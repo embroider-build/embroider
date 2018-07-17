@@ -19,8 +19,20 @@ import { sync as pkgUpSync }  from 'pkg-up';
 //   'treeForVendor',
 // ]);
 
-function customizes(mainModule, treeName) {
-  return mainModule.treeFor || mainModule[treeName];
+function customizes(mainModule, ...treeNames) {
+  return mainModule.treeFor || treeNames.find(treeName => mainModule[treeName]);
+}
+
+function transpile(addonInstance, tree) {
+  // TODO: for Javascript, this should respect the addon's configured babel
+  // plugins but only target ES latest, leaving everything else (especially
+  // modules) intact. For templates, this should apply custom AST transforms and
+  // re-serialize.
+  //
+  // Both of these steps can be optimized away when we see there is are no
+  // special preprocessors registered that wouldn't already be handled by the
+  // app-wide final babel and/or template compilation.
+  return tree;
 }
 
 export function prebuildV1Package(addonInstance) {
@@ -36,15 +48,30 @@ export function prebuildV1Package(addonInstance) {
 
   let mainModule = require(addonInstance.constructor._meta_.modulePath);
 
-  if (customizes(mainModule, 'treeForAddon')) {
-    console.log(`TODO: ${addonInstance.name} may have customized treeForAddon`);
+  if (customizes(mainModule, 'treeForAddon', 'treeForAddonTemplates')) {
+    console.log(`TODO: ${addonInstance.name} may have customized the addon tree`);
   } else {
     if (existsSync(join(root, 'addon'))) {
-      // todo: set main in package.json to index.js
+      // TODO: set main in package.json to index.js
       // and synthesize an index.js if there isn't one
-      trees.push(new Funnel(rootTree, {
-        srcDir: 'addon'
-      }));
+      trees.push(
+        transpile(addonInstance, new Funnel(rootTree, {
+          srcDir: 'addon'
+        }))
+      );
+    }
+  }
+
+  if (customizes(mainModule, 'treeForAddonTestSupport')) {
+    console.log(`TODO: ${addonInstance.name} may have customized the addon test support tree`);
+  } else {
+    if (existsSync(join(root, 'addon-test-support'))) {
+      trees.push(
+        transpile(addonInstance, new Funnel(rootTree, {
+          srcDir: 'addon-test-support',
+          destDir: 'test-support'
+        }))
+    );
     }
   }
 

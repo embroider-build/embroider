@@ -98,7 +98,7 @@ export default class Packages {
 
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return [...this.builtPackages.values()].map((tree, index) => new Funnel(tree, { destDir: `out-${index}` });
+    return [...this.builtPackages.values()].map((tree, index) => new Funnel(tree, { destDir: `out-${index}` }));
   }
 }
 
@@ -117,4 +117,3 @@ function transpile(_addonInstance, tree) {
   // app-wide final babel and/or template compilation.
   return tree;
 }
-

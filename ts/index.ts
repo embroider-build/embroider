@@ -1,11 +1,5 @@
-import mergeTrees from 'broccoli-merge-trees';
 import Funnel from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
-import { Tree } from 'broccoli-plugin';
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import RewritePackageJSON from './rewrite-package-json';
-import { sync as pkgUpSync }  from 'pkg-up';
+import Package from './package';
 
 // const customTreeNames = Object.freeze([
 //   'treeFor',
@@ -26,7 +20,7 @@ import { sync as pkgUpSync }  from 'pkg-up';
 // the fly, so that we can present a complete set of v2 packages as the public
 // API forward to our bundling phase.
 export default class Packages {
-  private builtPackages: Map<string, Tree> = new Map();
+  private builtPackages: Map<string, Package> = new Map();
 
   constructor(project) {
     // TODO: we need to follow all deps, not just active ones. You can still
@@ -52,108 +46,13 @@ export default class Packages {
       // distinct configs while sharing a single copy of the node module.
       console.log(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
     } else {
-      this.builtPackages.set(addonInstance.root, this.upcompileV1Package(addonInstance));
+      this.builtPackages.set(addonInstance.root, Package.fromV1(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));
     }
   }
 
-  upcompileV1Package(addonInstance) {
-    let trees = this.v2Trees(addonInstance);
-    return new Funnel(mergeTrees(trees), {
-      destDir: addonInstance.pkg.name
-    });
-  }
-
-  private v2Trees(addonInstance) {
-    let trees = [];
-
-    // addonInstance.root gets modified by a customized "main" or
-    // "ember-addon.main" in package.json. We want the real package root here
-    // (the place where package.json lives).
-    let root = dirname(pkgUpSync(addonInstance.root));
-
-    let rootTree = new UnwatchedDir(root);
-    trees.push(new RewritePackageJSON(rootTree));
-
-    let mainModule = require(addonInstance.constructor._meta_.modulePath);
-
-    if (customizes(mainModule, 'treeFor')) {
-      console.log(`TODO: ${addonInstance.pkg.name} has customized treeFor`);
-      return trees;
-    }
-
-    if (customizes(mainModule, 'treeForAddon', 'treeForAddonTemplates')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon tree`);
-    } else {
-      if (existsSync(join(root, 'addon'))) {
-        trees.push(
-          transpile(addonInstance, new Funnel(rootTree, {
-            srcDir: 'addon'
-          }))
-        );
-      }
-    }
-
-    if (customizes(mainModule, 'treeForAddonTestSupport')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon test support tree`);
-    } else {
-      if (existsSync(join(root, 'addon-test-support'))) {
-        trees.push(
-          transpile(addonInstance, new Funnel(rootTree, {
-            srcDir: 'addon-test-support',
-            destDir: 'test-support'
-          }))
-      );
-      }
-    }
-
-    if (customizes(mainModule, 'treeForApp', 'treeForTemplates')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the app tree`);
-    } else {
-      if (existsSync(join(root, 'app'))) {
-        trees.push(
-          transpile(addonInstance, new Funnel(rootTree, {
-            srcDir: 'app',
-            destDir: '_app_'
-          }))
-        );
-      }
-    }
-
-    if (customizes(mainModule, 'treeForPublic')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the public tree`);
-    } else {
-      if (existsSync(join(root, 'public'))) {
-        trees.push(
-          new Funnel(rootTree, {
-            srcDir: 'public',
-            destDir: 'public'
-          })
-        );
-      }
-    }
-
-    return trees;
-  }
-
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return [...this.builtPackages.values()].map((tree, index) => new Funnel(tree, { destDir: `out-${index}` }));
+    return [...this.builtPackages.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
-}
-
-function customizes(mainModule, ...treeNames) {
-  return treeNames.find(treeName => mainModule[treeName]);
-}
-
-function transpile(_addonInstance, tree) {
-  // TODO: for Javascript, this should respect the addon's configured babel
-  // plugins but only target ES latest, leaving everything else (especially
-  // modules) intact. For templates, this should apply custom AST transforms and
-  // re-serialize.
-  //
-  // Both of these steps can be optimized away when we see there is are no
-  // special preprocessors registered that wouldn't already be handled by the
-  // app-wide final babel and/or template compilation.
-  return tree;
 }

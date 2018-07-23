@@ -13,7 +13,7 @@ import { sync as pkgUpSync }  from 'pkg-up';
 //   'treeForAddonTemplates',
 //   'treeForAddonTestSupport',
 //   'treeForApp',
-//   'treeForPublic', // TODO
+//   'treeForPublic',
 //   'treeForStyles', // TODO
 //   'treeForTemplates',
 //   'treeForTestSupport', // TODO
@@ -45,7 +45,12 @@ export default class Packages {
       // output, so we could have conflicting needs here. (This doesn't come up
       // for v2 packages, their contents are constant by design, dynamicism is
       // handled elsewhere in the build process.)
-      console.log(`TODO: multiple instances of same copy of addon ${addonInstance.name}`);
+      //
+      // One easy case (that comes up a lot) is addon that don't have any build
+      // output (like ember-cli-htmlbars). Those are not really a big deal
+      // because only their runtime impacts matter, and those can still have
+      // distinct configs while sharing a single copy of the node module.
+      console.log(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
     } else {
       this.builtPackages.set(addonInstance.root, this.upcompileV1Package(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));
@@ -73,16 +78,14 @@ export default class Packages {
     let mainModule = require(addonInstance.constructor._meta_.modulePath);
 
     if (customizes(mainModule, 'treeFor')) {
-      console.log(`TODO: ${addonInstance.name} has customized treeFor`);
+      console.log(`TODO: ${addonInstance.pkg.name} has customized treeFor`);
       return trees;
     }
 
     if (customizes(mainModule, 'treeForAddon', 'treeForAddonTemplates')) {
-      console.log(`TODO: ${addonInstance.name} may have customized the addon tree`);
+      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon tree`);
     } else {
       if (existsSync(join(root, 'addon'))) {
-        // TODO: set main in package.json to index.js
-        // and synthesize an index.js if there isn't one
         trees.push(
           transpile(addonInstance, new Funnel(rootTree, {
             srcDir: 'addon'
@@ -92,7 +95,7 @@ export default class Packages {
     }
 
     if (customizes(mainModule, 'treeForAddonTestSupport')) {
-      console.log(`TODO: ${addonInstance.name} may have customized the addon test support tree`);
+      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon test support tree`);
     } else {
       if (existsSync(join(root, 'addon-test-support'))) {
         trees.push(
@@ -105,7 +108,7 @@ export default class Packages {
     }
 
     if (customizes(mainModule, 'treeForApp', 'treeForTemplates')) {
-      console.log(`TODO: ${addonInstance.name} may have customized the app tree`);
+      console.log(`TODO: ${addonInstance.pkg.name} may have customized the app tree`);
     } else {
       if (existsSync(join(root, 'app'))) {
         trees.push(
@@ -113,6 +116,19 @@ export default class Packages {
             srcDir: 'app',
             destDir: '_app_'
           }))
+        );
+      }
+    }
+
+    if (customizes(mainModule, 'treeForPublic')) {
+      console.log(`TODO: ${addonInstance.pkg.name} may have customized the public tree`);
+    } else {
+      if (existsSync(join(root, 'public'))) {
+        trees.push(
+          new Funnel(rootTree, {
+            srcDir: 'public',
+            destDir: 'public'
+          })
         );
       }
     }

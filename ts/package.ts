@@ -18,33 +18,53 @@ export default class Package {
   get tree(): Tree {
     let trees = this.v2Trees();
     return new Funnel(mergeTrees(trees), {
-      destDir: this.addonInstance.pkg.name
+      destDir: this.name
     });
+  }
+
+  get name() : string {
+    return this.addonInstance.pkg.name;
+  }
+
+  // addonInstance.root gets modified by a customized "main" or
+  // "ember-addon.main" in package.json. We want the real package root here
+  // (the place where package.json lives).
+  private get root(): string {
+    if (!this.rootCache) {
+      this.rootCache = dirname(pkgUpSync(this.addonInstance.root));
+    }
+    return this.rootCache;
+  }
+  private rootCache;
+
+  private get mainModule() {
+    if (!this.mainModuleCache) {
+      this.mainModuleCache = require(this.addonInstance.constructor._meta_.modulePath);
+    }
+    return this.mainModuleCache;
+  }
+  private mainModuleCache;
+
+  private customizes(...treeNames) {
+    return treeNames.find(treeName => this.mainModule[treeName]);
   }
 
   private v2Trees() {
     let { addonInstance } = this;
     let trees = [];
 
-    // addonInstance.root gets modified by a customized "main" or
-    // "ember-addon.main" in package.json. We want the real package root here
-    // (the place where package.json lives).
-    let root = dirname(pkgUpSync(addonInstance.root));
-
-    let rootTree = new UnwatchedDir(root);
+    let rootTree = new UnwatchedDir(this.root);
     trees.push(new RewritePackageJSON(rootTree));
 
-    let mainModule = require(addonInstance.constructor._meta_.modulePath);
-
-    if (customizes(mainModule, 'treeFor')) {
-      console.log(`TODO: ${addonInstance.pkg.name} has customized treeFor`);
+    if (this.customizes('treeFor')) {
+      console.log(`TODO: ${this.name} has customized treeFor`);
       return trees;
     }
 
-    if (customizes(mainModule, 'treeForAddon', 'treeForAddonTemplates')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon tree`);
+    if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
+      console.log(`TODO: ${this.name} may have customized the addon tree`);
     } else {
-      if (existsSync(join(root, 'addon'))) {
+      if (existsSync(join(this.root, 'addon'))) {
         trees.push(
           transpile(addonInstance, new Funnel(rootTree, {
             srcDir: 'addon'
@@ -53,10 +73,10 @@ export default class Package {
       }
     }
 
-    if (customizes(mainModule, 'treeForAddonTestSupport')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the addon test support tree`);
+    if (this.customizes('treeForAddonTestSupport')) {
+      console.log(`TODO: ${this.name} may have customized the addon test support tree`);
     } else {
-      if (existsSync(join(root, 'addon-test-support'))) {
+      if (existsSync(join(this.root, 'addon-test-support'))) {
         trees.push(
           transpile(addonInstance, new Funnel(rootTree, {
             srcDir: 'addon-test-support',
@@ -66,10 +86,10 @@ export default class Package {
       }
     }
 
-    if (customizes(mainModule, 'treeForApp', 'treeForTemplates')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the app tree`);
+    if (this.customizes('treeForApp', 'treeForTemplates')) {
+      console.log(`TODO: ${this.name} may have customized the app tree`);
     } else {
-      if (existsSync(join(root, 'app'))) {
+      if (existsSync(join(this.root, 'app'))) {
         trees.push(
           transpile(addonInstance, new Funnel(rootTree, {
             srcDir: 'app',
@@ -79,10 +99,10 @@ export default class Package {
       }
     }
 
-    if (customizes(mainModule, 'treeForPublic')) {
-      console.log(`TODO: ${addonInstance.pkg.name} may have customized the public tree`);
+    if (this.customizes('treeForPublic')) {
+      console.log(`TODO: ${this.name} may have customized the public tree`);
     } else {
-      if (existsSync(join(root, 'public'))) {
+      if (existsSync(join(this.root, 'public'))) {
         trees.push(
           new Funnel(rootTree, {
             srcDir: 'public',
@@ -94,9 +114,6 @@ export default class Package {
 
     return trees;
   }
-}
-function customizes(mainModule, ...treeNames) {
-  return treeNames.find(treeName => mainModule[treeName]);
 }
 
 function transpile(_addonInstance, tree) {

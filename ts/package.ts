@@ -7,6 +7,20 @@ import { join, dirname } from 'path';
 import RewritePackageJSON from './rewrite-package-json';
 import { sync as pkgUpSync }  from 'pkg-up';
 
+// const customTreeNames = Object.freeze([
+//   'treeFor',
+//   'treeForAddon',
+//   'treeForAddonStyles',
+//   'treeForAddonTemplates',
+//   'treeForAddonTestSupport',
+//   'treeForApp',
+//   'treeForPublic',
+//   'treeForStyles',
+//   'treeForTemplates',
+//   'treeForTestSupport', // TODO
+//   'treeForVendor', // TODO
+// ]);
+
 // represents a v2 package
 export default class Package {
   static fromV1(addonInstance) : Package {
@@ -65,11 +79,50 @@ export default class Package {
       console.log(`TODO: ${this.name} may have customized the addon tree`);
     } else {
       if (existsSync(join(this.root, 'addon'))) {
+        // TODO: track all the javascript in here for inclusion in our automatic
+        // implied imports.
         trees.push(
           transpile(addonInstance, new Funnel(rootTree, {
-            srcDir: 'addon'
+            srcDir: 'addon',
+            exclude: ['styles/**']
           }))
         );
+      }
+    }
+
+    if (this.customizes('treeForAddonStyles')) {
+      console.log(`TODO: ${this.name} may have customized the addon style tree`);
+    } else {
+      if (existsSync(join(this.root, 'addon/styles'))) {
+        // TODO should generate `import "this-addon/addon.css";` to maintain
+        // auto inclusion semantics.
+        trees.push(
+          transpile(addonInstance, new Funnel(rootTree, {
+            srcDir: 'addon/styles'
+          }))
+      );
+      }
+    }
+
+    if (this.customizes('treeForStyles')) {
+      console.log(`TODO: ${this.name} may have customized the app style tree`);
+    } else {
+      if (existsSync(join(this.root, 'app/styles'))) {
+        // The typical way these get used is via css @import from the app's own
+        // CSS (or SCSS). There is no enforced namespacing but that is the
+        // common pattern as far as I can tell.
+        //
+        // TODO: detect people doing the right thing (namespacing with their own
+        // package name) and send them down the happy path. Their styles can
+        // just ship inside the package root and be importable at the same name
+        // as before. Detect people doing anything other than that and yell at
+        // them and set up a fallback.
+        trees.push(
+          new Funnel(rootTree, {
+            srcDir: 'app/styles',
+            destDir: '_app_styles_'
+          })
+      );
       }
     }
 
@@ -91,8 +144,11 @@ export default class Package {
     } else {
       if (existsSync(join(this.root, 'app'))) {
         trees.push(
+          // TODO track all the Javascript in here and put it into our implied
+          // automatic imports.
           transpile(addonInstance, new Funnel(rootTree, {
             srcDir: 'app',
+            exclude: ['styles/**'],
             destDir: '_app_'
           }))
         );

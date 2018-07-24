@@ -1,19 +1,6 @@
 import Funnel from 'broccoli-funnel';
 import Package from './package';
 
-// const customTreeNames = Object.freeze([
-//   'treeFor',
-//   'treeForAddon',
-//   'treeForAddonTemplates',
-//   'treeForAddonTestSupport',
-//   'treeForApp',
-//   'treeForPublic',
-//   'treeForStyles', // TODO
-//   'treeForTemplates',
-//   'treeForTestSupport', // TODO
-//   'treeForVendor', // TODO
-// ]);
-
 // Represents the set of active V2 packages that make up a complete application. Addons
 // that publish as v2 can merely be discovered, addons that publish as v1 get
 // up-compiled. The host application itself also gets compiled into v2 format on

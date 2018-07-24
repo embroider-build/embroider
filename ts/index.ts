@@ -23,6 +23,11 @@ export default class Packages {
   private addPackage(addonInstance) {
     // TODO: check for native v2 and go down a different path
 
+    if (addonInstance.pkg.name === 'ember-auto-import') {
+      // auto import is effectively a polyfill for us. We are doing what it does.
+      return;
+    }
+
     if (this.builtPackages.has(addonInstance.root)) {
       // TODO: the same addon may be used by multiple different packages, and
       // for a v1 package each consumer may cause it to have different build

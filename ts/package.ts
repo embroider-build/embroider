@@ -180,7 +180,18 @@ export default class Package {
     }
 
     if (this.customizes('treeForPublic')) {
-      debug(`TODO: ${this.name} may have customized the public tree`);
+      // TODO: The stock behavior for public is that the files get automatically
+      // namespaced under your package name before merging into the final app.
+      // But people who are customizing have the ability to sidestep that
+      // behavior. So here we need to monitor them for good behavior.
+      let tree = this.addonInstance._treeFor('public');
+      if (tree) {
+        trees.push(
+          new Funnel(tree, {
+            destDir: 'public'
+          })
+        );
+      }
     } else if (this.hasStockTree('public')) {
       trees.push(
         this.stockTree('public', {
@@ -190,11 +201,21 @@ export default class Package {
     }
 
     if (this.customizes('treeForVendor')) {
-      debug(`TODO: ${this.name} may have customized the vendor tree`);
+      // We don't have any particular opinions about the structure inside
+      // vendor, so even when it's customized we can just use the customized
+      // one.
+      let tree = this.addonInstance._treeFor('vendor');
+      if (tree) {
+        trees.push(
+          new Funnel(tree, {
+            destDir: 'vendor'
+          })
+        );
+      }
     } else if (this.hasStockTree('vendor')) {
       trees.push(
         this.stockTree('vendor', {
-          destDir: '_vendor_'
+          destDir: 'vendor'
         })
       );
     }

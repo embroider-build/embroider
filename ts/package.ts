@@ -7,20 +7,6 @@ import { join, dirname } from 'path';
 import RewritePackageJSON from './rewrite-package-json';
 import { sync as pkgUpSync }  from 'pkg-up';
 
-// const customTreeNames = Object.freeze([
-//   'treeFor',
-//   'treeForAddon',
-//   'treeForAddonStyles',
-//   'treeForAddonTemplates',
-//   'treeForAddonTestSupport',
-//   'treeForApp',
-//   'treeForPublic',
-//   'treeForStyles',
-//   'treeForTemplates',
-//   'treeForTestSupport', // TODO
-//   'treeForVendor', // TODO
-// ]);
-
 // represents a v2 package
 export default class Package {
   static fromV1(addonInstance) : Package {
@@ -139,6 +125,16 @@ export default class Package {
       }
     }
 
+    if (this.customizes('treeForTestSupport')) {
+      console.log(`TODO: ${this.name} may have customized the test support tree`);
+    } else {
+      if (existsSync(join(this.root, 'test-support'))) {
+        // this case should probably get deprecated entirely, there's no good
+        // reason to use this over addon-test-support.
+        console.log(`TODO: ${this.name} is using test-support instead of addon-test-support`);
+      }
+    }
+
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       console.log(`TODO: ${this.name} may have customized the app tree`);
     } else {
@@ -163,6 +159,19 @@ export default class Package {
           new Funnel(rootTree, {
             srcDir: 'public',
             destDir: 'public'
+          })
+        );
+      }
+    }
+
+    if (this.customizes('treeForVendor')) {
+      console.log(`TODO: ${this.name} may have customized the vendor tree`);
+    } else {
+      if (existsSync(join(this.root, 'vendor'))) {
+        trees.push(
+          new Funnel(rootTree, {
+            srcDir: 'vendor',
+            destDir: '_vendor_'
           })
         );
       }

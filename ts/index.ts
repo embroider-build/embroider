@@ -12,12 +12,12 @@ const debug = makeDebug('ember-cli-vanilla');
 export default class Packages {
   private builtPackages: Map<string, Package> = new Map();
 
-  constructor(private app) {
+  constructor(project) {
     // TODO: we need to follow all deps, not just active ones. You can still
     // directly import things out of non-active packages, because we follow
     // node_modules resolution rules and those rules don't care about our notion
     // of active.
-    app.project.addons.forEach(addonInstance => this.addPackage(addonInstance));
+    project.addons.forEach(addonInstance => this.addPackage(addonInstance));
   }
 
   private addPackage(addonInstance) {
@@ -42,8 +42,7 @@ export default class Packages {
         // to be a preprocessor.
       }
     } else {
-      let appImports = this.app._importOwners.get(addonInstance);
-      this.builtPackages.set(addonInstance.root, Package.fromV1(addonInstance, appImports));
+      this.builtPackages.set(addonInstance.root, Package.fromV1(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));
     }
   }

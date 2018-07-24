@@ -1,5 +1,8 @@
 import Funnel from 'broccoli-funnel';
 import Package from './package';
+import makeDebug from 'debug';
+
+const debug = makeDebug('ember-cli-vanilla');
 
 // Represents the set of active V2 packages that make up a complete application. Addons
 // that publish as v2 can merely be discovered, addons that publish as v1 get
@@ -26,12 +29,13 @@ export default class Packages {
       // output, so we could have conflicting needs here. (This doesn't come up
       // for v2 packages, their contents are constant by design, dynamicism is
       // handled elsewhere in the build process.)
-      //
-      // One easy case (that comes up a lot) is addon that don't have any build
-      // output (like ember-cli-htmlbars). Those are not really a big deal
-      // because only their runtime impacts matter, and those can still have
-      // distinct configs while sharing a single copy of the node module.
-      console.log(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
+      if (this.builtPackages.get(addonInstance.root).hasAnyTrees()) {
+        debug(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
+      } else {
+        // This kind of conflict doesn't matter when you don't have any build
+        // output. An example of this is ember-cli-htmlbars, which only exists
+        // to be a preprocessor.
+      }
     } else {
       this.builtPackages.set(addonInstance.root, Package.fromV1(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));

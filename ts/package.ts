@@ -26,11 +26,15 @@ const stockTreeNames = Object.freeze([
 
 // represents a v2 package
 export default class Package {
-  static fromV1(addonInstance) : Package {
-    return new this(addonInstance);
+  static fromV1(addonInstance, appImports) : Package {
+    return new this(addonInstance, appImports);
   }
 
-  private constructor(private addonInstance) {}
+  private constructor(private addonInstance, appImports) {
+    if (appImports) {
+      console.log(`TODO: ${this.name} has imports ${appImports.imports.join(',')}f`);
+    }
+  }
 
   get tree(): Tree {
     let trees = this.v2Trees();

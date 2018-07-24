@@ -1,4 +1,22 @@
 
+# apps to test
+
+travis-web
+ember observer
+ghost?
+
+# more node_modules linking strategy
+
+We will always have some dynamic things plus static node_modules.
+
+When the dynamic things are just your app, it's not that hard because you can put the dynamic things in a subdir and they retain access to all the same node_modules. Critically, no other packages depend on you, so they don't need to be updated to point at your dynamically-rebuilt package.
+
+The harder case is when you're dynamic and other things do depend on you (a v1 addon).
+
+Perhaps we should make a complete separate node_modules tree with our dynamic output plus symlinks into the static tree. The naive solution wouldn't work (you can't
+
+# shadow node_modules thoughts
+
 can we construct a shadow node_modules to handle the v1-to-v2 compiled addons or should we do in-place replacement of them?
 
 shadow is annoying to make work in both directions (from shadow to real and real to shadow). It's not too bad when packages are same-level in the filesystem (you can override the real copy by placing symlinks into the nested node_modules of each of the packages that depend on it). But when you're already nested, there's no higher-priority place to put the symlink. Probalby in that case you need to copy the dependee into shadow too.

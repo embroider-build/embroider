@@ -2,14 +2,23 @@ import mergeTrees from 'broccoli-merge-trees';
 import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import { Tree } from 'broccoli-plugin';
-import { existsSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import RewritePackageJSON from './rewrite-package-json';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { Memoize } from 'typescript-memoize';
 import makeDebug from 'debug';
+import quickTemp from 'quick-temp';
+import { compile, registerHelper } from 'handlebars';
+import jsStringEscape from 'js-string-escape';
+
+registerHelper('js-string-escape', jsStringEscape);
 
 const debug = makeDebug('ember-cli-vanilla');
+
+const appImportsTemplate = compile(`{{#each imports as |import|}}
+import '{{js-string-escape import}}';
+{{/each}}`);
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -30,11 +39,7 @@ export default class Package {
     return new this(addonInstance);
   }
 
-  private constructor(private addonInstance) {
-    if (addonInstance._trackedImports) {
-      debug(`TODO: ${this.name} has imports ${JSON.stringify(addonInstance._trackedImports)}`);
-    }
-  }
+  private constructor(private addonInstance) {}
 
   get tree(): Tree {
     let trees = this.v2Trees();
@@ -97,10 +102,55 @@ export default class Package {
     return new UnwatchedDir(this.root);
   }
 
+  private implicitImportTree() {
+    if (!this.addonInstance._trackedImports) {
+      return;
+    }
+
+    let appImports = [];
+    let testImports = [];
+
+    this.addonInstance._trackedImports.forEach(({ assetPath, options }) => {
+      let standardAssetPath = standardizeAssetPath(assetPath);
+      if (!standardAssetPath) {
+        return;
+      }
+      if (options.type === 'vendor') {
+        if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
+          debug(`TODO: ${this.name} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
+        }
+        appImports.push(standardAssetPath);
+      } else if (options.type === 'test') {
+        testImports.push(standardAssetPath);
+      } else {
+        debug(`TODO: ${this.name} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+      }
+    });
+    if (appImports.length === 0 && testImports.length === 0) {
+      return;
+    }
+    quickTemp.makeOrRemake(this, 'implicitImportDir');
+    if (appImports.length > 0) {
+      writeFileSync(join(this.implicitImportDir, `_implicit_imports_.js`), appImportsTemplate({ imports: appImports }), 'utf8');
+    }
+    if (testImports.length > 0) {
+      writeFileSync(join(this.implicitImportDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: testImports }), 'utf8');
+    }
+    return new UnwatchedDir(this.implicitImportDir);
+  }
+  private implicitImportDir;
+
   private v2Trees() {
     let trees = [];
 
     trees.push(new RewritePackageJSON(this.rootTree));
+
+    {
+      let tree = this.implicitImportTree();
+      if (tree) {
+        trees.push(tree);
+      }
+    }
 
     if (this.customizes('treeFor')) {
       debug(`TODO: ${this.name} has customized treeFor`);
@@ -111,7 +161,7 @@ export default class Package {
       debug(`TODO: ${this.name} may have customized the addon tree`);
     } else if (this.hasStockTree('addon')) {
       // TODO: track all the javascript in here for inclusion in our automatic
-      // implied imports.
+      // implicit imports.
       trees.push(
         this.transpile(this.stockTree('addon', {
           exclude: ['styles/**']
@@ -170,7 +220,7 @@ export default class Package {
       debug(`TODO: ${this.name} may have customized the app tree`);
     } else if (this.hasStockTree('app')) {
       trees.push(
-        // TODO track all the Javascript in here and put it into our implied
+        // TODO track all the Javascript in here and put it into our implicit
         // automatic imports.
         this.transpile(this.stockTree('app', {
           exclude: ['styles/**'],
@@ -221,5 +271,18 @@ export default class Package {
     }
 
     return trees;
+  }
+}
+
+function standardizeAssetPath(assetPath) {
+  let [first, ...rest] = assetPath.split('/');
+  if (first === 'vendor') {
+    // our vendor tree is available via relative import
+    return './vendor/' + rest.join('/');
+  } else if (first === 'node_modules') {
+    // our node_modules are allowed to be resolved directly
+    return rest.join('/');
+  } else {
+    debug(`TODO: ${this.name} app.imported from unknown path ${assetPath}`);
   }
 }

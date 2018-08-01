@@ -68,10 +68,11 @@ export default class Package {
   private transpile(tree) {
     // TODO: for Javascript, this should respect the addon's configured babel
     // plugins but only target ES latest, leaving everything else (especially
-    // modules) intact. For templates, this should apply custom AST transforms and
-    // re-serialize.
+    // modules) intact. For templates, this should apply custom AST transforms
+    // and re-serialize. For styles, this should apply any custom registered
+    // style transforms down to plain CSS.
     //
-    // Both of these steps can be optimized away when we see there is are no
+    // All of these steps can be optimized away when we see there is are no
     // special preprocessors registered that wouldn't already be handled by the
     // app-wide final babel and/or template compilation.
     return tree;
@@ -192,9 +193,9 @@ export default class Package {
       // as before. Detect people doing anything other than that and yell at
       // them and set up a fallback.
       trees.push(
-        this.stockTree('styles', {
+        this.transpile(this.stockTree('styles', {
           destDir: '_app_styles_'
-        })
+        }))
       );
     }
 

@@ -11,10 +11,12 @@ import makeDebug from 'debug';
 import quickTemp from 'quick-temp';
 import { compile, registerHelper } from 'handlebars';
 import jsStringEscape from 'js-string-escape';
+import ImportParser from './import-parser';
+import DependencyAnalyzer from './dependency-analyzer';
 
 registerHelper('js-string-escape', jsStringEscape);
 
-const debug = makeDebug('ember-cli-vanilla');
+const todo = makeDebug('ember-cli-vanilla:todo');
 
 const appImportsTemplate = compile(`{{#each imports as |import|}}
 import '{{js-string-escape import}}';
@@ -75,6 +77,9 @@ export default class Package {
     // All of these steps can be optimized away when we see there is are no
     // special preprocessors registered that wouldn't already be handled by the
     // app-wide final babel and/or template compilation.
+    //
+    // TODO: also remember to add our own babel plugin that rewrites absolute
+    // specifiers within the same package to relative specifiers.
     return tree;
   }
 
@@ -118,13 +123,13 @@ export default class Package {
       }
       if (options.type === 'vendor') {
         if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
-          debug(`TODO: ${this.name} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
+          todo(`${this.name} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
         }
         appImports.push(standardAssetPath);
       } else if (options.type === 'test') {
         testImports.push(standardAssetPath);
       } else {
-        debug(`TODO: ${this.name} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+        todo(`${this.name} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
       }
     });
     if (appImports.length === 0 && testImports.length === 0) {
@@ -141,10 +146,13 @@ export default class Package {
   }
   private implicitImportDir;
 
+  private parseImports(tree) {
+    return new ImportParser(tree);
+  }
+
   private v2Trees() {
     let trees = [];
-
-    trees.push(new RewritePackageJSON(this.rootTree));
+    let importParsers = [];
 
     {
       let tree = this.implicitImportTree();
@@ -154,24 +162,24 @@ export default class Package {
     }
 
     if (this.customizes('treeFor')) {
-      debug(`TODO: ${this.name} has customized treeFor`);
+      todo(`${this.name} has customized treeFor`);
       return trees;
     }
 
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      debug(`TODO: ${this.name} may have customized the addon tree`);
+      todo(`${this.name} may have customized the addon tree`);
     } else if (this.hasStockTree('addon')) {
       // TODO: track all the javascript in here for inclusion in our automatic
       // implicit imports.
-      trees.push(
-        this.transpile(this.stockTree('addon', {
-          exclude: ['styles/**']
-        }))
-      );
+      let tree = this.transpile(this.stockTree('addon', {
+        exclude: ['styles/**']
+      }));
+      importParsers.push(this.parseImports(tree));
+      trees.push(tree);
     }
 
     if (this.customizes('treeForAddonStyles')) {
-      debug(`TODO: ${this.name} may have customized the addon style tree`);
+      todo(`${this.name} may have customized the addon style tree`);
     } else if (this.hasStockTree('addon-styles')) {
       // TODO should generate `import "this-addon/addon.css";` to maintain
       // auto inclusion semantics.
@@ -181,7 +189,7 @@ export default class Package {
     }
 
     if (this.customizes('treeForStyles')) {
-      debug(`TODO: ${this.name} may have customized the app style tree`);
+      todo(`${this.name} may have customized the app style tree`);
     } else if (this.hasStockTree('styles')) {
       // The typical way these get used is via css @import from the app's own
       // CSS (or SCSS). There is no enforced namespacing but that is the
@@ -200,34 +208,34 @@ export default class Package {
     }
 
     if (this.customizes('treeForAddonTestSupport')) {
-      debug(`TODO: ${this.name} may have customized the addon test support tree`);
+      todo(`${this.name} may have customized the addon test support tree`);
     } else if (this.hasStockTree('addon-test-support')) {
-      trees.push(
-        this.transpile(this.stockTree('addon-test-support', {
-          destDir: 'test-support'
-        }))
-      );
+      let tree = this.transpile(this.stockTree('addon-test-support', {
+        destDir: 'test-support'
+      }));
+      importParsers.push(this.parseImports(tree));
+      trees.push(tree);
     }
 
     if (this.customizes('treeForTestSupport')) {
-      debug(`TODO: ${this.name} may have customized the test support tree`);
+      todo(`${this.name} may have customized the test support tree`);
     } else if (this.hasStockTree('test-support')) {
       // this case should probably get deprecated entirely, there's no good
       // reason to use this over addon-test-support.
-      debug(`TODO: ${this.name} is using test-support instead of addon-test-support`);
+      todo(`${this.name} is using test-support instead of addon-test-support`);
     }
 
     if (this.customizes('treeForApp', 'treeForTemplates')) {
-      debug(`TODO: ${this.name} may have customized the app tree`);
+      todo(`${this.name} may have customized the app tree`);
     } else if (this.hasStockTree('app')) {
-      trees.push(
-        // TODO track all the Javascript in here and put it into our implicit
-        // automatic imports.
-        this.transpile(this.stockTree('app', {
-          exclude: ['styles/**'],
-          destDir: '_app_'
-        }))
-      );
+      // TODO track all the Javascript in here and put it into our implicit
+      // automatic imports.
+      let tree = this.transpile(this.stockTree('app', {
+        exclude: ['styles/**'],
+        destDir: '_app_'
+      }));
+      importParsers.push(this.parseImports(tree));
+      trees.push(tree);
     }
 
     if (this.customizes('treeForPublic')) {
@@ -271,6 +279,8 @@ export default class Package {
       );
     }
 
+    let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
+    trees.push(new RewritePackageJSON(this.rootTree, analyzer));
     return trees;
   }
 }
@@ -284,6 +294,6 @@ function standardizeAssetPath(assetPath) {
     // our node_modules are allowed to be resolved directly
     return rest.join('/');
   } else {
-    debug(`TODO: ${this.name} app.imported from unknown path ${assetPath}`);
+    todo(`${this.name} app.imported from unknown path ${assetPath}`);
   }
 }

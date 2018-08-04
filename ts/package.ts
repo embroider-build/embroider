@@ -13,6 +13,8 @@ import { compile, registerHelper } from 'handlebars';
 import jsStringEscape from 'js-string-escape';
 import ImportParser from './import-parser';
 import DependencyAnalyzer from './dependency-analyzer';
+import isEqual from 'lodash/isEqual';
+import babelPlugin from './babel-plugin';
 
 registerHelper('js-string-escape', jsStringEscape);
 
@@ -67,12 +69,38 @@ export default class Package {
     return require(this.addonInstance.constructor._meta_.modulePath);
   }
 
+  @Memoize()
+  private checkBabelConfig() {
+    let options = this.addonInstance.options;
+    let isDefault = isEqual(options.babel, {}) && isEqual(options['ember-cli-babel'], { compileModules: true });
+    if (isDefault) {
+      Object.assign(options['ember-cli-babel'], {
+        compileModules: false,
+        disablePresetEnv: true,
+        disableDebugTooling: true,
+        disableEmberModulesAPIPolyfill: true
+      });
+      Object.assign(options.babel, {
+        plugins: [
+          [babelPlugin, { ownName: this.name } ]
+        ]
+      });
+    } else {
+      todo(`${this.name} has non-default babel config`);
+    }
+
+  }
+
   private transpile(tree) {
+    this.checkBabelConfig();
+
+    tree = this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+
     // TODO: for Javascript, this should respect the addon's configured babel
     // plugins but only target ES latest, leaving everything else (especially
     // modules) intact. For templates, this should apply custom AST transforms
     // and re-serialize. For styles, this should apply any custom registered
-    // style transforms down to plain CSS.
+    // style transforms down to plain CSS.a
     //
     // All of these steps can be optimized away when we see there is are no
     // special preprocessors registered that wouldn't already be handled by the

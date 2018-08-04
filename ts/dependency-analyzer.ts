@@ -2,6 +2,7 @@ import Plugin from 'broccoli-plugin';
 import ImportParser from './import-parser';
 import flatMap from 'lodash/flatMap';
 import makeDebug from 'debug';
+import absolutePackageName from './package-name';
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 
@@ -23,7 +24,7 @@ export default class DependencyAnalyzer extends Plugin {
     let seen = new Set();
     let { dependencies, devDependencies, peerDependencies } = this.packageJSON;
     imports.forEach(imp => {
-      let name = this.absolutePackageName(imp.specifier);
+      let name = absolutePackageName(imp.specifier);
       if (name && !seen.has(name)) {
         seen.add(name);
         if (
@@ -43,18 +44,5 @@ export default class DependencyAnalyzer extends Plugin {
       }
     });
     return externals;
-  }
-
-  private absolutePackageName(specifier) {
-    if (specifier[0] === '.' || specifier[0] === '/') {
-      // Not an absolute specifier
-      return;
-    }
-    let parts = specifier.split('/');
-    if (specifier[0] === '@') {
-      return `${parts[0]}/${parts[1]}`;
-    } else {
-      return parts[0];
-    }
   }
 }

@@ -1,5 +1,7 @@
 import Funnel from 'broccoli-funnel';
 import Package from './package';
+import AddonPackage from './addon-package';
+import AppPackage from './app-package';
 import makeDebug from 'debug';
 
 const debug = makeDebug('ember-cli-vanilla');
@@ -20,7 +22,7 @@ export default class Packages {
     // of active.
     app.project.addons.forEach(addonInstance => this.addPackage(addonInstance));
 
-    this.topPackage = Package.fromApp(app, preprocessors);
+    this.topPackage = new AppPackage(app, preprocessors);
   }
 
   private addPackage(addonInstance) {
@@ -45,7 +47,7 @@ export default class Packages {
         // to be a preprocessor.
       }
     } else {
-      this.builtPackages.set(addonInstance.root, Package.fromV1(addonInstance));
+      this.builtPackages.set(addonInstance.root, new AddonPackage(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));
     }
   }

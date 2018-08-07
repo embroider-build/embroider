@@ -46,7 +46,7 @@ export default class AppPackage extends Package {
       trees.push(tree);
     }
 
-    todo('more app trees');
+    todo('more trees: src, tests, styles, templates, bower, vendor, public');
 
     let analyzer = new DependencyAnalyzer(importParsers, this.app.project.pkg, true );
     trees.push(new RewritePackageJSON(this.rootTree, analyzer));

@@ -106,8 +106,6 @@ export default class AddonPackage extends Package {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
       todo(`${this.name} may have customized the addon tree`);
     } else if (this.hasStockTree('addon')) {
-      // TODO: track all the javascript in here for inclusion in our automatic
-      // implicit imports.
       let tree = this.transpile(this.stockTree('addon', {
         exclude: ['styles/**']
       }));
@@ -165,8 +163,6 @@ export default class AddonPackage extends Package {
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       todo(`${this.name} may have customized the app tree`);
     } else if (this.hasStockTree('app')) {
-      // TODO track all the Javascript in here and put it into our implicit
-      // automatic imports.
       let tree = this.transpile(this.stockTree('app', {
         exclude: ['styles/**'],
         destDir: '_app_'

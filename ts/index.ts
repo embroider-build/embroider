@@ -11,13 +11,16 @@ const debug = makeDebug('ember-cli-vanilla');
 // API forward to our bundling phase.
 export default class Packages {
   private builtPackages: Map<string, Package> = new Map();
+  private topPackage: Package;
 
-  constructor(project) {
+  constructor(app, preprocessors) {
     // TODO: we need to follow all deps, not just active ones. You can still
     // directly import things out of non-active packages, because we follow
     // node_modules resolution rules and those rules don't care about our notion
     // of active.
-    project.addons.forEach(addonInstance => this.addPackage(addonInstance));
+    app.project.addons.forEach(addonInstance => this.addPackage(addonInstance));
+
+    this.topPackage = Package.fromApp(app, preprocessors);
   }
 
   private addPackage(addonInstance) {
@@ -49,6 +52,6 @@ export default class Packages {
 
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return [...this.builtPackages.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
+    return [this.topPackage, ...this.builtPackages.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
 }

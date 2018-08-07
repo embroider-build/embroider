@@ -13,8 +13,8 @@ import { compile, registerHelper } from 'handlebars';
 import jsStringEscape from 'js-string-escape';
 import ImportParser from './import-parser';
 import DependencyAnalyzer from './dependency-analyzer';
-import isEqual from 'lodash/isEqual';
 import babelPlugin from './babel-plugin';
+import semver from 'semver';
 
 registerHelper('js-string-escape', jsStringEscape);
 
@@ -38,12 +38,14 @@ const stockTreeNames = Object.freeze([
 ]);
 
 // represents a v2 package
-export default class Package {
+export default abstract class Package {
   static fromV1(addonInstance) : Package {
-    return new this(addonInstance);
+    return new AddonPackage(addonInstance);
   }
 
-  private constructor(private addonInstance) {}
+  static fromApp(app, preprocessors): Package {
+    return new AppPackage(app, preprocessors);
+  }
 
   get tree(): Tree {
     let trees = this.v2Trees();
@@ -52,49 +54,16 @@ export default class Package {
     });
   }
 
-  get name() : string {
-    return this.addonInstance.pkg.name;
-  }
+  abstract name: string;
+  abstract hasAnyTrees(): boolean;
+  protected abstract v2Trees(): Tree[];
+  protected abstract options: any;
+  protected abstract preprocessJS(tree: Tree) : Tree;
 
-  // addonInstance.root gets modified by a customized "main" or
-  // "ember-addon.main" in package.json. We want the real package root here
-  // (the place where package.json lives).
-  @Memoize()
-  private get root(): string {
-    return dirname(pkgUpSync(this.addonInstance.root));
-  }
-
-  @Memoize()
-  private get mainModule() {
-    return require(this.addonInstance.constructor._meta_.modulePath);
-  }
-
-  @Memoize()
-  private checkBabelConfig() {
-    let options = this.addonInstance.options;
-    let isDefault = isEqual(options.babel, {}) && isEqual(options['ember-cli-babel'], { compileModules: true });
-    if (isDefault) {
-      Object.assign(options['ember-cli-babel'], {
-        compileModules: false,
-        disablePresetEnv: true,
-        disableDebugTooling: true,
-        disableEmberModulesAPIPolyfill: true
-      });
-      Object.assign(options.babel, {
-        plugins: [
-          [babelPlugin, { ownName: this.name } ]
-        ]
-      });
-    } else {
-      todo(`${this.name} has non-default babel config`);
-    }
-
-  }
-
-  private transpile(tree) {
+  protected transpile(tree) {
     this.checkBabelConfig();
 
-    tree = this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+    tree = this.preprocessJS(tree);
 
     // TODO: for Javascript, this should respect the addon's configured babel
     // plugins but only target ES latest, leaving everything else (especially
@@ -111,40 +80,54 @@ export default class Package {
     return tree;
   }
 
-  private customizes(...treeNames) {
-    return treeNames.find(treeName => this.mainModule[treeName]);
+  protected parseImports(tree) {
+    return new ImportParser(tree);
   }
 
   @Memoize()
-  private hasStockTree(treeName) {
-    return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
+  protected checkBabelConfig() {
+    let options = this.options;
+
+    let emberCLIBabelInstance = this.findAddonByName('ember-cli-babel');
+    let version;
+    if (emberCLIBabelInstance) {
+      version = require(join(emberCLIBabelInstance.root, 'package')).version;
+    }
+
+    if (version && semver.satisfies(version, '^5')) {
+      todo(`${this.name} is using babel 5.`);
+      return;
+    }
+
+    Object.assign(options['ember-cli-babel'], {
+      compileModules: false,
+      disablePresetEnv: true,
+      disableDebugTooling: true,
+      disableEmberModulesAPIPolyfill: true
+    });
+    if (!options.babel.plugins) {
+      options.babel.plugins = [];
+    }
+    options.babel.plugins.push([babelPlugin, { ownName: this.name } ]);
   }
 
-  hasAnyTrees() : boolean {
-    return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
+  protected abstract directAddons;
+
+  protected findAddonByName(name) {
+    return this.directAddons.find(a => a.name === name || (a.pkg && a.pkg.name === name));
   }
 
-  private stockTree(treeName, funnelOpts?) {
-    let opts = Object.assign({
-      srcDir: this.addonInstance.treePaths[treeName]
-    }, funnelOpts);
-    return new Funnel(this.rootTree, opts);
-  }
+  protected abstract trackedImports;
 
-  @Memoize()
-  private get rootTree() {
-    return new UnwatchedDir(this.root);
-  }
-
-  private implicitImportTree() {
-    if (!this.addonInstance._trackedImports) {
+  protected implicitImportTree() {
+    if (!this.trackedImports) {
       return;
     }
 
     let appImports = [];
     let testImports = [];
 
-    this.addonInstance._trackedImports.forEach(({ assetPath, options }) => {
+    this.trackedImports.forEach(({ assetPath, options }) => {
       let standardAssetPath = standardizeAssetPath(assetPath);
       if (!standardAssetPath) {
         return;
@@ -173,12 +156,72 @@ export default class Package {
     return new UnwatchedDir(this.implicitImportDir);
   }
   private implicitImportDir;
+}
 
-  private parseImports(tree) {
-    return new ImportParser(tree);
+class AddonPackage extends Package {
+  constructor(private addonInstance) {
+    super();
   }
 
-  private v2Trees() {
+  get name() : string {
+    return this.addonInstance.pkg.name;
+  }
+
+  get directAddons() {
+    return this.addonInstance.addons;
+  }
+
+  protected get trackedImports() {
+    return this.addonInstance._trackedImports;
+  }
+
+  preprocessJS(tree) {
+    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+  }
+
+  // addonInstance.root gets modified by a customized "main" or
+  // "ember-addon.main" in package.json. We want the real package root here
+  // (the place where package.json lives).
+  @Memoize()
+  private get root(): string {
+    return dirname(pkgUpSync(this.addonInstance.root));
+  }
+
+  @Memoize()
+  private get mainModule() {
+    return require(this.addonInstance.constructor._meta_.modulePath);
+  }
+
+  protected get options() {
+    return this.addonInstance.options;
+  }
+
+  private customizes(...treeNames) {
+    return treeNames.find(treeName => this.mainModule[treeName]);
+  }
+
+  @Memoize()
+  private hasStockTree(treeName) {
+    return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
+  }
+
+  hasAnyTrees() : boolean {
+    return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
+  }
+
+  private stockTree(treeName, funnelOpts?) {
+    let opts = Object.assign({
+      srcDir: this.addonInstance.treePaths[treeName]
+    }, funnelOpts);
+    return new Funnel(this.rootTree, opts);
+  }
+
+  @Memoize()
+  private get rootTree() {
+    return new UnwatchedDir(this.root);
+  }
+
+  protected v2Trees() {
     let trees = [];
     let importParsers = [];
 
@@ -323,5 +366,67 @@ function standardizeAssetPath(assetPath) {
     return rest.join('/');
   } else {
     todo(`${this.name} app.imported from unknown path ${assetPath}`);
+  }
+}
+
+class AppPackage extends Package {
+  constructor(private app, private preprocessors) {
+    super();
+  }
+
+  get name() : string {
+    return this.app.project.pkg.name;
+  }
+
+  get directAddons() {
+    return this.app.project.addons;
+  }
+
+  protected get options() {
+    return this.app.options;
+  }
+
+  hasAnyTrees() {
+    return true;
+  }
+
+  protected v2Trees() {
+    let inputTrees = this.app.trees;
+    let trees = [];
+    let importParsers = [];
+    {
+      let tree = this.implicitImportTree();
+      if (tree) {
+        trees.push(tree);
+      }
+    }
+    if (inputTrees.app) {
+      let tree = this.transpile(inputTrees.app);
+      importParsers.push(this.parseImports(tree));
+      trees.push(tree);
+    }
+
+    let analyzer = new DependencyAnalyzer(importParsers, this.app.project.pkg, true );
+    trees.push(new RewritePackageJSON(this.rootTree, analyzer));
+
+    return trees;
+  }
+
+  @Memoize()
+  private get root(): string {
+    return dirname(pkgUpSync(this.app.root));
+  }
+
+  @Memoize()
+  private get rootTree() {
+    return new UnwatchedDir(this.root);
+  }
+
+  protected get trackedImports() {
+    return this.app._trackedImports;
+  }
+
+  protected preprocessJS(tree) {
+    return this.preprocessors.preprocessJs(tree, '/', '/', { registry: this.app.registry });
   }
 }

@@ -33,6 +33,7 @@
     "lodash": "^4.17.10",
     "pkg-up": "^2.0.0",
     "quick-temp": "^0.1.8",
+    "semver": "^5.5.0",
     "symlink-or-copy": "^1.2.0",
     "typescript-memoize": "^1.0.0-alpha.3",
     "walk-sync": "^0.3.2"

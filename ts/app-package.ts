@@ -10,6 +10,7 @@ import { join } from 'path';
 import resolve from 'resolve';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
+import AppEntrypoint from './app-entrypoint';
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 
@@ -38,6 +39,8 @@ export default class AppPackage extends Package {
     let inputTrees = this.app.trees;
     let trees = [];
     let importParsers = [];
+    let appTree;
+
     {
       let tree = this.implicitImportTree();
       if (tree) {
@@ -45,12 +48,13 @@ export default class AppPackage extends Package {
       }
     }
     if (inputTrees.app) {
-      let tree = this.transpile(inputTrees.app);
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
+      appTree = this.transpile(inputTrees.app);
+      importParsers.push(this.parseImports(appTree));
+      trees.push(appTree);
     }
 
     trees.push(this.htmlTree);
+    trees.push(new AppEntrypoint(appTree, { appPackage: this, outputPath: `assets/${this.name}.js` }));
 
     todo('more trees: src, tests, styles, templates, bower, vendor, public');
 
@@ -75,22 +79,18 @@ export default class AppPackage extends Package {
     return require(resolve.sync(specifier, { basedir: this.emberCLILocation }));
   }
 
-  @Memoize()
   private get configReplace() {
     return this.requireFromEmberCLI('broccoli-config-replace');
   }
 
-  @Memoize()
   private get configLoader() {
     return this.requireFromEmberCLI('broccoli-config-loader');
   }
 
-  @Memoize()
   private get appUtils() {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
   }
 
-  @Memoize()
   private get configTree() {
     return new (this.configLoader)(dirname(this.app.project.configPath()), {
       env: this.app.env,
@@ -99,7 +99,6 @@ export default class AppPackage extends Package {
     });
   }
 
-  @Memoize()
   private get htmlTree() {
     let indexFilePath = this.options.outputPaths.app.html;
 

@@ -7,13 +7,10 @@ import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
 import makeDebug from 'debug';
 import quickTemp from 'quick-temp';
-import { compile, registerHelper } from 'handlebars';
-import jsStringEscape from 'js-string-escape';
+import { compile } from './js-handlebars';
 import ImportParser from './import-parser';
 import babelPlugin from './babel-plugin';
 import semver from 'semver';
-
-registerHelper('js-string-escape', jsStringEscape);
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 

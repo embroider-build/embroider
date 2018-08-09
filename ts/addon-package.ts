@@ -21,7 +21,7 @@ const stockTreeNames = Object.freeze([
   'public',
   'vendor',
   // 'addon-templates' and 'templates are trees too, but they live inside
-  // 'addon' an 'app' and we handle them there.
+  // 'addon' and 'app' and we handle them there.
 ]);
 
 export default class AddonPackage extends Package {

@@ -1,3 +1,8 @@
+# taking over from EmberApp
+
+ember-cli eagerly instantiates all addons pretty much whatever you are doing. So even when you have all v2 packages, you're going to be using their v1 shims a lot until we can refactor ember-cli around v2 internally.
+
+Defer working on this until we have proved out the compatibility and have working builds.
 
 # apps to test
 

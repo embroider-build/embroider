@@ -23,12 +23,8 @@ export default class AppPackage extends Package {
 
   constructor(app, preprocessors) {
     if (!app._activeAddonInclude) {
-      throw new Error('ember-cli-vanilla required a patch to ember-cli that provides tracking of who calls app.import');
+      throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
     }
-    // TODO: we need to follow all deps, not just active ones. You can still
-    // directly import things out of non-active packages, because we follow
-    // node_modules resolution rules and those rules don't care about our notion
-    // of active.
     let packageLoader = new PackageLoader();
     app.project.addons.forEach(addonInstance => packageLoader.addPackage(addonInstance));
     super();

@@ -18,10 +18,9 @@ const todo = makeDebug('ember-cli-vanilla:todo');
 export default class AppPackage extends Package {
 
   private app;
-  private preprocessors;
   private packageLoader: PackageLoader;
 
-  constructor(app, preprocessors) {
+  constructor(app) {
     if (!app._activeAddonInclude) {
       throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
     }
@@ -29,7 +28,6 @@ export default class AppPackage extends Package {
     app.project.addons.forEach(addonInstance => packageLoader.addPackage(addonInstance));
     super();
     this.app = app;
-    this.preprocessors = preprocessors;
     this.packageLoader = packageLoader;
   }
 
@@ -103,6 +101,11 @@ export default class AppPackage extends Package {
 
   private get appUtils() {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
+  }
+
+  @Memoize()
+  private get preprocessors() {
+    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
   private get configTree() {

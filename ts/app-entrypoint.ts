@@ -25,6 +25,13 @@ export default class extends BroccoliPlugin {
   }
 
   build() {
+    this.buildAppJS();
+    this.buildVendorJS();
+  }
+
+  private buildAppJS() {
+    // todo: copy all addon's App Javascript into ourself
+
     // for the app tree, we take everything
     let specifiers = walkSync(this.inputPaths[0], {
       globs: ['**/*.js'],
@@ -38,5 +45,9 @@ export default class extends BroccoliPlugin {
     let appJS = join(this.outputPath, this.opts.outputPath);
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ specifiers }), 'utf8');
+  }
+
+  private buildVendorJS() {
+    // todo: needs all active descendants
   }
 }

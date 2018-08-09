@@ -37,7 +37,7 @@ export default class AppPackage extends Package {
     return this.app.project.pkg.name;
   }
 
-  get directAddons() {
+  protected get directAddons() {
     return this.app.project.addons;
   }
 

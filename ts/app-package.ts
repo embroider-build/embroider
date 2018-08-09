@@ -11,12 +11,27 @@ import resolve from 'resolve';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AppEntrypoint from './app-entrypoint';
+import Packages from './packages';
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 
 export default class AppPackage extends Package {
-  constructor(private app, private preprocessors) {
+
+  private app;
+  private preprocessors;
+  private packages: Packages;
+
+  constructor(app, preprocessors) {
+    // TODO: we need to follow all deps, not just active ones. You can still
+    // directly import things out of non-active packages, because we follow
+    // node_modules resolution rules and those rules don't care about our notion
+    // of active.
+    let packages = new Packages();
+    app.project.addons.forEach(addonInstance => packages.addPackage(addonInstance));
     super();
+    this.app = app;
+    this.preprocessors = preprocessors;
+    this.packages = packages;
   }
 
   get name() : string {
@@ -155,5 +170,10 @@ export default class AppPackage extends Package {
 
   protected preprocessJS(tree) {
     return this.preprocessors.preprocessJs(tree, '/', '/', { registry: this.app.registry });
+  }
+
+  // TODO: This is a placeholder for development purposes only.
+  dumpTrees() {
+    return [this, ...this.packages.addons.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
 }

@@ -4,8 +4,8 @@ import makeDebug from 'debug';
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 
-export default class Packages {
-  addons: Map<string, Package> = new Map();
+export default class PackageLoader {
+  packages: Map<string, Package> = new Map();
 
   addPackage(addonInstance) {
     // TODO: check for native v2 and go down a different path
@@ -15,13 +15,13 @@ export default class Packages {
       return;
     }
 
-    if (this.addons.has(addonInstance.root)) {
+    if (this.packages.has(addonInstance.root)) {
       // TODO: the same addon may be used by multiple different packages, and
       // for a v1 package each consumer may cause it to have different build
       // output, so we could have conflicting needs here. (This doesn't come up
       // for v2 packages, their contents are constant by design, dynamicism is
       // handled elsewhere in the build process.)
-      if (this.addons.get(addonInstance.root).hasAnyTrees()) {
+      if (this.packages.get(addonInstance.root).hasAnyTrees()) {
         todo(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
       } else {
         // This kind of conflict doesn't matter when you don't have any build
@@ -29,7 +29,7 @@ export default class Packages {
         // to be a preprocessor.
       }
     } else {
-      this.addons.set(addonInstance.root, new AddonPackage(addonInstance));
+      this.packages.set(addonInstance.root, new AddonPackage(addonInstance));
       addonInstance.addons.forEach(a => this.addPackage(a));
     }
   }

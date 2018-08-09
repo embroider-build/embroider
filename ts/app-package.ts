@@ -11,7 +11,7 @@ import resolve from 'resolve';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AppEntrypoint from './app-entrypoint';
-import Packages from './packages';
+import PackageLoader from './package-loader';
 
 const todo = makeDebug('ember-cli-vanilla:todo');
 
@@ -19,19 +19,22 @@ export default class AppPackage extends Package {
 
   private app;
   private preprocessors;
-  private packages: Packages;
+  private packageLoader: PackageLoader;
 
   constructor(app, preprocessors) {
+    if (!app._activeAddonInclude) {
+      throw new Error('ember-cli-vanilla required a patch to ember-cli that provides tracking of who calls app.import');
+    }
     // TODO: we need to follow all deps, not just active ones. You can still
     // directly import things out of non-active packages, because we follow
     // node_modules resolution rules and those rules don't care about our notion
     // of active.
-    let packages = new Packages();
-    app.project.addons.forEach(addonInstance => packages.addPackage(addonInstance));
+    let packageLoader = new PackageLoader();
+    app.project.addons.forEach(addonInstance => packageLoader.addPackage(addonInstance));
     super();
     this.app = app;
     this.preprocessors = preprocessors;
-    this.packages = packages;
+    this.packageLoader = packageLoader;
   }
 
   get name() : string {
@@ -174,6 +177,6 @@ export default class AppPackage extends Package {
 
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return [this, ...this.packages.addons.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
+    return [this, ...this.packageLoader.packages.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
 }

@@ -16,50 +16,15 @@ import quickTemp from 'quick-temp';
 import { updateBabelConfig } from './babel-config';
 import { Tree } from 'broccoli-plugin';
 import ImportParser from './import-parser';
+import V1InstanceCache from './v1-instance-cache';
+import flatten from 'lodash/flatten';
+import V1App from './v1-app';
 
 export default class AppPackage {
+  private app; // : V1App;
 
-  private app;
-
-  constructor(app) {
-    if (!app._activeAddonInclude) {
-      throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
-    }
-    app.project.addons.forEach(addonInstance => this.addPackage(addonInstance));
-    this.app = app;
-  }
-
-  private packageMap: Map<string, AddonPackage> = new Map();
-
-  private addPackage(addonInstance) {
-    // TODO: check for native v2 and go down a different path
-
-    if (addonInstance.pkg.name === 'ember-auto-import') {
-      // auto import is effectively a polyfill for us. We are doing what it does.
-      return;
-    }
-
-    if (this.packageMap.has(addonInstance.root)) {
-      // TODO: the same addon may be used by multiple different packages, and
-      // for a v1 package each consumer may cause it to have different build
-      // output, so we could have conflicting needs here. (This doesn't come up
-      // for v2 packages, their contents are constant by design, dynamicism is
-      // handled elsewhere in the build process.)
-      if (this.packageMap.get(addonInstance.root).hasAnyTrees()) {
-        todo(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
-      } else {
-        // This kind of conflict doesn't matter when you don't have any build
-        // output. An example of this is ember-cli-htmlbars, which only exists
-        // to be a preprocessor.
-      }
-    } else {
-      this.packageMap.set(addonInstance.root, new AddonPackage(addonInstance));
-      addonInstance.addons.forEach(a => this.addPackage(a));
-    }
-  }
-
-  get packages() {
-    return [this, ...this.packageMap.values()];
+  constructor(root: string, private v1Cache: V1InstanceCache ) {
+    this.app = (v1Cache.getApp(root) as any).app;
   }
 
   get tree(): Tree {
@@ -217,6 +182,9 @@ export default class AppPackage {
 
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return this.packages.map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
+    let pkgs = flatten([...(this.v1Cache as any).addons.values()]).map(v1Addon => new AddonPackage((v1Addon as any).addon));
+    (pkgs as any).unshift(this);
+    return pkgs.map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
+
 }

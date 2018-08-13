@@ -1,8 +1,6 @@
 import Package from './package';
 import AddonPackage from './addon-package';
-import makeDebug from 'debug';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 export default class PackageLoader {
   packages: Map<string, Package> = new Map();

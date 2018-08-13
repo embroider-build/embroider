@@ -4,9 +4,7 @@ import walkSync from 'walk-sync';
 import { writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
-import makeDebug from 'debug';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 const entryTemplate = compile(`
 {{#each specifiers as |specifier|}}

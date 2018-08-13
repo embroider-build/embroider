@@ -2,7 +2,6 @@ import Package from './package';
 import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
-import makeDebug from 'debug';
 import { WatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
@@ -12,8 +11,7 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AppEntrypoint from './app-entrypoint';
 import PackageLoader from './package-loader';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 export default class AppPackage extends Package {
 

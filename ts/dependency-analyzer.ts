@@ -1,10 +1,8 @@
 import Plugin from 'broccoli-plugin';
 import ImportParser from './import-parser';
 import flatMap from 'lodash/flatMap';
-import makeDebug from 'debug';
 import absolutePackageName from './package-name';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 export default class DependencyAnalyzer extends Plugin {
   constructor(private importParsers: ImportParser[], private packageJSON, private isTopLevelApp: boolean) {

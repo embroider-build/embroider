@@ -5,14 +5,12 @@ import { Tree } from 'broccoli-plugin';
 import { writeFileSync } from 'fs-extra';
 import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
-import makeDebug from 'debug';
 import quickTemp from 'quick-temp';
 import { compile } from './js-handlebars';
 import ImportParser from './import-parser';
 import babelPlugin from './babel-plugin';
 import semver from 'semver';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 const appImportsTemplate = compile(`{{#each imports as |import|}}
 import '{{js-string-escape import}}';

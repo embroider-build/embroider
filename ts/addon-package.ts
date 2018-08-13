@@ -3,13 +3,11 @@ import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { existsSync } from 'fs-extra';
-import makeDebug from 'debug';
 import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
-
-const todo = makeDebug('ember-cli-vanilla:todo');
+import { todo } from './messages';
 
 const stockTreeNames = Object.freeze([
   'addon',

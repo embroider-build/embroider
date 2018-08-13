@@ -1,20 +1,12 @@
 import mergeTrees from 'broccoli-merge-trees';
 import Funnel from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
 import { Tree } from 'broccoli-plugin';
-import { writeFileSync } from 'fs-extra';
 import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
-import quickTemp from 'quick-temp';
-import { compile } from './js-handlebars';
 import ImportParser from './import-parser';
 import babelPlugin from './babel-plugin';
 import semver from 'semver';
 import { todo } from './messages';
-
-const appImportsTemplate = compile(`{{#each imports as |import|}}
-import '{{js-string-escape import}}';
-{{/each}}`);
 
 // represents a v2 package
 export default abstract class Package {
@@ -86,58 +78,5 @@ export default abstract class Package {
 
   protected findAddonByName(name) {
     return this.directAddons.find(a => a.name === name || (a.pkg && a.pkg.name === name));
-  }
-
-  protected abstract trackedImports;
-
-  protected implicitImportTree() {
-    if (!this.trackedImports) {
-      return;
-    }
-
-    let appImports = [];
-    let testImports = [];
-
-    this.trackedImports.forEach(({ assetPath, options }) => {
-      let standardAssetPath = standardizeAssetPath(assetPath);
-      if (!standardAssetPath) {
-        return;
-      }
-      if (options.type === 'vendor') {
-        if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
-          todo(`${this.name} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
-        }
-        appImports.push(standardAssetPath);
-      } else if (options.type === 'test') {
-        testImports.push(standardAssetPath);
-      } else {
-        todo(`${this.name} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
-      }
-    });
-    if (appImports.length === 0 && testImports.length === 0) {
-      return;
-    }
-    quickTemp.makeOrRemake(this, 'implicitImportDir');
-    if (appImports.length > 0) {
-      writeFileSync(join(this.implicitImportDir, `_implicit_imports_.js`), appImportsTemplate({ imports: appImports }), 'utf8');
-    }
-    if (testImports.length > 0) {
-      writeFileSync(join(this.implicitImportDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: testImports }), 'utf8');
-    }
-    return new UnwatchedDir(this.implicitImportDir);
-  }
-  private implicitImportDir;
-}
-
-function standardizeAssetPath(assetPath) {
-  let [first, ...rest] = assetPath.split('/');
-  if (first === 'vendor') {
-    // our vendor tree is available via relative import
-    return './vendor/' + rest.join('/');
-  } else if (first === 'node_modules') {
-    // our node_modules are allowed to be resolved directly
-    return rest.join('/');
-  } else {
-    todo(`${this.name} app.imported from unknown path ${assetPath}`);
   }
 }

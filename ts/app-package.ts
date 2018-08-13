@@ -12,6 +12,8 @@ import mergeTrees from 'broccoli-merge-trees';
 import AppEntrypoint from './app-entrypoint';
 import PackageLoader from './package-loader';
 import { todo } from './messages';
+import { trackedImportTree } from './tracked-imports';
+import quickTemp from 'quick-temp';
 
 export default class AppPackage extends Package {
 
@@ -52,7 +54,8 @@ export default class AppPackage extends Package {
     let appTree;
 
     {
-      let tree = this.implicitImportTree();
+      quickTemp.makeOrRemake(this, 'trackedImportDir');
+      let tree = trackedImportTree(this.name, this.app._trackedImports, (this as any).trackedImportDir);
       if (tree) {
         trees.push(tree);
       }

@@ -8,6 +8,8 @@ import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
+import { trackedImportTree } from './tracked-imports';
+import quickTemp from 'quick-temp';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -90,7 +92,8 @@ export default class AddonPackage extends Package {
     let importParsers = [];
 
     {
-      let tree = this.implicitImportTree();
+      quickTemp.makeOrRemake(this, 'trackedImportDir');
+      let tree = trackedImportTree(this.name, this.addonInstance._trackedImports, (this as any).trackedImportDir);
       if (tree) {
         trees.push(tree);
       }

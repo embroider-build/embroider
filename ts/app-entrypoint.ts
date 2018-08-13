@@ -4,7 +4,6 @@ import { writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
-import AppPackage from './app-package';
 
 const entryTemplate = compile(`
 {{#each specifiers as |specifier|}}
@@ -13,7 +12,6 @@ const entryTemplate = compile(`
 `);
 
 export interface Options {
-  appPackage: AppPackage;
   outputPath: string;
 }
 

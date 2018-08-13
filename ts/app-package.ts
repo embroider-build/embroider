@@ -9,7 +9,7 @@ import resolve from 'resolve';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AppEntrypoint from './app-entrypoint';
-import PackageLoader from './package-loader';
+import AddonPackage from './addon-package';
 import { todo } from './messages';
 import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
@@ -20,16 +20,46 @@ import ImportParser from './import-parser';
 export default class AppPackage {
 
   private app;
-  private packageLoader: PackageLoader;
 
   constructor(app) {
     if (!app._activeAddonInclude) {
       throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
     }
-    let packageLoader = new PackageLoader();
-    app.project.addons.forEach(addonInstance => packageLoader.addPackage(addonInstance));
+    app.project.addons.forEach(addonInstance => this.addPackage(addonInstance));
     this.app = app;
-    this.packageLoader = packageLoader;
+  }
+
+  private packageMap: Map<string, AddonPackage> = new Map();
+
+  private addPackage(addonInstance) {
+    // TODO: check for native v2 and go down a different path
+
+    if (addonInstance.pkg.name === 'ember-auto-import') {
+      // auto import is effectively a polyfill for us. We are doing what it does.
+      return;
+    }
+
+    if (this.packageMap.has(addonInstance.root)) {
+      // TODO: the same addon may be used by multiple different packages, and
+      // for a v1 package each consumer may cause it to have different build
+      // output, so we could have conflicting needs here. (This doesn't come up
+      // for v2 packages, their contents are constant by design, dynamicism is
+      // handled elsewhere in the build process.)
+      if (this.packageMap.get(addonInstance.root).hasAnyTrees()) {
+        todo(`TODO: multiple instances of same copy of addon ${addonInstance.pkg.name}`);
+      } else {
+        // This kind of conflict doesn't matter when you don't have any build
+        // output. An example of this is ember-cli-htmlbars, which only exists
+        // to be a preprocessor.
+      }
+    } else {
+      this.packageMap.set(addonInstance.root, new AddonPackage(addonInstance));
+      addonInstance.addons.forEach(a => this.addPackage(a));
+    }
+  }
+
+  get packages() {
+    return [this, ...this.packageMap.values()];
   }
 
   get tree(): Tree {
@@ -187,6 +217,6 @@ export default class AppPackage {
 
   // TODO: This is a placeholder for development purposes only.
   dumpTrees() {
-    return [this, ...this.packageLoader.packages.values()].map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
+    return this.packages.map((pkg, index) => new Funnel(pkg.tree, { destDir: `out-${index}` }));
   }
 }

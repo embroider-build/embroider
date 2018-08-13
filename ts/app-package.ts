@@ -1,4 +1,3 @@
-import Package from './package';
 import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
@@ -14,8 +13,11 @@ import PackageLoader from './package-loader';
 import { todo } from './messages';
 import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
+import { updateBabelConfig } from './babel-config';
+import { Tree } from 'broccoli-plugin';
+import ImportParser from './import-parser';
 
-export default class AppPackage extends Package {
+export default class AppPackage {
 
   private app;
   private packageLoader: PackageLoader;
@@ -26,20 +28,22 @@ export default class AppPackage extends Package {
     }
     let packageLoader = new PackageLoader();
     app.project.addons.forEach(addonInstance => packageLoader.addPackage(addonInstance));
-    super();
     this.app = app;
     this.packageLoader = packageLoader;
+  }
+
+  get tree(): Tree {
+    let trees = this.v2Trees();
+    return new Funnel(mergeTrees(trees), {
+      destDir: this.name
+    });
   }
 
   get name() : string {
     return this.app.project.pkg.name;
   }
 
-  protected get directAddons() {
-    return this.app.project.addons;
-  }
-
-  protected get options() {
+  private get options() {
     return this.app.options;
   }
 
@@ -47,7 +51,21 @@ export default class AppPackage extends Package {
     return true;
   }
 
-  protected v2Trees() {
+  private transpile(tree) {
+    this.updateBabelConfig();
+    return this.preprocessors.preprocessJs(tree, '/', '/', { registry: this.app.registry });
+  }
+
+  @Memoize()
+  private updateBabelConfig() {
+    updateBabelConfig(this.name, this.options, this.app.project.addons.find(a => a.name === 'ember-cli-babel'));
+  }
+
+  private parseImports(tree) {
+    return new ImportParser(tree);
+  }
+
+  private v2Trees() {
     let inputTrees = this.app.trees;
     let trees = [];
     let importParsers = [];
@@ -165,14 +183,6 @@ export default class AppPackage extends Package {
   @Memoize()
   private get rootTree() {
     return new WatchedDir(this.root);
-  }
-
-  protected get trackedImports() {
-    return this.app._trackedImports;
-  }
-
-  protected preprocessJS(tree) {
-    return this.preprocessors.preprocessJs(tree, '/', '/', { registry: this.app.registry });
   }
 
   // TODO: This is a placeholder for development purposes only.

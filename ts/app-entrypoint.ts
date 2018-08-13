@@ -1,10 +1,10 @@
 import BroccoliPlugin from 'broccoli-plugin';
-import Package from './package';
 import walkSync from 'walk-sync';
 import { writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
+import AppPackage from './app-package';
 
 const entryTemplate = compile(`
 {{#each specifiers as |specifier|}}
@@ -13,7 +13,7 @@ const entryTemplate = compile(`
 `);
 
 export interface Options {
-  appPackage: Package;
+  appPackage: AppPackage;
   outputPath: string;
 }
 

@@ -1,4 +1,3 @@
-import Package from './package';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
@@ -10,6 +9,10 @@ import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
 import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
+import { updateBabelConfig } from './babel-config';
+import ImportParser from './import-parser';
+import { Tree } from 'broccoli-plugin';
+import mergeTrees from 'broccoli-merge-trees';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -24,25 +27,22 @@ const stockTreeNames = Object.freeze([
   // 'addon' and 'app' and we handle them there.
 ]);
 
-export default class AddonPackage extends Package {
-  constructor(private addonInstance) {
-    super();
+export default class AddonPackage {
+  constructor(private addonInstance) {}
+
+  get tree(): Tree {
+    let trees = this.v2Trees();
+    return new Funnel(mergeTrees(trees), {
+      destDir: this.name
+    });
   }
 
   get name() : string {
     return this.addonInstance.pkg.name;
   }
 
-  get directAddons() {
-    return this.addonInstance.addons;
-  }
-
-  protected get trackedImports() {
-    return this.addonInstance._trackedImports;
-  }
-
-  preprocessJS(tree) {
-    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+  private parseImports(tree) {
+    return new ImportParser(tree);
   }
 
   // addonInstance.root gets modified by a customized "main" or
@@ -58,7 +58,7 @@ export default class AddonPackage extends Package {
     return require(this.addonInstance.constructor._meta_.modulePath);
   }
 
-  protected get options() {
+  private get options() {
     return this.addonInstance.options;
   }
 
@@ -87,7 +87,17 @@ export default class AddonPackage extends Package {
     return new UnwatchedDir(this.root);
   }
 
-  protected v2Trees() {
+  private transpile(tree) {
+    this.updateBabelConfig();
+    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+  }
+
+  @Memoize()
+  private updateBabelConfig() {
+    updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
+  }
+
+  private v2Trees() {
     let trees = [];
     let importParsers = [];
 

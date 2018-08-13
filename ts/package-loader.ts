@@ -1,9 +1,8 @@
-import Package from './package';
 import AddonPackage from './addon-package';
 import { todo } from './messages';
 
 export default class PackageLoader {
-  packages: Map<string, Package> = new Map();
+  packages: Map<string, AddonPackage> = new Map();
 
   addPackage(addonInstance) {
     // TODO: check for native v2 and go down a different path

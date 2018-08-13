@@ -71,7 +71,7 @@ export default class AddonPackage {
     return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
   }
 
-  hasAnyTrees() : boolean {
+  private hasAnyTrees() : boolean {
     return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
   }
 

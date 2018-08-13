@@ -16,16 +16,8 @@ export default class AppPackage {
   get tree(): Tree {
     let trees = this.oldApp.v2Trees();
     return new Funnel(mergeTrees(trees), {
-      destDir: this.name
+      destDir: this.oldApp.name
     });
-  }
-
-  get name() : string {
-    return this.oldApp.name;
-  }
-
-  hasAnyTrees() {
-    return true;
   }
 
   // TODO: This is a placeholder for development purposes only.

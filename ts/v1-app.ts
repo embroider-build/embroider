@@ -28,7 +28,7 @@ export default class V1App {
   }
 
   @Memoize()
-  get root(): string {
+  private get root(): string {
     return dirname(pkgUpSync(this.app.root));
   }
 
@@ -77,7 +77,7 @@ export default class V1App {
     });
   }
 
-  get htmlTree() {
+  private get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index = new Funnel(this.rootTree, {

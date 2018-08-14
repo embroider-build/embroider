@@ -14,10 +14,12 @@ import { todo } from './messages';
 import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
 import ImportParser from './import-parser';
+import V1Package from './v1-package';
+import { Tree } from 'broccoli-plugin';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
-export default class V1App {
+export default class V1App implements V1Package {
   constructor(private app) {
   }
 
@@ -28,7 +30,7 @@ export default class V1App {
   }
 
   @Memoize()
-  private get root(): string {
+  get root(): string {
     return dirname(pkgUpSync(this.app.root));
   }
 
@@ -127,7 +129,7 @@ export default class V1App {
     updateBabelConfig(this.name, this.app.options, this.app.project.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  v2Trees() {
+  v2Trees() : Tree[] {
     let inputTrees = this.app.trees;
     let trees = [];
     let importParsers = [];

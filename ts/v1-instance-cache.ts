@@ -4,6 +4,7 @@
 
 import V1App from './v1-app';
 import V1Addon from './v1-addon';
+import V1Package from './v1-package';
 
 export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
@@ -11,30 +12,36 @@ export default class V1InstanceCache {
   // other packages and each gets an instance.
   private addons: Map<string, V1Addon[]> = new Map();
 
-  constructor(private emberApp) {
-    if (!emberApp._activeAddonInclude) {
+  app: V1App;
+
+  constructor(oldApp) {
+    if (!oldApp._activeAddonInclude) {
       throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
     }
 
-    // no reason to do this on demand because emberApp already eagerly loaded
+    this.app = new V1App(oldApp);
+
+    // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
-    emberApp.project.addons.forEach(addon => {
-      this.addAddon(addon);
+    oldApp.project.addons.forEach(addon => {
+      this.addAddon(addon, this.app);
     });
   }
 
-  private addAddon(addonInstance) {
-    let pkgs = this.addons.get(addonInstance.root);
+  private addAddon(addonInstance, parent: V1Package) {
+    let v1Addon = new V1Addon(addonInstance, parent);
+    let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
-      this.addons.set(addonInstance.root, pkgs = []);
+      this.addons.set(v1Addon.root, pkgs = []);
     }
-    pkgs.push(new V1Addon(addonInstance));
-    addonInstance.addons.forEach(a => this.addAddon(a));
+    pkgs.push(v1Addon);
+    addonInstance.addons.forEach(a => this.addAddon(a, v1Addon));
   }
 
-  getApp(root) {
-    if (this.emberApp.project.root === root) {
-      return new V1App(this.emberApp);
+  getAddon(root: string, fromParentRoot: string) : V1Addon | undefined {
+    let pkgs = this.addons.get(root);
+    if (pkgs) {
+      return pkgs.find(pkg => pkg.parent.root === fromParentRoot);
     }
   }
 }

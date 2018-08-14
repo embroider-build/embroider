@@ -1,230 +1,53 @@
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
-import { sync as pkgUpSync }  from 'pkg-up';
-import { existsSync } from 'fs-extra';
-import Funnel from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
-import DependencyAnalyzer from './dependency-analyzer';
-import RewritePackageJSON from './rewrite-package-json';
-import { todo } from './messages';
-import { trackedImportTree } from './tracked-imports';
-import quickTemp from 'quick-temp';
-import { updateBabelConfig } from './babel-config';
-import ImportParser from './import-parser';
 import { Tree } from 'broccoli-plugin';
+import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
+import V1InstanceCache from './v1-instance-cache';
+import Package from './package';
+import resolve from 'resolve';
+import PackageCache from './package-cache';
+import V1Addon from './v1-addon';
+import { todo } from './messages';
 
-const stockTreeNames = Object.freeze([
-  'addon',
-  'addon-styles',
-  'styles',
-  'addon-test-support',
-  'test-support',
-  'app',
-  'public',
-  'vendor',
-  // 'addon-templates' and 'templates are trees too, but they live inside
-  // 'addon' and 'app' and we handle them there.
-]);
+export default class AddonPackage implements Package {
+  oldAddon: V1Addon;
 
-export default class AddonPackage {
-  constructor(private addonInstance) {}
+  constructor(public root: string, private packageCache: PackageCache, private v1Cache: V1InstanceCache) {}
+
+  addParent(pkg: Package){
+    let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
+    if (v1Addon) {
+      if (!this.oldAddon) {
+        this.oldAddon = v1Addon;
+      } else if (v1Addon.hasAnyTrees()){
+        todo(`duplicate build of ${v1Addon.name}`);
+      }
+    }
+  }
 
   get tree(): Tree {
-    let trees = this.v2Trees();
+    let trees = this.oldAddon.v2Trees();
     return new Funnel(mergeTrees(trees), {
-      destDir: this.name
+      destDir: this.oldAddon.name
     });
   }
 
-  get name() : string {
-    return this.addonInstance.pkg.name;
-  }
-
-  private parseImports(tree) {
-    return new ImportParser(tree);
-  }
-
-  // addonInstance.root gets modified by a customized "main" or
-  // "ember-addon.main" in package.json. We want the real package root here
-  // (the place where package.json lives).
   @Memoize()
-  private get root(): string {
-    return dirname(pkgUpSync(this.addonInstance.root));
+  private get packageJSON() {
+    return require(join(this.root, 'package.json'));
   }
 
-  @Memoize()
-  private get mainModule() {
-    return require(this.addonInstance.constructor._meta_.modulePath);
+  get isEmberPackage() : boolean {
+    let keywords = this.packageJSON.keywords;
+    return keywords && keywords.indexOf('ember-addon') !== -1;
   }
 
-  private get options() {
-    return this.addonInstance.options;
-  }
-
-  private customizes(...treeNames) {
-    return treeNames.find(treeName => this.mainModule[treeName]);
-  }
-
-  @Memoize()
-  private hasStockTree(treeName) {
-    return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
-  }
-
-  private hasAnyTrees() : boolean {
-    return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
-  }
-
-  private stockTree(treeName, funnelOpts?) {
-    let opts = Object.assign({
-      srcDir: this.addonInstance.treePaths[treeName]
-    }, funnelOpts);
-    return new Funnel(this.rootTree, opts);
-  }
-
-  @Memoize()
-  private get rootTree() {
-    return new UnwatchedDir(this.root);
-  }
-
-  private transpile(tree) {
-    this.updateBabelConfig();
-    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
-  }
-
-  @Memoize()
-  private updateBabelConfig() {
-    updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
-  }
-
-  private v2Trees() {
-    let trees = [];
-    let importParsers = [];
-
-    {
-      quickTemp.makeOrRemake(this, 'trackedImportDir');
-      let tree = trackedImportTree(this.name, this.addonInstance._trackedImports, (this as any).trackedImportDir);
-      if (tree) {
-        trees.push(tree);
-      }
-    }
-
-    if (this.customizes('treeFor')) {
-      todo(`${this.name} has customized treeFor`);
-      return trees;
-    }
-
-    if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      todo(`${this.name} may have customized the addon tree`);
-    } else if (this.hasStockTree('addon')) {
-      let tree = this.transpile(this.stockTree('addon', {
-        exclude: ['styles/**']
-      }));
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
-    }
-
-    if (this.customizes('treeForAddonStyles')) {
-      todo(`${this.name} may have customized the addon style tree`);
-    } else if (this.hasStockTree('addon-styles')) {
-      // TODO should generate `import "this-addon/addon.css";` to maintain
-      // auto inclusion semantics.
-      trees.push(
-        this.transpile(this.stockTree('addon-styles'))
-      );
-    }
-
-    if (this.customizes('treeForStyles')) {
-      todo(`${this.name} may have customized the app style tree`);
-    } else if (this.hasStockTree('styles')) {
-      // The typical way these get used is via css @import from the app's own
-      // CSS (or SCSS). There is no enforced namespacing but that is the
-      // common pattern as far as I can tell.
-      //
-      // TODO: detect people doing the right thing (namespacing with their own
-      // package name) and send them down the happy path. Their styles can
-      // just ship inside the package root and be importable at the same name
-      // as before. Detect people doing anything other than that and yell at
-      // them and set up a fallback.
-      trees.push(
-        this.transpile(this.stockTree('styles', {
-          destDir: '_app_styles_'
-        }))
-      );
-    }
-
-    if (this.customizes('treeForAddonTestSupport')) {
-      todo(`${this.name} may have customized the addon test support tree`);
-    } else if (this.hasStockTree('addon-test-support')) {
-      let tree = this.transpile(this.stockTree('addon-test-support', {
-        destDir: 'test-support'
-      }));
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
-    }
-
-    if (this.customizes('treeForTestSupport')) {
-      todo(`${this.name} may have customized the test support tree`);
-    } else if (this.hasStockTree('test-support')) {
-      // this case should probably get deprecated entirely, there's no good
-      // reason to use this over addon-test-support.
-      todo(`${this.name} is using test-support instead of addon-test-support`);
-    }
-
-    if (this.customizes('treeForApp', 'treeForTemplates')) {
-      todo(`${this.name} may have customized the app tree`);
-    } else if (this.hasStockTree('app')) {
-      let tree = this.transpile(this.stockTree('app', {
-        exclude: ['styles/**'],
-        destDir: '_app_'
-      }));
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
-    }
-
-    if (this.customizes('treeForPublic')) {
-      // TODO: The stock behavior for public is that the files get automatically
-      // namespaced under your package name before merging into the final app.
-      // But people who are customizing have the ability to sidestep that
-      // behavior. So here we need to monitor them for good behavior.
-      let tree = this.addonInstance._treeFor('public');
-      if (tree) {
-        trees.push(
-          new Funnel(tree, {
-            destDir: 'public'
-          })
-        );
-      }
-    } else if (this.hasStockTree('public')) {
-      trees.push(
-        this.stockTree('public', {
-          destDir: 'public'
-        })
-      );
-    }
-
-    if (this.customizes('treeForVendor')) {
-      // We don't have any particular opinions about the structure inside
-      // vendor, so even when it's customized we can just use the customized
-      // one.
-      let tree = this.addonInstance._treeFor('vendor');
-      if (tree) {
-        trees.push(
-          new Funnel(tree, {
-            destDir: 'vendor'
-          })
-        );
-      }
-    } else if (this.hasStockTree('vendor')) {
-      trees.push(
-        this.stockTree('vendor', {
-          destDir: 'vendor'
-        })
-      );
-    }
-
-    let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
-    trees.push(new RewritePackageJSON(this.rootTree, analyzer));
-    return trees;
+  get dependencies(): AddonPackage[] {
+    let names = Object.keys(this.packageJSON.dependencies || {});
+    return names.map(name => {
+      let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
+      return this.packageCache.getPackage(addonRoot, this);
+    }).filter(Boolean);
   }
 }

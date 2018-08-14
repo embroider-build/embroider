@@ -34,7 +34,7 @@ export default class Package {
   }
 
   @Memoize()
-  protected get packageJSON() {
+  private get packageJSON() {
     return require(join(this.root, 'package.json'));
   }
 

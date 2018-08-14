@@ -1,4 +1,4 @@
-import AddonPackage from "./addon-package";
+import AddonPackage from "./package";
 import V1InstanceCache from "./v1-instance-cache";
 import Package from "./package";
 
@@ -7,13 +7,13 @@ export default class PackageCache {
 
   private cache: Map<string, AddonPackage> = new Map();
 
-  getPackage(root: string, parent: Package) : AddonPackage | undefined {
+  getPackage(root: string, fromParent: Package) : AddonPackage | undefined {
     if (!this.cache.has(root)) {
       this.cache.set(root, new AddonPackage(root, this, this.v1InstanceCache));
     }
     let p = this.cache.get(root);
     if (p.isEmberPackage) {
-      p.addParent(parent);
+      p.addParent(fromParent);
       return p;
     }
   }

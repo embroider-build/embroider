@@ -1,24 +1,21 @@
 import Funnel from 'broccoli-funnel';
-import mergeTrees from 'broccoli-merge-trees';
 import V1InstanceCache from './v1-instance-cache';
-import V1App from './v1-app';
 import { Tree } from 'broccoli-plugin';
 import PackageCache from './package-cache';
 import Package from './package';
+import AppEntrypoint from './app-entrypoint';
+import mergeTrees from 'broccoli-merge-trees';
 
 export default class AppPackage extends Package {
-  private oldApp: V1App;
-
   constructor(public root: string, v1Cache: V1InstanceCache ) {
     super(root, new PackageCache(v1Cache), v1Cache);
-    this.oldApp = v1Cache.app;
+    this.oldPackage = v1Cache.app;
   }
 
   get tree(): Tree {
-    let trees = this.oldApp.v2Trees();
-    return new Funnel(mergeTrees(trees), {
-      destDir: this.oldApp.name
-    });
+    let own = super.tree;
+    let entry = new AppEntrypoint(this.oldPackage.appTree, { package: this, outputPath: `assets/${this.name}.js` });
+    return mergeTrees([own, entry]);
   }
 
   protected dependencyKeys() {

@@ -1,25 +1,28 @@
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import { Tree } from 'broccoli-plugin';
-import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import V1InstanceCache from './v1-instance-cache';
 import resolve from 'resolve';
 import PackageCache from './package-cache';
-import V1Addon from './v1-addon';
 import { todo } from './messages';
 import flatMap from 'lodash/flatMap';
+import V1Package from './v1-package';
 
 export default class Package {
-  oldAddon: V1Addon;
+  protected oldPackage: V1Package;
 
   constructor(public root: string, private packageCache: PackageCache, private v1Cache: V1InstanceCache) {}
+
+  get name(): string {
+    return this.oldPackage.name;
+  }
 
   addParent(pkg: Package){
     let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
     if (v1Addon) {
-      if (!this.oldAddon) {
-        this.oldAddon = v1Addon;
+      if (!this.oldPackage) {
+        this.oldPackage = v1Addon;
       } else if (v1Addon.hasAnyTrees()){
         todo(`duplicate build of ${v1Addon.name}`);
       }
@@ -27,10 +30,8 @@ export default class Package {
   }
 
   get tree(): Tree {
-    let trees = this.oldAddon.v2Trees();
-    return new Funnel(mergeTrees(trees), {
-      destDir: this.oldAddon.name
-    });
+    let trees = this.oldPackage.v2Trees;
+    return mergeTrees(trees);
   }
 
   @Memoize()

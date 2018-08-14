@@ -4,6 +4,7 @@ import { writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
+import Package from './package';
 
 const entryTemplate = compile(`
 {{#each specifiers as |specifier|}}
@@ -13,6 +14,7 @@ const entryTemplate = compile(`
 
 export interface Options {
   outputPath: string;
+  package: Package;
 }
 
 export default class extends BroccoliPlugin {

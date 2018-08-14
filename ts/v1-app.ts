@@ -9,7 +9,6 @@ import resolve from 'resolve';
 import { updateBabelConfig } from './babel-config';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
-import AppEntrypoint from './app-entrypoint';
 import { todo } from './messages';
 import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
@@ -129,11 +128,22 @@ export default class V1App implements V1Package {
     updateBabelConfig(this.name, this.app.options, this.app.project.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  v2Trees() : Tree[] {
+  get appTree(): Tree {
+    this.makeV2Trees();
+    return this.appTreePriv;
+  }
+
+  get v2Trees() : Tree[] {
+    return this.makeV2Trees();
+  }
+
+  private appTreePriv;
+
+  @Memoize()
+  private makeV2Trees() {
     let inputTrees = this.app.trees;
     let trees = [];
     let importParsers = [];
-    let appTree;
 
     {
       quickTemp.makeOrRemake(this, 'trackedImportDir');
@@ -143,13 +153,13 @@ export default class V1App implements V1Package {
       }
     }
     if (inputTrees.app) {
-      appTree = this.transpile(inputTrees.app);
+      let appTree = this.transpile(inputTrees.app);
       importParsers.push(this.parseImports(appTree));
       trees.push(appTree);
+      this.appTreePriv = appTree;
     }
 
     trees.push(this.htmlTree);
-    trees.push(new AppEntrypoint(appTree, { outputPath: `assets/${this.name}.js` }));
 
     todo('more trees: src, tests, styles, templates, bower, vendor, public');
 

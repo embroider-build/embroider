@@ -93,7 +93,19 @@ export default class V1Addon implements V1Package {
     updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  v2Trees() {
+  get appTree() {
+    this.makeV2Trees();
+    return this.appTreePriv;
+  }
+
+  private appTreePriv;
+
+  get v2Trees() {
+    return this.makeV2Trees();
+  }
+
+  @Memoize()
+  private makeV2Trees() {
     let trees = [];
     let importParsers = [];
 
@@ -175,6 +187,7 @@ export default class V1Addon implements V1Package {
         destDir: '_app_'
       }));
       importParsers.push(this.parseImports(tree));
+      this.appTreePriv = tree;
       trees.push(tree);
     }
 

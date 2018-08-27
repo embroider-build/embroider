@@ -18,6 +18,8 @@ export default class Package {
     return this.oldPackage.name;
   }
 
+  // this is where we inform the package that it's being consumed by another,
+  // meaning it should take confirmation from that other into account.
   addParent(pkg: Package){
     let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
     if (v1Addon) {
@@ -48,11 +50,31 @@ export default class Package {
     return ['dependencies'];
   }
 
+  @Memoize()
   get dependencies(): Package[] {
     let names = flatMap(this.dependencyKeys(), key => Object.keys(this.packageJSON[key] || {}));
     return names.map(name => {
       let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
       return this.packageCache.getPackage(addonRoot, this);
     }).filter(Boolean);
+  }
+
+  get activeDependencies(): Package[] {
+    // todo: call a user-provided activeDependencies hook if provided
+    return this.dependencies;
+  }
+
+  descendant(key: "dependencies" | "activeDependencies") : Package[] {
+    let pkgs = new Set();
+    let queue : Package[] = [this];
+    while (queue.length > 0) {
+      let pkg = queue.shift();
+      if (!pkgs.has(pkg)) {
+        pkgs.add(pkg);
+        pkg[key].forEach(d => queue.push(d));
+      }
+    }
+    pkgs.delete(this);
+    return [...pkgs.values()];
   }
 }

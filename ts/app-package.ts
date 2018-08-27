@@ -14,7 +14,7 @@ export default class AppPackage extends Package {
 
   get tree(): Tree {
     let own = super.tree;
-    let entry = new AppEntrypoint(this.oldPackage.appTree, { package: this, outputPath: `assets/${this.name}.js` });
+    let entry = new AppEntrypoint(this.oldPackage.appTree, own, { package: this, outputPath: `assets/${this.name}.js` });
     return mergeTrees([own, entry]);
   }
 

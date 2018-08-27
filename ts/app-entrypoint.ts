@@ -35,10 +35,6 @@ export default class extends BroccoliPlugin {
     // todo: copy all addon's App Javascript into ourself
 
     // for the app tree, we take everything
-    //
-    // todo: by the time we get here, the app tree has deliberately been
-    // un-namespaced so its importable correctly. So we should probably
-    // separately track which files originated in 'app'.
     let lazyModules = walkSync(this.inputPaths[0], {
       globs: ['**/*.js'],
       directories: false
@@ -58,7 +54,8 @@ export default class extends BroccoliPlugin {
   private async gatherImplicitImports() {
     let sources = await Promise.all(this.inputPaths.map(async (inputPath, index) => {
       if (index === 0) {
-        // our own v1 appTree, which can't have implied imports.
+        // our own v1 appTree, which can't have implied imports because it's in
+        // v1 format.
         return;
       }
       let implicitPath = join(inputPath, '_implicit_imports_.js');

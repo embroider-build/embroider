@@ -22,7 +22,7 @@ export default class Addon extends Package {
   }
 
   // this is where we inform the package that it's being consumed by another,
-  // meaning it should take confirmation from that other into account.
+  // meaning it should take configuration from that other into account.
   addParent(pkg: Package){
     let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
     if (v1Addon) {

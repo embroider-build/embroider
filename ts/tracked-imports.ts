@@ -8,18 +8,14 @@ const appImportsTemplate = compile(`{{#each imports as |import|}}
 import '{{js-string-escape import}}';
 {{/each}}`);
 
-interface TrackedImport {
+export interface TrackedImport {
   assetPath: string;
   options: { type: string, outputFile: string | undefined };
 }
 
-export function trackedImportTree(packageName: string, trackedImports: TrackedImport[], outDir: string) {
-  if (!trackedImports) {
-    return;
-  }
-
-  let appImports = [];
-  let testImports = [];
+export function categorizedImports(packageName: string, trackedImports: TrackedImport[]) : { app: string[], test: string[] } {
+  let app = [];
+  let test = [];
 
   trackedImports.forEach(({ assetPath, options }) => {
     let standardAssetPath = standardizeAssetPath(packageName, assetPath);
@@ -30,21 +26,32 @@ export function trackedImportTree(packageName: string, trackedImports: TrackedIm
       if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
         todo(`${packageName} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
       }
-      appImports.push(standardAssetPath);
+      app.push(standardAssetPath);
     } else if (options.type === 'test') {
-      testImports.push(standardAssetPath);
+      test.push(standardAssetPath);
     } else {
       todo(`${packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
     }
   });
-  if (appImports.length === 0 && testImports.length === 0) {
+
+  return { app, test };
+}
+
+export function trackedImportTree(packageName: string, trackedImports: TrackedImport[], outDir: string) {
+  if (!trackedImports) {
     return;
   }
-  if (appImports.length > 0) {
-    writeFileSync(join(outDir, `_implicit_imports_.js`), appImportsTemplate({ imports: appImports }), 'utf8');
+
+  let { app, test } = categorizedImports(packageName, trackedImports);
+
+  if (app.length === 0 && test.length === 0) {
+    return;
   }
-  if (testImports.length > 0) {
-    writeFileSync(join(outDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: testImports }), 'utf8');
+  if (app.length > 0) {
+    writeFileSync(join(outDir, `_implicit_imports_.js`), appImportsTemplate({ imports: app }), 'utf8');
+  }
+  if (test.length > 0) {
+    writeFileSync(join(outDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: test }), 'utf8');
   }
   return new UnwatchedDir(outDir);
 }

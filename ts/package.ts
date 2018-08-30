@@ -1,80 +1,65 @@
+import PackageCache from "./package-cache";
+import Addon from "./addon";
+import { Tree } from "broccoli-plugin";
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
-import { Tree } from 'broccoli-plugin';
-import mergeTrees from 'broccoli-merge-trees';
-import V1InstanceCache from './v1-instance-cache';
-import resolve from 'resolve';
-import PackageCache from './package-cache';
-import { todo } from './messages';
 import flatMap from 'lodash/flatMap';
-import V1Package from './v1-package';
+import resolve from 'resolve';
 
-export default class Package {
-  protected oldPackage: V1Package;
-
-  constructor(public root: string, private packageCache: PackageCache, private v1Cache: V1InstanceCache) {}
-
-  get name(): string {
-    return this.oldPackage.name;
+export default abstract class Package {
+  constructor(public root: string) {
   }
 
-  // this is where we inform the package that it's being consumed by another,
-  // meaning it should take confirmation from that other into account.
-  addParent(pkg: Package){
-    let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
-    if (v1Addon) {
-      if (!this.oldPackage) {
-        this.oldPackage = v1Addon;
-      } else if (v1Addon.hasAnyTrees()){
-        todo(`duplicate build of ${v1Addon.name}`);
-      }
-    }
-  }
-
-  get tree(): Tree {
-    let trees = this.oldPackage.v2Trees;
-    return mergeTrees(trees);
-  }
+  abstract name: string;
+  protected abstract dependencyKeys: string[];
 
   @Memoize()
-  private get packageJSON() {
+  protected get packageJSON() {
     return require(join(this.root, 'package.json'));
   }
 
-  get isEmberPackage() : boolean {
-    let keywords = this.packageJSON.keywords;
-    return keywords && keywords.indexOf('ember-addon') !== -1;
-  }
-
-  protected dependencyKeys() {
-    return ['dependencies'];
-  }
+  protected abstract packageCache: PackageCache;
 
   @Memoize()
-  get dependencies(): Package[] {
-    let names = flatMap(this.dependencyKeys(), key => Object.keys(this.packageJSON[key] || {}));
+  get dependencies(): Addon[] {
+    // todo: call a user-provided activeDependencies hook if provided
+    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
     return names.map(name => {
       let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
       return this.packageCache.getPackage(addonRoot, this);
     }).filter(Boolean);
   }
 
-  get activeDependencies(): Package[] {
-    // todo: call a user-provided activeDependencies hook if provided
-    return this.dependencies;
+  @Memoize()
+  get descendants(): Addon[] {
+    return this.findDescendants(false);
   }
 
-  descendant(key: "dependencies" | "activeDependencies") : Package[] {
+  private findDescendants(activeOnly: boolean) {
     let pkgs = new Set();
     let queue : Package[] = [this];
     while (queue.length > 0) {
       let pkg = queue.shift();
       if (!pkgs.has(pkg)) {
         pkgs.add(pkg);
-        pkg[key].forEach(d => queue.push(d));
+        let section = activeOnly ? pkg.activeDependencies : pkg.dependencies;
+        section.forEach(d => queue.push(d));
       }
     }
     pkgs.delete(this);
     return [...pkgs.values()];
   }
+
+  @Memoize()
+  get activeDependencies(): Addon[] {
+    // todo: filter by addon-provided hook
+    return this.dependencies;
+  }
+
+  @Memoize()
+  get activeDescendants(): Addon[] {
+    return this.findDescendants(true);
+  }
+
+  abstract vanillaTree: Tree;
 }

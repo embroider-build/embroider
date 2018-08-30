@@ -7,12 +7,8 @@ import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { updateBabelConfig } from './babel-config';
-import DependencyAnalyzer from './dependency-analyzer';
-import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
-import { trackedImportTree } from './tracked-imports';
-import quickTemp from 'quick-temp';
-import ImportParser from './import-parser';
+import { TrackedImport } from './tracked-imports';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 
@@ -78,7 +74,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  private get htmlTree() {
+  get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index = new Funnel(this.rootTree, {
@@ -125,51 +121,33 @@ export default class V1App implements V1Package {
 
   @Memoize()
   private updateBabelConfig() {
+    // auto-import gets disabled because we support it natively
+    this.app.registry.remove('js', 'ember-auto-import-analyzer');
     updateBabelConfig(this.name, this.app.options, this.app.project.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  get appTree(): Tree {
-    this.makeV2Trees();
-    return this.appTreePriv;
+  get trackedImports(): TrackedImport[] {
+    return this.app._trackedImports;
   }
 
-  get v2Trees() : Tree[] {
-    return this.makeV2Trees();
-  }
-
-  private appTreePriv;
-
-  @Memoize()
-  private makeV2Trees() {
-    let inputTrees = this.app.trees;
-    let trees = [];
-    let importParsers = [];
-
-    {
-      quickTemp.makeOrRemake(this, 'trackedImportDir');
-      let tree = trackedImportTree(this.name, this.app._trackedImports, (this as any).trackedImportDir);
-      if (tree) {
-        trees.push(tree);
-      }
-    }
-    if (inputTrees.app) {
-      let appTree = this.transpile(inputTrees.app);
-      importParsers.push(this.parseImports(appTree));
-      trees.push(appTree);
-      this.appTreePriv = appTree;
-    }
-
-    trees.push(this.htmlTree);
-
+  // our own appTree. Not to be confused with the one that combines the app js
+  // from all addons too.
+  private get appTree() : Tree {
     todo('more trees: src, tests, styles, templates, bower, vendor, public');
-
-    let analyzer = new DependencyAnalyzer(importParsers, this.app.project.pkg, true );
-    trees.push(new RewritePackageJSON(this.rootTree, analyzer));
-
-    return trees;
+    return new Funnel(this.app.trees.app, {
+      exclude: ['styles/**'],
+    });
   }
 
-  private parseImports(tree) {
-    return new ImportParser(tree);
+  get appJSPath(): string {
+    return this.app.options.outputPaths.app.js;
+  }
+
+  // this takes the app JS trees from all active addons, since we can't really
+  // build our own code without them due to the way addon-provided "app js"
+  // works.
+  processAppJS(fromAddons: Tree[]) : Tree {
+    let trees = [...fromAddons, this.appTree];
+    return this.transpile(mergeTrees(trees, { overwrite: true }));
   }
 }

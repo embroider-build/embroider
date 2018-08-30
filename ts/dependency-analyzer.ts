@@ -11,9 +11,9 @@ export default class DependencyAnalyzer extends Plugin {
     });
   }
 
-  // we have our own protocol for getting input from the analyzers and providing
-  // our output via `externals`. But it's still important that we have a place
-  // in the broccoli graph, so that everything runs in the proper order.
+  // we have our own protocol for getting input from the import parsers and
+  // providing our output via `externals`. But it's still important that we have
+  // a place in the broccoli graph, so that everything runs in the proper order.
   build() {}
 
   get externals() {

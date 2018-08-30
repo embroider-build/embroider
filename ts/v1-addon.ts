@@ -13,6 +13,7 @@ import { trackedImportTree } from './tracked-imports';
 import quickTemp from 'quick-temp';
 import { updateBabelConfig } from './babel-config';
 import ImportParser from './import-parser';
+import { Tree } from "broccoli-plugin";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -90,24 +91,24 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private updateBabelConfig() {
+    // auto-import gets disabled because we support it natively
+    this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
+
     updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  get appTree() {
-    this.makeV2Trees();
-    return this.appTreePriv;
-  }
-
-  private appTreePriv;
-
-  get v2Trees() {
-    return this.makeV2Trees();
-  }
-
   @Memoize()
-  private makeV2Trees() {
+  get v2Trees() {
+    let { trees, importParsers, appJSPath } = this.legacyTrees();
+    let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
+    trees.push(new RewritePackageJSON(this.rootTree, analyzer, appJSPath));
+    return trees;
+  }
+
+  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], appJSPath: string|undefined } {
     let trees = [];
     let importParsers = [];
+    let appJSPath;
 
     {
       quickTemp.makeOrRemake(this, 'trackedImportDir');
@@ -119,7 +120,7 @@ export default class V1Addon implements V1Package {
 
     if (this.customizes('treeFor')) {
       todo(`${this.name} has customized treeFor`);
-      return trees;
+      return { trees, importParsers, appJSPath };
     }
 
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
@@ -182,12 +183,16 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       todo(`${this.name} may have customized the app tree`);
     } else if (this.hasStockTree('app')) {
-      let tree = this.transpile(this.stockTree('app', {
+      // this one doesn't go through parseImports and transpile yet because it
+      // gets handled as part of the consuming app. For example, imports should
+      // be relative to the consuming app, not our own package. That is some of
+      // what is lame about app trees and why they will go away once everyone is
+      // all MU.
+      appJSPath = '_app_';
+      let tree = this.stockTree('app', {
         exclude: ['styles/**'],
-        destDir: '_app_'
-      }));
-      importParsers.push(this.parseImports(tree));
-      this.appTreePriv = tree;
+        destDir: appJSPath
+      });
       trees.push(tree);
     }
 
@@ -232,8 +237,6 @@ export default class V1Addon implements V1Package {
       );
     }
 
-    let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
-    trees.push(new RewritePackageJSON(this.rootTree, analyzer));
-    return trees;
+    return { trees, importParsers, appJSPath };
   }
 }

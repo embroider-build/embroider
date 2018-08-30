@@ -8,7 +8,8 @@ import ChooseTree from './choose-tree';
 import Package from './package';
 import V1Addon from './v1-addon';
 import get from 'lodash/get';
-import { existsSync } from 'fs';
+import { UnwatchedDir } from 'broccoli-source';
+import { Memoize } from 'typescript-memoize';
 
 export default class Addon extends Package {
   private oldPackage: V1Addon;
@@ -34,7 +35,28 @@ export default class Addon extends Package {
     }
   }
 
+  get isNativeV2(): boolean {
+    let version = get(this.originalPackageJSON, 'ember-addon.version');
+    return version === 2;
+  }
+
+  // This is a V2 package.json. For a native-v2 package, it's the same thing as
+  // `this.originalPackageJSON`. But for non-native-v2 packages, it's derived
+  // during the building of vanillaTree, and it's only valid to use it after
+  // you've ensured the build has run.
+  @Memoize()
+  get packageJSON() {
+    if (this.isNativeV2) {
+      return this.originalPackageJSON;
+    } else {
+      return this.oldPackage.packageJSONRewriter.lastPackageJSON;
+    }
+  }
+
   get vanillaTree(): Tree {
+    if (this.isNativeV2) {
+      throw new Error(`we should not be using this on native v2 addons`);
+    }
     let trees = this.oldPackage.v2Trees;
     return mergeTrees(trees);
   }
@@ -42,22 +64,24 @@ export default class Addon extends Package {
   protected dependencyKeys = ['dependencies'];
 
   get legacyAppTree(): Tree {
-    return new ChooseTree(this.vanillaTree, {
-      annotation: `vanilla-choose-app-tree.${this.name}`,
-      srcDir: (inputPath) => {
-        let path = join(inputPath, 'package.json');
-        if (existsSync(path)) {
-          let pkg = require(path);
-          return get(pkg, 'ember-addon.app-js');
-        } else {
-          console.log(`${this.name} has no package.json?`);
-        }
+    if (this.isNativeV2) {
+      let appDir = get(this.packageJSON, 'ember-addon.app-js');
+      if (appDir) {
+        return new UnwatchedDir(join(this.root, appDir));
       }
-    });
+    } else {
+      return new ChooseTree(this.vanillaTree, {
+        annotation: `vanilla-choose-app-tree.${this.name}`,
+        srcDir: () => {
+          let pkg = this.oldPackage.packageJSONRewriter.lastPackageJSON;
+          return get(pkg, 'ember-addon.app-js');
+        }
+      });
+    }
   }
 
   get isEmberPackage() : boolean {
-    let keywords = this.packageJSON.keywords;
+    let keywords = this.originalPackageJSON.keywords;
     return keywords && keywords.indexOf('ember-addon') !== -1;
   }
 }

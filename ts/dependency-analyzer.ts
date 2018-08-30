@@ -17,7 +17,7 @@ export default class DependencyAnalyzer extends Plugin {
   build() {}
 
   get externals() {
-    let externals = [];
+    let externals: string[] = [];
     let imports = flatMap(this.importParsers, ip => ip.imports);
     let seen = new Set();
     let { dependencies, devDependencies, peerDependencies } = this.packageJSON;

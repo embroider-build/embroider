@@ -5,6 +5,7 @@ import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import flatMap from 'lodash/flatMap';
 import resolve from 'resolve';
+import { readFileSync } from "fs";
 
 export default abstract class Package {
   constructor(public root: string) {
@@ -13,9 +14,10 @@ export default abstract class Package {
   abstract name: string;
   protected abstract dependencyKeys: string[];
 
+  // This is the contents of the real packageJSON on disk.
   @Memoize()
-  protected get packageJSON() {
-    return require(join(this.root, 'package.json'));
+  get originalPackageJSON() {
+    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
   }
 
   protected abstract packageCache: PackageCache;
@@ -23,7 +25,7 @@ export default abstract class Package {
   @Memoize()
   get dependencies(): Addon[] {
     // todo: call a user-provided activeDependencies hook if provided
-    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
+    let names = flatMap(this.dependencyKeys, key => Object.keys(this.originalPackageJSON[key] || {}));
     return names.map(name => {
       let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
       return this.packageCache.getPackage(addonRoot, this);

@@ -1,4 +1,4 @@
-export default function absolutePackageName(specifier) {
+export default function absolutePackageName(specifier: string): string {
   if (specifier[0] === '.' || specifier[0] === '/') {
     // Not an absolute specifier
     return;

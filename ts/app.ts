@@ -7,8 +7,6 @@ import Package from './package';
 import V1App from './v1-app';
 import PackageCache from './package-cache';
 import { TrackedImport } from './tracked-imports';
-import DependencyAnalyzer from './dependency-analyzer';
-import ImportParser from './import-parser';
 
 export default class App extends Package {
   private oldPackage: V1App;
@@ -35,9 +33,6 @@ export default class App extends Package {
     // everybody goes MU.
     let appJSFromAddons = this.activeDescendants.map(d => d.legacyAppTree).filter(Boolean);
     let appJS = this.oldPackage.processAppJS(appJSFromAddons);
-    return appJS;
-    let importParser = new ImportParser(appJS);
-    let depAnalyzer = new DependencyAnalyzer([importParser], this.packageJSON, true );
 
     // And we generate the actual entrypoint files.
     let entry = new AppEntrypoint(appJS, {
@@ -48,7 +43,7 @@ export default class App extends Package {
     return mergeTrees([
       appJS,
       entry
-    ]);
+    ], { overwrite: true });
   }
 
   protected dependencyKeys = ['dependencies', 'devDependencies'];

@@ -10,6 +10,15 @@ export default class RewritePackageJSON extends Plugin {
     });
   }
 
+  private cachedLast;
+
+  get lastPackageJSON() {
+    if (!this.cachedLast) {
+      throw new Error(`tried to access package.json contents for a package that hasn't been build yet`);
+    }
+    return this.cachedLast;
+  }
+
   build() {
     let pkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
     if (!pkg['ember-addon']) {
@@ -20,6 +29,7 @@ export default class RewritePackageJSON extends Plugin {
     if (this.appJSPath) {
       pkg['ember-addon']['app-js'] = this.appJSPath;
     }
+    this.cachedLast = pkg;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 }

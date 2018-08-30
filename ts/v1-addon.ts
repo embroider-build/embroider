@@ -97,12 +97,21 @@ export default class V1Addon implements V1Package {
     updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  @Memoize()
   get v2Trees() {
+    return this.makeV2Trees().trees;
+  }
+
+  get packageJSONRewriter() {
+    return this.makeV2Trees().packageJSONRewriter;
+  }
+
+  @Memoize()
+  private makeV2Trees() {
     let { trees, importParsers, appJSPath } = this.legacyTrees();
     let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
-    trees.push(new RewritePackageJSON(this.rootTree, analyzer, appJSPath));
-    return trees;
+    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, appJSPath);
+    trees.push(packageJSONRewriter);
+    return { trees, packageJSONRewriter };
   }
 
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], appJSPath: string|undefined } {

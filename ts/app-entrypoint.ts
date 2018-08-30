@@ -4,9 +4,13 @@ import { writeFileSync, ensureDirSync, pathExists } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
-import Package from './package';
+import Addon from './addon';
 import App from './app';
 import { categorizedImports } from './tracked-imports';
+import get from 'lodash/get';
+import DependencyAnalyzer from './dependency-analyzer';
+import ImportParser from './import-parser';
+import cloneDeep from 'lodash/cloneDeep';
 
 const entryTemplate = compile(`
 {{#each eagerModules as |specifier| ~}}
@@ -24,13 +28,18 @@ export interface Options {
 
 export default class extends BroccoliPlugin {
   private opts: Options;
-  private activeDeps: Package[];
+  private activeDeps: Addon[];
+  private analyzer: DependencyAnalyzer;
 
   constructor(classicAppTree: Tree, opts: Options) {
+    // todo: only the deps with !dep.isNativeV2 should go into inputTrees. The
+    // native ones are already built and stable.
     let activeDeps = opts.package.activeDescendants;
-    super([classicAppTree, ...activeDeps.map(a => a.vanillaTree)], {});
+    let analyzer = new DependencyAnalyzer([new ImportParser(classicAppTree)], opts.package.originalPackageJSON, true);
+    super([classicAppTree, ...activeDeps.map(a => a.vanillaTree), analyzer], {});
     this.opts = opts;
     this.activeDeps = activeDeps;
+    this.analyzer = analyzer;
   }
 
   async build() {
@@ -51,6 +60,22 @@ export default class extends BroccoliPlugin {
     let appJS = join(this.outputPath, this.opts.outputPath);
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
+
+    // we are safe to access each addon.packageJSON because all the addon
+    // vanillaTrees are in our inputTrees, so we know we are only running after
+    // they have built.
+    let externals = this.activeDeps.map(addon => get(addon.packageJSON, 'ember-addon.externals')).filter(Boolean).reduce((a,b)=>a.concat(b), []);
+
+    // similarly, we're safe to access analyzer.externals because the analyzer
+    // is one of our input trees.
+    externals = externals.concat(this.analyzer.externals);
+
+    let pkg = cloneDeep(this.opts.package.originalPackageJSON);
+    if (!pkg['ember-addon']) {
+      pkg['ember-addon'] = {};
+    }
+    pkg['ember-addon'].externals = externals;
+    writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 
   private async gatherImplicitImports() {

@@ -7,6 +7,7 @@ import Package from './package';
 import V1App from './v1-app';
 import PackageCache from './package-cache';
 import { TrackedImport } from './tracked-imports';
+import Workspace from './workspace';
 
 export default class App extends Package {
   private oldPackage: V1App;
@@ -29,22 +30,24 @@ export default class App extends Package {
   // This is the end of the Vanilla build pipeline -- this is the tree that we
   // can hand off to an arbitrary Javascript packager.
   get vanillaTree(): Tree {
+    let workspace = new Workspace(this, 'vanilla-dist');
+
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.
     let appJSFromAddons = this.activeDescendants.map(d => d.legacyAppTree).filter(Boolean);
     let { appJS, analyzer } = this.oldPackage.processAppJS(appJSFromAddons, this.originalPackageJSON);
 
     // And we generate the actual entrypoint files.
-    let entry = new AppEntrypoint(appJS, {
-      package: this,
-      outputPath: this.oldPackage.appJSPath,
-      analyzer
-    });
+    let entry = new AppEntrypoint(workspace, appJS, this, analyzer);
 
     return mergeTrees([
       appJS,
       entry
     ], { overwrite: true });
+  }
+
+  get appJSPath() {
+    return this.oldPackage.appJSPath;
   }
 
   protected dependencyKeys = ['dependencies', 'devDependencies'];

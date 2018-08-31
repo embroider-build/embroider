@@ -1,16 +1,16 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync, pathExists } from 'fs-extra';
+import { writeFileSync, ensureDirSync, pathExistsSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
-import Addon from './addon';
 import App from './app';
 import { categorizedImports } from './tracked-imports';
 import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
+import Workspace from './workspace';
 
 const entryTemplate = compile(`
 {{#each eagerModules as |specifier| ~}}
@@ -21,28 +21,14 @@ const entryTemplate = compile(`
 {{/each}}
 `);
 
-export interface Options {
-  outputPath: string;
-  package: App;
-  analyzer: DependencyAnalyzer;
-}
-
 export default class extends BroccoliPlugin {
-  private opts: Options;
-  private activeDeps: Addon[];
-
-  constructor(classicAppTree: Tree, opts: Options) {
-    // todo: only the deps with !dep.isNativeV2 should go into inputTrees. The
-    // native ones are already built and stable.
-    let activeDeps = opts.package.activeDescendants;
-    super([classicAppTree, ...activeDeps.map(a => a.vanillaTree), opts.analyzer], {});
-    this.opts = opts;
-    this.activeDeps = activeDeps;
+  constructor(workspace: Workspace, classicAppTree: Tree, private app: App, private analyzer: DependencyAnalyzer){
+    super([workspace, classicAppTree, analyzer], {});
   }
 
   async build() {
     // for the app tree, we take everything
-    let lazyModules = walkSync(this.inputPaths[0], {
+    let lazyModules = walkSync(this.inputPaths[1], {
       globs: ['**/*.js'],
       directories: false
     }).map(specifier => `../${specifier.replace(/\.js$/, '')}`);
@@ -52,23 +38,33 @@ export default class extends BroccoliPlugin {
     todo("app src tree");
 
     let eagerModules = await this.gatherImplicitImports();
-    let imports = categorizedImports(this.opts.package.name, this.opts.package.implicitImports);
+    let imports = categorizedImports(this.app.name, this.app.implicitImports);
     eagerModules = eagerModules.concat(imports.app);
 
-    let appJS = join(this.outputPath, this.opts.outputPath);
+    let appJS = join(this.outputPath, this.app.appJSPath);
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
 
     // we are safe to access each addon.packageJSON because all the addon
     // vanillaTrees are in our inputTrees, so we know we are only running after
     // they have built.
-    let externals = new Set(flatMap(this.activeDeps, addon => get(addon.packageJSON, 'ember-addon.externals') || []));
+    let externals = new Set(flatMap(this.app.activeDescendants, addon => get(addon.packageJSON, 'ember-addon.externals') || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.
-    this.opts.analyzer.externals.forEach(name => externals.add(name));
+    this.analyzer.externals.forEach(name => externals.add(name));
 
-    let pkg = cloneDeep(this.opts.package.originalPackageJSON);
+    // At this point the externals list is correct in the sense that it points
+    // out every place a package imports a thing that isnt't listed in its
+    // dependencies. But this is stricter than the node_modules resolution
+    // algorithm, which lets you get away with importing things that aren't
+    // listed, so long as they're resolvable from your location.
+    //
+    // While it's more correct to list out all your peerDependencies explicitly,
+    // in practice lots of packages don't, so it behooves us to be lenient in
+    // the same way node is.
+
+    let pkg = cloneDeep(this.app.originalPackageJSON);
     if (!pkg['ember-addon']) {
       pkg['ember-addon'] = {};
     }
@@ -77,16 +73,13 @@ export default class extends BroccoliPlugin {
   }
 
   private async gatherImplicitImports() {
-    let sources = await Promise.all(this.inputPaths.map(async (inputPath, index) => {
-      if (index === 0) {
-        // the combined appTree, which can't have implied imports
-        return;
+    let result = [];
+    for (let addon of this.app.activeDescendants) {
+      let implicitPath = join(addon.root, '_implicit_imports_.js');
+      if (pathExistsSync(implicitPath)) {
+        result.push(`${addon.name}/_implicit_imports_`);
       }
-      let implicitPath = join(inputPath, '_implicit_imports_.js');
-      if (await pathExists(implicitPath)) {
-        return `${this.activeDeps[index - 1].name}/_implicit_imports_`;
-      }
-    }));
-    return sources.filter(Boolean);
+    }
+    return result;
   }
 }

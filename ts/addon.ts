@@ -14,8 +14,8 @@ import { Memoize } from 'typescript-memoize';
 export default class Addon extends Package {
   private oldPackage: V1Addon;
 
-  constructor(public root: string, protected packageCache: PackageCache, private v1Cache: V1InstanceCache) {
-    super(root);
+  constructor(public originalRoot: string, protected packageCache: PackageCache, private v1Cache: V1InstanceCache) {
+    super(originalRoot);
   }
 
   get name(): string {
@@ -25,7 +25,7 @@ export default class Addon extends Package {
   // this is where we inform the package that it's being consumed by another,
   // meaning it should take configuration from that other into account.
   addParent(pkg: Package){
-    let v1Addon = this.v1Cache.getAddon(this.root, pkg.root);
+    let v1Addon = this.v1Cache.getAddon(this.originalRoot, pkg.originalRoot);
     if (v1Addon) {
       if (!this.oldPackage) {
         this.oldPackage = v1Addon;
@@ -67,7 +67,7 @@ export default class Addon extends Package {
     if (this.isNativeV2) {
       let appDir = get(this.packageJSON, 'ember-addon.app-js');
       if (appDir) {
-        return new UnwatchedDir(join(this.root, appDir));
+        return new UnwatchedDir(join(this.originalRoot, appDir));
       }
     } else {
       return new ChooseTree(this.vanillaTree, {

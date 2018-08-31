@@ -12,8 +12,8 @@ export default class App extends Package {
   private oldPackage: V1App;
   protected packageCache: PackageCache;
 
-  constructor(public root: string, v1Cache: V1InstanceCache ) {
-    super(root);
+  constructor(public originalRoot: string, v1Cache: V1InstanceCache ) {
+    super(originalRoot);
     this.packageCache = new PackageCache(v1Cache);
     this.oldPackage = v1Cache.app;
   }

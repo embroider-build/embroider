@@ -8,7 +8,7 @@ import resolve from 'resolve';
 import { readFileSync } from "fs";
 
 export default abstract class Package {
-  constructor(public root: string) {
+  constructor(public originalRoot: string) {
   }
 
   abstract name: string;
@@ -17,7 +17,7 @@ export default abstract class Package {
   // This is the contents of the real packageJSON on disk.
   @Memoize()
   get originalPackageJSON() {
-    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    return JSON.parse(readFileSync(join(this.originalRoot, 'package.json'), 'utf8'));
   }
 
   protected abstract packageCache: PackageCache;
@@ -27,7 +27,7 @@ export default abstract class Package {
     // todo: call a user-provided activeDependencies hook if provided
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.originalPackageJSON[key] || {}));
     return names.map(name => {
-      let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
+      let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.originalRoot }));
       return this.packageCache.getPackage(addonRoot, this);
     }).filter(Boolean);
   }

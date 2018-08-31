@@ -8,6 +8,7 @@ import Addon from './addon';
 import App from './app';
 import { categorizedImports } from './tracked-imports';
 import get from 'lodash/get';
+import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
 

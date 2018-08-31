@@ -55,7 +55,12 @@ export default class Addon extends Package {
 
   get vanillaTree(): Tree {
     if (this.isNativeV2) {
-      throw new Error(`we should not be using this on native v2 addons`);
+      // todo: this case is needed when a native-v2 addon depends on a
+      // non-native-v2 addon. (The non-native one will get rewritten and
+      // therefore moved, so to continue depending on it the native one needs to
+      // move too.) It should probably grab the whole package off disk and just
+      // filter out node_modules.
+      throw new Error(`unimplemented`);
     }
     let trees = this.oldPackage.v2Trees;
     return mergeTrees(trees);
@@ -83,5 +88,11 @@ export default class Addon extends Package {
   get isEmberPackage() : boolean {
     let keywords = this.originalPackageJSON.keywords;
     return keywords && keywords.indexOf('ember-addon') !== -1;
+  }
+
+  // This is all the Ember packages that depend on us. Not valid until the other
+  // packages have all had a chance to find their dependencies.
+  get dependedUponBy() {
+    return this.packageCache.dependendUponBy.get(this);
   }
 }

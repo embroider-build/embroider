@@ -22,14 +22,33 @@ export default abstract class Package {
 
   protected abstract packageCache: PackageCache;
 
-  @Memoize()
   get dependencies(): Addon[] {
+    return this.findDependencies();
+  }
+
+  @Memoize()
+  private findDependencies(): Addon[] {
     // todo: call a user-provided activeDependencies hook if provided
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.originalPackageJSON[key] || {}));
     return names.map(name => {
       let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.originalRoot }));
       return this.packageCache.getPackage(addonRoot, this);
     }).filter(Boolean);
+  }
+
+  private privRoot: string | undefined;
+  get root(): string {
+    if (!this.privRoot) {
+      throw new Error(`package ${this.name} does not know its final root location yet`);
+    }
+    return this.privRoot;
+  }
+
+  set root(value: string) {
+    if (this.privRoot) {
+      throw new Error(`double set of root in package ${this.name}`);
+    }
+    this.privRoot = value;
   }
 
   @Memoize()
@@ -62,6 +81,15 @@ export default abstract class Package {
   get activeDescendants(): Addon[] {
     return this.findDescendants(true);
   }
+
+  // This is all the NPM packages we depend on, as opposed to `dependencies`
+  // which is just the Ember packages we depend on.
+  get npmDependencies() {
+    this.findDependencies();
+    return this.packageCache.dependsOn.get(this) || new Set();
+  }
+
+  abstract dependedUponBy: Set<Package>;
 
   abstract vanillaTree: Tree;
 }

@@ -63,4 +63,7 @@ export default class App extends Package {
     return [...pkgs.values()].map((pkg, index) => new Funnel(pkg.vanillaTree, { destDir: `out-${index}` }));
   }
 
+  get dependedUponBy() {
+    return new Set();
+  }
 }

@@ -61,7 +61,7 @@ export default class extends BroccoliPlugin {
     // we are safe to access each addon.packageJSON because all the addon
     // vanillaTrees are in our inputTrees, so we know we are only running after
     // they have built.
-    let externals = new Set(this.activeDeps.map(addon => get(addon.packageJSON, 'ember-addon.externals')).filter(Boolean).reduce((a,b)=>a.concat(b), []));
+    let externals = new Set(flatMap(this.activeDeps, addon => get(addon.packageJSON, 'ember-addon.externals') || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.

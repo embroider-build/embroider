@@ -2,7 +2,6 @@ import Plugin from 'broccoli-plugin';
 import ImportParser from './import-parser';
 import flatMap from 'lodash/flatMap';
 import absolutePackageName from './package-name';
-import { todo } from './messages';
 
 export default class DependencyAnalyzer extends Plugin {
   constructor(private importParsers: ImportParser[], private packageJSON, private isTopLevelApp: boolean) {
@@ -28,16 +27,20 @@ export default class DependencyAnalyzer extends Plugin {
         if (
           (dependencies && dependencies[name]) ||
           (peerDependencies && peerDependencies[name]) ||
-          (this.isTopLevelApp && devDependencies && devDependencies[name])
+          (this.isTopLevelApp && devDependencies && devDependencies[name]) ||
+          (name === this.packageJSON.name)
         ) {
-          // this is a valid static inter-package specifier
+          // this is either a valid inter-package specifier or our own
+          // name.
+
+          // Our own name is allowed in the appJS (because that is going to get
+          // moved into the app, where our name will be resolvable). It would be
+          // a problem in our Own JS, but that gets patched up by our
+          // babel-plugin.
         } else {
           // this is not a valid inter-package specifier, so we defer it to
           // runtime by treating it as an external
           externals.push(name);
-          if (name === this.packageJSON.name) {
-            todo(`local specifiers need to be rewritten as relative in ${this.packageJSON.name}`);
-          }
         }
       }
     });

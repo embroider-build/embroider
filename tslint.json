@@ -17,7 +17,7 @@
     "no-unused-expression": true,
     "no-unused-variable": true,
     "semicolon": [true, "always"],
-    "triple-equals": true,
+    "triple-equals": [true, "allow-null-check"],
     "class-name": true,
     "no-require-imports": true
   }

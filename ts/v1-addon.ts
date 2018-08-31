@@ -192,16 +192,21 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       todo(`${this.name} may have customized the app tree`);
     } else if (this.hasStockTree('app')) {
-      // this one doesn't go through parseImports and transpile yet because it
-      // gets handled as part of the consuming app. For example, imports should
-      // be relative to the consuming app, not our own package. That is some of
-      // what is lame about app trees and why they will go away once everyone is
-      // all MU.
+      // this one doesn't go through transpile yet because it gets handled as
+      // part of the consuming app. For example, imports should be relative to
+      // the consuming app, not our own package. That is some of what is lame
+      // about app trees and why they will go away once everyone is all MU.
+      //
+      // This does need to go through parseImports here, because by the time
+      // these files have been merged into the app we can't tell what their
+      // allowed dependencies are anymore and would get false positive
+      // externals.
       appJSPath = '_app_';
       let tree = this.stockTree('app', {
         exclude: ['styles/**'],
         destDir: appJSPath
       });
+      importParsers.push(this.parseImports(tree));
       trees.push(tree);
     }
 

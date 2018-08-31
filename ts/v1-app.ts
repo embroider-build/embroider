@@ -11,6 +11,8 @@ import { todo } from './messages';
 import { TrackedImport } from './tracked-imports';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
+import DependencyAnalyzer from './dependency-analyzer';
+import ImportParser from './import-parser';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -146,8 +148,14 @@ export default class V1App implements V1Package {
   // this takes the app JS trees from all active addons, since we can't really
   // build our own code without them due to the way addon-provided "app js"
   // works.
-  processAppJS(fromAddons: Tree[]) : Tree {
-    let trees = [...fromAddons, this.appTree];
-    return this.transpile(mergeTrees(trees, { overwrite: true }));
+  processAppJS(fromAddons: Tree[], packageJSON) : { appJS: Tree, analyzer: DependencyAnalyzer } {
+    let appTree = this.appTree;
+    let analyzer = new DependencyAnalyzer([new ImportParser(appTree)], packageJSON, true);
+
+    let trees = [...fromAddons, appTree];
+    return {
+      appJS: this.transpile(mergeTrees(trees, { overwrite: true })),
+      analyzer
+    };
   }
 }

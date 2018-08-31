@@ -32,12 +32,14 @@ export default class App extends Package {
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.
     let appJSFromAddons = this.activeDescendants.map(d => d.legacyAppTree).filter(Boolean);
-    let appJS = this.oldPackage.processAppJS(appJSFromAddons);
+
+    let { appJS, analyzer } = this.oldPackage.processAppJS(appJSFromAddons, this.originalPackageJSON);
 
     // And we generate the actual entrypoint files.
     let entry = new AppEntrypoint(appJS, {
       package: this,
-      outputPath: this.oldPackage.appJSPath
+      outputPath: this.oldPackage.appJSPath,
+      analyzer
     });
 
     return mergeTrees([

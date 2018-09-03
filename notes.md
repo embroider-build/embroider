@@ -1,3 +1,9 @@
+# Stack
+
+1. template compiler should get built in v2 app, with it's own key in package metadata. That simplifies the handoff between stages (the only ember-specific stuff is in package metadata). It makes my testing easier too (vbuild will work).
+2. need to rewrite template import specifiers so they get the `hbs` extension. We can reliably detect them because no JS equivalent is allowed to exist in today's ember apps (they would collide).
+3. get rid of publicly visible appJSPath on App. Doesn't make sense there as a concept. Instead, make the v1-app rewrite index.html into using a standard script name. It can use options.outputPaths to figure out which script tags its replacing. We're not going to generate a separate vendor.js, splitting is the responsibility of the final packager.
+
 # taking over from EmberApp
 
 ember-cli eagerly instantiates all addons pretty much whatever you are doing. So even when you have all v2 packages, you're going to be using their v1 shims a lot until we can refactor ember-cli around v2 internally.

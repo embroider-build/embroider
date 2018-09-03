@@ -45,9 +45,9 @@ export default class extends BroccoliPlugin {
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
 
-    // we are safe to access each addon.packageJSON because all the addon
-    // vanillaTrees are in our inputTrees, so we know we are only running after
-    // they have built.
+    // we are safe to access each addon.packageJSON because the Workspace is in
+    // our inputTrees, so we know we are only running after any v1 packages have
+    // already been build as v2.
     let externals = new Set(flatMap(this.app.activeDescendants, addon => get(addon.packageJSON, 'ember-addon.externals') || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
@@ -63,6 +63,8 @@ export default class extends BroccoliPlugin {
     // While it's more correct to list out all your peerDependencies explicitly,
     // in practice lots of packages don't, so it behooves us to be lenient in
     // the same way node is.
+    //
+    // TODO: implement
 
     let pkg = cloneDeep(this.app.originalPackageJSON);
     if (!pkg['ember-addon']) {

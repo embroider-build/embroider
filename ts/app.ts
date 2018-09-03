@@ -1,13 +1,12 @@
-import Funnel from 'broccoli-funnel';
 import V1InstanceCache from './v1-instance-cache';
 import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
-import mergeTrees from 'broccoli-merge-trees';
 import Package from './package';
 import V1App from './v1-app';
 import PackageCache from './package-cache';
 import { TrackedImport } from './tracked-imports';
 import Workspace from './workspace';
+import WorkspaceUpdater from './workspace-updater';
 
 export default class App extends Package {
   private oldPackage: V1App;
@@ -40,10 +39,7 @@ export default class App extends Package {
     // And we generate the actual entrypoint files.
     let entry = new AppEntrypoint(workspace, appJS, this, analyzer);
 
-    return mergeTrees([
-      appJS,
-      entry
-    ], { overwrite: true });
+    return new WorkspaceUpdater([appJS, entry], workspace);
   }
 
   get appJSPath() {
@@ -51,20 +47,6 @@ export default class App extends Package {
   }
 
   protected dependencyKeys = ['dependencies', 'devDependencies'];
-
-  // TODO: This is a placeholder for development purposes only.
-  dumpTrees() {
-    let pkgs : Set<Package> = new Set();
-    let queue : Package[] = [this];
-    while (queue.length > 0) {
-      let pkg = queue.shift();
-      if (!pkgs.has(pkg)) {
-        pkgs.add(pkg);
-        pkg.dependencies.forEach(d => queue.push(d));
-      }
-    }
-    return [...pkgs.values()].map((pkg, index) => new Funnel(pkg.vanillaTree, { destDir: `out-${index}` }));
-  }
 
   get dependedUponBy() {
     return new Set();

@@ -43,6 +43,10 @@ export default class Workspace extends Plugin {
     this.linkedPackages = new Set();
   }
 
+  copyIntoApp(srcDir) {
+    copyInto(srcDir, this.app.root);
+  }
+
   build() {
     if (this.didBuild) {
       // TODO: we can selectively allow some addons to rebuild, equivalent to

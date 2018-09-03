@@ -13,9 +13,12 @@ export default class PackagerRunner extends Plugin {
 
   @Memoize()
   private get packager(): PackagerInstance {
-    return new this.packagerClass(this.app.root, this.outputPath, {
-      consoleWrite: (msg) => console.log(msg)
-    });
+    return new this.packagerClass(
+      this.app.root,
+      this.outputPath,
+      this.app.templateCompiler,
+      (msg) => console.log(msg)
+    );
   }
 
   build() {

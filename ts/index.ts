@@ -4,10 +4,10 @@ import { Tree } from 'broccoli-plugin';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdtempSync } from 'fs';
-import { Packager, PackagerInstance, PackagerOptions } from './packager';
+import { Packager, PackagerInstance } from './packager';
 import PackagerRunner from './packager-runner';
 
-export { Packager, PackagerInstance, PackagerOptions };
+export { Packager, PackagerInstance };
 
 export function vanillaBuild(emberApp, outputDir): Tree {
   let cache = new V1InstanceCache(emberApp);

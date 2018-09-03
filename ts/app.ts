@@ -12,7 +12,7 @@ export default class App extends Package {
   private oldPackage: V1App;
   protected packageCache: PackageCache;
 
-  constructor(public originalRoot: string, v1Cache: V1InstanceCache ) {
+  constructor(public originalRoot: string, v1Cache: V1InstanceCache, private outputDir: string) {
     super(originalRoot);
     this.packageCache = new PackageCache(v1Cache);
     this.oldPackage = v1Cache.app;
@@ -29,7 +29,7 @@ export default class App extends Package {
   // This is the end of the Vanilla build pipeline -- this is the tree that we
   // can hand off to an arbitrary Javascript packager.
   get vanillaTree(): Tree {
-    let workspace = new Workspace(this, 'vanilla-dist');
+    let workspace = new Workspace(this, this.outputDir);
 
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.

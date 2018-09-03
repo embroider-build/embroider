@@ -15,7 +15,6 @@
     "no-implicit-dependencies": true,
     "no-trailing-whitespace": true,
     "no-unused-expression": true,
-    "no-unused-variable": true,
     "semicolon": [true, "always"],
     "triple-equals": [true, "allow-null-check"],
     "class-name": true,

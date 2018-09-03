@@ -20,8 +20,8 @@ import { sync as copyDereference } from "copy-dereference";
 //
 // Our own broccoli build step is responsible only for assembling the proper
 // node_modules structure with all our dependencies in v2 format. It leaves an
-// empty place for the app's own code to go, which is filled in later by
-// AppEntrypoint.
+// empty place for the app's own code to go, which is filled in later via
+// copyIntoApp().
 export default class Workspace extends Plugin {
   private didBuild: boolean;
   private destDir: string;

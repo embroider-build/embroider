@@ -1,0 +1,28 @@
+{
+  "name": "ember-webpack",
+  "version": "0.0.1",
+  "description": "Webpack builder for vanilla Ember apps",
+  "main": "js/ember-webpack.js",
+  "author": "Edward Faulkner",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "compile": "tsc",
+    "lint": "tslint --project .",
+    "prepare": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.116",
+    "@types/node": "^10.5.2",
+    "tslint": "^5.11.0",
+    "typescript": "^2.9.2"
+  },
+  "dependencies": {
+    "jsdom": "^12.0.0",
+    "lodash": "^4.17.10",
+    "webpack": "^4.17.1"
+  },
+  "peerDependencies": {
+    "ember-cli-vanilla": "*"
+  }
+}

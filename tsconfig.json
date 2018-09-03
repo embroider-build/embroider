@@ -1,0 +1,16 @@
+{
+  "include": ["./ts/**/*.ts"],
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./js",
+    "typeRoots": ["node_modules/@types", "types"],
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "allowUnreachableCode": false
+  }
+}

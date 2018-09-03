@@ -45,6 +45,8 @@ export default class extends BroccoliPlugin {
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
 
+    this.addConfigModule();
+
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
     // already been build as v2.
@@ -71,6 +73,7 @@ export default class extends BroccoliPlugin {
       pkg['ember-addon'] = {};
     }
     pkg['ember-addon'].externals = [...externals.values()];
+    pkg['ember-addon'].entrypoints = ['index.html'];
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 
@@ -83,5 +86,21 @@ export default class extends BroccoliPlugin {
       }
     }
     return result;
+  }
+
+  private addConfigModule() {
+    // todo: this assumes config-in-meta (which is the common default, but not the only possibility)
+    ensureDirSync(join(this.outputPath, 'config'));
+    writeFileSync(join(this.outputPath, 'config', 'environment.js'), `
+    let config;
+    try {
+      let metaName = '${this.app.name}/config/environment';
+      let rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
+      config = JSON.parse(unescape(rawConfig));
+    } catch(err) {
+      throw new Error('Could not read config from meta tag with name "' + metaName + '".');
+    }
+    export default config;
+    `, 'utf8');
   }
 }

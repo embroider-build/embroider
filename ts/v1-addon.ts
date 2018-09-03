@@ -129,12 +129,12 @@ export default class V1Addon implements V1Package {
 
     if (this.customizes('treeFor')) {
       todo(`${this.name} has customized treeFor`);
-      return { trees, importParsers, appJSPath };
     }
 
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
       todo(`${this.name} may have customized the addon tree`);
-    } else if (this.hasStockTree('addon')) {
+    }
+    if (this.hasStockTree('addon')) {
       let tree = this.transpile(this.stockTree('addon', {
         exclude: ['styles/**']
       }));
@@ -191,7 +191,8 @@ export default class V1Addon implements V1Package {
 
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       todo(`${this.name} may have customized the app tree`);
-    } else if (this.hasStockTree('app')) {
+    }
+    if (this.hasStockTree('app')) {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
       // the consuming app, not our own package. That is some of what is lame

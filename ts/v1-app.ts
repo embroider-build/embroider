@@ -76,7 +76,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  get htmlTree() {
+  private get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index = new Funnel(this.rootTree, {
@@ -152,7 +152,7 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let analyzer = new DependencyAnalyzer([new ImportParser(appTree)], packageJSON, true);
 
-    let trees = [...fromAddons, appTree];
+    let trees = [...fromAddons, appTree, this.htmlTree];
     return {
       appJS: this.transpile(mergeTrees(trees, { overwrite: true })),
       analyzer

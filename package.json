@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "jsdom": "^12.0.0",
+    "loader-utils": "^1.1.0",
     "lodash": "^4.17.10",
     "webpack": "^4.17.1"
   },

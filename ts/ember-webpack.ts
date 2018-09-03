@@ -1,4 +1,4 @@
-import { Packager, PackagerOptions } from "ember-cli-vanilla";
+import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
 import { readFileSync } from 'fs';
 import { join, basename } from 'path';
@@ -6,10 +6,12 @@ import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 
 const Webpack: Packager = class Webpack {
-  private consoleWrite: (message: string) => void;
-
-  constructor(private pathToVanillaApp: string, private outputPath: string, options: PackagerOptions) {
-    this.consoleWrite = options.consoleWrite;
+  constructor(
+    private pathToVanillaApp: string,
+    private outputPath: string,
+    private templateCompiler: (moduleName: string, templateContents: string) => string,
+    private consoleWrite: (msg: string) => void
+    ) {
   }
 
   private examineApp() {
@@ -39,6 +41,19 @@ const Webpack: Packager = class Webpack {
       mode: 'development', // todo
       context: this.pathToVanillaApp,
       entry,
+      module: {
+        rules: [
+          {
+            test: /\.hbs$/,
+            use: [
+              {
+                loader: join(__dirname, './webpack-hbs-loader'),
+                options: { templateCompiler: this.templateCompiler }
+              }
+            ]
+          }
+        ]
+      },
       output: {
         path: this.outputPath,
         filename: `chunk.[chunkhash].js`,

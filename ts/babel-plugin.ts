@@ -21,6 +21,27 @@ function maybeRelativize(specifier, sourceFileName, opts) {
   }
 }
 
+function makeHBSExplicit(specifier, _) {
+  // as an optimization, we only detect relative paths to templates. That is by
+  // far the common case, and it's probably much cheaper to check than full
+  // package resolution.
+  //
+  // we can revisit this if it turns out there are lots of examples in the wild
+  // of addons importing templates from other packages.
+  if (specifier[0] === '.') {
+    // this is gross, but unforunately we can't get enough information to locate
+    // the original file on disk in order to go check whether it's really
+    // referring to a template. To fix this, we would need to modify
+    // broccoli-babel-transpiler, but a typical app has many many copies of that
+    // library at various different verisons (a symptom of the very problem
+    // ember-cli-vanilla exists to solve).
+    if (/\btemplates\b/.test(specifier) && !/\.hbs$/.test(specifier)) {
+      return specifier + '.hbs';
+    }
+  }
+  return specifier;
+}
+
 export default function main(){
   return {
     visitor: {
@@ -30,7 +51,8 @@ export default function main(){
           return;
         }
         let sourceFileName = path.hub.file.opts.filename;
-        source.value = maybeRelativize(source.value, sourceFileName, opts);
+        let specifier = maybeRelativize(source.value, sourceFileName, opts);
+        source.value = makeHBSExplicit(specifier, sourceFileName);
       },
     }
   };

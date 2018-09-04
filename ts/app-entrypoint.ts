@@ -46,6 +46,7 @@ export default class extends BroccoliPlugin {
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
 
     this.addConfigModule();
+    this.addTemplateCompiler();
 
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
@@ -74,6 +75,7 @@ export default class extends BroccoliPlugin {
     }
     pkg['ember-addon'].externals = [...externals.values()];
     pkg['ember-addon'].entrypoints = ['index.html'];
+    pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 
@@ -101,6 +103,17 @@ export default class extends BroccoliPlugin {
       throw new Error('Could not read config from meta tag with name "' + metaName + '".');
     }
     export default config;
+    `, 'utf8');
+  }
+
+  // we could just use ember-source/dist/ember-template-compiler directly, but
+  // apparently ember-cli adds some extra steps on top (like stripping BOM), so
+  // we follow allow and do those too.
+  private addTemplateCompiler() {
+    writeFileSync(join(this.outputPath, '_template_compiler_.js'), `
+    var compiler = require('ember-source/dist/ember-template-compiler');
+    var setupCompiler = require('ember-cli-vanilla/js/template-compiler').default;
+    module.exports = setupCompiler(compiler);
     `, 'utf8');
   }
 }

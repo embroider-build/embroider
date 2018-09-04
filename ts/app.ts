@@ -7,9 +7,6 @@ import PackageCache from './package-cache';
 import { TrackedImport } from './tracked-imports';
 import Workspace from './workspace';
 import WorkspaceUpdater from './workspace-updater';
-import { Memoize } from 'typescript-memoize';
-import resolve from 'resolve';
-import stripBom from 'strip-bom';
 
 export default class App extends Package {
   private oldPackage: V1App;
@@ -53,21 +50,5 @@ export default class App extends Package {
 
   get dependedUponBy() {
     return new Set();
-  }
-
-  @Memoize()
-  get templateCompiler() {
-    let compiler = require(resolve.sync(`ember-source/dist/ember-template-compiler`, {
-      basedir: this.root
-    }));
-    return function(moduleName, contents) {
-      let compiled = compiler.precompile(
-        stripBom(contents), {
-          contents,
-          moduleName
-        }
-      );
-      return `export default Ember.HTMLBars.template(${compiled});`;
-    };
   }
 }

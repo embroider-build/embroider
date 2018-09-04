@@ -28,7 +28,6 @@ export default abstract class Package {
 
   @Memoize()
   private findDependencies(): Addon[] {
-    // todo: call a user-provided activeDependencies hook if provided
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.originalPackageJSON[key] || {}));
     return names.map(name => {
       let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.originalRoot }));

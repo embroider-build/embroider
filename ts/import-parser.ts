@@ -135,7 +135,7 @@ export default class ImportParser extends Plugin {
         // argument, so we can just assume this exists
         let argument = node.arguments[0];
         if (argument.type !== 'StringLiteral') {
-          throw new Error('ember-auto-import only supports dynamic import() with a string literal argument.');
+          throw new Error('ember-cli-vanilla only supports dynamic import() with a string literal argument.');
         }
         imports.push({ isDynamic: true, specifier: argument.value, path: relativePath });
       }

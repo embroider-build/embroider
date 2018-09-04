@@ -9,7 +9,6 @@ const Webpack: Packager = class Webpack {
   constructor(
     private pathToVanillaApp: string,
     private outputPath: string,
-    private templateCompiler: (moduleName: string, templateContents: string) => string,
     private consoleWrite: (msg: string) => void
     ) {
   }
@@ -22,10 +21,11 @@ const Webpack: Packager = class Webpack {
       return { name: entrypoint, scripts };
     });
     let externals = packageJSON['ember-addon'].externals;
-    return { entrypoints, externals };
+    let templateCompiler = require(join(this.pathToVanillaApp, packageJSON['ember-addon']['template-compiler']));
+    return { entrypoints, externals, templateCompiler };
   }
 
-  private configureWebpack({ entrypoints, externals }) {
+  private configureWebpack({ entrypoints, externals, templateCompiler }) {
 
     let entry = {};
     entrypoints.forEach(entrypoint => {
@@ -48,7 +48,7 @@ const Webpack: Packager = class Webpack {
             use: [
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
-                options: { templateCompiler: this.templateCompiler }
+                options: { templateCompiler }
               }
             ]
           }
@@ -99,7 +99,7 @@ const Webpack: Packager = class Webpack {
             reject(templateError.error);
           } else {
             this.consoleWrite(stats.toString());
-            reject(new Error('webpack returned errors to ember-auto-import'));
+            reject(new Error('webpack returned errors to ember-webpack'));
           }
           return;
         }

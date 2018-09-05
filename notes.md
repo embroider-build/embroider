@@ -1,8 +1,15 @@
 # Stack
 
-1. template compiler should get built in v2 app, with it's own key in package metadata. That simplifies the handoff between stages (the only ember-specific stuff is in package metadata). It makes my testing easier too (vbuild will work).
-2. need to rewrite template import specifiers so they get the `hbs` extension. We can reliably detect them because no JS equivalent is allowed to exist in today's ember apps (they would collide).
-3. get rid of publicly visible appJSPath on App. Doesn't make sense there as a concept. Instead, make the v1-app rewrite index.html into using a standard script name. It can use options.outputPaths to figure out which script tags its replacing. We're not going to generate a separate vendor.js, splitting is the responsibility of the final packager.
+2. get rid of publicly visible appJSPath on App. Doesn't make sense there as a concept. Instead, make the v1-app rewrite index.html into using a standard script name. It can use options.outputPaths to figure out which script tags its replacing. We're not going to generate a separate vendor.js, splitting is the responsibility of the final packager.
+
+
+# Badly behaved addons
+
+These are addons that can be fixed without even converting them to v2. They just do things that aren't very nice, for which there are better alternatives.
+
+ - ember-cli-deprecation-workflow does `app.import` of a vendor file that actually comes from ember-debug-handlers-polyfill. This is only needed because of a failure to call super in `included`. It breaks out assumption that people should be app.importing from their own vendor tree.
+ - ember-concurrency reexports nonexistent names
+ - ember-composable-helpers reexports nonexistent names
 
 # taking over from EmberApp
 

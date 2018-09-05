@@ -2,8 +2,8 @@ import Plugin from "broccoli-plugin";
 import App from "./app";
 import Package from "./package";
 import Addon from "./addon";
-import { join } from 'path';
-import { emptyDirSync, ensureDirSync, readdirSync, ensureSymlinkSync } from 'fs-extra';
+import { join, dirname, resolve } from 'path';
+import { emptyDirSync, ensureDirSync, readdirSync, ensureSymlinkSync, readdir, readlink, realpath } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import { sync as copyDereference } from "copy-dereference";
 
@@ -47,7 +47,7 @@ export default class Workspace extends Plugin {
     copyInto(srcDir, this.app.root);
   }
 
-  build() {
+  async build() {
     if (this.didBuild) {
       // TODO: we can selectively allow some addons to rebuild, equivalent to
       // the old isDevelopingAddon.
@@ -63,6 +63,9 @@ export default class Workspace extends Plugin {
     });
     this.app.root = this.localPath(this.app.originalRoot);
     this.linkNonCopiedDeps(this.app);
+
+    await this.updatePreexistingResolvableSymlinks();
+
     this.didBuild = true;
   }
 
@@ -71,7 +74,7 @@ export default class Workspace extends Plugin {
   // the point in the filesystem that contains all of them, which could even be
   // "/" (for example, if you npm-linked a dependency that lives in /tmp).
   @Memoize()
-  private get commonSegmentCount() {
+  private get commonSegmentCount(): number {
     return [...this.copiedPackages].reduce((longestPrefix, pkg) => {
       let candidate = pathSegments(pkg.originalRoot);
       let shorter, longer;
@@ -106,6 +109,66 @@ export default class Workspace extends Plugin {
     }
   }
 
+  @Memoize()
+  private get originalRoots() {
+    let originalRoots = new Map();
+    [...this.copiedPackages].forEach(pkg => originalRoots.set(pkg.originalRoot, pkg));
+    return originalRoots;
+  }
+
+  // hunt for symlinks that may be needed to do node_modules resolution from the
+  // given path, going up a maximum of `depth` levels.
+  private async updatePreexistingResolvableSymlinks() {
+    let candidates = new Set();
+    for (let pkg of [this.app, ...this.copiedPackages]) {
+      let segments = pathSegments(pkg.originalRoot);
+      for (let i = segments.length - 1; i >= this.commonSegmentCount; i--) {
+        if (segments[i-1] !== 'node_modules') {
+          let candidate = '/' + join(...segments.slice(0, i), 'node_modules');
+          if (candidates.has(candidate)) {
+            break;
+          }
+          candidates.add(candidate);
+        }
+      }
+    }
+    await Promise.all([...candidates].map(async path => {
+      let links = await symlinksInDir(path);
+      for (let { source, target } of links) {
+        let realTarget = await realpath(resolve(dirname(source), target));
+        let pkg = this.originalRoots.get(realTarget);
+        if (pkg) {
+          // we found a symlink that points at a package that was copied.
+          // Replicate it in the new structure pointing at the new package.
+          ensureSymlinkSync(pkg.root, this.localPath(source));
+        }
+      }
+    }));
+  }
+}
+
+async function symlinksInDir(path): Promise<{ source: string, target: string }[]> {
+  let names;
+  try {
+    names = await readdir(path);
+  } catch (err) {
+    if (err.code !== 'ENOTDIR' && err.code !== 'ENOENT') {
+      throw err;
+    }
+    return [];
+  }
+  let results = await Promise.all(names.map(async name => {
+    let source = join(path, name);
+    try {
+      let target = await readlink(source);
+      return { source, target };
+    } catch (err) {
+      if (err.code !== 'EINVAL') {
+        throw err;
+      }
+    }
+  }));
+  return results.filter(Boolean) as { source: string, target: string }[];
 }
 
 function findCopiedPackages(app: App): Set<Addon> {

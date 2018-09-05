@@ -4,12 +4,14 @@ import { readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
+import mergeWith from 'lodash/mergeWith';
 
-const Webpack: Packager = class Webpack {
+class Webpack {
   constructor(
     private pathToVanillaApp: string,
     private outputPath: string,
-    private consoleWrite: (msg: string) => void
+    private consoleWrite: (msg: string) => void,
+    private extraConfig: any
     ) {
   }
 
@@ -37,7 +39,7 @@ const Webpack: Packager = class Webpack {
       amdExternals[external] = `require("${externals}")`;
     });
 
-    return {
+    return mergeWith({}, {
       mode: 'development', // todo
       context: this.pathToVanillaApp,
       entry,
@@ -65,7 +67,7 @@ const Webpack: Packager = class Webpack {
         }
       },
       externals: amdExternals
-    };
+    }, this.extraConfig, appendArrays);
   }
 
   private lastConfig;
@@ -110,5 +112,23 @@ const Webpack: Packager = class Webpack {
       });
     });
   }
-};
-export { Webpack };
+}
+
+export function webpack(extraConfig={}) : Packager {
+  let ConfiguredWebpack = class extends Webpack {
+    constructor(
+      pathToVanillaApp: string,
+      outputPath: string,
+      consoleWrite: (msg: string) => void
+    ) {
+      super(pathToVanillaApp, outputPath, consoleWrite, extraConfig);
+    }
+  };
+  return ConfiguredWebpack;
+}
+
+function appendArrays(objValue, srcValue) {
+  if (Array.isArray(objValue)) {
+    return objValue.concat(srcValue);
+  }
+}

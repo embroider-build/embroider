@@ -114,7 +114,7 @@ class Webpack {
   }
 }
 
-export function webpack(extraConfig={}) : Packager {
+module.exports = function webpack(extraConfig={}) : Packager {
   let ConfiguredWebpack = class extends Webpack {
     constructor(
       pathToVanillaApp: string,
@@ -125,7 +125,7 @@ export function webpack(extraConfig={}) : Packager {
     }
   };
   return ConfiguredWebpack;
-}
+};
 
 function appendArrays(objValue, srcValue) {
   if (Array.isArray(objValue)) {

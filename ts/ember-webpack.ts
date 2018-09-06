@@ -107,7 +107,7 @@ class Webpack {
           }
           return;
         }
-        if (stats.hasWarnings() || process.env.AUTO_IMPORT_VERBOSE) {
+        if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
           this.consoleWrite(stats.toString());
         }
         resolve(stats.toJson());

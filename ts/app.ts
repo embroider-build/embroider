@@ -9,7 +9,7 @@ import Workspace from './workspace';
 import WorkspaceUpdater from './workspace-updater';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { mkdtempSync } from 'fs';
+import { mkdtempSync, realpathSync } from 'fs';
 import { Packager } from './packager';
 import PackagerRunner from './packager-runner';
 import { V1AddonConstructor } from './v1-addon';
@@ -45,7 +45,7 @@ export default class App extends Package {
     this.packageCache = new PackageCache(v1Cache);
 
     if (options && options.workspaceDir) {
-      this.workspaceDir = options.workspaceDir;
+      this.workspaceDir = realpathSync(options.workspaceDir);
     } else {
       this.workspaceDir = mkdtempSync(join(tmpdir(), 'ember-cli-vanilla-'));
     }

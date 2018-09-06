@@ -13,6 +13,7 @@ import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
+import NormalizeScriptTags from './normalize-script-tags';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -109,11 +110,12 @@ export default class V1App implements V1Package {
       isModuleUnification: this.isModuleUnification
     });
 
-    return new (this.configReplace)(index, this.configTree, {
+    let html = new (this.configReplace)(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
       files: [indexFilePath],
       patterns,
     });
+    return new NormalizeScriptTags(html, this.name, this.app.options.outputPaths);
   }
 
   private transpile(tree) {
@@ -139,10 +141,6 @@ export default class V1App implements V1Package {
     return new Funnel(this.app.trees.app, {
       exclude: ['styles/**'],
     });
-  }
-
-  get appJSPath(): string {
-    return this.app.options.outputPaths.app.js;
   }
 
   // this takes the app JS trees from all active addons, since we can't really

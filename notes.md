@@ -3,14 +3,6 @@
 2. get rid of publicly visible appJSPath on App. Doesn't make sense there as a concept. Instead, make the v1-app rewrite index.html into using a standard script name. It can use options.outputPaths to figure out which script tags its replacing. We're not going to generate a separate vendor.js, splitting is the responsibility of the final packager.
 
 
-# Badly behaved addons
-
-These are addons that can be fixed without even converting them to v2. They just do things that aren't very nice, for which there are better alternatives.
-
- - ember-cli-deprecation-workflow does `app.import` of a vendor file that actually comes from ember-debug-handlers-polyfill. This is only needed because of a failure to call super in `included`. It breaks out assumption that people should be app.importing from their own vendor tree.
- - ember-concurrency reexports nonexistent names
- - ember-composable-helpers reexports nonexistent names
-
 # taking over from EmberApp
 
 ember-cli eagerly instantiates all addons pretty much whatever you are doing. So even when you have all v2 packages, you're going to be using their v1 shims a lot until we can refactor ember-cli around v2 internally.

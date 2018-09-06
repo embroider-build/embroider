@@ -41,7 +41,11 @@ export default class extends BroccoliPlugin {
     let imports = categorizedImports(this.app.name, this.app.implicitImports);
     eagerModules = eagerModules.concat(imports.app);
 
-    let appJS = join(this.outputPath, this.app.appJSPath);
+    // standard JS file name, not customizable. It's not final anyway (that is
+    // up to the final stage packager). See also normalize-script-tags.ts, which
+    // enforces the same rule in the HTML.
+    let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
+
     ensureDirSync(dirname(appJS));
     writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
 

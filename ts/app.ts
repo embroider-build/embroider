@@ -80,10 +80,6 @@ export default class App extends Package {
     return new PackagerRunner(packagerClass, this);
   }
 
-  get appJSPath() {
-    return this.oldPackage.appJSPath;
-  }
-
   protected dependencyKeys = ['dependencies', 'devDependencies'];
 
   get dependedUponBy() {

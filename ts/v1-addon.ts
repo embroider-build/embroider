@@ -31,7 +31,7 @@ const stockTreeNames = Object.freeze([
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(private addonInstance, public parent: V1Package) {
+  constructor(protected addonInstance, public parent: V1Package) {
   }
 
   get name() {

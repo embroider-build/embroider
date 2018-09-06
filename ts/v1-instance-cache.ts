@@ -5,7 +5,7 @@
 import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import V1Package from './v1-package';
-import EmberDataCompat from './compat-adapters/ember-data';
+import { pathExistsSync } from 'fs-extra';
 
 export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
@@ -23,8 +23,6 @@ export default class V1InstanceCache {
 
     this.app = new V1App(oldApp);
 
-    this.registerCompatAdapter('ember-data', EmberDataCompat);
-
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
     oldApp.project.addons.forEach(addon => {
@@ -37,8 +35,21 @@ export default class V1InstanceCache {
     this.compatAdapters.set(packageName, constructor);
   }
 
+  private adapterClass(packageName): V1AddonConstructor {
+    // if the user registered something (including "null", which allows
+    // disabling the built-in adapters), that takes precedence.
+    if (this.compatAdapters.has(packageName)) {
+      return this.compatAdapters.get(packageName) || V1Addon;
+    }
+    let path = `${__dirname}/compat-adapters/${packageName}.js`;
+    if (pathExistsSync(path)) {
+      return require(path).default;
+    }
+    return V1Addon;
+  }
+
   private addAddon(addonInstance, parent: V1Package) {
-    let Klass = this.compatAdapters.get(addonInstance.pkg.name) || V1Addon;
+    let Klass = this.adapterClass(addonInstance.pkg.name);
     let v1Addon = new Klass(addonInstance, parent);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {

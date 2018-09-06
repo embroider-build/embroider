@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { Tree } from 'broccoli-plugin';
-import mergeTrees from 'broccoli-merge-trees';
 import V1InstanceCache from './v1-instance-cache';
 import PackageCache from './package-cache';
 import { todo } from './messages';
@@ -62,8 +61,7 @@ export default class Addon extends Package {
       // filter out node_modules.
       throw new Error(`unimplemented`);
     }
-    let trees = this.oldPackage.v2Trees;
-    return mergeTrees(trees);
+    return this.oldPackage.v2Tree;
   }
 
   protected dependencyKeys = ['dependencies'];

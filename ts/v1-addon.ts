@@ -14,6 +14,7 @@ import quickTemp from 'quick-temp';
 import { updateBabelConfig } from './babel-config';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
+import mergeTrees from 'broccoli-merge-trees';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -97,8 +98,12 @@ export default class V1Addon implements V1Package {
     updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
   }
 
-  get v2Trees() {
+  protected get v2Trees() {
     return this.makeV2Trees().trees;
+  }
+
+  get v2Tree() {
+    return mergeTrees(this.v2Trees);
   }
 
   get packageJSONRewriter() {

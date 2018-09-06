@@ -19,7 +19,9 @@ class Webpack {
     let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'));
     let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
       let document = new JSDOM(readFileSync(join(this.pathToVanillaApp, entrypoint), 'utf8')).window.document;
-      let scripts = [...document.querySelectorAll('script')].filter(s => !s.hasAttribute('async')).map(s => s.src.replace(/^\//, this.pathToVanillaApp + '/'));
+      let scripts = [...document.querySelectorAll('script')].filter(s => {
+        return !s.hasAttribute('async') && !isAbsoluteURL(s.src);
+      }).map(s => s.src.replace(/^\//, this.pathToVanillaApp + '/'));
       return { name: entrypoint, scripts };
     });
     let externals = packageJSON['ember-addon'].externals;
@@ -131,4 +133,8 @@ function appendArrays(objValue, srcValue) {
   if (Array.isArray(objValue)) {
     return objValue.concat(srcValue);
   }
+}
+
+function isAbsoluteURL(url) {
+  return /^(?:[a-z]+:)?\/\//i.test(url);
 }

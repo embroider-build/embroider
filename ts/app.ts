@@ -7,15 +7,48 @@ import PackageCache from './package-cache';
 import { TrackedImport } from './tracked-imports';
 import Workspace from './workspace';
 import WorkspaceUpdater from './workspace-updater';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { mkdtempSync } from 'fs';
+import { Packager } from './packager';
+import PackagerRunner from './packager-runner';
+import { V1AddonConstructor } from './v1-addon';
+
+class Options {
+  legacyAppInstance?: any;
+  workspaceDir?: string;
+  compatAdapters?: Map<string, V1AddonConstructor>;
+  emitNewRoot?: (path: string) => void;
+}
 
 export default class App extends Package {
   private oldPackage: V1App;
   protected packageCache: PackageCache;
+  private workspaceDir: string;
 
-  constructor(public originalRoot: string, v1Cache: V1InstanceCache, private outputDir: string) {
-    super(originalRoot);
+  constructor(public originalRoot: string, options?: Options) {
+    super(originalRoot, options ? options.emitNewRoot: null);
+
+    let v1Cache: V1InstanceCache | undefined;
+    if (options && options.legacyAppInstance) {
+      v1Cache = new V1InstanceCache(options.legacyAppInstance);
+      this.oldPackage = v1Cache.app;
+      if (options.compatAdapters) {
+        for (let [packageName, adapter] of options.compatAdapters) {
+          v1Cache.registerCompatAdapter(packageName, adapter);
+        }
+      }
+    } else {
+      throw new Error("Constructing a vanilla app without a legacyAppInstance is not yet implemented");
+    }
+
     this.packageCache = new PackageCache(v1Cache);
-    this.oldPackage = v1Cache.app;
+
+    if (options && options.workspaceDir) {
+      this.workspaceDir = options.workspaceDir;
+    } else {
+      this.workspaceDir = mkdtempSync(join(tmpdir(), 'ember-cli-vanilla-'));
+    }
   }
 
   get name(): string {
@@ -26,10 +59,11 @@ export default class App extends Package {
     return this.oldPackage.trackedImports;
   }
 
-  // This is the end of the Vanilla build pipeline -- this is the tree that we
-  // can hand off to an arbitrary Javascript packager.
+  // This is the end of the Vanilla build pipeline -- this is the tree you want
+  // to make broccoli build, though the actual output will appear in
+  // `this.outputPath` instead. See workspace.ts for explanation.
   get vanillaTree(): Tree {
-    let workspace = new Workspace(this, this.outputDir);
+    let workspace = new Workspace(this, this.workspaceDir);
 
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.
@@ -40,6 +74,10 @@ export default class App extends Package {
     let entry = new AppEntrypoint(workspace, appJS, this, analyzer);
 
     return new WorkspaceUpdater([appJS, entry], workspace);
+  }
+
+  packageWith(packagerClass: Packager): Tree {
+    return new PackagerRunner(packagerClass, this);
   }
 
   get appJSPath() {

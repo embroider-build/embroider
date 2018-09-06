@@ -8,7 +8,7 @@ import resolve from 'resolve';
 import { readFileSync } from "fs";
 
 export default abstract class Package {
-  constructor(public originalRoot: string) {
+  constructor(public originalRoot: string, private emitNewRoot?: (message: string) => void) {
   }
 
   abstract name: string;
@@ -48,6 +48,9 @@ export default abstract class Package {
       throw new Error(`double set of root in package ${this.name}`);
     }
     this.privRoot = value;
+    if (this.emitNewRoot) {
+      this.emitNewRoot(value);
+    }
   }
 
   @Memoize()

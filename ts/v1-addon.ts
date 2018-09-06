@@ -255,3 +255,7 @@ export default class V1Addon implements V1Package {
     return { trees, importParsers, appJSPath };
   }
 }
+
+export interface V1AddonConstructor {
+  new(addonInstance, parent: V1Package): V1Addon;
+}

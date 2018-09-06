@@ -3,14 +3,16 @@
 // words.
 
 import V1App from './v1-app';
-import V1Addon from './v1-addon';
+import V1Addon, { V1AddonConstructor } from './v1-addon';
 import V1Package from './v1-package';
+import EmberDataCompat from './compat-adapters/ember-data';
 
 export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
   private addons: Map<string, V1Addon[]> = new Map();
+  private compatAdapters: Map<string, V1AddonConstructor> = new Map();
 
   app: V1App;
 
@@ -21,15 +23,23 @@ export default class V1InstanceCache {
 
     this.app = new V1App(oldApp);
 
+    this.registerCompatAdapter('ember-data', EmberDataCompat);
+
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
     oldApp.project.addons.forEach(addon => {
       this.addAddon(addon, this.app);
     });
+
+  }
+
+  registerCompatAdapter(packageName: string, constructor: V1AddonConstructor) {
+    this.compatAdapters.set(packageName, constructor);
   }
 
   private addAddon(addonInstance, parent: V1Package) {
-    let v1Addon = new V1Addon(addonInstance, parent);
+    let Klass = this.compatAdapters.get(addonInstance.pkg.name) || V1Addon;
+    let v1Addon = new Klass(addonInstance, parent);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
       this.addons.set(v1Addon.root, pkgs = []);

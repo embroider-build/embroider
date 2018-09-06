@@ -16,7 +16,6 @@ export default class PackagerRunner extends Plugin {
     return new this.packagerClass(
       this.app.root,
       this.outputPath,
-      this.app.templateCompiler,
       (msg) => console.log(msg)
     );
   }

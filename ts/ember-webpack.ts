@@ -1,17 +1,47 @@
 import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
 import { readFileSync, writeFileSync } from 'fs';
-import { join, basename } from 'path';
+import { join, basename, dirname, relative } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
+import partition from 'lodash/partition';
 
-interface Entrypoint {
-  name: string;
-  scripts: string[];
-  scriptTags: HTMLScriptElement[];
-  dom: any;
-  filename: string;
+class Entrypoint {
+  public dom: any;
+
+  constructor(
+    pathToVanillaApp: string,
+    public filename: string,
+  ){
+    this.dom = new JSDOM(readFileSync(join(pathToVanillaApp, filename), 'utf8'));
+  }
+
+  get name() {
+    return basename(this.filename, '.html');
+  }
+
+  // we deal in synchronous, relative scripts. All others we leave alone.
+  get scriptTags() {
+    let document = this.dom.window.document;
+    return [...document.querySelectorAll('script')].filter(s => {
+      return !s.hasAttribute('async') && !isAbsoluteURL(s.src);
+    });
+  }
+
+  // makes relative to entrypoint
+  private relative(p) {
+    return './' + relative(dirname(this.filename), p);
+  }
+
+  get modules() {
+    let [modules, scripts] = partition(this.scriptTags, tag => tag.type === 'module');
+    // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
+    // be evaluated in script context, as opposed to module context.
+    return scripts.map(script => `script-loader!${this.relative(script.src)}`).concat(
+      modules.map(m => this.relative(m.src))
+    );
+  }
 }
 
 interface AppInfo {
@@ -32,19 +62,7 @@ class Webpack {
   private examineApp(): AppInfo {
     let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'));
     let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
-      let dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, entrypoint), 'utf8'));
-      let document = dom.window.document;
-      let scriptTags = [...document.querySelectorAll('script')].filter(s => {
-        return !s.hasAttribute('async') && !isAbsoluteURL(s.src);
-      });
-      let scripts = scriptTags.map(s => s.src.replace(/^\//, this.pathToVanillaApp + '/'));
-      return {
-        name: basename(entrypoint, '.html'),
-        scripts,
-        scriptTags,
-        dom,
-        filename: entrypoint
-      };
+      return new Entrypoint(this.pathToVanillaApp, entrypoint);
     });
     let externals = packageJSON['ember-addon'].externals;
     let templateCompiler = require(join(this.pathToVanillaApp, packageJSON['ember-addon']['template-compiler']));
@@ -52,10 +70,9 @@ class Webpack {
   }
 
   private configureWebpack({ entrypoints, externals, templateCompiler }: AppInfo) {
-
     let entry = {};
     entrypoints.forEach(entrypoint => {
-      entry[entrypoint.name] = entrypoint.scripts.slice();
+      entry[entrypoint.name] = entrypoint.modules;
     });
 
     let amdExternals = {};
@@ -90,7 +107,13 @@ class Webpack {
           chunks: 'all'
         }
       },
-      externals: amdExternals
+      externals: amdExternals,
+      resolveLoader: {
+        alias: {
+          // script-loader is our dependency, not the app's dependency.
+          'script-loader': require.resolve('script-loader')
+        }
+      }
     }, this.extraConfig, appendArrays);
   }
 
@@ -118,13 +141,14 @@ class Webpack {
     // that handles multiple entrypoints correctly.
     for (let entrypoint of entrypoints) {
       let assets = stats.entrypoints.get(entrypoint.name);
-      let firstTag = entrypoint.scriptTags[0];
+      let scriptTags = entrypoint.scriptTags;
+      let firstTag = scriptTags[0];
       for (let asset of assets) {
         let newScript = entrypoint.dom.window.document.createElement('script');
         newScript.src = `/assets/${asset}`; // todo adjust for rootURL
         firstTag.parentElement.insertBefore(newScript, firstTag);
       }
-      entrypoint.scriptTags.forEach(tag => tag.remove());
+      scriptTags.forEach(tag => tag.remove());
       writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
     }
   }

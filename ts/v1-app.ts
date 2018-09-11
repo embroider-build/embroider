@@ -13,7 +13,6 @@ import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
-import NormalizeScriptTags from './normalize-script-tags';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -77,7 +76,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  private get htmlTree() {
+  get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index = new Funnel(this.rootTree, {
@@ -110,12 +109,11 @@ export default class V1App implements V1Package {
       isModuleUnification: this.isModuleUnification
     });
 
-    let html = new (this.configReplace)(index, this.configTree, {
+    return new (this.configReplace)(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
       files: [indexFilePath],
       patterns,
     });
-    return new NormalizeScriptTags(html, this.name, this.app.options.outputPaths);
   }
 
   private transpile(tree) {
@@ -139,7 +137,7 @@ export default class V1App implements V1Package {
   private get appTree() : Tree {
     todo('more trees: src, tests, styles, templates, bower, vendor, public');
     return new Funnel(this.app.trees.app, {
-      exclude: ['styles/**'],
+      exclude: ['styles/**', "*.html"],
     });
   }
 
@@ -150,10 +148,18 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let analyzer = new DependencyAnalyzer([new ImportParser(appTree)], packageJSON, true);
 
-    let trees = [...fromAddons, appTree, this.htmlTree];
+    let trees = [...fromAddons, appTree];
     return {
       appJS: this.transpile(mergeTrees(trees, { overwrite: true })),
       analyzer
     };
+  }
+
+  findAppScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+    return scripts.find(script => script.src === this.app.options.outputPaths.app.js);
+  }
+
+  findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+    return scripts.find(script => script.src === this.app.options.outputPaths.vendor.js);
   }
 }

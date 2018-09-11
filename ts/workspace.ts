@@ -3,7 +3,7 @@ import App from "./app";
 import Package from "./package";
 import Addon from "./addon";
 import { join, dirname, resolve } from 'path';
-import { emptyDirSync, ensureDirSync, readdirSync, ensureSymlinkSync, readdir, readlink, realpath } from 'fs-extra';
+import { emptyDirSync, ensureDirSync, readdirSync, ensureSymlinkSync, readdir, readlink, realpath, removeSync } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import { sync as copyDereference } from "copy-dereference";
 
@@ -41,6 +41,14 @@ export default class Workspace extends Plugin {
     this.didBuild = false;
     this.copiedPackages = copiedPackages;
     this.linkedPackages = new Set();
+  }
+
+  clearApp() {
+    for (let name of readdirSync(this.app.root)) {
+      if (name !== 'node_modules') {
+        removeSync(join(this.app.root, name));
+      }
+    }
   }
 
   copyIntoApp(srcDir) {

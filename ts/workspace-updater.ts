@@ -9,6 +9,7 @@ export default class WorkspaceUpdater extends Plugin {
   }
 
   build() {
+    this.workspace.clearApp();
     for (let srcPath of this.inputPaths) {
       this.workspace.copyIntoApp(srcPath);
     }

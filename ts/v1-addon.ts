@@ -10,7 +10,6 @@ import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
 import { TrackedImports } from './tracked-imports';
-import quickTemp from 'quick-temp';
 import { updateBabelConfig } from './babel-config';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
@@ -125,13 +124,8 @@ export default class V1Addon implements V1Package {
     let meta = {};
 
     {
-      quickTemp.makeOrRemake(this, 'trackedImportDir');
       let tracked = new TrackedImports(this.name, this.addonInstance._trackedImports);
-      let tree = tracked.makeTree((this as any).trackedImportDir);
-      if (tree) {
-        trees.push(tree);
-        Object.assign(meta, tracked.meta);
-      }
+      Object.assign(meta, tracked.meta);
     }
 
     if (this.customizes('treeFor')) {

@@ -1,14 +1,5 @@
 import { todo } from './messages';
-import { UnwatchedDir } from 'broccoli-source';
-import { writeFileSync } from 'fs-extra';
-import { join } from 'path';
-import { compile } from './js-handlebars';
 import { Memoize } from 'typescript-memoize';
-import { Tree } from 'broccoli-plugin';
-
-const appImportsTemplate = compile(`{{#each imports as |import|}}
-import '{{js-string-escape import}}';
-{{/each}}`);
 
 export interface TrackedImport {
   assetPath: string;
@@ -45,26 +36,13 @@ export class TrackedImports {
     return { app, test };
   }
 
-  makeTree(outDir): Tree {
-    if (this.categorized.app.length === 0 && this.categorized.test.length === 0) {
-      return;
-    }
-    if (this.categorized.app.length > 0) {
-      writeFileSync(join(outDir, `_implicit_imports_.js`), appImportsTemplate({ imports: this.categorized.app }), 'utf8');
-    }
-    if (this.categorized.test.length > 0) {
-      writeFileSync(join(outDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: this.categorized.test }), 'utf8');
-    }
-    return new UnwatchedDir(outDir);
-  }
-
   get meta() {
     let result = {};
     if (this.categorized.app.length > 0) {
-      result['implicit-imports'] = ['_implicit_imports_'];
+      result['implicit-scripts'] = this.categorized.app.slice();
     }
     if (this.categorized.test.length > 0) {
-      result['implicit-test-imports'] = ['_implicit_test_imports_'];
+      result['implicit-test-scripts4'] = this.categorized.test.slice();
     }
     return result;
   }

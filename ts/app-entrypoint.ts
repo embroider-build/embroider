@@ -1,29 +1,33 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
 import App from './app';
-import { TrackedImports } from './tracked-imports';
 import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
 import Workspace from './workspace';
+import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
-{{#each eagerModules as |specifier| ~}}
-  import '{{js-string-escape specifier}}';
-{{/each}}
 {{#each lazyModules as |specifier| ~}}
   {{{may-import-sync specifier}}}
 {{/each}}
 `);
 
 export default class extends BroccoliPlugin {
-  constructor(workspace: Workspace, classicAppTree: Tree, private app: App, private analyzer: DependencyAnalyzer){
-    super([workspace, classicAppTree, analyzer], {});
+  constructor(
+    workspace: Workspace,
+    classicAppTree: Tree,
+    htmlTree: Tree,
+    private app: App,
+    private analyzer: DependencyAnalyzer,
+    private updateHTML: (entrypoint: string, dom) => void
+  ){
+    super([workspace, classicAppTree, analyzer, htmlTree], {});
   }
 
   async build() {
@@ -37,17 +41,13 @@ export default class extends BroccoliPlugin {
     // collections
     todo("app src tree");
 
-    let eagerModules = this.gatherImplicitImports();
-    let imports = new TrackedImports(this.app.name, this.app.implicitImports);
-    eagerModules = eagerModules.concat(imports.categorized.app);
-
     // standard JS file name, not customizable. It's not final anyway (that is
-    // up to the final stage packager). See also normalize-script-tags.ts, which
-    // enforces the same rule in the HTML.
+    // up to the final stage packager). See also updateHTML in app.ts for where
+    // we're enforcing this in the HTML.
     let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
 
     ensureDirSync(dirname(appJS));
-    writeFileSync(appJS, entryTemplate({ lazyModules, eagerModules }), 'utf8');
+    writeFileSync(appJS, entryTemplate({ lazyModules }), 'utf8');
 
     this.addConfigModule();
     this.addTemplateCompiler();
@@ -81,19 +81,8 @@ export default class extends BroccoliPlugin {
     pkg['ember-addon'].entrypoints = ['index.html'];
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
-  }
 
-  private gatherImplicitImports() {
-    let result = [];
-    for (let addon of this.app.activeDescendants) {
-      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-imports');
-      if (implicitModules) {
-        for (let mod of implicitModules) {
-          result.push(`${addon.root}/${mod}`);
-        }
-      }
-    }
-    return result;
+    this.rewriteHTML();
   }
 
   private addConfigModule() {
@@ -121,5 +110,14 @@ export default class extends BroccoliPlugin {
     var setupCompiler = require('ember-cli-vanilla/js/template-compiler').default;
     module.exports = setupCompiler(compiler);
     `, 'utf8');
+  }
+
+  private rewriteHTML() {
+    let entrypoint = 'index.html';
+
+    // inputsPaths[3] is the htmlTree we were given.
+    let dom = new JSDOM(readFileSync(join(this.inputPaths[3], entrypoint), 'utf8'));
+    this.updateHTML(entrypoint, dom);
+    writeFileSync(join(this.outputPath, entrypoint), dom.serialize(), 'utf8');
   }
 }

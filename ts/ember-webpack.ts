@@ -77,7 +77,7 @@ class Webpack {
 
     let amdExternals = {};
     externals.forEach(external => {
-      amdExternals[external] = `require("${externals}")`;
+      amdExternals[external] = `require("${external}")`;
     });
 
     return mergeWith({}, {

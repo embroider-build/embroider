@@ -89,7 +89,7 @@ export default class extends BroccoliPlugin {
       let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-imports');
       if (implicitModules) {
         for (let mod of implicitModules) {
-          result.push(`${addon.name}/${mod}`);
+          result.push(`${addon.root}/${mod}`);
         }
       }
     }

@@ -4,7 +4,7 @@ import { join } from 'path';
 import DependencyAnalyzer from './dependency-analyzer';
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree, private analyzer: DependencyAnalyzer, private appJSPath) {
+  constructor(inputTree, private analyzer: DependencyAnalyzer, private meta) {
     super([inputTree, analyzer], {
       annotation: 'ember-cli-vanilla-rewrite-package-json'
     });
@@ -26,9 +26,7 @@ export default class RewritePackageJSON extends Plugin {
     }
     pkg['ember-addon']['version'] = 2;
     pkg['ember-addon']['externals'] = this.analyzer.externals;
-    if (this.appJSPath) {
-      pkg['ember-addon']['app-js'] = this.appJSPath;
-    }
+    Object.assign(pkg['ember-addon'], this.meta);
     this.cachedLast = pkg;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }

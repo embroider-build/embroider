@@ -9,7 +9,7 @@ import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
-import { trackedImportTree } from './tracked-imports';
+import { TrackedImports } from './tracked-imports';
 import quickTemp from 'quick-temp';
 import { updateBabelConfig } from './babel-config';
 import ImportParser from './import-parser';
@@ -112,23 +112,25 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private makeV2Trees() {
-    let { trees, importParsers, appJSPath } = this.legacyTrees();
+    let { trees, importParsers, meta } = this.legacyTrees();
     let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
-    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, appJSPath);
+    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, meta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };
   }
 
-  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], appJSPath: string|undefined } {
+  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
     let trees = [];
     let importParsers = [];
-    let appJSPath;
+    let meta = {};
 
     {
       quickTemp.makeOrRemake(this, 'trackedImportDir');
-      let tree = trackedImportTree(this.name, this.addonInstance._trackedImports, (this as any).trackedImportDir);
+      let tracked = new TrackedImports(this.name, this.addonInstance._trackedImports);
+      let tree = tracked.makeTree((this as any).trackedImportDir);
       if (tree) {
         trees.push(tree);
+        Object.assign(meta, tracked.meta);
       }
     }
 
@@ -207,10 +209,10 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      appJSPath = '_app_';
+      meta['app-js'] = '_app_';
       let tree = this.stockTree('app', {
         exclude: ['styles/**'],
-        destDir: appJSPath
+        destDir: meta['app-js']
       });
       importParsers.push(this.parseImports(tree));
       trees.push(tree);
@@ -257,7 +259,7 @@ export default class V1Addon implements V1Package {
       );
     }
 
-    return { trees, importParsers, appJSPath };
+    return { trees, importParsers, meta };
   }
 }
 

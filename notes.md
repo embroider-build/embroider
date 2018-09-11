@@ -14,6 +14,11 @@ Defer working on this until we have proved out the compatibility and have workin
 travis-web
 ember observer
 ghost?
+ember-cli-eyeglass dummy app has engines: https://github.com/sass-eyeglass/ember-cli-eyeglass/tree/master/tests/dummy/lib
+
+more demo apps that do engine-related stuff:
+https://github.com/CodeOfficer/app-engine-addon-theme-demo
+https://github.com/CodeOfficer/demo-engine-addon-dependency-conflicts
 
 # more node_modules linking strategy
 

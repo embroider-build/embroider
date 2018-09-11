@@ -1,11 +1,11 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync, pathExistsSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
 import App from './app';
-import { categorizedImports } from './tracked-imports';
+import { TrackedImports } from './tracked-imports';
 import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -37,9 +37,9 @@ export default class extends BroccoliPlugin {
     // collections
     todo("app src tree");
 
-    let eagerModules = await this.gatherImplicitImports();
-    let imports = categorizedImports(this.app.name, this.app.implicitImports);
-    eagerModules = eagerModules.concat(imports.app);
+    let eagerModules = this.gatherImplicitImports();
+    let imports = new TrackedImports(this.app.name, this.app.implicitImports);
+    eagerModules = eagerModules.concat(imports.categorized.app);
 
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also normalize-script-tags.ts, which
@@ -83,12 +83,14 @@ export default class extends BroccoliPlugin {
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 
-  private async gatherImplicitImports() {
+  private gatherImplicitImports() {
     let result = [];
     for (let addon of this.app.activeDescendants) {
-      let implicitPath = join(addon.root, '_implicit_imports_.js');
-      if (pathExistsSync(implicitPath)) {
-        result.push(`${addon.name}/_implicit_imports_`);
+      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-imports');
+      if (implicitModules) {
+        for (let mod of implicitModules) {
+          result.push(`${addon.name}/${mod}`);
+        }
       }
     }
     return result;

@@ -3,6 +3,8 @@ import { UnwatchedDir } from 'broccoli-source';
 import { writeFileSync } from 'fs-extra';
 import { join } from 'path';
 import { compile } from './js-handlebars';
+import { Memoize } from 'typescript-memoize';
+import { Tree } from 'broccoli-plugin';
 
 const appImportsTemplate = compile(`{{#each imports as |import|}}
 import '{{js-string-escape import}}';
@@ -13,47 +15,59 @@ export interface TrackedImport {
   options: { type: string, outputFile: string | undefined };
 }
 
-export function categorizedImports(packageName: string, trackedImports: TrackedImport[]) : { app: string[], test: string[] } {
-  let app = [];
-  let test = [];
+export class TrackedImports {
+  constructor(private packageName: string, private trackedImports: TrackedImport[]) {
+  }
 
-  trackedImports.forEach(({ assetPath, options }) => {
-    let standardAssetPath = standardizeAssetPath(packageName, assetPath);
-    if (!standardAssetPath) {
+  @Memoize()
+  get categorized(): { app: string[], test: string[] } {
+    let app = [];
+    let test = [];
+
+    if (this.trackedImports) {
+      this.trackedImports.forEach(({ assetPath, options }) => {
+        let standardAssetPath = standardizeAssetPath(this.packageName, assetPath);
+        if (!standardAssetPath) {
+          return;
+        }
+        if (options.type === 'vendor') {
+          if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
+            todo(`${this.packageName} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
+          }
+          app.push(standardAssetPath);
+        } else if (options.type === 'test') {
+          test.push(standardAssetPath);
+        } else {
+          todo(`${this.packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+        }
+      });
+    }
+    return { app, test };
+  }
+
+  makeTree(outDir): Tree {
+    if (this.categorized.app.length === 0 && this.categorized.test.length === 0) {
       return;
     }
-    if (options.type === 'vendor') {
-      if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
-        todo(`${packageName} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
-      }
-      app.push(standardAssetPath);
-    } else if (options.type === 'test') {
-      test.push(standardAssetPath);
-    } else {
-      todo(`${packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+    if (this.categorized.app.length > 0) {
+      writeFileSync(join(outDir, `_implicit_imports_.js`), appImportsTemplate({ imports: this.categorized.app }), 'utf8');
     }
-  });
-
-  return { app, test };
-}
-
-export function trackedImportTree(packageName: string, trackedImports: TrackedImport[], outDir: string) {
-  if (!trackedImports) {
-    return;
+    if (this.categorized.test.length > 0) {
+      writeFileSync(join(outDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: this.categorized.test }), 'utf8');
+    }
+    return new UnwatchedDir(outDir);
   }
 
-  let { app, test } = categorizedImports(packageName, trackedImports);
-
-  if (app.length === 0 && test.length === 0) {
-    return;
+  get meta() {
+    let result = {};
+    if (this.categorized.app.length > 0) {
+      result['implicit-imports'] = ['_implicit_imports_'];
+    }
+    if (this.categorized.test.length > 0) {
+      result['implicit-test-imports'] = ['_implicit_test_imports_'];
+    }
+    return result;
   }
-  if (app.length > 0) {
-    writeFileSync(join(outDir, `_implicit_imports_.js`), appImportsTemplate({ imports: app }), 'utf8');
-  }
-  if (test.length > 0) {
-    writeFileSync(join(outDir, `_implicit_test_imports_.js`), appImportsTemplate({ imports: test }), 'utf8');
-  }
-  return new UnwatchedDir(outDir);
 }
 
 function standardizeAssetPath(packageName, assetPath) {

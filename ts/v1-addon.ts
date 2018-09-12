@@ -35,7 +35,11 @@ export default class V1Addon implements V1Package {
   }
 
   get name() {
-    return this.addonInstance.pkg.name;
+    return this.packageJSON.name;
+  }
+
+  protected get packageJSON() {
+    return this.addonInstance.pkg;
   }
 
   @Memoize()
@@ -112,7 +116,7 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private makeV2Trees() {
     let { trees, importParsers, meta } = this.legacyTrees();
-    let analyzer = new DependencyAnalyzer(importParsers, this.addonInstance.pkg, false );
+    let analyzer = new DependencyAnalyzer(importParsers, this.packageJSON, false );
     let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, meta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };

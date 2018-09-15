@@ -147,7 +147,6 @@ export default class V1App implements V1Package {
       let blacklist = babelInstance._getEmberModulesAPIBlacklist();
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
-    plugins.push(this.modulesTransformPlugin());
 
     return {
       moduleIds: true,
@@ -178,11 +177,6 @@ export default class V1App implements V1Package {
       }
     };
     return [DebugMacros, options];
-  }
-
-  private modulesTransformPlugin() {
-    let ModulesTransform = require.resolve('babel-plugin-transform-es2015-modules-amd');
-    return [ModulesTransform, { noInterop: true }];
   }
 
   get trackedImports(): TrackedImport[] {

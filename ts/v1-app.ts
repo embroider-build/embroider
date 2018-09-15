@@ -141,13 +141,13 @@ export default class V1App implements V1Package {
     // In its case, it's mostly doing it to set basedir so that broccoli caching
     // will be happy, but that's irrelevant to us here.
     plugins.push(this.debugMacrosPlugin());
-    plugins.push(this.modulesTransformPlugin());
     let babelInstance = this.app.project.addons.find(a => a.name === 'ember-cli-babel');
     if (babelInstance._emberVersionRequiresModulesAPIPolyfill()) {
       let ModulesAPIPolyfill = require.resolve('babel-plugin-ember-modules-api-polyfill');
       let blacklist = babelInstance._getEmberModulesAPIBlacklist();
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
+    plugins.push(this.modulesTransformPlugin());
 
     return {
       moduleIds: true,

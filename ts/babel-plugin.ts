@@ -1,21 +1,15 @@
 import packageName from './package-name';
-import { join } from 'path';
+import { join, relative, dirname } from 'path';
 
 function maybeRelativize(specifier, sourceFileName, opts) {
   let name = packageName(specifier);
   if (name && name === opts.ownName) {
-    let depth = sourceFileName.split('/').length;
-    let relative;
-    if (depth === 1) {
-      relative = ['.'];
-    } else {
-      relative = [];
-      while (depth > 1) {
-        relative.push('..');
-        depth -= 1;
-      }
+    let fullPath = specifier.replace(name, opts.basedir);
+    let relativePath = relative(dirname(sourceFileName), fullPath);
+    if (relativePath[0] !== '.') {
+      relativePath = `./${relativePath}`;
     }
-    return specifier.replace(name, relative.join('/'));
+    return relativePath;
   } else {
     return specifier;
   }

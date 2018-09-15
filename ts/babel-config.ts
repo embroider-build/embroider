@@ -1,7 +1,6 @@
 import { todo } from './messages';
 import semver from 'semver';
 import { join } from 'path';
-import babelPlugin from './babel-plugin';
 
 export function updateBabelConfig(packageName, packageOptions, emberCLIBabelInstance) {
   let version;
@@ -23,5 +22,5 @@ export function updateBabelConfig(packageName, packageOptions, emberCLIBabelInst
   if (!packageOptions.babel.plugins) {
     packageOptions.babel.plugins = [];
   }
-  packageOptions.babel.plugins.push([babelPlugin, { ownName: packageName } ]);
+  packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), { ownName: packageName } ]);
 }

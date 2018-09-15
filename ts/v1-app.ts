@@ -6,13 +6,13 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
-import { updateBabelConfig } from './babel-config';
 import { todo } from './messages';
 import { TrackedImport } from './tracked-imports';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
+import get from 'lodash/get';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -63,11 +63,6 @@ export default class V1App implements V1Package {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
   }
 
-  @Memoize()
-  private get preprocessors() {
-    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
-  }
-
   private get configTree() {
     return new (this.configLoader)(dirname(this.app.project.configPath()), {
       env: this.app.env,
@@ -116,16 +111,78 @@ export default class V1App implements V1Package {
     });
   }
 
-  private transpile(tree) {
-    this.updateBabelConfig();
-    return this.preprocessors.preprocessJs(tree, '/', '/', { registry: this.app.registry });
+  babelConfig(finalRoot) {
+    let plugins = get(this.app.options, 'babel.plugins');
+    if (plugins) {
+      plugins = plugins.filter(
+        // we want to generate a babel config that can be serialized. So
+        // already-required functions aren't supported.
+        // todo: should we emit a warning?
+        p => p && (typeof p === 'string' || typeof p[0] === 'string')
+      ).map(p => {
+        // resolve (not require) the app's configured plugins relative to the
+        // app
+        if (typeof p === 'string') {
+          return resolve.sync(`babel-plugin-${p}`, { basedir: finalRoot });
+        } else {
+          return [resolve.sync(`babel-plugin-${p[0]}`, { basedir: finalRoot }), p[1]];
+        }
+      });
+    } else {
+      plugins = [];
+    }
+
+    // this is our own plugin that patches up issues like non-explicit hbs
+    // extensions and packages importing their own names.
+    plugins.push([require.resolve('./babel-plugin'), { ownName: this.name, basedir: finalRoot } ]);
+
+    // this is reproducing what ember-cli-babel does. It would be nicer to just
+    // call it, but it require()s all the plugins up front, so not serializable.
+    // In its case, it's mostly doing it to set basedir so that broccoli caching
+    // will be happy, but that's irrelevant to us here.
+    plugins.push(this.debugMacrosPlugin());
+    plugins.push(this.modulesTransformPlugin());
+    let babelInstance = this.app.project.addons.find(a => a.name === 'ember-cli-babel');
+    if (babelInstance._emberVersionRequiresModulesAPIPolyfill()) {
+      let ModulesAPIPolyfill = require.resolve('babel-plugin-ember-modules-api-polyfill');
+      let blacklist = babelInstance._getEmberModulesAPIBlacklist();
+      plugins.push([ModulesAPIPolyfill, { blacklist }]);
+    }
+
+    return {
+      moduleIds: true,
+      babelrc: false,
+      plugins,
+      presets: [
+        ["env", { targets: babelInstance._getTargets() }]
+      ]
+    };
   }
 
-  @Memoize()
-  private updateBabelConfig() {
-    // auto-import gets disabled because we support it natively
-    this.app.registry.remove('js', 'ember-auto-import-analyzer');
-    updateBabelConfig(this.name, this.app.options, this.app.project.addons.find(a => a.name === 'ember-cli-babel'));
+  private debugMacrosPlugin() {
+    let DebugMacros = require.resolve('babel-plugin-debug-macros');
+    let isProduction = process.env.EMBER_ENV === 'production';
+    let options = {
+      envFlags: {
+        source: '@glimmer/env',
+        flags: { DEBUG: !isProduction, CI: !!process.env.CI }
+      },
+
+      externalizeHelpers: {
+        global: 'Ember'
+      },
+
+      debugTools: {
+        source: '@ember/debug',
+        assertPredicateIndex: 1
+      }
+    };
+    return [DebugMacros, options];
+  }
+
+  private modulesTransformPlugin() {
+    let ModulesTransform = require.resolve('babel-plugin-transform-es2015-modules-amd');
+    return [ModulesTransform, { noInterop: true }];
   }
 
   get trackedImports(): TrackedImport[] {
@@ -150,7 +207,7 @@ export default class V1App implements V1Package {
 
     let trees = [...fromAddons, appTree];
     return {
-      appJS: this.transpile(mergeTrees(trees, { overwrite: true })),
+      appJS: mergeTrees(trees, { overwrite: true }),
       analyzer
     };
   }

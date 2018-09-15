@@ -1,7 +1,11 @@
 # Stack
 
-2. get rid of publicly visible appJSPath on App. Doesn't make sense there as a concept. Instead, make the v1-app rewrite index.html into using a standard script name. It can use options.outputPaths to figure out which script tags its replacing. We're not going to generate a separate vendor.js, splitting is the responsibility of the final packager.
+ - re-introduce babel loader in ember-webpack. We need the ember modules polyfill to even get things running.
 
+ - require.include doesn't really do what we want. May need to go with the AMD-wrapping pattern used by ember-auto-import. Temporarily switched from require.include to require to get over this.
+
+ - need: vendor/ember-cli/app-{prefix,suffix,config,boot}.js
+   their contents comes from ember-app-utils.js
 
 # taking over from EmberApp
 

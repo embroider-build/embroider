@@ -20,6 +20,9 @@
   },
   "dependencies": {
     "babel-core": "^6.26.3",
+    "babel-plugin-debug-macros": "^0.1.11",
+    "babel-plugin-ember-modules-api-polyfill": "^2.4.0",
+    "babel-plugin-transform-es2015-modules-amd": "^6.24.1",
     "babylon": "^6.18.0",
     "broccoli-funnel": "^2.0.1",
     "broccoli-merge-trees": "^3.0.0",

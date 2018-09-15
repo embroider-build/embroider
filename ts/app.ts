@@ -17,6 +17,7 @@ import { TrackedImports } from './tracked-imports';
 import resolve from 'resolve';
 import Addon from './addon';
 import sortBy from 'lodash/sortBy';
+import { Memoize } from 'typescript-memoize';
 
 class Options {
   legacyAppInstance?: any;
@@ -129,6 +130,11 @@ export default class App extends Package {
 
   get dependedUponBy() {
     return new Set();
+  }
+
+  @Memoize()
+  get babelConfig() {
+    return this.oldPackage.babelConfig(this.root);
   }
 
   // this encapsulates API that the AppEntrypoint needs from App that we don't

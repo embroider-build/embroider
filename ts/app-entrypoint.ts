@@ -51,6 +51,7 @@ export default class extends BroccoliPlugin {
 
     this.addConfigModule();
     this.addTemplateCompiler();
+    this.addBabelConfig();
 
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
@@ -80,6 +81,7 @@ export default class extends BroccoliPlugin {
     pkg['ember-addon'].externals = [...externals.values()];
     pkg['ember-addon'].entrypoints = ['index.html'];
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
+    pkg['ember-addon']['babel-config'] = '_babel_config_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
     this.rewriteHTML();
@@ -103,12 +105,18 @@ export default class extends BroccoliPlugin {
 
   // we could just use ember-source/dist/ember-template-compiler directly, but
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
-  // we follow allow and do those too.
+  // we follow along and do those too.
   private addTemplateCompiler() {
     writeFileSync(join(this.outputPath, '_template_compiler_.js'), `
     var compiler = require('ember-source/dist/ember-template-compiler');
     var setupCompiler = require('ember-cli-vanilla/js/template-compiler').default;
     module.exports = setupCompiler(compiler);
+    `, 'utf8');
+  }
+
+  private addBabelConfig() {
+    writeFileSync(join(this.outputPath, '_babel_config_.js'), `
+    module.exports = ${JSON.stringify(this.app.babelConfig, null, 2)};
     `, 'utf8');
   }
 

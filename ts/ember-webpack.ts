@@ -1,17 +1,19 @@
 import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
 import { readFileSync, writeFileSync } from 'fs';
-import { join, basename, dirname, relative } from 'path';
+import { join, basename, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
+import { Memoize } from 'typescript-memoize';
+import PackageOwners from "./package-owners";
 
 class Entrypoint {
   public dom: any;
 
   constructor(
-    pathToVanillaApp: string,
+    private pathToVanillaApp: string,
     public filename: string,
   ){
     this.dom = new JSDOM(readFileSync(join(pathToVanillaApp, filename), 'utf8'));
@@ -29,17 +31,34 @@ class Entrypoint {
     });
   }
 
-  // makes relative to entrypoint
-  private relative(p) {
-    return './' + relative(dirname(this.filename), p);
+  @Memoize()
+  private partitionedSources() {
+    let [modules, scripts] = partition(this.scriptTags, tag => tag.type === 'module');
+    return {
+      modules: modules.map(t => this.resolvePath(t.src)),
+      scripts: scripts.map(t=> this.resolvePath(t.src))
+    };
   }
 
   get modules() {
-    let [modules, scripts] = partition(this.scriptTags, tag => tag.type === 'module');
+    return this.partitionedSources().modules;
+  }
+
+  get scripts() {
+    return this.partitionedSources().scripts;
+  }
+
+  private resolvePath(p) {
+    // the input is relative to the entrypoint file, which is relative to the
+    // app root. So get it all down to absolute first.
+    return resolve(this.pathToVanillaApp, dirname(this.filename), p);
+  }
+
+  get specifiers() {
     // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
     // be evaluated in script context, as opposed to module context.
-    return scripts.map(script => `script-loader!${this.relative(script.src)}`).concat(
-      modules.map(m => this.relative(m.src))
+    return this.scripts.map(script => `script-loader!${script}`).concat(
+      this.modules
     );
   }
 }
@@ -60,6 +79,8 @@ class Webpack {
     ) {
   }
 
+  private packageOwners: PackageOwners = new PackageOwners();
+
   private examineApp(): AppInfo {
     let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'));
     let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
@@ -76,9 +97,15 @@ class Webpack {
   }
 
   private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
+    // keep track of known scripts (as opposed to modules), as those are
+    // conventionally not transpiled by babel (they are the old `vendor` assets
+    // that were simply concatenated).
+    let scripts = new Set();
+
     let entry = {};
     entrypoints.forEach(entrypoint => {
-      entry[entrypoint.name] = entrypoint.modules;
+      entry[entrypoint.name] = entrypoint.specifiers;
+      entrypoint.scripts.forEach(script => scripts.add(script));
     });
 
     let amdExternals = {};
@@ -102,7 +129,7 @@ class Webpack {
             ]
           },
           {
-            test: /\.js$/,
+            test: this.shouldTranspileFile.bind(this, scripts),
             use: [
               'thread-loader',
               {
@@ -135,6 +162,35 @@ class Webpack {
         }
       }
     }, this.extraConfig, appendArrays);
+  }
+
+  private shouldTranspileFile(scripts, filename) {
+    if (!/\.js$/i.test(filename)) {
+      // quick exit for non JS extensions
+      return false;
+    }
+
+    if (scripts.has(filename)) {
+      // our vendored scripts don't get babel
+      return false;
+    }
+
+    let owner = this.packageOwners.lookup(filename);
+
+    // Not owned by any NPM package? Weird, leave it alone.
+    if (!owner) { return false; }
+
+    // Owned by our app, so use babel
+    if (owner.root === this.pathToVanillaApp) {
+      return true;
+    }
+
+    // Lastly, use babel on ember addons, but not other arbitrary libraries. A
+    // lot of them won't appreciate running through our AMD plugin, for example.
+    // If you want to transpile some of them, you should make a different rule
+    // from your own extension to the webpack config.
+    return owner.packageJSON.keywords &&
+      owner.packageJSON.keywords.includes('ember-addon');
   }
 
   private lastConfig;

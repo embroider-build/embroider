@@ -48,6 +48,7 @@ interface AppInfo {
   entrypoints: Entrypoint[];
   externals: string[];
   templateCompiler: Function;
+  babelConfig: any;
 }
 
 class Webpack {
@@ -66,10 +67,15 @@ class Webpack {
     });
     let externals = packageJSON['ember-addon'].externals;
     let templateCompiler = require(join(this.pathToVanillaApp, packageJSON['ember-addon']['template-compiler']));
-    return { entrypoints, externals, templateCompiler };
+    let babelConfigFile = packageJSON['ember-addon']['babel-config'];
+    let babelConfig;
+    if (babelConfigFile) {
+      babelConfig = require(join(this.pathToVanillaApp, babelConfigFile));
+    }
+    return { entrypoints, externals, templateCompiler, babelConfig };
   }
 
-  private configureWebpack({ entrypoints, externals, templateCompiler }: AppInfo) {
+  private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
     let entry = {};
     entrypoints.forEach(entrypoint => {
       entry[entrypoint.name] = entrypoint.modules;
@@ -94,6 +100,16 @@ class Webpack {
                 options: { templateCompiler }
               }
             ]
+          },
+          {
+            test: /\.js$/,
+            use: [
+              'thread-loader',
+              {
+                loader: 'babel-loader',
+                options: Object.assign({}, babelConfig)
+              }
+            ]
           }
         ]
       },
@@ -110,8 +126,12 @@ class Webpack {
       externals: amdExternals,
       resolveLoader: {
         alias: {
-          // script-loader is our dependency, not the app's dependency.
-          'script-loader': require.resolve('script-loader')
+          // these loaders are our dependencies, not the app's dependencies. I'm
+          // not overriding the default loader resolution rules in case the app also
+          // wants to control those.
+          'script-loader': require.resolve('script-loader'),
+          'thread-loader': require.resolve('thread-loader'),
+          'babel-loader': require.resolve('babel-loader')
         }
       }
     }, this.extraConfig, appendArrays);

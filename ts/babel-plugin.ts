@@ -4,7 +4,7 @@ import { join, relative, dirname } from 'path';
 function maybeRelativize(specifier, sourceFileName, opts) {
   let name = packageName(specifier);
   if (name && name === opts.ownName) {
-    let fullPath = specifier.replace(name, opts.basedir);
+    let fullPath = specifier.replace(name, opts.basedir || '.');
     let relativePath = relative(dirname(sourceFileName), fullPath);
     if (relativePath[0] !== '.') {
       relativePath = `./${relativePath}`;

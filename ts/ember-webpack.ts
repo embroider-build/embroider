@@ -57,11 +57,9 @@ class Entrypoint {
   get specifiers() {
     // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
     // be evaluated in script context, as opposed to module context.
-    let specifiers = this.scripts.map(script => `script-loader!${script}`).concat(
+    return this.scripts.map(script => `script-loader!${script}`).concat(
       this.modules
     );
-    specifiers.unshift(require.resolve('./interop.js'));
-    return specifiers;
   }
 }
 
@@ -112,7 +110,7 @@ class Webpack {
 
     let amdExternals = {};
     externals.forEach(external => {
-      amdExternals[external] = `window.ember_cli_vanilla.resolveDynamic("${external}")`;
+      amdExternals[external] = `_vanilla_("${external}")`;
     });
 
     // todo

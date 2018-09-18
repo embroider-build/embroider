@@ -14,6 +14,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import V1Config from './v1-config';
+import { renamed } from './renaming';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -148,7 +149,11 @@ export default class V1App implements V1Package {
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
-    plugins.push([require.resolve('./babel-plugin'), { ownName: this.name, basedir: finalRoot } ]);
+    plugins.push([require.resolve('./babel-plugin'), {
+      ownName: this.name,
+      basedir: finalRoot,
+      rename: renamed(this.app.project.addons)
+    } ]);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
     // call it, but it require()s all the plugins up front, so not serializable.

@@ -14,6 +14,7 @@ import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
+import { renamed } from "./renaming";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -32,6 +33,7 @@ const stockTreeNames = Object.freeze([
 // v1 addon instance.
 export default class V1Addon implements V1Package {
   constructor(protected addonInstance, public parent: V1Package) {
+    this.updateBabelConfig();
   }
 
   get name() {
@@ -60,10 +62,13 @@ export default class V1Addon implements V1Package {
   }
 
   private get options() {
+    if (!this.addonInstance.options) {
+      this.addonInstance.options = {};
+    }
     return this.addonInstance.options;
   }
 
-  private customizes(...treeNames) {
+  protected customizes(...treeNames) {
     return treeNames.find(treeName => this.mainModule[treeName]);
   }
 
@@ -76,7 +81,7 @@ export default class V1Addon implements V1Package {
     return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
   }
 
-  private stockTree(treeName, funnelOpts?) {
+  protected stockTree(treeName, funnelOpts?) {
     let opts = Object.assign({
       srcDir: this.addonInstance.treePaths[treeName]
     }, funnelOpts);
@@ -89,14 +94,13 @@ export default class V1Addon implements V1Package {
   }
 
   private transpile(tree) {
-    this.updateBabelConfig();
     return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
   }
 
   @Memoize()
   private updateBabelConfig() {
     // auto-import gets disabled because we support it natively
-    this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
+    //this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
 
     let packageOptions = this.options;
     let emberCLIBabelInstance = this.addonInstance.addons.find(a => a.name === 'ember-cli-babel');
@@ -111,6 +115,14 @@ export default class V1Addon implements V1Package {
       return;
     }
 
+    if (!packageOptions['ember-cli-babel']) {
+      packageOptions['ember-cli-babel'] = {};
+    }
+
+    if (!packageOptions.babel) {
+      packageOptions.babel = {};
+    }
+
     Object.assign(packageOptions['ember-cli-babel'], {
       compileModules: false,
       disablePresetEnv: true,
@@ -120,7 +132,10 @@ export default class V1Addon implements V1Package {
     if (!packageOptions.babel.plugins) {
       packageOptions.babel.plugins = [];
     }
-    packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), { ownName: this.name } ]);
+    packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), {
+      ownName: this.name,
+      rename: renamed(this.addonInstance.addons)
+    } ]);
   }
 
   protected get v2Trees() {
@@ -150,6 +165,10 @@ export default class V1Addon implements V1Package {
     return { trees, packageJSONRewriter };
   }
 
+  protected invokeOriginalTreeFor(name) {
+    return this.addonInstance._treeFor(name);
+  }
+
   @Memoize()
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
     let trees = [];
@@ -165,15 +184,22 @@ export default class V1Addon implements V1Package {
       todo(`${this.name} has customized treeFor`);
     }
 
-    if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      todo(`${this.name} may have customized the addon tree`);
-    }
-    if (this.hasStockTree('addon')) {
-      let tree = this.transpile(this.stockTree('addon', {
-        exclude: ['styles/**']
-      }));
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
+    {
+      let addonTree;
+      if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
+        addonTree = new Funnel(this.invokeOriginalTreeFor('addon'), {
+          srcDir: this.addonInstance.name
+        });
+        // todo: also invoke treeForAddonTemplates
+      } else if (this.hasStockTree('addon')) {
+        addonTree = this.transpile(this.stockTree('addon', {
+          exclude: ['styles/**']
+        }));
+      }
+      if (addonTree) {
+        importParsers.push(this.parseImports(addonTree));
+        trees.push(addonTree);
+      }
     }
 
     if (this.customizes('treeForAddonStyles')) {
@@ -250,7 +276,7 @@ export default class V1Addon implements V1Package {
       // namespaced under your package name before merging into the final app.
       // But people who are customizing have the ability to sidestep that
       // behavior. So here we need to monitor them for good behavior.
-      let tree = this.addonInstance._treeFor('public');
+      let tree = this.invokeOriginalTreeFor('public');
       if (tree) {
         trees.push(
           new Funnel(tree, {
@@ -270,7 +296,7 @@ export default class V1Addon implements V1Package {
       // We don't have any particular opinions about the structure inside
       // vendor, so even when it's customized we can just use the customized
       // one.
-      let tree = this.addonInstance._treeFor('vendor');
+      let tree = this.invokeOriginalTreeFor('vendor');
       if (tree) {
         trees.push(
           new Funnel(tree, {

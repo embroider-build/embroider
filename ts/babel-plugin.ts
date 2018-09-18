@@ -1,7 +1,7 @@
 import packageName from './package-name';
 import { join, relative, dirname } from 'path';
 
-function maybeRelativize(specifier, sourceFileName, opts) {
+function adjustSpecifier(specifier, sourceFileName, opts) {
   let name = packageName(specifier);
   if (name && name === opts.ownName) {
     let fullPath = specifier.replace(name, opts.basedir || '.');
@@ -10,6 +10,8 @@ function maybeRelativize(specifier, sourceFileName, opts) {
       relativePath = `./${relativePath}`;
     }
     return relativePath;
+  } else if (name && opts.rename && opts.rename[name]) {
+    return specifier.replace(name, opts.rename[name]);
   } else {
     return specifier;
   }
@@ -37,7 +39,7 @@ export default function main(){
           return;
         }
         let sourceFileName = path.hub.file.opts.filename;
-        let specifier = maybeRelativize(source.value, sourceFileName, opts);
+        let specifier = adjustSpecifier(source.value, sourceFileName, opts);
         source.value = makeHBSExplicit(specifier, sourceFileName);
       },
     }

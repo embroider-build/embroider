@@ -10,4 +10,10 @@ export default class EmberData extends V1Addon {
     trees.push(version());
     return trees;
   }
+
+  // ember-data customizes the addon tree, but we don't want to run that one.
+  // We'll take the stock behavior instead.
+  customizes(...names) {
+    return super.customizes(...names.filter(n => n !== 'treeForAddon'));
+  }
 }

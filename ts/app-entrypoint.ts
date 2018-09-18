@@ -13,8 +13,8 @@ import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
-{{#each lazyModules as |specifier| ~}}
-  {{{may-import-sync specifier}}}
+{{#each lazyModules as |lazyModule| ~}}
+  {{{may-import-sync lazyModule}}}
 {{/each}}
 {{#if autoRun ~}}
   require("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
@@ -34,11 +34,21 @@ export default class extends BroccoliPlugin {
   }
 
   async build() {
+    // readConfig timing is safe here because app.configTree is in our input trees.
+    let config = this.app.configTree.readConfig();
+
     // for the app tree, we take everything
     let lazyModules = walkSync(this.inputPaths[1], {
-      globs: ['**/*.js'],
+      globs: ['**/*.{js,hbs}'],
       directories: false
-    }).map(specifier => `../${specifier.replace(/\.js$/, '')}`);
+    }).map(specifier => {
+      let noJS = specifier.replace(/\.js$/, '');
+      let noHBS = noJS.replace(/\.hbs$/, '');
+      return {
+        runtime: `${config.modulePrefix}/${noHBS}`,
+        buildtime: `../${noJS}`
+      };
+    });
 
     // for the src tree, we can limit ourselves to only known resolvable
     // collections
@@ -48,9 +58,6 @@ export default class extends BroccoliPlugin {
     // up to the final stage packager). See also updateHTML in app.ts for where
     // we're enforcing this in the HTML.
     let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
-
-    // readConfig timing is safe here because app.configTree is in our input trees.
-    let config = this.app.configTree.readConfig();
 
     let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
 

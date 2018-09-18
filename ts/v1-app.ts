@@ -13,7 +13,7 @@ import { Tree } from 'broccoli-plugin';
 import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
-import V1Config from './v1-config';
+import { V1Config, WriteV1Config } from './v1-config';
 import { renamed } from './renaming';
 
 // This controls and types the interface between our new world and the classic
@@ -86,6 +86,10 @@ export default class V1App implements V1Package {
     return this.app.options.autoRun;
   }
 
+  private get storeConfigInMeta(): boolean {
+    return this.app.options.storeConfigInMeta;
+  }
+
   get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
@@ -115,7 +119,7 @@ export default class V1App implements V1Package {
     let patterns = this.appUtils.configReplacePatterns({
       addons: this.app.project.addons,
       autoRun: this.autoRun,
-      storeConfigInMeta: this.app.options.storeConfigInMeta,
+      storeConfigInMeta: this.storeConfigInMeta,
       isModuleUnification: this.isModuleUnification
     });
 
@@ -217,8 +221,12 @@ export default class V1App implements V1Package {
   processAppJS(fromAddons: Tree[], packageJSON) : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let analyzer = new DependencyAnalyzer([new ImportParser(appTree)], packageJSON, true);
-
-    let trees = [...fromAddons, appTree];
+    let config = new WriteV1Config(
+      this.config,
+      this.storeConfigInMeta,
+      this.name
+    );
+    let trees = [...fromAddons, appTree, config];
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

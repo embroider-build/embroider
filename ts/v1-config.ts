@@ -1,8 +1,8 @@
 import Plugin, { Tree } from "broccoli-plugin";
 import { join } from 'path';
-import { readFileSync } from "fs";
+import { readFileSync, outputFileSync } from "fs-extra";
 
-export default class V1Config extends Plugin {
+export class V1Config extends Plugin {
   private lastConfig: string;
   constructor(configTree: Tree, private env: string) {
     super([configTree], {});
@@ -16,4 +16,35 @@ export default class V1Config extends Plugin {
     }
     return this.lastConfig;
   }
+}
+
+export class WriteV1Config extends Plugin {
+  constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private appName: string) {
+    super([inputTree], {});
+  }
+  build() {
+    let filename = join(this.outputPath, 'config/environment.js');
+    let contents;
+    if (this.storeConfigInMeta) {
+      contents = metaLoader(this.appName);
+    } else {
+      contents = `export default ${JSON.stringify(this.inputTree.readConfig())};`;
+    }
+    outputFileSync(filename, contents);
+  }
+}
+
+function metaLoader(appName) {
+  return `
+  let config, metaName;
+  try {
+    metaName = '${appName}/config/environment';
+    let rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
+    config = JSON.parse(unescape(rawConfig));
+  }
+  catch(err) {
+    throw new Error('Could not read config from meta tag with name "' + metaName + '".');
+  }
+  export default config;
+  `;
 }

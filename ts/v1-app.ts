@@ -13,6 +13,7 @@ import { Tree } from 'broccoli-plugin';
 import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
+import V1Config from './v1-config';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -26,6 +27,10 @@ export default class V1App implements V1Package {
     return this.app.project.pkg.name;
   }
 
+  get env(): string {
+    return this.app.env;
+  }
+
   @Memoize()
   get root(): string {
     return dirname(pkgUpSync(this.app.root));
@@ -37,7 +42,7 @@ export default class V1App implements V1Package {
   }
 
   @Memoize()
-  private get isModuleUnification() {
+  get isModuleUnification() {
     let experiments = this.requireFromEmberCLI('./lib/experiments');
     return experiments.MODULE_UNIFICATION && !!this.app.trees.src;
   }
@@ -71,6 +76,15 @@ export default class V1App implements V1Package {
     });
   }
 
+  @Memoize()
+  get config(): V1Config {
+    return new V1Config(this.configTree, this.app.env);
+  }
+
+  get autoRun(): boolean {
+    return this.app.options.autoRun;
+  }
+
   get htmlTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
@@ -99,7 +113,7 @@ export default class V1App implements V1Package {
 
     let patterns = this.appUtils.configReplacePatterns({
       addons: this.app.project.addons,
-      autoRun: this.app.options.autoRun,
+      autoRun: this.autoRun,
       storeConfigInMeta: this.app.options.storeConfigInMeta,
       isModuleUnification: this.isModuleUnification
     });

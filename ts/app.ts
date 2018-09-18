@@ -60,6 +60,14 @@ export default class App extends Package {
     return this.oldPackage.name;
   }
 
+  get autoRun(): boolean {
+    return this.oldPackage.autoRun;
+  }
+
+  get isModuleUnification(): boolean {
+    return this.oldPackage.isModuleUnification;
+  }
+
   private scriptPriority(pkg: Addon) {
     switch (pkg.name) {
       case 'loader.js':
@@ -137,6 +145,10 @@ export default class App extends Package {
     return this.oldPackage.babelConfig(this.root);
   }
 
+  get configTree(): ConfigTree {
+    return this.oldPackage.config;
+  }
+
   // this encapsulates API that the AppEntrypoint needs from App that we don't
   // want to make public for everyone else.
   private updateHTML(entrypoint: string, dom) {
@@ -160,4 +172,8 @@ export default class App extends Package {
     }
     vendorJS.remove();
   }
+}
+
+export interface ConfigTree extends Tree {
+  readConfig: () => any;
 }

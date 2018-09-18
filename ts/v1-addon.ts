@@ -113,15 +113,22 @@ export default class V1Addon implements V1Package {
     return this.makeV2Trees().packageJSONRewriter;
   }
 
+  // this is split out so that compatability shims can override it to add more
+  // things to the package metadata.
+  protected get packageMeta() {
+    return this.legacyTrees().meta;
+  }
+
   @Memoize()
   private makeV2Trees() {
-    let { trees, importParsers, meta } = this.legacyTrees();
+    let { trees, importParsers } = this.legacyTrees();
     let analyzer = new DependencyAnalyzer(importParsers, this.packageJSON, false );
-    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, meta);
+    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, this.packageMeta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };
   }
 
+  @Memoize()
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
     let trees = [];
     let importParsers = [];

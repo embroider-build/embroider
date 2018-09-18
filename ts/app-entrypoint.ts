@@ -1,7 +1,7 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 import walkSync from 'walk-sync';
 import { writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
-import { join, dirname } from 'path';
+import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
 import App from './app';
@@ -16,6 +16,9 @@ const entryTemplate = compile(`
 {{#each lazyModules as |specifier| ~}}
   {{{may-import-sync specifier}}}
 {{/each}}
+{{#if autoRun ~}}
+  require("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+{{/if}}
 `);
 
 export default class extends BroccoliPlugin {
@@ -27,7 +30,7 @@ export default class extends BroccoliPlugin {
     private analyzer: DependencyAnalyzer,
     private updateHTML: (entrypoint: string, dom) => void
   ){
-    super([workspace, classicAppTree, analyzer, htmlTree], {});
+    super([workspace, classicAppTree, analyzer, htmlTree, app.configTree], {});
   }
 
   async build() {
@@ -46,8 +49,18 @@ export default class extends BroccoliPlugin {
     // we're enforcing this in the HTML.
     let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
 
+    // readConfig timing is safe here because app.configTree is in our input trees.
+    let config = this.app.configTree.readConfig();
+
+    let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
+
     ensureDirSync(dirname(appJS));
-    writeFileSync(appJS, entryTemplate({ lazyModules }), 'utf8');
+    writeFileSync(appJS, entryTemplate({
+      lazyModules,
+      autoRun: this.app.autoRun,
+      mainModule: relative(dirname(appJS), mainModule),
+      appConfig: config.APP
+    }), 'utf8');
 
     this.addConfigModule();
     this.addTemplateCompiler();

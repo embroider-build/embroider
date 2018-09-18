@@ -1,11 +1,9 @@
 # Stack
- - ember-cli-moment-shim is committing the cardinal sin of using somebody else's package name for its Own Javascript.
-
  - there's a weird babel bug that forced me to rename some locals in travis
 
  - require.include doesn't really do what we want. May need to go with the AMD-wrapping pattern used by ember-auto-import. Temporarily switched from require.include to require to get over this.
 
- - need: vendor/ember-cli/app-{prefix,suffix,config,boot}.js
+ - need: vendor/ember-cli/app-{config,boot}.js
    their contents comes from ember-app-utils.js
 
 # taking over from EmberApp

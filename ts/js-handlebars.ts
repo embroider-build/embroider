@@ -4,10 +4,13 @@ import jsStringEscape from 'js-string-escape';
 
 registerHelper('js-string-escape', jsStringEscape);
 
+registerHelper('json-stringify', function(input) {
+  return JSON.stringify(input);
+});
+
 registerHelper('may-import-sync', function(specifier) {
-  // todo: this will be pluggable based on which final-stage packager you're
-  // using. It is one of the few things that must be provided.
-  return `require.include("${jsStringEscape(specifier)}");`;
+  // todo: we can make this pluggable to optimize for final stage bundlers that have a better native option
+  return `window.define("${jsStringEscape(specifier)}", function(){ return require("${jsStringEscape(specifier)}");});`;
 });
 
 export { compile };

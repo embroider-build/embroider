@@ -10,10 +10,10 @@ import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
 import { TrackedImports } from './tracked-imports';
-import { updateBabelConfig } from './babel-config';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
+import semver from 'semver';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -98,7 +98,29 @@ export default class V1Addon implements V1Package {
     // auto-import gets disabled because we support it natively
     this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
 
-    updateBabelConfig(this.name, this.options, this.addonInstance.addons.find(a => a.name === 'ember-cli-babel'));
+    let packageOptions = this.options;
+    let emberCLIBabelInstance = this.addonInstance.addons.find(a => a.name === 'ember-cli-babel');
+    let version;
+
+    if (emberCLIBabelInstance) {
+      version = require(join(emberCLIBabelInstance.root, 'package')).version;
+    }
+
+    if (version && semver.satisfies(version, '^5')) {
+      todo(`${this.name} is using babel 5.`);
+      return;
+    }
+
+    Object.assign(packageOptions['ember-cli-babel'], {
+      compileModules: false,
+      disablePresetEnv: true,
+      disableDebugTooling: true,
+      disableEmberModulesAPIPolyfill: true
+    });
+    if (!packageOptions.babel.plugins) {
+      packageOptions.babel.plugins = [];
+    }
+    packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), { ownName: this.name } ]);
   }
 
   protected get v2Trees() {

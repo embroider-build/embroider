@@ -115,10 +115,21 @@ class Webpack {
       amdExternals[external] = `window.ember_cli_vanilla.resolveDynamic("${external}")`;
     });
 
+    // todo
+    let mode = 'development';
+
     return mergeWith({}, {
-      mode: 'development', // todo
+      mode,
       context: this.pathToVanillaApp,
       entry,
+      plugins: [
+        // this is needed for script-loader to have sourcemaps. It's a backward
+        // compatibility thing, presumably script-loader will eventually update
+        // to the modern webpack way of taking these options.
+        new webpack.LoaderOptionsPlugin({
+          debug: mode === 'development'
+        })
+      ],
       module: {
         rules: [
           {

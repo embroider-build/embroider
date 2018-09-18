@@ -16,17 +16,16 @@ const entryTemplate = compile(`
 {{!-
     This is the entrypoint that final stage packagers should
     use to lookup externals at runtime.
-
-    window.ember_cli_vanilla itself must be provided by the
-    final stage packager, and it must have a corresponding
-    resolveStatic method that we can use for finding its modules.
 -}}
-window.ember_cli_vanilla.resolveDynamic = function(specifier) {
+let w = window;
+let r = w.require;
+let d = w.define;
+w._vanilla_ = function(specifier) {
   let m;
   if (specifier === 'require') {
-    m = window.require;
+    m = r;
   } else {
-    m = window.require(specifier);
+    m = r(specifier);
   }
   {{!-
     There are plenty of hand-written AMD defines floating around
@@ -45,7 +44,7 @@ window.ember_cli_vanilla.resolveDynamic = function(specifier) {
   return m;
 };
 {{#each lazyModules as |lazyModule| ~}}
-  {{{may-import-sync lazyModule}}}
+  d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
 {{/each}}
 {{#if autoRun ~}}
   require("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
@@ -68,6 +67,11 @@ export default class extends BroccoliPlugin {
     // readConfig timing is safe here because app.configTree is in our input trees.
     let config = this.app.configTree.readConfig();
 
+    // standard JS file name, not customizable. It's not final anyway (that is
+    // up to the final stage packager). See also updateHTML in app.ts for where
+    // we're enforcing this in the HTML.
+    let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
+
     // for the app tree, we take everything
     let lazyModules = walkSync(this.inputPaths[1], {
       globs: ['**/*.{js,hbs}'],
@@ -85,10 +89,19 @@ export default class extends BroccoliPlugin {
     // collections
     todo("app src tree");
 
-    // standard JS file name, not customizable. It's not final anyway (that is
-    // up to the final stage packager). See also updateHTML in app.ts for where
-    // we're enforcing this in the HTML.
-    let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
+    // this is a backward-compatibility feature: addons can force inclusion of
+    // modules.
+    for (let addon of this.app.activeDescendants) {
+      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-modules');
+      if (implicitModules) {
+        for (let name of implicitModules) {
+          lazyModules.push({
+            runtime: `${addon.name}/${name}`,
+            buildtime: relative(join(this.app.root, 'assets'), `${addon.root}/${name}`)
+          });
+        }
+      }
+    }
 
     let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
 

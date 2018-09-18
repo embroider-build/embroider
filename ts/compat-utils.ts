@@ -8,3 +8,12 @@ export function addPeerDependency(packageJSON, packageName, version='*') {
   pkg.peerDependencies[packageName] = version;
   return pkg;
 }
+
+export function forceIncludeModule(meta, localPath) {
+  meta = cloneDeep(meta);
+  if (!meta['implicit-modules']) {
+    meta['implicit-modules'] = [];
+  }
+  meta['implicit-modules'].push(localPath);
+  return meta;
+}

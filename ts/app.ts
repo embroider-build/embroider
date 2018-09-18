@@ -93,9 +93,9 @@ export default class App extends Package {
     }
     let result = [];
     for (let addon of sortBy(this.activeDescendants, this.scriptPriority.bind(this))) {
-      let implicitModules = get(addon.packageJSON, `ember-addon.implicit-${group === 'test' ? 'test-' : ''}scripts`);
-      if (implicitModules) {
-        for (let mod of implicitModules) {
+      let implicitScripts = get(addon.packageJSON, `ember-addon.implicit-${group === 'test' ? 'test-' : ''}scripts`);
+      if (implicitScripts) {
+        for (let mod of implicitScripts) {
           result.push(resolve.sync(mod, { basedir: addon.root }));
         }
       }

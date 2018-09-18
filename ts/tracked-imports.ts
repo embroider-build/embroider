@@ -17,6 +17,10 @@ export class TrackedImports {
 
     if (this.trackedImports) {
       this.trackedImports.forEach(({ assetPath, options }) => {
+        if (!/\.js$/i.test(assetPath)) {
+          todo(`Skipping non-js app.import ${assetPath}`);
+          return;
+        }
         let standardAssetPath = standardizeAssetPath(this.packageName, assetPath);
         if (!standardAssetPath) {
           return;

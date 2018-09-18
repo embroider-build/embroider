@@ -13,11 +13,36 @@ import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
+{{!-
+    This is the entrypoint that final stage packagers should
+    use to lookup externals at runtime.
+
+    window.ember_cli_vanilla itself must be provided by the
+    final stage packager, and it must have a corresponding
+    resolveStatic method that we can use for finding its modules.
+-}}
 window.ember_cli_vanilla.resolveDynamic = function(specifier) {
+  let m;
   if (specifier === 'require') {
-    return window.require;
+    m = window.require;
+  } else {
+    m = window.require(specifier);
   }
-  return window.require(specifier);
+  {{!-
+    There are plenty of hand-written AMD defines floating around
+    that lack this, and they will break when other build systems
+    encounter them.
+
+    As far as I can tell, Ember's loader was already treating this
+    case as a module, so in theory we aren't breaking anything by
+    marking it as such when other packagers come looking.
+
+    todo: get review on this part.
+  -}}
+  if (m.default && !m.__esModule) {
+    m.__esModule = true;
+  }
+  return m;
 };
 {{#each lazyModules as |lazyModule| ~}}
   {{{may-import-sync lazyModule}}}

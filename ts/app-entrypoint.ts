@@ -56,11 +56,12 @@ export default class extends BroccoliPlugin {
     workspace: Workspace,
     classicAppTree: Tree,
     htmlTree: Tree,
+    publicTree: Tree,
     private app: App,
     private analyzer: DependencyAnalyzer,
     private updateHTML: (entrypoint: string, dom) => void
   ){
-    super([workspace, classicAppTree, analyzer, htmlTree, app.configTree], {});
+    super([workspace, classicAppTree, analyzer, htmlTree, publicTree, app.configTree], {});
   }
 
   async build() {
@@ -103,6 +104,13 @@ export default class extends BroccoliPlugin {
       }
     }
 
+    // This is the publicTree we were given. We need to list all the files in
+    // here as "entrypoints", because an "entrypoint" is anything that is
+    // guaranteed to have a valid URL in the final build output.
+    let entrypoints = walkSync(this.inputPaths[4], {
+      directories: false
+    });
+
     let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
 
     ensureDirSync(dirname(appJS));
@@ -125,24 +133,12 @@ export default class extends BroccoliPlugin {
     // is one of our input trees.
     this.analyzer.externals.forEach(name => externals.add(name));
 
-    // At this point the externals list is correct in the sense that it points
-    // out every place a package imports a thing that isnt't listed in its
-    // dependencies. But this is stricter than the node_modules resolution
-    // algorithm, which lets you get away with importing things that aren't
-    // listed, so long as they're resolvable from your location.
-    //
-    // While it's more correct to list out all your peerDependencies explicitly,
-    // in practice lots of packages don't, so it behooves us to be lenient in
-    // the same way node is.
-    //
-    // TODO: implement
-
     let pkg = cloneDeep(this.app.originalPackageJSON);
     if (!pkg['ember-addon']) {
       pkg['ember-addon'] = {};
     }
     pkg['ember-addon'].externals = [...externals.values()];
-    pkg['ember-addon'].entrypoints = ['index.html'];
+    pkg['ember-addon'].entrypoints = ['index.html'].concat(entrypoints);
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
     pkg['ember-addon']['babel-config'] = '_babel_config_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');

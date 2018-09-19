@@ -215,6 +215,10 @@ export default class V1App implements V1Package {
     });
   }
 
+  get publicTree(): Tree {
+    return this.app.trees.public;
+  }
+
   // this takes the app JS trees from all active addons, since we can't really
   // build our own code without them due to the way addon-provided "app js"
   // works.

@@ -1,6 +1,8 @@
 # Stack
- - styles & assets
+
+ - styles
  - make sure `ember s` works
+ - write README, publish to npm, open repos
  - there's a weird babel bug that forced me to rename some locals in travis
 
 

@@ -18,18 +18,21 @@ import resolve from 'resolve';
 import Addon from './addon';
 import sortBy from 'lodash/sortBy';
 import { Memoize } from 'typescript-memoize';
+import mergeTrees from 'broccoli-merge-trees';
 
 class Options {
   legacyAppInstance?: any;
   workspaceDir?: string;
   compatAdapters?: Map<string, V1AddonConstructor>;
   emitNewRoot?: (path: string) => void;
+  extraPublicTrees?: Tree[];
 }
 
 export default class App extends Package {
   private oldPackage: V1App;
   protected packageCache: PackageCache;
   private workspaceDir: string;
+  private extraPublicTrees: Tree[] | undefined;
 
   constructor(public originalRoot: string, options?: Options) {
     super(originalRoot, options ? options.emitNewRoot: null);
@@ -53,6 +56,10 @@ export default class App extends Package {
       this.workspaceDir = realpathSync(options.workspaceDir);
     } else {
       this.workspaceDir = mkdtempSync(join(tmpdir(), 'ember-cli-vanilla-'));
+    }
+
+    if (options && options.extraPublicTrees) {
+      this.extraPublicTrees = options.extraPublicTrees;
     }
   }
 
@@ -124,10 +131,16 @@ export default class App extends Package {
     let htmlTree = this.oldPackage.htmlTree;
     let updateHTML = this.updateHTML.bind(this);
 
-    // And we generate the actual entrypoint files.
-    let entry = new AppEntrypoint(workspace, appJS, htmlTree, this, analyzer, updateHTML);
+    // todo: this should also take the public trees of each addon
+    let publicTree = this.oldPackage.publicTree;
+    if (this.extraPublicTrees) {
+      publicTree = mergeTrees([publicTree, ...this.extraPublicTrees]);
+    }
 
-    return new WorkspaceUpdater([appJS, entry], workspace);
+    // And we generate the actual entrypoint files.
+    let entry = new AppEntrypoint(workspace, appJS, htmlTree, publicTree, this, analyzer, updateHTML);
+
+    return new WorkspaceUpdater([publicTree, appJS, entry], workspace);
   }
 
   packageWith(packagerClass: Packager): Tree {

@@ -1,6 +1,6 @@
 import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, copySync } from 'fs-extra';
 import { join, basename, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
@@ -10,13 +10,19 @@ import { Memoize } from 'typescript-memoize';
 import PackageOwners from "./package-owners";
 
 class Entrypoint {
-  public dom: any;
+  constructor(private pathToVanillaApp: string, public filename: string){}
 
-  constructor(
-    private pathToVanillaApp: string,
-    public filename: string,
-  ){
-    this.dom = new JSDOM(readFileSync(join(pathToVanillaApp, filename), 'utf8'));
+  get isHTML() {
+    return /\.html$/i.test(this.filename);
+  }
+
+  get absoluteFilename() {
+    return join(this.pathToVanillaApp, this.filename);
+  }
+
+  @Memoize()
+  get dom() {
+    return new JSDOM(readFileSync(this.absoluteFilename, 'utf8'));
   }
 
   get name() {
@@ -54,6 +60,7 @@ class Entrypoint {
     return resolve(this.pathToVanillaApp, dirname(this.filename), p);
   }
 
+  @Memoize()
   get specifiers() {
     // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
     // be evaluated in script context, as opposed to module context.
@@ -104,8 +111,10 @@ class Webpack {
 
     let entry = {};
     entrypoints.forEach(entrypoint => {
-      entry[entrypoint.name] = entrypoint.specifiers;
-      entrypoint.scripts.forEach(script => scripts.add(script));
+      if (entrypoint.isHTML && entrypoint.specifiers.length > 0) {
+        entry[entrypoint.name] = entrypoint.specifiers;
+        entrypoint.scripts.forEach(script => scripts.add(script));
+      }
     });
 
     let amdExternals = {};
@@ -220,23 +229,29 @@ class Webpack {
     let config = this.configureWebpack(appInfo);
     let webpack = this.getWebpack(config);
     let stats = this.summarizeStats(await this.runWebpack(webpack));
-    this.writeHTML(stats, appInfo);
+    this.writeFiles(stats, appInfo);
   }
 
-  private writeHTML(stats, { entrypoints }: AppInfo) {
+  private writeFiles(stats, { entrypoints }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple entrypoints correctly.
     for (let entrypoint of entrypoints) {
       let assets = stats.entrypoints.get(entrypoint.name);
-      let scriptTags = entrypoint.scriptTags;
-      let firstTag = scriptTags[0];
-      for (let asset of assets) {
-        let newScript = entrypoint.dom.window.document.createElement('script');
-        newScript.src = `/assets/${asset}`; // todo adjust for rootURL
-        firstTag.parentElement.insertBefore(newScript, firstTag);
+      if (assets) {
+        // this branch handles html entrypoints that we passed through webpack
+        let scriptTags = entrypoint.scriptTags;
+        let firstTag = scriptTags[0];
+        for (let asset of assets) {
+          let newScript = entrypoint.dom.window.document.createElement('script');
+          newScript.src = `/assets/${asset}`; // todo adjust for rootURL
+          firstTag.parentElement.insertBefore(newScript, firstTag);
+        }
+        scriptTags.forEach(tag => tag.remove());
+        writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
+      } else {
+        // this branch handles other assets that we are just passing through
+        copySync(entrypoint.absoluteFilename, join(this.outputPath, entrypoint.filename));
       }
-      scriptTags.forEach(tag => tag.remove());
-      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
     }
   }
 

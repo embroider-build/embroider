@@ -208,11 +208,31 @@ export default class V1App implements V1Package {
 
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
-  private get appTree() : Tree {
+  private get appTree(): Tree {
     todo('more trees: src, tests, styles, templates, bower, vendor, public');
     return new Funnel(this.app.trees.app, {
       exclude: ['styles/**', "*.html"],
     });
+  }
+
+  @Memoize()
+  private get preprocessors() {
+    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
+  }
+
+  private get styleTree(): Tree {
+    let options = {
+      outputPaths: this.app.options.outputPaths.app.css,
+      registry: this.app.registry,
+      minifyCSS: this.app.options.minifyCSS.options,
+    };
+
+    return this.preprocessors.preprocessCss(
+      this.app.trees.styles,
+      `.`,
+      '/assets',
+      options
+    );
   }
 
   get publicTree(): Tree {
@@ -230,7 +250,7 @@ export default class V1App implements V1Package {
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [...fromAddons, appTree, config];
+    let trees = [...fromAddons, appTree, this.styleTree, config];
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

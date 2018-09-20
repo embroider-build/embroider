@@ -3,9 +3,17 @@ import App from "./app";
 import Package from "./package";
 import Addon from "./addon";
 import { join, dirname, resolve } from 'path';
-import { emptyDirSync, ensureDirSync, readdirSync, ensureSymlinkSync, readdir, readlink, realpath, removeSync } from 'fs-extra';
+import {
+  emptyDirSync,
+  readdirSync,
+  ensureSymlinkSync,
+  readdir,
+  readlink,
+  realpath,
+  removeSync,
+  copySync,
+} from 'fs-extra';
 import { Memoize } from "typescript-memoize";
-import { sync as copyDereference } from "copy-dereference";
 
 // The Workspace represents our directory that will contain a complete Vanilla
 // Ember app. It's weird for a broccoli plugin, because we have strong opinions
@@ -52,7 +60,7 @@ export default class Workspace extends Plugin {
   }
 
   copyIntoApp(srcDir) {
-    copyInto(srcDir, this.app.root);
+    copySync(srcDir, this.app.root, { dereference: true });
   }
 
   async build() {
@@ -66,7 +74,7 @@ export default class Workspace extends Plugin {
 
     [...this.copiedPackages].forEach((pkg, index) => {
       pkg.root = this.localPath(pkg.originalRoot);
-      copyInto(this.inputPaths[index], pkg.root);
+      copySync(this.inputPaths[index], pkg.root, { dereference: true });
       this.linkNonCopiedDeps(pkg);
     });
     this.app.root = this.localPath(this.app.originalRoot);
@@ -211,9 +219,3 @@ function pathSegments(filename) {
   return segments;
 }
 
-function copyInto(srcDir, destDir) {
-  ensureDirSync(destDir);
-  for (let name of readdirSync(srcDir)) {
-    copyDereference(join(srcDir, name), join(destDir, name));
-  }
-}

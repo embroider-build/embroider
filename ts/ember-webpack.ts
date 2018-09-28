@@ -8,6 +8,7 @@ import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
 import { Memoize } from 'typescript-memoize';
 import PackageOwners from "./package-owners";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
 
 class Entrypoint {
   constructor(private pathToVanillaApp: string, public filename: string){}
@@ -30,11 +31,16 @@ class Entrypoint {
   }
 
   // we deal in synchronous, relative scripts. All others we leave alone.
+  @Memoize()
   get scriptTags() {
-    let document = this.dom.window.document;
-    return [...document.querySelectorAll('script')].filter(s => {
-      return !s.hasAttribute('async') && !isAbsoluteURL(s.src);
-    });
+    return [...this.dom.window.document.querySelectorAll('script')]
+      .filter(s => !s.hasAttribute('async') && !isAbsoluteURL(s.src));
+  }
+
+  @Memoize()
+  get styleLinks() {
+    return [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')]
+      .filter(s => !isAbsoluteURL(s.href));
   }
 
   @Memoize()
@@ -42,7 +48,8 @@ class Entrypoint {
     let [modules, scripts] = partition(this.scriptTags, tag => tag.type === 'module');
     return {
       modules: modules.map(t => this.resolvePath(t.src)),
-      scripts: scripts.map(t=> this.resolvePath(t.src))
+      scripts: scripts.map(t=> this.resolvePath(t.src)),
+      styles: this.styleLinks.map(link => this.resolvePath(link.href))
     };
   }
 
@@ -54,19 +61,28 @@ class Entrypoint {
     return this.partitionedSources().scripts;
   }
 
+  get styles() {
+    return this.partitionedSources().styles;
+  }
+
   private resolvePath(p) {
-    // the input is relative to the entrypoint file, which is relative to the
-    // app root. So get it all down to absolute first.
-    return resolve(this.pathToVanillaApp, dirname(this.filename), p);
+    if (p[0] === '/') {
+      // this path is relative to the app root
+      return resolve(this.pathToVanillaApp, p.slice(1));
+    } else {
+      // the path is relative to the entrypoint file, which is relative to the
+      // app root.
+      return resolve(this.pathToVanillaApp, dirname(this.filename), p);
+    }
   }
 
   @Memoize()
   get specifiers() {
     // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
     // be evaluated in script context, as opposed to module context.
-    return this.scripts.map(script => `script-loader!${script}`).concat(
-      this.modules
-    );
+    return this.scripts.map(script => `script-loader!${script}`)
+    .concat(this.modules)
+    .concat(this.styles);
   }
 }
 
@@ -103,17 +119,27 @@ class Webpack {
     return { entrypoints, externals, templateCompiler, babelConfig };
   }
 
+  // todo
+  private mode = 'development';
+
   private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
     // keep track of known scripts (as opposed to modules), as those are
     // conventionally not transpiled by babel (they are the old `vendor` assets
     // that were simply concatenated).
     let scripts = new Set();
 
+    // keep track of files added via <link rel="stylesheet">, because those are
+    // not parsed and traversed, whereas CSS files that are `import`ed from
+    // Javascript are. This is analogous to the script vs module distinction for
+    // Javascript.
+    let stylesheets = new Set();
+
     let entry = {};
     entrypoints.forEach(entrypoint => {
       if (entrypoint.isHTML && entrypoint.specifiers.length > 0) {
         entry[entrypoint.name] = entrypoint.specifiers;
         entrypoint.scripts.forEach(script => scripts.add(script));
+        entrypoint.styles.forEach(stylesheet => stylesheets.add(stylesheet));
       }
     });
 
@@ -122,11 +148,8 @@ class Webpack {
       amdExternals[external] = `_vanilla_("${external}")`;
     });
 
-    // todo
-    let mode = 'development';
-
     return mergeWith({}, {
-      mode,
+      mode: this.mode,
       context: this.pathToVanillaApp,
       entry,
       plugins: [
@@ -134,8 +157,9 @@ class Webpack {
         // compatibility thing, presumably script-loader will eventually update
         // to the modern webpack way of taking these options.
         new webpack.LoaderOptionsPlugin({
-          debug: mode === 'development'
-        })
+          debug: this.mode === 'development'
+        }),
+        new MiniCssExtractPlugin()
       ],
       module: {
         rules: [
@@ -157,6 +181,14 @@ class Webpack {
                 options: Object.assign({}, babelConfig)
               }
             ]
+          },
+          {
+            test: this.isCSSModule.bind(this, stylesheets),
+            use: this.makeCSSRule(true)
+          },
+          {
+            test: this.isStylesheet.bind(this, stylesheets),
+            use: this.makeCSSRule(false)
           }
         ]
       },
@@ -178,14 +210,24 @@ class Webpack {
           // wants to control those.
           'script-loader': require.resolve('script-loader'),
           'thread-loader': require.resolve('thread-loader'),
-          'babel-loader': require.resolve('babel-loader')
+          'babel-loader': require.resolve('babel-loader'),
+          'css-loader': require.resolve('css-loader'),
+          'style-loader': require.resolve('style-loader')
         }
       }
     }, this.extraConfig, appendArrays);
   }
 
+  private isCSSModule(stylesheets, filename) {
+    return isCSS(filename) && !stylesheets.has(filename);
+  }
+
+  private isStylesheet(stylesheets, filename) {
+    return isCSS(filename) && stylesheets.has(filename);
+  }
+
   private shouldTranspileFile(scripts, filename) {
-    if (!/\.js$/i.test(filename)) {
+    if (!isJS(filename)) {
       // quick exit for non JS extensions
       return false;
     }
@@ -239,14 +281,30 @@ class Webpack {
       let assets = stats.entrypoints.get(entrypoint.name);
       if (assets) {
         // this branch handles html entrypoints that we passed through webpack
-        let scriptTags = entrypoint.scriptTags;
-        let firstTag = scriptTags[0];
         for (let asset of assets) {
-          let newScript = entrypoint.dom.window.document.createElement('script');
-          newScript.src = `/assets/${asset}`; // todo adjust for rootURL
-          firstTag.parentElement.insertBefore(newScript, firstTag);
+          if (isJS(asset)) {
+            let firstTag = entrypoint.scriptTags[0];
+            // this conditional is here because if there were no scripts in the
+            // input, we're not about to add some in the output, even though
+            // webpack sometimes does funny things like adding empty script
+            // chunks just because we have some CSS.
+            if (firstTag) {
+              let newScript = entrypoint.dom.window.document.createElement('script');
+              newScript.src = `/assets/${asset}`; // todo adjust for rootURL
+              firstTag.parentElement.insertBefore(newScript, firstTag);
+            }
+          } else if (isCSS(asset)) {
+            let firstLink = entrypoint.styleLinks[0];
+            if (firstLink) {
+              let newLink = entrypoint.dom.window.document.createElement('link');
+              newLink.href = `/assets/${asset}`; // todo adjust for rootURL
+              newLink.rel = 'stylesheet';
+              firstLink.parentElement.insertBefore(newLink, firstLink);
+            }
+          }
         }
-        scriptTags.forEach(tag => tag.remove());
+        entrypoint.scriptTags.forEach(tag => tag.remove());
+        entrypoint.styleLinks.forEach(tag => tag.remove());
         writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
       } else {
         // this branch handles other assets that we are just passing through
@@ -299,6 +357,21 @@ class Webpack {
       });
     });
   }
+
+  private makeCSSRule(moduleMode: boolean) {
+    return [
+      moduleMode && this.mode === 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
+      {
+        loader: 'css-loader',
+        options: {
+          url: moduleMode,
+          import: moduleMode,
+          modules: moduleMode
+        }
+      }
+    ];
+  }
+
 }
 
 module.exports = function webpack(extraConfig={}) : Packager {
@@ -322,4 +395,12 @@ function appendArrays(objValue, srcValue) {
 
 function isAbsoluteURL(url) {
   return /^(?:[a-z]+:)?\/\//i.test(url);
+}
+
+function isCSS(filename) {
+  return /\.css$/i.test(filename);
+}
+
+function isJS(filename) {
+  return /\.js$/i.test(filename)
 }

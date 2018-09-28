@@ -148,7 +148,7 @@ class Webpack {
       amdExternals[external] = `_vanilla_("${external}")`;
     });
 
-    return mergeWith({}, {
+    return {
       mode: this.mode,
       context: this.pathToVanillaApp,
       entry,
@@ -215,7 +215,7 @@ class Webpack {
           'style-loader': require.resolve('style-loader')
         }
       }
-    }, this.extraConfig, appendArrays);
+    };
   }
 
   private isCSSModule(stylesheets, filename) {
@@ -268,7 +268,7 @@ class Webpack {
 
   async build(): Promise<void> {
     let appInfo = this.examineApp();
-    let config = this.configureWebpack(appInfo);
+    let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
     let webpack = this.getWebpack(config);
     let stats = this.summarizeStats(await this.runWebpack(webpack));
     this.writeFiles(stats, appInfo);

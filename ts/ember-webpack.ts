@@ -402,5 +402,5 @@ function isCSS(filename) {
 }
 
 function isJS(filename) {
-  return /\.js$/i.test(filename)
+  return /\.js$/i.test(filename);
 }

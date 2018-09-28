@@ -117,10 +117,12 @@ export default class Workspace extends Plugin {
 
   private linkNonCopiedDeps(pkg: Package) {
     for (let dep of pkg.npmDependencies) {
-      if (!this.copiedPackages.has(dep) && !this.linkedPackages.has(dep)) {
-        this.linkedPackages.add(dep);
-        ensureSymlinkSync(dep.originalRoot, this.localPath(dep.originalRoot));
-        dep.root = dep.originalRoot;
+      if (!this.copiedPackages.has(dep)) {
+        ensureSymlinkSync(dep.originalRoot, join(pkg.root, 'node_modules', dep.originalPackageJSON.name));
+        if (!this.linkedPackages.has(dep)) {
+          this.linkedPackages.add(dep);
+          dep.root = dep.originalRoot;
+        }
       }
     }
   }
@@ -218,4 +220,3 @@ function pathSegments(filename) {
   }
   return segments;
 }
-

@@ -222,7 +222,11 @@ export default class V1App implements V1Package {
 
   private get styleTree(): Tree {
     let options = {
-      outputPaths: this.app.options.outputPaths.app.css,
+       // we're deliberately not allowing this to be customized. It's an
+       // internal implementation detail, and respecting outputPaths here is
+       // unnecessary complexity. The corresponding code that adjusts the HTML
+       // <link> is in updateHTML in app.ts.
+      outputPaths: { app: `/assets/${this.name}.css` },
       registry: this.app.registry,
       minifyCSS: this.app.options.minifyCSS.options,
     };
@@ -261,7 +265,15 @@ export default class V1App implements V1Package {
     return scripts.find(script => script.src === this.app.options.outputPaths.app.js);
   }
 
+  findAppStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+    return styles.find(style => style.href === this.app.options.outputPaths.app.css.app);
+  }
+
   findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
     return scripts.find(script => script.src === this.app.options.outputPaths.vendor.js);
+  }
+
+  findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+    return styles.find(style => style.href === this.app.options.outputPaths.vendor.css);
   }
 }

@@ -11,42 +11,59 @@ export class TrackedImports {
   }
 
   @Memoize()
-  get categorized(): { app: string[], test: string[] } {
-    let app = [];
-    let test = [];
+  get categorized(): { appJS: string[], appCSS: string[], testJS: string[], testCSS: string[] } {
+    let appJS = [];
+    let appCSS = [];
+    let testJS = [];
+    let testCSS = [];
 
     if (this.trackedImports) {
       this.trackedImports.forEach(({ assetPath, options }) => {
-        if (!/\.js$/i.test(assetPath)) {
-          todo(`Skipping non-js app.import ${assetPath}`);
-          return;
-        }
         let standardAssetPath = standardizeAssetPath(this.packageName, assetPath);
         if (!standardAssetPath) {
           return;
         }
-        if (options.type === 'vendor') {
-          if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
-            todo(`${this.packageName} is app.importing vendor assets into a nonstandard output file ${options.outputFile}`);
+        if (/\.js$/i.test(assetPath)) {
+          if (options.type === 'vendor') {
+            if (options.outputFile && options.outputFile !== '/assets/vendor.js') {
+              todo(`${this.packageName} is app.importing vendor JS into a nonstandard output file ${options.outputFile}`);
+            }
+            appJS.push(standardAssetPath);
+          } else if (options.type === 'test') {
+            testJS.push(standardAssetPath);
+          } else {
+            todo(`${this.packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
           }
-          app.push(standardAssetPath);
-        } else if (options.type === 'test') {
-          test.push(standardAssetPath);
-        } else {
-          todo(`${this.packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+        } else if (/\.css$/i.test(assetPath)) {
+          if (options.type === 'vendor') {
+            if (options.outputFile && options.outputFile !== '/assets/vendor.css') {
+              todo(`${this.packageName} is app.importing vendor CSS into a nonstandard output file ${options.outputFile}`);
+            }
+            appCSS.push(standardAssetPath);
+          } else if (options.type === 'test') {
+            testCSS.push(standardAssetPath);
+          } else {
+            todo(`${this.packageName} has a non-standard app.import type ${options.type} for asset ${assetPath}`);
+          }
         }
       });
     }
-    return { app, test };
+    return { appJS, appCSS, testJS, testCSS };
   }
 
   get meta() {
     let result = {};
-    if (this.categorized.app.length > 0) {
-      result['implicit-scripts'] = this.categorized.app.slice();
+    if (this.categorized.appJS.length > 0) {
+      result['implicit-scripts'] = this.categorized.appJS.slice();
     }
-    if (this.categorized.test.length > 0) {
-      result['implicit-test-scripts4'] = this.categorized.test.slice();
+    if (this.categorized.appCSS.length > 0) {
+      result['implicit-styles'] = this.categorized.appCSS.slice();
+    }
+    if (this.categorized.testJS.length > 0) {
+      result['implicit-test-scripts'] = this.categorized.testJS.slice();
+    }
+    if (this.categorized.testCSS.length > 0) {
+      result['implicit-test-styles'] = this.categorized.testCSS.slice();
     }
     return result;
   }

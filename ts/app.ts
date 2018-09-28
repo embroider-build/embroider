@@ -87,21 +87,35 @@ export default class App extends Package {
     }
   }
 
-  private scripts(entrypoint): any {
-    let group;
+  private assets(entrypoint, type): any {
+    let group, metaKey;
     switch (entrypoint) {
       case 'index.html':
         group = 'app';
+        metaKey = 'implicit-';
         break;
       case 'tests/index.html':
         group = 'test';
+        metaKey = 'implicit-test-';
         break;
       default:
         throw new Error(`unimplemented entrypoint ${entrypoint}`);
     }
+    switch (type) {
+      case 'js':
+        group = group + 'JS';
+        metaKey += 'scripts';
+        break;
+      case 'css':
+        group = group + 'CSS';
+        metaKey += 'styles';
+        break;
+      default:
+      throw new Error(`unimplemented asset type ${type}`);
+    }
     let result = [];
     for (let addon of sortBy(this.activeDescendants, this.scriptPriority.bind(this))) {
-      let implicitScripts = get(addon.packageJSON, `ember-addon.implicit-${group === 'test' ? 'test-' : ''}scripts`);
+      let implicitScripts = get(addon.packageJSON, `ember-addon.${metaKey}`);
       if (implicitScripts) {
         for (let mod of implicitScripts) {
           result.push(resolve.sync(mod, { basedir: addon.root }));
@@ -179,12 +193,32 @@ export default class App extends Package {
     // the vendor.js file gets replaced with each of our implicit scripts. It's
     // up to the final stage packager to worry about concatenation.
     let vendorJS = this.oldPackage.findVendorScript(scripts);
-    for (let insertedScript of this.scripts(entrypoint)) {
+    for (let insertedScript of this.assets(entrypoint, 'js')) {
       let s = dom.window.document.createElement('script');
       s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
       vendorJS.parentElement.insertBefore(s, vendorJS);
     }
     vendorJS.remove();
+
+    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')];
+
+    // no custom name allowed here. Same argument applies here as for appJS
+    // above.
+    let appCSS = this.oldPackage.findAppStyles(styles);
+    appCSS.href = `assets/${this.name}.css`;
+
+    // the vendor.css file gets replaced with each of our implicit CSS
+    // dependencies. It's up to the final stage packager to worry about
+    // concatenation.
+    let vendorCSS = this.oldPackage.findVendorStyles(styles);
+    for (let insertedStyle of this.assets(entrypoint, 'css')) {
+      let s = dom.window.document.createElement('link');
+      s.rel = 'stylesheet';
+      s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
+      vendorCSS.parentElement.insertBefore(s, vendorCSS);
+    }
+    vendorCSS.remove();
+
   }
 }
 

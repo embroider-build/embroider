@@ -18,7 +18,7 @@ export default class Addon extends Package {
   }
 
   get name(): string {
-    return this.oldPackage.name;
+    return this.originalPackageJSON.name;
   }
 
   // this is where we inform the package that it's being consumed by another,

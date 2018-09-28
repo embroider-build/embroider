@@ -176,7 +176,7 @@ export default class V1App implements V1Package {
       babelrc: false,
       plugins,
       presets: [
-        ["env", { targets: babelInstance._getTargets() }]
+        [resolve.sync("babel-preset-env", { basedir: this.root }), { targets: babelInstance._getTargets() }]
       ]
     };
   }

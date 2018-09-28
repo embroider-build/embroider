@@ -151,7 +151,7 @@ export default class extends BroccoliPlugin {
   // we follow along and do those too.
   private addTemplateCompiler() {
     writeFileSync(join(this.outputPath, '_template_compiler_.js'), `
-    var compiler = require('ember-source/dist/ember-template-compiler');
+    var compiler = require('ember-source/vendor/ember/ember-template-compiler');
     var setupCompiler = require('ember-cli-vanilla/js/template-compiler').default;
     module.exports = setupCompiler(compiler);
     `, 'utf8');

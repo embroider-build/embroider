@@ -94,8 +94,17 @@ export default class V1Addon implements V1Package {
     return new UnwatchedDir(this.root);
   }
 
-  private transpile(tree) {
-    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, { registry : this.addonInstance.registry });
+  // In an ideal world, there would be no options to this. We would just run
+  // every kind of tree through every kind of transpiler, and they could freely
+  // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
+  // embrer-cli-sass will blow up if they don't find some files.
+  private transpile(tree, { includeCSS } = { includeCSS: false}) {
+    if (includeCSS) {
+      tree = this.addonInstance.compileStyles(tree);
+    }
+    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, {
+      registry : this.addonInstance.registry
+    });
   }
 
   @Memoize()
@@ -208,11 +217,13 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForAddonStyles')) {
       todo(`${this.name} may have customized the addon style tree`);
     } else if (this.hasStockTree('addon-styles')) {
-      // TODO should generate `import "this-addon/addon.css";` to maintain
-      // auto inclusion semantics.
       trees.push(
-        this.transpile(this.stockTree('addon-styles'))
+        this.transpile(this.stockTree('addon-styles'), { includeCSS: true })
       );
+      if (!meta['implicit-styles']) {
+        meta['implicit-styles'] = [];
+      }
+      meta['implicit-styles'].push(`./${this.name}.css`);
     }
 
     if (this.customizes('treeForStyles')) {
@@ -230,7 +241,7 @@ export default class V1Addon implements V1Package {
       trees.push(
         this.transpile(this.stockTree('styles', {
           destDir: '_app_styles_'
-        }))
+        }), { includeCSS: true })
       );
     }
 

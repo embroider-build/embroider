@@ -111,11 +111,6 @@ export default class V1Addon implements V1Package {
       version = require(join(emberCLIBabelInstance.root, 'package')).version;
     }
 
-    if (version && semver.satisfies(version, '^5')) {
-      todo(`${this.name} is using babel 5.`);
-      return;
-    }
-
     if (!packageOptions['ember-cli-babel']) {
       packageOptions['ember-cli-babel'] = {};
     }
@@ -130,6 +125,13 @@ export default class V1Addon implements V1Package {
       disableDebugTooling: true,
       disableEmberModulesAPIPolyfill: true
     });
+
+    if (version && semver.satisfies(version, '^5')) {
+      todo(`${this.name} is using babel 5. Not installing our custom plugin.`);
+      return;
+    }
+
+
     if (!packageOptions.babel.plugins) {
       packageOptions.babel.plugins = [];
     }

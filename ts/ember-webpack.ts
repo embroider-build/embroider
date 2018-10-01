@@ -1,6 +1,6 @@
 import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
-import { readFileSync, writeFileSync, copySync } from 'fs-extra';
+import { readFileSync, writeFileSync, copySync, realpathSync } from 'fs-extra';
 import { join, basename, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
@@ -94,12 +94,15 @@ interface AppInfo {
 }
 
 class Webpack {
+  pathToVanillaApp: string;
+
   constructor(
-    private pathToVanillaApp: string,
+    pathToVanillaApp: string,
     private outputPath: string,
     private consoleWrite: (msg: string) => void,
     private extraConfig: any
     ) {
+      this.pathToVanillaApp = realpathSync(pathToVanillaApp);
   }
 
   private packageOwners: PackageOwners = new PackageOwners();

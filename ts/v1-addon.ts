@@ -10,6 +10,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo } from './messages';
 import { TrackedImports } from './tracked-imports';
+import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
@@ -187,8 +188,8 @@ export default class V1Addon implements V1Package {
     {
       let addonTree;
       if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-        addonTree = new Funnel(this.invokeOriginalTreeFor('addon'), {
-          srcDir: this.addonInstance.name
+        addonTree = new MultiFunnel(this.invokeOriginalTreeFor('addon'), {
+          srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
         });
         // todo: also invoke treeForAddonTemplates
       } else if (this.hasStockTree('addon')) {

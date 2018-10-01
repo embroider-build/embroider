@@ -126,6 +126,13 @@ export default class App extends Package {
     for (let mod of imports.categorized[group]) {
       result.push(resolve.sync(mod, { basedir: this.root }));
     }
+
+    // This file gets created by app-entrypoint.ts. We need to insert it at the
+    // beginning of the scripts.
+    if (entrypoint === 'index.html' && type === 'js') {
+      result.unshift(join(this.root, '_ember_env_.js'));
+    }
+
     return result;
   }
 

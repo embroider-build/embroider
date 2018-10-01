@@ -123,6 +123,7 @@ export default class extends BroccoliPlugin {
 
     this.addTemplateCompiler();
     this.addBabelConfig();
+    this.addEmberEnv(config.EmberENV);
 
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
@@ -160,6 +161,16 @@ export default class extends BroccoliPlugin {
   private addBabelConfig() {
     writeFileSync(join(this.outputPath, '_babel_config_.js'), `
     module.exports = ${JSON.stringify(this.app.babelConfig, null, 2)};
+    `, 'utf8');
+  }
+
+  // this is stuff that needs to get set globally before Ember loads. In classic
+  // Ember CLI is was "vendor-prefix" content that would go at the start of the
+  // vendor.js. We are going to make sure it's the first plain <script> in the
+  // HTML that we hand to the final stage packager.
+  private addEmberEnv(config) {
+    writeFileSync(join(this.outputPath, '_ember_env_.js'), `
+    window.EmberENV=${JSON.stringify(config, null, 2)};
     `, 'utf8');
   }
 

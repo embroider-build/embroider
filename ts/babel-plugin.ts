@@ -33,14 +33,26 @@ function makeHBSExplicit(specifier, _) {
 export default function main(){
   return {
     visitor: {
-      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path, { opts }) {
+      Program: {
+        enter: function(_, state) {
+          state.emberCLIVanillaJobs = [];
+        },
+        exit: function(_, state) {
+          state.emberCLIVanillaJobs.forEach(job => job());
+        }
+      },
+      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path, state) {
+        let { opts, emberCLIVanillaJobs } = state;
         const {source} = path.node;
         if (source === null) {
           return;
         }
         let sourceFileName = path.hub.file.opts.filename;
         let specifier = adjustSpecifier(source.value, sourceFileName, opts);
-        source.value = makeHBSExplicit(specifier, sourceFileName);
+        specifier = makeHBSExplicit(specifier, sourceFileName);
+        if (specifier !== source.value) {
+          emberCLIVanillaJobs.push(() => source.value = specifier);
+        }
       },
     }
   };

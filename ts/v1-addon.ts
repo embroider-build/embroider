@@ -31,6 +31,8 @@ const stockTreeNames = Object.freeze([
   // 'addon' and 'app' and we handle them there.
 ]);
 
+const appPublicationDir = '_app_';
+
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
@@ -202,6 +204,20 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  protected treeForTestSupport(): Tree|undefined {
+    if (this.customizes('treeForTestSupport')) {
+      todo(`${this.name} has customized the test support tree`);
+    } else if (this.hasStockTree('test-support')) {
+      // this one doesn't go through transpile yet because it gets handled as
+      // part of the consuming app. For example, imports should be relative to
+      // the consuming app, not our own package. That is some of what is lame
+      // about app trees and why they will go away once everyone is all MU.
+      return new Funnel(this.stockTree('test-support'), {
+        destDir: `${appPublicationDir}/tests`
+      });
+    }
+  }
+
   @Memoize()
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
     let trees = [];
@@ -282,12 +298,13 @@ export default class V1Addon implements V1Package {
       }
     }
 
-    if (this.customizes('treeForTestSupport')) {
-      todo(`${this.name} may have customized the test support tree`);
-    } else if (this.hasStockTree('test-support')) {
-      // this case should probably get deprecated entirely, there's no good
-      // reason to use this over addon-test-support.
-      todo(`${this.name} is using test-support instead of addon-test-support`);
+    {
+      let tree = this.treeForTestSupport();
+      if (tree) {
+        importParsers.push(this.parseImports(tree));
+        trees.push(tree);
+        meta['app-js'] = appPublicationDir;
+      }
     }
 
     if (this.customizes('treeForApp', 'treeForTemplates')) {
@@ -303,10 +320,10 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      meta['app-js'] = '_app_';
+      meta['app-js'] = appPublicationDir;
       let tree = this.stockTree('app', {
         exclude: ['styles/**'],
-        destDir: meta['app-js']
+        destDir: appPublicationDir
       });
       importParsers.push(this.parseImports(tree));
       trees.push(tree);

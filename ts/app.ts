@@ -87,31 +87,27 @@ export default class App extends Package {
     }
   }
 
-  private assets(entrypoint, type): any {
+  private assets(originalBundle): any {
     let group, metaKey;
-    switch (entrypoint) {
-      case 'index.html':
-        group = 'app';
-        metaKey = 'implicit-';
+    switch (originalBundle) {
+      case 'vendor.js':
+        group = 'appJS';
+        metaKey = 'implicit-scripts';
         break;
-      case 'tests/index.html':
-        group = 'test';
-        metaKey = 'implicit-test-';
+      case 'vendor.css':
+        group = 'appCSS';
+        metaKey = 'implicit-styles';
         break;
-      default:
-        throw new Error(`unimplemented entrypoint ${entrypoint}`);
-    }
-    switch (type) {
-      case 'js':
-        group = group + 'JS';
-        metaKey += 'scripts';
+      case 'test-support.js':
+        group = 'testJS';
+        metaKey = 'implicit-test-scripts';
         break;
-      case 'css':
-        group = group + 'CSS';
-        metaKey += 'styles';
+      case 'test-support.css':
+        group = 'testCSS';
+        metaKey = 'implicit-test-styles';
         break;
       default:
-      throw new Error(`unimplemented asset type ${type}`);
+        throw new Error(`unimplemented originalBundle ${originalBundle}`);
     }
     let result = [];
     for (let addon of sortBy(this.activeDescendants, this.scriptPriority.bind(this))) {
@@ -129,7 +125,7 @@ export default class App extends Package {
 
     // This file gets created by app-entrypoint.ts. We need to insert it at the
     // beginning of the scripts.
-    if (entrypoint === 'index.html' && type === 'js') {
+    if (originalBundle === 'vendor.js') {
       result.unshift(join(this.root, '_ember_env_.js'));
     }
 
@@ -188,44 +184,73 @@ export default class App extends Package {
   // want to make public for everyone else.
   private updateHTML(entrypoint: string, dom) {
     let scripts = [...dom.window.document.querySelectorAll('script')];
+    this.updateAppJS(entrypoint, scripts);
+    this.updateTestJS(entrypoint, scripts);
+    this.updateJS(dom, entrypoint, this.oldPackage.findVendorScript(scripts), 'vendor.js');
+    this.updateJS(dom, entrypoint, this.oldPackage.findTestSupportScript(scripts), 'test-support.js');
 
+    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')];
+    this.updateAppCSS(entrypoint, styles);
+    this.updateCSS(dom, entrypoint, this.oldPackage.findVendorStyles(styles), 'vendor.css');
+    this.updateCSS(dom, entrypoint, this.oldPackage.findTestSupportStyles(styles), 'test-support.css');
+  }
+
+  private updateAppJS(entrypoint, scripts) {
     // no custom name allowed here -- we're standardizing. It's not the final
     // output anyway, that will be up to the final stage packager. We also
     // switch to module type, to convey that we're going to point at an ES
     // module.
     let appJS = this.oldPackage.findAppScript(scripts);
-    appJS.src = `assets/${this.name}.js`;
-    appJS.type = "module";
+    if (appJS) {
+      appJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.name}.js`));
+      appJS.type = "module";
+    }
+  }
 
+  private updateTestJS(entrypoint, scripts) {
+    let testJS = this.oldPackage.findTestScript(scripts);
+    if (testJS) {
+      testJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/test.js`));
+      testJS.type = "module";
+    }
+  }
+
+  private updateJS(dom, entrypoint, original, bundleName) {
     // the vendor.js file gets replaced with each of our implicit scripts. It's
     // up to the final stage packager to worry about concatenation.
-    let vendorJS = this.oldPackage.findVendorScript(scripts);
-    for (let insertedScript of this.assets(entrypoint, 'js')) {
+    if (!original) { return; }
+    for (let insertedScript of this.assets(bundleName)) {
       let s = dom.window.document.createElement('script');
       s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
-      vendorJS.parentElement.insertBefore(s, vendorJS);
+      // these newlines make the output more readable
+      original.parentElement.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement.insertBefore(s, original);
     }
-    vendorJS.remove();
+    original.remove();
+  }
 
-    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')];
-
+  private updateAppCSS(entrypoint, styles) {
     // no custom name allowed here. Same argument applies here as for appJS
     // above.
     let appCSS = this.oldPackage.findAppStyles(styles);
-    appCSS.href = `assets/${this.name}.css`;
+    if (appCSS) {
+      appCSS.href = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.name}.css`));
+    }
+  }
 
+  private updateCSS(dom, entrypoint, original, bundleName) {
     // the vendor.css file gets replaced with each of our implicit CSS
     // dependencies. It's up to the final stage packager to worry about
     // concatenation.
-    let vendorCSS = this.oldPackage.findVendorStyles(styles);
-    for (let insertedStyle of this.assets(entrypoint, 'css')) {
+    if (!original) { return; }
+    for (let insertedStyle of this.assets(bundleName)) {
       let s = dom.window.document.createElement('link');
       s.rel = 'stylesheet';
       s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
-      vendorCSS.parentElement.insertBefore(s, vendorCSS);
+      original.parentElement.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement.insertBefore(s, original);
     }
-    vendorCSS.remove();
-
+    original.remove();
   }
 }
 

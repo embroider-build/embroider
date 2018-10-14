@@ -14,7 +14,7 @@ import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
 {{!-
-    This is the entrypoint that final stage packagers should
+    This function is the entrypoint that final stage packagers should
     use to lookup externals at runtime.
 -}}
 let w = window;
@@ -51,6 +51,12 @@ w._vanilla_ = function(specifier) {
 {{/if}}
 `);
 
+const testTemplate = compile(`
+{{#each testModules as |testModule| ~}}
+  import "{{js-string-escape testModule}}";
+{{/each}}
+`);
+
 export default class extends BroccoliPlugin {
   constructor(
     workspace: Workspace,
@@ -68,59 +74,8 @@ export default class extends BroccoliPlugin {
     // readConfig timing is safe here because app.configTree is in our input trees.
     let config = this.app.configTree.readConfig();
 
-    // standard JS file name, not customizable. It's not final anyway (that is
-    // up to the final stage packager). See also updateHTML in app.ts for where
-    // we're enforcing this in the HTML.
-    let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
-
-    // for the app tree, we take everything
-    let lazyModules = walkSync(this.inputPaths[1], {
-      globs: ['**/*.{js,hbs}'],
-      directories: false
-    }).map(specifier => {
-      let noJS = specifier.replace(/\.js$/, '');
-      let noHBS = noJS.replace(/\.hbs$/, '');
-      return {
-        runtime: `${config.modulePrefix}/${noHBS}`,
-        buildtime: `../${noJS}`
-      };
-    });
-
-    // for the src tree, we can limit ourselves to only known resolvable
-    // collections
-    todo("app src tree");
-
-    // this is a backward-compatibility feature: addons can force inclusion of
-    // modules.
-    for (let addon of this.app.activeDescendants) {
-      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-modules');
-      if (implicitModules) {
-        for (let name of implicitModules) {
-          lazyModules.push({
-            runtime: `${addon.name}/${name}`,
-            buildtime: relative(join(this.app.root, 'assets'), `${addon.root}/${name}`)
-          });
-        }
-      }
-    }
-
-    // This is the publicTree we were given. We need to list all the files in
-    // here as "entrypoints", because an "entrypoint" is anything that is
-    // guaranteed to have a valid URL in the final build output.
-    let entrypoints = walkSync(this.inputPaths[4], {
-      directories: false
-    });
-
-    let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
-
-    ensureDirSync(dirname(appJS));
-    writeFileSync(appJS, entryTemplate({
-      lazyModules,
-      autoRun: this.app.autoRun,
-      mainModule: relative(dirname(appJS), mainModule),
-      appConfig: config.APP
-    }), 'utf8');
-
+    this.writeAppJS(config);
+    this.writeTestJS();
     this.addTemplateCompiler();
     this.addBabelConfig();
     this.addEmberEnv(config.EmberENV);
@@ -134,12 +89,19 @@ export default class extends BroccoliPlugin {
     // is one of our input trees.
     this.analyzer.externals.forEach(name => externals.add(name));
 
+    // This is the publicTree we were given. We need to list all the files in
+    // here as "entrypoints", because an "entrypoint" is anything that is
+    // guaranteed to have a valid URL in the final build output.
+    let entrypoints = walkSync(this.inputPaths[4], {
+      directories: false
+    });
+
     let pkg = cloneDeep(this.app.originalPackageJSON);
     if (!pkg['ember-addon']) {
       pkg['ember-addon'] = {};
     }
     pkg['ember-addon'].externals = [...externals.values()];
-    pkg['ember-addon'].entrypoints = ['index.html'].concat(entrypoints);
+    pkg['ember-addon'].entrypoints = ['index.html', 'tests/index.html'].concat(entrypoints);
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
     pkg['ember-addon']['babel-config'] = '_babel_config_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
@@ -175,11 +137,71 @@ export default class extends BroccoliPlugin {
   }
 
   private rewriteHTML() {
-    let entrypoint = 'index.html';
+    for (let entrypoint of  ['index.html', 'tests/index.html']) {
+      // inputsPaths[3] is the htmlTree we were given.
+      let dom = new JSDOM(readFileSync(join(this.inputPaths[3], entrypoint), 'utf8'));
+      this.updateHTML(entrypoint, dom);
+      let outputFile = join(this.outputPath, entrypoint);
+      ensureDirSync(dirname(outputFile));
+      writeFileSync(outputFile, dom.serialize(), 'utf8');
+    }
+  }
 
-    // inputsPaths[3] is the htmlTree we were given.
-    let dom = new JSDOM(readFileSync(join(this.inputPaths[3], entrypoint), 'utf8'));
-    this.updateHTML(entrypoint, dom);
-    writeFileSync(join(this.outputPath, entrypoint), dom.serialize(), 'utf8');
+  private writeAppJS(config) {
+    let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
+    // standard JS file name, not customizable. It's not final anyway (that is
+    // up to the final stage packager). See also updateHTML in app.ts for where
+    // we're enforcing this in the HTML.
+    let appJS = join(this.outputPath, `assets/${this.app.name}.js`);
+
+    // for the app tree, we take everything
+    let lazyModules = walkSync(this.inputPaths[1], {
+      globs: ['**/*.{js,hbs}'],
+      directories: false
+    }).map(specifier => {
+      let noJS = specifier.replace(/\.js$/, '');
+      let noHBS = noJS.replace(/\.hbs$/, '');
+      return {
+        runtime: `${config.modulePrefix}/${noHBS}`,
+        buildtime: `../${noJS}`
+      };
+    });
+
+    // for the src tree, we can limit ourselves to only known resolvable
+    // collections
+    todo("app src tree");
+
+    // this is a backward-compatibility feature: addons can force inclusion of
+    // modules.
+    for (let addon of this.app.activeDescendants) {
+      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-modules');
+      if (implicitModules) {
+        for (let name of implicitModules) {
+          lazyModules.push({
+            runtime: `${addon.name}/${name}`,
+            buildtime: relative(join(this.app.root, 'assets'), `${addon.root}/${name}`)
+          });
+        }
+      }
+    }
+    ensureDirSync(dirname(appJS));
+    writeFileSync(appJS, entryTemplate({
+      lazyModules,
+      autoRun: this.app.autoRun,
+      mainModule: relative(dirname(appJS), mainModule),
+      appConfig: config.APP
+    }), 'utf8');
+  }
+
+  private writeTestJS() {
+    let testJS = join(this.outputPath, `assets/test.js`);
+    let testModules = walkSync(this.inputPaths[1], {
+      globs: ['tests/**/*-test.js'],
+      directories: false
+    }).map(specifier => `../${specifier}`);
+    ensureDirSync(dirname(testJS));
+    writeFileSync(testJS, testTemplate({
+      testModules
+    }), 'utf8');
   }
 }

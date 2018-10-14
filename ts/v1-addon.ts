@@ -16,6 +16,7 @@ import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import { renamed } from "./renaming";
+import Snitch from './snitch';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -140,7 +141,6 @@ export default class V1Addon implements V1Package {
       return;
     }
 
-
     if (!packageOptions.babel.plugins) {
       packageOptions.babel.plugins = [];
     }
@@ -245,14 +245,27 @@ export default class V1Addon implements V1Package {
       );
     }
 
-    if (this.customizes('treeForAddonTestSupport')) {
-      todo(`${this.name} may have customized the addon test support tree`);
-    } else if (this.hasStockTree('addon-test-support')) {
-      let tree = this.transpile(this.stockTree('addon-test-support', {
-        destDir: 'test-support'
-      }));
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
+    {
+      let addonTestSupportTree;
+      if (this.customizes('treeForAddonTestSupport')) {
+        addonTestSupportTree = new Snitch(
+          this.invokeOriginalTreeFor('addon-test-support'),
+          {
+            allowedPaths: new RegExp(`^${this.name}/test-support/`),
+            description: `${this.name} treeForAddonTestSupport`,
+          }, {
+            srcDir: this.name
+          }
+        );
+      } else if (this.hasStockTree('addon-test-support')) {
+        addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {
+          destDir: 'test-support'
+        }));
+      }
+      if (addonTestSupportTree) {
+        importParsers.push(this.parseImports(addonTestSupportTree));
+        trees.push(addonTestSupportTree);
+      }
     }
 
     if (this.customizes('treeForTestSupport')) {
@@ -286,14 +299,13 @@ export default class V1Addon implements V1Package {
     }
 
     if (this.customizes('treeForPublic')) {
-      // TODO: The stock behavior for public is that the files get automatically
-      // namespaced under your package name before merging into the final app.
-      // But people who are customizing have the ability to sidestep that
-      // behavior. So here we need to monitor them for good behavior.
       let tree = this.invokeOriginalTreeFor('public');
       if (tree) {
         trees.push(
-          new Funnel(tree, {
+          new Snitch(tree, {
+            allowedPaths: new RegExp(`^${this.name}/`),
+            description: `${this.name} treeForPublic`
+          }, {
             destDir: 'public'
           })
         );

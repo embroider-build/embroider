@@ -6,7 +6,6 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
-import { todo } from './messages';
 import { TrackedImport } from './tracked-imports';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
@@ -91,6 +90,10 @@ export default class V1App implements V1Package {
   }
 
   get htmlTree() {
+    return mergeTrees([this.indexTree, this.app.testIndex()]);
+  }
+
+  get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index = new Funnel(this.rootTree, {
@@ -209,9 +212,14 @@ export default class V1App implements V1Package {
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
   private get appTree(): Tree {
-    todo('more trees: src, tests, styles, templates, bower, vendor, public');
     return new Funnel(this.app.trees.app, {
       exclude: ['styles/**', "*.html"],
+    });
+  }
+
+  private get testsTree(): Tree {
+    return new Funnel(this.app.trees.tests, {
+      destDir: 'tests'
     });
   }
 
@@ -248,13 +256,17 @@ export default class V1App implements V1Package {
   // works.
   processAppJS(fromAddons: Tree[], packageJSON) : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
-    let analyzer = new DependencyAnalyzer([new ImportParser(appTree)], packageJSON, true);
+    let testsTree = this.testsTree;
+    let analyzer = new DependencyAnalyzer([
+      new ImportParser(appTree),
+      new ImportParser(testsTree)
+    ], packageJSON, true);
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [...fromAddons, appTree, this.styleTree, config];
+    let trees = [...fromAddons, appTree, this.styleTree, config, testsTree];
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer
@@ -275,5 +287,17 @@ export default class V1App implements V1Package {
 
   findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
     return styles.find(style => style.href === this.app.options.outputPaths.vendor.css);
+  }
+
+  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+    return styles.find(style => style.href === this.app.options.outputPaths.testSupport.css);
+  }
+
+  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+    return scripts.find(script => script.src === this.app.options.outputPaths.testSupport.js.testSupport);
+  }
+
+  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+    return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
   }
 }

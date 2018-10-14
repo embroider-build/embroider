@@ -1,3 +1,5 @@
 import makeDebug from 'debug';
 const todo = makeDebug('ember-cli-vanilla:todo');
-export { todo };
+const unsupported = makeDebug('ember-cli-vanilla:unsupported');
+
+export { todo, unsupported };

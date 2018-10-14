@@ -1,7 +1,7 @@
 import { Packager } from "ember-cli-vanilla";
 import webpack from 'webpack';
-import { readFileSync, writeFileSync, copySync, realpathSync } from 'fs-extra';
-import { join, basename, dirname, resolve } from 'path';
+import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
+import { join, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -27,14 +27,14 @@ class Entrypoint {
   }
 
   get name() {
-    return basename(this.filename, '.html');
+    return this.filename;
   }
 
   // we deal in synchronous, relative scripts. All others we leave alone.
   @Memoize()
   get scriptTags() {
     return [...this.dom.window.document.querySelectorAll('script')]
-      .filter(s => !s.hasAttribute('async') && !isAbsoluteURL(s.src));
+      .filter(s => s.hasAttribute('src') && !s.hasAttribute('async') && !isAbsoluteURL(s.src));
   }
 
   @Memoize()
@@ -308,6 +308,7 @@ class Webpack {
         }
         entrypoint.scriptTags.forEach(tag => tag.remove());
         entrypoint.styleLinks.forEach(tag => tag.remove());
+        ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
         writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
       } else {
         // this branch handles other assets that we are just passing through

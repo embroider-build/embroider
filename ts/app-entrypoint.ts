@@ -70,6 +70,17 @@ export default class extends BroccoliPlugin {
     super([workspace, classicAppTree, analyzer, htmlTree, publicTree, app.configTree], {});
   }
 
+  // todo
+  private shouldBuildTests = false;
+
+  private emberEntrypoints() {
+    let entrypoints = ['index.html'];
+    if (this.shouldBuildTests) {
+      entrypoints.push('tests/index.html');
+    }
+    return entrypoints;
+  }
+
   async build() {
     // readConfig timing is safe here because app.configTree is in our input trees.
     let config = this.app.configTree.readConfig();
@@ -101,7 +112,7 @@ export default class extends BroccoliPlugin {
       pkg['ember-addon'] = {};
     }
     pkg['ember-addon'].externals = [...externals.values()];
-    pkg['ember-addon'].entrypoints = ['index.html', 'tests/index.html'].concat(entrypoints);
+    pkg['ember-addon'].entrypoints = this.emberEntrypoints().concat(entrypoints);
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
     pkg['ember-addon']['babel-config'] = '_babel_config_.js';
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
@@ -137,7 +148,7 @@ export default class extends BroccoliPlugin {
   }
 
   private rewriteHTML() {
-    for (let entrypoint of  ['index.html', 'tests/index.html']) {
+    for (let entrypoint of  this.emberEntrypoints()) {
       // inputsPaths[3] is the htmlTree we were given.
       let dom = new JSDOM(readFileSync(join(this.inputPaths[3], entrypoint), 'utf8'));
       this.updateHTML(entrypoint, dom);
@@ -157,6 +168,7 @@ export default class extends BroccoliPlugin {
     // for the app tree, we take everything
     let lazyModules = walkSync(this.inputPaths[1], {
       globs: ['**/*.{js,hbs}'],
+      ignore: ['tests/**'],
       directories: false
     }).map(specifier => {
       let noJS = specifier.replace(/\.js$/, '');

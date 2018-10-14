@@ -1,5 +1,13 @@
 # Stack
 
+ - finish making every legacyTrees into a protected method so it can be overidden
+ - start documenting things addons do that are impossible to patch over
+  - having the same import do different things in test and non-test
+    (ember-window-mock). Solution is an API for importing and installing the
+    test behavior explicitly from test code.
+ - document how to use build-time-config to strip even static imports
+  - we need slightly stronger semantics for our code block stripping. It should also strip the corresponding import statements that are used only inside the stripped block. This means you're not allowed to rely on the side-effects of the import.
+
  - next is tests.html entrypoint
  - write README, publish to npm, open repos
  - there's a weird babel bug that forced me to rename some locals in travis

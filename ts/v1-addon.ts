@@ -8,7 +8,7 @@ import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
-import { todo } from './messages';
+import { todo, unsupported } from './messages';
 import { TrackedImports } from './tracked-imports';
 import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
@@ -137,7 +137,7 @@ export default class V1Addon implements V1Package {
     });
 
     if (version && semver.satisfies(version, '^5')) {
-      todo(`${this.name} is using babel 5. Not installing our custom plugin.`);
+      unsupported(`${this.name} is using babel 5. Not installing our custom plugin.`);
       return;
     }
 
@@ -181,6 +181,27 @@ export default class V1Addon implements V1Package {
     return this.addonInstance._treeFor(name);
   }
 
+  protected treeForAddon(): Tree|undefined {
+    if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
+      return new MultiFunnel(this.invokeOriginalTreeFor('addon'), {
+        srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
+      });
+      // todo: also invoke treeForAddonTemplates
+    } else if (this.hasStockTree('addon')) {
+      return this.transpile(this.stockTree('addon', {
+        exclude: ['styles/**']
+      }));
+    }
+  }
+
+  protected addonStylesTree(): Tree|undefined {
+    if (this.customizes('treeForAddonStyles')) {
+      todo(`${this.name} may have customized the addon style tree`);
+    } else if (this.hasStockTree('addon-styles')) {
+      return this.transpile(this.stockTree('addon-styles'), { includeCSS: true });
+    }
+  }
+
   @Memoize()
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
     let trees = [];
@@ -193,37 +214,26 @@ export default class V1Addon implements V1Package {
     }
 
     if (this.customizes('treeFor')) {
-      todo(`${this.name} has customized treeFor`);
+      unsupported(`${this.name} has customized treeFor`);
     }
 
     {
-      let addonTree;
-      if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-        addonTree = new MultiFunnel(this.invokeOriginalTreeFor('addon'), {
-          srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
-        });
-        // todo: also invoke treeForAddonTemplates
-      } else if (this.hasStockTree('addon')) {
-        addonTree = this.transpile(this.stockTree('addon', {
-          exclude: ['styles/**']
-        }));
-      }
+      let addonTree = this.treeForAddon();
       if (addonTree) {
         importParsers.push(this.parseImports(addonTree));
         trees.push(addonTree);
       }
     }
 
-    if (this.customizes('treeForAddonStyles')) {
-      todo(`${this.name} may have customized the addon style tree`);
-    } else if (this.hasStockTree('addon-styles')) {
-      trees.push(
-        this.transpile(this.stockTree('addon-styles'), { includeCSS: true })
-      );
-      if (!meta['implicit-styles']) {
-        meta['implicit-styles'] = [];
+    {
+      let addonStylesTree = this.addonStylesTree();
+      if (addonStylesTree) {
+        trees.push(addonStylesTree);
+        if (!meta['implicit-styles']) {
+          meta['implicit-styles'] = [];
+        }
+        meta['implicit-styles'].push(`./${this.name}.css`);
       }
-      meta['implicit-styles'].push(`./${this.name}.css`);
     }
 
     if (this.customizes('treeForStyles')) {
@@ -308,7 +318,8 @@ export default class V1Addon implements V1Package {
         trees.push(
           new Snitch(tree, {
             // The normal behavior is to namespace your public files under your
-            // own name. But addons can flaunt that.
+            // own name. But addons can flaunt that, and that goes beyond what
+            // the v2 format is allowed to do.
             allowedPaths: new RegExp(`^${this.name}/`),
             description: `${this.name} treeForPublic`
           }, {

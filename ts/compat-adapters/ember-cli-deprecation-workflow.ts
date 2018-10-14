@@ -5,7 +5,7 @@ import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
 import Funnel from 'broccoli-funnel';
 
-export default class EmberData extends V1Addon {
+export default class extends V1Addon {
   @Memoize()
   get v2Trees() {
     // ember-cli-deprecation-workflow does `app.import` of a file that isn't in

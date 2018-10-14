@@ -251,6 +251,10 @@ export default class V1Addon implements V1Package {
         addonTestSupportTree = new Snitch(
           this.invokeOriginalTreeFor('addon-test-support'),
           {
+            // the normal behavior (when the addon doesn't customize or when
+            // they at least call `super`) is to namespace their stuff under
+            // my-addon-name/test-support. Addons that don't do that are asking
+            // for trouble.
             allowedPaths: new RegExp(`^${this.name}/test-support/`),
             description: `${this.name} treeForAddonTestSupport`,
           }, {
@@ -303,6 +307,8 @@ export default class V1Addon implements V1Package {
       if (tree) {
         trees.push(
           new Snitch(tree, {
+            // The normal behavior is to namespace your public files under your
+            // own name. But addons can flaunt that.
             allowedPaths: new RegExp(`^${this.name}/`),
             description: `${this.name} treeForPublic`
           }, {

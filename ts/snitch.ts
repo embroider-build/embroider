@@ -27,12 +27,16 @@ export default class Snitch extends Funnel {
 
   build() {
     if (this.mustCheck) {
+      let badPaths = [];
       walkSync(this.inputPaths[0], { directories: false })
         .map(filename => {
           if (!this.allowedPaths.test(filename)) {
-            unsupported(`${this.description} contains unsupported path: ${filename}`);
+            badPaths.push(filename);
           }
         });
+      if (badPaths.length > 0) {
+        unsupported(`${this.description} contains unsupported paths: ${badPaths.join(', ')}`);
+      }
       this.mustCheck = false;
     }
     return super.build();

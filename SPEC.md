@@ -66,7 +66,7 @@ This compile step lets us separate the authoring format (which isn’t changing 
 
 and no `version` key (or version key less than 2) in **Ember package metadata**.
 
-**non-Ember package**: a package without `keywords: [``"``ember-addon``"``]`
+**non-Ember package**: a package without `keywords: ["ember-addon"]`
 
 
 
@@ -78,7 +78,7 @@ First, here’s the list of things a v2 package can provide. More detail on each
 
 
 - **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.js/`)
-- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**``*/**``.js`). This stops being needed under Module Unification, but v2 package format is not tied to MU — you can adopt either first.
+- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.js`). This stops being needed under Module Unification, but v2 package format is not tied to MU — you can adopt either first.
 - **CSS:** available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
 - **Assets**: any files that are neither JS nor CSS that should be available in the final built application directory (typical examples are images and fonts).
 - **Middleware**: express middleware that will mount automatically during development, unchanged from v1.
@@ -102,10 +102,10 @@ In v1 packages, `main` usually points to a build-time configuration file. That f
 Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve any **allowed dependency**, causing it to be included in the build whenever the importing module is included. This replaces `app.import`.
 
 
-  Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how node module resolution works. This is different from how run-time AMD module resolution has historically worked in Ember Apps, so the build step that produces the v2 publication format will need to adjust import paths appropriately. For example, if `your-package/a.js` tries to import from `"``your-package/b``"`, that needs to get rewritten to “`./b`".
+  Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how node module resolution works. This is different from how run-time AMD module resolution has historically worked in Ember Apps, so the build step that produces the v2 publication format will need to adjust import paths appropriately. For example, if `your-package/a.js` tries to import from `"your-package/b"`, that needs to get rewritten to “`./b`".
 
 
-Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import(``'``./lang-en``'``)` is OK but `import(`./lang-${language}`)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
+Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
 
 Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension (a v1-to-v2 compiler can adjust these specifiers automatically).
 
@@ -273,7 +273,7 @@ Finally, your `build` module may export named constants that will be made availa
 
 The v2 format deliberately moves a lot of dynamic behavior to publication time. So how do we deal with remaining cases where different code needs to be included based on dynamic information?
 
-You may export named `const` values from your `build` module (as defined in the **Addon Hooks** section). These constants will be available to your Javascript via `import { someConstant } from` `'``@ember/build-time-config/your-package-name``'`, and we guarantee that a dead-code elimination step can see any boolean constant branch predicates (this is how feature flags already work inside Ember itself). For example:
+You may export named `const` values from your `build` module (as defined in the **Addon Hooks** section). These constants will be available to your Javascript via `import { someConstant } from` `'@ember/build-time-config/your-package-name'`, and we guarantee that a dead-code elimination step can see any boolean constant branch predicates (this is how feature flags already work inside Ember itself). For example:
 
 
     import { needsLegacySupport } from '@ember/build-time-config/my-package';
@@ -336,7 +336,7 @@ When and only when a package is active:
 
 
 - all standard Ember module types (`your-package/components/*.js`, `your-package/services/*.js`, etc) from its **Own Javascript** *that cannot be statically ruled out as unnecessary* are included in the build as if some application code has `import`ed them. (What counts as “cannot be statically ruled out” is free to change as apps adopt increasingly static practices. This doesn’t break any already published packages, it just makes builds that consume them more efficient.)
-- if your **Ember package metadata** contains `"``implicit-scripts``"` or `"``implicit-test-scripts``"`,  the listed scripts will be included in the consuming app or its tests, respectively. Each of these keys can contain a list of specifier strings that will be resolved relative to the package. This is a backward-compatibility feature for capturing the behavior of v1 packages. New features are encouraged to use direct `import` where possible.
+- if your **Ember package metadata** contains `"implicit-scripts"` or `"implicit-test-scripts"`,  the listed scripts will be included in the consuming app or its tests, respectively. Each of these keys can contain a list of specifier strings that will be resolved relative to the package. This is a backward-compatibility feature for capturing the behavior of v1 packages. New features are encouraged to use direct `import` where possible.
 
 
   Example:
@@ -344,7 +344,7 @@ When and only when a package is active:
       "version": 2,
       "implicit-scripts": ["./vendor/my-package/some-shim", "lodash/sortBy"]
     }
-  Scripts included this way are *not* interpreted as ES modules. They are evaluated in script context (think `<script src=``"``./vendor/my-package/some-shim.js``"``>` not `<script type=``"``module``"` `src=``"``./vendor-my-package/some-shim.js``"``>`.
+  Scripts included this way are *not* interpreted as ES modules. They are evaluated in script context (think `<script src="./vendor/my-package/some-shim.js">` not `<script type="module"` `src="./vendor-my-package/some-shim.js">`.
 
 
 - all **App Javascript** is included in the build.
@@ -441,25 +441,25 @@ One feature that *is* allowed in a v2 app is the `externals` key in **Ember pack
 These are features that are only supported in apps, not addons:
 
 
-- `"``entrypoints``"`: in **Ember package metadata**, a list of relative paths to files. The intent of `"``entrypoints``"`  is that it declares that each file in the list should result in a valid URL in the final app.
+- `"entrypoints"`: in **Ember package metadata**, a list of relative paths to files. The intent of `"entrypoints"`  is that it declares that each file in the list should result in a valid URL in the final app.
 
 
   The most important entrypoints are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.)  It is the job of the final stage packager to examine each entrypoint HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
 
-  Note that packagers must respect the HTML semantics of `<script type=``"``module``"``>` vs  `<script>` vs `<script async>`.  For example:
-  - don’t go looking for `import` in `<script>`, it’s only correct in `<script type=``"``module``"``>`
+  Note that packagers must respect the HTML semantics of `<script type="module">` vs  `<script>` vs `<script async>`.  For example:
+  - don’t go looking for `import` in `<script>`, it’s only correct in `<script type="module">`
   - a series of `<script>` tags may be concatenated (in order!) into one file while preserving correctness. A series of `<script async>` tags cannot.
 
 
-  File types other than HTML are allowed to appear in `"``entrypoints``"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by HTTP). For example, a Javascript file in `"``entrypoints``"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
+  File types other than HTML are allowed to appear in `"entrypoints"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by HTTP). For example, a Javascript file in `"entrypoints"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
 
 
-  A conventional app will have an `"``entrypoints``"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
+  A conventional app will have an `"entrypoints"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
 
 - synchronous dynamic imports are allowed in the app’s Javascript. See next subsection.
-- `"``template-compiler``"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
-- `"``babel-config``"`: in Ember package metadata, the relative path to a module that exports *serializable* babel options. These are the app’s preferred settings, and final stage packagers should use these as input when they configure their own babel support.
-- Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with its exposed `"``babel-config``"`. This is an optimization — we *could* logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
+- `"template-compiler"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
+- `"babel-config"`: in Ember package metadata, the relative path to a module that exports *serializable* babel options. These are the app’s preferred settings, and final stage packagers should use these as input when they configure their own babel support.
+- Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with its exposed `"babel-config"`. This is an optimization — we *could* logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
 
 **Apps can use synchronous dynamic “imports”**
 
@@ -471,7 +471,7 @@ Our extensions are:
 - `importSync(specifier: string) => Module` a special form with the same syntax and semantics as `import()` except instead of returning a Promise it returns the module object synchronously or throws if it is not available.
 - `mayImportSync StringLiteral` a special form that exists to inform a static analyzer that a given specifier might be accessed via `importSync`. Only valid at module scope. Any module that says `mayImportSync "something"` and every module that statically depends on it may safely assume that either  `importSync("something")` will succeed or it will fail *at build time.* `mayImportSync` has no runtime semantics (it can compile to nothing by the time we are running in the browser).
 
-In practice, final stage packagers already tend to offer `importSync` semantics (because they compile `import`  to a synchronous function). `mayImportSync` is less supported, but given that we are keeping runtime AMD compatibility (see **Named AMD Interop** below), we can express it as `window.define(``"``your-module``"``, [], function(){ return importSync(``"``your-module``"``); })`.
+In practice, final stage packagers already tend to offer `importSync` semantics (because they compile `import`  to a synchronous function). `mayImportSync` is less supported, but given that we are keeping runtime AMD compatibility (see **Named AMD Interop** below), we can express it as `window.define("your-module", [], function(){ return importSync("your-module"); })`.
 
 
   Q. What is the difference between `mayImportSync "thing"` and `import "thing"`, since both just cause `"thing"` to be statically added to our build?
@@ -526,7 +526,7 @@ This makes it basically impossible to statically discover all the modules at bui
 
 To describe our interoperability strategy, we must first distinguish “run-time specifiers” and “build-time specifiers”. A run-time specifier (like `@ember/component`) is a name that is able to be `require`'d at runtime. A build-time specifier (like `ember-cli-shims/vendor/ember-cli-shims/app-shims`) is something you can actually `require.resolve` using Node resolution rules.
 
-For many modules, the run-time and build-time specifiers happily coincide (or at least they do once we have run the v1 to v2 compiler step, which (for example) moves `ember-percy/addon/index.js` to `ember-percy/index.js` so that `import { percySnapshot } from` `"``ember-percy``"` follows normal node_modules resolution. This is the case for all `/app` and `/addon` Javascript that is authored in ES modules. It’s also already true for packages that adopt Module Unification (good job MU authors).
+For many modules, the run-time and build-time specifiers happily coincide (or at least they do once we have run the v1 to v2 compiler step, which (for example) moves `ember-percy/addon/index.js` to `ember-percy/index.js` so that `import { percySnapshot } from` `"ember-percy"` follows normal node_modules resolution. This is the case for all `/app` and `/addon` Javascript that is authored in ES modules. It’s also already true for packages that adopt Module Unification (good job MU authors).
 
 But for many other cases (include the examples like `@ember/component`), the build- and run-time specifiers are different.
 
@@ -539,11 +539,11 @@ So our solution works like this:
 2. For imports that resolve to files within the same package, rewrite them as relative imports if they aren’t already (node_modules resolution does not allow packages to resolve themselves).
 3. For imports that cannot be resolved, list them in the **Ember package metadata** as `externals`.
 4. Our final-stage packager (like Webpack or Parcel) should be configured to find externals via our runtime AMD loader.
-5. Our final-stage packager integration shall hook itself in as a fallback to `require` (for example, `require(``'``foo``'``)` would first find something that came from a runtime `define(``'``foo``'``, …)`, but then would also try `__webpack_require__(``'``foo``'``)`.
+5. Our final-stage packager integration shall hook itself in as a fallback to `require` (for example, `require('foo')` would first find something that came from a runtime `define('foo', …)`, but then would also try `__webpack_require__('foo')`.
 
 This allows statically-defined modules to depend on dynamically-defined modules (using externals), and it allows dynamically-defined modules to depend on statically-defined modules (because of the fallback hook).
 
-The only failure mode for this design happens if a v1 package was doing a run-time resolution of a specifier that *happens to also be statically resolvable*. For example, if you’re using `ember-cli-moment-shim` to `import` `"``moment``"`, but you *also* list `moment` in your package.json dependencies, when you switch to a v2 build you will start getting the direct `moment` and not the shim. In that case, you could get an unexpected version of moment. In practice, I think this is rare, and even when you get the surprising behavior you often wouldn’t get breaking behavior (because people generally don’t stomp on existing module names to provide something entirely different). Keep in mind it’s not sufficient that `moment` happens to be resolvable — we strictly check that you’ve actually listed it as a dependency. So even if `moment` gets hoisted out of `ember-cli-moment-shim`, you’re still safe. It’s only if you actually depend *directly* on `moment` and `ember-cli-moment-shim` that you would get new behavior.
+The only failure mode for this design happens if a v1 package was doing a run-time resolution of a specifier that *happens to also be statically resolvable*. For example, if you’re using `ember-cli-moment-shim` to `import` `"moment"`, but you *also* list `moment` in your package.json dependencies, when you switch to a v2 build you will start getting the direct `moment` and not the shim. In that case, you could get an unexpected version of moment. In practice, I think this is rare, and even when you get the surprising behavior you often wouldn’t get breaking behavior (because people generally don’t stomp on existing module names to provide something entirely different). Keep in mind it’s not sufficient that `moment` happens to be resolvable — we strictly check that you’ve actually listed it as a dependency. So even if `moment` gets hoisted out of `ember-cli-moment-shim`, you’re still safe. It’s only if you actually depend *directly* on `moment` and `ember-cli-moment-shim` that you would get new behavior.
 
 
 # How we Teach This

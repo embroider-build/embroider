@@ -350,7 +350,7 @@ class Webpack {
             reject(templateError.error);
           } else {
             this.consoleWrite(stats.toString());
-            reject(new Error('webpack returned errors to ember-webpack'));
+            reject(new Error('webpack returned errors to @embroider/webpack'));
           }
           return;
         }

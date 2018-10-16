@@ -279,9 +279,10 @@ export default class V1Addon implements V1Package {
           {
             // the normal behavior (when the addon doesn't customize or when
             // they at least call `super`) is to namespace their stuff under
-            // my-addon-name/test-support. Addons that don't do that are asking
-            // for trouble.
-            allowedPaths: new RegExp(`^${this.name}/test-support/`),
+            // "my-addon-name/test-support". A few choose to go under
+            // "my-addon-name" instead, which we can at least work with. But
+            // some use other package names, which is right out.
+            allowedPaths: new RegExp(`^${this.name}/`),
             description: `${this.name} treeForAddonTestSupport`,
           }, {
             srcDir: this.name

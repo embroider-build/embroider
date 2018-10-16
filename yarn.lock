@@ -1704,7 +1704,16 @@ fs-minipass@^1.2.5:
   dependencies:
     minipass "^2.2.1"
 
-fs-tree-diff@^0.5.3, fs-tree-diff@^0.5.7:
+fs-tree-diff@0.5.7:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/fs-tree-diff/-/fs-tree-diff-0.5.7.tgz#315e2b098d5fe7f622880ac965b1b051868ac871"
+  dependencies:
+    heimdalljs-logger "^0.1.7"
+    object-assign "^4.1.0"
+    path-posix "^1.0.0"
+    symlink-or-copy "^1.1.8"
+
+fs-tree-diff@^0.5.3:
   version "0.5.9"
   resolved "https://registry.yarnpkg.com/fs-tree-diff/-/fs-tree-diff-0.5.9.tgz#a4ec6182c2f5bd80b9b83c8e23e4522e6f5fd946"
   dependencies:

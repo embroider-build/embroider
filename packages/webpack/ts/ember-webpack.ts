@@ -1,4 +1,4 @@
-import { Packager } from "ember-cli-vanilla";
+import { Packager } from "@embroider/core";
 import webpack from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';

@@ -23,7 +23,7 @@ function makeHBSExplicit(specifier, _) {
   // referring to a template. To fix this, we would need to modify
   // broccoli-babel-transpiler, but a typical app has many many copies of that
   // library at various different verisons (a symptom of the very problem
-  // ember-cli-vanilla exists to solve).
+  // embroider exists to solve).
   if (/\btemplates\b/.test(specifier) && !/\.hbs$/.test(specifier)) {
     return specifier + '.hbs';
   }

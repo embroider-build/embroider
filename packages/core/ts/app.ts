@@ -56,7 +56,7 @@ export default class App extends Package {
       ensureDirSync(options.workspaceDir);
       this.workspaceDir = realpathSync(options.workspaceDir);
     } else {
-      this.workspaceDir = mkdtempSync(join(tmpdir(), 'ember-cli-vanilla-'));
+      this.workspaceDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
 
     if (options && options.extraPublicTrees) {

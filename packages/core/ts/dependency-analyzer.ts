@@ -6,7 +6,7 @@ import absolutePackageName from './package-name';
 export default class DependencyAnalyzer extends Plugin {
   constructor(private importParsers: ImportParser[], private packageJSON, private isTopLevelApp: boolean) {
     super(importParsers, {
-      annotation: 'ember-cli-vanilla-dependency-analyzer'
+      annotation: '@embroider/core/dependency-analyzer'
     });
   }
 

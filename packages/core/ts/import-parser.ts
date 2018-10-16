@@ -16,7 +16,7 @@ import symlinkOrCopy from 'symlink-or-copy';
 import { join, dirname, extname } from 'path';
 import { isEqual, flatten } from 'lodash';
 
-const debug = makeDebug('ember-cli-vanilla:import-parser');
+const debug = makeDebug('embroider:core:import-parser');
 
 export interface Import {
   path: string;
@@ -36,7 +36,7 @@ export default class ImportParser extends Plugin {
 
   constructor(inputTree: Tree) {
     super([inputTree], {
-      annotation: 'ember-cli-vanilla-import-parser',
+      annotation: 'embroider:core:import-parser',
       persistentOutput: true
     });
     this.parserOptions = this.buildParserOptions();
@@ -135,7 +135,7 @@ export default class ImportParser extends Plugin {
         // argument, so we can just assume this exists
         let argument = node.arguments[0];
         if (argument.type !== 'StringLiteral') {
-          throw new Error('ember-cli-vanilla only supports dynamic import() with a string literal argument.');
+          throw new Error('@embroider/core only supports dynamic import() with a string literal argument.');
         }
         imports.push({ isDynamic: true, specifier: argument.value, path: relativePath });
       }

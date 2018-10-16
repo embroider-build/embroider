@@ -1,5 +1,5 @@
 import makeDebug from 'debug';
-const todo = makeDebug('ember-cli-vanilla:todo');
-const unsupported = makeDebug('ember-cli-vanilla:unsupported');
+const todo = makeDebug('embroider:core:todo');
+const unsupported = makeDebug('embroider:core:unsupported');
 
 export { todo, unsupported };

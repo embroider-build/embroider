@@ -18,7 +18,7 @@ export default class V1InstanceCache {
 
   constructor(oldApp) {
     if (!oldApp._activeAddonInclude) {
-      throw new Error('ember-cli-vanilla requires a patch to ember-cli that provides tracking of who calls app.import');
+      throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }
 
     this.app = new V1App(oldApp);

@@ -40,7 +40,7 @@ export default class Workspace extends Plugin {
   constructor(app: App, destDir: string) {
     let copiedPackages = findCopiedPackages(app);
     super([...copiedPackages].map(p => p.vanillaTree), {
-      annotation: 'ember-cli-vanilla-workspace',
+      annotation: 'embroider:core:workspace',
       persistentOutput: true,
       needsCache: false
     });

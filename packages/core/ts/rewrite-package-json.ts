@@ -6,7 +6,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 export default class RewritePackageJSON extends Plugin {
   constructor(inputTree, private analyzer: DependencyAnalyzer, private meta) {
     super([inputTree, analyzer], {
-      annotation: 'ember-cli-vanilla-rewrite-package-json'
+      annotation: 'embroider:core:rewrite-package-json'
     });
   }
 

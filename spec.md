@@ -1,10 +1,10 @@
-# Vanilla Build Spec
+# V2 Package Spec
 
 # Motivation
 
 One of the good things about Ember is that apps and addons have a powerful set of build-time capabilities that allow lots of shared code with zero-to-no manual integration steps for the typical user. We have been doing “zero config” since before it was a cool buzzword (it was just called “convention over configuration”). And we’ve been broadly successful at maintaining very wide backward- and forward-compatibility for a large body of highly-rated community-maintained addons.
 
-But one of the challenging things about Ember is that our ecosystem’s build-time capabilities are more implementation-defined than spec-defined, and the implementation has accumulated capabilities organically while only rarely phasing out older patterns. I believe the lack of a clear, foundational, build-time public API specification is the fundamental underlying issue that efforts like the various packaging / packager RFCs have tried to work around. 
+But one of the challenging things about Ember is that our ecosystem’s build-time capabilities are more implementation-defined than spec-defined, and the implementation has accumulated capabilities organically while only rarely phasing out older patterns. I believe the lack of a clear, foundational, build-time public API specification is the fundamental underlying issue that efforts like the various packaging / packager RFCs have tried to work around.
 
 The benefits to users for this RFC are:
 
@@ -99,7 +99,7 @@ The benefit of this design is that it makes our packages understandable by a bro
 
 In v1 packages, `main` usually points to a build-time configuration file. That file is moving and will be described in the **Addon Hooks** section below.
 
-Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve any **allowed dependency**, causing it to be included in the build whenever the importing module is included. This replaces `app.import`. 
+Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve any **allowed dependency**, causing it to be included in the build whenever the importing module is included. This replaces `app.import`.
 
 
   Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how node module resolution works. This is different from how run-time AMD module resolution has historically worked in Ember Apps, so the build step that produces the v2 publication format will need to adjust import paths appropriately. For example, if `your-package/a.js` tries to import from `"``your-package/b``"`, that needs to get rewritten to “`./b`".
@@ -148,7 +148,7 @@ This is interpreted as a build-time directive that ensures that any build that i
 It is also possible for other packages (including the consuming application) to depend on a CSS file in any of its **allowed dependencies**, from either Javascript or CSS. From Javascript it looks like:
 
 
-    // This will resolve the `your-addon` package and find 
+    // This will resolve the `your-addon` package and find
     // './some-component.css' relative to the package root.
     // The .css file extension is mandatory
     import 'your-addon/some-component.css';
@@ -232,18 +232,18 @@ List of existing v1 public methods and properties on addons, and their dispositi
 
 
 - blueprintsPath: unchanged in v2
-- buildError: Kept. This is an event hook that makes it possible to implement things like ember-cli-build-notifications. 
+- buildError: Kept. This is an event hook that makes it possible to implement things like ember-cli-build-notifications.
 - cacheKeyForTree: Dropped. This is a build-time feature, it doesn’t belong in the publication format.
-- config: TODO. 
+- config: TODO.
 - contentFor: Some of the possible destinations for content are removed. See **ContentFor** section.
-- dependencies: Dropped. Can’t find any usages in the wild. 
+- dependencies: Dropped. Can’t find any usages in the wild.
 - description: Dropped. This is redundant with the description in package.json.
 - import: Dropped. This is replaced with actual ECMA `import` for both Javascript and CSS.
 - importTransforms: Dropped, because this goes with `this.import()` above. All examples in the wild that I could find are handled better by other alternatives.
   - the CJS and AMD transforms aren’t needed because better packagers can automate the transformation of both, as demonstrated by ember-auto-import
   - the fastboot transform is used to neuter whole dependencies in fastboot. This can be handled by ECMA dynamic `import()` instead.
   - most other occurrences in the EmberObserver code search are actually addons re-exporting the fastboot transform (because apparently `importTransforms` doesn’t cascade properly).
-- included: Unchanged, but it should be needed much more rarely. Today it is mostly used to `this.import()` things, which is not a thing anymore. 
+- included: Unchanged, but it should be needed much more rarely. Today it is mostly used to `this.import()` things, which is not a thing anymore.
 - includedCommands: Unchanged.
 - init: Dropped in favor of `constructor`, since we’re now talking about a native class.
 - isDevelopingAddon: Dropped. This doesn’t belong in each addon’s code, it’s a runtime decision and control over it belongs in ember-cli proper.
@@ -251,9 +251,9 @@ List of existing v1 public methods and properties on addons, and their dispositi
 - lintTree: Kept. This is a legit runtime thing to do.
 - moduleName: Dropped. Using a moduleName that doesn’t match your NPM package name is a megatroll, and it won’t work with build tools that know how to follow the Node package resolution algorithm.
 - name: Dropped. Setting a name that doesn’t match your NPM package name is a megatroll.
-- outputReady: Kept. 
+- outputReady: Kept.
 - postBuild: Kept.
-- postprocessTree: TODO. need to confirm existing pre/postprocessTree behaviors. I think most of the trees (js, styles, templates, all) only apply to your immediate parent, meaning they can run at publication time when they’re being applied to an addon. 
+- postprocessTree: TODO. need to confirm existing pre/postprocessTree behaviors. I think most of the trees (js, styles, templates, all) only apply to your immediate parent, meaning they can run at publication time when they’re being applied to an addon.
 - preBuild: Kept
 - preprocessTree: TODO. Same boat as postprocessTree.
 - serverMiddleware: Kept.
@@ -295,7 +295,7 @@ This is also a motivating example for our support of dynamic `imports()`: it all
       import("../css/default-styles.css");
     }
 
-Your `build` module is evaluated in Node, not the browser. We just promise that any JSON-serializable constants it exports will get packaged up into the special Ember-provided `@ember/build-time-config` package. 
+Your `build` module is evaluated in Node, not the browser. We just promise that any JSON-serializable constants it exports will get packaged up into the special Ember-provided `@ember/build-time-config` package.
 
 **Template Build-time conditionals**
 
@@ -336,7 +336,7 @@ When and only when a package is active:
 
 
 - all standard Ember module types (`your-package/components/*.js`, `your-package/services/*.js`, etc) from its **Own Javascript** *that cannot be statically ruled out as unnecessary* are included in the build as if some application code has `import`ed them. (What counts as “cannot be statically ruled out” is free to change as apps adopt increasingly static practices. This doesn’t break any already published packages, it just makes builds that consume them more efficient.)
-- if your **Ember package metadata** contains `"``implicit-scripts``"` or `"``implicit-test-scripts``"`,  the listed scripts will be included in the consuming app or its tests, respectively. Each of these keys can contain a list of specifier strings that will be resolved relative to the package. This is a backward-compatibility feature for capturing the behavior of v1 packages. New features are encouraged to use direct `import` where possible. 
+- if your **Ember package metadata** contains `"``implicit-scripts``"` or `"``implicit-test-scripts``"`,  the listed scripts will be included in the consuming app or its tests, respectively. Each of these keys can contain a list of specifier strings that will be resolved relative to the package. This is a backward-compatibility feature for capturing the behavior of v1 packages. New features are encouraged to use direct `import` where possible.
 
 
   Example:
@@ -365,7 +365,7 @@ The `activeDependencies` hook is the *only* way to disable child packages. Notic
 
 TODO: this section is a rough draft. It’s ideas need to get incorporated better into the rest of the doc, too.
 
-v1 Addon packages make up their own conventions for how to receive configuration from their parent package(s). It’s messy. Many packages expect their config under a key that doesn’t actually match their own name (like `fingerprint` for `broccoli-asset-rev`), which makes things unnecessarily mysterious. 
+v1 Addon packages make up their own conventions for how to receive configuration from their parent package(s). It’s messy. Many packages expect their config under a key that doesn’t actually match their own name (like `fingerprint` for `broccoli-asset-rev`), which makes things unnecessarily mysterious.
 
 Furthermore, a package can be used by multiple other packages simultaneously. For some features (like preprocessors) this is fine, because multiple instances of a given package with distinct configurations can each operate independently. But for features like **Own Javascript**, there’s no desirable way for each instance to operate independently. A consensus must be reached. v1 packages just smoosh together the output from all instances, with a precedence that depends on ember-cli traversal order. This often wastes work, since multiple instances are doing the same thing.
 
@@ -385,7 +385,7 @@ This is an example of embracing NPM conventions: best practice is to preprocess 
 
 In-repo addons are **addons**, so they have all the same semantics. The only gotcha is that we need them to be resolvable by the node modules resolution algorithm, such that their containing package can import directly from them.
 
-Therefore, a v2 package that contains in-repo addons is responsible for linking or copying them into its own node_modules directory. 
+Therefore, a v2 package that contains in-repo addons is responsible for linking or copying them into its own node_modules directory.
 
 
 ## Engines
@@ -429,7 +429,7 @@ These features include:
 - the `implicit-scripts` and `implicit-test-scripts` keys in Ember package metadata.
 - the `app-js` key in **Ember package metadata**
 - the `build` key in **Ember package metadata**. (We should consider updating the *authoring* format so that apps can use a build file with the standard package hooks, because that makes a lot of sense. But it’s not appropriate in the v2 build output, and this change can be a separate RFC, and it will be an easier RFC after landing this one.)
-- automatic inclusion of resolvable types (components, services, etc) from the **Own Javascript** of all **Active Dependencies.** 
+- automatic inclusion of resolvable types (components, services, etc) from the **Own Javascript** of all **Active Dependencies.**
 
 All these features can appear in v2 *addons*, and the *app* ensures each one is represented by standards-compliant Javascript within the app’s own code.
 
@@ -445,7 +445,7 @@ These are features that are only supported in apps, not addons:
 
 
   The most important entrypoints are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.)  It is the job of the final stage packager to examine each entrypoint HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
-  
+
   Note that packagers must respect the HTML semantics of `<script type=``"``module``"``>` vs  `<script>` vs `<script async>`.  For example:
   - don’t go looking for `import` in `<script>`, it’s only correct in `<script type=``"``module``"``>`
   - a series of `<script>` tags may be concatenated (in order!) into one file while preserving correctness. A series of `<script async>` tags cannot.
@@ -455,7 +455,7 @@ These are features that are only supported in apps, not addons:
 
 
   A conventional app will have an `"``entrypoints``"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
-  
+
 - synchronous dynamic imports are allowed in the app’s Javascript. See next subsection.
 - `"``template-compiler``"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
 - `"``babel-config``"`: in Ember package metadata, the relative path to a module that exports *serializable* babel options. These are the app’s preferred settings, and final stage packagers should use these as input when they configure their own babel support.
@@ -468,17 +468,17 @@ We need to make two small extensions beyond the ECMA spec, because Ember’s res
 Our extensions are:
 
 
-- `importSync(specifier: string) => Module` a special form with the same syntax and semantics as `import()` except instead of returning a Promise it returns the module object synchronously or throws if it is not available. 
+- `importSync(specifier: string) => Module` a special form with the same syntax and semantics as `import()` except instead of returning a Promise it returns the module object synchronously or throws if it is not available.
 - `mayImportSync StringLiteral` a special form that exists to inform a static analyzer that a given specifier might be accessed via `importSync`. Only valid at module scope. Any module that says `mayImportSync "something"` and every module that statically depends on it may safely assume that either  `importSync("something")` will succeed or it will fail *at build time.* `mayImportSync` has no runtime semantics (it can compile to nothing by the time we are running in the browser).
 
 In practice, final stage packagers already tend to offer `importSync` semantics (because they compile `import`  to a synchronous function). `mayImportSync` is less supported, but given that we are keeping runtime AMD compatibility (see **Named AMD Interop** below), we can express it as `window.define(``"``your-module``"``, [], function(){ return importSync(``"``your-module``"``); })`.
 
 
   Q. What is the difference between `mayImportSync "thing"` and `import "thing"`, since both just cause `"thing"` to be statically added to our build?
-  
-  A. `mayImportSync "thing"` doesn’t *execute* the dependency. `import "thing"` guarantees that the dependency will be executed before any of the code in your module. 
 
-Only app packages can use this capability, not addons. It’s mostly of interest to people who want to integrate new final-stage packagers. Addons don’t need this capability because they delegate the responsibility to the consuming application. 
+  A. `mayImportSync "thing"` doesn’t *execute* the dependency. `import "thing"` guarantees that the dependency will be executed before any of the code in your module.
+
+Only app packages can use this capability, not addons. It’s mostly of interest to people who want to integrate new final-stage packagers. Addons don’t need this capability because they delegate the responsibility to the consuming application.
 
 You should think of `mayImportSync` and `importSync` as spec concepts, not literally code that will appear anywhere. In practice, someone integrating a packager can provide us hooks for how to express both of these concepts in terms that their packager understands.
 
@@ -495,12 +495,12 @@ One benefit of our current system *not* respecting node_modules resolution every
 
 This problem can be compounded when you use `npm link` to develop multiple packages simultaneously, since even if you were careful to flatten down your dependencies, you will suddenly have multiple distinct copies again.
 
-This problem is general to NPM, and I think the solution should be equally general. So in one sense, it’s beyond the scope of this document and the vanilla build spec doesn’t need to directly address it. But we should consider the usability impact. Some recommendations to assuage the impact:
+This problem is general to NPM, and I think the solution should be equally general. So in one sense, it’s beyond the scope of this document and the v2 package spec doesn’t need to directly address it. But we should consider the usability impact. Some recommendations to assuage the impact:
 
 
 - add a linting tool to the default app blueprint that will warn whenever a duplicated package would end up in the browser build. Many final-stage packagers already offer analysis features like this. For example, a webpack-based packager could integrate [duplicate-package-checker-webpack-plugin](https://github.com/darrenscerri/duplicate-package-checker-webpack-plugin) with the Ember build output or test suite.
 - consider whether we can use Node’s [preserve symlink](https://nodejs.org/api/cli.html#cli_preserve_symlinks)s option to prevent `npm link` from introducing duplication.
-- find or write a utility that does a more sophisticated `npm link` that also back-links all shared dependencies. 
+- find or write a utility that does a more sophisticated `npm link` that also back-links all shared dependencies.
 
 One hopeful NPM-ecosystem proposal is [Yarn Plugn’n’Play](https://github.com/yarnpkg/rfcs/pull/101). If that proposal or a similar one moves forward, everything in this spec still works, and only localized changes to our build code would be needed (no ecosystem-wide changes to all addons / packages would be needed).
 
@@ -511,7 +511,7 @@ My goal is to make it so we can automatically compile all v1 packages to v2 on d
 
 We can also make v2 packages work with older ember-cli by taking advantage of the existing `main` key support in **Ember package metadata**. v2 packages will have their true `main` pointing at their **Own Javascript** as described so far, while pointing their `ember-addon.main` at a v2-to-v1 shim.  This allows addon authors to begin to update immediately without dropping support for older ember-cli versions.
 
-Addons can immediately begin relying on direct import from NPM by using ember-auto-import as a polyfill. In old ember-cli versions, the ember-auto-import will run. In new ember-cli versions, ember-auto-import can become a no-op. To make this fully align with the Vanilla spec, ember-auto-import should gain CSS support to match.
+Addons can immediately begin relying on direct import from NPM by using ember-auto-import as a polyfill. In old ember-cli versions, the ember-auto-import will run. In new ember-cli versions, ember-auto-import can become a no-op. To make this fully align with the v2 build spec, ember-auto-import should gain CSS support to match.
 
 **Named AMD Interop**
 
@@ -519,7 +519,7 @@ Our runtime AMD-based loader does not mesh well with ES module and node_modules 
 
 
 - `@ember/component` really comes from `ember-cli-shims/vendor/ember-cli-shims/app-shims`, which uses globals to find the real code in `ember-source`.
-- `moment` typically comes from `ember-cli-moment-shim`, which has its own `dependency` on `moment` and dynamically incorporates the right files into the build. 
+- `moment` typically comes from `ember-cli-moment-shim`, which has its own `dependency` on `moment` and dynamically incorporates the right files into the build.
 - `qunit` typically comes from a shim in `@ember/test-helpers/vendor/shims/qunit`, which in turn uses globals to find code that gets dynamically incorporated via `ember-qunit`.
 
 This makes it basically impossible to statically discover all the modules at build time. It would be nice to completely jettison the whole named AMD loader, but in practice it is public API that is widely used. This design *does not* propose any breaking changes to it.
@@ -530,7 +530,7 @@ For many modules, the run-time and build-time specifiers happily coincide (or at
 
 But for many other cases (include the examples like `@ember/component`), the build- and run-time specifiers are different.
 
-The good news is, even though the `define` side is generally too dynamic to analyze, in practice Ember apps overwhelmingly use `import` on the consuming side, which we *can* analyze. Any `import` specifier that appears in a v1 package can safely be assumed to already be available at runtime (or if it isn’t, the package was already broken and we aren’t making it any worse). 
+The good news is, even though the `define` side is generally too dynamic to analyze, in practice Ember apps overwhelmingly use `import` on the consuming side, which we *can* analyze. Any `import` specifier that appears in a v1 package can safely be assumed to already be available at runtime (or if it isn’t, the package was already broken and we aren’t making it any worse).
 
 So our solution works like this:
 

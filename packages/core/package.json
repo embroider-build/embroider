@@ -1,7 +1,7 @@
 {
-  "name": "ember-cli-vanilla",
+  "name": "@embroider/core",
   "version": "0.0.1",
-  "description": "Compatibility layer for converting Ember packages to the new vanilla build spec.",
+  "description": "A build system for EmberJS applications.",
   "main": "js/index.js",
   "author": "Edward Faulkner",
   "license": "MIT",

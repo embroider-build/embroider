@@ -1,7 +1,7 @@
 {
-  "name": "ember-webpack",
+  "name": "@embroider/webpack",
   "version": "0.0.1",
-  "description": "Webpack builder for vanilla Ember apps",
+  "description": "Builds EmberJS apps with Webpack",
   "main": "js/ember-webpack.js",
   "author": "Edward Faulkner",
   "license": "MIT",
@@ -36,6 +36,6 @@
     "webpack": "^4.17.1"
   },
   "peerDependencies": {
-    "ember-cli-vanilla": "*"
+    "@embroider/core": "*"
   }
 }

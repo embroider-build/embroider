@@ -2,14 +2,12 @@
   "name": "@embroider/webpack",
   "version": "0.0.1",
   "description": "Builds EmberJS apps with Webpack",
-  "main": "js/ember-webpack.js",
+  "main": "src/ember-webpack.js",
   "author": "Edward Faulkner",
   "license": "MIT",
   "private": false,
   "scripts": {
-    "compile": "tsc",
-    "lint": "tslint --project .",
-    "prepare": "npm run compile"
+    "prepare": "tsc"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",

@@ -1,10 +1,9 @@
 {
-  "include": ["./ts/**/*.ts"],
+  "include": ["./packages/*/src/**/*.ts"],
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
     "declaration": true,
-    "outDir": "./js",
     "typeRoots": ["node_modules/@types", "types"],
     "esModuleInterop": true,
     "noUnusedLocals": true,
@@ -12,5 +11,10 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "allowUnreachableCode": false
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "packages/*/tmp",
+    "packages/*/dist"
+  ]
 }

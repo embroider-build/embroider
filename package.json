@@ -1,4 +1,9 @@
 {
     "private": true,
-    "workspaces": ["packages/*"]
+    "workspaces": ["packages/*"],
+    "scripts": {
+      "compile": "tsc",
+      "lint": "tslint --project .",
+      "clean": "git clean -x -f"
+    }
   }

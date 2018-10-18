@@ -1,4 +1,6 @@
 /node_modules
 /packages/*/node_modules
-/packages/*/js
+/packages/*/src/**/*.js
+/packages/*/src/**/*.d.ts
+/packages/*/src/**/*.map
 *.log

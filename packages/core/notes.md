@@ -1,5 +1,11 @@
 # Stack
 
+ - generalized import renaming:
+    -  already have this for packages that depend on addons that rename themselves
+    -  need it also for things that show up in addon-test-support trees under nonstandard names
+    -  it's OK to only support renaming inside v1 packages. if you want to update to v2 but one of your deps is renaming its files, you can import the real names directly as part of your v2 upgrade.
+    -  the new feature here is that we don't know the full set of names needed until after building.
+
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

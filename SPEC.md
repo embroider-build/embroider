@@ -574,4 +574,163 @@ The API that packager provides is also incomplete compared with this design. For
 
 The prebuilt addons RFC addresses build performance by doing the same kind of work-moving as this design. Addons can do much of their building up front, thus saving time when apps are building. But it only achieves a speedup when apps happen to be using the same build options that addons authors happened to publish. This design takes a different approach that preserves complete freedom for app authors to postprocess all addon Javascript, including dead-code-elimination based on the addon features their app is using. The prebuilt addons RFC also doesn’t attempt to specify the contents of the prebuilt trees — it just accepts the current implementation-defined contents. This is problematic because shared builds artifacts are long-lived, so it’s worth trying to align them with very general, spec-compliant semantics.
 
+# Appendix: List of Ember Package Metadata Fields
+
+## app-js
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+A list of paths to folders that should be merged with the app's own namespace. This is a backward-compatibility feature, avoiding using it.
+
+## babel-config
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Path to a Javascript file that exports a babel config.
+
+Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
+
+## build
+
+```
+Allowed in: addons
+Status: encouraged
+```
+
+Path to a package's build-time hooks file.
+
+## entrypoints
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+List of paths to files (of any type) that must be present as valid URLs in the final output. HTML files are typical entrypoints, but so is anything that we cannot otherwise rule out. For example: everything in `/public` in a traditional Ember app goes into `entrypoints`, since we can't know if anybody expects them to be remain present on the web.
+
+Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
+
+## externals
+
+```
+Allowed in: addons and apps
+Status: intent to deprecate
+```
+
+List of module names that are used within the package but not statically build-time resolvable.
+
+This is a backward-compatibility feature that allows us to more efficiently bridge the gap between build-time and run-time resolution.
+
+## implicit-modules
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+List of paths to Javascript files that should be included as `<script type="module">` whenever this package is active.
+
+This is a backward-compatibility feature that's used by the v1-to-v2 compiler.
+
+## implicit-scripts
+
+```
+Allowed in: addons
+Status: use sparingly
+```
+
+List of paths to Javascript files that should be included via `<script>` whenever this package is active. This is effectively a drop-in replacement for the old `app.import()` of JS files.
+
+Instead of using this, prefer to directly import the code you need from the place that needs it. But this may still be needed if you're depending on a legacy library that doesn't work in module context.
+
+## implicit-styles
+
+```
+Allowed in: addons
+Status: use sparingly
+```
+
+List of paths to CSS files that should be included as `<link rel="stylesheet">` whenever this package is active.
+
+Prefer instead to express your dependencies on CSS via ECMA import from the places where it's needed.
+
+## implicit-test-scripts
+
+```
+Allowed in: addons
+Status: use sparingly
+```
+
+Same as `implicit-scripts`, but only within `tests/index.html`.
+
+## implicit-test-styles
+
+```
+Allowed in: addons
+Status: use sparingly
+```
+
+Same as `implicit-styles`, but only within `tests/index.html`
+
+## main
+
+```
+Allowed in: addons
+Status: encouraged
+```
+
+This field predates the v2 package spec. It's already used by ember-cli to provide an alternative location for the addon's build-time hooks (as opposed to using the top-level `main` from `package.json`). It's definition is unchanged by this spec: old EmberCLI can keep on using this and finding compatible hooks. v2-aware versions of EmberCLI will ignore this in favor of `build`. Addon authors are encouraged to use this field to allow V2 packages to work in older EmberCLI versions.
+
+## renamed-modules
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+An object that maps old module names to new module names. Any Ember package that consumes this package will rewrite its own imports to follow these renames.
+
+For example, `ember-lodash` renames itself to `lodash`. When we compile it into a v2 package, we generate:
+
+```
+"renamed-modules": {
+  "lodash": "ember-lodash"
+}
+```
+
+And then in an app that depends on `ember-lodash`, our Babel plugin will rewrite:
+
+```diff
+-import capitalize from 'lodash/capitalize';
++import capitalize from 'ember-lodash/capitalize';
+```
+
+This is a backward compatibility feature and you should stop doing this. Exposing a module under some other package's name is Not Nice.
+
+## template-compiler
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Path to a Javascript file that provides the preconfigured HBS template compiler.
+
+Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
+
+## version
+
+```
+Allowed in: addons and apps
+Status: encouraged
+```
+
+Identifies that a package is v2 spec compatible.
+
 

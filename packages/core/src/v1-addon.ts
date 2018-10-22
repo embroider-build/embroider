@@ -16,6 +16,8 @@ import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
+import rewriteAddonTestSupport from "./addon-test-support";
+import mergeWith from 'lodash/mergeWith';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -165,14 +167,14 @@ export default class V1Addon implements V1Package {
   // this is split out so that compatability shims can override it to add more
   // things to the package metadata.
   protected get packageMeta() {
-    return this.legacyTrees().meta;
+    return this.legacyTrees().getMeta();
   }
 
   @Memoize()
   private makeV2Trees() {
     let { trees, importParsers } = this.legacyTrees();
     let analyzer = new DependencyAnalyzer(importParsers, this.packageJSON, false );
-    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, this.packageMeta);
+    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };
   }
@@ -217,20 +219,21 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], meta: any } {
+  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], getMeta: () => any } {
     let trees = [];
     let importParsers = [];
-    let meta = {};
+    let staticMeta = {};
+    let dynamicMeta = [];
 
     if (this.addonInstance.name !== this.name) {
-      meta['renamed-modules'] = {
+      staticMeta['renamed-modules'] = {
         [this.addonInstance.name]: this.name
       };
     }
 
     {
       let tracked = new TrackedImports(this.name, this.addonInstance._trackedImports);
-      Object.assign(meta, tracked.meta);
+      Object.assign(staticMeta, tracked.meta);
     }
 
     if (this.customizes('treeFor')) {
@@ -249,10 +252,10 @@ export default class V1Addon implements V1Package {
       let addonStylesTree = this.addonStylesTree();
       if (addonStylesTree) {
         trees.push(addonStylesTree);
-        if (!meta['implicit-styles']) {
-          meta['implicit-styles'] = [];
+        if (!staticMeta['implicit-styles']) {
+          staticMeta['implicit-styles'] = [];
         }
-        meta['implicit-styles'].push(`./${this.name}.css`);
+        staticMeta['implicit-styles'].push(`./${this.name}.css`);
       }
     }
 
@@ -278,20 +281,12 @@ export default class V1Addon implements V1Package {
     {
       let addonTestSupportTree;
       if (this.customizes('treeForAddonTestSupport')) {
-        addonTestSupportTree = new Snitch(
+        let { tree, getMeta } = rewriteAddonTestSupport(
           this.invokeOriginalTreeFor('addon-test-support'),
-          {
-            // the normal behavior (when the addon doesn't customize or when
-            // they at least call `super`) is to namespace their stuff under
-            // "my-addon-name/test-support". A few choose to go under
-            // "my-addon-name" instead, which we can at least work with. But
-            // some use other package names, which is right out.
-            allowedPaths: new RegExp(`^${this.name}/`),
-            description: `${this.name} treeForAddonTestSupport`,
-          }, {
-            srcDir: this.name
-          }
+          this.name
         );
+        addonTestSupportTree = tree;
+        dynamicMeta.push(getMeta);
       } else if (this.hasStockTree('addon-test-support')) {
         addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {
           destDir: 'test-support'
@@ -308,7 +303,7 @@ export default class V1Addon implements V1Package {
       if (tree) {
         importParsers.push(this.parseImports(tree));
         trees.push(tree);
-        meta['app-js'] = appPublicationDir;
+        staticMeta['app-js'] = appPublicationDir;
       }
     }
 
@@ -325,7 +320,7 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      meta['app-js'] = appPublicationDir;
+      staticMeta['app-js'] = appPublicationDir;
       let tree = this.stockTree('app', {
         exclude: ['styles/**'],
         destDir: appPublicationDir
@@ -343,7 +338,7 @@ export default class V1Addon implements V1Package {
             // own name. But addons can flaunt that, and that goes beyond what
             // the v2 format is allowed to do.
             allowedPaths: new RegExp(`^${this.name}/`),
-            description: `${this.name} treeForPublic`
+            foundBadPaths: (badPaths) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
           }, {
             destDir: 'public'
           })
@@ -377,10 +372,25 @@ export default class V1Addon implements V1Package {
       );
     }
 
-    return { trees, importParsers, meta };
+    let getMeta = () => {
+      return mergeWith(
+        {},
+        staticMeta,
+        ...dynamicMeta.map(d => d()),
+        appendArrays
+      );
+    };
+
+    return { trees, importParsers, getMeta };
   }
 }
 
 export interface V1AddonConstructor {
   new(addonInstance, parent: V1Package): V1Addon;
+}
+
+function appendArrays(objValue, srcValue) {
+  if (Array.isArray(objValue)) {
+    return objValue.concat(srcValue);
+  }
 }

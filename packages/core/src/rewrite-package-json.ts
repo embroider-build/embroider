@@ -4,7 +4,7 @@ import { join } from 'path';
 import DependencyAnalyzer from './dependency-analyzer';
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree, private analyzer: DependencyAnalyzer, private meta) {
+  constructor(inputTree, private analyzer: DependencyAnalyzer, private getMeta) {
     super([inputTree, analyzer], {
       annotation: 'embroider:core:rewrite-package-json'
     });
@@ -26,7 +26,7 @@ export default class RewritePackageJSON extends Plugin {
     }
     pkg['ember-addon']['version'] = 2;
     pkg['ember-addon']['externals'] = this.analyzer.externals;
-    Object.assign(pkg['ember-addon'], this.meta);
+    Object.assign(pkg['ember-addon'], this.getMeta());
     this.cachedLast = pkg;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }

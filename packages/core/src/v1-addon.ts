@@ -15,7 +15,6 @@ import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
-import { renamed } from "./renaming";
 import Snitch from './snitch';
 
 const stockTreeNames = Object.freeze([
@@ -147,8 +146,7 @@ export default class V1Addon implements V1Package {
       packageOptions.babel.plugins = [];
     }
     packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), {
-      ownName: this.name,
-      rename: renamed(this.addonInstance.addons)
+      ownName: this.name
     } ]);
   }
 
@@ -223,6 +221,12 @@ export default class V1Addon implements V1Package {
     let trees = [];
     let importParsers = [];
     let meta = {};
+
+    if (this.addonInstance.name !== this.name) {
+      meta['renamed-modules'] = {
+        [this.addonInstance.name]: this.name
+      };
+    }
 
     {
       let tracked = new TrackedImports(this.name, this.addonInstance._trackedImports);

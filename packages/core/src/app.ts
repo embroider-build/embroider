@@ -173,7 +173,8 @@ export default class App extends Package {
 
   @Memoize()
   get babelConfig() {
-    return this.oldPackage.babelConfig(this.root);
+    let rename = Object.assign({}, ...this.activeDescendants.map(dep => get(dep.packageJSON, 'ember-addon.renamed-modules')));
+    return this.oldPackage.babelConfig(this.root, rename);
   }
 
   get configTree(): ConfigTree {

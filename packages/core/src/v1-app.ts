@@ -13,7 +13,6 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { renamed } from './renaming';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -133,7 +132,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  babelConfig(finalRoot) {
+  babelConfig(finalRoot, rename) {
     let plugins = get(this.app.options, 'babel.plugins');
     if (plugins) {
       plugins = plugins.filter(
@@ -159,7 +158,7 @@ export default class V1App implements V1Package {
     plugins.push([require.resolve('./babel-plugin'), {
       ownName: this.name,
       basedir: finalRoot,
-      rename: renamed(this.app.project.addons)
+      rename
     } ]);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just

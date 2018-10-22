@@ -1,11 +1,7 @@
 # Stack
-
- - generalized import renaming:
-    -  already have this for packages that depend on addons that rename themselves
-    -  need it also for things that show up in addon-test-support trees under nonstandard names
-    -  it's OK to only support renaming inside v1 packages. if you want to update to v2 but one of your deps is renaming its files, you can import the real names directly as part of your v2 upgrade.
-    -  the new feature here is that we don't know the full set of names needed until after building.
-
+ - externals detection should take into account which deps are ember-addons and whether or not we have ember-auto-import
+    - would be nice to use package-cache for this, which implies refactoring so its available inside v1-addon
+    - this is a good time to split the phase1 and phase2 layers into separate packages
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

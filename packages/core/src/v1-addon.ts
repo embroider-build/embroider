@@ -101,7 +101,7 @@ export default class V1Addon implements V1Package {
   // In an ideal world, there would be no options to this. We would just run
   // every kind of tree through every kind of transpiler, and they could freely
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
-  // embrer-cli-sass will blow up if they don't find some files.
+  // ember-cli-sass will blow up if they don't find some files.
   private transpile(tree, { includeCSS } = { includeCSS: false}) {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);

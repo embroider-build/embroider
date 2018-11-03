@@ -27,7 +27,7 @@ import { Tree } from 'broccoli-plugin';
   merge it directly into our own v2 package root so people can import the
   modules from their tests.
 
-  But the (shim) under "qunit" gets moved *into* the ember-qunit package, and
+  But the shim under "qunit" gets moved *into* the ember-qunit package, and
   consumers of ember-qunit will get renaming from:
 
   import { test } from 'qunit';

@@ -179,8 +179,19 @@ export default class V1Addon implements V1Package {
     return { trees, packageJSONRewriter };
   }
 
-  protected invokeOriginalTreeFor(name) {
-    return this.addonInstance._treeFor(name);
+  protected invokeOriginalTreeFor(name, { neuterPreprocessors } = { neuterPreprocessors: false }) {
+    let original;
+    try {
+      if (neuterPreprocessors) {
+        original = this.addonInstance.preprocessJs;
+        this.addonInstance.preprocessJs = function(tree){ return tree; };
+      }
+      return this.addonInstance._treeFor(name);
+    } finally {
+      if (neuterPreprocessors) {
+        this.addonInstance.preprocessJs = original;
+      }
+    }
   }
 
   protected treeForAddon(): Tree|undefined {
@@ -282,10 +293,10 @@ export default class V1Addon implements V1Package {
       let addonTestSupportTree;
       if (this.customizes('treeForAddonTestSupport')) {
         let { tree, getMeta } = rewriteAddonTestSupport(
-          this.invokeOriginalTreeFor('addon-test-support'),
+          this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true }),
           this.name
         );
-        addonTestSupportTree = tree;
+        addonTestSupportTree = this.transpile(tree);
         dynamicMeta.push(getMeta);
       } else if (this.hasStockTree('addon-test-support')) {
         addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {

@@ -16,7 +16,7 @@ import { Tree } from "broccoli-plugin";
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
-import rewriteAddonTestSupport from "./addon-test-support";
+import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import mergeWith from 'lodash/mergeWith';
 
 const stockTreeNames = Object.freeze([

@@ -9,7 +9,7 @@ import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
-import Workspace from './workspace';
+import CompatWorkspace from './compat-workspace';
 import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
@@ -59,7 +59,7 @@ const testTemplate = compile(`
 
 export default class extends BroccoliPlugin {
   constructor(
-    workspace: Workspace,
+    workspace: CompatWorkspace,
     classicAppTree: Tree,
     htmlTree: Tree,
     publicTree: Tree,
@@ -71,7 +71,7 @@ export default class extends BroccoliPlugin {
   }
 
   // todo
-  private shouldBuildTests = false;
+  private shouldBuildTests = true;
 
   private emberEntrypoints() {
     let entrypoints = ['index.html'];

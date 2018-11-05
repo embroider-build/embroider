@@ -4,7 +4,7 @@ import AppEntrypoint from './app-entrypoint';
 import Package from './package';
 import V1App from './v1-app';
 import PackageCache from './package-cache';
-import Workspace from './workspace';
+import CompatWorkspace from './compat-workspace';
 import WorkspaceUpdater from './workspace-updater';
 import { tmpdir } from 'os';
 import { join, relative, dirname } from 'path';
@@ -136,7 +136,7 @@ export default class App extends Package {
   // to make broccoli build, though the actual output will appear in
   // `this.outputPath` instead. See workspace.ts for explanation.
   get vanillaTree(): Tree {
-    let workspace = new Workspace(this, this.workspaceDir);
+    let workspace = new CompatWorkspace(this, this.workspaceDir);
 
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.

@@ -1,4 +1,4 @@
-import PackageCache from "./package-cache";
+import PackageCache from "./compat-package-cache";
 import Addon from "./addon";
 import { Tree } from "broccoli-plugin";
 import { Memoize } from 'typescript-memoize';
@@ -7,7 +7,7 @@ import flatMap from 'lodash/flatMap';
 import resolve from 'resolve';
 import { readFileSync } from "fs";
 
-export default abstract class Package {
+export default abstract class CompatPackage {
   constructor(public originalRoot: string, private emitNewRoot?: (message: string) => void) {
   }
 
@@ -60,7 +60,7 @@ export default abstract class Package {
 
   private findDescendants(activeOnly: boolean) {
     let pkgs = new Set();
-    let queue : Package[] = [this];
+    let queue : CompatPackage[] = [this];
     while (queue.length > 0) {
       let pkg = queue.shift();
       if (!pkgs.has(pkg)) {
@@ -91,7 +91,7 @@ export default abstract class Package {
     return this.packageCache.dependsOn.get(this) || new Set();
   }
 
-  abstract dependedUponBy: Set<Package>;
+  abstract dependedUponBy: Set<CompatPackage>;
 
   abstract vanillaTree: Tree;
 }

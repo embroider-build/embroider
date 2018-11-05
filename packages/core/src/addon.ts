@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { Tree } from 'broccoli-plugin';
 import V1InstanceCache from './v1-instance-cache';
-import PackageCache from './package-cache';
+import PackageCache from './compat-package-cache';
 import mergeTrees from 'broccoli-merge-trees';
 import ChooseTree from './choose-tree';
 import Package from './compat-package';

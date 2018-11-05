@@ -3,7 +3,7 @@ import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
 import Package from './compat-package';
 import V1App from './v1-app';
-import PackageCache from './package-cache';
+import PackageCache from './compat-package-cache';
 import CompatWorkspace from './compat-workspace';
 import WorkspaceUpdater from './workspace-updater';
 import { tmpdir } from 'os';

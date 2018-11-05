@@ -1,6 +1,6 @@
 import Plugin from "broccoli-plugin";
 import App from "./app";
-import Package from "./package";
+import Package from "./compat-package";
 import Addon from "./addon";
 import { join, dirname, resolve } from 'path';
 import {

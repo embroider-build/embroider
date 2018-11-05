@@ -1,7 +1,7 @@
 import V1InstanceCache from './v1-instance-cache';
 import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
-import Package from './package';
+import Package from './compat-package';
 import V1App from './v1-app';
 import PackageCache from './package-cache';
 import CompatWorkspace from './compat-workspace';

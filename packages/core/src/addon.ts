@@ -4,7 +4,7 @@ import V1InstanceCache from './v1-instance-cache';
 import PackageCache from './package-cache';
 import mergeTrees from 'broccoli-merge-trees';
 import ChooseTree from './choose-tree';
-import Package from './package';
+import Package from './compat-package';
 import V1Addon from './v1-addon';
 import get from 'lodash/get';
 import { UnwatchedDir } from 'broccoli-source';

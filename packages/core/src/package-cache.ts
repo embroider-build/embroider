@@ -1,6 +1,6 @@
 import Addon from "./addon";
 import V1InstanceCache from "./v1-instance-cache";
-import Package from "./package";
+import Package from "./compat-package";
 import { realpathSync } from 'fs';
 
 export default class PackageCache {

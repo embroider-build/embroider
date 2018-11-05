@@ -2,16 +2,18 @@ import { join } from 'path';
 import { Tree } from 'broccoli-plugin';
 import V1InstanceCache from './v1-instance-cache';
 import PackageCache from './package-cache';
-import { todo } from './messages';
+import mergeTrees from 'broccoli-merge-trees';
 import ChooseTree from './choose-tree';
 import Package from './package';
 import V1Addon from './v1-addon';
 import get from 'lodash/get';
 import { UnwatchedDir } from 'broccoli-source';
 import { Memoize } from 'typescript-memoize';
+import SmooshPackageJSON from './smoosh-package-json';
 
 export default class Addon extends Package {
-  private oldPackage: V1Addon;
+  private oldPackages: V1Addon[] = [];
+  private smoosher: SmooshPackageJSON | undefined;
 
   constructor(public originalRoot: string, protected packageCache: PackageCache, private v1Cache: V1InstanceCache) {
     super(originalRoot);
@@ -26,11 +28,7 @@ export default class Addon extends Package {
   addParent(pkg: Package){
     let v1Addon = this.v1Cache.getAddon(this.originalRoot, pkg.originalRoot);
     if (v1Addon) {
-      if (!this.oldPackage) {
-        this.oldPackage = v1Addon;
-      } else if (v1Addon.hasAnyTrees()){
-        todo(`duplicate build of ${v1Addon.name}`);
-      }
+      this.oldPackages.push(v1Addon);
     }
   }
 
@@ -47,9 +45,18 @@ export default class Addon extends Package {
   get packageJSON() {
     if (this.isNativeV2) {
       return this.originalPackageJSON;
+    } else if (this.needsSmooshing()) {
+      if (!this.smoosher) {
+        throw new Error("tried to access smooshed package.json before it was built");
+      }
+      return this.smoosher.lastPackageJSON;
     } else {
-      return this.oldPackage.packageJSONRewriter.lastPackageJSON;
+      return this.oldPackages[0].rewrittenPackageJSON;
     }
+  }
+
+  private needsSmooshing() {
+    return this.oldPackages.length > 1 && this.oldPackages[0].hasAnyTrees();
   }
 
   get vanillaTree(): Tree {
@@ -61,7 +68,14 @@ export default class Addon extends Package {
       // filter out node_modules.
       throw new Error(`unimplemented`);
     }
-    return this.oldPackage.v2Tree;
+
+    if (this.needsSmooshing()) {
+      let trees = this.oldPackages.map(pkg => pkg.v2Tree);
+      this.smoosher = new SmooshPackageJSON(trees);
+      return mergeTrees([...trees, this.smoosher], { overwrite: true });
+    } else {
+      return this.oldPackages[0].v2Tree;
+    }
   }
 
   protected dependencyKeys = ['dependencies'];
@@ -76,8 +90,7 @@ export default class Addon extends Package {
       return new ChooseTree(this.vanillaTree, {
         annotation: `vanilla-choose-app-tree.${this.name}`,
         srcDir: () => {
-          let pkg = this.oldPackage.packageJSONRewriter.lastPackageJSON;
-          return get(pkg, 'ember-addon.app-js');
+          return get(this.packageJSON, 'ember-addon.app-js');
         }
       });
     }

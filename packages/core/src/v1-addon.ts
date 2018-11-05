@@ -17,7 +17,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
-import mergeWith from 'lodash/mergeWith';
+import { mergeWithAppend } from './merges';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -30,6 +30,19 @@ const stockTreeNames = Object.freeze([
   'vendor',
   // 'addon-templates' and 'templates are trees too, but they live inside
   // 'addon' and 'app' and we handle them there.
+]);
+
+const dynamicTreeHooks = Object.freeze([
+  "treeFor",
+  "treeForAddon",
+  "treeForAddonTemplates",
+  "treeForAddonTestSupport",
+  "treeForApp",
+  "treeForPublic",
+  "treeForStyles",
+  "treeForTemplates",
+  "treeForTestSupport",
+  "treeForVendor",
 ]);
 
 const appPublicationDir = '_app_';
@@ -47,6 +60,10 @@ export default class V1Addon implements V1Package {
 
   protected get packageJSON() {
     return this.addonInstance.pkg;
+  }
+
+  get rewrittenPackageJSON() {
+    return this.makeV2Trees().packageJSONRewriter.lastPackageJSON;
   }
 
   @Memoize()
@@ -74,7 +91,7 @@ export default class V1Addon implements V1Package {
   }
 
   protected customizes(...treeNames) {
-    return treeNames.find(treeName => this.mainModule[treeName]);
+    return Boolean(treeNames.find(treeName => this.mainModule[treeName]));
   }
 
   @Memoize()
@@ -83,7 +100,7 @@ export default class V1Addon implements V1Package {
   }
 
   hasAnyTrees() : boolean {
-    return Boolean(stockTreeNames.find(name => this.hasStockTree(name)));
+    return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.customizes(...dynamicTreeHooks);
   }
 
   protected stockTree(treeName, funnelOpts?) {
@@ -158,10 +175,6 @@ export default class V1Addon implements V1Package {
 
   get v2Tree() {
     return mergeTrees(this.v2Trees);
-  }
-
-  get packageJSONRewriter() {
-    return this.makeV2Trees().packageJSONRewriter;
   }
 
   // this is split out so that compatability shims can override it to add more
@@ -384,11 +397,10 @@ export default class V1Addon implements V1Package {
     }
 
     let getMeta = () => {
-      return mergeWith(
+      return mergeWithAppend(
         {},
         staticMeta,
-        ...dynamicMeta.map(d => d()),
-        appendArrays
+        ...dynamicMeta.map(d => d())
       );
     };
 
@@ -398,10 +410,4 @@ export default class V1Addon implements V1Package {
 
 export interface V1AddonConstructor {
   new(addonInstance, parent: V1Package): V1Addon;
-}
-
-function appendArrays(objValue, srcValue) {
-  if (Array.isArray(objValue)) {
-    return objValue.concat(srcValue);
-  }
 }

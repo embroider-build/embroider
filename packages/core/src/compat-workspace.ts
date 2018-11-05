@@ -1,6 +1,6 @@
 import Plugin from "broccoli-plugin";
 import App from "./app";
-import Package from "./compat-package";
+import CompatPackage from "./compat-package";
 import Addon from "./addon";
 import { join, dirname, resolve } from 'path';
 import {
@@ -101,7 +101,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
   }
 
-  private linkNonCopiedDeps(pkg: Package) {
+  private linkNonCopiedDeps(pkg: CompatPackage) {
     for (let dep of pkg.npmDependencies) {
       if (!this.copiedPackages.has(dep)) {
         ensureSymlinkSync(dep.originalRoot, join(pkg.root, 'node_modules', dep.originalPackageJSON.name));
@@ -186,7 +186,7 @@ function findCopiedPackages(app: App): Set<Addon> {
   return needsCopy;
 }
 
-function addToCopySet(copySet: Set<Package>, pkg: Package, app: App) {
+function addToCopySet(copySet: Set<CompatPackage>, pkg: CompatPackage, app: App) {
   if (copySet.has(pkg)) {
     return;
   }

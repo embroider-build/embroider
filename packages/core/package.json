@@ -14,7 +14,7 @@
     "@types/lodash": "^4.14.116",
     "@types/node": "^10.5.2",
     "tslint": "^5.11.0",
-    "typescript": "^2.9.2"
+    "typescript": "^3.1.6"
   },
   "dependencies": {
     "babel-core": "^6.26.3",

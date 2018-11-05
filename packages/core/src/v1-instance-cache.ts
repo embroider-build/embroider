@@ -59,6 +59,10 @@ export default class V1InstanceCache {
     addonInstance.addons.forEach(a => this.addAddon(a, v1Addon));
   }
 
+  getAddons(root: string): V1Addon[] {
+    return this.addons.get(root) || [];
+  }
+
   getAddon(root: string, fromParentRoot: string) : V1Addon | undefined {
     let pkgs = this.addons.get(root);
     if (pkgs) {

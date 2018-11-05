@@ -10,7 +10,7 @@ export default class PackageCache {
   getPackage(inputRoot: string, fromParent?: Package ) : Package | undefined {
     let root = realpathSync(inputRoot);
     if (!this.cache.has(root)) {
-      let newPackage = new Package(root, Boolean(fromParent), this);
+      let newPackage = new Package(root, !Boolean(fromParent), this);
       this.cache.set(root, newPackage);
       this.dependendUponBy.set(newPackage, new Set());
     }

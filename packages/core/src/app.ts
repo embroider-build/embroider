@@ -1,9 +1,9 @@
 import V1InstanceCache from './v1-instance-cache';
 import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
-import Package from './compat-package';
+import CompatPackage from './compat-package';
 import V1App from './v1-app';
-import PackageCache from './compat-package-cache';
+import PackageCache from './package-cache';
 import CompatWorkspace from './compat-workspace';
 import WorkspaceUpdater from './workspace-updater';
 import { tmpdir } from 'os';
@@ -19,38 +19,40 @@ import Addon from './addon';
 import sortBy from 'lodash/sortBy';
 import { Memoize } from 'typescript-memoize';
 import mergeTrees from 'broccoli-merge-trees';
+import Package from './package';
+import CompatPackageCache from './compat-package-cache';
 
 class Options {
-  legacyAppInstance?: any;
+  legacyAppInstance: any;
   workspaceDir?: string;
   compatAdapters?: Map<string, V1AddonConstructor>;
   emitNewRoot?: (path: string) => void;
   extraPublicTrees?: Tree[];
 }
 
-export default class App extends Package {
+export default class App implements CompatPackage {
   private oldPackage: V1App;
-  protected packageCache: PackageCache;
   private workspaceDir: string;
   private extraPublicTrees: Tree[] | undefined;
+  private emitNewRoot: ((string) => void) | undefined;
+  private compatCache: CompatPackageCache;
 
-  constructor(public originalRoot: string, options?: Options) {
-    super(originalRoot, options ? options.emitNewRoot: null);
+  static create(rootDir: string, options: Options) {
+    let packageCache = new PackageCache();
+    let v1Cache = new V1InstanceCache(options.legacyAppInstance);
+    return new this(packageCache.getPackage(rootDir), v1Cache, options);
+  }
 
-    let v1Cache: V1InstanceCache | undefined;
-    if (options && options.legacyAppInstance) {
-      v1Cache = new V1InstanceCache(options.legacyAppInstance);
-      this.oldPackage = v1Cache.app;
-      if (options.compatAdapters) {
-        for (let [packageName, adapter] of options.compatAdapters) {
-          v1Cache.registerCompatAdapter(packageName, adapter);
-        }
+  constructor(private pkg: Package, v1Cache: V1InstanceCache, options?: Options) {
+    this.compatCache = new CompatPackageCache(v1Cache, pkg, this);
+    this.packageAsAddon = this.packageAsAddon.bind(this);
+
+    this.oldPackage = v1Cache.app;
+    if (options.compatAdapters) {
+      for (let [packageName, adapter] of options.compatAdapters) {
+        v1Cache.registerCompatAdapter(packageName, adapter);
       }
-    } else {
-      throw new Error("Constructing a vanilla app without a legacyAppInstance is not yet implemented");
     }
-
-    this.packageCache = new PackageCache(v1Cache);
 
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
@@ -62,6 +64,47 @@ export default class App extends Package {
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
     }
+
+    if (options && options.emitNewRoot) {
+      this.emitNewRoot = options.emitNewRoot;
+    }
+  }
+
+  private packageAsAddon(pkg: Package): Addon {
+    return this.compatCache.lookupAddon(pkg);
+  }
+
+  // This is all the NPM packages we depend on, as opposed to `dependencies`
+  // which is just the Ember packages we depend on.
+  get npmDependencies() {
+    return this.pkg.dependencies.map(this.packageAsAddon);
+  }
+
+  get descendants(): Addon[] {
+    return this.pkg.findDescendants(pkg => this.packageAsAddon(pkg).isEmberPackage).map(this.packageAsAddon);
+  }
+
+  get dependencies(): Addon[] {
+    return this.pkg.dependencies.map(this.packageAsAddon).filter(pkg => pkg.isEmberPackage);
+  }
+
+  get originalPackageJSON() {
+    return this.pkg.packageJSON;
+  }
+
+  get activeDependencies(): Addon[] {
+    // todo: filter by addon-provided hook
+    return this.dependencies;
+  }
+
+  @Memoize()
+  get activeDescendants(): Addon[] {
+    // todo: filter by addon-provided hook
+    return this.descendants;
+  }
+
+  get originalRoot() {
+    return this.pkg.root;
   }
 
   get name(): string {
@@ -74,6 +117,24 @@ export default class App extends Package {
 
   get isModuleUnification(): boolean {
     return this.oldPackage.isModuleUnification;
+  }
+
+  private privRoot: string | undefined;
+  get root(): string {
+    if (!this.privRoot) {
+      throw new Error(`package ${this.name} does not know its final root location yet`);
+    }
+    return this.privRoot;
+  }
+
+  set root(value: string) {
+    if (this.privRoot) {
+      throw new Error(`double set of root in package ${this.name}`);
+    }
+    this.privRoot = value;
+    if (this.emitNewRoot) {
+      this.emitNewRoot(value);
+    }
   }
 
   private scriptPriority(pkg: Addon) {
@@ -164,8 +225,6 @@ export default class App extends Package {
   packageWith(packagerClass: Packager): Tree {
     return new PackagerRunner(packagerClass, this);
   }
-
-  protected dependencyKeys = ['dependencies', 'devDependencies'];
 
   get dependedUponBy() {
     return new Set();

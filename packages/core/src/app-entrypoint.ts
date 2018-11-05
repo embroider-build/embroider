@@ -9,7 +9,7 @@ import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
-import CompatWorkspace from './compat-workspace';
+import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
 
 const entryTemplate = compile(`
@@ -59,7 +59,7 @@ const testTemplate = compile(`
 
 export default class extends BroccoliPlugin {
   constructor(
-    workspace: CompatWorkspace,
+    workspace: Workspace,
     classicAppTree: Tree,
     htmlTree: Tree,
     publicTree: Tree,

@@ -14,6 +14,7 @@ import {
   copySync,
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
+import Workspace from './workspace';
 
 // The Workspace represents our directory that will contain a complete Vanilla
 // Ember app. It's weird for a broccoli plugin, because we have strong opinions
@@ -30,7 +31,7 @@ import { Memoize } from "typescript-memoize";
 // node_modules structure with all our dependencies in v2 format. It leaves an
 // empty place for the app's own code to go, which is filled in later via
 // copyIntoApp().
-export default class Workspace extends Plugin {
+export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
   private app: App;

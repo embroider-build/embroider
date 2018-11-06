@@ -1,4 +1,5 @@
-import Package from "./package";
+import BasicPackage from "./basic-package";
+import Package from './package';
 import { realpathSync } from 'fs';
 
 export default class PackageCache {
@@ -10,7 +11,7 @@ export default class PackageCache {
   getPackage(inputRoot: string, fromParent?: Package ) : Package | undefined {
     let root = realpathSync(inputRoot);
     if (!this.cache.has(root)) {
-      let newPackage = new Package(root, !Boolean(fromParent), this);
+      let newPackage = new BasicPackage(root, !Boolean(fromParent), this);
       this.cache.set(root, newPackage);
       this.dependendUponBy.set(newPackage, new Set());
     }

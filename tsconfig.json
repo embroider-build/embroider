@@ -12,6 +12,7 @@
     "experimentalDecorators": true,
     "allowUnreachableCode": false,
     "noImplicitThis": true,
+    "noImplicitAny": false
   },
   "exclude": [
     "node_modules",

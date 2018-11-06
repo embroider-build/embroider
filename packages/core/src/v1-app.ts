@@ -95,7 +95,7 @@ export default class V1App implements V1Package {
   get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
-    let index = new Funnel(this.rootTree, {
+    let index: Tree = new Funnel(this.rootTree, {
       allowEmtpy: true,
       include: [`app/index.html`],
       getDestinationPath: () => indexFilePath,

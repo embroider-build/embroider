@@ -34,7 +34,7 @@ export default class App implements CompatPackage {
   private oldPackage: V1App;
   private workspaceDir: string;
   private extraPublicTrees: Tree[] | undefined;
-  private emitNewRoot: ((string) => void) | undefined;
+  private emitNewRoot: ((message: string) => void) | undefined;
   private compatCache: CompatPackageCache;
 
   static create(rootDir: string, options: Options) {

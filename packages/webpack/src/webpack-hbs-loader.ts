@@ -1,6 +1,7 @@
+import { loader } from 'webpack';
 import { getOptions } from 'loader-utils';
 
-export default function hbsLoader(templateContent) {
+export default function hbsLoader(this: loader.LoaderContext, templateContent) {
   let { templateCompiler } = getOptions(this);
   try {
     return templateCompiler(this.resourcePath, templateContent);

@@ -1,5 +1,6 @@
 import { todo } from './messages';
 import { Memoize } from 'typescript-memoize';
+import { AddonPackageJSON } from './metadata';
 
 export interface TrackedImport {
   assetPath: string;
@@ -12,10 +13,10 @@ export class TrackedImports {
 
   @Memoize()
   get categorized(): { appJS: string[], appCSS: string[], testJS: string[], testCSS: string[] } {
-    let appJS = [];
-    let appCSS = [];
-    let testJS = [];
-    let testCSS = [];
+    let appJS: string[] = [];
+    let appCSS: string[] = [];
+    let testJS: string[] = [];
+    let testCSS: string[] = [];
 
     if (this.trackedImports) {
       this.trackedImports.forEach(({ assetPath, options }) => {
@@ -52,7 +53,9 @@ export class TrackedImports {
   }
 
   get meta() {
-    let result = {};
+    let result: AddonPackageJSON["ember-addon"] = {
+      version: 2
+    };
     if (this.categorized.appJS.length > 0) {
       result['implicit-scripts'] = this.categorized.appJS.slice();
     }
@@ -69,7 +72,7 @@ export class TrackedImports {
   }
 }
 
-function standardizeAssetPath(packageName, assetPath) {
+function standardizeAssetPath(packageName: string, assetPath: string) {
   let [first, ...rest] = assetPath.split('/');
   if (first === 'vendor') {
     // our vendor tree is available via relative import

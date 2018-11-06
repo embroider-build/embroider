@@ -1,16 +1,16 @@
-import Plugin from 'broccoli-plugin';
+import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { mergeWithUniq } from './merges';
 
 export default class SmooshPackageJSON extends Plugin {
-  constructor(inputTrees) {
+  constructor(inputTrees: Tree[]) {
     super(inputTrees, {
       annotation: 'embroider:core:smoosh-package-json'
     });
   }
 
-  private cachedLast;
+  private cachedLast: any;
 
   get lastPackageJSON() {
     if (!this.cachedLast) {

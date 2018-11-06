@@ -3,7 +3,7 @@ import { dirname } from 'path';
 import { Memoize } from 'typescript-memoize';
 
 class PackageEntry {
-  constructor(private packagePath) {}
+  constructor(private packagePath: string) {}
 
   @Memoize()
   get packageJSON() {
@@ -23,7 +23,7 @@ class PackageEntry {
 export default class PackageOwners {
   private knownPackages = new Map();
 
-  lookup(filename) {
+  lookup(filename: string) {
     let segments = filename.split('/');
     for (let length = segments.length - 1; length >= 0; length--) {
       if (segments[length-1] === 'node_modules') {

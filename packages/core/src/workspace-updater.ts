@@ -1,10 +1,10 @@
-import Plugin from "broccoli-plugin";
+import Plugin, { Tree } from "broccoli-plugin";
 import Workspace from "./workspace";
 
 // Copies the contents of the inputTrees into our Workspace (which is not a
 // normal broccoli tree, see workspace.ts).
 export default class WorkspaceUpdater extends Plugin {
-  constructor(inputTrees, private workspace: Workspace) {
+  constructor(inputTrees: Tree[], private workspace: Workspace) {
     super([...inputTrees, workspace], {});
   }
 

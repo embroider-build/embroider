@@ -3,6 +3,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
 import packageName from './package-name';
 import { Tree } from 'broccoli-plugin';
+import { AddonPackageJSON } from './metadata';
 
 /*
   The traditional addon-test-support tree allows you to emit modules under any
@@ -37,11 +38,13 @@ import { Tree } from 'broccoli-plugin';
   import { test } from 'ember-qunit/qunit';
 */
 
-export default function rewriteAddonTestSupport(tree, ownName): { tree: Tree, getMeta: () => any } {
-  let renamed = {};
+type GetMeta = () => AddonPackageJSON["ember-addon"];
+
+export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree, getMeta: GetMeta } {
+  let renamed: { [name: string]: string } = {};
   let goodParts = new Snitch(tree, {
     allowedPaths: new RegExp(`^${ownName}/`),
-    foundBadPaths: (badPaths) => {
+    foundBadPaths: (badPaths: string[]) => {
       for (let badPath of badPaths) {
         let name = packageName(badPath);
         renamed[name] = `${ownName}/${name}`;
@@ -55,6 +58,6 @@ export default function rewriteAddonTestSupport(tree, ownName): { tree: Tree, ge
   });
   return {
     tree: mergeTrees([goodParts, badParts]),
-    getMeta: () => ({ 'renamed-modules' : renamed })
+    getMeta: () => ({ 'renamed-modules' : renamed, version: 2 })
   };
 }

@@ -34,7 +34,7 @@ export class WriteV1Config extends Plugin {
   }
 }
 
-function metaLoader(appName) {
+function metaLoader(appName: string) {
   return `
   let config, metaName;
   try {

@@ -1,5 +1,6 @@
 import Funnel from 'broccoli-funnel';
 import walkSync from 'walk-sync';
+import { Tree } from 'broccoli-plugin';
 
 /*
   This is used to monitor when addons are emitting badly-behaved broccoli
@@ -15,7 +16,7 @@ export default class Snitch extends Funnel {
   private mustCheck = true;
 
   constructor(
-    inputTree,
+    inputTree: Tree,
     snitchOptions: { allowedPaths: RegExp, foundBadPaths: Function },
     funnelOptions: any
   ) {
@@ -26,7 +27,7 @@ export default class Snitch extends Funnel {
 
   build() {
     if (this.mustCheck) {
-      let badPaths = [];
+      let badPaths: string[] = [];
       walkSync(this.inputPaths[0], { directories: false })
         .map(filename => {
           if (!this.allowedPaths.test(filename)) {

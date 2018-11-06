@@ -10,12 +10,15 @@
     "prepare": "tsc"
   },
   "devDependencies": {
+    "@types/debug": "^0.0.31",
     "@types/fs-extra": "^5.0.4",
+    "@types/js-string-escape": "^1.0.0",
     "@types/jsdom": "^12.2.0",
     "@types/lodash": "^4.14.116",
     "@types/node": "^10.5.2",
     "@types/resolve": "^0.0.8",
     "@types/semver": "^5.5.0",
+    "@types/strip-bom": "^3.0.0",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6"
   },

@@ -5,10 +5,25 @@ type filename = string;
 export interface AppPackageJSON {
   name: string;
   "ember-addon": {
-    version: number;
+    version: 2;
     entrypoints: filename[];
+    externals?: string[];
     "template-compiler": filename;
     "babel-config": filename;
-    externals: string[];
+  };
+}
+
+// This describes the ember-specific parts of package.json of a v2-formatted
+// addon.
+export interface AddonPackageJSON {
+  name: string;
+  "ember-addon": {
+    version: 2;
+    externals?: string[];
+    "implicit-scripts"?: filename[];
+    "implicit-test-scripts"?: filename[];
+    "implicit-styles"?: filename[];
+    "implicit-test-styles"?: filename[];
+    "renamed-modules"?: { [fromName: string]: string };
   };
 }

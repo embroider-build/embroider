@@ -1,7 +1,7 @@
 import stripBom from 'strip-bom';
 
-export default function(compiler) {
-  return function(moduleName, contents) {
+export default function(compiler: { precompile: any }) {
+  return function(moduleName: string, contents: string) {
     let compiled = compiler.precompile(
       stripBom(contents), {
         contents,

@@ -45,7 +45,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     }
   }
 
-  copyIntoApp(srcDir) {
+  copyIntoApp(srcDir: string) {
     copySync(srcDir, this.app.root, { dereference: true });
   }
 
@@ -97,7 +97,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     }, pathSegments(this.app.originalRoot)).length;
   }
 
-  private localPath(filename) {
+  private localPath(filename: string) {
     return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
   }
 
@@ -151,7 +151,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   }
 }
 
-async function symlinksInDir(path): Promise<{ source: string, target: string }[]> {
+async function symlinksInDir(path: string): Promise<{ source: string, target: string }[]> {
   let names;
   try {
     names = await readdir(path);
@@ -199,7 +199,7 @@ function addToCopySet(copySet: Set<CompatPackage>, pkg: CompatPackage, app: App)
   }
 }
 
-function pathSegments(filename) {
+function pathSegments(filename: string) {
   let segments = filename.split('/');
   if (segments[0] === '/') {
     segments.shift();

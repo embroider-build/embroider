@@ -5,11 +5,11 @@ import symlinkOrCopy from 'symlink-or-copy';
 
 interface ChooseTreeOptions {
   annotation?: string;
-  srcDir: (string) => Promise<string>;
+  srcDir: (inputPath: string) => Promise<string>;
 }
 
 export default class ChooseTree extends Plugin {
-  private srcDirFn: (string) => Promise<string>;
+  private srcDirFn: (inputPath: string) => Promise<string>;
   private lastSrcDir: string | undefined;
 
   constructor(inputTree: Tree, options: ChooseTreeOptions) {

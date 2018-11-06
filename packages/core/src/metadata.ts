@@ -24,6 +24,7 @@ export interface AddonPackageJSON {
     "implicit-test-scripts"?: filename[];
     "implicit-styles"?: filename[];
     "implicit-test-styles"?: filename[];
+    "implicit-modules"?: filename[];
     "renamed-modules"?: { [fromName: string]: string };
   };
 }

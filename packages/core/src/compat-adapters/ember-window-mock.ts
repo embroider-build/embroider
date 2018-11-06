@@ -19,7 +19,7 @@ export default class extends V1Addon {
         setup();
 
   */
-  treeForAddon() {
+  treeForAddon(): undefined {
     todo(`ember-window-mock's API can't work as a v2 package, so we're leaving the test code in all the time`);
     return undefined;
   }

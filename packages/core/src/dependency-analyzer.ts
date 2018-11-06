@@ -4,7 +4,7 @@ import flatMap from 'lodash/flatMap';
 import absolutePackageName from './package-name';
 
 export default class DependencyAnalyzer extends Plugin {
-  constructor(private importParsers: ImportParser[], private packageJSON, private isTopLevelApp: boolean) {
+  constructor(private importParsers: ImportParser[], private packageJSON: any, private isTopLevelApp: boolean) {
     super(importParsers, {
       annotation: '@embroider/core/dependency-analyzer'
     });

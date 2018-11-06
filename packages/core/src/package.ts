@@ -43,7 +43,7 @@ export default class Package {
     return this.findDescendants();
   }
 
-  findDescendants(filter?: (Package) => boolean) {
+  findDescendants(filter?: (pkg: Package) => boolean) {
     let pkgs = new Set();
     let queue : Package[] = [this];
     while (queue.length > 0) {

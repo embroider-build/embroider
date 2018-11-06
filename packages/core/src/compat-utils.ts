@@ -1,6 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
+import { AddonPackageJSON } from './metadata';
 
-export function addPeerDependency(packageJSON, packageName, version='*') {
+export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
   let pkg = cloneDeep(packageJSON);
   if (!pkg.peerDependencies) {
     pkg.peerDependencies = {};
@@ -9,7 +10,7 @@ export function addPeerDependency(packageJSON, packageName, version='*') {
   return pkg;
 }
 
-export function forceIncludeModule(meta, localPath) {
+export function forceIncludeModule(meta: AddonPackageJSON["ember-addon"], localPath: string) {
   meta = cloneDeep(meta);
   if (!meta['implicit-modules']) {
     meta['implicit-modules'] = [];

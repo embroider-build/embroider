@@ -12,7 +12,6 @@ import { mkdtempSync, ensureDirSync, realpathSync } from 'fs-extra';
 import { Packager } from './packager';
 import PackagerRunner from './packager-runner';
 import { V1AddonConstructor } from './v1-addon';
-import get from 'lodash/get';
 import { TrackedImports } from './tracked-imports';
 import resolve from 'resolve';
 import Addon from './addon';
@@ -150,7 +149,8 @@ export default class App implements CompatPackage {
   }
 
   private assets(originalBundle: string): any {
-    let group: 'appJS' | 'appCSS' | 'testJS' | 'testCSS', metaKey;
+    let group: 'appJS' | 'appCSS' | 'testJS' | 'testCSS';
+    let metaKey: 'implicit-scripts' | 'implicit-styles' | 'implicit-test-scripts' | 'implicit-test-styles';
     switch (originalBundle) {
       case 'vendor.js':
         group = 'appJS';
@@ -173,7 +173,7 @@ export default class App implements CompatPackage {
     }
     let result = [];
     for (let addon of sortBy(this.activeDescendants, this.scriptPriority.bind(this))) {
-      let implicitScripts = get(addon.packageJSON, `ember-addon.${metaKey}`);
+      let implicitScripts = addon.packageJSON['ember-addon'][metaKey];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
           result.push(resolve.sync(mod, { basedir: addon.root }));
@@ -233,7 +233,7 @@ export default class App implements CompatPackage {
 
   @Memoize()
   get babelConfig() {
-    let rename = Object.assign({}, ...this.activeDescendants.map(dep => get(dep.packageJSON, 'ember-addon.renamed-modules')));
+    let rename = Object.assign({}, ...this.activeDescendants.map(dep => dep.packageJSON['ember-addon']['renamed-modules']));
     return this.oldPackage.babelConfig(this.root, rename);
   }
 

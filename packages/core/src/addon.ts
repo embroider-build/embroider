@@ -10,6 +10,7 @@ import { UnwatchedDir } from 'broccoli-source';
 import { Memoize } from 'typescript-memoize';
 import SmooshPackageJSON from './smoosh-package-json';
 import CompatPackageCache from './compat-package-cache';
+import { AddonPackageJSON } from './metadata';
 
 export default class Addon implements CompatPackage {
   private oldPackages: V1Addon[] = [];
@@ -87,7 +88,7 @@ export default class Addon implements CompatPackage {
   // during the building of vanillaTree, and it's only valid to use it after
   // you've ensured the build has run.
   @Memoize()
-  get packageJSON() {
+  get packageJSON(): AddonPackageJSON {
     if (this.isNativeV2) {
       return this.originalPackageJSON;
     } else if (this.needsSmooshing()) {
@@ -125,15 +126,15 @@ export default class Addon implements CompatPackage {
 
   get legacyAppTree(): Tree {
     if (this.isNativeV2) {
-      let appDir = get(this.packageJSON, 'ember-addon.app-js');
+      let appDir = this.packageJSON['ember-addon']['app-js'];
       if (appDir) {
         return new UnwatchedDir(join(this.originalRoot, appDir));
       }
     } else {
       return new ChooseTree(this.vanillaTree, {
         annotation: `vanilla-choose-app-tree.${this.name}`,
-        srcDir: () => {
-          return get(this.packageJSON, 'ember-addon.app-js');
+        srcDir: (_: string) => {
+          return this.packageJSON['ember-addon']['app-js'];
         }
       });
     }

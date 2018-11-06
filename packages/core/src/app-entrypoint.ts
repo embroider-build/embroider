@@ -5,12 +5,12 @@ import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
 import App from './app';
-import get from 'lodash/get';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
 import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
+import { AppPackageJSON } from './metadata';
 
 const entryTemplate = compile(`
 {{!-
@@ -94,7 +94,7 @@ export default class extends BroccoliPlugin {
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
     // already been build as v2.
-    let externals = new Set(flatMap(this.app.activeDescendants, addon => get(addon.packageJSON, 'ember-addon.externals') || []));
+    let externals = new Set(flatMap(this.app.activeDescendants, addon => addon.packageJSON['ember-addon'].externals || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.
@@ -107,10 +107,11 @@ export default class extends BroccoliPlugin {
       directories: false
     });
 
-    let pkg = cloneDeep(this.app.originalPackageJSON);
-    if (!pkg['ember-addon']) {
-      pkg['ember-addon'] = {};
+    let rawPkg = cloneDeep(this.app.originalPackageJSON);
+    if (!rawPkg['ember-addon']) {
+      rawPkg['ember-addon'] = {};
     }
+    let pkg = rawPkg as AppPackageJSON;
     pkg['ember-addon'].externals = [...externals.values()];
     pkg['ember-addon'].entrypoints = this.emberEntrypoints().concat(entrypoints);
     pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
@@ -186,7 +187,7 @@ export default class extends BroccoliPlugin {
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
     for (let addon of this.app.activeDescendants) {
-      let implicitModules = get(addon.packageJSON, 'ember-addon.implicit-modules');
+      let implicitModules = addon.packageJSON['ember-addon']['implicit-modules'];
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({

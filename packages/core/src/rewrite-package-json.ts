@@ -13,7 +13,7 @@ export default class RewritePackageJSON extends Plugin {
     });
   }
 
-  private cachedLast: AddonPackageJSON["ember-addon"];
+  private cachedLast: AddonPackageJSON;
 
   get lastPackageJSON() {
     if (!this.cachedLast) {
@@ -23,12 +23,13 @@ export default class RewritePackageJSON extends Plugin {
   }
 
   build() {
-    let pkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
-    if (!pkg['ember-addon']) {
-      pkg['ember-addon'] = {};
+    let rawPkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
+    if (!rawPkg['ember-addon']) {
+      rawPkg['ember-addon'] = {};
     }
-    pkg['ember-addon']['version'] = 2;
-    pkg['ember-addon']['externals'] = this.analyzer.externals;
+    let pkg = rawPkg as AddonPackageJSON;
+    pkg['ember-addon'].version = 2;
+    pkg['ember-addon'].externals = this.analyzer.externals;
     Object.assign(pkg['ember-addon'], this.getMeta());
     this.cachedLast = pkg;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');

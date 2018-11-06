@@ -17,7 +17,7 @@ import { V1Config, WriteV1Config } from './v1-config';
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
 export default class V1App implements V1Package {
-  constructor(private app) {
+  constructor(private app: any) {
   }
 
   // always the name from package.json. Not the one that apps may have weirdly
@@ -51,7 +51,7 @@ export default class V1App implements V1Package {
     return dirname(resolve.sync('ember-cli/package.json', { basedir: this.root }));
   }
 
-  private requireFromEmberCLI(specifier) {
+  private requireFromEmberCLI(specifier: string) {
     return require(resolve.sync(specifier, { basedir: this.emberCLILocation }));
   }
 
@@ -96,7 +96,7 @@ export default class V1App implements V1Package {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
     let index: Tree = new Funnel(this.rootTree, {
-      allowEmtpy: true,
+      allowEmpty: true,
       include: [`app/index.html`],
       getDestinationPath: () => indexFilePath,
       annotation: 'app/index.html',
@@ -132,8 +132,8 @@ export default class V1App implements V1Package {
     });
   }
 
-  babelConfig(finalRoot, rename) {
-    let plugins = get(this.app.options, 'babel.plugins');
+  babelConfig(finalRoot: string, rename: any) {
+    let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (plugins) {
       plugins = plugins.filter(
         // we want to generate a babel config that can be serialized. So
@@ -166,7 +166,7 @@ export default class V1App implements V1Package {
     // In its case, it's mostly doing it to set basedir so that broccoli caching
     // will be happy, but that's irrelevant to us here.
     plugins.push(this.debugMacrosPlugin());
-    let babelInstance = this.app.project.addons.find(a => a.name === 'ember-cli-babel');
+    let babelInstance = (this.app.project.addons as any[]).find(a => a.name === 'ember-cli-babel');
     if (babelInstance._emberVersionRequiresModulesAPIPolyfill()) {
       let ModulesAPIPolyfill = require.resolve('babel-plugin-ember-modules-api-polyfill');
       let blacklist = babelInstance._getEmberModulesAPIBlacklist();
@@ -253,7 +253,7 @@ export default class V1App implements V1Package {
   // this takes the app JS trees from all active addons, since we can't really
   // build our own code without them due to the way addon-provided "app js"
   // works.
-  processAppJS(fromAddons: Tree[], packageJSON) : { appJS: Tree, analyzer: DependencyAnalyzer } {
+  processAppJS(fromAddons: Tree[], packageJSON: any) : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let analyzer = new DependencyAnalyzer([

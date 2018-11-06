@@ -16,7 +16,7 @@ export default class V1InstanceCache {
 
   app: V1App;
 
-  constructor(oldApp) {
+  constructor(oldApp: any) {
     if (!oldApp._activeAddonInclude) {
       throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }
@@ -25,7 +25,7 @@ export default class V1InstanceCache {
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
-    oldApp.project.addons.forEach(addon => {
+    (oldApp.project.addons as any[]).forEach(addon => {
       this.addAddon(addon, this.app);
     });
 
@@ -35,7 +35,7 @@ export default class V1InstanceCache {
     this.compatAdapters.set(packageName, constructor);
   }
 
-  private adapterClass(packageName): V1AddonConstructor {
+  private adapterClass(packageName: string): V1AddonConstructor {
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
     if (this.compatAdapters.has(packageName)) {
@@ -48,7 +48,7 @@ export default class V1InstanceCache {
     return V1Addon;
   }
 
-  private addAddon(addonInstance, parent: V1Package) {
+  private addAddon(addonInstance: any, parent: V1Package) {
     let Klass = this.adapterClass(addonInstance.pkg.name);
     let v1Addon = new Klass(addonInstance, parent);
     let pkgs = this.addons.get(v1Addon.root);
@@ -56,7 +56,7 @@ export default class V1InstanceCache {
       this.addons.set(v1Addon.root, pkgs = []);
     }
     pkgs.push(v1Addon);
-    addonInstance.addons.forEach(a => this.addAddon(a, v1Addon));
+    (addonInstance.addons as any[]).forEach(a => this.addAddon(a, v1Addon));
   }
 
   getAddons(root: string): V1Addon[] {

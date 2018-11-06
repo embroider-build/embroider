@@ -21,6 +21,7 @@ import { Memoize } from 'typescript-memoize';
 import mergeTrees from 'broccoli-merge-trees';
 import Package from './package';
 import CompatPackageCache from './compat-package-cache';
+import { JSDOM } from 'jsdom';
 
 class Options {
   legacyAppInstance: any;
@@ -148,8 +149,8 @@ export default class App implements CompatPackage {
     }
   }
 
-  private assets(originalBundle): any {
-    let group, metaKey;
+  private assets(originalBundle: string): any {
+    let group: 'appJS' | 'appCSS' | 'testJS' | 'testCSS', metaKey;
     switch (originalBundle) {
       case 'vendor.js':
         group = 'appJS';
@@ -242,20 +243,20 @@ export default class App implements CompatPackage {
 
   // this encapsulates API that the AppEntrypoint needs from App that we don't
   // want to make public for everyone else.
-  private updateHTML(entrypoint: string, dom) {
+  private updateHTML(entrypoint: string, dom: JSDOM) {
     let scripts = [...dom.window.document.querySelectorAll('script')];
     this.updateAppJS(entrypoint, scripts);
     this.updateTestJS(entrypoint, scripts);
     this.updateJS(dom, entrypoint, this.oldPackage.findVendorScript(scripts), 'vendor.js');
     this.updateJS(dom, entrypoint, this.oldPackage.findTestSupportScript(scripts), 'test-support.js');
 
-    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')];
+    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
     this.updateAppCSS(entrypoint, styles);
     this.updateCSS(dom, entrypoint, this.oldPackage.findVendorStyles(styles), 'vendor.css');
     this.updateCSS(dom, entrypoint, this.oldPackage.findTestSupportStyles(styles), 'test-support.css');
   }
 
-  private updateAppJS(entrypoint, scripts) {
+  private updateAppJS(entrypoint: string, scripts: HTMLScriptElement[]) {
     // no custom name allowed here -- we're standardizing. It's not the final
     // output anyway, that will be up to the final stage packager. We also
     // switch to module type, to convey that we're going to point at an ES
@@ -267,7 +268,7 @@ export default class App implements CompatPackage {
     }
   }
 
-  private updateTestJS(entrypoint, scripts) {
+  private updateTestJS(entrypoint: string, scripts: HTMLScriptElement[]) {
     let testJS = this.oldPackage.findTestScript(scripts);
     if (testJS) {
       testJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/test.js`));
@@ -275,7 +276,7 @@ export default class App implements CompatPackage {
     }
   }
 
-  private updateJS(dom, entrypoint, original, bundleName) {
+  private updateJS(dom: JSDOM, entrypoint: string, original: HTMLScriptElement, bundleName: string) {
     // the vendor.js file gets replaced with each of our implicit scripts. It's
     // up to the final stage packager to worry about concatenation.
     if (!original) { return; }
@@ -289,7 +290,7 @@ export default class App implements CompatPackage {
     original.remove();
   }
 
-  private updateAppCSS(entrypoint, styles) {
+  private updateAppCSS(entrypoint: string, styles: HTMLLinkElement[]) {
     // no custom name allowed here. Same argument applies here as for appJS
     // above.
     let appCSS = this.oldPackage.findAppStyles(styles);
@@ -298,7 +299,7 @@ export default class App implements CompatPackage {
     }
   }
 
-  private updateCSS(dom, entrypoint, original, bundleName) {
+  private updateCSS(dom: JSDOM, entrypoint: string, original: HTMLLinkElement, bundleName: string) {
     // the vendor.css file gets replaced with each of our implicit CSS
     // dependencies. It's up to the final stage packager to worry about
     // concatenation.

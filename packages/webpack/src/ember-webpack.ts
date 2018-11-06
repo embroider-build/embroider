@@ -39,7 +39,7 @@ class Entrypoint {
 
   @Memoize()
   get styleLinks() {
-    return [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')]
+    return ([...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[])
       .filter(s => !isAbsoluteURL(s.href));
   }
 

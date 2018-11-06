@@ -65,7 +65,7 @@ export default class extends BroccoliPlugin {
     publicTree: Tree,
     private app: App,
     private analyzer: DependencyAnalyzer,
-    private updateHTML: (entrypoint: string, dom) => void
+    private updateHTML: (entrypoint: string, dom: JSDOM) => void
   ){
     super([workspace, classicAppTree, analyzer, htmlTree, publicTree, app.configTree], {});
   }
@@ -141,7 +141,7 @@ export default class extends BroccoliPlugin {
   // Ember CLI is was "vendor-prefix" content that would go at the start of the
   // vendor.js. We are going to make sure it's the first plain <script> in the
   // HTML that we hand to the final stage packager.
-  private addEmberEnv(config) {
+  private addEmberEnv(config: any) {
     writeFileSync(join(this.outputPath, '_ember_env_.js'), `
     window.EmberENV=${JSON.stringify(config, null, 2)};
     `, 'utf8');
@@ -158,7 +158,7 @@ export default class extends BroccoliPlugin {
     }
   }
 
-  private writeAppJS(config) {
+  private writeAppJS(config: any) {
     let mainModule = join(this.outputPath, this.app.isModuleUnification ? 'src/main' : 'app');
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also updateHTML in app.ts for where

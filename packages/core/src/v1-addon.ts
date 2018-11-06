@@ -4,7 +4,7 @@ import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { join } from 'path';
 import { existsSync } from 'fs-extra';
-import Funnel from 'broccoli-funnel';
+import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
@@ -50,7 +50,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance, public parent: V1Package) {
+  constructor(protected addonInstance: any, public parent: V1Package) {
     this.updateBabelConfig();
   }
 
@@ -74,7 +74,7 @@ export default class V1Addon implements V1Package {
     return dirname(pkgUpSync(this.addonInstance.root));
   }
 
-  private parseImports(tree) {
+  private parseImports(tree: Tree) {
     return new ImportParser(tree);
   }
 
@@ -90,12 +90,12 @@ export default class V1Addon implements V1Package {
     return this.addonInstance.options;
   }
 
-  protected customizes(...treeNames) {
+  protected customizes(...treeNames: string[]) {
     return Boolean(treeNames.find(treeName => this.mainModule[treeName]));
   }
 
   @Memoize()
-  private hasStockTree(treeName) {
+  private hasStockTree(treeName: string) {
     return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
   }
 
@@ -103,7 +103,7 @@ export default class V1Addon implements V1Package {
     return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.customizes(...dynamicTreeHooks);
   }
 
-  protected stockTree(treeName, funnelOpts?) {
+  protected stockTree(treeName: string, funnelOpts?: FunnelOptions) {
     let opts = Object.assign({
       srcDir: this.addonInstance.treePaths[treeName]
     }, funnelOpts);
@@ -119,7 +119,7 @@ export default class V1Addon implements V1Package {
   // every kind of tree through every kind of transpiler, and they could freely
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
   // ember-cli-sass will blow up if they don't find some files.
-  private transpile(tree, { includeCSS } = { includeCSS: false}) {
+  private transpile(tree: Tree, { includeCSS } = { includeCSS: false}) {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
@@ -134,7 +134,7 @@ export default class V1Addon implements V1Package {
     //this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
 
     let packageOptions = this.options;
-    let emberCLIBabelInstance = this.addonInstance.addons.find(a => a.name === 'ember-cli-babel');
+    let emberCLIBabelInstance = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-babel');
     let version;
 
     if (emberCLIBabelInstance) {
@@ -192,12 +192,12 @@ export default class V1Addon implements V1Package {
     return { trees, packageJSONRewriter };
   }
 
-  protected invokeOriginalTreeFor(name, { neuterPreprocessors } = { neuterPreprocessors: false }) {
+  protected invokeOriginalTreeFor(name: string, { neuterPreprocessors } = { neuterPreprocessors: false }) {
     let original;
     try {
       if (neuterPreprocessors) {
         original = this.addonInstance.preprocessJs;
-        this.addonInstance.preprocessJs = function(tree){ return tree; };
+        this.addonInstance.preprocessJs = function(tree: Tree){ return tree; };
       }
       return this.addonInstance._treeFor(name);
     } finally {
@@ -246,8 +246,8 @@ export default class V1Addon implements V1Package {
   private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], getMeta: () => any } {
     let trees = [];
     let importParsers = [];
-    let staticMeta = {};
-    let dynamicMeta = [];
+    let staticMeta: { [metaField: string]: any } = {};
+    let dynamicMeta: (() => any)[] = [];
 
     if (this.addonInstance.name !== this.name) {
       staticMeta['renamed-modules'] = {
@@ -362,7 +362,7 @@ export default class V1Addon implements V1Package {
             // own name. But addons can flaunt that, and that goes beyond what
             // the v2 format is allowed to do.
             allowedPaths: new RegExp(`^${this.name}/`),
-            foundBadPaths: (badPaths) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
+            foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
           }, {
             destDir: 'public'
           })
@@ -409,5 +409,5 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance, parent: V1Package): V1Addon;
+  new(addonInstance: any, parent: V1Package): V1Addon;
 }

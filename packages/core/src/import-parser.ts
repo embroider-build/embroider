@@ -12,7 +12,7 @@ import FSTree from 'fs-tree-diff';
 import makeDebug from 'debug';
 import { Pipeline, File } from 'babel-core';
 import { parse } from 'babylon';
-import symlinkOrCopy from 'symlink-or-copy';
+import { sync as symlinkOrCopySync } from 'symlink-or-copy';
 import { join, dirname, extname } from 'path';
 import { isEqual, flatten } from 'lodash';
 
@@ -30,7 +30,7 @@ export interface Import {
 */
 export default class ImportParser extends Plugin {
   private previousTree = new FSTree();
-  private parserOptions;
+  private parserOptions: any;
   private modules: Import[] | null = [];
   private paths: Map<string, Import[]> = new Map();
 
@@ -94,7 +94,7 @@ export default class ImportParser extends Plugin {
     return previous.calculatePatch(next);
   }
 
-  removeImports(relativePath) {
+  removeImports(relativePath: string) {
     debug(`removing imports for ${relativePath}`);
     let imports = this.paths.get(relativePath);
     if (imports) {
@@ -105,7 +105,7 @@ export default class ImportParser extends Plugin {
     }
   }
 
-  updateImports(relativePath, source) {
+  updateImports(relativePath: string, source: string) {
     debug(`updating imports for ${relativePath}, ${source.length}`);
     let newImports = this.parseImports(relativePath, source);
     if (!isEqual(this.paths.get(relativePath), newImports)) {
@@ -114,7 +114,7 @@ export default class ImportParser extends Plugin {
     }
   }
 
-  private parseImports(relativePath, source) : Import[] {
+  private parseImports(relativePath: string, source: string) : Import[] {
     let ast;
     try {
       ast = parse(source, this.parserOptions);
@@ -129,7 +129,7 @@ export default class ImportParser extends Plugin {
       return imports;
     }
 
-    forEachNode(ast.program.body, node => {
+    forEachNode(ast.program.body, (node: any) => {
       if (node.type === 'CallExpression' && node.callee && node.callee.type === 'Import') {
         // it's a syntax error to have anything other than exactly one
         // argument, so we can just assume this exists
@@ -162,11 +162,11 @@ export default class ImportParser extends Plugin {
   }
 }
 
-function copy(sourcePath, destPath) {
+function copy(sourcePath: string, destPath: string) {
   let destDir = dirname(destPath);
 
   try {
-    symlinkOrCopy.sync(sourcePath, destPath);
+    symlinkOrCopySync(sourcePath, destPath);
   } catch (e) {
     if (!existsSync(destDir)) {
       mkdirpSync(destDir);
@@ -176,18 +176,18 @@ function copy(sourcePath, destPath) {
     } catch (e) {
       // swallow the error
     }
-    symlinkOrCopy.sync(sourcePath, destPath);
+    symlinkOrCopySync(sourcePath, destPath);
   }
 }
 
-const skipKeys = {
+const skipKeys: { [key: string]: boolean } = {
   'loc': true,
   'type': true,
   'start': true,
   'end': true
 };
 
-function forEachNode(node, visit) {
+function forEachNode(node: any, visit: (node: any) => void) {
   visit(node);
   for (let key in node) {
     if (skipKeys[key]) {

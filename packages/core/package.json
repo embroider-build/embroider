@@ -10,6 +10,7 @@
     "prepare": "tsc"
   },
   "devDependencies": {
+    "@types/babylon": "^6.16.4",
     "@types/debug": "^0.0.31",
     "@types/fs-extra": "^5.0.4",
     "@types/js-string-escape": "^1.0.0",

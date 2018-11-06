@@ -4,7 +4,7 @@ import jsStringEscape from 'js-string-escape';
 
 registerHelper('js-string-escape', jsStringEscape);
 
-registerHelper('json-stringify', function(input) {
+registerHelper('json-stringify', function(input: any) {
   return JSON.stringify(input);
 });
 

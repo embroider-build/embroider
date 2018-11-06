@@ -1,5 +1,5 @@
-import { Packager } from "@embroider/core";
-import webpack from 'webpack';
+import { Packager, AppPackageJSON } from "@embroider/core";
+import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
@@ -65,7 +65,7 @@ class Entrypoint {
     return this.partitionedSources().styles;
   }
 
-  private resolvePath(p) {
+  private resolvePath(p: string) {
     if (p[0] === '/') {
       // this path is relative to the app root
       return resolve(this.pathToVanillaApp, p.slice(1));
@@ -108,7 +108,7 @@ class Webpack {
   private packageOwners: PackageOwners = new PackageOwners();
 
   private examineApp(): AppInfo {
-    let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'));
+    let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8')) as AppPackageJSON;
     let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
       return new Entrypoint(this.pathToVanillaApp, entrypoint);
     });
@@ -137,7 +137,7 @@ class Webpack {
     // Javascript.
     let stylesheets = new Set();
 
-    let entry = {};
+    let entry: { [name: string]: string[] } = {};
     entrypoints.forEach(entrypoint => {
       if (entrypoint.isHTML && entrypoint.specifiers.length > 0) {
         entry[entrypoint.name] = entrypoint.specifiers;
@@ -146,7 +146,7 @@ class Webpack {
       }
     });
 
-    let amdExternals = {};
+    let amdExternals: { [name: string]: string } = {};
     externals.forEach(external => {
       amdExternals[external] = `_vanilla_("${external}")`;
     });
@@ -221,15 +221,15 @@ class Webpack {
     };
   }
 
-  private isCSSModule(stylesheets, filename) {
+  private isCSSModule(stylesheets: Set<string>, filename: string) {
     return isCSS(filename) && !stylesheets.has(filename);
   }
 
-  private isStylesheet(stylesheets, filename) {
+  private isStylesheet(stylesheets: Set<string>, filename: string) {
     return isCSS(filename) && stylesheets.has(filename);
   }
 
-  private shouldTranspileFile(scripts, filename) {
+  private shouldTranspileFile(scripts: Set<string>, filename: string) {
     if (!isJS(filename)) {
       // quick exit for non JS extensions
       return false;
@@ -258,10 +258,10 @@ class Webpack {
       owner.packageJSON.keywords.includes('ember-addon');
   }
 
-  private lastConfig;
-  private lastWebpack;
+  private lastConfig: Configuration;
+  private lastWebpack: webpack.Compiler;
 
-  private getWebpack(config) {
+  private getWebpack(config: Configuration) {
     if (this.lastWebpack && isEqual(config, this.lastConfig)) {
       return this.lastWebpack;
     }
@@ -277,7 +277,7 @@ class Webpack {
     this.writeFiles(stats, appInfo);
   }
 
-  private writeFiles(stats, { entrypoints }: AppInfo) {
+  private writeFiles(stats: StatSummary, { entrypoints }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple entrypoints correctly.
     for (let entrypoint of entrypoints) {
@@ -317,8 +317,8 @@ class Webpack {
     }
   }
 
-  private summarizeStats(stats) {
-    let output = {
+  private summarizeStats(stats: any): StatSummary {
+    let output: { lazyAssets: string[], entrypoints: Map<string, string[]> } = {
       entrypoints: new Map(),
       lazyAssets: [],
     };
@@ -326,7 +326,7 @@ class Webpack {
     for (let id of Object.keys(stats.entrypoints)) {
       let entrypoint = stats.entrypoints[id];
       output.entrypoints.set(id, entrypoint.assets);
-      entrypoint.assets.forEach(asset => nonLazyAssets.add(asset));
+      (entrypoint.assets as string[]).forEach(asset => nonLazyAssets.add(asset));
     }
     for (let asset of stats.assets) {
       if (!nonLazyAssets.has(asset.name)) {
@@ -336,7 +336,7 @@ class Webpack {
     return output;
   }
 
-  private runWebpack(webpack): Promise<any> {
+  private runWebpack(webpack: webpack.Compiler): Promise<any> {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         if (err) {
@@ -391,20 +391,25 @@ module.exports = function webpack(extraConfig={}) : Packager {
   return ConfiguredWebpack;
 };
 
-function appendArrays(objValue, srcValue) {
+function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {
     return objValue.concat(srcValue);
   }
 }
 
-function isAbsoluteURL(url) {
+function isAbsoluteURL(url: string) {
   return /^(?:[a-z]+:)?\/\//i.test(url);
 }
 
-function isCSS(filename) {
+function isCSS(filename: string) {
   return /\.css$/i.test(filename);
 }
 
-function isJS(filename) {
+function isJS(filename: string) {
   return /\.js$/i.test(filename);
+}
+
+interface StatSummary {
+  lazyAssets: string[];
+  entrypoints: Map<string, string[]>;
 }

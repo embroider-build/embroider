@@ -1,7 +1,18 @@
 import packageName from './package-name';
 import { join, relative, dirname } from 'path';
 
-function adjustSpecifier(specifier, sourceFileName, opts) {
+interface State {
+  emberCLIVanillaJobs: Function[];
+  opts: {
+    ownName?: string;
+    basedir?: string;
+    rename: {
+      [fromName: string]: string;
+    }
+  };
+}
+
+function adjustSpecifier(specifier: string, sourceFileName: string, opts: State["opts"]) {
   let name = packageName(specifier);
   if (name && name === opts.ownName) {
     let fullPath = specifier.replace(name, opts.basedir || '.');
@@ -17,7 +28,7 @@ function adjustSpecifier(specifier, sourceFileName, opts) {
   }
 }
 
-function makeHBSExplicit(specifier, _) {
+function makeHBSExplicit(specifier: string, _: string) {
   // this is gross, but unforunately we can't get enough information to locate
   // the original file on disk in order to go check whether it's really
   // referring to a template. To fix this, we would need to modify
@@ -34,14 +45,14 @@ export default function main(){
   return {
     visitor: {
       Program: {
-        enter: function(_, state) {
+        enter: function(_: any, state: State) {
           state.emberCLIVanillaJobs = [];
         },
-        exit: function(_, state) {
+        exit: function(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
         }
       },
-      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path, state) {
+      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path: any, state: State) {
         let { opts, emberCLIVanillaJobs } = state;
         const {source} = path.node;
         if (source === null) {

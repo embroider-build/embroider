@@ -1,39 +1,20 @@
 import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
-import CompatWorkspace from './compat-workspace';
 import WorkspaceUpdater from './workspace-updater';
 import { Packager } from './packager';
 import PackagerRunner from './packager-runner';
-import { V1AddonConstructor } from './v1-addon';
 import mergeTrees from 'broccoli-merge-trees';
 import Workspace from './workspace';
 import MovedApp from './moved-app';
 
 class Options {
-  legacyAppInstance: any;
-  workspaceDir?: string;
-  compatAdapters?: Map<string, V1AddonConstructor>;
-  emitNewRoot?: (path: string) => void;
   extraPublicTrees?: Tree[];
 }
 
 export default class App {
   private extraPublicTrees: Tree[] | undefined;
 
-  static create(_: string, options: Options) {
-    let workspace = new CompatWorkspace(options.legacyAppInstance, {
-      workspaceDir: options.workspaceDir,
-      compatAdapters: options.compatAdapters
-    });
-
-    if (options && options.emitNewRoot) {
-      options.emitNewRoot(workspace.appDest.root);
-    }
-
-    return new this(workspace, options);
-  }
-
-  private constructor(private workspace: Workspace, options?: Options) {
+  constructor(private workspace: Workspace, options?: Options) {
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
     }

@@ -23,6 +23,7 @@ import MovedApp from "./moved-app";
 interface Options {
   workspaceDir?: string;
   compatAdapters?: Map<string, V1AddonConstructor>;
+  emitNewRoot?: (path: string) => void;
 }
 
 export default class CompatWorkspace extends Plugin implements Workspace {
@@ -68,6 +69,9 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.moved = moved;
     this.appSource = app;
     this.destDir = destDir;
+    if (options.emitNewRoot) {
+      options.emitNewRoot(this.appDest.root);
+    }
   }
 
   clearApp() {

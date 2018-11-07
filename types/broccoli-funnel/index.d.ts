@@ -1,5 +1,5 @@
 declare module 'broccoli-funnel' {
-  import { Tree } from 'broccoli-plugin';
+  import Plugin, { Tree } from 'broccoli-plugin';
   export interface Options {
     srcDir?: string;
     destDir?: string;
@@ -10,12 +10,10 @@ declare module 'broccoli-funnel' {
     getDestinationPath?: (relativePath: string) => string;
     annotation?: string;
   }
-  export default class Funnel {
+  export default class Funnel extends Plugin {
     constructor(inputTree: Tree, options: Options);
-    inputPaths: string[];
-    srcDir: string;
-    srcDirs: string[];
     build(): Promise<void>;
+    protected srcDir: string;
   }
 
 }

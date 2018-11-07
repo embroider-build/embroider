@@ -1,8 +1,6 @@
 import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
 import WorkspaceUpdater from './workspace-updater';
-import { Packager } from './packager';
-import PackagerRunner from './packager-runner';
 import mergeTrees from 'broccoli-merge-trees';
 import Workspace from './workspace';
 import MovedApp from './moved-app';
@@ -45,10 +43,6 @@ export default class App {
     let entry = new AppEntrypoint(this.workspace, appJS, htmlTree, publicTree, appDest, analyzer, updateHTML);
 
     return new WorkspaceUpdater([publicTree, appJS, entry], this.workspace);
-  }
-
-  packageWith(packagerClass: Packager): Tree {
-    return new PackagerRunner(packagerClass, this);
   }
 }
 

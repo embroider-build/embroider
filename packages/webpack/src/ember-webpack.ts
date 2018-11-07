@@ -1,4 +1,4 @@
-import { Packager, AppPackageJSON } from "@embroider/core";
+import { PackagerInstance, AppPackageJSON } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';
@@ -93,16 +93,22 @@ interface AppInfo {
   babelConfig: any;
 }
 
-class Webpack {
+interface Options {
+  webpackConfig: Configuration;
+}
+
+export class Webpack implements PackagerInstance {
   pathToVanillaApp: string;
+  private extraConfig: Configuration;
 
   constructor(
     pathToVanillaApp: string,
     private outputPath: string,
     private consoleWrite: (msg: string) => void,
-    private extraConfig: any
-    ) {
-      this.pathToVanillaApp = realpathSync(pathToVanillaApp);
+    options?: Options
+  ) {
+    this.pathToVanillaApp = realpathSync(pathToVanillaApp);
+    this.extraConfig = options && options.webpackConfig;
   }
 
   private packageOwners: PackageOwners = new PackageOwners();
@@ -377,19 +383,6 @@ class Webpack {
   }
 
 }
-
-module.exports = function webpack(extraConfig={}) : Packager {
-  let ConfiguredWebpack = class extends Webpack {
-    constructor(
-      pathToVanillaApp: string,
-      outputPath: string,
-      consoleWrite: (msg: string) => void
-    ) {
-      super(pathToVanillaApp, outputPath, consoleWrite, extraConfig);
-    }
-  };
-  return ConfiguredWebpack;
-};
 
 function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {

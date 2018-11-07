@@ -1,8 +1,9 @@
-export interface Packager {
+export interface Packager<Options> {
   new (
-    pathToVanillaApp: string,
+    inputPath: string,
     outputPath: string,
     consoleWrite: (message: string) => void,
+    options?: Options,
   ): PackagerInstance;
 }
 

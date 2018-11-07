@@ -3,8 +3,8 @@ import Package from './package';
 import { realpathSync } from 'fs';
 
 export default class PackageCache {
-  dependsOn: WeakMap<Package, Set<Package>> = new WeakMap();
-  dependendUponBy: WeakMap<Package, Set<Package>> = new WeakMap();
+  private dependsOn: WeakMap<Package, Set<Package>> = new WeakMap();
+  private dependendUponBy: WeakMap<Package, Set<Package>> = new WeakMap();
 
   private cache: Map<string, Package> = new Map();
 
@@ -24,5 +24,9 @@ export default class PackageCache {
       this.dependendUponBy.get(p).add(fromParent);
     }
     return p;
+  }
+
+  packagesThatDependOn(pkg: Package): Set<Package> {
+    return this.dependendUponBy.get(pkg);
   }
 }

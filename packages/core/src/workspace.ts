@@ -1,3 +1,6 @@
+import Package from "./package";
+import { Tree } from "broccoli-plugin";
+
 // The Workspace represents our directory that will contain a complete Vanilla
 // Ember app. It's weird for a broccoli plugin, because we have strong opinions
 // about symlinks that don't match Broccoli's. So instead of writing to our own
@@ -13,7 +16,12 @@
 // node_modules structure with all our dependencies in v2 format. It leaves an
 // empty place for the app's own code to go, which is filled in later via
 // copyIntoApp().
-export default interface Workspace {
+export default interface Workspace extends Tree {
   clearApp(): void;
   copyIntoApp(srcPath: string): void;
+
+  // This package represents the on-disk package as authored, not a thing
+  // _inside_ the workspace. The workspace isn't responsible for building app
+  // code.
+  readonly appSource: Package;
 }

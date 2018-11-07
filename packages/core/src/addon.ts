@@ -144,12 +144,4 @@ export default class Addon implements CompatPackage {
     let keywords = this.originalPackageJSON.keywords;
     return keywords && keywords.indexOf('ember-addon') !== -1;
   }
-
-  // This is all the Ember packages that depend on us. Not valid until the other
-  // packages have all had a chance to find their dependencies.
-  get dependedUponBy() {
-    return new Set([...this.pkg.dependedUponBy].map(pkg => {
-      return this.compatCache.lookup(pkg);
-    }));
-  }
 }

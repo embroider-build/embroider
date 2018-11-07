@@ -3,12 +3,9 @@ import { Tree } from 'broccoli-plugin';
 import AppEntrypoint from './app-entrypoint';
 import CompatPackage from './compat-package';
 import V1App from './v1-app';
-import PackageCache from './package-cache';
 import CompatWorkspace from './compat-workspace';
 import WorkspaceUpdater from './workspace-updater';
-import { tmpdir } from 'os';
 import { join, relative, dirname } from 'path';
-import { mkdtempSync, ensureDirSync, realpathSync } from 'fs-extra';
 import { Packager } from './packager';
 import PackagerRunner from './packager-runner';
 import { V1AddonConstructor } from './v1-addon';
@@ -21,6 +18,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import Package from './package';
 import CompatPackageCache from './compat-package-cache';
 import { JSDOM } from 'jsdom';
+import Workspace from './workspace';
 
 class Options {
   legacyAppInstance: any;
@@ -32,34 +30,26 @@ class Options {
 
 export default class App implements CompatPackage {
   private oldPackage: V1App;
-  private workspaceDir: string;
   private extraPublicTrees: Tree[] | undefined;
   private emitNewRoot: ((message: string) => void) | undefined;
   private compatCache: CompatPackageCache;
+  private pkg: Package;
 
-  static create(rootDir: string, options: Options) {
-    let packageCache = new PackageCache();
-    let v1Cache = new V1InstanceCache(options.legacyAppInstance);
-    return new this(packageCache.getPackage(rootDir), v1Cache, options);
+  static create(_: string, options: Options) {
+    let workspace = new CompatWorkspace(options.legacyAppInstance, {
+      workspaceDir: options.workspaceDir,
+      compatAdapters: options.compatAdapters
+    });
+
+    return new this(workspace, v1Cache, options);
   }
 
-  constructor(private pkg: Package, v1Cache: V1InstanceCache, options?: Options) {
-    this.compatCache = new CompatPackageCache(v1Cache, pkg, this);
+  private constructor(private workspace: Workspace, v1Cache: V1InstanceCache, options?: Options) {
+    this.pkg = workspace.appSource;
+    this.compatCache = new CompatPackageCache(v1Cache, this.pkg, this);
     this.packageAsAddon = this.packageAsAddon.bind(this);
 
     this.oldPackage = v1Cache.app;
-    if (options.compatAdapters) {
-      for (let [packageName, adapter] of options.compatAdapters) {
-        v1Cache.registerCompatAdapter(packageName, adapter);
-      }
-    }
-
-    if (options && options.workspaceDir) {
-      ensureDirSync(options.workspaceDir);
-      this.workspaceDir = realpathSync(options.workspaceDir);
-    } else {
-      this.workspaceDir = mkdtempSync(join(tmpdir(), 'embroider-'));
-    }
 
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
@@ -198,7 +188,7 @@ export default class App implements CompatPackage {
   // to make broccoli build, though the actual output will appear in
   // `this.outputPath` instead. See workspace.ts for explanation.
   get vanillaTree(): Tree {
-    let workspace = new CompatWorkspace(this, this.workspaceDir);
+    let workspace = this.workspace;
 
     // We need to smoosh all the app trees together. This is unavoidable until
     // everybody goes MU.

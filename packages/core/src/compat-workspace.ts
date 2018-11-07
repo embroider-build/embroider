@@ -18,6 +18,7 @@ import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
 import Package from "./package";
+import MovedApp from "./moved-app";
 
 interface Options {
   workspaceDir?: string;
@@ -70,19 +71,19 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   }
 
   clearApp() {
-    for (let name of readdirSync(this.appDestDir)) {
+    for (let name of readdirSync(this.appDest.root)) {
       if (name !== 'node_modules') {
-        removeSync(join(this.appDestDir, name));
+        removeSync(join(this.appDest.root, name));
       }
     }
   }
 
   copyIntoApp(srcDir: string) {
-    copySync(srcDir, this.appDestDir, { dereference: true });
+    copySync(srcDir, this.appDest.root, { dereference: true });
   }
 
-  get appDestDir(): string {
-    return this.moved.app.root;
+  get appDest(): MovedApp {
+    return this.moved.app;
   }
 
   async build() {
@@ -103,7 +104,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.didBuild = true;
   }
 
-  private linkNonCopiedDeps(pkg: MovedPackage) {
+  private linkNonCopiedDeps(pkg: MovedPackage | MovedApp) {
     for (let dep of pkg.dependencies) {
       if (!(dep instanceof MovedPackage)) {
         ensureSymlinkSync(dep.root, join(pkg.root, 'node_modules', dep.packageJSON.name));

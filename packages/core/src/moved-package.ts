@@ -1,14 +1,17 @@
 import { Tree } from "broccoli-plugin";
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import Package from './package';
+import Package, { EmberPackage } from './package';
 import V1Addon from "./v1-addon";
 import MovedPackageCache from "./moved-package-cache";
 import SmooshPackageJSON from "./smoosh-package-json";
 import broccoliMergeTrees from "broccoli-merge-trees";
 import { AddonPackageJSON } from "./metadata";
+import { UnwatchedDir } from 'broccoli-source';
+import ChooseTree from './choose-tree';
+import { join } from 'path';
 
-export default class MovedPackage extends Package {
+export default class MovedPackage extends EmberPackage {
   private smoosher: SmooshPackageJSON | undefined;
 
   // gets set externally when the MovedPackageCache is constructed
@@ -27,6 +30,7 @@ export default class MovedPackage extends Package {
     return this.v1Cache.getAddons(this.originalPackage.root);
   }
 
+  @Memoize()
   asTree(): Tree {
     if (this.isNativeV2) {
       // todo: this case is needed when a native-v2 addon depends on a
@@ -46,8 +50,10 @@ export default class MovedPackage extends Package {
     }
   }
 
-  // Moved packages are all v2-formated ember addons, so their package.json has
-  // a more precise type than the generic Package inteface.
+  get name() {
+    return this.originalPackage.name;
+  }
+
   @Memoize()
   get packageJSON(): AddonPackageJSON {
     if (this.isNativeV2) {
@@ -72,5 +78,21 @@ export default class MovedPackage extends Package {
 
   private needsSmooshing() {
     return this.oldPackages.length > 1 && this.oldPackages[0].hasAnyTrees();
+  }
+
+  get legacyAppTree(): Tree {
+    if (this.isNativeV2) {
+      let appDir = this.packageJSON['ember-addon']['app-js'];
+      if (appDir) {
+        return new UnwatchedDir(join(this.originalPackage.root, appDir));
+      }
+    } else {
+      return new ChooseTree(this.asTree(), {
+        annotation: `vanilla-choose-app-tree.${this.name}`,
+        srcDir: (_: string) => {
+          return this.packageJSON['ember-addon']['app-js'];
+        }
+      });
+    }
   }
 }

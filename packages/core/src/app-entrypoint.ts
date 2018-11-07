@@ -4,13 +4,13 @@ import { writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
-import App from './app';
 import flatMap from 'lodash/flatmap';
 import DependencyAnalyzer from './dependency-analyzer';
 import cloneDeep from 'lodash/cloneDeep';
 import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
 import { AppPackageJSON } from './metadata';
+import MovedApp from './moved-app';
 
 const entryTemplate = compile(`
 {{!-
@@ -63,7 +63,7 @@ export default class extends BroccoliPlugin {
     classicAppTree: Tree,
     htmlTree: Tree,
     publicTree: Tree,
-    private app: App,
+    private app: MovedApp,
     private analyzer: DependencyAnalyzer,
     private updateHTML: (entrypoint: string, dom: JSDOM) => void
   ){
@@ -94,7 +94,7 @@ export default class extends BroccoliPlugin {
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
     // already been build as v2.
-    let externals = new Set(flatMap(this.app.activeDescendants, addon => addon.packageJSON['ember-addon'].externals || []));
+    let externals = new Set(flatMap(this.app.activeAddonDescendants, addon => addon.packageJSON['ember-addon'].externals || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.
@@ -186,7 +186,7 @@ export default class extends BroccoliPlugin {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    for (let addon of this.app.activeDescendants) {
+    for (let addon of this.app.activeAddonDescendants) {
       let implicitModules = addon.packageJSON['ember-addon']['implicit-modules'];
       if (implicitModules) {
         for (let name of implicitModules) {

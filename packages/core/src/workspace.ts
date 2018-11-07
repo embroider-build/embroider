@@ -25,7 +25,9 @@ export default interface Workspace extends Tree {
   // code.
   readonly appSource: Package;
 
-  // This is the place inside the workspace that the app's own built form will
-  // go.
-  readonly appDestDir: string;
+  // This represents the app as it will be inside the workspace. For example,
+  // appDest.root is the directory where it will live, and appDest.dependencies
+  // point at its dependencies _inside_ the workspace (where they will all have
+  // been automatically upgraded to v2 format).
+  readonly appDest: Package;
 }

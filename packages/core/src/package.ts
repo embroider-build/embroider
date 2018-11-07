@@ -2,6 +2,8 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync } from "fs";
 import { join } from 'path';
 import get from 'lodash/get';
+import { AddonPackageJSON } from './metadata';
+import { Tree } from 'broccoli-plugin';
 
 export default abstract class Package {
   abstract readonly root: string;
@@ -39,4 +41,15 @@ export default abstract class Package {
     pkgs.delete(this);
     return [...pkgs.values()];
   }
+}
+
+// Represents not just any NPM pakage, but an Ember v2-formatted addon package.
+export abstract class EmberPackage extends Package {
+  get isEmberPackage() {
+    return true;
+  }
+  get packageJSON(): AddonPackageJSON {
+    return super.packageJSON;
+  }
+  abstract legacyAppTree: Tree;
 }

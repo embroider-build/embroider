@@ -7,6 +7,8 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import V1Package from './v1-package';
 import { pathExistsSync } from 'fs-extra';
 
+const fixme: WeakMap<object, V1InstanceCache> = new WeakMap();
+
 export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
   // There can be many because a single copy of an addon may be consumed by many
@@ -16,7 +18,16 @@ export default class V1InstanceCache {
 
   app: V1App;
 
-  constructor(oldApp: any) {
+  static findOrCreate(oldApp: any) {
+    if (fixme.has(oldApp)) {
+      return fixme.get(oldApp);
+    }
+    let instance = new this(oldApp);
+    fixme.set(oldApp, instance);
+    return instance;
+  }
+
+  private constructor(oldApp: any) {
     if (!oldApp._activeAddonInclude) {
       throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }

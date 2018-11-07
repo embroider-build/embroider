@@ -39,7 +39,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
 
-    let v1Cache = new V1InstanceCache(legacyEmberAppInstance);
+    let v1Cache = V1InstanceCache.findOrCreate(legacyEmberAppInstance);
 
     if (options.compatAdapters) {
       for (let [packageName, adapter] of options.compatAdapters) {
@@ -66,18 +66,23 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.didBuild = false;
     this.moved = moved;
     this.appSource = app;
+    this.destDir = destDir;
   }
 
   clearApp() {
-    for (let name of readdirSync(this.moved.app.root)) {
+    for (let name of readdirSync(this.appDestDir)) {
       if (name !== 'node_modules') {
-        removeSync(join(this.moved.app.root, name));
+        removeSync(join(this.appDestDir, name));
       }
     }
   }
 
   copyIntoApp(srcDir: string) {
-    copySync(srcDir, this.moved.app.root, { dereference: true });
+    copySync(srcDir, this.appDestDir, { dereference: true });
+  }
+
+  get appDestDir(): string {
+    return this.moved.app.root;
   }
 
   async build() {

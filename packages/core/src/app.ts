@@ -31,9 +31,9 @@ class Options {
 export default class App implements CompatPackage {
   private oldPackage: V1App;
   private extraPublicTrees: Tree[] | undefined;
-  private emitNewRoot: ((message: string) => void) | undefined;
   private compatCache: CompatPackageCache;
   private pkg: Package;
+  readonly root: string;
 
   static create(_: string, options: Options) {
     let workspace = new CompatWorkspace(options.legacyAppInstance, {
@@ -41,11 +41,17 @@ export default class App implements CompatPackage {
       compatAdapters: options.compatAdapters
     });
 
+    if (options && options.emitNewRoot) {
+      options.emitNewRoot(workspace.appDestDir);
+    }
+
+    let v1Cache = V1InstanceCache.findOrCreate(options.legacyAppInstance);
     return new this(workspace, v1Cache, options);
   }
 
   private constructor(private workspace: Workspace, v1Cache: V1InstanceCache, options?: Options) {
     this.pkg = workspace.appSource;
+    this.root = workspace.appDestDir;
     this.compatCache = new CompatPackageCache(v1Cache, this.pkg, this);
     this.packageAsAddon = this.packageAsAddon.bind(this);
 
@@ -53,10 +59,6 @@ export default class App implements CompatPackage {
 
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
-    }
-
-    if (options && options.emitNewRoot) {
-      this.emitNewRoot = options.emitNewRoot;
     }
   }
 
@@ -107,24 +109,6 @@ export default class App implements CompatPackage {
 
   get isModuleUnification(): boolean {
     return this.oldPackage.isModuleUnification;
-  }
-
-  private privRoot: string | undefined;
-  get root(): string {
-    if (!this.privRoot) {
-      throw new Error(`package ${this.name} does not know its final root location yet`);
-    }
-    return this.privRoot;
-  }
-
-  set root(value: string) {
-    if (this.privRoot) {
-      throw new Error(`double set of root in package ${this.name}`);
-    }
-    this.privRoot = value;
-    if (this.emitNewRoot) {
-      this.emitNewRoot(value);
-    }
   }
 
   private scriptPriority(pkg: Addon) {

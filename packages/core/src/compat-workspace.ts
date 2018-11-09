@@ -40,7 +40,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
 
-    let v1Cache = V1InstanceCache.findOrCreate(legacyEmberAppInstance);
+    let v1Cache = new V1InstanceCache(legacyEmberAppInstance);
 
     if (options.compatAdapters) {
       for (let [packageName, adapter] of options.compatAdapters) {

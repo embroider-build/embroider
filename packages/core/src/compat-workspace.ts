@@ -17,7 +17,6 @@ import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
-import Package from "./package";
 import MovedApp from "./moved-app";
 
 interface Options {
@@ -30,7 +29,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
   private moved: MovedPackageCache;
-  readonly appSource: Package;
+  readonly appSrcDir: string;
 
   constructor(legacyEmberAppInstance: any, options?: Options) {
     let destDir;
@@ -67,27 +66,31 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     this.didBuild = false;
     this.moved = moved;
-    this.appSource = app;
+    this.appSrcDir = app.root;
     this.destDir = destDir;
     if (options.emitNewRoot) {
-      options.emitNewRoot(this.appDest.root);
+      options.emitNewRoot(this.appDestDir);
     }
   }
 
   clearApp() {
-    for (let name of readdirSync(this.appDest.root)) {
+    for (let name of readdirSync(this.appDestDir)) {
       if (name !== 'node_modules') {
-        removeSync(join(this.appDest.root, name));
+        removeSync(join(this.appDestDir, name));
       }
     }
   }
 
   copyIntoApp(srcDir: string) {
-    copySync(srcDir, this.appDest.root, { dereference: true });
+    copySync(srcDir, this.appDestDir, { dereference: true });
   }
 
-  get appDest(): MovedApp {
-    return this.moved.app;
+  get appDestDir(): string {
+    return this.moved.app.root;
+  }
+
+  get packageCache(): PackageCache {
+    return this.moved;
   }
 
   async build() {

@@ -51,5 +51,8 @@ export abstract class EmberPackage extends Package {
   get packageJSON(): AddonPackageJSON {
     return super.packageJSON;
   }
+
+  // this is all the code that needs to get mashed into the consuming
+  // application's own package.
   abstract legacyAppTree: Tree;
 }

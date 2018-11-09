@@ -1,5 +1,5 @@
-import Package from "./package";
 import { Tree } from "broccoli-plugin";
+import PackageCache from "./package-cache";
 
 // The Workspace represents our directory that will contain a complete Vanilla
 // Ember app. It's weird for a broccoli plugin, because we have strong opinions
@@ -20,14 +20,13 @@ export default interface Workspace extends Tree {
   clearApp(): void;
   copyIntoApp(srcPath: string): void;
 
-  // This package represents the on-disk package as authored, not a thing
-  // _inside_ the workspace. The workspace isn't responsible for building app
-  // code.
-  readonly appSource: Package;
+  // the original (as authored) location of the app's own source on disk
+  readonly appSrcDir: string;
 
-  // This represents the app as it will be inside the workspace. For example,
-  // appDest.root is the directory where it will live, and appDest.dependencies
-  // point at its dependencies _inside_ the workspace (where they will all have
-  // been automatically upgraded to v2 format).
-  readonly appDest: Package;
+  // the location inside the workspace where the app's code will go
+  readonly appDestDir: string;
+
+  // Optional PackageCache that allows us to save work discovering the packages
+  // again in the next stage.
+  readonly packageCache: PackageCache | undefined;
 }

@@ -42,7 +42,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     let v1Cache = new V1InstanceCache(legacyEmberAppInstance);
 
-    if (options.compatAdapters) {
+    if (options && options.compatAdapters) {
       for (let [packageName, adapter] of options.compatAdapters) {
         v1Cache.registerCompatAdapter(packageName, adapter);
       }
@@ -68,7 +68,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.moved = moved;
     this.appSrcDir = app.root;
     this.destDir = destDir;
-    if (options.emitNewRoot) {
+    if (options && options.emitNewRoot) {
       options.emitNewRoot(this.appDestDir);
     }
   }

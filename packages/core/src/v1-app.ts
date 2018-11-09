@@ -272,31 +272,31 @@ export default class V1App implements V1Package {
     };
   }
 
-  findAppScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+  findAppScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.app.js);
   }
 
-  findAppStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+  findAppStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
     return styles.find(style => style.href === this.app.options.outputPaths.app.css.app);
   }
 
-  findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+  findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.vendor.js);
   }
 
-  findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+  findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
     return styles.find(style => style.href === this.app.options.outputPaths.vendor.css);
   }
 
-  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement {
+  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
     return styles.find(style => style.href === this.app.options.outputPaths.testSupport.css);
   }
 
-  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.testSupport.js.testSupport);
   }
 
-  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement {
+  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
   }
 }

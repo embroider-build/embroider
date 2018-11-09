@@ -1,6 +1,7 @@
 import BasicPackage from "./basic-package";
 import Package from './package';
 import { realpathSync } from 'fs';
+import { getOrCreate } from './get-or-create';
 
 export default class PackageCache {
   private dependsOn: WeakMap<Package, Set<Package>> = new WeakMap();
@@ -8,25 +9,20 @@ export default class PackageCache {
 
   private cache: Map<string, Package> = new Map();
 
-  getPackage(inputRoot: string, fromParent?: Package ) : Package | undefined {
+  getPackage(inputRoot: string, fromParent?: Package | undefined ): Package {
     let root = realpathSync(inputRoot);
-    if (!this.cache.has(root)) {
+    let p = getOrCreate(this.cache, root, () => {
       let newPackage = new BasicPackage(root, !Boolean(fromParent), this);
-      this.cache.set(root, newPackage);
-      this.dependendUponBy.set(newPackage, new Set());
-    }
-    let p = this.cache.get(root);
+      return newPackage;
+    });
     if (fromParent) {
-      if (!this.dependsOn.has(fromParent)) {
-        this.dependsOn.set(fromParent, new Set());
-      }
-      this.dependsOn.get(fromParent).add(p);
-      this.dependendUponBy.get(p).add(fromParent);
+      getOrCreate(this.dependsOn, fromParent, ()=> new Set()).add(p);
+      getOrCreate(this.dependendUponBy, p, () => new Set()).add(fromParent);
     }
     return p;
   }
 
   packagesThatDependOn(pkg: Package): Set<Package> {
-    return this.dependendUponBy.get(pkg);
+    return this.dependendUponBy.get(pkg) || new Set();
   }
 }

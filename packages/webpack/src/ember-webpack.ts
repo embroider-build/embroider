@@ -99,7 +99,7 @@ interface Options {
 
 export class Webpack implements PackagerInstance {
   pathToVanillaApp: string;
-  private extraConfig: Configuration;
+  private extraConfig: Configuration | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -118,7 +118,7 @@ export class Webpack implements PackagerInstance {
     let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
       return new Entrypoint(this.pathToVanillaApp, entrypoint);
     });
-    let externals = packageJSON['ember-addon'].externals;
+    let externals = packageJSON['ember-addon'].externals || [];
     let templateCompiler = require(join(this.pathToVanillaApp, packageJSON['ember-addon']['template-compiler']));
     let babelConfigFile = packageJSON['ember-addon']['babel-config'];
     let babelConfig;
@@ -264,8 +264,8 @@ export class Webpack implements PackagerInstance {
       owner.packageJSON.keywords.includes('ember-addon');
   }
 
-  private lastConfig: Configuration;
-  private lastWebpack: webpack.Compiler;
+  private lastConfig: Configuration | undefined;
+  private lastWebpack: webpack.Compiler | undefined;
 
   private getWebpack(config: Configuration) {
     if (this.lastWebpack && isEqual(config, this.lastConfig)) {
@@ -292,7 +292,7 @@ export class Webpack implements PackagerInstance {
         // this branch handles html entrypoints that we passed through webpack
         for (let asset of assets) {
           if (isJS(asset)) {
-            let firstTag = entrypoint.scriptTags[0];
+            let firstTag = entrypoint.scriptTags[0] as InDOMHTMLElement;
             // this conditional is here because if there were no scripts in the
             // input, we're not about to add some in the output, even though
             // webpack sometimes does funny things like adding empty script
@@ -303,7 +303,7 @@ export class Webpack implements PackagerInstance {
               firstTag.parentElement.insertBefore(newScript, firstTag);
             }
           } else if (isCSS(asset)) {
-            let firstLink = entrypoint.styleLinks[0];
+            let firstLink = entrypoint.styleLinks[0] as InDOMHTMLElement;
             if (firstLink) {
               let newLink = entrypoint.dom.window.document.createElement('link');
               newLink.href = `/assets/${asset}`; // todo adjust for rootURL
@@ -405,4 +405,8 @@ function isJS(filename: string) {
 interface StatSummary {
   lazyAssets: string[];
   entrypoints: Map<string, string[]>;
+}
+
+interface InDOMHTMLElement extends HTMLElement {
+  parentElement: HTMLElement;
 }

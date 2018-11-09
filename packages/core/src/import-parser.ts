@@ -143,7 +143,7 @@ export default class ImportParser extends Plugin {
 
     // No need to recurse here, because we only deal with top-level static import declarations
     for (let node of ast.program.body) {
-      let specifier : string|null;
+      let specifier : string | undefined;
       if (node.type === 'ImportDeclaration'){
         specifier = node.source.value;
       }

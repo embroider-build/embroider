@@ -12,7 +12,7 @@ import { JSDOM } from 'jsdom';
 
 export default class MovedApp extends Package {
   // gets set externally when the MovedPackageCache is constructed
-  moved: MovedPackageCache;
+  moved!: MovedPackageCache;
 
   constructor(
     readonly root: string,
@@ -162,7 +162,7 @@ export default class MovedApp extends Package {
     }
   }
 
-  private updateJS(dom: JSDOM, entrypoint: string, original: HTMLScriptElement, bundleName: string) {
+  private updateJS(dom: JSDOM, entrypoint: string, original: HTMLScriptElement | undefined, bundleName: string) {
     // the vendor.js file gets replaced with each of our implicit scripts. It's
     // up to the final stage packager to worry about concatenation.
     if (!original) { return; }
@@ -170,8 +170,8 @@ export default class MovedApp extends Package {
       let s = dom.window.document.createElement('script');
       s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
       // these newlines make the output more readable
-      original.parentElement.insertBefore(dom.window.document.createTextNode("\n"), original);
-      original.parentElement.insertBefore(s, original);
+      original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement!.insertBefore(s, original);
     }
     original.remove();
   }
@@ -185,7 +185,7 @@ export default class MovedApp extends Package {
     }
   }
 
-  private updateCSS(dom: JSDOM, entrypoint: string, original: HTMLLinkElement, bundleName: string) {
+  private updateCSS(dom: JSDOM, entrypoint: string, original: HTMLLinkElement | undefined, bundleName: string) {
     // the vendor.css file gets replaced with each of our implicit CSS
     // dependencies. It's up to the final stage packager to worry about
     // concatenation.
@@ -194,8 +194,8 @@ export default class MovedApp extends Package {
       let s = dom.window.document.createElement('link');
       s.rel = 'stylesheet';
       s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
-      original.parentElement.insertBefore(dom.window.document.createTextNode("\n"), original);
-      original.parentElement.insertBefore(s, original);
+      original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement!.insertBefore(s, original);
     }
     original.remove();
   }
@@ -218,7 +218,7 @@ export default class MovedApp extends Package {
 
   @Memoize()
   private processAppJS() {
-    let appJSFromAddons = this.activeAddonDescendants.map(d => d.legacyAppTree).filter(Boolean);
+    let appJSFromAddons = this.activeAddonDescendants.map(d => d.legacyAppTree).filter(Boolean) as Tree[];
     return this.oldPackage.processAppJS(appJSFromAddons, this.originalPackage.packageJSON);
   }
 }

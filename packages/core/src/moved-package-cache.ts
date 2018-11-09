@@ -13,7 +13,7 @@ import MovedPackage from './moved-package';
 import MovedApp from './moved-app';
 
 class PartialMovedPackageCache {
-  private willMove: Set<Package> | undefined = new Set();
+  private willMove: Set<Package> = new Set();
 
   constructor(
     private originalPackageCache: PackageCache,
@@ -113,8 +113,10 @@ export default class MovedPackageCache extends PackageCache {
     }
   }
 
-  getPackage(inputRoot: string, fromParent?: Package) : Package | undefined {
-    fromParent = this.maybeOriginal(fromParent);
+  getPackage(inputRoot: string, fromParent?: Package) : Package {
+    if (fromParent) {
+      fromParent = this.maybeOriginal(fromParent);
+    }
     return this.maybeMoved(this.originalPackageCache.getPackage(inputRoot, fromParent));
   }
 
@@ -125,14 +127,14 @@ export default class MovedPackageCache extends PackageCache {
 
   private maybeMoved(pkg: Package) {
     if (pkg && this.moved.has(pkg)) {
-      return this.moved.get(pkg);
+      return this.moved.get(pkg)!;
     }
     return pkg;
   }
 
   private maybeOriginal(pkg: Package) {
     if (pkg instanceof MovedPackage && this.reverseMoved.has(pkg)) {
-      return this.reverseMoved.get(pkg);
+      return this.reverseMoved.get(pkg)!;
     }
     return pkg;
   }

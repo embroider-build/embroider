@@ -13,7 +13,7 @@ export default class RewritePackageJSON extends Plugin {
     });
   }
 
-  private cachedLast: AddonPackageJSON;
+  private cachedLast: AddonPackageJSON | undefined;
 
   get lastPackageJSON() {
     if (!this.cachedLast) {

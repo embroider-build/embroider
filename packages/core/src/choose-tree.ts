@@ -5,7 +5,7 @@ import symlinkOrCopy from 'symlink-or-copy';
 
 interface ChooseTreeOptions {
   annotation?: string;
-  srcDir: (inputPath: string) => Promise<string> | string;
+  srcDir: (inputPath: string) => Promise<string | undefined> | string | undefined;
 }
 
 export default class ChooseTree extends Plugin {
@@ -42,7 +42,7 @@ export default class ChooseTree extends Plugin {
     } else {
       // the source doesn't exist, so make an empty output dir
       ensureDirSync(this.outputPath);
-      this.lastSrcDir = null;
+      this.lastSrcDir = undefined;
     }
   }
 }

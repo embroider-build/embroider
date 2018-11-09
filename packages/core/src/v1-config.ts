@@ -3,7 +3,7 @@ import { join } from 'path';
 import { readFileSync, outputFileSync } from "fs-extra";
 
 export class V1Config extends Plugin {
-  private lastConfig: string;
+  private lastConfig: string | undefined;
   constructor(configTree: Tree, private env: string) {
     super([configTree], {});
   }

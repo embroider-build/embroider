@@ -15,7 +15,7 @@ export default class MovedPackage extends EmberPackage {
   private smoosher: SmooshPackageJSON | undefined;
 
   // gets set externally when the MovedPackageCache is constructed
-  moved: MovedPackageCache;
+  moved!: MovedPackageCache;
 
   constructor(
     readonly root: string,
@@ -80,7 +80,7 @@ export default class MovedPackage extends EmberPackage {
     return this.oldPackages.length > 1 && this.oldPackages[0].hasAnyTrees();
   }
 
-  get legacyAppTree(): Tree {
+  get legacyAppTree(): Tree | undefined {
     if (this.isNativeV2) {
       let appDir = this.packageJSON['ember-addon']['app-js'];
       if (appDir) {

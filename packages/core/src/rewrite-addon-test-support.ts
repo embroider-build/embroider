@@ -46,7 +46,7 @@ export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { 
     allowedPaths: new RegExp(`^${ownName}/`),
     foundBadPaths: (badPaths: string[]) => {
       for (let badPath of badPaths) {
-        let name = packageName(badPath);
+        let name = packageName(badPath)!;
         renamed[name] = `${ownName}/${name}`;
       }
     }

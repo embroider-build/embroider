@@ -31,11 +31,18 @@ export default abstract class Package {
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
     let pkgs = new Set();
     let queue : Package[] = [this];
-    while (queue.length > 0) {
+    while (true) {
       let pkg = queue.shift();
+      if (!pkg) { break; }
       if (!pkgs.has(pkg)) {
         pkgs.add(pkg);
-        pkg.dependencies.filter(filter).forEach(d => queue.push(d));
+        let nextLevel;
+        if (filter) {
+          nextLevel = pkg.dependencies.filter(filter);
+        } else {
+          nextLevel = pkg.dependencies;
+        }
+        nextLevel.forEach(d => queue.push(d));
       }
     }
     pkgs.delete(this);
@@ -54,5 +61,5 @@ export abstract class EmberPackage extends Package {
 
   // this is all the code that needs to get mashed into the consuming
   // application's own package.
-  abstract legacyAppTree: Tree;
+  abstract legacyAppTree: Tree | undefined;
 }

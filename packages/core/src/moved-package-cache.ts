@@ -12,81 +12,8 @@ import Package from './package';
 import MovedPackage from './moved-package';
 import MovingApp from './moving-app';
 
-class PartialMovedPackageCache {
-  private willMove: Set<Package> = new Set();
-
-  constructor(
-    private originalPackageCache: PackageCache,
-    private app: Package,
-    private destDir: string,
-    private v1Cache: V1InstanceCache
-  ) {
-    for (let dep of app.findDescendants(pkg => pkg.isEmberPackage).reverse()) {
-      if (!dep.isNativeV2) {
-        // Non-native-v2 dependencies need to move into the workspace
-        this.move(dep);
-      }
-    }
-  }
-
-  finish(): MovedPackageCache {
-    let moved: Map<Package, MovedPackage | MovingApp> = new Map();
-    for (let originalPkg of this.willMove) {
-      if (originalPkg === this.app) {
-        moved.set(originalPkg, new MovingApp(this.localPath(originalPkg.root), originalPkg, this.v1Cache));
-      } else {
-        moved.set(originalPkg, new MovedPackage(this.localPath(originalPkg.root), originalPkg, this.v1Cache));
-      }
-    }
-    return new MovedPackageCache(moved, this.originalPackageCache, this.app, this.localPath.bind(this), this.commonSegmentCount);
-  }
-
-  private move(pkg: Package) {
-    if (this.willMove.has(pkg)) {
-      return;
-    }
-    this.willMove.add(pkg);
-    for (let nextLevelPackage of this.originalPackageCache.packagesThatDependOn(pkg)) {
-      // packages that depend on a copied package also need to be moved
-      this.move(nextLevelPackage);
-    }
-  }
-
-  // the npm structure we're shadowing could have a dependency nearly anywhere
-  // on disk. We want to maintain their relations to each other. So we must find
-  // the point in the filesystem that contains all of them, which could even be
-  // "/" (for example, if you npm-linked a dependency that lives in /tmp).
-  //
-  // The commonSegmentCount is how many leading path segments are shared by all
-  // our packages.
-  @Memoize()
-  private get commonSegmentCount(): number {
-    return [...this.willMove].reduce((longestPrefix, pkg) => {
-      let candidate = pathSegments(pkg.root);
-      let shorter, longer;
-      if (longestPrefix.length > candidate.length) {
-        shorter = candidate;
-        longer = longestPrefix;
-      } else {
-        shorter = longestPrefix;
-        longer = candidate;
-      }
-      let i = 0;
-      for (; i < shorter.length; i++) {
-        if (shorter[i] !== longer[i]) {
-          break;
-        }
-      }
-      return shorter.slice(0, i);
-    }, pathSegments(this.app.root)).length;
-  }
-
-  private localPath(filename: string) {
-    return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
-  }
-}
-
 export default class MovedPackageCache extends PackageCache {
+  private moved: Map<Package, MovedPackage | MovingApp> = new Map();
   private reverseMoved: Map<MovedPackage | MovingApp, Package> = new Map();
 
   static create(
@@ -95,20 +22,28 @@ export default class MovedPackageCache extends PackageCache {
     destDir: string,
     v1Cache: V1InstanceCache
   ): MovedPackageCache {
-    let partial = new PartialMovedPackageCache(originalPackageCache, app, destDir, v1Cache);
-    return partial.finish();
+    let movedSet = new MovedSet(originalPackageCache, app);
+    return new this(movedSet.packages, originalPackageCache, app, movedSet.commonSegmentCount, destDir, v1Cache);
   }
 
-  constructor(
-    private moved: Map<Package, MovedPackage | MovingApp>,
+  private constructor(
+    movedPackages: Set<Package>,
     private originalPackageCache: PackageCache,
     private origApp: Package,
-    private localPath: PartialMovedPackageCache["localPath"],
-    private commonSegmentCount: number
+    private commonSegmentCount: number,
+    private destDir: string,
+    v1Cache: V1InstanceCache
   ) {
     super();
-    for (let [originalPkg, movedPkg] of moved.entries()) {
-      movedPkg.moved = this;
+
+    for (let originalPkg of movedPackages) {
+      let movedPkg;
+      if (originalPkg === origApp) {
+        movedPkg = new MovingApp(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
+      } else {
+        movedPkg = new MovedPackage(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
+      }
+      this.moved.set(originalPkg, movedPkg);
       this.reverseMoved.set(movedPkg, originalPkg);
     }
   }
@@ -123,6 +58,10 @@ export default class MovedPackageCache extends PackageCache {
   packagesThatDependOn(pkg: Package) {
     pkg = this.maybeOriginal(pkg);
     return new Set([...this.originalPackageCache.packagesThatDependOn(pkg)].map(pkg => this.maybeMoved(pkg)));
+  }
+
+  private localPath(filename: string) {
+    return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
   }
 
   private maybeMoved(pkg: Package) {
@@ -232,4 +171,57 @@ function pathSegments(filename: string) {
     segments.shift();
   }
   return segments;
+}
+
+class MovedSet {
+  packages: Set<Package> = new Set();
+
+  constructor(private originalPackageCache: PackageCache, private app: Package) {
+    for (let dep of app.findDescendants(pkg => pkg.isEmberPackage).reverse()) {
+      if (!dep.isNativeV2) {
+        // Non-native-v2 dependencies need to move into the workspace
+        this.move(dep);
+      }
+    }
+  }
+
+  private move(pkg: Package) {
+    if (this.packages.has(pkg)) {
+      return;
+    }
+    this.packages.add(pkg);
+    for (let nextLevelPackage of this.originalPackageCache.packagesThatDependOn(pkg)) {
+      // packages that depend on a copied package also need to be moved
+      this.move(nextLevelPackage);
+    }
+  }
+
+  // the npm structure we're shadowing could have a dependency nearly anywhere
+  // on disk. We want to maintain their relations to each other. So we must find
+  // the point in the filesystem that contains all of them, which could even be
+  // "/" (for example, if you npm-linked a dependency that lives in /tmp).
+  //
+  // The commonSegmentCount is how many leading path segments are shared by all
+  // our packages.
+  @Memoize()
+  get commonSegmentCount(): number {
+    return [...this.packages].reduce((longestPrefix, pkg) => {
+      let candidate = pathSegments(pkg.root);
+      let shorter, longer;
+      if (longestPrefix.length > candidate.length) {
+        shorter = candidate;
+        longer = longestPrefix;
+      } else {
+        shorter = longestPrefix;
+        longer = candidate;
+      }
+      let i = 0;
+      for (; i < shorter.length; i++) {
+        if (shorter[i] !== longer[i]) {
+          break;
+        }
+      }
+      return shorter.slice(0, i);
+    }, pathSegments(this.app.root)).length;
+  }
 }

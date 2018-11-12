@@ -11,10 +11,8 @@ import { Tree } from 'broccoli-plugin';
 import { JSDOM } from 'jsdom';
 
 export default class MovingApp extends Package {
-  // gets set externally when the MovedPackageCache is constructed
-  moved!: MovedPackageCache;
-
   constructor(
+    private moved: MovedPackageCache,
     readonly destRoot: string,
     private originalPackage: Package,
     private v1Cache: V1InstanceCache,

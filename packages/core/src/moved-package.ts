@@ -14,10 +14,8 @@ import { join } from 'path';
 export default class MovedPackage extends EmberPackage {
   private smoosher: SmooshPackageJSON | undefined;
 
-  // gets set externally when the MovedPackageCache is constructed
-  moved!: MovedPackageCache;
-
   constructor(
+    private moved: MovedPackageCache,
     readonly root: string,
     private originalPackage: Package,
     private v1Cache: V1InstanceCache,

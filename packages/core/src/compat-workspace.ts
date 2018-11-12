@@ -30,7 +30,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   private destDir: string;
   private moved: MovedPackageCache;
 
-  constructor(legacyEmberAppInstance: any, options?: Options) {
+  constructor(legacyEmberAppInstance: object, options?: Options) {
     let destDir;
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
@@ -39,7 +39,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
 
-    let v1Cache = new V1InstanceCache(legacyEmberAppInstance);
+    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance);
 
     if (options && options.compatAdapters) {
       for (let [packageName, adapter] of options.compatAdapters) {

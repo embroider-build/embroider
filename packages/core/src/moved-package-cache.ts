@@ -39,7 +39,7 @@ export default class MovedPackageCache extends PackageCache {
     for (let originalPkg of movedPackages) {
       let movedPkg;
       if (originalPkg === origApp) {
-        movedPkg = new MovingApp(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
+        movedPkg = new MovingApp(this, this.localPath(originalPkg.root), originalPkg);
       } else {
         movedPkg = new MovedPackage(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
       }

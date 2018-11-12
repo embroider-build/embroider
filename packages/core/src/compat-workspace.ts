@@ -18,6 +18,7 @@ import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
 import MovedApp from "./moved-app";
+import Package from "./package";
 
 interface Options {
   workspaceDir?: string;
@@ -29,7 +30,6 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
   private moved: MovedPackageCache;
-  readonly appSrcDir: string;
 
   constructor(legacyEmberAppInstance: any, options?: Options) {
     let destDir;
@@ -66,7 +66,6 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     this.didBuild = false;
     this.moved = moved;
-    this.appSrcDir = app.root;
     this.destDir = destDir;
     if (options && options.emitNewRoot) {
       options.emitNewRoot(this.appDestDir);
@@ -86,11 +85,11 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   }
 
   get appDestDir(): string {
-    return this.moved.app.root;
+    return this.moved.app.destRoot;
   }
 
-  get packageCache(): PackageCache {
-    return this.moved;
+  get app(): Package {
+    return this.moved.app;
   }
 
   async build() {
@@ -104,17 +103,17 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     this.moved.all.forEach(([, movedPkg], index) => {
       copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
-      this.linkNonCopiedDeps(movedPkg);
+      this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });
-    this.linkNonCopiedDeps(this.moved.app);
+    this.linkNonCopiedDeps(this.moved.app, this.moved.app.destRoot);
     await this.moved.updatePreexistingResolvableSymlinks();
     this.didBuild = true;
   }
 
-  private linkNonCopiedDeps(pkg: MovedPackage | MovedApp) {
+  private linkNonCopiedDeps(pkg: MovedPackage | MovedApp, destRoot: string) {
     for (let dep of pkg.dependencies) {
       if (!(dep instanceof MovedPackage)) {
-        ensureSymlinkSync(dep.root, join(pkg.root, 'node_modules', dep.packageJSON.name));
+        ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));
       }
     }
   }

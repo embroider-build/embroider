@@ -4,7 +4,6 @@ import WorkspaceUpdater from './workspace-updater';
 import mergeTrees from 'broccoli-merge-trees';
 import Workspace from './workspace';
 import MovedApp from './moved-app';
-import PackageCache from './package-cache';
 
 class Options {
   extraPublicTrees?: Tree[];
@@ -12,13 +11,11 @@ class Options {
 
 export default class App {
   private extraPublicTrees: Tree[] | undefined;
-  private packageCache: PackageCache;
 
   constructor(private workspace: Workspace, options?: Options) {
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
     }
-    this.packageCache = workspace.packageCache || new PackageCache();
   }
 
   get root(): string {
@@ -29,7 +26,7 @@ export default class App {
   // to make broccoli build, though the actual output will appear in
   // `this.outputPath` instead. See workspace.ts for explanation.
   get vanillaTree(): Tree {
-    let app = this.packageCache.getPackage(this.workspace.appSrcDir);
+    let app = this.workspace.app;
     if (!(app instanceof MovedApp)) {
       throw new Error("Unimplemented");
     }
@@ -42,7 +39,7 @@ export default class App {
     }
 
     // And we generate the actual entrypoint files.
-    let entry = new AppEntrypoint(this.workspace, appJS, htmlTree, publicTree, app, analyzer, updateHTML);
+    let entry = new AppEntrypoint(this.workspace, appJS, htmlTree, publicTree, analyzer, updateHTML);
 
     return new WorkspaceUpdater([publicTree, appJS, entry], this.workspace);
   }

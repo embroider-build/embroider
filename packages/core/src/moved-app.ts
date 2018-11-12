@@ -15,11 +15,15 @@ export default class MovedApp extends Package {
   moved!: MovedPackageCache;
 
   constructor(
-    readonly root: string,
+    readonly destRoot: string,
     private originalPackage: Package,
     private v1Cache: V1InstanceCache,
   ) {
     super();
+  }
+
+  get root() {
+    return this.originalPackage.root;
   }
 
   private get oldPackage(): V1App {
@@ -106,13 +110,13 @@ export default class MovedApp extends Package {
     }
     let imports = new TrackedImports(this.name, this.oldPackage.trackedImports);
     for (let mod of imports.categorized[group]) {
-      result.push(resolve.sync(mod, { basedir: this.root }));
+      result.push(resolve.sync(mod, { basedir: this.destRoot }));
     }
 
     // This file gets created by app-entrypoint.ts. We need to insert it at the
     // beginning of the scripts.
     if (originalBundle === 'vendor.js') {
-      result.unshift(join(this.root, '_ember_env_.js'));
+      result.unshift(join(this.destRoot, '_ember_env_.js'));
     }
 
     return result;
@@ -120,7 +124,7 @@ export default class MovedApp extends Package {
   @Memoize()
   get babelConfig() {
     let rename = Object.assign({}, ...this.activeAddonDescendants.map(dep => dep.packageJSON['ember-addon']['renamed-modules']));
-    return this.oldPackage.babelConfig(this.root, rename);
+    return this.oldPackage.babelConfig(this.destRoot, rename);
   }
 
   get configTree(): ConfigTree {
@@ -149,7 +153,7 @@ export default class MovedApp extends Package {
     // module.
     let appJS = this.oldPackage.findAppScript(scripts);
     if (appJS) {
-      appJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.name}.js`));
+      appJS.src = relative(dirname(join(this.destRoot, entrypoint)), join(this.destRoot, `assets/${this.name}.js`));
       appJS.type = "module";
     }
   }
@@ -157,7 +161,7 @@ export default class MovedApp extends Package {
   private updateTestJS(entrypoint: string, scripts: HTMLScriptElement[]) {
     let testJS = this.oldPackage.findTestScript(scripts);
     if (testJS) {
-      testJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/test.js`));
+      testJS.src = relative(dirname(join(this.destRoot, entrypoint)), join(this.destRoot, `assets/test.js`));
       testJS.type = "module";
     }
   }
@@ -168,7 +172,7 @@ export default class MovedApp extends Package {
     if (!original) { return; }
     for (let insertedScript of this.assets(bundleName)) {
       let s = dom.window.document.createElement('script');
-      s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
+      s.src = relative(dirname(join(this.destRoot, entrypoint)), insertedScript);
       // these newlines make the output more readable
       original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
       original.parentElement!.insertBefore(s, original);
@@ -181,7 +185,7 @@ export default class MovedApp extends Package {
     // above.
     let appCSS = this.oldPackage.findAppStyles(styles);
     if (appCSS) {
-      appCSS.href = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.name}.css`));
+      appCSS.href = relative(dirname(join(this.destRoot, entrypoint)), join(this.destRoot, `assets/${this.name}.css`));
     }
   }
 
@@ -193,7 +197,7 @@ export default class MovedApp extends Package {
     for (let insertedStyle of this.assets(bundleName)) {
       let s = dom.window.document.createElement('link');
       s.rel = 'stylesheet';
-      s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
+      s.href = relative(dirname(join(this.destRoot, entrypoint)), insertedStyle);
       original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
       original.parentElement!.insertBefore(s, original);
     }

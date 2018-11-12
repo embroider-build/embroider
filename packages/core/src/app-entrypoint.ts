@@ -58,16 +58,18 @@ const testTemplate = compile(`
 `);
 
 export default class extends BroccoliPlugin {
+  private app: MovedApp;
+
   constructor(
     workspace: Workspace,
     classicAppTree: Tree,
     htmlTree: Tree,
     publicTree: Tree,
-    private app: MovedApp,
     private analyzer: DependencyAnalyzer,
     private updateHTML: (entrypoint: string, dom: JSDOM) => void
   ){
-    super([workspace, classicAppTree, analyzer, htmlTree, publicTree, app.configTree], {});
+    super([workspace, classicAppTree, analyzer, htmlTree, publicTree, (workspace.app as MovedApp).configTree], {});
+    this.app = workspace.app as MovedApp;
   }
 
   // todo

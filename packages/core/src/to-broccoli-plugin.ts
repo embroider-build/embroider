@@ -10,7 +10,7 @@ interface BroccoliPackager<Options> {
 export default function toBroccoliPlugin<Options>(packagerClass: Packager<Options>): BroccoliPackager<Options> {
   class PackagerRunner extends Plugin {
     constructor(private app: App, private options?: Options) {
-      super([app.vanillaTree], {
+      super([app.tree], {
         persistentOutput: true,
         needsCache: false
       });

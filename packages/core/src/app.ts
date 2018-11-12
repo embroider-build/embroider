@@ -22,10 +22,7 @@ export default class App {
     return this.workspace.appDestDir;
   }
 
-  // This is the end of the Vanilla build pipeline -- this is the tree you want
-  // to make broccoli build, though the actual output will appear in
-  // `this.outputPath` instead. See workspace.ts for explanation.
-  get vanillaTree(): Tree {
+  get tree(): Tree {
     let app = this.workspace.app;
     if (!(app instanceof MovedApp)) {
       throw new Error("Unimplemented");

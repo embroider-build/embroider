@@ -183,6 +183,8 @@ class MovedSet {
         this.move(dep);
       }
     }
+    // even if all our deps are native v2, the app itself always moves.
+    this.move(app);
   }
 
   private move(pkg: Package) {

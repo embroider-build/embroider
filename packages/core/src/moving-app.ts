@@ -35,10 +35,6 @@ export default class MovingApp extends Package {
   }
 
   get packageJSON(): any {
-    throw new Error(`MovingApp doesn't have its final packageJSON available at this stage`);
-  }
-
-  get originalPackageJSON(): any {
     return this.originalPackage.packageJSON;
   }
 

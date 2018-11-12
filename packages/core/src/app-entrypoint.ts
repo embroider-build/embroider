@@ -109,7 +109,7 @@ export default class extends BroccoliPlugin {
       directories: false
     });
 
-    let rawPkg = cloneDeep(this.app.originalPackageJSON);
+    let rawPkg = cloneDeep(this.app.packageJSON);
     if (!rawPkg['ember-addon']) {
       rawPkg['ember-addon'] = {};
     }

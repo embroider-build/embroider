@@ -3,7 +3,7 @@ import AppEntrypoint from './app-entrypoint';
 import WorkspaceUpdater from './workspace-updater';
 import mergeTrees from 'broccoli-merge-trees';
 import Workspace from './workspace';
-import MovedApp from './moved-app';
+import MovingApp from './moving-app';
 
 class Options {
   extraPublicTrees?: Tree[];
@@ -24,7 +24,7 @@ export default class App {
 
   get tree(): Tree {
     let app = this.workspace.app;
-    if (!(app instanceof MovedApp)) {
+    if (!(app instanceof MovingApp)) {
       throw new Error("Unimplemented");
     }
     let { appJS, analyzer, htmlTree, publicTree } = app;

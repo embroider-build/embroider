@@ -10,7 +10,7 @@ import { join, relative, dirname } from 'path';
 import { Tree } from 'broccoli-plugin';
 import { JSDOM } from 'jsdom';
 
-export default class MovedApp extends Package {
+export default class MovingApp extends Package {
   // gets set externally when the MovedPackageCache is constructed
   moved!: MovedPackageCache;
 
@@ -35,7 +35,7 @@ export default class MovedApp extends Package {
   }
 
   get packageJSON(): any {
-    throw new Error(`MovedApp doesn't have its final packageJSON available at this stage`);
+    throw new Error(`MovingApp doesn't have its final packageJSON available at this stage`);
   }
 
   get originalPackageJSON(): any {

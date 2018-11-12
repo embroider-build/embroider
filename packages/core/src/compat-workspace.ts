@@ -17,7 +17,7 @@ import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
-import MovedApp from "./moved-app";
+import MovingApp from "./moving-app";
 import Package from "./package";
 
 interface Options {
@@ -110,7 +110,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.didBuild = true;
   }
 
-  private linkNonCopiedDeps(pkg: MovedPackage | MovedApp, destRoot: string) {
+  private linkNonCopiedDeps(pkg: MovedPackage | MovingApp, destRoot: string) {
     for (let dep of pkg.dependencies) {
       if (!(dep instanceof MovedPackage)) {
         ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));

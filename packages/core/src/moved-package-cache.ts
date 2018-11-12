@@ -10,7 +10,7 @@ import V1InstanceCache from "./v1-instance-cache";
 import PackageCache from "./package-cache";
 import Package from './package';
 import MovedPackage from './moved-package';
-import MovedApp from './moved-app';
+import MovingApp from './moving-app';
 
 class PartialMovedPackageCache {
   private willMove: Set<Package> = new Set();
@@ -30,10 +30,10 @@ class PartialMovedPackageCache {
   }
 
   finish(): MovedPackageCache {
-    let moved: Map<Package, MovedPackage | MovedApp> = new Map();
+    let moved: Map<Package, MovedPackage | MovingApp> = new Map();
     for (let originalPkg of this.willMove) {
       if (originalPkg === this.app) {
-        moved.set(originalPkg, new MovedApp(this.localPath(originalPkg.root), originalPkg, this.v1Cache));
+        moved.set(originalPkg, new MovingApp(this.localPath(originalPkg.root), originalPkg, this.v1Cache));
       } else {
         moved.set(originalPkg, new MovedPackage(this.localPath(originalPkg.root), originalPkg, this.v1Cache));
       }
@@ -87,7 +87,7 @@ class PartialMovedPackageCache {
 }
 
 export default class MovedPackageCache extends PackageCache {
-  private reverseMoved: Map<MovedPackage | MovedApp, Package> = new Map();
+  private reverseMoved: Map<MovedPackage | MovingApp, Package> = new Map();
 
   static create(
     originalPackageCache: PackageCache,
@@ -100,7 +100,7 @@ export default class MovedPackageCache extends PackageCache {
   }
 
   constructor(
-    private moved: Map<Package, MovedPackage | MovedApp>,
+    private moved: Map<Package, MovedPackage | MovingApp>,
     private originalPackageCache: PackageCache,
     private origApp: Package,
     private localPath: PartialMovedPackageCache["localPath"],
@@ -146,15 +146,15 @@ export default class MovedPackageCache extends PackageCache {
       // we leave the app out here, because we don't _actually_ want to do any
       // copying of app files into the workspace. That is not our responsibility
       // -- we're just supposed to be getting all the dependencies ready.
-      if (!(moved instanceof MovedApp)) {
+      if (!(moved instanceof MovingApp)) {
         output.push([orig, moved]);
       }
     }
     return output;
   }
 
-  get app(): MovedApp {
-    return this.moved.get(this.origApp) as MovedApp;
+  get app(): MovingApp {
+    return this.moved.get(this.origApp) as MovingApp;
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the

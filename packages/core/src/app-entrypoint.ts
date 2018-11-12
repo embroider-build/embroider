@@ -10,7 +10,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
 import { AppPackageJSON } from './metadata';
-import MovedApp from './moved-app';
+import MovingApp from './moving-app';
 
 const entryTemplate = compile(`
 {{!-
@@ -58,7 +58,7 @@ const testTemplate = compile(`
 `);
 
 export default class extends BroccoliPlugin {
-  private app: MovedApp;
+  private app: MovingApp;
 
   constructor(
     workspace: Workspace,
@@ -68,8 +68,8 @@ export default class extends BroccoliPlugin {
     private analyzer: DependencyAnalyzer,
     private updateHTML: (entrypoint: string, dom: JSDOM) => void
   ){
-    super([workspace, classicAppTree, analyzer, htmlTree, publicTree, (workspace.app as MovedApp).configTree], {});
-    this.app = workspace.app as MovedApp;
+    super([workspace, classicAppTree, analyzer, htmlTree, publicTree, (workspace.app as MovingApp).configTree], {});
+    this.app = workspace.app as MovingApp;
   }
 
   // todo

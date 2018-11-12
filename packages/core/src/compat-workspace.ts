@@ -17,7 +17,6 @@ import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
-import MovingApp from "./moving-app";
 import Package from "./package";
 
 interface Options {
@@ -105,12 +104,12 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
       this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });
-    this.linkNonCopiedDeps(this.moved.app, this.moved.app.destRoot);
+    this.linkNonCopiedDeps(this.moved.app, this.appDestDir);
     await this.moved.updatePreexistingResolvableSymlinks();
     this.didBuild = true;
   }
 
-  private linkNonCopiedDeps(pkg: MovedPackage | MovingApp, destRoot: string) {
+  private linkNonCopiedDeps(pkg: Package, destRoot: string) {
     for (let dep of pkg.dependencies) {
       if (!(dep instanceof MovedPackage)) {
         ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));

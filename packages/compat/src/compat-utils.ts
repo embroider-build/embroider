@@ -1,5 +1,5 @@
 import cloneDeep from 'lodash/cloneDeep';
-import { AddonPackageJSON } from './metadata';
+import { AddonPackageJSON } from '@embroider/core';
 
 export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
   let pkg = cloneDeep(packageJSON);

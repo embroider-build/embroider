@@ -1,6 +1,6 @@
 import { todo } from './messages';
 import { Memoize } from 'typescript-memoize';
-import { AddonPackageJSON } from './metadata';
+import { AddonPackageJSON } from '@embroider/core';
 
 export interface TrackedImport {
   assetPath: string;

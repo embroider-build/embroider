@@ -1,12 +1,11 @@
 import { Tree } from "broccoli-plugin";
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import Package, { EmberPackage } from './package';
+import { Package, EmberPackage, AddonPackageJSON } from '@embroider/core';
 import V1Addon from "./v1-addon";
 import MovedPackageCache from "./moved-package-cache";
 import SmooshPackageJSON from "./smoosh-package-json";
 import broccoliMergeTrees from "broccoli-merge-trees";
-import { AddonPackageJSON } from "./metadata";
 import { UnwatchedDir } from 'broccoli-source';
 import ChooseTree from './choose-tree';
 import { join } from 'path';

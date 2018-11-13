@@ -2,7 +2,7 @@ import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import DependencyAnalyzer from './dependency-analyzer';
-import { AddonPackageJSON } from './metadata';
+import { AddonPackageJSON } from '@embroider/core';
 
 type GetMeta = () => AddonPackageJSON["ember-addon"];
 

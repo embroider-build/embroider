@@ -1,7 +1,7 @@
 import Plugin from 'broccoli-plugin';
 import ImportParser from './import-parser';
 import flatMap from 'lodash/flatMap';
-import absolutePackageName from './package-name';
+import { packageName as absolutePackageName } from '@embroider/core';
 
 export default class DependencyAnalyzer extends Plugin {
   constructor(private importParsers: ImportParser[], private packageJSON: any, private isTopLevelApp: boolean) {

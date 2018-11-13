@@ -7,8 +7,7 @@ import {
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import PackageCache from "./package-cache";
-import Package from './package';
+import { PackageCache, Package } from "@embroider/core";
 import MovedPackage from './moved-package';
 import MovingApp from './moving-app';
 

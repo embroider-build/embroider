@@ -1,9 +1,8 @@
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
-import packageName from './package-name';
 import { Tree } from 'broccoli-plugin';
-import { AddonPackageJSON } from './metadata';
+import { AddonPackageJSON, packageName } from '@embroider/core';
 
 /*
   The traditional addon-test-support tree allows you to emit modules under any

@@ -6,7 +6,7 @@ import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import V1Package from './v1-package';
 import { pathExistsSync } from 'fs-extra';
-import { getOrCreate } from './get-or-create';
+import { getOrCreate } from '@embroider/core';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();

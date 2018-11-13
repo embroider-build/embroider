@@ -10,14 +10,12 @@ import {
   mkdtempSync,
   copySync,
 } from 'fs-extra';
-import Workspace from './workspace';
+import { Workspace, Package, PackageCache } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
-import PackageCache from "./package-cache";
 import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
-import Package from "./package";
 
 interface Options {
   workspaceDir?: string;

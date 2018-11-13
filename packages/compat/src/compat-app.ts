@@ -1,12 +1,17 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
-import WorkspaceUpdater from './workspace-updater';
 import mergeTrees from 'broccoli-merge-trees';
-import App from './app';
+import {
+  App,
+  Package,
+  EmberPackage,
+  Workspace,
+  AppPackageJSON,
+  WorkspaceUpdater
+} from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { TrackedImports } from './tracked-imports';
 import { Memoize } from "typescript-memoize";
-import Package, { EmberPackage } from './package';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
@@ -16,9 +21,7 @@ import { compile } from './js-handlebars';
 import { todo } from './messages';
 import flatMap from 'lodash/flatmap';
 import cloneDeep from 'lodash/cloneDeep';
-import Workspace from './workspace';
 import { JSDOM } from 'jsdom';
-import { AppPackageJSON } from './metadata';
 
 const entryTemplate = compile(`
 {{!-

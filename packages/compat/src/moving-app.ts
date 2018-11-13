@@ -1,4 +1,4 @@
-import Package from './package';
+import { Package }  from '@embroider/core';
 import MovedPackageCache from "./moved-package-cache";
 
 export default class MovingApp extends Package {

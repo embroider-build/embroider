@@ -188,8 +188,6 @@ export default class CompatApp implements App {
     return this.oldPackage.config;
   }
 
-  // this encapsulates API that the AppEntrypoint needs from App that we don't
-  // want to make public for everyone else.
   private updateHTML(entrypoint: string, dom: JSDOM) {
     let scripts = [...dom.window.document.querySelectorAll('script')];
     this.updateAppJS(entrypoint, scripts);

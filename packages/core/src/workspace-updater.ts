@@ -10,7 +10,10 @@ export default class WorkspaceUpdater extends Plugin {
 
   build() {
     this.workspace.clearApp();
-    for (let srcPath of this.inputPaths) {
+    // this is slicing off the Workspace's own tree. It's in our inputPaths
+    // because it needs to be ready before we go, but we don't read from it, we
+    // write into it.
+    for (let srcPath of this.inputPaths.slice(0, -1)) {
       this.workspace.copyIntoApp(srcPath);
     }
   }

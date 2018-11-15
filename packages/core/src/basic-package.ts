@@ -17,11 +17,15 @@ export default class BasicPackage extends Package {
     this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies'] : ['dependencies'];
   }
 
+  protected get basedir(): string {
+    return this.root;
+  }
+
   @Memoize()
   get dependencies(): Package[] {
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
     return names.map(name => {
-      let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.root }));
+      let addonRoot = dirname(resolve.sync(join(name, 'package.json'), { basedir: this.basedir }));
       return this.packageCache.getPackage(addonRoot, this);
     }).filter(Boolean);
   }

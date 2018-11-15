@@ -49,7 +49,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     let packageCache = new PackageCache();
 
     // the topmost package, representing our app
-    let app = packageCache.getPackage(v1Cache.app.root);
+    let app = packageCache.getApp(v1Cache.app.root);
 
     // this layers on top of packageCache and overrides the packages that need
     // to move into our workspace.

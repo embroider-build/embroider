@@ -47,11 +47,13 @@ export default class MovedPackageCache extends PackageCache {
     }
   }
 
-  getPackage(inputRoot: string, fromParent?: Package) : Package {
-    if (fromParent) {
-      fromParent = this.maybeOriginal(fromParent);
-    }
-    return this.maybeMoved(this.originalPackageCache.getPackage(inputRoot, fromParent));
+  getApp(inputRoot: string) : Package {
+    return this.maybeMoved(this.originalPackageCache.getApp(inputRoot));
+  }
+
+  resolve(packageName: string, fromPackage: Package): Package {
+    fromPackage = this.maybeOriginal(fromPackage);
+    return this.maybeMoved(this.originalPackageCache.resolve(packageName, fromPackage));
   }
 
   packagesThatDependOn(pkg: Package) {

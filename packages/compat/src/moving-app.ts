@@ -22,6 +22,6 @@ export default class MovingApp extends Package {
   }
 
   get dependencies(): Package[] {
-    return this.originalPackage.dependencies.map(dep => this.moved.getPackage(dep.root, this));
+    return this.originalPackage.dependencies.map(dep => this.moved.resolve(dep.name, this));
   }
 }

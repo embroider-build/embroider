@@ -2,23 +2,42 @@ import BasicPackage from "./basic-package";
 import Package from './package';
 import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
+import resolve from 'resolve';
+import { join, dirname } from 'path';
 
 export default class PackageCache {
+  private rootCache: Map<string, Package> = new Map();
+
   private dependsOn: WeakMap<Package, Set<Package>> = new WeakMap();
   private dependendUponBy: WeakMap<Package, Set<Package>> = new WeakMap();
+  private resolutionCache: WeakMap<Package, Map<string, Package>> = new WeakMap();
 
-  private cache: Map<string, Package> = new Map();
-
-  getPackage(inputRoot: string, fromParent?: Package | undefined ): Package {
-    let root = realpathSync(inputRoot);
-    let p = getOrCreate(this.cache, root, () => {
-      let newPackage = new BasicPackage(root, !Boolean(fromParent), this);
-      return newPackage;
+  resolve(packageName: string, fromPackage: Package): Package {
+    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
+    return getOrCreate(cache, packageName, () => {
+      let root = dirname(resolve.sync(join(packageName, 'package.json'), { basedir: fromPackage.root }));
+      let pkg = this.getAddon(root);
+      if (fromPackage) {
+        getOrCreate(this.dependsOn, fromPackage, ()=> new Set()).add(pkg);
+        getOrCreate(this.dependendUponBy, pkg, () => new Set()).add(fromPackage);
+      }
+      return pkg;
     });
-    if (fromParent) {
-      getOrCreate(this.dependsOn, fromParent, ()=> new Set()).add(p);
-      getOrCreate(this.dependendUponBy, p, () => new Set()).add(fromParent);
-    }
+  }
+
+  private getAddon(packageRoot: string) {
+    return this.getPackage(packageRoot, true);
+  }
+
+  getApp(packageRoot: string) {
+    return this.getPackage(packageRoot, false);
+  }
+
+  private getPackage(packageRoot: string, isAddon: boolean): Package {
+    let root = realpathSync(packageRoot);
+    let p = getOrCreate(this.rootCache, root, () => {
+      return new BasicPackage(root, !isAddon, this);
+    });
     return p;
   }
 

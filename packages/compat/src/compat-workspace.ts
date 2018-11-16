@@ -45,11 +45,9 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       }
     }
 
-    // this layers on top of packageCache and overrides the packages that need
-    // to move into our workspace.
     let moved = MovedPackageCache.create(destDir, v1Cache);
 
-    super(moved.all.map(entry => entry[1].asTree()), {
+    super(moved.all.map(pkg => pkg.asTree()), {
       annotation: 'embroider:core:workspace',
       persistentOutput: true,
       needsCache: false
@@ -92,7 +90,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     emptyDirSync(this.destDir);
 
-    this.moved.all.forEach(([, movedPkg], index) => {
+    this.moved.all.forEach((movedPkg, index) => {
       copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
       this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });

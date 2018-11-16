@@ -18,8 +18,8 @@ export default class PackageCache {
     return this.getPackage(packageRoot, false);
   }
 
-  private rootCache: Map<string, Package> = new Map();
-  private resolutionCache: WeakMap<Package, Map<string, Package>> = new WeakMap();
+  protected rootCache: Map<string, Package> = new Map();
+  protected resolutionCache: WeakMap<Package, Map<string, Package>> = new WeakMap();
 
   private getPackage(packageRoot: string, isAddon: boolean): Package {
     let root = realpathSync(packageRoot);

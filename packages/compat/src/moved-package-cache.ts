@@ -7,79 +7,68 @@ import {
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import { PackageCache, Package, BasicPackage } from "@embroider/core";
+import { PackageCache, Package, getOrCreate, BasicPackage } from "@embroider/core";
 import MovedPackage from './moved-package';
 
 export default class MovedPackageCache extends PackageCache {
-  private moved: Map<Package, MovedPackage> = new Map();
-  private reverseMoved: Map<MovedPackage, Package> = new Map();
   readonly app!: Package;
-  readonly appDestDir!: string;
+  readonly appDestDir: string;
+  private commonSegmentCount: number;
+  private moved: Map<Package, MovedPackage> = new Map();
 
   static create(
     destDir: string,
     v1Cache: V1InstanceCache
   ): MovedPackageCache {
-
-    // this holds our underlying, real on-disk packages
-    let packageCache = new PackageCache();
-
-    // the topmost package, representing our app
-    let app = packageCache.getApp(v1Cache.app.root);
-
-    let movedSet = new MovedSet(app);
-    return new this(movedSet.packages, packageCache, app, movedSet.commonSegmentCount, destDir, v1Cache);
+    return new this(destDir, v1Cache);
   }
 
   private constructor(
-    movedPackages: Set<Package>,
-    private originalPackageCache: PackageCache,
-    origApp: Package,
-    private commonSegmentCount: number,
     private destDir: string,
-    v1Cache: V1InstanceCache
+    private v1Cache: V1InstanceCache
   ) {
     super();
 
-    for (let originalPkg of movedPackages) {
+    let origApp = this.getApp(v1Cache.app.root);
+
+    let movedSet = new MovedSet(origApp);
+    this.commonSegmentCount = movedSet.commonSegmentCount;
+    this.appDestDir = this.localPath(origApp.root);
+
+    for (let originalPkg of movedSet.packages) {
       let movedPkg;
-      if (originalPkg === origApp) {
-        this.app = new BasicPackage(originalPkg.root, true, this);
-        this.appDestDir = this.localPath(originalPkg.root);
-      } else {
-        movedPkg = new MovedPackage(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
+      if (originalPkg !== origApp) {
+        movedPkg = this.movedPackage(originalPkg);
         this.moved.set(originalPkg, movedPkg);
-        this.reverseMoved.set(movedPkg, originalPkg);
+      } else {
+        movedPkg = new BasicPackage(origApp.root, true, this);
+        this.app = movedPkg;
+        this.rootCache.set(movedPkg.root, movedPkg);
       }
+      let resolutions = new Map();
+      for (let dep of originalPkg.dependencies) {
+        if (movedSet.packages.has(dep)) {
+          resolutions.set(dep.name, this.movedPackage(dep));
+        } else {
+          resolutions.set(dep.name, dep);
+        }
+      }
+      this.resolutionCache.set(movedPkg, resolutions);
     }
   }
 
-  resolve(packageName: string, fromPackage: Package): Package {
-    fromPackage = this.maybeOriginal(fromPackage);
-    return this.maybeMoved(this.originalPackageCache.resolve(packageName, fromPackage));
+  private movedPackage(originalPkg: Package): MovedPackage {
+    let newRoot = this.localPath(originalPkg.root);
+    return getOrCreate(this.rootCache, newRoot, () => new MovedPackage(this, newRoot, originalPkg, this.v1Cache)) as MovedPackage;
   }
 
   private localPath(filename: string) {
     return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
   }
 
-  private maybeMoved(pkg: Package) {
-    if (pkg && this.moved.has(pkg)) {
-      return this.moved.get(pkg)!;
-    }
-    return pkg;
-  }
-
-  private maybeOriginal(pkg: Package) {
-    if (pkg instanceof MovedPackage && this.reverseMoved.has(pkg)) {
-      return this.reverseMoved.get(pkg)!;
-    }
-    return pkg;
-  }
-
   @Memoize()
-  get all(): [Package, MovedPackage][] {
-    return [...this.moved.entries()];
+  get all(): MovedPackage[] {
+    return [...this.rootCache.values()].filter(pkg => pkg instanceof MovedPackage) as MovedPackage[];
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the

@@ -2,8 +2,7 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync } from "fs";
 import { join } from 'path';
 import get from 'lodash/get';
-import { AddonPackageJSON } from './metadata';
-import { Tree } from 'broccoli-plugin';
+import { AddonMeta } from './metadata';
 
 export default abstract class Package {
   abstract readonly root: string;
@@ -18,12 +17,19 @@ export default abstract class Package {
     return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
   }
 
+  get meta(): AddonMeta {
+    if (!this.isV2) {
+      throw new Error("Not a v2-formatted Ember package");
+    }
+    return this.packageJSON["ember-addon"] as AddonMeta;
+  }
+
   get isEmberPackage() : boolean {
     let keywords = this.packageJSON.keywords;
     return keywords && (keywords as string[]).includes('ember-addon');
   }
 
-  get isNativeV2(): boolean {
+  get isV2(): boolean {
     let version = get(this.packageJSON, 'ember-addon.version');
     return version === 2;
   }
@@ -48,18 +54,4 @@ export default abstract class Package {
     pkgs.delete(this);
     return [...pkgs.values()];
   }
-}
-
-// Represents not just any NPM pakage, but an Ember v2-formatted addon package.
-export abstract class EmberPackage extends Package {
-  get isEmberPackage() {
-    return true;
-  }
-  get packageJSON(): AddonPackageJSON {
-    return super.packageJSON;
-  }
-
-  // this is all the code that needs to get mashed into the consuming
-  // application's own package.
-  abstract legacyAppTree: Tree | undefined;
 }

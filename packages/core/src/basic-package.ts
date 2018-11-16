@@ -4,7 +4,7 @@ import flatMap from 'lodash/flatMap';
 import Package from './package';
 
 export default class BasicPackage extends Package {
-  private dependencyKeys: string[];
+  private dependencyKeys: ("dependencies" | "devDependencies")[];
 
   constructor(
     readonly root: string,
@@ -13,10 +13,6 @@ export default class BasicPackage extends Package {
   ) {
     super();
     this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies'] : ['dependencies'];
-  }
-
-  protected get basedir(): string {
-    return this.root;
   }
 
   @Memoize()

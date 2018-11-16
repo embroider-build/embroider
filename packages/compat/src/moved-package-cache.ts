@@ -180,7 +180,7 @@ class MovedSet {
     // The app always moves (because we need a place to mash all the
     // addon-provided "app-js" trees), and you must move if you are not native
     // v2
-    let mustMove = pkg === this.app || !pkg.isNativeV2;
+    let mustMove = pkg === this.app || !pkg.isV2;
     for (let dep of pkg.dependencies) {
       // or if any of your deps need to move
       mustMove = this.check(dep) || mustMove;

@@ -1,4 +1,4 @@
-import { PackagerInstance, AppPackageJSON } from "@embroider/core";
+import { PackagerInstance, AppMeta } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';
@@ -114,13 +114,13 @@ export class Webpack implements PackagerInstance {
   private packageOwners: PackageOwners = new PackageOwners();
 
   private examineApp(): AppInfo {
-    let packageJSON = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8')) as AppPackageJSON;
-    let entrypoints = packageJSON['ember-addon'].entrypoints.map(entrypoint => {
+    let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+    let entrypoints = meta.entrypoints.map(entrypoint => {
       return new Entrypoint(this.pathToVanillaApp, entrypoint);
     });
-    let externals = packageJSON['ember-addon'].externals || [];
-    let templateCompiler = require(join(this.pathToVanillaApp, packageJSON['ember-addon']['template-compiler']));
-    let babelConfigFile = packageJSON['ember-addon']['babel-config'];
+    let externals = meta.externals || [];
+    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
+    let babelConfigFile = meta['babel-config'];
     let babelConfig;
     if (babelConfigFile) {
       babelConfig = require(join(this.pathToVanillaApp, babelConfigFile));

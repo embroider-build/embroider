@@ -1,6 +1,6 @@
 import { todo } from './messages';
 import { Memoize } from 'typescript-memoize';
-import { AddonPackageJSON } from '@embroider/core';
+import { AddonMeta } from '@embroider/core';
 
 export interface TrackedImport {
   assetPath: string;
@@ -53,7 +53,7 @@ export class TrackedImports {
   }
 
   get meta() {
-    let result: AddonPackageJSON["ember-addon"] = {
+    let result: AddonMeta = {
       version: 2
     };
     if (this.categorized.appJS.length > 0) {

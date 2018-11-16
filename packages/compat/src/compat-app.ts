@@ -3,10 +3,9 @@ import mergeTrees from 'broccoli-merge-trees';
 import {
   App,
   Package,
-  EmberPackage,
   Workspace,
-  AppPackageJSON,
-  WorkspaceUpdater
+  WorkspaceUpdater,
+  AppMeta
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -22,6 +21,7 @@ import { todo } from './messages';
 import flatMap from 'lodash/flatmap';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
+import MovedPackage from './moved-package';
 
 const entryTemplate = compile(`
 {{!-
@@ -111,9 +111,9 @@ export default class CompatApp implements App {
   }
 
   @Memoize()
-  private get activeAddonDescendants(): EmberPackage[] {
+  private get activeAddonDescendants(): Package[] {
     // todo: filter by addon-provided hook
-    return this.workspace.app.findDescendants(dep => dep.isEmberPackage) as EmberPackage[];
+    return this.workspace.app.findDescendants(dep => dep.isEmberPackage);
   }
 
   private get autoRun(): boolean {
@@ -160,7 +160,7 @@ export default class CompatApp implements App {
     }
     let result = [];
     for (let addon of sortBy(this.activeAddonDescendants, this.scriptPriority.bind(this))) {
-      let implicitScripts = addon.packageJSON['ember-addon'][metaKey];
+      let implicitScripts = addon.meta[metaKey];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
           result.push(resolve.sync(mod, { basedir: addon.root }));
@@ -183,7 +183,7 @@ export default class CompatApp implements App {
 
   @Memoize()
   private get babelConfig() {
-    let rename = Object.assign({}, ...this.activeAddonDescendants.map(dep => dep.packageJSON['ember-addon']['renamed-modules']));
+    let rename = Object.assign({}, ...this.activeAddonDescendants.map(dep => dep.meta['renamed-modules']));
     return this.oldPackage.babelConfig(this.root, rename);
   }
 
@@ -280,7 +280,11 @@ export default class CompatApp implements App {
 
   @Memoize()
   private processAppJS() {
-    let appJSFromAddons = this.activeAddonDescendants.map(d => d.legacyAppTree).filter(Boolean) as Tree[];
+    let appJSFromAddons = this.activeAddonDescendants.map(d => {
+      if (d instanceof MovedPackage) {
+        return d.legacyAppTree;
+      }
+    }).filter(Boolean) as Tree[];
     return this.oldPackage.processAppJS(appJSFromAddons, this.workspace.app.packageJSON);
   }
 
@@ -308,7 +312,7 @@ export default class CompatApp implements App {
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
     // already been build as v2.
-    let externals = new Set(flatMap(this.activeAddonDescendants, addon => addon.packageJSON['ember-addon'].externals || []));
+    let externals = new Set(flatMap(this.activeAddonDescendants, addon => addon.meta.externals || []));
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.
@@ -321,17 +325,17 @@ export default class CompatApp implements App {
       directories: false
     });
 
-    let rawPkg = cloneDeep(this.workspace.app.packageJSON);
-    if (!rawPkg['ember-addon']) {
-      rawPkg['ember-addon'] = {};
-    }
-    let pkg = rawPkg as AppPackageJSON;
-    pkg['ember-addon'].externals = [...externals.values()];
-    pkg['ember-addon'].entrypoints = this.emberEntrypoints().concat(entrypoints);
-    pkg['ember-addon']['template-compiler'] = '_template_compiler_.js';
-    pkg['ember-addon']['babel-config'] = '_babel_config_.js';
-    writeFileSync(join(outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+    let meta: AppMeta = {
+      version: 2,
+      externals: [...externals.values()],
+      entrypoints: this.emberEntrypoints().concat(entrypoints),
+      ['template-compiler']: '_template_compiler_.js',
+      ['babel-config']: '_babel_config_.js',
+    };
 
+    let pkg = cloneDeep(this.workspace.app.packageJSON);
+    pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
+    writeFileSync(join(outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
     this.rewriteHTML(inputPaths.htmlTree, outputPath);
   }
 
@@ -400,7 +404,7 @@ export default class CompatApp implements App {
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
     for (let addon of this.activeAddonDescendants) {
-      let implicitModules = addon.packageJSON['ember-addon']['implicit-modules'];
+      let implicitModules = addon.meta['implicit-modules'];
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({

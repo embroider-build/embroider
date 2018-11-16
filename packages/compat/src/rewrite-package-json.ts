@@ -2,9 +2,9 @@ import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import DependencyAnalyzer from './dependency-analyzer';
-import { AddonPackageJSON } from '@embroider/core';
+import { AddonMeta } from '@embroider/core';
 
-type GetMeta = () => AddonPackageJSON["ember-addon"];
+type GetMeta = () => AddonMeta;
 
 export default class RewritePackageJSON extends Plugin {
   constructor(inputTree: Tree, private analyzer: DependencyAnalyzer, private getMeta: GetMeta) {
@@ -13,7 +13,7 @@ export default class RewritePackageJSON extends Plugin {
     });
   }
 
-  private cachedLast: AddonPackageJSON | undefined;
+  private cachedLast: AddonMeta | undefined;
 
   get lastPackageJSON() {
     if (!this.cachedLast) {
@@ -23,14 +23,14 @@ export default class RewritePackageJSON extends Plugin {
   }
 
   build() {
-    let rawPkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
-    if (!rawPkg['ember-addon']) {
-      rawPkg['ember-addon'] = {};
+    let pkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
+    if (!pkg['ember-addon']) {
+      pkg['ember-addon'] = {};
     }
-    let pkg = rawPkg as AddonPackageJSON;
-    pkg['ember-addon'].version = 2;
-    pkg['ember-addon'].externals = this.analyzer.externals;
-    Object.assign(pkg['ember-addon'], this.getMeta());
+    let meta = pkg['ember-addon'] as AddonMeta;
+    meta.version = 2;
+    meta.externals = this.analyzer.externals;
+    Object.assign(meta, this.getMeta());
     this.cachedLast = pkg;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }

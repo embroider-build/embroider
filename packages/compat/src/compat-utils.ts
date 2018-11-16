@@ -1,5 +1,5 @@
 import cloneDeep from 'lodash/cloneDeep';
-import { AddonPackageJSON } from '@embroider/core';
+import { AddonMeta } from '@embroider/core';
 
 export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
   let pkg = cloneDeep(packageJSON);
@@ -10,7 +10,7 @@ export function addPeerDependency(packageJSON: any, packageName: string, version
   return pkg;
 }
 
-export function forceIncludeModule(meta: AddonPackageJSON["ember-addon"], localPath: string) {
+export function forceIncludeModule(meta: AddonMeta, localPath: string) {
   meta = cloneDeep(meta);
   if (!meta.hasOwnProperty('implicit-modules')) {
     meta['implicit-modules'] = [];

@@ -2,7 +2,7 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
 import { Tree } from 'broccoli-plugin';
-import { AddonPackageJSON, packageName } from '@embroider/core';
+import { AddonMeta, packageName } from '@embroider/core';
 
 /*
   The traditional addon-test-support tree allows you to emit modules under any
@@ -37,7 +37,7 @@ import { AddonPackageJSON, packageName } from '@embroider/core';
   import { test } from 'ember-qunit/qunit';
 */
 
-type GetMeta = () => AddonPackageJSON["ember-addon"];
+type GetMeta = () => AddonMeta;
 
 export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree, getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};

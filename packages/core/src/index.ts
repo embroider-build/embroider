@@ -1,8 +1,8 @@
 // Shared interfaces
 export { Packager, PackagerInstance } from './packager';
-export { AppPackageJSON, AddonPackageJSON } from './metadata';
+export { AppMeta, AddonMeta } from './metadata';
 export { default as App } from './app';
-export { default as Package, EmberPackage } from './package';
+export { default as Package } from './package';
 export { default as Workspace } from './workspace';
 
 // Shared utilities

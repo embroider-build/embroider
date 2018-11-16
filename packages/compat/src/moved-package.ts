@@ -1,7 +1,7 @@
 import { Tree } from "broccoli-plugin";
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import { Package, EmberPackage, AddonPackageJSON } from '@embroider/core';
+import { Package } from '@embroider/core';
 import V1Addon from "./v1-addon";
 import MovedPackageCache from "./moved-package-cache";
 import SmooshPackageJSON from "./smoosh-package-json";
@@ -10,7 +10,7 @@ import { UnwatchedDir } from 'broccoli-source';
 import ChooseTree from './choose-tree';
 import { join } from 'path';
 
-export default class MovedPackage extends EmberPackage {
+export default class MovedPackage extends Package {
   private smoosher: SmooshPackageJSON | undefined;
 
   constructor(
@@ -29,7 +29,7 @@ export default class MovedPackage extends EmberPackage {
 
   @Memoize()
   asTree(): Tree {
-    if (this.isNativeV2) {
+    if (this.originalPackage.isV2) {
       // todo: this case is needed when a native-v2 addon depends on a
       // non-native-v2 addon. (The non-native one will get rewritten and
       // therefore moved, so to continue depending on it the native one needs to
@@ -47,13 +47,25 @@ export default class MovedPackage extends EmberPackage {
     }
   }
 
+  @Memoize()
+  get dependencies(): Package[] {
+    let deps = this.originalPackage.packageJSON.dependencies;
+    if (!deps) { return []; }
+    let names = Object.keys(deps);
+    return names.map(name => this.moved.resolve(name, this));
+  }
+
   get name() {
     return this.originalPackage.name;
   }
 
+  get isEmberPackage() {
+    return this.originalPackage.isEmberPackage;
+  }
+
   @Memoize()
-  get packageJSON(): AddonPackageJSON {
-    if (this.isNativeV2) {
+  get packageJSON() {
+    if (this.originalPackage.isV2) {
       return this.originalPackage.packageJSON;
     } else if (this.needsSmooshing()) {
       if (!this.smoosher) {
@@ -65,12 +77,8 @@ export default class MovedPackage extends EmberPackage {
     }
   }
 
-  get dependencies(): Package[] {
-    return this.originalPackage.dependencies.map(dep => this.moved.resolve(dep.name, this));
-  }
-
-  get isNativeV2(): boolean {
-    return this.originalPackage.isNativeV2;
+  get isV2(): boolean {
+    return true;
   }
 
   private needsSmooshing() {
@@ -78,8 +86,8 @@ export default class MovedPackage extends EmberPackage {
   }
 
   get legacyAppTree(): Tree | undefined {
-    if (this.isNativeV2) {
-      let appDir = this.packageJSON['ember-addon']['app-js'];
+    if (this.originalPackage.isV2) {
+      let appDir = this.originalPackage.meta['app-js'];
       if (appDir) {
         return new UnwatchedDir(join(this.originalPackage.root, appDir));
       }
@@ -87,7 +95,7 @@ export default class MovedPackage extends EmberPackage {
       return new ChooseTree(this.asTree(), {
         annotation: `vanilla-choose-app-tree.${this.name}`,
         srcDir: (_: string) => {
-          return this.packageJSON['ember-addon']['app-js'];
+          return this.meta['app-js'];
         }
       });
     }

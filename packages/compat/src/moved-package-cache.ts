@@ -21,7 +21,7 @@ export default class MovedPackageCache extends PackageCache {
     destDir: string,
     v1Cache: V1InstanceCache
   ): MovedPackageCache {
-    let movedSet = new MovedSet(originalPackageCache, app);
+    let movedSet = new MovedSet(app);
     return new this(movedSet.packages, originalPackageCache, app, movedSet.commonSegmentCount, destDir, v1Cache);
   }
 
@@ -54,11 +54,6 @@ export default class MovedPackageCache extends PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
     fromPackage = this.maybeOriginal(fromPackage);
     return this.maybeMoved(this.originalPackageCache.resolve(packageName, fromPackage));
-  }
-
-  packagesThatDependOn(pkg: Package) {
-    pkg = this.maybeOriginal(pkg);
-    return new Set([...this.originalPackageCache.packagesThatDependOn(pkg)].map(pkg => this.maybeMoved(pkg)));
   }
 
   private localPath(filename: string) {
@@ -175,28 +170,44 @@ function pathSegments(filename: string) {
 }
 
 class MovedSet {
-  packages: Set<Package> = new Set();
+  private mustMove: Map<Package, boolean> = new Map();
 
-  constructor(private originalPackageCache: PackageCache, private app: Package) {
-    for (let dep of app.findDescendants(pkg => pkg.isEmberPackage).reverse()) {
-      if (!dep.isNativeV2) {
-        // Non-native-v2 dependencies need to move into the workspace
-        this.move(dep);
-      }
-    }
-    // even if all our deps are native v2, the app itself always moves.
-    this.move(app);
+  constructor(private app: Package) {
+    this.check(app);
   }
 
-  private move(pkg: Package) {
-    if (this.packages.has(pkg)) {
-      return;
+  private check(pkg: Package): boolean {
+    if (this.mustMove.has(pkg)) {
+      return this.mustMove.get(pkg)!;
     }
-    this.packages.add(pkg);
-    for (let nextLevelPackage of this.originalPackageCache.packagesThatDependOn(pkg)) {
-      // packages that depend on a copied package also need to be moved
-      this.move(nextLevelPackage);
+
+    // non-ember packages don't need to move
+    if (pkg !== this.app && !pkg.isEmberPackage) {
+      this.mustMove.set(pkg, false);
+      return false;
     }
+
+    // The app always moves (because we need a place to mash all the
+    // addon-provided "app-js" trees), and you must move if you are not native
+    // v2
+    let mustMove = pkg === this.app || !pkg.isNativeV2;
+    for (let dep of pkg.dependencies) {
+      // or if any of your deps need to move
+      mustMove = this.check(dep) || mustMove;
+    }
+    this.mustMove.set(pkg, mustMove);
+    return mustMove;
+  }
+
+  @Memoize()
+  get packages(): Set<Package> {
+    let result = new Set();
+    for (let [pkg, mustMove] of this.mustMove) {
+      if (mustMove) {
+        result.add(pkg);
+      }
+    }
+    return result;
   }
 
   // the npm structure we're shadowing could have a dependency nearly anywhere

@@ -1,6 +1,6 @@
 {
   "name": "@embroider/webpack",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Builds EmberJS apps with Webpack",
   "main": "src/ember-webpack.js",
   "author": "Edward Faulkner",

@@ -12,18 +12,9 @@ import Package from "./package";
 //
 // Our own broccoli build step is responsible only for assembling the proper
 // node_modules structure with all our dependencies in v2 format. It leaves an
-// empty place for the app's own code to go, which is filled in later via
-// copyIntoApp().
+// empty place for the app's own code to go.
 export default interface Workspace extends Tree {
-  // these two methods are used by the phase 2 build to put the app's own build
-  // output into the workspace.
-  clearApp(): void;
-  copyIntoApp(srcPath: string): void;
-
-  // the location inside the workspace where the app's code will go. Generally
-  // you don't actually copy code into here manually (use `copyIntoApp`
-  // instead), but you still may need to know this to do proper module
-  // resolutions.
+  // the location inside the workspace where the app's code will go.
   readonly appDestDir: string;
 
   // The phase 2 build takes this as input to discover the application's

@@ -2,9 +2,7 @@ import Plugin from "broccoli-plugin";
 import { join } from 'path';
 import {
   emptyDirSync,
-  readdirSync,
   ensureSymlinkSync,
-  removeSync,
   ensureDirSync,
   realpathSync,
   mkdtempSync,
@@ -59,18 +57,6 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     if (options && options.emitNewRoot) {
       options.emitNewRoot(this.appDestDir);
     }
-  }
-
-  clearApp() {
-    for (let name of readdirSync(this.appDestDir)) {
-      if (name !== 'node_modules') {
-        removeSync(join(this.appDestDir, name));
-      }
-    }
-  }
-
-  copyIntoApp(srcDir: string) {
-    copySync(srcDir, this.appDestDir, { dereference: true });
   }
 
   get appDestDir(): string {

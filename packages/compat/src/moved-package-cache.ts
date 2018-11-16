@@ -17,13 +17,18 @@ export default class MovedPackageCache extends PackageCache {
   readonly appDestDir!: string;
 
   static create(
-    originalPackageCache: PackageCache,
-    app: Package,
     destDir: string,
     v1Cache: V1InstanceCache
   ): MovedPackageCache {
+
+    // this holds our underlying, real on-disk packages
+    let packageCache = new PackageCache();
+
+    // the topmost package, representing our app
+    let app = packageCache.getApp(v1Cache.app.root);
+
     let movedSet = new MovedSet(app);
-    return new this(movedSet.packages, originalPackageCache, app, movedSet.commonSegmentCount, destDir, v1Cache);
+    return new this(movedSet.packages, packageCache, app, movedSet.commonSegmentCount, destDir, v1Cache);
   }
 
   private constructor(

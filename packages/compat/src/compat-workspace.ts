@@ -10,7 +10,7 @@ import {
   mkdtempSync,
   copySync,
 } from 'fs-extra';
-import { Workspace, Package, PackageCache } from '@embroider/core';
+import { Workspace, Package } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
@@ -45,15 +45,9 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       }
     }
 
-    // this holds our underlying, real on-disk packages
-    let packageCache = new PackageCache();
-
-    // the topmost package, representing our app
-    let app = packageCache.getApp(v1Cache.app.root);
-
     // this layers on top of packageCache and overrides the packages that need
     // to move into our workspace.
-    let moved = MovedPackageCache.create(packageCache, app, destDir, v1Cache);
+    let moved = MovedPackageCache.create(destDir, v1Cache);
 
     super(moved.all.map(entry => entry[1].asTree()), {
       annotation: 'embroider:core:workspace',

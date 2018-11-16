@@ -47,7 +47,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     let moved = new MovedPackageCache(destDir, v1Cache);
 
-    super(moved.all.map(pkg => pkg.asTree()), {
+    super(moved.all.map(pkg => pkg.tree), {
       annotation: 'embroider:core:workspace',
       persistentOutput: true,
       needsCache: false

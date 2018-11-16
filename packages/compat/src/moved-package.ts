@@ -6,9 +6,6 @@ import V1Addon from "./v1-addon";
 import MovedPackageCache from "./moved-package-cache";
 import SmooshPackageJSON from "./smoosh-package-json";
 import broccoliMergeTrees from "broccoli-merge-trees";
-import { UnwatchedDir } from 'broccoli-source';
-import ChooseTree from './choose-tree';
-import { join } from 'path';
 
 export default class MovedPackage extends Package {
   private smoosher: SmooshPackageJSON | undefined;
@@ -28,7 +25,7 @@ export default class MovedPackage extends Package {
   }
 
   @Memoize()
-  asTree(): Tree {
+  get tree(): Tree {
     if (this.originalPackage.isV2) {
       // todo: this case is needed when a native-v2 addon depends on a
       // non-native-v2 addon. (The non-native one will get rewritten and
@@ -83,21 +80,5 @@ export default class MovedPackage extends Package {
 
   private needsSmooshing() {
     return this.oldPackages.length > 1 && this.oldPackages[0].hasAnyTrees();
-  }
-
-  get legacyAppTree(): Tree | undefined {
-    if (this.originalPackage.isV2) {
-      let appDir = this.originalPackage.meta['app-js'];
-      if (appDir) {
-        return new UnwatchedDir(join(this.originalPackage.root, appDir));
-      }
-    } else {
-      return new ChooseTree(this.asTree(), {
-        annotation: `vanilla-choose-app-tree.${this.name}`,
-        srcDir: (_: string) => {
-          return this.meta['app-js'];
-        }
-      });
-    }
   }
 }

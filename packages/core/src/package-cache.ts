@@ -9,7 +9,7 @@ export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
     return getOrCreate(cache, packageName, () => {
-      let root = dirname(resolve.sync(join(packageName, 'package.json'), { basedir: fromPackage.root }));
+      let root = dirname(resolve.sync(join(packageName, 'package.json'), { basedir: this.basedir(fromPackage) }));
       return this.getAddon(root);
     });
   }
@@ -20,6 +20,10 @@ export default class PackageCache {
 
   protected rootCache: Map<string, Package> = new Map();
   protected resolutionCache: WeakMap<Package, Map<string, Package>> = new WeakMap();
+
+  protected basedir(pkg: Package): string {
+    return pkg.root;
+  }
 
   private getPackage(packageRoot: string, isAddon: boolean): Package {
     let root = realpathSync(packageRoot);

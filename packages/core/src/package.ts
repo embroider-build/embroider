@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import { join } from 'path';
 import get from 'lodash/get';
 import { AddonMeta } from './metadata';
+import { Tree } from 'broccoli-plugin';
 
 export default abstract class Package {
   abstract readonly root: string;
@@ -33,6 +34,10 @@ export default abstract class Package {
     let version = get(this.packageJSON, 'ember-addon.version');
     return version === 2;
   }
+
+  // if this package is being dynamically generated, this is the broccoli tree
+  // representing the whole package.
+  tree: Tree | undefined;
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
     let pkgs = new Set();

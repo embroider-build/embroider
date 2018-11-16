@@ -21,7 +21,8 @@ import { todo } from './messages';
 import flatMap from 'lodash/flatmap';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
-import MovedPackage from './moved-package';
+import ChooseTree from './choose-tree';
+import { UnwatchedDir } from 'broccoli-source';
 
 const entryTemplate = compile(`
 {{!-
@@ -281,8 +282,22 @@ export default class CompatApp implements App {
   @Memoize()
   private processAppJS() {
     let appJSFromAddons = this.activeAddonDescendants.map(d => {
-      if (d instanceof MovedPackage) {
-        return d.legacyAppTree;
+      if (d.tree) {
+        // this dependency is being dynamically generated, so we need to setup a
+        // broccoli transform that can pull off any app-js that may appear.
+        return new ChooseTree(d.tree, {
+          annotation: `embroider-choose-app-tree.${d.name}`,
+          srcDir: (_: string) => {
+            return d.meta['app-js'];
+          }
+        });
+      } else {
+        // this dependency is inert on disk, so we can already see whether there
+        // is an app-js tree.
+        let appDir = d.meta['app-js'];
+        if (appDir) {
+          return new UnwatchedDir(join(d.root, appDir));
+        }
       }
     }).filter(Boolean) as Tree[];
     return this.oldPackage.processAppJS(appJSFromAddons, this.workspace.app.packageJSON);

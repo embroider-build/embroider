@@ -22,22 +22,36 @@ export default class MovedPackageCache extends PackageCache {
   ) {
     super();
 
+    // start with the plain old app package
     let origApp = this.getApp(v1Cache.app.root);
 
+    // discover the set of all packages that will need to be moved into the
+    // workspace
     let movedSet = new MovedSet(origApp);
+
+    // that gives us our common segment count, which enables localPath mapping
     this.commonSegmentCount = movedSet.commonSegmentCount;
+
+    // so we can now determine where the app will go inside the workspace
     this.appDestDir = this.localPath(origApp.root);
 
     for (let originalPkg of movedSet.packages) {
+      // Update our rootCache so we don't need to rediscover moved packages
       let movedPkg;
-      if (originalPkg !== origApp) {
-        movedPkg = this.movedPackage(originalPkg);
-        this.moved.set(originalPkg, movedPkg);
-      } else {
+      if (originalPkg === origApp) {
+        // this replaces the origApp package with one that will use moved
+        // dependencies (origApp has already cached the pre-moved dependencies)
         movedPkg = new BasicPackage(origApp.root, true, this);
         this.app = movedPkg;
         this.rootCache.set(movedPkg.root, movedPkg);
+      } else {
+        movedPkg = this.movedPackage(originalPkg);
+        this.moved.set(originalPkg, movedPkg);
       }
+
+      // Update our resolutionCache so we still know as much about the moved
+      // packages as we did before we moved them, without redoing package
+      // resolution.
       let resolutions = new Map();
       for (let dep of originalPkg.dependencies) {
         if (movedSet.packages.has(dep)) {

@@ -300,7 +300,7 @@ export default class CompatApp implements App {
         }
       }
     }).filter(Boolean) as Tree[];
-    return this.oldPackage.processAppJS(appJSFromAddons, this.workspace.app.packageJSON);
+    return this.oldPackage.processAppJS(appJSFromAddons);
   }
 
   // todo

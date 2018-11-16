@@ -75,7 +75,7 @@ export default class MovedPackageCache extends PackageCache {
 
   @Memoize()
   get all(): MovedPackage[] {
-    return [...this.rootCache.values()].filter(pkg => pkg instanceof MovedPackage) as MovedPackage[];
+    return [...this.moved.values()];
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the
@@ -114,7 +114,7 @@ export default class MovedPackageCache extends PackageCache {
     return candidates;
   }
 
-  private originalRoots() {
+  private originalRoots(): Map<string, MovedPackage> {
     let originalRoots = new Map();
     for (let [originalPackage, movedPackage] of this.moved.entries()) {
       originalRoots.set(originalPackage.root, movedPackage);

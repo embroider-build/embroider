@@ -10,4 +10,5 @@ export { default as toBroccoliPlugin } from './to-broccoli-plugin';
 export { default as WorkspaceUpdater } from './workspace-updater';
 export { default as PackageCache } from './package-cache';
 export { default as packageName } from './package-name';
+export { default as BasicPackage } from './basic-package';
 export { getOrCreate } from './get-or-create';

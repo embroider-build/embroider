@@ -7,13 +7,14 @@ import {
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import V1InstanceCache from "./v1-instance-cache";
-import { PackageCache, Package } from "@embroider/core";
+import { PackageCache, Package, BasicPackage } from "@embroider/core";
 import MovedPackage from './moved-package';
-import MovingApp from './moving-app';
 
 export default class MovedPackageCache extends PackageCache {
-  private moved: Map<Package, MovedPackage | MovingApp> = new Map();
-  private reverseMoved: Map<MovedPackage | MovingApp, Package> = new Map();
+  private moved: Map<Package, MovedPackage> = new Map();
+  private reverseMoved: Map<MovedPackage, Package> = new Map();
+  readonly app!: Package;
+  readonly appDestDir!: string;
 
   static create(
     originalPackageCache: PackageCache,
@@ -28,7 +29,7 @@ export default class MovedPackageCache extends PackageCache {
   private constructor(
     movedPackages: Set<Package>,
     private originalPackageCache: PackageCache,
-    private origApp: Package,
+    origApp: Package,
     private commonSegmentCount: number,
     private destDir: string,
     v1Cache: V1InstanceCache
@@ -38,17 +39,14 @@ export default class MovedPackageCache extends PackageCache {
     for (let originalPkg of movedPackages) {
       let movedPkg;
       if (originalPkg === origApp) {
-        movedPkg = new MovingApp(this, this.localPath(originalPkg.root), originalPkg);
+        this.app = new BasicPackage(originalPkg.root, true, this);
+        this.appDestDir = this.localPath(originalPkg.root);
       } else {
         movedPkg = new MovedPackage(this, this.localPath(originalPkg.root), originalPkg, v1Cache);
+        this.moved.set(originalPkg, movedPkg);
+        this.reverseMoved.set(movedPkg, originalPkg);
       }
-      this.moved.set(originalPkg, movedPkg);
-      this.reverseMoved.set(movedPkg, originalPkg);
     }
-  }
-
-  getApp(inputRoot: string) : Package {
-    return this.maybeMoved(this.originalPackageCache.getApp(inputRoot));
   }
 
   resolve(packageName: string, fromPackage: Package): Package {
@@ -76,20 +74,7 @@ export default class MovedPackageCache extends PackageCache {
 
   @Memoize()
   get all(): [Package, MovedPackage][] {
-    let output: [Package, MovedPackage][] = [];
-    for (let [orig, moved] of this.moved.entries()) {
-      // we leave the app out here, because we don't _actually_ want to do any
-      // copying of app files into the workspace. That is not our responsibility
-      // -- we're just supposed to be getting all the dependencies ready.
-      if (!(moved instanceof MovingApp)) {
-        output.push([orig, moved]);
-      }
-    }
-    return output;
-  }
-
-  get app(): MovingApp {
-    return this.moved.get(this.origApp) as MovingApp;
+    return [...this.moved.entries()];
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the

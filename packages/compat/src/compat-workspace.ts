@@ -82,7 +82,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   }
 
   get appDestDir(): string {
-    return this.moved.app.destRoot;
+    return this.moved.appDestDir;
   }
 
   get app(): Package {
@@ -102,7 +102,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
       this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });
-    this.linkNonCopiedDeps(this.moved.app, this.appDestDir);
+    this.linkNonCopiedDeps(this.app, this.appDestDir);
     await this.moved.updatePreexistingResolvableSymlinks();
     this.didBuild = true;
   }

@@ -69,11 +69,4 @@ export default class V1InstanceCache {
   getAddons(root: string): V1Addon[] {
     return this.addons.get(root) || [];
   }
-
-  getAddon(root: string, fromParentRoot: string) : V1Addon | undefined {
-    let pkgs = this.addons.get(root);
-    if (pkgs) {
-      return pkgs.find(pkg => pkg.parent.root === fromParentRoot);
-    }
-  }
 }

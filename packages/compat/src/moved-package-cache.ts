@@ -16,14 +16,7 @@ export default class MovedPackageCache extends PackageCache {
   private commonSegmentCount: number;
   private moved: Map<Package, MovedPackage> = new Map();
 
-  static create(
-    destDir: string,
-    v1Cache: V1InstanceCache
-  ): MovedPackageCache {
-    return new this(destDir, v1Cache);
-  }
-
-  private constructor(
+  constructor(
     private destDir: string,
     private v1Cache: V1InstanceCache
   ) {

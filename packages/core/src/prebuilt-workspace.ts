@@ -6,7 +6,7 @@ import { UnwatchedDir } from "broccoli-source";
 
 export default class PrebuiltWorkspace extends UnwatchedDir implements Workspace {
   private packageCache: PackageCache;
-  readonly appDestDir: string;
+  private appDestDir: string;
   private appSrcDir: string;
 
   constructor(appSrcDir: string, appDestDir: string) {
@@ -18,8 +18,11 @@ export default class PrebuiltWorkspace extends UnwatchedDir implements Workspace
     this.appDestDir = appDestDir;
   }
 
-  get app(): Package {
-    return this.packageCache.getApp(this.appSrcDir);
+  async ready(): Promise<{ app: Package, appDestDir: string }> {
+    return {
+      app: this.packageCache.getApp(this.appSrcDir),
+      appDestDir: this.appDestDir
+    };
   }
 }
 

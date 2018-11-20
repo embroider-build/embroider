@@ -14,11 +14,17 @@ import Package from "./package";
 // node_modules structure with all our dependencies in v2 format. It leaves an
 // empty place for the app's own code to go.
 export default interface Workspace extends Tree {
-  // the location inside the workspace where the app's code will go.
-  readonly appDestDir: string;
 
-  // The phase 2 build takes this as input to discover the application's
-  // as-authored source code as well as the complete set of the app's
-  // v2-formatted dependencies.
-  readonly app: Package;
+  // this promise is only guaranteed to resolve if you are causing the Workspace
+  // to be included in a broccoli build.
+  ready(): Promise<{
+    // the location inside the workspace where the app's code will go.
+    appDestDir: string;
+
+    // The phase 2 build takes this as input to discover the application's
+    // as-authored source code as well as the complete set of the app's
+    // v2-formatted dependencies.
+    app: Package;
+  }>;
+
 }

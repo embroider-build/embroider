@@ -6,6 +6,10 @@ export default interface App {
   // for that you must look at `root`.
   readonly tree: Tree;
 
-  // This is the actual directory in which the app will be.
-  readonly root: string;
+  // this promise is only guaranteed to resolve if you cause `tree` to be
+  // included in a broccoli build.
+  ready(): Promise<{
+    // This is the actual directory in which the app will be.
+    readonly root: string;
+  }>;
 }

@@ -20,6 +20,7 @@ import { todo } from './messages';
 import flatMap from 'lodash/flatmap';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
+import DependencyAnalyzer from './dependency-analyzer';
 
 const entryTemplate = compile(`
 {{!-
@@ -73,6 +74,7 @@ class Options {
 export default class CompatApp implements App {
   private extraPublicTrees: Tree[] | undefined;
   private oldPackage: V1App;
+  private active: ActiveCompatApp | undefined;
 
   constructor(legacyEmberAppInstance: object, private workspace: Workspace, options?: Options) {
     if (options && options.extraPublicTrees) {
@@ -81,20 +83,18 @@ export default class CompatApp implements App {
     this.oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance).app;
   }
 
-  get root(): string {
-    return this.workspace.appDestDir;
-  }
-
   get tree(): Tree {
-    let { workspace, appJS, analyzer, htmlTree, publicTree, configTree } = this;
+    let { analyzer, appJS } = this.oldPackage.processAppJS();
+    let htmlTree = this.oldPackage.htmlTree;
+    let publicTree = this.oldPackage.publicTree;
+    let configTree = this.oldPackage.config;
 
-    // todo: this should also take the public trees of each addon
     if (this.extraPublicTrees) {
       publicTree = mergeTrees([publicTree, ...this.extraPublicTrees]);
     }
 
     let inTrees: TreeNames<Tree> = {
-      workspace,
+      workspace: this.workspace,
       appJS,
       analyzer,
       htmlTree,
@@ -102,14 +102,57 @@ export default class CompatApp implements App {
       configTree,
     };
 
-    // And we generate the actual entrypoint files.
-    return new WaitForTrees(inTrees, (treePaths: TreeNames<string>) => this.build(treePaths));
+    return new WaitForTrees(inTrees, (treePaths) => this.build(treePaths, configTree, analyzer));
   }
+
+  async ready(): Promise<{ root: string }>{
+    await this.deferReady.promise;
+    return {
+      root: this.active!.root
+    };
+  }
+
+  private async build(treePaths: TreeNames<string>, configTree: ConfigTree, analyzer: DependencyAnalyzer) {
+    if (!this.active) {
+      let { appDestDir, app } = await this.workspace.ready();
+      this.active = new ActiveCompatApp(
+        appDestDir,
+        app,
+        this.oldPackage,
+        configTree,
+        analyzer
+        );
+    }
+    await this.active.build(treePaths);
+    this.deferReady.resolve();
+  }
+
+  @Memoize()
+  private get deferReady() {
+    let resolve: Function;
+    let promise: Promise<void> = new Promise(r => resolve =r);
+    return { resolve: resolve!, promise };
+  }
+}
+
+// This class holds state that's only available after the Workspace we are
+// building against has had a chance to complete its broccoli build step. In
+// general in broccoli, it's important to keep clear the distinction between
+// "pipline construction time" (which we deal with in CompatApp) and "tree
+// building time" (which we deal with in ActiveCompatApp).
+class ActiveCompatApp {
+  constructor(
+    readonly root: string,
+    private app: Package,
+    private oldPackage: V1App,
+    private configTree: ConfigTree,
+    private analyzer: DependencyAnalyzer
+  ) {}
 
   @Memoize()
   private get activeAddonDescendants(): Package[] {
     // todo: filter by addon-provided hook
-    return this.workspace.app.findDescendants(dep => dep.isEmberPackage);
+    return this.app.findDescendants(dep => dep.isEmberPackage);
   }
 
   private get autoRun(): boolean {
@@ -122,9 +165,9 @@ export default class CompatApp implements App {
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
-      case 'loader.js':
+      case "loader.js":
         return 0;
-      case 'ember-source':
+      case "ember-source":
         return 10;
       default:
         return 1000;
@@ -132,30 +175,37 @@ export default class CompatApp implements App {
   }
 
   private assets(originalBundle: string): any {
-    let group: 'appJS' | 'appCSS' | 'testJS' | 'testCSS';
-    let metaKey: 'implicit-scripts' | 'implicit-styles' | 'implicit-test-scripts' | 'implicit-test-styles';
+    let group: "appJS" | "appCSS" | "testJS" | "testCSS";
+    let metaKey:
+      | "implicit-scripts"
+      | "implicit-styles"
+      | "implicit-test-scripts"
+      | "implicit-test-styles";
     switch (originalBundle) {
-      case 'vendor.js':
-        group = 'appJS';
-        metaKey = 'implicit-scripts';
+      case "vendor.js":
+        group = "appJS";
+        metaKey = "implicit-scripts";
         break;
-      case 'vendor.css':
-        group = 'appCSS';
-        metaKey = 'implicit-styles';
+      case "vendor.css":
+        group = "appCSS";
+        metaKey = "implicit-styles";
         break;
-      case 'test-support.js':
-        group = 'testJS';
-        metaKey = 'implicit-test-scripts';
+      case "test-support.js":
+        group = "testJS";
+        metaKey = "implicit-test-scripts";
         break;
-      case 'test-support.css':
-        group = 'testCSS';
-        metaKey = 'implicit-test-styles';
+      case "test-support.css":
+        group = "testCSS";
+        metaKey = "implicit-test-styles";
         break;
       default:
         throw new Error(`unimplemented originalBundle ${originalBundle}`);
     }
     let result = [];
-    for (let addon of sortBy(this.activeAddonDescendants, this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(
+      this.activeAddonDescendants,
+      this.scriptPriority.bind(this)
+    )) {
       let implicitScripts = addon.meta[metaKey];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
@@ -163,15 +213,18 @@ export default class CompatApp implements App {
         }
       }
     }
-    let imports = new TrackedImports(this.workspace.app.name, this.oldPackage.trackedImports);
+    let imports = new TrackedImports(
+      this.app.name,
+      this.oldPackage.trackedImports
+    );
     for (let mod of imports.categorized[group]) {
       result.push(resolve.sync(mod, { basedir: this.root }));
     }
 
     // This file gets created by app-entrypoint.ts. We need to insert it at the
     // beginning of the scripts.
-    if (originalBundle === 'vendor.js') {
-      result.unshift(join(this.root, '_ember_env_.js'));
+    if (originalBundle === "vendor.js") {
+      result.unshift(join(this.root, "_ember_env_.js"));
     }
 
     return result;
@@ -179,25 +232,46 @@ export default class CompatApp implements App {
 
   @Memoize()
   private get babelConfig() {
-    let rename = Object.assign({}, ...this.activeAddonDescendants.map(dep => dep.meta['renamed-modules']));
+    let rename = Object.assign(
+      {},
+      ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
+    );
     return this.oldPackage.babelConfig(this.root, rename);
   }
 
-  private get configTree(): ConfigTree {
-    return this.oldPackage.config;
-  }
-
   private updateHTML(entrypoint: string, dom: JSDOM) {
-    let scripts = [...dom.window.document.querySelectorAll('script')];
+    let scripts = [...dom.window.document.querySelectorAll("script")];
     this.updateAppJS(entrypoint, scripts);
     this.updateTestJS(entrypoint, scripts);
-    this.updateJS(dom, entrypoint, this.oldPackage.findVendorScript(scripts), 'vendor.js');
-    this.updateJS(dom, entrypoint, this.oldPackage.findTestSupportScript(scripts), 'test-support.js');
+    this.updateJS(
+      dom,
+      entrypoint,
+      this.oldPackage.findVendorScript(scripts),
+      "vendor.js"
+    );
+    this.updateJS(
+      dom,
+      entrypoint,
+      this.oldPackage.findTestSupportScript(scripts),
+      "test-support.js"
+    );
 
-    let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
+    let styles = [
+      ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
+    ] as HTMLLinkElement[];
     this.updateAppCSS(entrypoint, styles);
-    this.updateCSS(dom, entrypoint, this.oldPackage.findVendorStyles(styles), 'vendor.css');
-    this.updateCSS(dom, entrypoint, this.oldPackage.findTestSupportStyles(styles), 'test-support.css');
+    this.updateCSS(
+      dom,
+      entrypoint,
+      this.oldPackage.findVendorStyles(styles),
+      "vendor.css"
+    );
+    this.updateCSS(
+      dom,
+      entrypoint,
+      this.oldPackage.findTestSupportStyles(styles),
+      "test-support.css"
+    );
   }
 
   private updateAppJS(entrypoint: string, scripts: HTMLScriptElement[]) {
@@ -207,7 +281,10 @@ export default class CompatApp implements App {
     // module.
     let appJS = this.oldPackage.findAppScript(scripts);
     if (appJS) {
-      appJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.workspace.app.name}.js`));
+      appJS.src = relative(
+        dirname(join(this.root, entrypoint)),
+        join(this.root, `assets/${this.app.name}.js`)
+      );
       appJS.type = "module";
     }
   }
@@ -215,20 +292,33 @@ export default class CompatApp implements App {
   private updateTestJS(entrypoint: string, scripts: HTMLScriptElement[]) {
     let testJS = this.oldPackage.findTestScript(scripts);
     if (testJS) {
-      testJS.src = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/test.js`));
+      testJS.src = relative(
+        dirname(join(this.root, entrypoint)),
+        join(this.root, `assets/test.js`)
+      );
       testJS.type = "module";
     }
   }
 
-  private updateJS(dom: JSDOM, entrypoint: string, original: HTMLScriptElement | undefined, bundleName: string) {
+  private updateJS(
+    dom: JSDOM,
+    entrypoint: string,
+    original: HTMLScriptElement | undefined,
+    bundleName: string
+  ) {
     // the vendor.js file gets replaced with each of our implicit scripts. It's
     // up to the final stage packager to worry about concatenation.
-    if (!original) { return; }
+    if (!original) {
+      return;
+    }
     for (let insertedScript of this.assets(bundleName)) {
-      let s = dom.window.document.createElement('script');
+      let s = dom.window.document.createElement("script");
       s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
       // these newlines make the output more readable
-      original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement!.insertBefore(
+        dom.window.document.createTextNode("\n"),
+        original
+      );
       original.parentElement!.insertBefore(s, original);
     }
     original.remove();
@@ -239,58 +329,50 @@ export default class CompatApp implements App {
     // above.
     let appCSS = this.oldPackage.findAppStyles(styles);
     if (appCSS) {
-      appCSS.href = relative(dirname(join(this.root, entrypoint)), join(this.root, `assets/${this.workspace.app.name}.css`));
+      appCSS.href = relative(
+        dirname(join(this.root, entrypoint)),
+        join(this.root, `assets/${this.app.name}.css`)
+      );
     }
   }
 
-  private updateCSS(dom: JSDOM, entrypoint: string, original: HTMLLinkElement | undefined, bundleName: string) {
+  private updateCSS(
+    dom: JSDOM,
+    entrypoint: string,
+    original: HTMLLinkElement | undefined,
+    bundleName: string
+  ) {
     // the vendor.css file gets replaced with each of our implicit CSS
     // dependencies. It's up to the final stage packager to worry about
     // concatenation.
-    if (!original) { return; }
+    if (!original) {
+      return;
+    }
     for (let insertedStyle of this.assets(bundleName)) {
-      let s = dom.window.document.createElement('link');
-      s.rel = 'stylesheet';
+      let s = dom.window.document.createElement("link");
+      s.rel = "stylesheet";
       s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
-      original.parentElement!.insertBefore(dom.window.document.createTextNode("\n"), original);
+      original.parentElement!.insertBefore(
+        dom.window.document.createTextNode("\n"),
+        original
+      );
       original.parentElement!.insertBefore(s, original);
     }
     original.remove();
-  }
-
-  private get appJS() {
-    return this.processAppJS().appJS;
-  }
-
-  private get analyzer() {
-    return this.processAppJS().analyzer;
-  }
-
-  private get htmlTree() {
-    return this.oldPackage.htmlTree;
-  }
-
-  private get publicTree() {
-    return this.oldPackage.publicTree;
-  }
-
-  @Memoize()
-  private processAppJS() {
-    return this.oldPackage.processAppJS();
   }
 
   // todo
   private shouldBuildTests = true;
 
   private emberEntrypoints() {
-    let entrypoints = ['index.html'];
+    let entrypoints = ["index.html"];
     if (this.shouldBuildTests) {
-      entrypoints.push('tests/index.html');
+      entrypoints.push("tests/index.html");
     }
     return entrypoints;
   }
 
-  private async build(inputPaths: TreeNames<string>) {
+  async build(inputPaths: TreeNames<string>) {
     // the steps in here are order dependent!
 
     // readConfig timing is safe here because configTree is in our input trees.
@@ -300,12 +382,12 @@ export default class CompatApp implements App {
     // stuff, first from addons, and then from the app itself (so it can
     // ovewrite the files from addons).
     for (let addon of this.activeAddonDescendants) {
-      let appJSPath = addon.meta['app-js'];
+      let appJSPath = addon.meta["app-js"];
       if (appJSPath) {
-        copySync(join(addon.root, appJSPath), this.workspace.appDestDir);
+        copySync(join(addon.root, appJSPath), this.root);
       }
     }
-    copySync(inputPaths.appJS, this.workspace.appDestDir, { dereference: true });
+    copySync(inputPaths.appJS, this.root, { dereference: true });
 
     // At this point, all all-js and *only* app-js has been copied into the
     // project, so we can crawl the results to discover what needs to go into
@@ -315,7 +397,7 @@ export default class CompatApp implements App {
 
     // now we're clear to copy other things and they won't perturb the
     // entrypoint files
-    copySync(inputPaths.publicTree, this.workspace.appDestDir, { dereference: true });
+    copySync(inputPaths.publicTree, this.root, { dereference: true });
 
     this.addTemplateCompiler();
     this.addBabelConfig();
@@ -324,7 +406,9 @@ export default class CompatApp implements App {
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
     // already been build as v2.
-    let externals = new Set(flatMap(this.activeAddonDescendants, addon => addon.meta.externals || []));
+    let externals = new Set(
+      flatMap(this.activeAddonDescendants, addon => addon.meta.externals || [])
+    );
 
     // similarly, we're safe to access analyzer.externals because the analyzer
     // is one of our input trees.
@@ -334,20 +418,24 @@ export default class CompatApp implements App {
     // here as "entrypoints", because an "entrypoint" is anything that is
     // guaranteed to have a valid URL in the final build output.
     let entrypoints = walkSync(inputPaths.publicTree, {
-      directories: false
+      directories: false,
     });
 
     let meta: AppMeta = {
       version: 2,
       externals: [...externals.values()],
       entrypoints: this.emberEntrypoints().concat(entrypoints),
-      ['template-compiler']: '_template_compiler_.js',
-      ['babel-config']: '_babel_config_.js',
+      ["template-compiler"]: "_template_compiler_.js",
+      ["babel-config"]: "_babel_config_.js",
     };
 
-    let pkg = cloneDeep(this.workspace.app.packageJSON);
-    pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
-    writeFileSync(join(this.workspace.appDestDir, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+    let pkg = cloneDeep(this.app.packageJSON);
+    pkg["ember-addon"] = Object.assign({}, pkg["ember-addon"], meta);
+    writeFileSync(
+      join(this.root, "package.json"),
+      JSON.stringify(pkg, null, 2),
+      "utf8"
+    );
     this.rewriteHTML(inputPaths.htmlTree);
   }
 
@@ -355,17 +443,25 @@ export default class CompatApp implements App {
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
   private addTemplateCompiler() {
-    writeFileSync(join(this.workspace.appDestDir, '_template_compiler_.js'), `
+    writeFileSync(
+      join(this.root, "_template_compiler_.js"),
+      `
     var compiler = require('ember-source/vendor/ember/ember-template-compiler');
     var setupCompiler = require('@embroider/core/src/template-compiler').default;
     module.exports = setupCompiler(compiler);
-    `, 'utf8');
+    `,
+      "utf8"
+    );
   }
 
   private addBabelConfig() {
-    writeFileSync(join(this.workspace.appDestDir, '_babel_config_.js'), `
+    writeFileSync(
+      join(this.root, "_babel_config_.js"),
+      `
     module.exports = ${JSON.stringify(this.babelConfig, null, 2)};
-    `, 'utf8');
+    `,
+      "utf8"
+    );
   }
 
   // this is stuff that needs to get set globally before Ember loads. In classic
@@ -373,39 +469,46 @@ export default class CompatApp implements App {
   // vendor.js. We are going to make sure it's the first plain <script> in the
   // HTML that we hand to the final stage packager.
   private addEmberEnv(config: any) {
-    writeFileSync(join(this.workspace.appDestDir, '_ember_env_.js'), `
+    writeFileSync(
+      join(this.root, "_ember_env_.js"),
+      `
     window.EmberENV=${JSON.stringify(config, null, 2)};
-    `, 'utf8');
+    `,
+      "utf8"
+    );
   }
 
   private rewriteHTML(htmlTreePath: string) {
-    for (let entrypoint of  this.emberEntrypoints()) {
-      let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), 'utf8'));
+    for (let entrypoint of this.emberEntrypoints()) {
+      let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
       this.updateHTML(entrypoint, dom);
-      let outputFile = join(this.workspace.appDestDir, entrypoint);
+      let outputFile = join(this.root, entrypoint);
       ensureDirSync(dirname(outputFile));
-      writeFileSync(outputFile, dom.serialize(), 'utf8');
+      writeFileSync(outputFile, dom.serialize(), "utf8");
     }
   }
 
   private writeAppJSEntrypoint(config: any) {
-    let mainModule = join(this.workspace.appDestDir, this.isModuleUnification ? 'src/main' : 'app');
+    let mainModule = join(
+      this.root,
+      this.isModuleUnification ? "src/main" : "app"
+    );
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also updateHTML in app.ts for where
     // we're enforcing this in the HTML.
-    let appJS = join(this.workspace.appDestDir, `assets/${this.workspace.app.name}.js`);
+    let appJS = join(this.root, `assets/${this.app.name}.js`);
 
     // for the app tree, we take everything
-    let lazyModules = walkSync(this.workspace.appDestDir, {
-      globs: ['**/*.{js,hbs}'],
-      ignore: ['tests', 'node_modules'],
-      directories: false
+    let lazyModules = walkSync(this.root, {
+      globs: ["**/*.{js,hbs}"],
+      ignore: ["tests", "node_modules"],
+      directories: false,
     }).map(specifier => {
-      let noJS = specifier.replace(/\.js$/, '');
-      let noHBS = noJS.replace(/\.hbs$/, '');
+      let noJS = specifier.replace(/\.js$/, "");
+      let noHBS = noJS.replace(/\.hbs$/, "");
       return {
         runtime: `${config.modulePrefix}/${noHBS}`,
-        buildtime: `../${noJS}`
+        buildtime: `../${noJS}`,
       };
     });
 
@@ -416,35 +519,46 @@ export default class CompatApp implements App {
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
     for (let addon of this.activeAddonDescendants) {
-      let implicitModules = addon.meta['implicit-modules'];
+      let implicitModules = addon.meta["implicit-modules"];
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
             runtime: `${addon.name}/${name}`,
-            buildtime: relative(join(this.root, 'assets'), `${addon.root}/${name}`)
+            buildtime: relative(
+              join(this.root, "assets"),
+              `${addon.root}/${name}`
+            ),
           });
         }
       }
     }
     ensureDirSync(dirname(appJS));
-    writeFileSync(appJS, entryTemplate({
-      lazyModules,
-      autoRun: this.autoRun,
-      mainModule: relative(dirname(appJS), mainModule),
-      appConfig: config.APP
-    }), 'utf8');
+    writeFileSync(
+      appJS,
+      entryTemplate({
+        lazyModules,
+        autoRun: this.autoRun,
+        mainModule: relative(dirname(appJS), mainModule),
+        appConfig: config.APP,
+      }),
+      "utf8"
+    );
   }
 
   private writeTestJSEntrypoint() {
-    let testJS = join(this.workspace.appDestDir, `assets/test.js`);
-    let testModules = walkSync(this.workspace.appDestDir, {
-      globs: ['tests/**/*-test.js'],
-      directories: false
+    let testJS = join(this.root, `assets/test.js`);
+    let testModules = walkSync(this.root, {
+      globs: ["tests/**/*-test.js"],
+      directories: false,
     }).map(specifier => `../${specifier}`);
     ensureDirSync(dirname(testJS));
-    writeFileSync(testJS, testTemplate({
-      testModules
-    }), 'utf8');
+    writeFileSync(
+      testJS,
+      testTemplate({
+        testModules,
+      }),
+      "utf8"
+    );
   }
 }
 

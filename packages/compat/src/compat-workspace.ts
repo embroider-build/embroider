@@ -14,6 +14,7 @@ import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import MovedPackageCache from "./moved-package-cache";
 import MovedPackage from "./moved-package";
+import { Memoize } from "typescript-memoize";
 
 interface Options {
   workspaceDir?: string;
@@ -59,6 +60,14 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     }
   }
 
+  async ready(): Promise<{ appDestDir: string, app: Package }>{
+    await this.deferReady.promise;
+    return {
+      appDestDir: this.moved.appDestDir,
+      app: this.moved.app
+    };
+  }
+
   get appDestDir(): string {
     return this.moved.appDestDir;
   }
@@ -83,6 +92,14 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.linkNonCopiedDeps(this.app, this.appDestDir);
     await this.moved.updatePreexistingResolvableSymlinks();
     this.didBuild = true;
+    this.deferReady.resolve();
+  }
+
+  @Memoize()
+  private get deferReady() {
+    let resolve: Function;
+    let promise: Promise<void> = new Promise(r => resolve =r);
+    return { resolve: resolve!, promise };
   }
 
   private linkNonCopiedDeps(pkg: Package, destRoot: string) {

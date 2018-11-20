@@ -68,11 +68,11 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     };
   }
 
-  get appDestDir(): string {
+  private get appDestDir(): string {
     return this.moved.appDestDir;
   }
 
-  get app(): Package {
+  private get app(): Package {
     return this.moved.app;
   }
 

@@ -7,6 +7,7 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import V1Package from './v1-package';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
+import { MovablePackageCache } from './moved-package-cache';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
@@ -22,6 +23,7 @@ export default class V1InstanceCache {
   private compatAdapters: Map<string, V1AddonConstructor> = new Map();
 
   app: V1App;
+  packageCache = new MovablePackageCache();
 
   private constructor(oldApp: any) {
     if (!oldApp._activeAddonInclude) {

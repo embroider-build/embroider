@@ -12,9 +12,9 @@ import { Workspace, Package } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
-import MovedPackageCache from "./moved-package-cache";
-import MovedPackage from "./moved-package";
+import { MovedPackageCache } from "./moved-package-cache";
 import { Memoize } from "typescript-memoize";
+import buildCompatAddon from './build-compat-addon';
 
 interface Options {
   workspaceDir?: string;
@@ -25,7 +25,7 @@ interface Options {
 export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
-  private moved: MovedPackageCache;
+  private packageCache: MovedPackageCache;
 
   constructor(legacyEmberAppInstance: object, options?: Options) {
     let destDir;
@@ -44,16 +44,17 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       }
     }
 
-    let moved = new MovedPackageCache(destDir, v1Cache);
+    let packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, destDir);
+    let trees = [...packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
 
-    super(moved.all.map(pkg => pkg.tree), {
+    super(trees, {
       annotation: 'embroider:core:workspace',
       persistentOutput: true,
       needsCache: false
     });
 
     this.didBuild = false;
-    this.moved = moved;
+    this.packageCache = packageCache;
     this.destDir = destDir;
     if (options && options.emitNewRoot) {
       options.emitNewRoot(this.appDestDir);
@@ -63,17 +64,17 @@ export default class CompatWorkspace extends Plugin implements Workspace {
   async ready(): Promise<{ appDestDir: string, app: Package }>{
     await this.deferReady.promise;
     return {
-      appDestDir: this.moved.appDestDir,
-      app: this.moved.app
+      appDestDir: this.packageCache.appDestDir,
+      app: this.packageCache.app
     };
   }
 
   private get appDestDir(): string {
-    return this.moved.appDestDir;
+    return this.packageCache.appDestDir;
   }
 
   private get app(): Package {
-    return this.moved.app;
+    return this.packageCache.app;
   }
 
   async build() {
@@ -85,12 +86,12 @@ export default class CompatWorkspace extends Plugin implements Workspace {
 
     emptyDirSync(this.destDir);
 
-    this.moved.all.forEach((movedPkg, index) => {
+    [...this.packageCache.moved.values()].forEach((movedPkg, index) => {
       copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
       this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });
     this.linkNonCopiedDeps(this.app, this.appDestDir);
-    await this.moved.updatePreexistingResolvableSymlinks();
+    await this.packageCache.updatePreexistingResolvableSymlinks();
     this.didBuild = true;
     this.deferReady.resolve();
   }
@@ -102,9 +103,19 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     return { resolve: resolve!, promise };
   }
 
+  @Memoize()
+  private isMoved(pkg: Package) {
+    for (let candidate of this.packageCache.moved.values()) {
+      if (candidate === pkg) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private linkNonCopiedDeps(pkg: Package, destRoot: string) {
     for (let dep of pkg.dependencies) {
-      if (!(dep instanceof MovedPackage)) {
+      if (!this.isMoved(dep)) {
         ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));
       }
     }

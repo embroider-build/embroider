@@ -19,7 +19,7 @@ export default class PackageCache {
   }
 
   protected rootCache: Map<string, Package> = new Map();
-  protected resolutionCache: WeakMap<Package, Map<string, Package>> = new WeakMap();
+  protected resolutionCache: Map<Package, Map<string, Package>> = new Map();
 
   protected basedir(pkg: Package): string {
     return pkg.root;

@@ -6,28 +6,35 @@ import {
   realpath,
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
-import V1InstanceCache from "./v1-instance-cache";
 import { PackageCache, Package, getOrCreate, BasicPackage } from "@embroider/core";
-import MovedPackage from './moved-package';
 
-export default class MovedPackageCache extends PackageCache {
-  readonly app!: Package;
-  readonly appDestDir: string;
-  private commonSegmentCount: number;
-  private moved: Map<Package, MovedPackage> = new Map();
-
-  constructor(
-    private destDir: string,
-    private v1Cache: V1InstanceCache
-  ) {
-    super();
-
+export class MovablePackageCache extends PackageCache {
+  moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
     // start with the plain old app package
-    let origApp = this.getApp(v1Cache.app.root);
+    let origApp = this.getApp(appSrcDir);
 
     // discover the set of all packages that will need to be moved into the
     // workspace
     let movedSet = new MovedSet(origApp);
+
+    return new MovedPackageCache(this.rootCache, this.resolutionCache, destDir, movedSet, origApp);
+  }
+}
+
+export class MovedPackageCache extends PackageCache {
+  readonly app!: Package;
+  readonly appDestDir: string;
+  private commonSegmentCount: number;
+  readonly moved: Map<Package, Package> = new Map();
+
+  constructor(
+    rootCache: PackageCache["rootCache"],
+    resolutionCache: PackageCache["resolutionCache"],
+    private destDir: string,
+    movedSet: MovedSet,
+    origApp: Package
+  ) {
+    super();
 
     // that gives us our common segment count, which enables localPath mapping
     this.commonSegmentCount = movedSet.commonSegmentCount;
@@ -43,7 +50,7 @@ export default class MovedPackageCache extends PackageCache {
         // dependencies (origApp has already cached the pre-moved dependencies)
         movedPkg = new BasicPackage(origApp.root, true, this);
         this.app = movedPkg;
-        this.rootCache.set(movedPkg.root, movedPkg);
+        rootCache.set(movedPkg.root, movedPkg);
       } else {
         movedPkg = this.movedPackage(originalPkg);
         this.moved.set(originalPkg, movedPkg);
@@ -60,22 +67,19 @@ export default class MovedPackageCache extends PackageCache {
           resolutions.set(dep.name, dep);
         }
       }
-      this.resolutionCache.set(movedPkg, resolutions);
+      resolutionCache.set(movedPkg, resolutions);
     }
+    this.rootCache = rootCache;
+    this.resolutionCache = resolutionCache;
   }
 
-  private movedPackage(originalPkg: Package): MovedPackage {
+  private movedPackage(originalPkg: Package): Package {
     let newRoot = this.localPath(originalPkg.root);
-    return getOrCreate(this.rootCache, newRoot, () => new MovedPackage(this, newRoot, originalPkg, this.v1Cache)) as MovedPackage;
+    return getOrCreate(this.rootCache, newRoot, () => new BasicPackage(newRoot, false, this));
   }
 
   private localPath(filename: string) {
     return join(this.destDir, ...pathSegments(filename).slice(this.commonSegmentCount));
-  }
-
-  @Memoize()
-  get all(): MovedPackage[] {
-    return [...this.moved.values()];
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the
@@ -114,7 +118,7 @@ export default class MovedPackageCache extends PackageCache {
     return candidates;
   }
 
-  private originalRoots(): Map<string, MovedPackage> {
+  private originalRoots(): Map<string, Package> {
     let originalRoots = new Map();
     for (let [originalPackage, movedPackage] of this.moved.entries()) {
       originalRoots.set(originalPackage.root, movedPackage);

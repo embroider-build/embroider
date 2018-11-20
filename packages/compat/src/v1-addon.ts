@@ -50,7 +50,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, public parent: V1Package) {
+  constructor(protected addonInstance: any) {
     this.updateBabelConfig();
   }
 
@@ -409,5 +409,5 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, parent: V1Package): V1Addon;
+  new(addonInstance: any): V1Addon;
 }

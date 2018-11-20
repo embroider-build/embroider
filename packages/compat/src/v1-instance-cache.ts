@@ -4,7 +4,6 @@
 
 import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';
-import V1Package from './v1-package';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
@@ -35,9 +34,8 @@ export default class V1InstanceCache {
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
     (oldApp.project.addons as any[]).forEach(addon => {
-      this.addAddon(addon, this.app);
+      this.addAddon(addon);
     });
-
   }
 
   registerCompatAdapter(packageName: string, constructor: V1AddonConstructor) {
@@ -57,15 +55,15 @@ export default class V1InstanceCache {
     return V1Addon;
   }
 
-  private addAddon(addonInstance: any, parent: V1Package) {
+  private addAddon(addonInstance: any) {
     let Klass = this.adapterClass(addonInstance.pkg.name);
-    let v1Addon = new Klass(addonInstance, parent);
+    let v1Addon = new Klass(addonInstance);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
       this.addons.set(v1Addon.root, pkgs = []);
     }
     pkgs.push(v1Addon);
-    (addonInstance.addons as any[]).forEach(a => this.addAddon(a, v1Addon));
+    (addonInstance.addons as any[]).forEach(a => this.addAddon(a));
   }
 
   getAddons(root: string): V1Addon[] {

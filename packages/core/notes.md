@@ -1,8 +1,5 @@
 # Stack
- - we should split all tree building out of MovedPackage and let it just be about the package
  - externals detection should take into account which deps are ember-addons and whether or not we have ember-auto-import
-    - would be nice to use package-cache for this, which implies refactoring so its available inside v1-addon
-    - this is a good time to split the phase1 and phase2 layers into separate packages
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

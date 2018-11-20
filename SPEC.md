@@ -109,6 +109,8 @@ Modules in **Own Javascript** are also allowed to use the (currently stage 3) EC
 
 Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension (a v1-to-v2 compiler can adjust these specifiers automatically).
 
+Modules in **Own Javascript** are allowed to use `hbs` tagged template strings as provided by `ember-cli-htmlbars-inline-precompile`, and we promise to compile the templates at app build time (whether we upgrade `ember-cli-htmlbars-inline-precompile` to support this case or ship an alternative package is TBD).
+
 You’re allowed to `import` from both other v2 Ember packages and non-Ember packages. The only difference is that v2 Ember packages necessarily agree to provide ES modules with ES latest features, and so we will always apply the application’s browser-specific Babel transpilation to them. Non-Ember packages can be authored in lots of ways, and we will use best-effort to consume them, including conversion of ESM or CJS to whatever format we’re using in the browser (currently AMD), but we won’t apply the app’s Babel transpilation to them, because it’s usually just unnecessary expense — the most common way to ship NPM packages outside of well-known build systems like ember-cli is to transpile before publication.
 
 
@@ -573,6 +575,15 @@ Packager creates an escape hatch from the existing ember-cli build that is suppo
 The API that packager provides is also incomplete compared with this design. For example, to take the packager output and build it using Webpack, Rollup, or Parcel still requires a significant amount of custom code. Whereas taking a collection of v2 formatted Ember packages and building them with any of those tools requires very little custom code. TODO: link to hopefully more than one working example.
 
 The prebuilt addons RFC addresses build performance by doing the same kind of work-moving as this design. Addons can do much of their building up front, thus saving time when apps are building. But it only achieves a speedup when apps happen to be using the same build options that addons authors happened to publish. This design takes a different approach that preserves complete freedom for app authors to postprocess all addon Javascript, including dead-code-elimination based on the addon features their app is using. The prebuilt addons RFC also doesn’t attempt to specify the contents of the prebuilt trees — it just accepts the current implementation-defined contents. This is problematic because shared builds artifacts are long-lived, so it’s worth trying to align them with very general, spec-compliant semantics.
+
+# Appendix: Standardized Language Extensions
+
+This spec makes some promises about app-build-time behavior that all v2-formatted addons can rely on. This behavior goes beyond "just Javascript" semantics by making some optimizations mandatory. V2-formatted addons that depend on the following packages get optimization guarantees:
+
+ - `@ember/build-time-config`
+ - `ember-cli-htmlbars-inline-precompile`
+
+The details of each should be described elsewhere in this spec.
 
 # Appendix: List of Ember Package Metadata Fields
 

@@ -1,5 +1,7 @@
 # Stack
- - externals detection should take into account which deps are ember-addons and whether or not we have ember-auto-import
+ - make app's babel config gen smarter
+   - reverse engineer _parallelBabel (it seems to invoke inline-precompile, for example)
+   - attempt to map already-resolved functions back to their sources
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

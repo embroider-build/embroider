@@ -18,6 +18,7 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
+import { Package, PackageCache, BasicPackage } from "@embroider/core";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -50,7 +51,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any) {
+  constructor(protected addonInstance: any, private packageCache: PackageCache) {
     this.updateBabelConfig();
   }
 
@@ -186,7 +187,13 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private makeV2Trees() {
     let { trees, importParsers } = this.legacyTrees();
-    let analyzer = new DependencyAnalyzer(importParsers, this.packageJSON, false );
+
+    // Compat Adapters are allowed to override the packageJSON getter. So we
+    // must create a Package that respects that version of packageJSON, so the
+    // DependencyAnalyzer will respect tweaks made by Compat Adapters.
+    let pkg = new TweakedPackage(this.packageCache.getAddon(this.root), this.packageJSON, this.packageCache);
+
+    let analyzer = new DependencyAnalyzer(importParsers, pkg, false );
     let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };
@@ -409,5 +416,14 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any): V1Addon;
+  new(addonInstance: any, packageCache: PackageCache): V1Addon;
+}
+
+class TweakedPackage extends BasicPackage {
+  constructor(realPackage: Package, private overridePackageJSON: any, packageCache: PackageCache) {
+    super(realPackage.root, false, packageCache);
+  }
+  get packageJSON() {
+    return this.overridePackageJSON;
+  }
 }

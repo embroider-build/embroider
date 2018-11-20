@@ -1,10 +1,10 @@
 import Plugin from 'broccoli-plugin';
 import ImportParser from './import-parser';
 import flatMap from 'lodash/flatMap';
-import { packageName as absolutePackageName } from '@embroider/core';
+import { packageName as absolutePackageName, Package } from '@embroider/core';
 
 export default class DependencyAnalyzer extends Plugin {
-  constructor(private importParsers: ImportParser[], private packageJSON: any, private isTopLevelApp: boolean) {
+  constructor(private importParsers: ImportParser[], private pkg: Package, private isTopLevelApp: boolean) {
     super(importParsers, {
       annotation: '@embroider/core/dependency-analyzer'
     });
@@ -21,7 +21,7 @@ export default class DependencyAnalyzer extends Plugin {
 
     let seenSpecifiers = new Set();
 
-    let { dependencies, devDependencies, peerDependencies } = this.packageJSON;
+    let { dependencies, devDependencies, peerDependencies } = this.pkg.packageJSON;
     imports.forEach(imp => {
 
       // handle each specifier only once
@@ -34,7 +34,7 @@ export default class DependencyAnalyzer extends Plugin {
             (dependencies && dependencies[name]) ||
             (peerDependencies && peerDependencies[name]) ||
             (this.isTopLevelApp && devDependencies && devDependencies[name]) ||
-            (name === this.packageJSON.name)
+            (name === this.pkg.name)
           ) {
             // this is either a valid inter-package specifier or our own
             // name.

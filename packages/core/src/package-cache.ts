@@ -33,7 +33,7 @@ export default class PackageCache {
     return p;
   }
 
-  private getAddon(packageRoot: string) {
+  getAddon(packageRoot: string) {
     return this.getPackage(packageRoot, true);
   }
 

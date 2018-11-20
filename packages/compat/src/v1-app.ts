@@ -13,11 +13,12 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
+import { PackageCache } from '@embroider/core';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
 export default class V1App implements V1Package {
-  constructor(private app: any) {
+  constructor(private app: any, private packageCache: PackageCache) {
   }
 
   // always the name from package.json. Not the one that apps may have weirdly
@@ -254,13 +255,12 @@ export default class V1App implements V1Package {
   // build our own code without them due to the way addon-provided "app js"
   // works.
   processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
-    let packageJSON = this.app.project.pkg;
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let analyzer = new DependencyAnalyzer([
       new ImportParser(appTree),
       new ImportParser(testsTree)
-    ], packageJSON, true);
+    ], this.packageCache.getApp(this.root), true);
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,

@@ -29,7 +29,7 @@ export default class V1InstanceCache {
       throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }
 
-    this.app = new V1App(oldApp);
+    this.app = new V1App(oldApp, this.packageCache);
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
@@ -57,7 +57,7 @@ export default class V1InstanceCache {
 
   private addAddon(addonInstance: any) {
     let Klass = this.adapterClass(addonInstance.pkg.name);
-    let v1Addon = new Klass(addonInstance);
+    let v1Addon = new Klass(addonInstance, this.packageCache);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
       this.addons.set(v1Addon.root, pkgs = []);

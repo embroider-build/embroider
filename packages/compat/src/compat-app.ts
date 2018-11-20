@@ -16,8 +16,7 @@ import walkSync from 'walk-sync';
 import { writeFileSync, ensureDirSync, readFileSync, copySync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
-import { todo } from './messages';
-import flatMap from 'lodash/flatmap';
+import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -431,10 +430,28 @@ class ActiveCompatApp {
   }
 
   private combineExternals() {
-    let externals = new Set(
-      flatMap(this.activeAddonDescendants, addon => addon.meta.externals || [])
-    );
-    this.analyzer.externals.forEach(name => externals.add(name));
+    let allAddonNames = new Set(this.activeAddonDescendants.map(d => d.name));
+    let externals = new Set();
+    for (let addon of this.activeAddonDescendants) {
+      if (!addon.meta.externals) {
+        continue;
+      }
+      for (let name of addon.meta.externals) {
+        if (allAddonNames.has(name)) {
+          unsupported(`${addon.name} imports ${name} but does not directly depend on it.`);
+        } else {
+          externals.add(name);
+        }
+      }
+    }
+
+    for (let name of this.analyzer.externals) {
+      if (allAddonNames.has(name)) {
+        unsupported(`your app imports ${name} but does not directly depend on it.`);
+      } else {
+        externals.add(name);
+      }
+    }
     return [...externals.values()];
   }
 

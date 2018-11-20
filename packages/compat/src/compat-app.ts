@@ -20,8 +20,6 @@ import { todo } from './messages';
 import flatMap from 'lodash/flatmap';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
-import ChooseTree from './choose-tree';
-import { UnwatchedDir } from 'broccoli-source';
 
 const entryTemplate = compile(`
 {{!-
@@ -278,26 +276,7 @@ export default class CompatApp implements App {
 
   @Memoize()
   private processAppJS() {
-    let appJSFromAddons = this.activeAddonDescendants.map(d => {
-      if (d.tree) {
-        // this dependency is being dynamically generated, so we need to setup a
-        // broccoli transform that can pull off any app-js that may appear.
-        return new ChooseTree(d.tree, {
-          annotation: `embroider-choose-app-tree.${d.name}`,
-          srcDir: (_: string) => {
-            return d.meta['app-js'];
-          }
-        });
-      } else {
-        // this dependency is inert on disk, so we can already see whether there
-        // is an app-js tree.
-        let appDir = d.meta['app-js'];
-        if (appDir) {
-          return new UnwatchedDir(join(d.root, appDir));
-        }
-      }
-    }).filter(Boolean) as Tree[];
-    return this.oldPackage.processAppJS(appJSFromAddons);
+    return this.oldPackage.processAppJS();
   }
 
   // todo
@@ -312,15 +291,32 @@ export default class CompatApp implements App {
   }
 
   private async build(inputPaths: TreeNames<string>) {
-    // the public and appJS trees get copied directly into the output
-    copySync(inputPaths.publicTree, this.workspace.appDestDir, { dereference: true });
-    copySync(inputPaths.appJS, this.workspace.appDestDir, { dereference: true });
+    // the steps in here are order dependent!
 
-    // readConfig timing is safe here because app.configTree is in our input trees.
+    // readConfig timing is safe here because configTree is in our input trees.
     let config = this.configTree.readConfig();
 
-    this.writeAppJSEntrypoint(inputPaths.appJS, config);
-    this.writeTestJSEntrypoint(inputPaths.appJS);
+    // first modifications of the output directory: we're copying only "app-js"
+    // stuff, first from addons, and then from the app itself (so it can
+    // ovewrite the files from addons).
+    for (let addon of this.activeAddonDescendants) {
+      let appJSPath = addon.meta['app-js'];
+      if (appJSPath) {
+        copySync(join(addon.root, appJSPath), this.workspace.appDestDir);
+      }
+    }
+    copySync(inputPaths.appJS, this.workspace.appDestDir, { dereference: true });
+
+    // At this point, all all-js and *only* app-js has been copied into the
+    // project, so we can crawl the results to discover what needs to go into
+    // the Javascript entrypoint files.
+    this.writeAppJSEntrypoint(config);
+    this.writeTestJSEntrypoint();
+
+    // now we're clear to copy other things and they won't perturb the
+    // entrypoint files
+    copySync(inputPaths.publicTree, this.workspace.appDestDir, { dereference: true });
+
     this.addTemplateCompiler();
     this.addBabelConfig();
     this.addEmberEnv(config.EmberENV);
@@ -392,7 +388,7 @@ export default class CompatApp implements App {
     }
   }
 
-  private writeAppJSEntrypoint(appJSTreePath: string, config: any) {
+  private writeAppJSEntrypoint(config: any) {
     let mainModule = join(this.workspace.appDestDir, this.isModuleUnification ? 'src/main' : 'app');
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also updateHTML in app.ts for where
@@ -400,9 +396,9 @@ export default class CompatApp implements App {
     let appJS = join(this.workspace.appDestDir, `assets/${this.workspace.app.name}.js`);
 
     // for the app tree, we take everything
-    let lazyModules = walkSync(appJSTreePath, {
+    let lazyModules = walkSync(this.workspace.appDestDir, {
       globs: ['**/*.{js,hbs}'],
-      ignore: ['tests/**'],
+      ignore: ['tests', 'node_modules'],
       directories: false
     }).map(specifier => {
       let noJS = specifier.replace(/\.js$/, '');
@@ -439,9 +435,9 @@ export default class CompatApp implements App {
     }), 'utf8');
   }
 
-  private writeTestJSEntrypoint(appJSTreePath: string) {
+  private writeTestJSEntrypoint() {
     let testJS = join(this.workspace.appDestDir, `assets/test.js`);
-    let testModules = walkSync(appJSTreePath, {
+    let testModules = walkSync(this.workspace.appDestDir, {
       globs: ['tests/**/*-test.js'],
       directories: false
     }).map(specifier => `../${specifier}`);

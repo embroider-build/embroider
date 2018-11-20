@@ -253,7 +253,7 @@ export default class V1App implements V1Package {
   // this takes the app JS trees from all active addons, since we can't really
   // build our own code without them due to the way addon-provided "app js"
   // works.
-  processAppJS(fromAddons: Tree[]) : { appJS: Tree, analyzer: DependencyAnalyzer } {
+  processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let packageJSON = this.app.project.pkg;
     let appTree = this.appTree;
     let testsTree = this.testsTree;
@@ -266,7 +266,7 @@ export default class V1App implements V1Package {
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [...fromAddons, appTree, this.styleTree, config, testsTree];
+    let trees = [appTree, this.styleTree, config, testsTree];
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

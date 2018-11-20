@@ -260,7 +260,7 @@ export default class V1App implements V1Package {
     let analyzer = new DependencyAnalyzer([
       new ImportParser(appTree),
       new ImportParser(testsTree)
-    ], this.packageCache.getApp(this.root), true);
+    ], this.packageCache.getApp(this.root));
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,

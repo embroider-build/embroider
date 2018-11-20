@@ -4,7 +4,7 @@ import flatMap from 'lodash/flatMap';
 import { packageName as absolutePackageName, Package } from '@embroider/core';
 
 export default class DependencyAnalyzer extends Plugin {
-  constructor(private importParsers: ImportParser[], private pkg: Package, private isTopLevelApp: boolean) {
+  constructor(private importParsers: ImportParser[], private pkg: Package) {
     super(importParsers, {
       annotation: '@embroider/core/dependency-analyzer'
     });
@@ -21,36 +21,41 @@ export default class DependencyAnalyzer extends Plugin {
 
     let seenSpecifiers = new Set();
 
-    let { dependencies, devDependencies, peerDependencies } = this.pkg.packageJSON;
-    imports.forEach(imp => {
+    let dependencies: Map<string, Package> = new Map();
+    for (let dep of this.pkg.dependencies) {
+      dependencies.set(dep.name, dep);
+    }
 
+    for (let imp of imports) {
       // handle each specifier only once
-      if (!seenSpecifiers.has(imp.specifier)) {
-        seenSpecifiers.add(imp.specifier);
-
-        let name = absolutePackageName(imp.specifier);
-        if (name) {
-          if (
-            (dependencies && dependencies[name]) ||
-            (peerDependencies && peerDependencies[name]) ||
-            (this.isTopLevelApp && devDependencies && devDependencies[name]) ||
-            (name === this.pkg.name)
-          ) {
-            // this is either a valid inter-package specifier or our own
-            // name.
-            //
-            // Our own name is allowed in the appJS (because that is going to get
-            // moved into the app, where our name will be resolvable). It would be
-            // a problem in our Own JS, but that gets patched up by our
-            // babel-plugin.
-          } else {
-            // this is not a valid inter-package specifier, so we defer it to
-            // runtime by treating it as an external
-            externals.push(imp.specifier);
-          }
-        }
+      if (seenSpecifiers.has(imp.specifier)) {
+        continue;
       }
-    });
+      seenSpecifiers.add(imp.specifier);
+
+      let name = absolutePackageName(imp.specifier);
+      if (!name) {
+        // must have been relative, we only care about absolute imports here
+        continue;
+      }
+
+      if (name === this.pkg.name) {
+        // Our own name is allowed in the appJS (because that is going to get
+        // moved into the app, where our name will be resolvable). It would be
+        // a problem in our Own JS, but that gets patched up by our
+        // babel-plugin.
+        continue;
+      }
+
+      let dep = dependencies.get(name);
+      if (dep) {
+        // this is a valid inter-package specifier
+        continue;
+      }
+
+      // this is not something we know how to resolve, so we defer it to runtime
+      externals.push(imp.specifier);
+    }
     return externals;
   }
 }

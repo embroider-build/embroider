@@ -4,7 +4,7 @@ import flatMap from 'lodash/flatMap';
 import Package from './package';
 
 export default class BasicPackage extends Package {
-  private dependencyKeys: ("dependencies" | "devDependencies")[];
+  private dependencyKeys: ("dependencies" | "devDependencies" | "peerDependencies")[];
 
   constructor(
     readonly root: string,
@@ -12,7 +12,7 @@ export default class BasicPackage extends Package {
     private packageCache: PackageCache
   ) {
     super();
-    this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies'] : ['dependencies'];
+    this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies', 'peerDependencies'] : ['dependencies', 'peerDependencies'];
   }
 
   @Memoize()

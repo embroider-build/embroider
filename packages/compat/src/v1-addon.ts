@@ -193,7 +193,7 @@ export default class V1Addon implements V1Package {
     // DependencyAnalyzer will respect tweaks made by Compat Adapters.
     let pkg = new TweakedPackage(this.packageCache.getAddon(this.root), this.packageJSON, this.packageCache);
 
-    let analyzer = new DependencyAnalyzer(importParsers, pkg, false );
+    let analyzer = new DependencyAnalyzer(importParsers, pkg );
     let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
     trees.push(packageJSONRewriter);
     return { trees, packageJSONRewriter };

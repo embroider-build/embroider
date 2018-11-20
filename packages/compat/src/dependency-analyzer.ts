@@ -48,8 +48,11 @@ export default class DependencyAnalyzer extends Plugin {
       }
 
       let dep = dependencies.get(name);
-      if (dep) {
-        // this is a valid inter-package specifier
+      if (dep && (dep.isEmberPackage || dependencies.has('ember-auto-import'))) {
+        // this is a valid inter-package specifier, either because it's an ember
+        // addon (which we are going to ensure is resolvable by upgrading it to
+        // v2) or because the package was using ember-auto-import to resolve
+        // arbitrary NPM dependencies.
         continue;
       }
 

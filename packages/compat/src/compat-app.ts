@@ -403,16 +403,7 @@ class ActiveCompatApp {
     this.addBabelConfig();
     this.addEmberEnv(config.EmberENV);
 
-    // we are safe to access each addon.packageJSON because the Workspace is in
-    // our inputTrees, so we know we are only running after any v1 packages have
-    // already been build as v2.
-    let externals = new Set(
-      flatMap(this.activeAddonDescendants, addon => addon.meta.externals || [])
-    );
-
-    // similarly, we're safe to access analyzer.externals because the analyzer
-    // is one of our input trees.
-    this.analyzer.externals.forEach(name => externals.add(name));
+    let externals = this.combineExternals();
 
     // This is the publicTree we were given. We need to list all the files in
     // here as "entrypoints", because an "entrypoint" is anything that is
@@ -423,7 +414,7 @@ class ActiveCompatApp {
 
     let meta: AppMeta = {
       version: 2,
-      externals: [...externals.values()],
+      externals,
       entrypoints: this.emberEntrypoints().concat(entrypoints),
       ["template-compiler"]: "_template_compiler_.js",
       ["babel-config"]: "_babel_config_.js",
@@ -437,6 +428,14 @@ class ActiveCompatApp {
       "utf8"
     );
     this.rewriteHTML(inputPaths.htmlTree);
+  }
+
+  private combineExternals() {
+    let externals = new Set(
+      flatMap(this.activeAddonDescendants, addon => addon.meta.externals || [])
+    );
+    this.analyzer.externals.forEach(name => externals.add(name));
+    return [...externals.values()];
   }
 
   // we could just use ember-source/dist/ember-template-compiler directly, but

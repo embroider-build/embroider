@@ -4,7 +4,6 @@ import {
   App,
   Package,
   Workspace,
-  WorkspaceUpdater,
   AppMeta
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
@@ -14,7 +13,7 @@ import { Memoize } from "typescript-memoize";
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, readFileSync, copySync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo } from './messages';
@@ -106,9 +105,7 @@ export default class CompatApp implements App {
     };
 
     // And we generate the actual entrypoint files.
-    let entry = new AppEntry(this.build.bind(this), inTrees);
-
-    return new WorkspaceUpdater([publicTree, appJS, entry], this.workspace);
+    return new WaitForTrees(inTrees, (treePaths: TreeNames<string>) => this.build(treePaths));
   }
 
   @Memoize()
@@ -314,15 +311,19 @@ export default class CompatApp implements App {
     return entrypoints;
   }
 
-  private async build(inputPaths: TreeNames<string>, outputPath: string) {
+  private async build(inputPaths: TreeNames<string>) {
+    // the public and appJS trees get copied directly into the output
+    copySync(inputPaths.publicTree, this.workspace.appDestDir, { dereference: true });
+    copySync(inputPaths.appJS, this.workspace.appDestDir, { dereference: true });
+
     // readConfig timing is safe here because app.configTree is in our input trees.
     let config = this.configTree.readConfig();
 
-    this.writeAppJS(inputPaths.appJS, config, outputPath);
-    this.writeTestJS(inputPaths.appJS, outputPath);
-    this.addTemplateCompiler(outputPath);
-    this.addBabelConfig(outputPath);
-    this.addEmberEnv(config.EmberENV, outputPath);
+    this.writeAppJSEntrypoint(inputPaths.appJS, config);
+    this.writeTestJSEntrypoint(inputPaths.appJS);
+    this.addTemplateCompiler();
+    this.addBabelConfig();
+    this.addEmberEnv(config.EmberENV);
 
     // we are safe to access each addon.packageJSON because the Workspace is in
     // our inputTrees, so we know we are only running after any v1 packages have
@@ -350,23 +351,23 @@ export default class CompatApp implements App {
 
     let pkg = cloneDeep(this.workspace.app.packageJSON);
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
-    writeFileSync(join(outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
-    this.rewriteHTML(inputPaths.htmlTree, outputPath);
+    writeFileSync(join(this.workspace.appDestDir, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+    this.rewriteHTML(inputPaths.htmlTree);
   }
 
   // we could just use ember-source/dist/ember-template-compiler directly, but
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
-  private addTemplateCompiler(outputPath: string) {
-    writeFileSync(join(outputPath, '_template_compiler_.js'), `
+  private addTemplateCompiler() {
+    writeFileSync(join(this.workspace.appDestDir, '_template_compiler_.js'), `
     var compiler = require('ember-source/vendor/ember/ember-template-compiler');
     var setupCompiler = require('@embroider/core/src/template-compiler').default;
     module.exports = setupCompiler(compiler);
     `, 'utf8');
   }
 
-  private addBabelConfig(outputPath: string) {
-    writeFileSync(join(outputPath, '_babel_config_.js'), `
+  private addBabelConfig() {
+    writeFileSync(join(this.workspace.appDestDir, '_babel_config_.js'), `
     module.exports = ${JSON.stringify(this.babelConfig, null, 2)};
     `, 'utf8');
   }
@@ -375,28 +376,28 @@ export default class CompatApp implements App {
   // Ember CLI is was "vendor-prefix" content that would go at the start of the
   // vendor.js. We are going to make sure it's the first plain <script> in the
   // HTML that we hand to the final stage packager.
-  private addEmberEnv(config: any, outputPath: string) {
-    writeFileSync(join(outputPath, '_ember_env_.js'), `
+  private addEmberEnv(config: any) {
+    writeFileSync(join(this.workspace.appDestDir, '_ember_env_.js'), `
     window.EmberENV=${JSON.stringify(config, null, 2)};
     `, 'utf8');
   }
 
-  private rewriteHTML(htmlTreePath: string, outputPath: string) {
+  private rewriteHTML(htmlTreePath: string) {
     for (let entrypoint of  this.emberEntrypoints()) {
       let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), 'utf8'));
       this.updateHTML(entrypoint, dom);
-      let outputFile = join(outputPath, entrypoint);
+      let outputFile = join(this.workspace.appDestDir, entrypoint);
       ensureDirSync(dirname(outputFile));
       writeFileSync(outputFile, dom.serialize(), 'utf8');
     }
   }
 
-  private writeAppJS(appJSTreePath: string, config: any, outputPath: string) {
-    let mainModule = join(outputPath, this.isModuleUnification ? 'src/main' : 'app');
+  private writeAppJSEntrypoint(appJSTreePath: string, config: any) {
+    let mainModule = join(this.workspace.appDestDir, this.isModuleUnification ? 'src/main' : 'app');
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also updateHTML in app.ts for where
     // we're enforcing this in the HTML.
-    let appJS = join(outputPath, `assets/${this.workspace.app.name}.js`);
+    let appJS = join(this.workspace.appDestDir, `assets/${this.workspace.app.name}.js`);
 
     // for the app tree, we take everything
     let lazyModules = walkSync(appJSTreePath, {
@@ -438,8 +439,8 @@ export default class CompatApp implements App {
     }), 'utf8');
   }
 
-  private writeTestJS(appJSTreePath: string, outputPath: string) {
-    let testJS = join(outputPath, `assets/test.js`);
+  private writeTestJSEntrypoint(appJSTreePath: string) {
+    let testJS = join(this.workspace.appDestDir, `assets/test.js`);
     let testModules = walkSync(appJSTreePath, {
       globs: ['tests/**/*-test.js'],
       directories: false
@@ -464,10 +465,10 @@ interface TreeNames<T> {
   configTree: T;
 }
 
-class AppEntry extends BroccoliPlugin {
+class WaitForTrees extends BroccoliPlugin {
   constructor(
-    private buildHook: (trees: TreeNames<string>, outputPath: string) => Promise<void>,
-    private trees: TreeNames<Tree>
+    private trees: TreeNames<Tree>,
+    private buildHook: (trees: TreeNames<string>) => Promise<void>,
   ){
     super(Object.values(trees), {});
   }
@@ -478,6 +479,6 @@ class AppEntry extends BroccoliPlugin {
     for (let i = 0; i < this.inputPaths.length; i++) {
       inputPathsByName[treeNames[i]] = this.inputPaths[i];
     }
-    return this.buildHook(inputPathsByName as unknown as TreeNames<string>, this.outputPath);
+    return this.buildHook(inputPathsByName as unknown as TreeNames<string>);
   }
 }

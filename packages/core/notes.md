@@ -1,6 +1,10 @@
 # Stack
+ - in-repo addons
+ - refactor v1-app to not watch all of root
  - we can avoid needing the addon's app-js as trees at all.
     - the AppEntry tree can stop being a tree and just be a hook that runs inside WorkspaceUpdater
+    - but probably as a hook it still needs to see the distinctly-named trees, so those need to run through WorkspaceUpdater
+    - so lets not do any auto-copy in WorkspaceUpdater
  - to do that we should clarify the build timing of Workspace as consumed by app.
  - we should split all tree building out of MovedPackage and let it just be about the package
  - externals detection should take into account which deps are ember-addons and whether or not we have ember-auto-import

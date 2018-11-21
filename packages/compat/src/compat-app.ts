@@ -64,6 +64,10 @@ const testTemplate = compile(`
 {{#each testModules as |testModule| ~}}
   import "{{js-string-escape testModule}}";
 {{/each}}
+
+{{!- this is the traditioanl tests-suffix.js -}}
+require('../tests/test-helper');
+EmberENV.TESTS_FILE_LOADED = true;
 `);
 
 class Options {

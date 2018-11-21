@@ -471,10 +471,19 @@ class ActiveCompatApp {
   }
 
   private addBabelConfig() {
+    let { config, syntheticPlugins } = this.babelConfig;
+
+    for (let [name, source] of syntheticPlugins) {
+      let fullName = join(this.root, name);
+      writeFileSync(fullName, source, 'utf8');
+      let index = config.plugins.indexOf(name);
+      config.plugins[index] = fullName;
+    }
+
     writeFileSync(
       join(this.root, "_babel_config_.js"),
       `
-    module.exports = ${JSON.stringify(this.babelConfig, null, 2)};
+    module.exports = ${JSON.stringify(config, null, 2)};
     `,
       "utf8"
     );

@@ -14,6 +14,8 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache } from '@embroider/core';
+import { todo } from './messages';
+import { synthesize } from './parallel-babel-shim';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -134,25 +136,37 @@ export default class V1App implements V1Package {
   }
 
   babelConfig(finalRoot: string, rename: any) {
+    let syntheticPlugins = new Map();
+
     let plugins = get(this.app.options, 'babel.plugins') as any[];
-    if (plugins) {
-      plugins = plugins.filter(
-        // we want to generate a babel config that can be serialized. So
-        // already-required functions aren't supported.
-        // todo: should we emit a warning?
-        p => p && (typeof p === 'string' || typeof p[0] === 'string')
-      ).map(p => {
-        // resolve (not require) the app's configured plugins relative to the
-        // app
-        if (typeof p === 'string') {
-          return resolve.sync(`babel-plugin-${p}`, { basedir: finalRoot });
-        } else {
-          return [resolve.sync(`babel-plugin-${p[0]}`, { basedir: finalRoot }), p[1]];
-        }
-      });
-    } else {
+    if (!plugins) {
       plugins = [];
     }
+
+    plugins = plugins.map(plugin => {
+      // We want to resolve (not require) the app's configured plugins relative
+      // to the app. We want to keep everything serializable.
+
+      // bare string plugin name
+      if (typeof plugin === 'string') {
+        return resolve.sync(`babel-plugin-${plugin}`, { basedir: finalRoot });
+      }
+
+      // pair of [pluginName, pluginOptions]
+      if (typeof plugin[0] === 'string') {
+        return [resolve.sync(`babel-plugin-${plugin[0]}`, { basedir: finalRoot }), plugin[1]];
+      }
+
+      // broccoli-babel-transpiler's custom parallel API. Here we synthesize
+      // normal babel plugins that wrap their configuration.
+      if (plugin._parallelBabel) {
+        let name = `_synthetic_babel_plugin_${syntheticPlugins.size}_.js`;
+        syntheticPlugins.set(name, synthesize(plugin._parallelBabel));
+        return name;
+      }
+
+      todo(`Found a babel plugin that we couldn't deal with`);
+    }).filter(Boolean);
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
@@ -174,7 +188,7 @@ export default class V1App implements V1Package {
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
 
-    return {
+    let config = {
       moduleIds: true,
       babelrc: false,
       plugins,
@@ -182,6 +196,7 @@ export default class V1App implements V1Package {
         [resolve.sync("babel-preset-env", { basedir: this.root }), { targets: babelInstance._getTargets() }]
       ]
     };
+    return { config, syntheticPlugins };
   }
 
   private debugMacrosPlugin() {

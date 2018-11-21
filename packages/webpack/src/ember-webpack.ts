@@ -184,12 +184,12 @@ export class Webpack implements PackagerInstance {
           {
             test: this.shouldTranspileFile.bind(this, scripts),
             use: [
-              'thread-loader',
+              process.env.JOBS === '1' ? null : 'thread-loader',
               {
                 loader: 'babel-loader',
                 options: Object.assign({}, babelConfig)
               }
-            ]
+            ].filter(Boolean)
           },
           {
             test: this.isCSSModule.bind(this, stylesheets),

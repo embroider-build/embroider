@@ -13,7 +13,7 @@ import { Memoize } from "typescript-memoize";
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync, readFileSync, copySync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, readFileSync, copySync, readdirSync, removeSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo, unsupported } from './messages';
@@ -375,13 +375,24 @@ class ActiveCompatApp {
     return entrypoints;
   }
 
+  private clearApp() {
+    for (let name of readdirSync(this.root)) {
+      if (name !== 'node_modules') {
+        removeSync(join(this.root, name));
+      }
+    }
+  }
+
   async build(inputPaths: TreeNames<string>) {
     // the steps in here are order dependent!
 
     // readConfig timing is safe here because configTree is in our input trees.
     let config = this.configTree.readConfig();
 
-    // first modifications of the output directory: we're copying only "app-js"
+    // start with a clean app directory, leaving only our node_modules
+    this.clearApp();
+
+    // first thing we add: we're copying only "app-js"
     // stuff, first from addons, and then from the app itself (so it can
     // ovewrite the files from addons).
     for (let addon of this.activeAddonDescendants) {

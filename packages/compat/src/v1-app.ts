@@ -224,22 +224,37 @@ export default class V1App implements V1Package {
     return this.app._trackedImports;
   }
 
+  private preprocessJS(tree: Tree): Tree {
+    // we're saving all our babel compilation for the final stage packager
+    this.app.registry.remove('js', 'ember-cli-babel');
+
+    // auto-import is supported natively so we don't need it here
+    this.app.registry.remove('js', 'ember-auto-import-analyzer');
+
+    return this.preprocessors.preprocessJs(
+      tree, `/`, '/', {
+        annotation: 'v1-app-preprocess-js',
+        registry: this.app.registry
+      }
+    );
+  }
+
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
   private get appTree(): Tree {
-    return new Funnel(this.app.trees.app, {
+    return this.preprocessJS(new Funnel(this.app.trees.app, {
       exclude: ['styles/**', "*.html"],
-    });
+    }));
   }
 
   private get testsTree(): Tree {
-    return new Funnel(this.app.trees.tests, {
+    return this.preprocessJS(new Funnel(this.app.trees.tests, {
       destDir: 'tests'
-    });
+    }));
   }
 
   @Memoize()
-  private get preprocessors() {
+  private get preprocessors(): Preprocessors {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
@@ -266,9 +281,6 @@ export default class V1App implements V1Package {
     return this.app.trees.public;
   }
 
-  // this takes the app JS trees from all active addons, since we can't really
-  // build our own code without them due to the way addon-provided "app js"
-  // works.
   processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
@@ -315,4 +327,9 @@ export default class V1App implements V1Package {
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
   }
+}
+
+interface Preprocessors {
+  preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
+  preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
 }

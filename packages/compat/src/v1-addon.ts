@@ -121,6 +121,12 @@ export default class V1Addon implements V1Package {
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
   // ember-cli-sass will blow up if they don't find some files.
   private transpile(tree: Tree, { includeCSS } = { includeCSS: false}) {
+    // auto-import gets disabled because we support it natively
+    this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
+    // note that we don't remove ember-cli-babel here, instead we have pared
+    // down its config so that it will only run nonstandard plugins, leaving all
+    // other normal ESlatest features in place.
+
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
@@ -131,9 +137,6 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private updateBabelConfig() {
-    // auto-import gets disabled because we support it natively
-    //this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
-
     let packageOptions = this.options;
     let emberCLIBabelInstance = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-babel');
     let version;

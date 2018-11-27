@@ -14,14 +14,16 @@ import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
 import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
-import WorkspaceOptions from './options';
+import WorkspaceOptions, { defaultOptions, WorkspaceOptionsWithDefaults } from './options';
 
 export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
   private packageCache: MovedPackageCache;
 
-  constructor(legacyEmberAppInstance: object, options?: WorkspaceOptions) {
+  constructor(legacyEmberAppInstance: object, maybeOptions?: WorkspaceOptions) {
+    let options = Object.assign({}, defaultOptions(), maybeOptions) as WorkspaceOptionsWithDefaults;
+
     let destDir;
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);

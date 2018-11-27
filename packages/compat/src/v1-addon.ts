@@ -19,6 +19,7 @@ import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
 import { Package, PackageCache, BasicPackage } from "@embroider/core";
+import { WorkspaceOptionsWithDefaults } from "./options";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -51,7 +52,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, private packageCache: PackageCache) {
+  constructor(protected addonInstance: any, private packageCache: PackageCache, protected workspaceOptions: WorkspaceOptionsWithDefaults) {
     this.updateBabelConfig();
   }
 
@@ -84,7 +85,7 @@ export default class V1Addon implements V1Package {
     return require(this.addonInstance.constructor._meta_.modulePath);
   }
 
-  private get options() {
+  protected get options() {
     if (!this.addonInstance.options) {
       this.addonInstance.options = {};
     }
@@ -136,7 +137,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private updateBabelConfig() {
+  protected updateBabelConfig() {
     let packageOptions = this.options;
     let emberCLIBabelInstance = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-babel');
     let version;
@@ -277,8 +278,12 @@ export default class V1Addon implements V1Package {
     {
       let addonTree = this.treeForAddon();
       if (addonTree) {
-        importParsers.push(this.parseImports(addonTree));
+        let addonParser = this.parseImports(addonTree);
+        importParsers.push(addonParser);
         trees.push(addonTree);
+        if (this.workspaceOptions.forceIncludeAddonTrees) {
+          dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
+        }
       }
     }
 
@@ -419,7 +424,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, packageCache: PackageCache): V1Addon;
+  new(addonInstance: any, packageCache: PackageCache, options: WorkspaceOptionsWithDefaults): V1Addon;
 }
 
 class TweakedPackage extends BasicPackage {

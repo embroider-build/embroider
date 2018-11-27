@@ -50,6 +50,10 @@ export default class ImportParser extends Plugin {
     return this.modules;
   }
 
+  get filenames(): string[] {
+    return [...this.paths.keys()];
+  }
+
   private buildParserOptions() {
     let babelOptions = {};
     let p = new Pipeline();

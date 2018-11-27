@@ -48,3 +48,15 @@ export default interface WorkspaceOptions {
   workspaceDir?: string;
 
 }
+
+export interface WorkspaceOptionsWithDefaults extends WorkspaceOptions {
+  forceIncludeAddonTrees: boolean;
+  compatAdapters: Map<string, V1AddonConstructor>;
+}
+
+export function defaultOptions(): WorkspaceOptionsWithDefaults {
+  return {
+    forceIncludeAddonTrees: true,
+    compatAdapters: new Map()
+  };
+}

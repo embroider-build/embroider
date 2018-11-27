@@ -7,15 +7,15 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
-import WorkspaceOptions from './options';
+import { WorkspaceOptionsWithDefaults, defaultOptions } from './options';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object, options?: WorkspaceOptions): V1InstanceCache {
-    let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp));
-    if (options) {
-      instance.setOptions(options);
+  static forApp(emberApp: object, options?: WorkspaceOptionsWithDefaults): V1InstanceCache {
+    let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
+    if (options && instance.options !== options) {
+      throw new Error(`attempted double set of WorkspaceOptions`);
     }
     return instance;
   }
@@ -24,12 +24,11 @@ export default class V1InstanceCache {
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
   private addons: Map<string, V1Addon[]> = new Map();
-  private options: WorkspaceOptions | undefined;
 
   app: V1App;
   packageCache = new MovablePackageCache();
 
-  private constructor(oldApp: any) {
+  private constructor(oldApp: any, private options: WorkspaceOptionsWithDefaults = defaultOptions()) {
     if (!oldApp._activeAddonInclude) {
       throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }
@@ -43,17 +42,10 @@ export default class V1InstanceCache {
     });
   }
 
-  private setOptions(options: WorkspaceOptions) {
-    if (this.options) {
-      throw new Error("double set of WorkspaceOptions");
-    }
-    this.options = options;
-  }
-
   private adapterClass(packageName: string): V1AddonConstructor {
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
-    if (this.options && this.options.compatAdapters && this.options.compatAdapters.has(packageName)) {
+    if (this.options.compatAdapters.has(packageName)) {
       return this.options.compatAdapters.get(packageName) || V1Addon;
     }
     let path = `${__dirname}/compat-adapters/${packageName}.js`;
@@ -65,7 +57,7 @@ export default class V1InstanceCache {
 
   private addAddon(addonInstance: any) {
     let Klass = this.adapterClass(addonInstance.pkg.name);
-    let v1Addon = new Klass(addonInstance, this.packageCache);
+    let v1Addon = new Klass(addonInstance, this.packageCache, this.options);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
       this.addons.set(v1Addon.root, pkgs = []);

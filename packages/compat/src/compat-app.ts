@@ -65,6 +65,9 @@ const testTemplate = compile(`
   import "{{js-string-escape testModule}}";
 {{/each}}
 
+{{#if lazyModules}}
+  let d = window.define;
+{{/if}
 {{#each lazyModules as |lazyModule| ~}}
   d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
 {{/each}}
@@ -613,7 +616,7 @@ class ActiveCompatApp {
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
-            runtime: `${addon.name}/${name}`,
+            runtime: join(addon.name, name),
             buildtime: relative(
               join(this.root, "assets"),
               `${addon.root}/${name}`

@@ -26,6 +26,19 @@ export default interface WorkspaceOptions {
   // ./compat-adapters.
   forceIncludeAddonTrees?: boolean;
 
+  // Whether to force the contents of each v1 addon's treeForTestSupport to be
+  // incorporated into test builds.
+  //
+  //   true (the default): implies maximum backward compatibility at the cost of
+  //   bigger builds.
+  //
+  //   false: produces smaller builds. The files must be imported from somewhere
+  //   we can statically see during the build.
+  //
+  // Commentary: this is analogous to forceIncludeAddonTrees and the same
+  // guidelines applies.
+  forceIncludeAddonTestSupportTrees?: boolean;
+
   // Allows you to override how specific addons will build. Like:
   //
   //   import V1Addon from '@embroider/compat';
@@ -51,12 +64,14 @@ export default interface WorkspaceOptions {
 
 export interface WorkspaceOptionsWithDefaults extends WorkspaceOptions {
   forceIncludeAddonTrees: boolean;
+  forceIncludeAddonTestSupportTrees: boolean;
   compatAdapters: Map<string, V1AddonConstructor>;
 }
 
 export function defaultOptions(): WorkspaceOptionsWithDefaults {
   return {
     forceIncludeAddonTrees: true,
+    forceIncludeAddonTestSupportTrees: true,
     compatAdapters: new Map()
   };
 }

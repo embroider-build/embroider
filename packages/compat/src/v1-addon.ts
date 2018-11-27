@@ -332,8 +332,12 @@ export default class V1Addon implements V1Package {
         }));
       }
       if (addonTestSupportTree) {
-        importParsers.push(this.parseImports(addonTestSupportTree));
+        let testSupportParser = this.parseImports(addonTestSupportTree);
+        importParsers.push(testSupportParser);
         trees.push(addonTestSupportTree);
+        if (this.workspaceOptions.forceIncludeAddonTestSupportTrees) {
+          dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
+        }
       }
     }
 

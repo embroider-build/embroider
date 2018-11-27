@@ -1,6 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { AddonMeta } from '@embroider/core';
 import resolve from 'resolve';
+import { resolve as pathResolve } from 'path';
 
 export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
   let pkg = cloneDeep(packageJSON);
@@ -54,3 +55,6 @@ function stripBadReexportsTransform() {
     }
   };
 }
+(stripBadReexportsTransform as any).baseDir = function() {
+  return pathResolve(__dirname, '..');
+};

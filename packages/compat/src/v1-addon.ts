@@ -55,7 +55,7 @@ export default class V1Addon implements V1Package {
     this.updateBabelConfig();
   }
 
-  get name() {
+  get name(): string {
     return this.packageJSON.name;
   }
 

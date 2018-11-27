@@ -18,3 +18,12 @@ export function forceIncludeModule(meta: AddonMeta, localPath: string) {
   meta['implicit-modules']!.push(localPath);
   return meta;
 }
+
+export function forceIncludeTestModule(meta: AddonMeta, localPath: string) {
+  meta = cloneDeep(meta);
+  if (!meta.hasOwnProperty('implicit-test-modules')) {
+    meta['implicit-test-modules'] = [];
+  }
+  meta['implicit-test-modules']!.push(localPath);
+  return meta;
+}

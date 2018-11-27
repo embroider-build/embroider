@@ -20,6 +20,7 @@ export interface AddonMeta {
   "implicit-styles"?: filename[];
   "implicit-test-styles"?: filename[];
   "implicit-modules"?: string[];
+  "implicit-test-modules"?: string[];
   "renamed-modules"?: { [fromName: string]: string };
   "app-js"?: filename;
 }

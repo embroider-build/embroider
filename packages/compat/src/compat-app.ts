@@ -65,6 +65,10 @@ const testTemplate = compile(`
   import "{{js-string-escape testModule}}";
 {{/each}}
 
+{{#each lazyModules as |lazyModule| ~}}
+  d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
+{{/each}}
+
 {{!- this is the traditioanl tests-suffix.js -}}
 require('../tests/test-helper');
 EmberENV.TESTS_FILE_LOADED = true;
@@ -565,20 +569,8 @@ class ActiveCompatApp {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    for (let addon of this.activeAddonDescendants) {
-      let implicitModules = addon.meta["implicit-modules"];
-      if (implicitModules) {
-        for (let name of implicitModules) {
-          lazyModules.push({
-            runtime: `${addon.name}/${name}`,
-            buildtime: relative(
-              join(this.root, "assets"),
-              `${addon.root}/${name}`
-            ),
-          });
-        }
-      }
-    }
+    this.gatherImplicitModules('implicit-modules', lazyModules);
+
     ensureDirSync(dirname(appJS));
     writeFileSync(
       appJS,
@@ -598,14 +590,38 @@ class ActiveCompatApp {
       globs: ["tests/**/*-test.js"],
       directories: false,
     }).map(specifier => `../${specifier}`);
+
+    let lazyModules: { runtime: string, buildtime: string }[] = [];
+    // this is a backward-compatibility feature: addons can force inclusion of
+    // test support modules.
+    this.gatherImplicitModules('implicit-test-modules', lazyModules);
+
     ensureDirSync(dirname(testJS));
     writeFileSync(
       testJS,
       testTemplate({
         testModules,
+        lazyModules
       }),
       "utf8"
     );
+  }
+
+  private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
+    for (let addon of this.activeAddonDescendants) {
+      let implicitModules = addon.meta[section];
+      if (implicitModules) {
+        for (let name of implicitModules) {
+          lazyModules.push({
+            runtime: `${addon.name}/${name}`,
+            buildtime: relative(
+              join(this.root, "assets"),
+              `${addon.root}/${name}`
+            ),
+          });
+        }
+      }
+    }
   }
 }
 

@@ -13,7 +13,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache } from '@embroider/core';
+import { PackageCache, TemplateCompilerPlugins } from '@embroider/core';
 import { todo } from './messages';
 import { synthesize } from './parallel-babel-shim';
 
@@ -239,6 +239,12 @@ export default class V1App implements V1Package {
     );
   }
 
+  get htmlbarsPlugins(): TemplateCompilerPlugins {
+    let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    let options = addon.htmlbarsOptions();
+    return options.plugins;
+  }
+
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
   private get appTree(): Tree {
@@ -333,3 +339,4 @@ interface Preprocessors {
   preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
   preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
 }
+

@@ -413,7 +413,7 @@ class ActiveCompatApp {
     // entrypoint files
     copySync(inputPaths.publicTree, this.root, { dereference: true });
 
-    this.addTemplateCompiler();
+    this.addTemplateCompiler(config.EmberENV);
     this.addBabelConfig();
     this.addEmberEnv(config.EmberENV);
 
@@ -473,13 +473,20 @@ class ActiveCompatApp {
   // we could just use ember-source/dist/ember-template-compiler directly, but
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
-  private addTemplateCompiler() {
+  private addTemplateCompiler(config: any) {
+    let plugins = this.oldPackage.htmlbarsPlugins;
+    (global as any).__embroiderHtmlbarsPlugins__ = plugins;
     writeFileSync(
       join(this.root, "_template_compiler_.js"),
       `
     var compiler = require('ember-source/vendor/ember/ember-template-compiler');
     var setupCompiler = require('@embroider/core/src/template-compiler').default;
-    module.exports = setupCompiler(compiler);
+    var EmberENV = ${JSON.stringify(config)};
+    var plugins = global.__embroiderHtmlbarsPlugins__;
+    if (!plugins) {
+      throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
+    }
+    module.exports = setupCompiler(compiler, EmberENV, plugins);
     `,
       "utf8"
     );

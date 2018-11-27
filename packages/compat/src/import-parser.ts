@@ -45,7 +45,7 @@ export default class ImportParser extends Plugin {
   get imports() : Import[] {
     if (!this.modules) {
       this.modules = flatten([...this.paths.values()]);
-      debug("imports %s", new PrinableImports(this.modules));
+      debug("imports %s", new PrintableImports(this.modules));
     }
     return this.modules;
   }
@@ -200,7 +200,7 @@ function forEachNode(node: any, visit: (node: any) => void) {
   }
 }
 
-class PrinableImports {
+class PrintableImports {
   constructor(private imports: Import[]) {}
   toString() {
     return JSON.stringify(this.imports, null, 2);

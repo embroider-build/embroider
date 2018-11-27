@@ -10,24 +10,18 @@ import {
 } from 'fs-extra';
 import { Workspace, Package } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
-import { V1AddonConstructor } from "./v1-addon";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
 import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
-
-interface Options {
-  workspaceDir?: string;
-  compatAdapters?: Map<string, V1AddonConstructor>;
-  emitNewRoot?: (path: string) => void;
-}
+import WorkspaceOptions from './options';
 
 export default class CompatWorkspace extends Plugin implements Workspace {
   private didBuild: boolean;
   private destDir: string;
   private packageCache: MovedPackageCache;
 
-  constructor(legacyEmberAppInstance: object, options?: Options) {
+  constructor(legacyEmberAppInstance: object, options?: WorkspaceOptions) {
     let destDir;
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
@@ -36,14 +30,7 @@ export default class CompatWorkspace extends Plugin implements Workspace {
       destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
 
-    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance);
-
-    if (options && options.compatAdapters) {
-      for (let [packageName, adapter] of options.compatAdapters) {
-        v1Cache.registerCompatAdapter(packageName, adapter);
-      }
-    }
-
+    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     let packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, destDir);
     let trees = [...packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
 
@@ -56,9 +43,6 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.didBuild = false;
     this.packageCache = packageCache;
     this.destDir = destDir;
-    if (options && options.emitNewRoot) {
-      options.emitNewRoot(this.appDestDir);
-    }
   }
 
   async ready(): Promise<{ appDestDir: string, app: Package }>{

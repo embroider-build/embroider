@@ -7,19 +7,24 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
+import WorkspaceOptions from './options';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object): V1InstanceCache {
-    return getOrCreate(this.caches, emberApp, () => new this(emberApp));
+  static forApp(emberApp: object, options?: WorkspaceOptions): V1InstanceCache {
+    let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp));
+    if (options) {
+      instance.setOptions(options);
+    }
+    return instance;
   }
 
   // maps from package root directories to known V1 instances of that packages.
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
   private addons: Map<string, V1Addon[]> = new Map();
-  private compatAdapters: Map<string, V1AddonConstructor> = new Map();
+  private options: WorkspaceOptions | undefined;
 
   app: V1App;
   packageCache = new MovablePackageCache();
@@ -38,15 +43,18 @@ export default class V1InstanceCache {
     });
   }
 
-  registerCompatAdapter(packageName: string, constructor: V1AddonConstructor) {
-    this.compatAdapters.set(packageName, constructor);
+  private setOptions(options: WorkspaceOptions) {
+    if (this.options) {
+      throw new Error("double set of WorkspaceOptions");
+    }
+    this.options = options;
   }
 
   private adapterClass(packageName: string): V1AddonConstructor {
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
-    if (this.compatAdapters.has(packageName)) {
-      return this.compatAdapters.get(packageName) || V1Addon;
+    if (this.options && this.options.compatAdapters && this.options.compatAdapters.has(packageName)) {
+      return this.options.compatAdapters.get(packageName) || V1Addon;
     }
     let path = `${__dirname}/compat-adapters/${packageName}.js`;
     if (pathExistsSync(path)) {

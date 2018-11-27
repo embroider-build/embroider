@@ -1,7 +1,8 @@
 # Stack
- - re-enable AST transforms
-   - like our babel config, we may want to enforce stricter serializability here
-   - that could require some compatibility heroics in terms of code analysis to reverse functions to their import sources
+ - introduce forceIncludeAddonTrees
+   - this is a good time to optimize the workspace compat-app build hook for rebuilds
+   - make sure we handle `/index` suffixes automatically
+ - generalize the derequire transformation. Probably applies to everything other than our own synthesized entrypoints.
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

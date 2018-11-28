@@ -235,7 +235,7 @@ class ActiveCompatApp {
       result.push(resolve.sync(mod, { basedir: this.root }));
     }
 
-    // This file gets created by app-entrypoint.ts. We need to insert it at the
+    // This file gets created by addEmberEnv(). We need to insert it at the
     // beginning of the scripts.
     if (originalBundle === "vendor.js") {
       result.unshift(join(this.root, "_ember_env_.js"));

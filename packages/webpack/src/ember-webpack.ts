@@ -1,4 +1,4 @@
-import { PackagerInstance, AppMeta } from "@embroider/core";
+import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';
@@ -7,7 +7,6 @@ import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
 import { Memoize } from 'typescript-memoize';
-import PackageOwners from "./package-owners";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 
 class Entrypoint {
@@ -97,7 +96,11 @@ interface Options {
   webpackConfig: Configuration;
 }
 
-export class Webpack implements PackagerInstance {
+// we want to ensure that not only does our instance conform to
+// PackagerInstance, but our constructor conforms to Packager. So instead of
+// just exporting our class directly, we export a const constructor of the
+// correct type.
+const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
 
@@ -105,13 +108,12 @@ export class Webpack implements PackagerInstance {
     pathToVanillaApp: string,
     private outputPath: string,
     private consoleWrite: (msg: string) => void,
+    private packageCache: PackageCache,
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options && options.webpackConfig;
   }
-
-  private packageOwners: PackageOwners = new PackageOwners();
 
   private examineApp(): AppInfo {
     let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
@@ -246,7 +248,7 @@ export class Webpack implements PackagerInstance {
       return false;
     }
 
-    let owner = this.packageOwners.lookup(filename);
+    let owner = this.packageCache.ownerOfFile(filename);
 
     // Not owned by any NPM package? Weird, leave it alone.
     if (!owner) { return false; }
@@ -382,7 +384,7 @@ export class Webpack implements PackagerInstance {
     ];
   }
 
-}
+};
 
 function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {
@@ -410,3 +412,5 @@ interface StatSummary {
 interface InDOMHTMLElement extends HTMLElement {
   parentElement: HTMLElement;
 }
+
+export { Webpack };

@@ -1,4 +1,5 @@
 import { Tree } from "broccoli-plugin";
+import PackageCache from "./package-cache";
 
 export default interface App {
   // this is the broccoli tree that must get built for the app to be ready. But!
@@ -11,5 +12,9 @@ export default interface App {
   ready(): Promise<{
     // This is the actual directory in which the app will be.
     readonly root: string;
+
+    // This optionally allows the App to share its PackageCache with the following
+    // build stage, as an optimization.
+    readonly packageCache?: PackageCache;
   }>;
 }

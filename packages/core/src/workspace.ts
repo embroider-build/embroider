@@ -1,5 +1,6 @@
 import { Tree } from "broccoli-plugin";
 import Package from "./package";
+import PackageCache from "./package-cache";
 
 // The Workspace represents our directory that will contain a complete vanilla
 // Ember app. It's weird for a broccoli plugin, because we have strong opinions
@@ -25,6 +26,10 @@ export default interface Workspace extends Tree {
     // as-authored source code as well as the complete set of the app's
     // v2-formatted dependencies.
     app: Package;
+
+    // optional shared cache that allows the following build stages to avoid
+    // repeating work that we may have already performed.
+    packageCache?: PackageCache;
   }>;
 
 }

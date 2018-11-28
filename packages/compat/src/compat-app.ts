@@ -4,7 +4,8 @@ import {
   App,
   Package,
   Workspace,
-  AppMeta
+  AppMeta,
+  PackageCache
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -67,7 +68,7 @@ const testTemplate = compile(`
 
 {{#if lazyModules}}
   let d = window.define;
-{{/if}
+{{/if}}
 {{#each lazyModules as |lazyModule| ~}}
   d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
 {{/each}}
@@ -115,19 +116,21 @@ export default class CompatApp implements App {
     return new WaitForTrees(inTrees, (treePaths) => this.build(treePaths, configTree, analyzer));
   }
 
-  async ready(): Promise<{ root: string }>{
+  async ready(): Promise<{ root: string, packageCache: PackageCache | undefined }>{
     await this.deferReady.promise;
     return {
-      root: this.active!.root
+      root: this.active!.root,
+      packageCache: this.active!.packageCache
     };
   }
 
   private async build(treePaths: TreeNames<string>, configTree: ConfigTree, analyzer: DependencyAnalyzer) {
     if (!this.active) {
-      let { appDestDir, app } = await this.workspace.ready();
+      let { appDestDir, app, packageCache } = await this.workspace.ready();
       this.active = new ActiveCompatApp(
         appDestDir,
         app,
+        packageCache,
         this.oldPackage,
         configTree,
         analyzer
@@ -154,6 +157,7 @@ class ActiveCompatApp {
   constructor(
     readonly root: string,
     private app: Package,
+    readonly packageCache: PackageCache | undefined,
     private oldPackage: V1App,
     private configTree: ConfigTree,
     private analyzer: DependencyAnalyzer

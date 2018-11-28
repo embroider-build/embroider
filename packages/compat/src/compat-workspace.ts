@@ -8,7 +8,7 @@ import {
   mkdtempSync,
   copySync,
 } from 'fs-extra';
-import { Workspace, Package } from '@embroider/core';
+import { Workspace, Package, PackageCache } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
@@ -47,11 +47,12 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.destDir = destDir;
   }
 
-  async ready(): Promise<{ appDestDir: string, app: Package }>{
+  async ready(): Promise<{ appDestDir: string, app: Package, packageCache: PackageCache }>{
     await this.deferReady.promise;
     return {
       appDestDir: this.packageCache.appDestDir,
-      app: this.packageCache.app
+      app: this.packageCache.app,
+      packageCache: this.packageCache
     };
   }
 

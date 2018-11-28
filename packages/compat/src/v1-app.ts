@@ -35,7 +35,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync(this.app.root));
+    return dirname(pkgUpSync(this.app.root)!);
   }
 
   @Memoize()

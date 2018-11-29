@@ -3,19 +3,19 @@ import { realpathSync } from 'fs-extra';
 import Package from "./package";
 import PackageCache from "./package-cache";
 import { UnwatchedDir } from "broccoli-source";
+import { Tree } from "broccoli-plugin";
 
-export default class PrebuiltWorkspace extends UnwatchedDir implements Stage {
+export default class PrebuiltWorkspace implements Stage {
   private packageCache: PackageCache;
   private appDestDir: string;
   readonly inputPath: string;
+  readonly tree: Tree;
 
   constructor(appSrcDir: string, appDestDir: string) {
-    appSrcDir = realpathSync(appSrcDir);
-    appDestDir = realpathSync(appDestDir);
-    super(appSrcDir);
-    this.packageCache = new RehomedPackageCache(appSrcDir, appDestDir);
-    this.inputPath = appSrcDir;
-    this.appDestDir = appDestDir;
+    this.inputPath = realpathSync(appSrcDir);
+    this.appDestDir = realpathSync(appDestDir);
+    this.packageCache = new RehomedPackageCache(this.inputPath, this.appDestDir);
+    this.tree = new UnwatchedDir(this.inputPath);
   }
 
   async ready(): Promise<{ packageCache: PackageCache, outputPath: string }> {
@@ -24,8 +24,6 @@ export default class PrebuiltWorkspace extends UnwatchedDir implements Stage {
       outputPath: this.appDestDir
     };
   }
-
-  get tree(){ return this; }
 }
 
 class RehomedPackageCache extends PackageCache {

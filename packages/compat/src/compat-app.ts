@@ -22,6 +22,7 @@ import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
+import { V1Config, ConfigContents, EmberENV } from './v1-config';
 
 const entryTemplate = compile(`
 {{!-
@@ -132,7 +133,7 @@ class CompatAppBuilder {
     private root: string,
     private app: Package,
     private oldPackage: V1App,
-    private configTree: ConfigTree,
+    private configTree: V1Config,
     private analyzer: DependencyAnalyzer
   ) {}
 
@@ -457,7 +458,7 @@ class CompatAppBuilder {
   // we could just use ember-source/dist/ember-template-compiler directly, but
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
-  private addTemplateCompiler(config: any) {
+  private addTemplateCompiler(config: EmberENV) {
     let plugins = this.oldPackage.htmlbarsPlugins;
     (global as any).__embroiderHtmlbarsPlugins__ = plugins;
     writeFileSync(
@@ -499,7 +500,7 @@ class CompatAppBuilder {
   // Ember CLI is was "vendor-prefix" content that would go at the start of the
   // vendor.js. We are going to make sure it's the first plain <script> in the
   // HTML that we hand to the final stage packager.
-  private addEmberEnv(config: any) {
+  private addEmberEnv(config: EmberENV) {
     writeFileSync(
       join(this.root, "_ember_env_.js"),
       `
@@ -519,7 +520,7 @@ class CompatAppBuilder {
     }
   }
 
-  private writeAppJSEntrypoint(config: any) {
+  private writeAppJSEntrypoint(config: ConfigContents) {
     let mainModule = join(
       this.root,
       this.isModuleUnification ? "src/main" : "app"
@@ -603,10 +604,6 @@ class CompatAppBuilder {
       }
     }
   }
-}
-
-export interface ConfigTree extends Tree {
-  readConfig: () => any;
 }
 
 export default class CompatApp extends BuildStage<TreeNames> {

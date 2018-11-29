@@ -5,7 +5,8 @@ import {
   Stage,
   AppMeta,
   PackageCache,
-  WaitForTrees
+  OutputPaths,
+  BuildStage
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -82,30 +83,31 @@ class Options {
   extraPublicTrees?: Tree[];
 }
 
-export default class CompatApp implements Stage {
-  private extraPublicTrees: Tree[] | undefined;
-  private oldPackage: V1App;
-  private active: ActiveCompatApp | undefined;
+interface TreeNames {
+  appJS: Tree;
+  analyzer: Tree;
+  htmlTree: Tree;
+  publicTree: Tree;
+  configTree: Tree;
+}
 
-  constructor(legacyEmberAppInstance: object, private addons: Stage, options?: Options) {
+class CompatAppBuilder {
+
+  // This runs at broccoli-pipeline-construction time, whereas our actual instance
+  // only becomes available during actual tree-building time.
+  static setup(legacyEmberAppInstance: object, options?: Options ) {
+    let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance).app;
+
+    let { analyzer, appJS } = oldPackage.processAppJS();
+    let htmlTree = oldPackage.htmlTree;
+    let publicTree = oldPackage.publicTree;
+    let configTree = oldPackage.config;
+
     if (options && options.extraPublicTrees) {
-      this.extraPublicTrees = options.extraPublicTrees;
-    }
-    this.oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance).app;
-  }
-
-  get tree(): Tree {
-    let { analyzer, appJS } = this.oldPackage.processAppJS();
-    let htmlTree = this.oldPackage.htmlTree;
-    let publicTree = this.oldPackage.publicTree;
-    let configTree = this.oldPackage.config;
-
-    if (this.extraPublicTrees) {
-      publicTree = mergeTrees([publicTree, ...this.extraPublicTrees]);
+      publicTree = mergeTrees([publicTree, ...options.extraPublicTrees]);
     }
 
-    let inTrees: TreeNames<Tree> = {
-      addons: this.addons.tree,
+    let inTrees = {
       appJS,
       analyzer,
       htmlTree,
@@ -113,59 +115,22 @@ export default class CompatApp implements Stage {
       configTree,
     };
 
-    return new WaitForTrees(inTrees, (treePaths) => this.build(treePaths, configTree, analyzer));
-  }
-
-  get inputPath(): string {
-    return this.addons.inputPath;
-  }
-
-  async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
-    await this.deferReady.promise;
-    return {
-      outputPath: this.active!.root,
-      packageCache: this.active!.packageCache
-    };
-  }
-
-  private async build(treePaths: TreeNames<string>, configTree: ConfigTree, analyzer: DependencyAnalyzer) {
-    if (!this.active) {
-      let { outputPath: root, packageCache } = await this.addons.ready();
-      if (!packageCache) {
-        packageCache = new PackageCache();
-      }
-      let app = packageCache.getApp(this.addons.inputPath);
-      this.active = new ActiveCompatApp(
+    let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
+      return new this(
         root,
-        app,
-        packageCache,
-        this.oldPackage,
+        packageCache.getApp(appSrcDir),
+        oldPackage,
         configTree,
         analyzer
-        );
-    }
-    await this.active.build(treePaths);
-    this.deferReady.resolve();
+      );
+    };
+
+    return { inTrees, instantiate };
   }
 
-  @Memoize()
-  private get deferReady() {
-    let resolve: Function;
-    let promise: Promise<void> = new Promise(r => resolve =r);
-    return { resolve: resolve!, promise };
-  }
-}
-
-// This class holds state that's only available after the addon Stage we are
-// building against has had a chance to complete its broccoli build step. In
-// general in broccoli, it's important to keep clear the distinction between
-// "pipline construction time" (which we deal with in CompatApp) and "tree
-// building time" (which we deal with in ActiveCompatApp).
-class ActiveCompatApp {
   constructor(
-    readonly root: string,
+    private root: string,
     private app: Package,
-    readonly packageCache: PackageCache,
     private oldPackage: V1App,
     private configTree: ConfigTree,
     private analyzer: DependencyAnalyzer
@@ -402,7 +367,7 @@ class ActiveCompatApp {
     }
   }
 
-  async build(inputPaths: TreeNames<string>) {
+  async build(inputPaths: OutputPaths<TreeNames>) {
     // the steps in here are order dependent!
 
     // readConfig timing is safe here because configTree is in our input trees.
@@ -644,11 +609,9 @@ export interface ConfigTree extends Tree {
   readConfig: () => any;
 }
 
-interface TreeNames<T> {
-  addons: T;
-  appJS: T;
-  analyzer: T;
-  htmlTree: T;
-  publicTree: T;
-  configTree: T;
+export default class CompatApp extends BuildStage<TreeNames> {
+  constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
+    let { inTrees, instantiate } = CompatAppBuilder.setup(legacyEmberAppInstance, options);
+    super(addons, inTrees, instantiate);
+  }
 }

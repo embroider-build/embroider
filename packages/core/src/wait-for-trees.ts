@@ -46,7 +46,7 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
   }
 }
 
-type OutputPaths<NamedTrees> = {
+export type OutputPaths<NamedTrees> = {
   [P in keyof NamedTrees]: NamedTrees[P] extends Tree ? string :
                            NamedTrees[P] extends Tree[] ? string[]
                            : never;

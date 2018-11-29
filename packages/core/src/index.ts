@@ -11,5 +11,6 @@ export { default as PrebuiltAddons } from './prebuilt-addons';
 export { default as PackageCache } from './package-cache';
 export { default as packageName } from './package-name';
 export { default as BasicPackage } from './basic-package';
-export { default as WaitForTrees } from './wait-for-trees';
+export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
+export { default as BuildStage } from './build-stage';
 export { getOrCreate } from './get-or-create';

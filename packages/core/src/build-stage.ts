@@ -18,8 +18,9 @@ export default class BuildStage<NamedTrees> implements Stage {
     private instantiate: (root: string, appSrcDir: string, packageCache: PackageCache) => Promise<BuilderInstance<NamedTrees>>
   ) {}
 
+  @Memoize()
   get tree(): Tree {
-    return new WaitForTrees(this.inTrees, async (treePaths) => {
+    return new WaitForTrees(this.augment(this.inTrees), async (treePaths) => {
       if (!this.active) {
         let { outputPath, packageCache } = await this.prevStage.ready();
         if (!packageCache) {
@@ -29,7 +30,8 @@ export default class BuildStage<NamedTrees> implements Stage {
         this.packageCache = packageCache;
         this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
       }
-      await this.active.build(treePaths);
+      delete treePaths.__prevStageTree;
+      await this.active.build(this.deAugment(treePaths));
       this.deferReady.resolve();
     });
   }
@@ -52,8 +54,21 @@ export default class BuildStage<NamedTrees> implements Stage {
     let promise: Promise<void> = new Promise(r => resolve =r);
     return { resolve: resolve!, promise };
   }
+
+  private augment(inTrees: NamedTrees) : NamedTrees & ExtraTree {
+    return Object.assign({ __prevStageTree: this.prevStage.tree }, inTrees);
+  }
+
+  private deAugment(treePaths: OutputPaths<NamedTrees & ExtraTree>): OutputPaths<NamedTrees> {
+    delete treePaths.__prevStageTree;
+    return treePaths;
+  }
 }
 
 interface BuilderInstance<NamedTrees> {
   build(inputPaths: OutputPaths<NamedTrees>): Promise<void>;
+}
+
+interface ExtraTree {
+  __prevStageTree: Tree;
 }

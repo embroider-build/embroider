@@ -26,7 +26,10 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     private trees: NamedTrees,
     private buildHook: (trees: OutputPaths<NamedTrees>) => Promise<void>,
   ){
-    super(flatTrees(trees), {});
+    super(flatTrees(trees), {
+      persistentOutput: true,
+      needsCache: false
+    });
   }
 
   async build() {

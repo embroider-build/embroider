@@ -1,4 +1,4 @@
-import Plugin from "broccoli-plugin";
+import { Tree } from "broccoli-plugin";
 import { join } from 'path';
 import {
   emptyDirSync,
@@ -8,7 +8,7 @@ import {
   mkdtempSync,
   copySync,
 } from 'fs-extra';
-import { Stage, Package, PackageCache } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
@@ -16,41 +16,25 @@ import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
 import WorkspaceOptions, { defaultOptions, WorkspaceOptionsWithDefaults } from './options';
 
-export default class CompatWorkspace extends Plugin implements Stage {
-  private didBuild: boolean;
+export default class CompatWorkspace implements Stage {
+  private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
   readonly inputPath: string;
+  readonly tree: Tree;
 
   constructor(legacyEmberAppInstance: object, maybeOptions?: WorkspaceOptions) {
     let options = Object.assign({}, defaultOptions(), maybeOptions) as WorkspaceOptionsWithDefaults;
-
-    let destDir;
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
-      destDir = realpathSync(options.workspaceDir);
+      this.destDir = realpathSync(options.workspaceDir);
     } else {
-      destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
+      this.destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
     }
-
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
-    let packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, destDir);
-    let trees = [...packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
-
-    super(trees, {
-      annotation: 'embroider:core:workspace',
-    persistentOutput: true,
-      needsCache: false
-    });
-
-    this.didBuild = false;
-    this.packageCache = packageCache;
-    this.destDir = destDir;
+    this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
+    this.tree = new WaitForTrees({ movedAddons: [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache)) }, this.build.bind(this));
     this.inputPath = v1Cache.app.root;
-  }
-
-  get tree(){
-    return this;
   }
 
   async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
@@ -67,9 +51,9 @@ export default class CompatWorkspace extends Plugin implements Stage {
 
   private get app(): Package {
     return this.packageCache.app;
-}
+  }
 
-  async build() {
+  private async build({ movedAddons }: { movedAddons: string[] }) {
     if (this.didBuild) {
       // TODO: we can selectively allow some addons to rebuild, equivalent to
       // the old isDevelopingAddon.
@@ -79,7 +63,7 @@ export default class CompatWorkspace extends Plugin implements Stage {
     emptyDirSync(this.destDir);
 
     [...this.packageCache.moved.values()].forEach((movedPkg, index) => {
-      copySync(this.inputPaths[index], movedPkg.root, { dereference: true });
+      copySync(movedAddons[index], movedPkg.root, { dereference: true });
       this.linkNonCopiedDeps(movedPkg, movedPkg.root);
     });
     this.linkNonCopiedDeps(this.app, this.appDestDir);

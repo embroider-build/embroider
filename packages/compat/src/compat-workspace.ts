@@ -39,7 +39,7 @@ export default class CompatWorkspace extends Plugin implements Stage {
 
     super(trees, {
       annotation: 'embroider:core:workspace',
-      persistentOutput: true,
+    persistentOutput: true,
       needsCache: false
     });
 
@@ -67,7 +67,7 @@ export default class CompatWorkspace extends Plugin implements Stage {
 
   private get app(): Package {
     return this.packageCache.app;
-  }
+}
 
   async build() {
     if (this.didBuild) {

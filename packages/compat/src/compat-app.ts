@@ -1,10 +1,11 @@
-import BroccoliPlugin, { Tree } from 'broccoli-plugin';
+import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import {
   Package,
   Stage,
   AppMeta,
-  PackageCache
+  PackageCache,
+  WaitForTrees
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -650,22 +651,4 @@ interface TreeNames<T> {
   htmlTree: T;
   publicTree: T;
   configTree: T;
-}
-
-class WaitForTrees extends BroccoliPlugin {
-  constructor(
-    private trees: TreeNames<Tree>,
-    private buildHook: (trees: TreeNames<string>) => Promise<void>,
-  ){
-    super(Object.values(trees), {});
-  }
-
-  async build() {
-    let treeNames = Object.keys(this.trees);
-    let inputPathsByName: { [treeName: string]: string } = {};
-    for (let i = 0; i < this.inputPaths.length; i++) {
-      inputPathsByName[treeNames[i]] = this.inputPaths[i];
-    }
-    return this.buildHook(inputPathsByName as unknown as TreeNames<string>);
-  }
 }

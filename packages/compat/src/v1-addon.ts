@@ -19,7 +19,7 @@ import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
 import { Package, PackageCache, BasicPackage } from "@embroider/core";
-import { WorkspaceOptionsWithDefaults } from "./options";
+import { AddonOptionsWithDefaults } from "./options";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -52,7 +52,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, private packageCache: PackageCache, protected workspaceOptions: WorkspaceOptionsWithDefaults) {
+  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: AddonOptionsWithDefaults) {
     this.updateBabelConfig();
   }
 
@@ -281,7 +281,7 @@ export default class V1Addon implements V1Package {
         let addonParser = this.parseImports(addonTree);
         importParsers.push(addonParser);
         trees.push(addonTree);
-        if (this.workspaceOptions.forceIncludeAddonTrees) {
+        if (this.addonOptions.forceIncludeAddonTrees) {
           dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
         }
       }
@@ -335,7 +335,7 @@ export default class V1Addon implements V1Package {
         let testSupportParser = this.parseImports(addonTestSupportTree);
         importParsers.push(testSupportParser);
         trees.push(addonTestSupportTree);
-        if (this.workspaceOptions.forceIncludeAddonTestSupportTrees) {
+        if (this.addonOptions.forceIncludeAddonTestSupportTrees) {
           dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
         }
       }
@@ -428,7 +428,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, packageCache: PackageCache, options: WorkspaceOptionsWithDefaults): V1Addon;
+  new(addonInstance: any, packageCache: PackageCache, options: AddonOptionsWithDefaults): V1Addon;
 }
 
 class TweakedPackage extends BasicPackage {

@@ -87,7 +87,7 @@ export default class CompatApp implements Stage {
   private oldPackage: V1App;
   private active: ActiveCompatApp | undefined;
 
-  constructor(legacyEmberAppInstance: object, private workspace: Stage, options?: Options) {
+  constructor(legacyEmberAppInstance: object, private addons: Stage, options?: Options) {
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
     }
@@ -105,7 +105,7 @@ export default class CompatApp implements Stage {
     }
 
     let inTrees: TreeNames<Tree> = {
-      workspace: this.workspace.tree,
+      addons: this.addons.tree,
       appJS,
       analyzer,
       htmlTree,
@@ -117,7 +117,7 @@ export default class CompatApp implements Stage {
   }
 
   get inputPath(): string {
-    return this.workspace.inputPath;
+    return this.addons.inputPath;
   }
 
   async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
@@ -130,11 +130,11 @@ export default class CompatApp implements Stage {
 
   private async build(treePaths: TreeNames<string>, configTree: ConfigTree, analyzer: DependencyAnalyzer) {
     if (!this.active) {
-      let { outputPath: root, packageCache } = await this.workspace.ready();
+      let { outputPath: root, packageCache } = await this.addons.ready();
       if (!packageCache) {
         packageCache = new PackageCache();
       }
-      let app = packageCache.getApp(this.workspace.inputPath);
+      let app = packageCache.getApp(this.addons.inputPath);
       this.active = new ActiveCompatApp(
         root,
         app,
@@ -156,7 +156,7 @@ export default class CompatApp implements Stage {
   }
 }
 
-// This class holds state that's only available after the Workspace we are
+// This class holds state that's only available after the addon Stage we are
 // building against has had a chance to complete its broccoli build step. In
 // general in broccoli, it's important to keep clear the distinction between
 // "pipline construction time" (which we deal with in CompatApp) and "tree
@@ -645,7 +645,7 @@ export interface ConfigTree extends Tree {
 }
 
 interface TreeNames<T> {
-  workspace: T;
+  addons: T;
   appJS: T;
   analyzer: T;
   htmlTree: T;

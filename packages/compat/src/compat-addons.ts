@@ -14,17 +14,17 @@ import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
 import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
-import WorkspaceOptions, { defaultOptions, WorkspaceOptionsWithDefaults } from './options';
+import AddonOptions, { defaultOptions, AddonOptionsWithDefaults } from './options';
 
-export default class CompatWorkspace implements Stage {
+export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
   readonly inputPath: string;
   readonly tree: Tree;
 
-  constructor(legacyEmberAppInstance: object, maybeOptions?: WorkspaceOptions) {
-    let options = Object.assign({}, defaultOptions(), maybeOptions) as WorkspaceOptionsWithDefaults;
+  constructor(legacyEmberAppInstance: object, maybeOptions?: AddonOptions) {
+    let options = Object.assign({}, defaultOptions(), maybeOptions) as AddonOptionsWithDefaults;
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
       this.destDir = realpathSync(options.workspaceDir);

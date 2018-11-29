@@ -4,7 +4,7 @@ import { V1AddonConstructor } from "./v1-addon";
 // addons. The defaults are conservative and try to maximize compatibility, at
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
-export default interface WorkspaceOptions {
+export default interface AddonOptions {
 
   // Whether to force the contents of each v1 addon's treeForAddon (the "Own
   // Javascript" as described in SPEC.md) to be incorporated into the build.
@@ -62,13 +62,13 @@ export default interface WorkspaceOptions {
 
 }
 
-export interface WorkspaceOptionsWithDefaults extends WorkspaceOptions {
+export interface AddonOptionsWithDefaults extends AddonOptions {
   forceIncludeAddonTrees: boolean;
   forceIncludeAddonTestSupportTrees: boolean;
   compatAdapters: Map<string, V1AddonConstructor>;
 }
 
-export function defaultOptions(): WorkspaceOptionsWithDefaults {
+export function defaultOptions(): AddonOptionsWithDefaults {
   return {
     forceIncludeAddonTrees: true,
     forceIncludeAddonTestSupportTrees: true,

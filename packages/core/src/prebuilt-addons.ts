@@ -5,7 +5,7 @@ import PackageCache from "./package-cache";
 import { UnwatchedDir } from "broccoli-source";
 import { Tree } from "broccoli-plugin";
 
-export default class PrebuiltWorkspace implements Stage {
+export default class PrebuiltAddons implements Stage {
   private packageCache: PackageCache;
   private appDestDir: string;
   readonly inputPath: string;

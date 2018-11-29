@@ -7,7 +7,7 @@ export { Compiler as TemplateCompiler, Plugins as TemplateCompilerPlugins } from
 
 // Shared utilities
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';
-export { default as PrebuiltWorkspace } from './prebuilt-workspace';
+export { default as PrebuiltAddons } from './prebuilt-addons';
 export { default as PackageCache } from './package-cache';
 export { default as packageName } from './package-name';
 export { default as BasicPackage } from './basic-package';

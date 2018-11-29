@@ -7,15 +7,15 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
-import { WorkspaceOptionsWithDefaults, defaultOptions } from './options';
+import { AddonOptionsWithDefaults, defaultOptions } from './options';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object, options?: WorkspaceOptionsWithDefaults): V1InstanceCache {
+  static forApp(emberApp: object, options?: AddonOptionsWithDefaults): V1InstanceCache {
     let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
     if (options && instance.options !== options) {
-      throw new Error(`attempted double set of WorkspaceOptions`);
+      throw new Error(`attempted double set of AddonOptions`);
     }
     return instance;
   }
@@ -28,7 +28,7 @@ export default class V1InstanceCache {
   app: V1App;
   packageCache = new MovablePackageCache();
 
-  private constructor(oldApp: any, private options: WorkspaceOptionsWithDefaults = defaultOptions()) {
+  private constructor(oldApp: any, private options: AddonOptionsWithDefaults = defaultOptions()) {
     if (!oldApp._activeAddonInclude) {
       throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
     }

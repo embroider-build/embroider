@@ -414,7 +414,7 @@ class ActiveCompatApp {
     }
     copySync(inputPaths.appJS, this.root, { dereference: true });
 
-    // At this point, all all-js and *only* app-js has been copied into the
+    // At this point, all app-js and *only* app-js has been copied into the
     // project, so we can crawl the results to discover what needs to go into
     // the Javascript entrypoint files.
     this.writeAppJSEntrypoint(config);

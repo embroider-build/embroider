@@ -1,9 +1,8 @@
 import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import {
-  App,
   Package,
-  Workspace,
+  Stage,
   AppMeta,
   PackageCache
 } from '@embroider/core';
@@ -82,12 +81,12 @@ class Options {
   extraPublicTrees?: Tree[];
 }
 
-export default class CompatApp implements App {
+export default class CompatApp implements Stage {
   private extraPublicTrees: Tree[] | undefined;
   private oldPackage: V1App;
   private active: ActiveCompatApp | undefined;
 
-  constructor(legacyEmberAppInstance: object, private workspace: Workspace, options?: Options) {
+  constructor(legacyEmberAppInstance: object, private workspace: Stage, options?: Options) {
     if (options && options.extraPublicTrees) {
       this.extraPublicTrees = options.extraPublicTrees;
     }
@@ -105,7 +104,7 @@ export default class CompatApp implements App {
     }
 
     let inTrees: TreeNames<Tree> = {
-      workspace: this.workspace,
+      workspace: this.workspace.tree,
       appJS,
       analyzer,
       htmlTree,
@@ -116,19 +115,27 @@ export default class CompatApp implements App {
     return new WaitForTrees(inTrees, (treePaths) => this.build(treePaths, configTree, analyzer));
   }
 
-  async ready(): Promise<{ root: string, packageCache: PackageCache | undefined }>{
+  get inputPath(): string {
+    return this.workspace.inputPath;
+  }
+
+  async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
     await this.deferReady.promise;
     return {
-      root: this.active!.root,
+      outputPath: this.active!.root,
       packageCache: this.active!.packageCache
     };
   }
 
   private async build(treePaths: TreeNames<string>, configTree: ConfigTree, analyzer: DependencyAnalyzer) {
     if (!this.active) {
-      let { appDestDir, app, packageCache } = await this.workspace.ready();
+      let { outputPath: root, packageCache } = await this.workspace.ready();
+      if (!packageCache) {
+        packageCache = new PackageCache();
+      }
+      let app = packageCache.getApp(this.workspace.inputPath);
       this.active = new ActiveCompatApp(
-        appDestDir,
+        root,
         app,
         packageCache,
         this.oldPackage,
@@ -157,7 +164,7 @@ class ActiveCompatApp {
   constructor(
     readonly root: string,
     private app: Package,
-    readonly packageCache: PackageCache | undefined,
+    readonly packageCache: PackageCache,
     private oldPackage: V1App,
     private configTree: ConfigTree,
     private analyzer: DependencyAnalyzer

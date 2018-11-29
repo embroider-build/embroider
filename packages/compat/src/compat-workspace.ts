@@ -8,7 +8,7 @@ import {
   mkdtempSync,
   copySync,
 } from 'fs-extra';
-import { Workspace, Package, PackageCache } from '@embroider/core';
+import { Stage, Package, PackageCache } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
@@ -16,10 +16,11 @@ import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
 import WorkspaceOptions, { defaultOptions, WorkspaceOptionsWithDefaults } from './options';
 
-export default class CompatWorkspace extends Plugin implements Workspace {
+export default class CompatWorkspace extends Plugin implements Stage {
   private didBuild: boolean;
   private destDir: string;
   private packageCache: MovedPackageCache;
+  readonly inputPath: string;
 
   constructor(legacyEmberAppInstance: object, maybeOptions?: WorkspaceOptions) {
     let options = Object.assign({}, defaultOptions(), maybeOptions) as WorkspaceOptionsWithDefaults;
@@ -45,13 +46,17 @@ export default class CompatWorkspace extends Plugin implements Workspace {
     this.didBuild = false;
     this.packageCache = packageCache;
     this.destDir = destDir;
+    this.inputPath = v1Cache.app.root;
   }
 
-  async ready(): Promise<{ appDestDir: string, app: Package, packageCache: PackageCache }>{
+  get tree(){
+    return this;
+  }
+
+  async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
     await this.deferReady.promise;
     return {
-      appDestDir: this.packageCache.appDestDir,
-      app: this.packageCache.app,
+      outputPath: this.packageCache.appDestDir,
       packageCache: this.packageCache
     };
   }

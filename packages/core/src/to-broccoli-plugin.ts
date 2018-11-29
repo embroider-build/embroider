@@ -1,17 +1,17 @@
 import Plugin from "broccoli-plugin";
 import { Packager, PackagerInstance } from "./packager";
-import App from "./app";
+import Stage from "./stage";
 import PackageCache from "./package-cache";
 
 interface BroccoliPackager<Options> {
-  new(app: App, options?: Options): Plugin;
+  new(stage: Stage, options?: Options): Plugin;
 }
 
 export default function toBroccoliPlugin<Options>(packagerClass: Packager<Options>): BroccoliPackager<Options> {
   class PackagerRunner extends Plugin {
     private packager: PackagerInstance | undefined;
-    constructor(private app: App, private options?: Options) {
-      super([app.tree], {
+    constructor(private stage: Stage, private options?: Options) {
+      super([stage.tree], {
         persistentOutput: true,
         needsCache: false
       });
@@ -19,15 +19,15 @@ export default function toBroccoliPlugin<Options>(packagerClass: Packager<Option
 
     async build() {
       if (!this.packager) {
-        let { root, packageCache } = await this.app.ready();
+        let { outputPath, packageCache } = await this.stage.ready();
         if (!packageCache) {
-          // apps are allowed to share a package cache as an optimization, but
+          // stages are allowed to share a package cache as an optimization, but
           // they aren't required to. Whereas Packages are allowed to assume
           // they will receive a packageCache instance.
           packageCache = new PackageCache();
         }
         this.packager = new packagerClass(
-          root,
+          outputPath,
           this.outputPath,
           (msg) => console.log(msg),
           packageCache,

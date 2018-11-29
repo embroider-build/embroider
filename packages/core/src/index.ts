@@ -1,9 +1,8 @@
 // Shared interfaces
 export { Packager, PackagerInstance } from './packager';
 export { AppMeta, AddonMeta } from './metadata';
-export { default as App } from './app';
 export { default as Package } from './package';
-export { default as Workspace } from './workspace';
+export { default as Stage } from './stage';
 export { Compiler as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
 
 // Shared utilities

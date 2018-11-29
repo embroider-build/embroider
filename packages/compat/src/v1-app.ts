@@ -339,4 +339,3 @@ interface Preprocessors {
   preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
   preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
 }
-

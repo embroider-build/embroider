@@ -59,4 +59,10 @@ export default abstract class Package {
     pkgs.delete(this);
     return [...pkgs.values()];
   }
+
+  // by default, addons do not get rebuilt on the fly. This can be changed when
+  // you are actively developing one.
+  get mayRebuild(): boolean {
+    return false;
+  }
 }

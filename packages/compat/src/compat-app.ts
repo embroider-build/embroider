@@ -15,7 +15,7 @@ import { Memoize } from "typescript-memoize";
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { writeFileSync, ensureDirSync, readFileSync, copySync, readdirSync, removeSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, readFileSync, copySync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { compile } from './js-handlebars';
 import { todo, unsupported } from './messages';
@@ -23,6 +23,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
+import AppDiffer from '@embroider/core/src/app-differ';
 
 const entryTemplate = compile(`
 {{!-
@@ -229,7 +230,7 @@ class CompatAppBuilder {
 
   private updateHTML(entrypoint: string, dom: JSDOM) {
     let scripts = [...dom.window.document.querySelectorAll("script")];
-    this.updateAppJS(entrypoint, scripts);
+    this.updateAppJSScript(entrypoint, scripts);
     this.updateTestJS(entrypoint, scripts);
     this.updateJS(
       dom,
@@ -262,7 +263,7 @@ class CompatAppBuilder {
     );
   }
 
-  private updateAppJS(entrypoint: string, scripts: HTMLScriptElement[]) {
+  private updateAppJSScript(entrypoint: string, scripts: HTMLScriptElement[]) {
     // no custom name allowed here -- we're standardizing. It's not the final
     // output anyway, that will be up to the final stage packager. We also
     // switch to module type, to convey that we're going to point at an ES
@@ -360,42 +361,28 @@ class CompatAppBuilder {
     return entrypoints;
   }
 
-  private clearApp() {
-    for (let name of readdirSync(this.root)) {
-      if (name !== 'node_modules') {
-        removeSync(join(this.root, name));
-      }
+  private appDiffer: AppDiffer | undefined;
+
+  private updateAppJS(appJSPath: string): Set<string> {
+    if (!this.appDiffer) {
+      this.appDiffer = new AppDiffer(this.root, appJSPath, this.activeAddonDescendants);
     }
+    this.appDiffer.update();
+    return this.appDiffer.files;
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    // the steps in here are order dependent!
+    let appFiles = this.updateAppJS(inputPaths.appJS);
 
     // readConfig timing is safe here because configTree is in our input trees.
     let config = this.configTree.readConfig();
 
-    // start with a clean app directory, leaving only our node_modules
-    this.clearApp();
-
-    // first thing we add: we're copying only "app-js"
-    // stuff, first from addons, and then from the app itself (so it can
-    // ovewrite the files from addons).
-    for (let addon of this.activeAddonDescendants) {
-      let appJSPath = addon.meta["app-js"];
-      if (appJSPath) {
-        copySync(join(addon.root, appJSPath), this.root);
-      }
-    }
-    copySync(inputPaths.appJS, this.root, { dereference: true });
-
     // At this point, all app-js and *only* app-js has been copied into the
     // project, so we can crawl the results to discover what needs to go into
     // the Javascript entrypoint files.
-    this.writeAppJSEntrypoint(config);
-    this.writeTestJSEntrypoint();
+    this.writeAppJSEntrypoint(config, appFiles);
+    this.writeTestJSEntrypoint(appFiles);
 
-    // now we're clear to copy other things and they won't perturb the
-    // entrypoint files
     copySync(inputPaths.publicTree, this.root, { dereference: true });
 
     this.addTemplateCompiler(config.EmberENV);
@@ -520,29 +507,28 @@ class CompatAppBuilder {
     }
   }
 
-  private writeAppJSEntrypoint(config: ConfigContents) {
+  private writeAppJSEntrypoint(config: ConfigContents, appFiles: Set<string>) {
     let mainModule = join(
       this.root,
       this.isModuleUnification ? "src/main" : "app"
     );
+
     // standard JS file name, not customizable. It's not final anyway (that is
     // up to the final stage packager). See also updateHTML in app.ts for where
     // we're enforcing this in the HTML.
     let appJS = join(this.root, `assets/${this.app.name}.js`);
 
     // for the app tree, we take everything
-    let lazyModules = walkSync(this.root, {
-      globs: ["**/*.{js,hbs}"],
-      ignore: ["tests", "node_modules"],
-      directories: false,
-    }).map(specifier => {
-      let noJS = specifier.replace(/\.js$/, "");
-      let noHBS = noJS.replace(/\.hbs$/, "");
-      return {
-        runtime: `${config.modulePrefix}/${noHBS}`,
-        buildtime: `../${noJS}`,
-      };
-    });
+    let lazyModules = [...appFiles].map(relativePath => {
+      if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
+        let noJS = relativePath.replace(/\.js$/, "");
+        let noHBS = noJS.replace(/\.hbs$/, "");
+        return {
+          runtime: `${config.modulePrefix}/${noHBS}`,
+          buildtime: `../${noJS}`,
+        };
+      }
+    }).filter(Boolean) as { runtime: string, buildtime: string }[];
 
     // for the src tree, we can limit ourselves to only known resolvable
     // collections
@@ -565,12 +551,13 @@ class CompatAppBuilder {
     );
   }
 
-  private writeTestJSEntrypoint() {
+  private writeTestJSEntrypoint(appFiles: Set<string>) {
     let testJS = join(this.root, `assets/test.js`);
-    let testModules = walkSync(this.root, {
-      globs: ["tests/**/*-test.js"],
-      directories: false,
-    }).map(specifier => `../${specifier}`);
+    let testModules = [...appFiles].map(relativePath => {
+      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
+        return `../${relativePath}`;
+      }
+    }).filter(Boolean) as string[];
 
     let lazyModules: { runtime: string, buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of

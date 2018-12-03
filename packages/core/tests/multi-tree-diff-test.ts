@@ -92,6 +92,30 @@ QUnit.module('tracked-merge-dirs', function() {
     assert.equal(result.sources.get('alpha'), 0);
   });
 
+  test('it switches to later source at creation', function(assert) {
+    let a = new MockTree(['alpha', 'tomster']);
+    let b = new MockTree(['charlie']);
+
+    let t = new MultiTreeDiff([a,b]);
+
+    let result = t.update();
+    assert.equal(result.sources.get('alpha'), 0);
+
+    b.entries.push({
+      relativePath: 'alpha',
+      mode: 33188,
+      size: 1000,
+      mtime: new Date(),
+      isDirectory: () => false
+    });
+
+    result = t.update();
+    assert.deepEqual(fileOps(result.ops), [
+      ['change', 'alpha'],
+    ]);
+    assert.equal(result.sources.get('alpha'), 1);
+  });
+
   test('it hides changes in occluded files', function(assert) {
     let a = new MockTree(['alpha']);
     let b = new MockTree(['alpha']);
@@ -99,7 +123,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let t = new MultiTreeDiff([a,b]);
     t.update();
     dirty(a.entries[0]);
-    let { ops, sources } = t.update();
+    let { ops } = t.update();
     assert.deepEqual(fileOps(ops), []);
   });
 

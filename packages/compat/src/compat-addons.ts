@@ -56,7 +56,7 @@ export default class CompatAddons implements Stage {
   private async build({ movedAddons }: { movedAddons: string[] }) {
     if (this.didBuild) {
       // TODO: we can selectively allow some addons to rebuild, equivalent to
-      // the old isDevelopingAddon.
+      // the old isDevelopingAddon. This should be based off Package#mayRebuild.
       return;
     }
 

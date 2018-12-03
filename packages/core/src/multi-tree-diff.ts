@@ -1,6 +1,6 @@
 import FSTree, { Operation, Entry } from 'fs-tree-diff';
 
-interface InputTree {
+export interface InputTree {
   walk(): Entry[];
   mayChange: boolean;
 }
@@ -11,7 +11,6 @@ export type Sources = Map<string, number>;
 export default class MultiTreeDiff {
   private prevEntries: Entry[][] | undefined;
   private prevCombined: FSTree = new FSTree();
-  private prevSources: Sources = new Map();
   private owners: WeakMap<Entry, number> = new WeakMap();
 
   constructor(
@@ -47,7 +46,6 @@ export default class MultiTreeDiff {
     let newFSTree = FSTree.fromEntries(combinedEntries);
     let ops = this.prevCombined.calculatePatch(newFSTree, isEqual(this.owners));
     this.prevCombined = newFSTree;
-    this.prevSources = sources;
     return { ops, sources };
   }
 }

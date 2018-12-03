@@ -1,4 +1,5 @@
 # Stack
+ - our use of "entrypoint" in the spec is weird relative to common usage, let's change it to "asset" and keep "entrypoint" only for URLs users would visit
  - optimize the workspace compat-app build hook for rebuilds
  - generalize the derequire transformation. Probably applies to everything other than our own synthesized entrypoints.
    - this implies generalizing split babel configs (we don't really want to apply the app's plugins to addon code unnecessarily anyway)

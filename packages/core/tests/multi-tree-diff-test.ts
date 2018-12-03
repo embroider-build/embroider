@@ -74,7 +74,7 @@ QUnit.module('tracked-merge-dirs', function() {
     assert.equal(sources.get('alpha'), 0);
   });
 
-  test('it falls back to earlier dir at deletion', function(assert) {
+  test('it falls back to earlier source at deletion', function(assert) {
     let a = new MockTree(['alpha', 'tomster']);
     let c = new MockTree(['charlie', 'alpha']);
 
@@ -90,6 +90,27 @@ QUnit.module('tracked-merge-dirs', function() {
       ['change', 'alpha'],
     ]);
     assert.equal(result.sources.get('alpha'), 0);
+  });
+
+  test('it hides changes in occluded files', function(assert) {
+    let a = new MockTree(['alpha']);
+    let b = new MockTree(['alpha']);
+
+    let t = new MultiTreeDiff([a,b]);
+    t.update();
+    dirty(a.entries[0]);
+    let { ops, sources } = t.update();
+    assert.deepEqual(fileOps(ops), []);
+  });
+
+  test('it respects mayChange', function(assert) {
+    let a = new MockTree(['alpha', 'tomster']);
+    a.mayChange = false;
+    let t = new MultiTreeDiff([a]);
+    t.update();
+    dirty(a.entries[0]);
+    let { ops } = t.update();
+    assert.deepEqual(fileOps(ops), []);
   });
 
 });

@@ -7,14 +7,17 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "prepare": "tsc"
+    "prepare": "tsc",
+    "test": "qunit tests"
   },
   "devDependencies": {
     "@types/debug": "^0.0.31",
     "@types/lodash": "^4.14.116",
     "@types/node": "^10.5.2",
+    "@types/qunit": "^2.5.3",
     "@types/resolve": "^0.0.8",
     "@types/strip-bom": "^3.0.0",
+    "qunit": "^2.8.0",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6"
   },
@@ -23,10 +26,12 @@
     "broccoli-source": "^1.1.0",
     "debug": "^3.1.0",
     "fs-extra": "^7.0.1",
+    "fs-tree-diff": "0.5.7",
     "lodash": "^4.17.10",
     "pkg-up": "^2.0.0",
     "resolve": "^1.8.1",
     "strip-bom": "^3.0.0",
-    "typescript-memoize": "^1.0.0-alpha.3"
+    "typescript-memoize": "^1.0.0-alpha.3",
+    "walk-sync": "^0.3.2"
   }
 }

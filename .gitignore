@@ -3,4 +3,7 @@
 /packages/*/src/**/*.js
 /packages/*/src/**/*.d.ts
 /packages/*/src/**/*.map
+/packages/*/tests/**/*.js
+/packages/*/tests/**/*.d.ts
+/packages/*/tests/**/*.map
 *.log

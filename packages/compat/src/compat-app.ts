@@ -24,7 +24,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
-import { InMemoryAsset } from './app';
+import { Asset } from './app';
 
 const entryTemplate = compile(`
 let w = window;
@@ -161,7 +161,7 @@ class CompatAppBuilder {
     }
   }
 
-  private assets(originalBundle: string): any {
+  private impliedAssets(originalBundle: string): any {
     let group: "appJS" | "appCSS" | "testJS" | "testCSS";
     let metaKey:
       | "implicit-scripts"
@@ -298,7 +298,7 @@ class CompatAppBuilder {
     if (!original) {
       return;
     }
-    for (let insertedScript of this.assets(bundleName)) {
+    for (let insertedScript of this.impliedAssets(bundleName)) {
       let s = dom.window.document.createElement("script");
       s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
       // these newlines make the output more readable
@@ -335,7 +335,7 @@ class CompatAppBuilder {
     if (!original) {
       return;
     }
-    for (let insertedStyle of this.assets(bundleName)) {
+    for (let insertedStyle of this.impliedAssets(bundleName)) {
       let s = dom.window.document.createElement("link");
       s.rel = "stylesheet";
       s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
@@ -369,28 +369,50 @@ class CompatAppBuilder {
     return this.appDiffer.files;
   }
 
+  private assets(treePaths: OutputPaths<TreeNames>): Asset[] {
+    // Everything in our traditional public tree is an on-disk asset
+    let assets = walkSync(treePaths.publicTree, {
+      directories: false,
+    }).map((file): Asset => ({
+      kind: 'on-disk',
+      relativePath: file,
+      sourcePath: join(treePaths.publicTree, file)
+    }));
+
+    return assets;
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let config = this.configTree.readConfig();
 
-    let assets: InMemoryAsset[] = [
-      this.javascriptEntrypoint(this.app.name, config, appFiles),
+    let assets = this.assets(inputPaths);
+    assets.push(
+      this.javascriptEntrypoint(this.app.name, config, appFiles)
+    );
+    assets.push(
       this.testJSEntrypoint(appFiles)
-    ];
+    );
 
     for (let asset of assets) {
       let destination = join(this.root, asset.relativePath);
+      ensureDirSync(dirname(destination));
       switch (asset.kind) {
         case 'in-memory':
-          ensureDirSync(dirname(destination));
           writeFileSync(
             destination,
             asset.source,
             "utf8"
           );
           break;
+        case 'on-disk':
+          copySync(asset.sourcePath, destination, { dereference: true });
+          break;
+        case 'dom':
+          writeFileSync(destination, asset.dom.serialize(), "utf8");
+          break;
         default:
-          assertNever(asset.kind);
+          assertNever(asset);
       }
     }
 
@@ -518,7 +540,7 @@ class CompatAppBuilder {
     }
   }
 
-  private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): InMemoryAsset {
+  private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): Asset {
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
       if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
@@ -557,7 +579,7 @@ class CompatAppBuilder {
     };
   }
 
-  private testJSEntrypoint(appFiles: Set<string>): InMemoryAsset {
+  private testJSEntrypoint(appFiles: Set<string>): Asset {
     let testModules = [...appFiles].map(relativePath => {
       if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
         return `../${relativePath}`;

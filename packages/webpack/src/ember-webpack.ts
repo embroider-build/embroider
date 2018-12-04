@@ -156,7 +156,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     let amdExternals: { [name: string]: string } = {};
     externals.forEach(external => {
-      amdExternals[external] = `_vanilla_("${external}")`;
+      amdExternals[external] = `_embroider_("${external}")`;
     });
 
     return {

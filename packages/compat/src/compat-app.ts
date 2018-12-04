@@ -27,59 +27,56 @@ import AppDiffer from '@embroider/core/src/app-differ';
 import { InMemoryAsset } from './app';
 
 const entryTemplate = compile(`
-{{!-
+let w = window;
+let d = w.define;
+
+{{#if needsEmbroiderHook}}
+  {{!-
     This function is the entrypoint that final stage packagers should
     use to lookup externals at runtime.
--}}
-let w = window;
-let r = w.require;
-let d = w.define;
-w._vanilla_ = function(specifier) {
-  let m;
-  if (specifier === 'require') {
-    m = r;
-  } else {
-    m = r(specifier);
-  }
-  {{!-
-    There are plenty of hand-written AMD defines floating around
-    that lack this, and they will break when other build systems
-    encounter them.
-
-    As far as I can tell, Ember's loader was already treating this
-    case as a module, so in theory we aren't breaking anything by
-    marking it as such when other packagers come looking.
-
-    todo: get review on this part.
   -}}
-  if (m.default && !m.__esModule) {
-    m.__esModule = true;
-  }
-  return m;
-};
+  w._embroider_ = function(specifier) {
+    let m;
+    if (specifier === 'require') {
+      m = w.require;
+    } else {
+      m = w.require(specifier);
+    }
+    {{!-
+      There are plenty of hand-written AMD defines floating around
+      that lack this, and they will break when other build systems
+      encounter them.
+
+      As far as I can tell, Ember's loader was already treating this
+      case as a module, so in theory we aren't breaking anything by
+      marking it as such when other packagers come looking.
+
+      todo: get review on this part.
+    -}}
+    if (m.default && !m.__esModule) {
+      m.__esModule = true;
+    }
+    return m;
+  };
+{{/if}}
+
+{{#each eagerModules as |eagerModule| ~}}
+  import "{{js-string-escape eagerModule}}";
+{{/each}}
+
 {{#each lazyModules as |lazyModule| ~}}
   d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
 {{/each}}
+
 {{#if autoRun ~}}
   require("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
 {{/if}}
-`);
 
-const testTemplate = compile(`
-{{#each testModules as |testModule| ~}}
-  import "{{js-string-escape testModule}}";
-{{/each}}
-
-{{#if lazyModules}}
-  let d = window.define;
+{{#if testSuffix ~}}
+  {{!- this is the traditioanl tests-suffix.js -}}
+  require('../tests/test-helper');
+  EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
-{{#each lazyModules as |lazyModule| ~}}
-  d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
-{{/each}}
-
-{{!- this is the traditioanl tests-suffix.js -}}
-require('../tests/test-helper');
-EmberENV.TESTS_FILE_LOADED = true;
 `);
 
 class Options {
@@ -544,6 +541,7 @@ class CompatAppBuilder {
     let mainModule = this.isModuleUnification ? "src/main" : "app";
 
     let source = entryTemplate({
+      needsEmbroiderHook: true,
       lazyModules,
       autoRun: this.autoRun,
       mainModule: relative(dirname(relativePath), mainModule),
@@ -573,9 +571,10 @@ class CompatAppBuilder {
     ensureDirSync(dirname(testJS));
     writeFileSync(
       testJS,
-      testTemplate({
-        testModules,
-        lazyModules
+      entryTemplate({
+        lazyModules,
+        eagerModules: testModules,
+        testSuffix: true
       }),
       "utf8"
     );

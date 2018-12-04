@@ -371,15 +371,28 @@ class CompatAppBuilder {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(inputPaths.appJS);
-
-    // readConfig timing is safe here because configTree is in our input trees.
     let config = this.configTree.readConfig();
 
-    // At this point, all app-js and *only* app-js has been copied into the
-    // project, so we can crawl the results to discover what needs to go into
-    // the Javascript entrypoint files.
-    this.writeAppJSEntrypoint(config, appFiles);
-    this.writeTestJSEntrypoint(appFiles);
+    let assets: InMemoryAsset[] = [
+      this.javascriptEntrypoint(this.app.name, config, appFiles),
+      this.testJSEntrypoint(appFiles)
+    ];
+
+    for (let asset of assets) {
+      let destination = join(this.root, asset.relativePath);
+      switch (asset.kind) {
+        case 'in-memory':
+          ensureDirSync(dirname(destination));
+          writeFileSync(
+            destination,
+            asset.source,
+            "utf8"
+          );
+          break;
+        default:
+          assertNever(asset.kind);
+      }
+    }
 
     copySync(inputPaths.publicTree, this.root, { dereference: true });
 
@@ -505,17 +518,6 @@ class CompatAppBuilder {
     }
   }
 
-  private writeAppJSEntrypoint(config: ConfigContents, appFiles: Set<string>) {
-    let asset = this.javascriptEntrypoint(this.app.name, config, appFiles);
-    let dest = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(dest));
-    writeFileSync(
-      dest,
-      asset.source,
-      "utf8"
-    );
-  }
-
   private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): InMemoryAsset {
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
@@ -580,17 +582,6 @@ class CompatAppBuilder {
     };
   }
 
-  private writeTestJSEntrypoint(appFiles: Set<string>) {
-    let asset = this.testJSEntrypoint(appFiles);
-    let dest = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(dest));
-    writeFileSync(
-      dest,
-      asset.source,
-      "utf8"
-    );
-  }
-
   private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
     for (let addon of this.activeAddonDescendants) {
       let implicitModules = addon.meta[section];
@@ -615,3 +606,5 @@ export default class CompatApp extends BuildStage<TreeNames> {
     super(addons, inTrees, instantiate);
   }
 }
+
+function assertNever(_: never) {}

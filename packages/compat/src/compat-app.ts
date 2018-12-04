@@ -24,6 +24,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
+import { InMemoryAsset } from './app';
 
 const entryTemplate = compile(`
 {{!-
@@ -508,16 +509,17 @@ class CompatAppBuilder {
   }
 
   private writeAppJSEntrypoint(config: ConfigContents, appFiles: Set<string>) {
-    let mainModule = join(
-      this.root,
-      this.isModuleUnification ? "src/main" : "app"
+    let asset = this.javascriptEntrypoint(this.app.name, config, appFiles);
+    let dest = join(this.root, asset.relativePath);
+    ensureDirSync(dirname(dest));
+    writeFileSync(
+      dest,
+      asset.source,
+      "utf8"
     );
+  }
 
-    // standard JS file name, not customizable. It's not final anyway (that is
-    // up to the final stage packager). See also updateHTML in app.ts for where
-    // we're enforcing this in the HTML.
-    let appJS = join(this.root, `assets/${this.app.name}.js`);
-
+  private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): InMemoryAsset {
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
       if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
@@ -538,17 +540,21 @@ class CompatAppBuilder {
     // modules.
     this.gatherImplicitModules('implicit-modules', lazyModules);
 
-    ensureDirSync(dirname(appJS));
-    writeFileSync(
-      appJS,
-      entryTemplate({
-        lazyModules,
-        autoRun: this.autoRun,
-        mainModule: relative(dirname(appJS), mainModule),
-        appConfig: config.APP,
-      }),
-      "utf8"
-    );
+    let relativePath = `assets/${name}.js`;
+    let mainModule = this.isModuleUnification ? "src/main" : "app";
+
+    let source = entryTemplate({
+      lazyModules,
+      autoRun: this.autoRun,
+      mainModule: relative(dirname(relativePath), mainModule),
+      appConfig: config.APP,
+    });
+
+    return {
+      kind: 'in-memory',
+      source,
+      relativePath,
+    };
   }
 
   private writeTestJSEntrypoint(appFiles: Set<string>) {

@@ -555,8 +555,7 @@ class CompatAppBuilder {
     };
   }
 
-  private writeTestJSEntrypoint(appFiles: Set<string>) {
-    let testJS = join(this.root, `assets/test.js`);
+  private testJSEntrypoint(appFiles: Set<string>): InMemoryAsset {
     let testModules = [...appFiles].map(relativePath => {
       if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
         return `../${relativePath}`;
@@ -568,14 +567,26 @@ class CompatAppBuilder {
     // test support modules.
     this.gatherImplicitModules('implicit-test-modules', lazyModules);
 
-    ensureDirSync(dirname(testJS));
+    let source = entryTemplate({
+      lazyModules,
+      eagerModules: testModules,
+      testSuffix: true
+    });
+
+    return {
+      kind: 'in-memory',
+      source,
+      relativePath: 'assets/test.js'
+    };
+  }
+
+  private writeTestJSEntrypoint(appFiles: Set<string>) {
+    let asset = this.testJSEntrypoint(appFiles);
+    let dest = join(this.root, asset.relativePath);
+    ensureDirSync(dirname(dest));
     writeFileSync(
-      testJS,
-      entryTemplate({
-        lazyModules,
-        eagerModules: testModules,
-        testSuffix: true
-      }),
+      dest,
+      asset.source,
       "utf8"
     );
   }

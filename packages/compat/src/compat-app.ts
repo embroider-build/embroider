@@ -379,22 +379,29 @@ class CompatAppBuilder {
       sourcePath: join(treePaths.publicTree, file)
     }));
 
+    for (let asset of this.rewriteHTML(treePaths.htmlTree)) {
+      assets.push(asset);
+    }
+
     return assets;
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let config = this.configTree.readConfig();
-
     let assets = this.assets(inputPaths);
-    assets.push(
+
+    let queue = assets.slice();
+
+    queue.push(
       this.javascriptEntrypoint(this.app.name, config, appFiles)
     );
-    assets.push(
+    queue.push(
       this.testJSEntrypoint(appFiles)
     );
 
-    for (let asset of assets) {
+    while (queue.length > 0) {
+      let asset = queue.shift()!;
       let destination = join(this.root, asset.relativePath);
       ensureDirSync(dirname(destination));
       switch (asset.kind) {
@@ -415,8 +422,6 @@ class CompatAppBuilder {
           assertNever(asset);
       }
     }
-
-    copySync(inputPaths.publicTree, this.root, { dereference: true });
 
     this.addTemplateCompiler(config.EmberENV);
     this.addBabelConfig();
@@ -446,7 +451,6 @@ class CompatAppBuilder {
       JSON.stringify(pkg, null, 2),
       "utf8"
     );
-    this.rewriteHTML(inputPaths.htmlTree);
   }
 
   private combineExternals() {
@@ -530,13 +534,15 @@ class CompatAppBuilder {
     );
   }
 
-  private rewriteHTML(htmlTreePath: string) {
+  private * rewriteHTML(htmlTreePath: string): IterableIterator<Asset> {
     for (let entrypoint of this.emberEntrypoints()) {
       let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
       this.updateHTML(entrypoint, dom);
-      let outputFile = join(this.root, entrypoint);
-      ensureDirSync(dirname(outputFile));
-      writeFileSync(outputFile, dom.serialize(), "utf8");
+      yield {
+        kind: 'dom',
+        relativePath: entrypoint,
+        dom
+      };
     }
   }
 

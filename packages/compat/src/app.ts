@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 
-export type ImplicitSection = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles" | "implicit-modules" | "implicit-test-modules";
+export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
 
 interface BaseAsset {
   // where this asset should be placed, relative to the app's root

@@ -25,7 +25,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
-import { Asset, EmberAsset } from './app';
+import { Asset, EmberAsset, ImplicitAssetType } from './app';
 import { insertNewline, insertScriptTag, insertStyleLink } from './dom-util';
 
 const entryTemplate = compile(`
@@ -163,34 +163,34 @@ class CompatAppBuilder {
     }
   }
 
-  private impliedAssets(originalBundle: string): any {
-    let result = this.impliedAddonAssets(originalBundle).concat(this.impliedAppAssets(originalBundle));
+  private impliedAssets(type: ImplicitAssetType): any {
+    let result = this.impliedAddonAssets(type).concat(this.impliedAppAssets(type));
 
     // This file gets created by addEmberEnv(). We need to insert it at the
     // beginning of the scripts.
-    if (originalBundle === "vendor.js") {
+    if (type === "implicit-scripts") {
       result.unshift(join(this.root, "_ember_env_.js"));
     }
     return result;
   }
 
-  private impliedAppAssets(originalBundle: string): any {
+  private impliedAppAssets(type: ImplicitAssetType): string[] {
     let group: "appJS" | "appCSS" | "testJS" | "testCSS";
-    switch (originalBundle) {
-      case "vendor.js":
+    switch (type) {
+      case "implicit-scripts":
         group = "appJS";
         break;
-      case "vendor.css":
+      case "implicit-styles":
         group = "appCSS";
         break;
-      case "test-support.js":
+      case "implicit-test-scripts":
         group = "testJS";
         break;
-      case "test-support.css":
+      case "implicit-test-styles":
         group = "testCSS";
         break;
       default:
-        throw new Error(`unimplemented originalBundle ${originalBundle}`);
+        throw assertNever(type);
     }
     let result = [];
     let imports = new TrackedImports(
@@ -203,34 +203,13 @@ class CompatAppBuilder {
     return result;
   }
 
-  private impliedAddonAssets(originalBundle: string): any {
-    let metaKey:
-      | "implicit-scripts"
-      | "implicit-styles"
-      | "implicit-test-scripts"
-      | "implicit-test-styles";
-    switch (originalBundle) {
-      case "vendor.js":
-        metaKey = "implicit-scripts";
-        break;
-      case "vendor.css":
-        metaKey = "implicit-styles";
-        break;
-      case "test-support.js":
-        metaKey = "implicit-test-scripts";
-        break;
-      case "test-support.css":
-        metaKey = "implicit-test-styles";
-        break;
-      default:
-        throw new Error(`unimplemented originalBundle ${originalBundle}`);
-    }
+  private impliedAddonAssets(type: ImplicitAssetType): any {
     let result = [];
     for (let addon of sortBy(
       this.activeAddonDescendants,
       this.scriptPriority.bind(this)
     )) {
-      let implicitScripts = addon.meta[metaKey];
+      let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
           result.push(resolve.sync(mod, { basedir: addon.root }));
@@ -270,16 +249,16 @@ class CompatAppBuilder {
       `assets/${this.app.name}.css`
     );
 
-    this.updateJS(
+    this.addImplicitJS(
       asset,
       asset.implicitScripts,
-      "vendor.js"
+      "implicit-scripts"
     );
 
-    this.updateCSS(
+    this.addImplicitCSS(
       asset,
       asset.implicitStyles,
-      "vendor.css"
+      "implicit-styles"
     );
 
     if (asset.includeTests) {
@@ -296,28 +275,28 @@ class CompatAppBuilder {
         testJS.relativePath
       ).type = 'module';
 
-      this.updateJS(
+      this.addImplicitJS(
         asset,
         asset.implicitTestScripts || asset.implicitScripts,
-        "test-support.js"
+        "implicit-test-scripts"
       );
 
-      this.updateCSS(
+      this.addImplicitCSS(
         asset,
         asset.implicitTestStyles || asset.implicitStyles,
-        "test-support.css"
+        "implicit-test-styles"
       );
     }
     this.stripInsertionMarkers(asset);
     return newAssets;
   }
 
-  private updateJS(
+  private addImplicitJS(
     asset: EmberAsset,
     marker: Node,
-    bundleName: string
+    type: ImplicitAssetType
   ) {
-    for (let insertedScript of this.impliedAssets(bundleName)) {
+    for (let insertedScript of this.impliedAssets(type)) {
       let s = asset.dom.window.document.createElement("script");
       s.src = relative(dirname(join(this.root, asset.relativePath)), insertedScript);
       insertNewline(marker);
@@ -325,12 +304,12 @@ class CompatAppBuilder {
     }
   }
 
-  private updateCSS(
+  private addImplicitCSS(
     asset: EmberAsset,
     marker: Node,
-    bundleName: string
+    type: ImplicitAssetType
   ) {
-    for (let insertedStyle of this.impliedAssets(bundleName)) {
+    for (let insertedStyle of this.impliedAssets(type)) {
       let s = asset.dom.window.document.createElement("link");
       s.rel = "stylesheet";
       s.href = relative(dirname(join(this.root, asset.relativePath)), insertedStyle);

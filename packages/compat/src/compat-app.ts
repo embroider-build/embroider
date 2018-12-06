@@ -26,6 +26,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
 import { Asset, EmberAsset } from './app';
+import { insertNewline, insertScriptTag, insertStyleLink } from './dom-util';
 
 const entryTemplate = compile(`
 let w = window;
@@ -227,7 +228,7 @@ class CompatAppBuilder {
     return this.oldPackage.babelConfig(this.root, rename);
   }
 
-  private updateHTML(asset: EmberAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
+  private insertEmberApp(asset: EmberAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
     let newAssets: Asset[] = [];
 
     let appJS = getOrCreate(jsEntrypoints, `assets/${this.app.name}.js`, () => {
@@ -236,13 +237,13 @@ class CompatAppBuilder {
       return js;
     });
 
-    this.insertScriptTag(
+    insertScriptTag(
       asset,
       asset.javascript,
       appJS.relativePath
     ).type = 'module';
 
-    this.insertStyleLink(
+    insertStyleLink(
       asset,
       asset.styles,
       `assets/${this.app.name}.css`
@@ -268,7 +269,7 @@ class CompatAppBuilder {
         return js;
       });
 
-      this.insertScriptTag(
+      insertScriptTag(
         asset,
         asset.testJavascript || asset.javascript,
         testJS.relativePath
@@ -290,30 +291,6 @@ class CompatAppBuilder {
     return newAssets;
   }
 
-  private insertScriptTag(asset: EmberAsset, location: Node, relativeSrc: string) {
-    let newTag = asset.dom.window.document.createElement('script');
-    newTag.src = relative(dirname(asset.relativePath), relativeSrc);
-    this.insertNewline(location);
-    location.parentElement!.insertBefore(newTag, location);
-    return newTag;
-  }
-
-  private insertNewline(at: Node) {
-    at.parentElement!.insertBefore(
-      at.ownerDocument!.createTextNode("\n"),
-      at
-    );
-  }
-
-  private insertStyleLink(asset: EmberAsset, location: Node, relativeHref: string) {
-    let newTag = asset.dom.window.document.createElement('link');
-    newTag.rel = "stylesheet";
-    newTag.href = relative(dirname(asset.relativePath), relativeHref);
-    this.insertNewline(location);
-    location.parentElement!.insertBefore(newTag, location);
-    return newTag;
-  }
-
   private updateJS(
     asset: EmberAsset,
     marker: Node,
@@ -322,7 +299,7 @@ class CompatAppBuilder {
     for (let insertedScript of this.impliedAssets(bundleName)) {
       let s = asset.dom.window.document.createElement("script");
       s.src = relative(dirname(join(this.root, asset.relativePath)), insertedScript);
-      this.insertNewline(marker);
+      insertNewline(marker);
       marker.parentElement!.insertBefore(s, marker);
     }
   }
@@ -336,7 +313,7 @@ class CompatAppBuilder {
       let s = asset.dom.window.document.createElement("link");
       s.rel = "stylesheet";
       s.href = relative(dirname(join(this.root, asset.relativePath)), insertedStyle);
-      this.insertNewline(marker);
+      insertNewline(marker);
       marker.parentElement!.insertBefore(s, marker);
     }
   }
@@ -387,7 +364,7 @@ class CompatAppBuilder {
         copySync(asset.sourcePath, destination, { dereference: true });
         break;
       case 'ember':
-        newAssets = this.updateHTML(asset, config, appFiles, jsEntrypoints);
+        newAssets = this.insertEmberApp(asset, config, appFiles, jsEntrypoints);
         writeFileSync(destination, asset.dom.serialize(), "utf8");
         break;
       default:

@@ -164,7 +164,46 @@ class CompatAppBuilder {
   }
 
   private impliedAssets(originalBundle: string): any {
+    let result = this.impliedAddonAssets(originalBundle).concat(this.impliedAppAssets(originalBundle));
+
+    // This file gets created by addEmberEnv(). We need to insert it at the
+    // beginning of the scripts.
+    if (originalBundle === "vendor.js") {
+      result.unshift(join(this.root, "_ember_env_.js"));
+    }
+    return result;
+  }
+
+  private impliedAppAssets(originalBundle: string): any {
     let group: "appJS" | "appCSS" | "testJS" | "testCSS";
+    switch (originalBundle) {
+      case "vendor.js":
+        group = "appJS";
+        break;
+      case "vendor.css":
+        group = "appCSS";
+        break;
+      case "test-support.js":
+        group = "testJS";
+        break;
+      case "test-support.css":
+        group = "testCSS";
+        break;
+      default:
+        throw new Error(`unimplemented originalBundle ${originalBundle}`);
+    }
+    let result = [];
+    let imports = new TrackedImports(
+      this.app.name,
+      this.oldPackage.trackedImports
+    );
+    for (let mod of imports.categorized[group]) {
+      result.push(resolve.sync(mod, { basedir: this.root }));
+    }
+    return result;
+  }
+
+  private impliedAddonAssets(originalBundle: string): any {
     let metaKey:
       | "implicit-scripts"
       | "implicit-styles"
@@ -172,19 +211,15 @@ class CompatAppBuilder {
       | "implicit-test-styles";
     switch (originalBundle) {
       case "vendor.js":
-        group = "appJS";
         metaKey = "implicit-scripts";
         break;
       case "vendor.css":
-        group = "appCSS";
         metaKey = "implicit-styles";
         break;
       case "test-support.js":
-        group = "testJS";
         metaKey = "implicit-test-scripts";
         break;
       case "test-support.css":
-        group = "testCSS";
         metaKey = "implicit-test-styles";
         break;
       default:
@@ -202,20 +237,6 @@ class CompatAppBuilder {
         }
       }
     }
-    let imports = new TrackedImports(
-      this.app.name,
-      this.oldPackage.trackedImports
-    );
-    for (let mod of imports.categorized[group]) {
-      result.push(resolve.sync(mod, { basedir: this.root }));
-    }
-
-    // This file gets created by addEmberEnv(). We need to insert it at the
-    // beginning of the scripts.
-    if (originalBundle === "vendor.js") {
-      result.unshift(join(this.root, "_ember_env_.js"));
-    }
-
     return result;
   }
 

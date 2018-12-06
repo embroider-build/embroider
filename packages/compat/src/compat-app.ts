@@ -6,7 +6,8 @@ import {
   AppMeta,
   PackageCache,
   OutputPaths,
-  BuildStage
+  BuildStage,
+  getOrCreate
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -24,7 +25,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
-import { Asset } from './app';
+import { Asset, AppInsertion, appInsertion, DOMAsset } from './app';
 
 const entryTemplate = compile(`
 let w = window;
@@ -226,126 +227,128 @@ class CompatAppBuilder {
     return this.oldPackage.babelConfig(this.root, rename);
   }
 
-  private updateHTML(entrypoint: string, dom: JSDOM) {
-    let scripts = [...dom.window.document.querySelectorAll("script")];
-    this.updateAppJSScript(entrypoint, scripts);
-    this.updateTestJS(entrypoint, scripts);
+  private updateHTML(asset: DOMAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
+    if (!asset.insertEmberApp) {
+      return [];
+    }
+
+    let newAssets: Asset[] = [];
+
+    let appJS = getOrCreate(jsEntrypoints, `assets/${this.app.name}.js`, () => {
+      let js = this.javascriptEntrypoint(this.app.name, config, appFiles);
+      newAssets.push(js);
+      return js;
+    });
+
+    this.insertScriptTag(
+      asset,
+      asset.insertEmberApp.javascript,
+      appJS.relativePath
+    ).type = 'module';
+
+    this.insertStyleLink(
+      asset,
+      asset.insertEmberApp.styles,
+      `assets/${this.app.name}.css`
+    );
+
     this.updateJS(
-      dom,
-      entrypoint,
-      this.oldPackage.findVendorScript(scripts),
+      asset,
+      asset.insertEmberApp.implicitScripts,
       "vendor.js"
     );
-    this.updateJS(
-      dom,
-      entrypoint,
-      this.oldPackage.findTestSupportScript(scripts),
-      "test-support.js"
-    );
 
-    let styles = [
-      ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
-    ] as HTMLLinkElement[];
-    this.updateAppCSS(entrypoint, styles);
     this.updateCSS(
-      dom,
-      entrypoint,
-      this.oldPackage.findVendorStyles(styles),
+      asset,
+      asset.insertEmberApp.implicitStyles,
       "vendor.css"
     );
-    this.updateCSS(
-      dom,
-      entrypoint,
-      this.oldPackage.findTestSupportStyles(styles),
-      "test-support.css"
+
+    if (asset.insertEmberApp.includeTests) {
+
+      let testJS = getOrCreate(jsEntrypoints, `assets/test.js`, () => {
+        let js = this.testJSEntrypoint(appFiles);
+        newAssets.push(js);
+        return js;
+      });
+
+      this.insertScriptTag(
+        asset,
+        asset.insertEmberApp.testJavascript || asset.insertEmberApp.javascript,
+        testJS.relativePath
+      ).type = 'module';
+
+      this.updateJS(
+        asset,
+        asset.insertEmberApp.implicitTestScripts || asset.insertEmberApp.implicitScripts,
+        "test-support.js"
+      );
+
+      this.updateCSS(
+        asset,
+        asset.insertEmberApp.implicitTestStyles || asset.insertEmberApp.implicitStyles,
+        "test-support.css"
+      );
+    }
+    this.stripInsertionMarkers(asset.insertEmberApp);
+    return newAssets;
+  }
+
+  private insertScriptTag(asset: DOMAsset, location: Node, relativeSrc: string) {
+    let newTag = asset.dom.window.document.createElement('script');
+    newTag.src = relative(
+      dirname(join(this.root, asset.relativePath)),
+      join(this.root, relativeSrc)
+    );
+    this.insertNewline(location);
+    location.parentElement!.insertBefore(newTag, location);
+    return newTag;
+  }
+
+  private insertNewline(at: Node) {
+    at.parentElement!.insertBefore(
+      at.ownerDocument!.createTextNode("\n"),
+      at
     );
   }
 
-  private updateAppJSScript(entrypoint: string, scripts: HTMLScriptElement[]) {
-    // no custom name allowed here -- we're standardizing. It's not the final
-    // output anyway, that will be up to the final stage packager. We also
-    // switch to module type, to convey that we're going to point at an ES
-    // module.
-    let appJS = this.oldPackage.findAppScript(scripts);
-    if (appJS) {
-      appJS.src = relative(
-        dirname(join(this.root, entrypoint)),
-        join(this.root, `assets/${this.app.name}.js`)
-      );
-      appJS.type = "module";
-    }
-  }
-
-  private updateTestJS(entrypoint: string, scripts: HTMLScriptElement[]) {
-    let testJS = this.oldPackage.findTestScript(scripts);
-    if (testJS) {
-      testJS.src = relative(
-        dirname(join(this.root, entrypoint)),
-        join(this.root, `assets/test.js`)
-      );
-      testJS.type = "module";
-    }
+  private insertStyleLink(asset: DOMAsset, location: Node, relativeHref: string) {
+    let newTag = asset.dom.window.document.createElement('link');
+    newTag.rel = "stylesheet";
+    newTag.href = relative(
+      dirname(join(this.root, asset.relativePath)),
+      join(this.root, relativeHref)
+    );
+    this.insertNewline(location);
+    location.parentElement!.insertBefore(newTag, location);
+    return newTag;
   }
 
   private updateJS(
-    dom: JSDOM,
-    entrypoint: string,
-    original: HTMLScriptElement | undefined,
+    asset: DOMAsset,
+    marker: Node,
     bundleName: string
   ) {
-    // the vendor.js file gets replaced with each of our implicit scripts. It's
-    // up to the final stage packager to worry about concatenation.
-    if (!original) {
-      return;
-    }
     for (let insertedScript of this.impliedAssets(bundleName)) {
-      let s = dom.window.document.createElement("script");
-      s.src = relative(dirname(join(this.root, entrypoint)), insertedScript);
-      // these newlines make the output more readable
-      original.parentElement!.insertBefore(
-        dom.window.document.createTextNode("\n"),
-        original
-      );
-      original.parentElement!.insertBefore(s, original);
-    }
-    original.remove();
-  }
-
-  private updateAppCSS(entrypoint: string, styles: HTMLLinkElement[]) {
-    // no custom name allowed here. Same argument applies here as for appJS
-    // above.
-    let appCSS = this.oldPackage.findAppStyles(styles);
-    if (appCSS) {
-      appCSS.href = relative(
-        dirname(join(this.root, entrypoint)),
-        join(this.root, `assets/${this.app.name}.css`)
-      );
+      let s = asset.dom.window.document.createElement("script");
+      s.src = relative(dirname(join(this.root, asset.relativePath)), insertedScript);
+      this.insertNewline(marker);
+      marker.parentElement!.insertBefore(s, marker);
     }
   }
 
   private updateCSS(
-    dom: JSDOM,
-    entrypoint: string,
-    original: HTMLLinkElement | undefined,
+    asset: DOMAsset,
+    marker: Node,
     bundleName: string
   ) {
-    // the vendor.css file gets replaced with each of our implicit CSS
-    // dependencies. It's up to the final stage packager to worry about
-    // concatenation.
-    if (!original) {
-      return;
-    }
     for (let insertedStyle of this.impliedAssets(bundleName)) {
-      let s = dom.window.document.createElement("link");
+      let s = asset.dom.window.document.createElement("link");
       s.rel = "stylesheet";
-      s.href = relative(dirname(join(this.root, entrypoint)), insertedStyle);
-      original.parentElement!.insertBefore(
-        dom.window.document.createTextNode("\n"),
-        original
-      );
-      original.parentElement!.insertBefore(s, original);
+      s.href = relative(dirname(join(this.root, asset.relativePath)), insertedStyle);
+      this.insertNewline(marker);
+      marker.parentElement!.insertBefore(s, marker);
     }
-    original.remove();
   }
 
   // todo
@@ -386,41 +389,44 @@ class CompatAppBuilder {
     return assets;
   }
 
+  private emitAsset(asset: Asset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>) {
+    let destination = join(this.root, asset.relativePath);
+    let newAssets: Asset[] = [];
+    ensureDirSync(dirname(destination));
+    switch (asset.kind) {
+      case 'in-memory':
+        writeFileSync(
+          destination,
+          asset.source,
+          "utf8"
+        );
+        break;
+      case 'on-disk':
+        copySync(asset.sourcePath, destination, { dereference: true });
+        break;
+      case 'dom':
+        newAssets = this.updateHTML(asset, config, appFiles, jsEntrypoints);
+        writeFileSync(destination, asset.dom.serialize(), "utf8");
+        break;
+      default:
+        assertNever(asset);
+    }
+    return newAssets;
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let config = this.configTree.readConfig();
     let assets = this.assets(inputPaths);
 
+    // this serves as a shared cache as we're filling out each of the html entrypoints
+    let jsEntrypoints: Map<string, Asset> = new Map();
+
     let queue = assets.slice();
-
-    queue.push(
-      this.javascriptEntrypoint(this.app.name, config, appFiles)
-    );
-    queue.push(
-      this.testJSEntrypoint(appFiles)
-    );
-
     while (queue.length > 0) {
       let asset = queue.shift()!;
-      let destination = join(this.root, asset.relativePath);
-      ensureDirSync(dirname(destination));
-      switch (asset.kind) {
-        case 'in-memory':
-          writeFileSync(
-            destination,
-            asset.source,
-            "utf8"
-          );
-          break;
-        case 'on-disk':
-          copySync(asset.sourcePath, destination, { dereference: true });
-          break;
-        case 'dom':
-          writeFileSync(destination, asset.dom.serialize(), "utf8");
-          break;
-        default:
-          assertNever(asset);
-      }
+      let newAssets = this.emitAsset(asset, config, appFiles, jsEntrypoints);
+      queue = queue.concat(newAssets);
     }
 
     this.addTemplateCompiler(config.EmberENV);
@@ -429,17 +435,10 @@ class CompatAppBuilder {
 
     let externals = this.combineExternals();
 
-    // This is the publicTree we were given. We need to list all the files in
-    // here as "entrypoints", because an "entrypoint" is anything that is
-    // guaranteed to have a valid URL in the final build output.
-    let entrypoints = walkSync(inputPaths.publicTree, {
-      directories: false,
-    });
-
     let meta: AppMeta = {
       version: 2,
       externals,
-      entrypoints: this.emberEntrypoints().concat(entrypoints),
+      entrypoints: assets.map(a => a.relativePath),
       ["template-compiler"]: "_template_compiler_.js",
       ["babel-config"]: "_babel_config_.js",
     };
@@ -534,15 +533,55 @@ class CompatAppBuilder {
     );
   }
 
+  private maybeReplace(dom: JSDOM, element: Element | undefined) {
+    if (element) {
+      let placeholder = dom.window.document.createComment('');
+      element.replaceWith(placeholder);
+      return placeholder;
+    }
+  }
+
+  private prepareInsertion(dom: JSDOM): AppInsertion {
+    let scripts = [...dom.window.document.querySelectorAll("script")];
+    let styles = [
+      ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
+    ] as HTMLLinkElement[];
+
+    return appInsertion({
+      javascript: this.maybeReplace(dom, this.oldPackage.findAppScript(scripts)),
+      styles: this.maybeReplace(dom, this.oldPackage.findAppStyles(styles)),
+      implicitScripts: this.maybeReplace(dom, this.oldPackage.findVendorScript(scripts)),
+      implicitStyles: this.maybeReplace(dom, this.oldPackage.findVendorStyles(styles)),
+      testJavascript: this.maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
+      implicitTestScripts: this.maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
+      implicitTestStyles: this.maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
+    });
+  }
+
+  private stripInsertionMarkers(insertion: AppInsertion) {
+    for (let value of Object.values(insertion)) {
+      if (value && value.nodeType) {
+        let node = value as Node;
+        if (node.parentElement) {
+          node.parentElement.removeChild(node);
+        }
+      }
+    }
+  }
+
   private * rewriteHTML(htmlTreePath: string): IterableIterator<Asset> {
     for (let entrypoint of this.emberEntrypoints()) {
       let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
-      this.updateHTML(entrypoint, dom);
-      yield {
+      let asset: DOMAsset = {
         kind: 'dom',
         relativePath: entrypoint,
-        dom
+        dom,
+        insertEmberApp: this.prepareInsertion(dom)
       };
+      if (entrypoint === "tests/index.html") {
+        asset.insertEmberApp!.includeTests = true;
+      }
+      yield asset;
     }
   }
 

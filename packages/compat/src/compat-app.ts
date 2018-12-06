@@ -292,10 +292,7 @@ class CompatAppBuilder {
 
   private insertScriptTag(asset: EmberAsset, location: Node, relativeSrc: string) {
     let newTag = asset.dom.window.document.createElement('script');
-    newTag.src = relative(
-      dirname(join(this.root, asset.relativePath)),
-      join(this.root, relativeSrc)
-    );
+    newTag.src = relative(dirname(asset.relativePath), relativeSrc);
     this.insertNewline(location);
     location.parentElement!.insertBefore(newTag, location);
     return newTag;
@@ -311,10 +308,7 @@ class CompatAppBuilder {
   private insertStyleLink(asset: EmberAsset, location: Node, relativeHref: string) {
     let newTag = asset.dom.window.document.createElement('link');
     newTag.rel = "stylesheet";
-    newTag.href = relative(
-      dirname(join(this.root, asset.relativePath)),
-      join(this.root, relativeHref)
-    );
+    newTag.href = relative(dirname(asset.relativePath), relativeHref);
     this.insertNewline(location);
     location.parentElement!.insertBefore(newTag, location);
     return newTag;

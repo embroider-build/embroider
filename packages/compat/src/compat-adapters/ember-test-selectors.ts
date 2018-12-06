@@ -6,7 +6,7 @@ export default class extends V1Addon {
     if (this.addonInstance._stripTestSelectors) {
       return super.packageMeta;
     } else {
-      return forceIncludeModule(super.packageMeta, 'utils/bind-data-test-attributes');
+      return forceIncludeModule(super.packageMeta, './utils/bind-data-test-attributes');
     }
   }
 }

@@ -652,7 +652,7 @@ class CompatAppBuilder {
             runtime: join(addon.name, name),
             buildtime: relative(
               join(this.root, "assets"),
-              `${addon.root}/${name}`
+              join(addon.root, name)
             ),
           });
         }

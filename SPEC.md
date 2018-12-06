@@ -645,7 +645,7 @@ Allowed in: addons
 Status: intent to deprecate
 ```
 
-List of paths to Javascript files that should be included as `<script type="module">` whenever this package is active.
+List of paths to Javascript modules that must be resolvable at runtime whenever this package is active.
 
 This is a backward-compatibility feature that's used by the v1-to-v2 compiler.
 
@@ -670,6 +670,15 @@ Status: use sparingly
 List of paths to CSS files that should be included as `<link rel="stylesheet">` whenever this package is active.
 
 Prefer instead to express your dependencies on CSS via ECMA import from the places where it's needed.
+
+## implicit-test-modules
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+Same as `implicit-modules`, but only within `tests/index.html`.
 
 ## implicit-test-scripts
 

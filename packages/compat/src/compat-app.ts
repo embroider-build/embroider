@@ -25,7 +25,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config, ConfigContents, EmberENV } from './v1-config';
 import AppDiffer from '@embroider/core/src/app-differ';
-import { Asset, AppInsertion, appInsertion, DOMAsset } from './app';
+import { Asset, EmberAsset } from './app';
 
 const entryTemplate = compile(`
 let w = window;
@@ -227,11 +227,7 @@ class CompatAppBuilder {
     return this.oldPackage.babelConfig(this.root, rename);
   }
 
-  private updateHTML(asset: DOMAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
-    if (!asset.insertEmberApp) {
-      return [];
-    }
-
+  private updateHTML(asset: EmberAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
     let newAssets: Asset[] = [];
 
     let appJS = getOrCreate(jsEntrypoints, `assets/${this.app.name}.js`, () => {
@@ -242,29 +238,29 @@ class CompatAppBuilder {
 
     this.insertScriptTag(
       asset,
-      asset.insertEmberApp.javascript,
+      asset.javascript,
       appJS.relativePath
     ).type = 'module';
 
     this.insertStyleLink(
       asset,
-      asset.insertEmberApp.styles,
+      asset.styles,
       `assets/${this.app.name}.css`
     );
 
     this.updateJS(
       asset,
-      asset.insertEmberApp.implicitScripts,
+      asset.implicitScripts,
       "vendor.js"
     );
 
     this.updateCSS(
       asset,
-      asset.insertEmberApp.implicitStyles,
+      asset.implicitStyles,
       "vendor.css"
     );
 
-    if (asset.insertEmberApp.includeTests) {
+    if (asset.includeTests) {
 
       let testJS = getOrCreate(jsEntrypoints, `assets/test.js`, () => {
         let js = this.testJSEntrypoint(appFiles);
@@ -274,27 +270,27 @@ class CompatAppBuilder {
 
       this.insertScriptTag(
         asset,
-        asset.insertEmberApp.testJavascript || asset.insertEmberApp.javascript,
+        asset.testJavascript || asset.javascript,
         testJS.relativePath
       ).type = 'module';
 
       this.updateJS(
         asset,
-        asset.insertEmberApp.implicitTestScripts || asset.insertEmberApp.implicitScripts,
+        asset.implicitTestScripts || asset.implicitScripts,
         "test-support.js"
       );
 
       this.updateCSS(
         asset,
-        asset.insertEmberApp.implicitTestStyles || asset.insertEmberApp.implicitStyles,
+        asset.implicitTestStyles || asset.implicitStyles,
         "test-support.css"
       );
     }
-    this.stripInsertionMarkers(asset.insertEmberApp);
+    this.stripInsertionMarkers(asset);
     return newAssets;
   }
 
-  private insertScriptTag(asset: DOMAsset, location: Node, relativeSrc: string) {
+  private insertScriptTag(asset: EmberAsset, location: Node, relativeSrc: string) {
     let newTag = asset.dom.window.document.createElement('script');
     newTag.src = relative(
       dirname(join(this.root, asset.relativePath)),
@@ -312,7 +308,7 @@ class CompatAppBuilder {
     );
   }
 
-  private insertStyleLink(asset: DOMAsset, location: Node, relativeHref: string) {
+  private insertStyleLink(asset: EmberAsset, location: Node, relativeHref: string) {
     let newTag = asset.dom.window.document.createElement('link');
     newTag.rel = "stylesheet";
     newTag.href = relative(
@@ -325,7 +321,7 @@ class CompatAppBuilder {
   }
 
   private updateJS(
-    asset: DOMAsset,
+    asset: EmberAsset,
     marker: Node,
     bundleName: string
   ) {
@@ -338,7 +334,7 @@ class CompatAppBuilder {
   }
 
   private updateCSS(
-    asset: DOMAsset,
+    asset: EmberAsset,
     marker: Node,
     bundleName: string
   ) {
@@ -353,14 +349,6 @@ class CompatAppBuilder {
 
   // todo
   private shouldBuildTests = true;
-
-  private emberEntrypoints() {
-    let entrypoints = ["index.html"];
-    if (this.shouldBuildTests) {
-      entrypoints.push("tests/index.html");
-    }
-    return entrypoints;
-  }
 
   private appDiffer: AppDiffer | undefined;
 
@@ -404,7 +392,7 @@ class CompatAppBuilder {
       case 'on-disk':
         copySync(asset.sourcePath, destination, { dereference: true });
         break;
-      case 'dom':
+      case 'ember':
         newAssets = this.updateHTML(asset, config, appFiles, jsEntrypoints);
         writeFileSync(destination, asset.dom.serialize(), "utf8");
         break;
@@ -533,54 +521,66 @@ class CompatAppBuilder {
     );
   }
 
-  private maybeReplace(dom: JSDOM, element: Element | undefined) {
+  private maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
     if (element) {
-      let placeholder = dom.window.document.createComment('');
-      element.replaceWith(placeholder);
-      return placeholder;
+      return this.definitelyReplace(dom, element, "", "");
     }
   }
 
-  private prepareInsertion(dom: JSDOM): AppInsertion {
-    let scripts = [...dom.window.document.querySelectorAll("script")];
-    let styles = [
-      ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
-    ] as HTMLLinkElement[];
-
-    return appInsertion({
-      javascript: this.maybeReplace(dom, this.oldPackage.findAppScript(scripts)),
-      styles: this.maybeReplace(dom, this.oldPackage.findAppStyles(styles)),
-      implicitScripts: this.maybeReplace(dom, this.oldPackage.findVendorScript(scripts)),
-      implicitStyles: this.maybeReplace(dom, this.oldPackage.findVendorStyles(styles)),
-      testJavascript: this.maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
-      implicitTestScripts: this.maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
-      implicitTestStyles: this.maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
-    });
+  private definitelyReplace(dom: JSDOM, element: Element | undefined, description: string, file: string): Node {
+    if (!element) {
+      throw new Error(`could not find ${description} in ${file}`);
+    }
+    let placeholder = dom.window.document.createComment('');
+    element.replaceWith(placeholder);
+    return placeholder;
   }
 
-  private stripInsertionMarkers(insertion: AppInsertion) {
-    for (let value of Object.values(insertion)) {
-      if (value && value.nodeType) {
-        let node = value as Node;
-        if (node.parentElement) {
+  private stripInsertionMarkers(asset: EmberAsset) {
+    let nodes = [
+      asset.javascript,
+      asset.styles,
+      asset.implicitScripts,
+      asset.implicitStyles,
+      asset.testJavascript,
+      asset.implicitTestScripts,
+      asset.implicitTestStyles
+    ];
+    for (let node of nodes) {
+      if (node && node.parentElement) {
           node.parentElement.removeChild(node);
-        }
       }
     }
   }
 
   private * rewriteHTML(htmlTreePath: string): IterableIterator<Asset> {
-    for (let entrypoint of this.emberEntrypoints()) {
+    let classicEntrypoints = [
+      { entrypoint: 'index.html', includeTests: false },
+      { entrypoint: 'tests/index.html', includeTests: true },
+    ];
+    if (!this.shouldBuildTests) {
+      classicEntrypoints.pop();
+    }
+    for (let { entrypoint, includeTests } of classicEntrypoints) {
       let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
-      let asset: DOMAsset = {
-        kind: 'dom',
+      let scripts = [...dom.window.document.querySelectorAll("script")];
+      let styles = [
+        ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
+      ] as HTMLLinkElement[];
+
+      let asset: EmberAsset = {
+        kind: 'ember',
         relativePath: entrypoint,
         dom,
-        insertEmberApp: this.prepareInsertion(dom)
+        includeTests,
+        javascript: this.definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
+        styles: this.definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
+        implicitScripts: this.definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
+        implicitStyles: this.definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
+        testJavascript: this.maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
+        implicitTestScripts: this.maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
+        implicitTestStyles: this.maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
       };
-      if (entrypoint === "tests/index.html") {
-        asset.insertEmberApp!.includeTests = true;
-      }
       yield asset;
     }
   }

@@ -175,30 +175,15 @@ class CompatAppBuilder {
   }
 
   private impliedAppAssets(type: ImplicitAssetType): string[] {
-    let group: "appJS" | "appCSS" | "testJS" | "testCSS";
-    switch (type) {
-      case "implicit-scripts":
-        group = "appJS";
-        break;
-      case "implicit-styles":
-        group = "appCSS";
-        break;
-      case "implicit-test-scripts":
-        group = "testJS";
-        break;
-      case "implicit-test-styles":
-        group = "testCSS";
-        break;
-      default:
-        throw assertNever(type);
-    }
     let result = [];
     let imports = new TrackedImports(
       this.app.name,
       this.oldPackage.trackedImports
-    );
-    for (let mod of imports.categorized[group]) {
-      result.push(resolve.sync(mod, { basedir: this.root }));
+    ).meta[type];
+    if (imports) {
+      for (let mod of imports) {
+        result.push(resolve.sync(mod, { basedir: this.root }));
+      }
     }
     return result;
   }

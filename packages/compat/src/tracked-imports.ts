@@ -11,8 +11,7 @@ export class TrackedImports {
   constructor(private packageName: string, private trackedImports: TrackedImport[]) {
   }
 
-  @Memoize()
-  get categorized(): { appJS: string[], appCSS: string[], testJS: string[], testCSS: string[] } {
+  private categorize(): { appJS: string[], appCSS: string[], testJS: string[], testCSS: string[] } {
     let appJS: string[] = [];
     let appCSS: string[] = [];
     let testJS: string[] = [];
@@ -52,21 +51,23 @@ export class TrackedImports {
     return { appJS, appCSS, testJS, testCSS };
   }
 
+  @Memoize()
   get meta() {
+    let c = this.categorize();
     let result: AddonMeta = {
       version: 2
     };
-    if (this.categorized.appJS.length > 0) {
-      result['implicit-scripts'] = this.categorized.appJS.slice();
+    if (c.appJS.length > 0) {
+      result['implicit-scripts'] = c.appJS.slice();
     }
-    if (this.categorized.appCSS.length > 0) {
-      result['implicit-styles'] = this.categorized.appCSS.slice();
+    if (c.appCSS.length > 0) {
+      result['implicit-styles'] = c.appCSS.slice();
     }
-    if (this.categorized.testJS.length > 0) {
-      result['implicit-test-scripts'] = this.categorized.testJS.slice();
+    if (c.testJS.length > 0) {
+      result['implicit-test-scripts'] = c.testJS.slice();
     }
-    if (this.categorized.testCSS.length > 0) {
-      result['implicit-test-styles'] = this.categorized.testCSS.slice();
+    if (c.testCSS.length > 0) {
+      result['implicit-test-styles'] = c.testCSS.slice();
     }
     return result;
   }

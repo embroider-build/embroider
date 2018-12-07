@@ -101,6 +101,8 @@ export interface AppAdapter<TreeNames> {
   impliedAssets(type: ImplicitAssetType): string[];
   templateCompilerSource(config: EmberENV): string;
   babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
+  configContents(): ConfigContents;
+  externals(): string[];
 }
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
@@ -129,14 +131,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
       let adapter = new this(
         oldPackage,
+        configTree,
+        analyzer,
       );
-      return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), configTree, analyzer, adapter);
+      return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter);
     };
 
     return { inTrees, instantiate };
   }
   constructor(
     private oldPackage: V1App,
+    private configTree: V1Config,
+    private analyzer: DependencyAnalyzer,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -224,6 +230,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.oldPackage.babelConfig(finalRoot);
   }
 
+  configContents(): ConfigContents {
+    return this.configTree.readConfig();
+  }
+
+  externals(): string[] {
+    return this.analyzer.externals;
+  }
+
   // todo
   private shouldBuildTests = true;
 
@@ -233,8 +247,6 @@ class AppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
-    private configTree: V1Config,
-    private analyzer: DependencyAnalyzer,
     private adapter: AppAdapter<TreeNames>
   ) {}
 
@@ -382,7 +394,7 @@ class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
-    let config = this.configTree.readConfig();
+    let config = this.adapter.configContents();
     let assets = this.adapter.assets(inputPaths);
 
     // this serves as a shared cache as we're filling out each of the html entrypoints
@@ -434,7 +446,7 @@ class AppBuilder<TreeNames> {
       }
     }
 
-    for (let name of this.analyzer.externals) {
+    for (let name of this.adapter.externals()) {
       if (allAddonNames.has(name)) {
         unsupported(`your app imports ${name} but does not directly depend on it.`);
       } else {

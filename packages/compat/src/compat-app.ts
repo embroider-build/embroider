@@ -16,7 +16,6 @@ import { TrackedImports } from './tracked-imports';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -106,24 +105,26 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       classicEntrypoints.pop();
     }
     for (let { entrypoint, includeTests } of classicEntrypoints) {
-      let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
-      let scripts = [...dom.window.document.querySelectorAll("script")];
-      let styles = [
-        ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
-      ] as HTMLLinkElement[];
-
       let asset: EmberAsset = {
         kind: 'ember',
         relativePath: entrypoint,
-        dom,
         includeTests,
-        javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
-        styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
-        implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
-        implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
-        testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
-        implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
-        implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
+        sourcePath: join(htmlTreePath, entrypoint),
+        prepare: (dom: JSDOM) => {
+          let scripts = [...dom.window.document.querySelectorAll("script")];
+          let styles = [
+            ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
+          ] as HTMLLinkElement[];
+          return {
+            javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
+            styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
+            implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
+            implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
+            testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
+            implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
+            implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
+          };
+        }
       };
       yield asset;
     }

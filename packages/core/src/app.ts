@@ -10,64 +10,9 @@ import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
-import { insertScriptTag, insertStyleLink } from './dom-util';
-import { JSDOM } from 'jsdom';
 import { getOrCreate } from './get-or-create';
-
-export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
-
-interface BaseAsset {
-  // where this asset should be placed, relative to the app's root
-  relativePath: string;
-}
-
-export interface OnDiskAsset extends BaseAsset {
-  kind: "on-disk";
-
-  // absolute path to where we will find it
-  sourcePath: string;
-}
-
-export interface InMemoryAsset extends BaseAsset {
-  kind: "in-memory";
-
-  // the actual bits
-  source: string | Buffer;
-}
-
-// This represents an HTML entrypoint to the Ember app
-export interface EmberAsset extends BaseAsset {
-  kind: "ember";
-
-  // an already-parsed document
-  dom: JSDOM;
-
-  // whether to include the test suite (in addition to the ember app)
-  includeTests: boolean;
-
-  // each of the Nodes in here points at where we should insert the
-  // corresponding parts of the ember app. The Nodes themselves will be
-  // replaced, so provide placeholders.
-
-  // these are mandatory, the Ember app may need to put things into them.
-  javascript: Node;
-  styles: Node;
-  implicitScripts: Node;
-  implicitStyles: Node;
-
-  // these are optional because you *may* choose to stick your implicit test
-  // things into specific locations (which we need for backward-compat). But you
-  // can leave these off and we will simply put them in the same places as the
-  // non-test things.
-  //
-  // Do not confus these with controlling whether or not we will insert tests.
-  // That is separately controlled via `includeTests`.
-  testJavascript?: Node;
-  implicitTestScripts?: Node;
-  implicitTestStyles?: Node;
-}
-
-export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;
+import { PreparedEmberHTML } from './ember-html';
+import { Asset, ImplicitAssetType, EmberAsset } from './asset';
 
 export type EmberENV = unknown;
 
@@ -221,10 +166,16 @@ export class AppBuilder<TreeNames> {
       return js;
     });
 
-    insertScriptTag(asset.javascript, relativeTo(asset.relativePath, appJS.relativePath), { type: 'module' });
-    insertStyleLink(asset.styles, relativeTo(asset.relativePath, `assets/${this.app.name}.css`));
-    this.addImplicitJS(asset, asset.implicitScripts, "implicit-scripts");
-    this.addImplicitCSS(asset, asset.implicitStyles,"implicit-styles");
+    let html = new PreparedEmberHTML(asset);
+
+    html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
+    html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
+    for (let script of this.impliedAssets("implicit-scripts")) {
+      html.insertScriptTag(html.implicitScripts, relative(this.root, script));
+    }
+    for (let style of this.impliedAssets("implicit-styles")) {
+      html.insertStyleLink(html.implicitStyles, relative(this.root, style));
+    }
 
     if (asset.includeTests) {
       let testJS = getOrCreate(jsEntrypoints, `assets/test.js`, () => {
@@ -232,24 +183,22 @@ export class AppBuilder<TreeNames> {
         newAssets.push(js);
         return js;
       });
-      insertScriptTag(asset.testJavascript || asset.javascript, relativeTo(asset.relativePath, testJS.relativePath), { type: 'module' });
-      this.addImplicitJS(asset, asset.implicitTestScripts || asset.implicitScripts, "implicit-test-scripts");
-      this.addImplicitCSS(asset, asset.implicitTestStyles || asset.implicitStyles, "implicit-test-styles");
+      html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
+      for (let script of this.impliedAssets("implicit-test-scripts")) {
+        html.insertScriptTag(html.implicitTestScripts, relative(this.root, script));
+      }
+      for (let style of this.impliedAssets("implicit-test-styles")) {
+        html.insertStyleLink(html.implicitTestStyles, relative(this.root, style));
+      }
     }
+
+    newAssets.push({
+      kind: 'in-memory',
+      relativePath: asset.relativePath,
+      source: html.dom.serialize()
+    });
 
     return newAssets;
-  }
-
-  private addImplicitJS(asset: EmberAsset, marker: Node, type: ImplicitAssetType) {
-    for (let insertedScript of this.impliedAssets(type)) {
-      insertScriptTag(marker, relativeTo(join(this.root, asset.relativePath), insertedScript));
-    }
-  }
-
-  private addImplicitCSS(asset: EmberAsset, marker: Node, type: ImplicitAssetType) {
-    for (let insertedStyle of this.impliedAssets(type)) {
-      insertStyleLink(marker, relativeTo(join(this.root, asset.relativePath), insertedStyle));
-    }
   }
 
   private appDiffer: AppDiffer | undefined;
@@ -275,7 +224,6 @@ export class AppBuilder<TreeNames> {
         break;
       case 'ember':
         newAssets = this.insertEmberApp(asset, appFiles, jsEntrypoints);
-        writeFileSync(destination, asset.dom.serialize(), "utf8");
         break;
       default:
         assertNever(asset);
@@ -522,7 +470,3 @@ let d = w.define;
 `);
 
 function assertNever(_: never) {}
-
-function relativeTo(documentPath: string, otherPath: string) {
-  return relative(dirname(documentPath), otherPath);
-}

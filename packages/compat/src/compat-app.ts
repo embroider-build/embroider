@@ -175,17 +175,12 @@ class CompatAppBuilder {
   }
 
   private impliedAppAssets(type: ImplicitAssetType): string[] {
-    let result = [];
-    let imports = new TrackedImports(
-      this.app.name,
-      this.oldPackage.trackedImports
-    ).meta[type];
+    let imports = new TrackedImports(this.app.name, this.oldPackage.trackedImports).meta[type];
     if (imports) {
-      for (let mod of imports) {
-        result.push(resolve.sync(mod, { basedir: this.root }));
-      }
+      return imports.map(mod => resolve.sync(mod, { basedir: this.root }));
+    } else {
+      return [];
     }
-    return result;
   }
 
   private impliedAddonAssets(type: ImplicitAssetType): any {

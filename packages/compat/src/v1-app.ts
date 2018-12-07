@@ -135,7 +135,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  babelConfig(finalRoot: string, rename: any) {
+  babelConfig(finalRoot: string) {
     let syntheticPlugins = new Map();
 
     let plugins = get(this.app.options, 'babel.plugins') as any[];
@@ -167,14 +167,6 @@ export default class V1App implements V1Package {
 
       todo(`Found a babel plugin that we couldn't deal with`);
     }).filter(Boolean);
-
-    // this is our own plugin that patches up issues like non-explicit hbs
-    // extensions and packages importing their own names.
-    plugins.push([require.resolve('./babel-plugin'), {
-      ownName: this.name,
-      basedir: finalRoot,
-      rename
-    } ]);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
     // call it, but it require()s all the plugins up front, so not serializable.

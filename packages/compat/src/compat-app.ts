@@ -99,6 +99,8 @@ export interface AppAdapter<TreeNames> {
   autoRun(): boolean;
   mainModule(): string;
   impliedAssets(type: ImplicitAssetType): string[];
+  templateCompilerSource(config: EmberENV): string;
+  babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
 }
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
@@ -128,7 +130,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       let adapter = new this(
         oldPackage,
       );
-      return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), oldPackage, configTree, analyzer, adapter);
+      return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), configTree, analyzer, adapter);
     };
 
     return { inTrees, instantiate };
@@ -203,6 +205,25 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return imports || [];
   }
 
+  templateCompilerSource(config: EmberENV) {
+    let plugins = this.oldPackage.htmlbarsPlugins;
+    (global as any).__embroiderHtmlbarsPlugins__ = plugins;
+    return `
+    var compiler = require('ember-source/vendor/ember/ember-template-compiler');
+    var setupCompiler = require('@embroider/core/src/template-compiler').default;
+    var EmberENV = ${JSON.stringify(config)};
+    var plugins = global.__embroiderHtmlbarsPlugins__;
+    if (!plugins) {
+      throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
+    }
+    module.exports = setupCompiler(compiler, EmberENV, plugins);
+    `;
+  }
+
+  babelConfig(finalRoot: string) {
+    return this.oldPackage.babelConfig(finalRoot);
+  }
+
   // todo
   private shouldBuildTests = true;
 
@@ -212,7 +233,6 @@ class AppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
-    private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private adapter: AppAdapter<TreeNames>
@@ -269,7 +289,16 @@ class AppBuilder<TreeNames> {
       {},
       ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
     );
-    return this.oldPackage.babelConfig(this.root, rename);
+    let babel = this.adapter.babelConfig(this.root);
+
+    // this is our own plugin that patches up issues like non-explicit hbs
+    // extensions and packages importing their own names.
+    babel.config.plugins.push([require.resolve('./babel-plugin'), {
+      ownName: this.app.name,
+      basedir: this.root,
+      rename
+    }]);
+    return babel;
   }
 
   private insertEmberApp(asset: EmberAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
@@ -419,20 +448,9 @@ class AppBuilder<TreeNames> {
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
-    let plugins = this.oldPackage.htmlbarsPlugins;
-    (global as any).__embroiderHtmlbarsPlugins__ = plugins;
     writeFileSync(
       join(this.root, "_template_compiler_.js"),
-      `
-    var compiler = require('ember-source/vendor/ember/ember-template-compiler');
-    var setupCompiler = require('@embroider/core/src/template-compiler').default;
-    var EmberENV = ${JSON.stringify(config)};
-    var plugins = global.__embroiderHtmlbarsPlugins__;
-    if (!plugins) {
-      throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
-    }
-    module.exports = setupCompiler(compiler, EmberENV, plugins);
-    `,
+      this.adapter.templateCompilerSource(config),
       "utf8"
     );
   }

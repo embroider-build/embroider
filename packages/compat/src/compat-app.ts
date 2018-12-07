@@ -279,7 +279,7 @@ class CompatAppBuilder {
       sourcePath: join(treePaths.publicTree, file)
     }));
 
-    for (let asset of this.rewriteHTML(treePaths.htmlTree)) {
+    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
       assets.push(asset);
     }
 
@@ -413,20 +413,15 @@ class CompatAppBuilder {
   }
 
   // this is stuff that needs to get set globally before Ember loads. In classic
-  // Ember CLI is was "vendor-prefix" content that would go at the start of the
+  // Ember CLI it was "vendor-prefix" content that would go at the start of the
   // vendor.js. We are going to make sure it's the first plain <script> in the
   // HTML that we hand to the final stage packager.
   private addEmberEnv(config: EmberENV) {
-    writeFileSync(
-      join(this.root, "_ember_env_.js"),
-      `
-    window.EmberENV=${JSON.stringify(config, null, 2)};
-    `,
-      "utf8"
-    );
+    let content = `window.EmberENV=${JSON.stringify(config, null, 2)};`;
+    writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
   }
 
-  private * rewriteHTML(htmlTreePath: string): IterableIterator<Asset> {
+  private * emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
     let classicEntrypoints = [
       { entrypoint: 'index.html', includeTests: false },
       { entrypoint: 'tests/index.html', includeTests: true },

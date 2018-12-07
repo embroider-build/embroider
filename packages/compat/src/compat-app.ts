@@ -75,7 +75,7 @@ let d = w.define;
 {{/if}}
 
 {{#if testSuffix ~}}
-  {{!- this is the traditioanl tests-suffix.js -}}
+  {{!- this is the traditional tests-suffix.js -}}
   require('../tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
@@ -93,8 +93,14 @@ interface TreeNames {
   configTree: Tree;
 }
 
-class CompatAppBuilder {
+export interface AppAdapter<TreeNames> {
+  appJSSrcDir(treePaths: OutputPaths<TreeNames>): string;
+  assets(treePaths: OutputPaths<TreeNames>): Asset[];
+  autoRun(): boolean;
+  mainModule(): string;
+}
 
+class CompatAppAdapter implements AppAdapter<TreeNames> {
   // This runs at broccoli-pipeline-construction time, whereas our actual instance
   // only becomes available during actual tree-building time.
   static setup(legacyEmberAppInstance: object, options?: Options ) {
@@ -118,38 +124,98 @@ class CompatAppBuilder {
     };
 
     let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
-      return new this(
-        root,
-        packageCache.getApp(appSrcDir),
+      let adapter = new this(
         oldPackage,
-        configTree,
-        analyzer
       );
+      return new CompatAppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), oldPackage, configTree, analyzer, adapter);
     };
 
     return { inTrees, instantiate };
   }
+  constructor(
+    private oldPackage: V1App,
+  ) {}
 
+  appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
+    return treePaths.appJS;
+  }
+
+  assets(treePaths: OutputPaths<TreeNames>): Asset[] {
+    // Everything in our traditional public tree is an on-disk asset
+    let assets = walkSync(treePaths.publicTree, {
+      directories: false,
+    }).map((file): Asset => ({
+      kind: 'on-disk',
+      relativePath: file,
+      sourcePath: join(treePaths.publicTree, file)
+    }));
+
+    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
+      assets.push(asset);
+    }
+
+    return assets;
+  }
+
+  private * emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
+    let classicEntrypoints = [
+      { entrypoint: 'index.html', includeTests: false },
+      { entrypoint: 'tests/index.html', includeTests: true },
+    ];
+    if (!this.shouldBuildTests) {
+      classicEntrypoints.pop();
+    }
+    for (let { entrypoint, includeTests } of classicEntrypoints) {
+      let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
+      let scripts = [...dom.window.document.querySelectorAll("script")];
+      let styles = [
+        ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
+      ] as HTMLLinkElement[];
+
+      let asset: EmberAsset = {
+        kind: 'ember',
+        relativePath: entrypoint,
+        dom,
+        includeTests,
+        javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
+        styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
+        implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
+        implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
+        testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
+        implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
+        implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
+      };
+      yield asset;
+    }
+  }
+
+  autoRun(): boolean {
+    return this.oldPackage.autoRun;
+  }
+
+  mainModule(): string {
+    return this.oldPackage.isModuleUnification ? "src/main" : "app";
+  }
+
+  // todo
+  private shouldBuildTests = true;
+
+}
+
+class CompatAppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
     private oldPackage: V1App,
     private configTree: V1Config,
-    private analyzer: DependencyAnalyzer
+    private analyzer: DependencyAnalyzer,
+    private adapter: AppAdapter<TreeNames>
   ) {}
 
   @Memoize()
   private get activeAddonDescendants(): Package[] {
     // todo: filter by addon-provided hook
     return this.app.findDescendants(dep => dep.isEmberPackage);
-  }
-
-  private get autoRun(): boolean {
-    return this.oldPackage.autoRun;
-  }
-
-  private get isModuleUnification(): boolean {
-    return this.oldPackage.isModuleUnification;
   }
 
   private scriptPriority(pkg: Package) {
@@ -256,9 +322,6 @@ class CompatAppBuilder {
     }
   }
 
-  // todo
-  private shouldBuildTests = true;
-
   private appDiffer: AppDiffer | undefined;
 
   private updateAppJS(appJSPath: string): Set<string> {
@@ -267,23 +330,6 @@ class CompatAppBuilder {
     }
     this.appDiffer.update();
     return this.appDiffer.files;
-  }
-
-  private assets(treePaths: OutputPaths<TreeNames>): Asset[] {
-    // Everything in our traditional public tree is an on-disk asset
-    let assets = walkSync(treePaths.publicTree, {
-      directories: false,
-    }).map((file): Asset => ({
-      kind: 'on-disk',
-      relativePath: file,
-      sourcePath: join(treePaths.publicTree, file)
-    }));
-
-    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
-      assets.push(asset);
-    }
-
-    return assets;
   }
 
   private emitAsset(asset: Asset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>) {
@@ -308,9 +354,9 @@ class CompatAppBuilder {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    let appFiles = this.updateAppJS(inputPaths.appJS);
+    let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let config = this.configTree.readConfig();
-    let assets = this.assets(inputPaths);
+    let assets = this.adapter.assets(inputPaths);
 
     // this serves as a shared cache as we're filling out each of the html entrypoints
     let jsEntrypoints: Map<string, Asset> = new Map();
@@ -421,38 +467,6 @@ class CompatAppBuilder {
     writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
   }
 
-  private * emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
-    let classicEntrypoints = [
-      { entrypoint: 'index.html', includeTests: false },
-      { entrypoint: 'tests/index.html', includeTests: true },
-    ];
-    if (!this.shouldBuildTests) {
-      classicEntrypoints.pop();
-    }
-    for (let { entrypoint, includeTests } of classicEntrypoints) {
-      let dom = new JSDOM(readFileSync(join(htmlTreePath, entrypoint), "utf8"));
-      let scripts = [...dom.window.document.querySelectorAll("script")];
-      let styles = [
-        ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
-      ] as HTMLLinkElement[];
-
-      let asset: EmberAsset = {
-        kind: 'ember',
-        relativePath: entrypoint,
-        dom,
-        includeTests,
-        javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
-        styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
-        implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
-        implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
-        testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
-        implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
-        implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
-      };
-      yield asset;
-    }
-  }
-
   private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): Asset {
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
@@ -475,13 +489,12 @@ class CompatAppBuilder {
     this.gatherImplicitModules('implicit-modules', lazyModules);
 
     let relativePath = `assets/${name}.js`;
-    let mainModule = this.isModuleUnification ? "src/main" : "app";
 
     let source = entryTemplate({
       needsEmbroiderHook: true,
       lazyModules,
-      autoRun: this.autoRun,
-      mainModule: relative(dirname(relativePath), mainModule),
+      autoRun: this.adapter.autoRun(),
+      mainModule: relative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: config.APP,
     });
 
@@ -537,7 +550,7 @@ class CompatAppBuilder {
 
 export default class CompatApp extends BuildStage<TreeNames> {
   constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
-    let { inTrees, instantiate } = CompatAppBuilder.setup(legacyEmberAppInstance, options);
+    let { inTrees, instantiate } = CompatAppAdapter.setup(legacyEmberAppInstance, options);
     super(addons, inTrees, instantiate);
   }
 }

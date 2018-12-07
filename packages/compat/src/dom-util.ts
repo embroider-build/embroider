@@ -25,7 +25,6 @@ export function insertStyleLink(asset: EmberAsset, location: Node, relativeHref:
   return newTag;
 }
 
-
 export function stripInsertionMarkers(asset: EmberAsset) {
   let nodes = [
     asset.javascript,

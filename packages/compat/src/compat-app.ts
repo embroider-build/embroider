@@ -16,7 +16,6 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { Asset, EmberAsset, ImplicitAssetType, AppAdapter, AppBuilder, EmberENV } from './app';
-import { definitelyReplace, maybeReplace } from './dom-util';
 
 class Options {
   extraPublicTrees?: Tree[];
@@ -183,4 +182,19 @@ export default class CompatApp extends BuildStage<TreeNames> {
     let { inTrees, instantiate } = setup(legacyEmberAppInstance, options);
     super(addons, inTrees, instantiate);
   }
+}
+
+function maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
+  if (element) {
+    return definitelyReplace(dom, element, "", "");
+  }
+}
+
+function definitelyReplace(dom: JSDOM, element: Element | undefined, description: string, file: string): Node {
+  if (!element) {
+    throw new Error(`could not find ${description} in ${file}`);
+  }
+  let placeholder = dom.window.document.createComment('');
+  element.replaceWith(placeholder);
+  return placeholder;
 }

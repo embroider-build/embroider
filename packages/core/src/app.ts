@@ -71,17 +71,74 @@ export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;
 
 export type EmberENV = unknown;
 
+/*
+  This interface is the boundary between the general-purpose build system in
+  AppBuilder and the messy specifics of apps.
+
+    - CompatAppAdapter in `@embroider/compat` implements this interface for
+      building based of a legacy ember-cli EmberApp instance
+    - We will want to make a different class that implmenets this interface for
+      building apps that don't need an EmberApp instance at all (presumably
+      because they opt into new authoring standards.
+*/
 export interface AppAdapter<TreeNames> {
+
+  // path to the directory where the app's own Javascript lives. Doesn't include
+  // any files copied out of addons, we take care of that generically in
+  // AppBuilder.
   appJSSrcDir(treePaths: OutputPaths<TreeNames>): string;
+
+  // this is where you declare what assets must be in the final output
+  // (especially index.html, tests/index.html, and anything from your classic
+  // public tree).
   assets(treePaths: OutputPaths<TreeNames>): Asset[];
+
+  // whether the ember app should boot itself automatically
   autoRun(): boolean;
+
+  // the ember app's main module
   mainModule(): string;
+
+  // the configuration that will get passed into the ember app's main module.
+  // This traditionally comes from the `APP` property returned by
+  // config/environment.js.
   mainModuleConfig(): unknown;
+
+  // The namespace for the app's own modules at runtime.
+  //
+  // (For apps, we _do_ still allow this to be arbitrary. This is in contrast
+  // with _addons_, which absolutley must use their real NPM package name as
+  // their modulePrefix.)
   modulePrefix(): string;
+
+  // The scripts and styles that the app needs to be present, that aren't
+  // otherwise directly imported or include via tags in the HTML. In a classic
+  // application, this is the stuff that you included via `app.import()` in
+  // ember-cli-build.js.
   impliedAssets(type: ImplicitAssetType): string[];
+
+  // this is actual Javascript for a module that provides template compilation.
+  // See how CompatAppAdapter does it for an example.
   templateCompilerSource(config: EmberENV): string;
+
+  // this lets us figure out the babel config used by the app. You receive
+  // "finalRoot" which is where the app will be when we run babel against it,
+  // and you must make sure that the configuration will resolve correctly from
+  // that path.
+  //
+  // - `config` is the actual babel configuration object.
+  // - `syntheticPlugins` is a map from plugin names to Javascript source code
+  //    for babel plugins. This can make it possible to serialize babel
+  //    configs that would otherwise not be serializable.
   babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
+
+  // The environment settings used to control Ember itself. In a classic app,
+  // this comes from the EmberENV property returned by config/environment.js.
   emberENV(): EmberENV;
+
+  // the list of module specifiers that are used in the app that are not
+  // resolvable at build time. This is how we figure out the "externals" for the
+  // app itself as defined in SPEC.md.
   externals(): string[];
 }
 

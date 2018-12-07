@@ -10,7 +10,7 @@ import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
-import { insertNewline, insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
+import { insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
 import { JSDOM } from 'jsdom';
 import { getOrCreate } from './get-or-create';
 
@@ -221,8 +221,8 @@ export class AppBuilder<TreeNames> {
       return js;
     });
 
-    insertScriptTag(asset, asset.javascript, appJS.relativePath).type = 'module';
-    insertStyleLink(asset, asset.styles, `assets/${this.app.name}.css`);
+    insertScriptTag(asset.javascript, relativeTo(asset.relativePath, appJS.relativePath), { type: 'module' });
+    insertStyleLink(asset.styles, relativeTo(asset.relativePath, `assets/${this.app.name}.css`));
     this.addImplicitJS(asset, asset.implicitScripts, "implicit-scripts");
     this.addImplicitCSS(asset, asset.implicitStyles,"implicit-styles");
 
@@ -232,7 +232,7 @@ export class AppBuilder<TreeNames> {
         newAssets.push(js);
         return js;
       });
-      insertScriptTag(asset, asset.testJavascript || asset.javascript, testJS.relativePath).type = 'module';
+      insertScriptTag(asset.testJavascript || asset.javascript, relativeTo(asset.relativePath, testJS.relativePath), { type: 'module' });
       this.addImplicitJS(asset, asset.implicitTestScripts || asset.implicitScripts, "implicit-test-scripts");
       this.addImplicitCSS(asset, asset.implicitTestStyles || asset.implicitStyles, "implicit-test-styles");
     }
@@ -243,20 +243,13 @@ export class AppBuilder<TreeNames> {
 
   private addImplicitJS(asset: EmberAsset, marker: Node, type: ImplicitAssetType) {
     for (let insertedScript of this.impliedAssets(type)) {
-      let s = asset.dom.window.document.createElement("script");
-      s.src = relative(dirname(join(this.root, asset.relativePath)), insertedScript);
-      insertNewline(marker);
-      marker.parentElement!.insertBefore(s, marker);
+      insertScriptTag(marker, relativeTo(join(this.root, asset.relativePath), insertedScript));
     }
   }
 
   private addImplicitCSS(asset: EmberAsset, marker: Node, type: ImplicitAssetType) {
     for (let insertedStyle of this.impliedAssets(type)) {
-      let s = asset.dom.window.document.createElement("link");
-      s.rel = "stylesheet";
-      s.href = relative(dirname(join(this.root, asset.relativePath)), insertedStyle);
-      insertNewline(marker);
-      marker.parentElement!.insertBefore(s, marker);
+      insertStyleLink(marker, relativeTo(join(this.root, asset.relativePath), insertedStyle));
     }
   }
 
@@ -530,3 +523,7 @@ let d = w.define;
 `);
 
 function assertNever(_: never) {}
+
+function relativeTo(documentPath: string, otherPath: string) {
+  return relative(dirname(documentPath), otherPath);
+}

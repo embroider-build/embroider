@@ -1,4 +1,3 @@
-import { dirname, relative } from 'path';
 import { EmberAsset } from './app';
 
 export function insertNewline(at: Node) {
@@ -8,18 +7,21 @@ export function insertNewline(at: Node) {
   );
 }
 
-export function insertScriptTag(asset: EmberAsset, location: Node, relativeSrc: string) {
-  let newTag = asset.dom.window.document.createElement('script');
-  newTag.src = relative(dirname(asset.relativePath), relativeSrc);
+export function insertScriptTag(location: Node, relativeSrc: string, opts?: { type?: string }) {
+  let newTag = location.ownerDocument!.createElement('script');
+  newTag.src = relativeSrc;
   insertNewline(location);
   location.parentElement!.insertBefore(newTag, location);
+  if (opts && opts.type) {
+    newTag.type = opts.type;
+  }
   return newTag;
 }
 
-export function insertStyleLink(asset: EmberAsset, location: Node, relativeHref: string) {
-  let newTag = asset.dom.window.document.createElement('link');
+export function insertStyleLink(location: Node, relativeHref: string) {
+  let newTag = location.ownerDocument!.createElement('link');
   newTag.rel = "stylesheet";
-  newTag.href = relative(dirname(asset.relativePath), relativeHref);
+  newTag.href = relativeHref;
   insertNewline(location);
   location.parentElement!.insertBefore(newTag, location);
   return newTag;

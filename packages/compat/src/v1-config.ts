@@ -1,14 +1,13 @@
 import Plugin, { Tree } from "broccoli-plugin";
 import { join } from 'path';
 import { readFileSync, outputFileSync } from "fs-extra";
+import { EmberENV } from './app';
 
 export interface ConfigContents {
   modulePrefix: string;
   EmberENV: EmberENV;
   APP: unknown;
 }
-
-export type EmberENV = unknown;
 
 export class V1Config extends Plugin {
   private lastConfig: ConfigContents | undefined;

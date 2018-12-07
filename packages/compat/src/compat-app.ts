@@ -14,8 +14,8 @@ import { readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
-import { V1Config, ConfigContents, EmberENV } from './v1-config';
-import { Asset, EmberAsset, ImplicitAssetType, AppAdapter, AppBuilder } from './app';
+import { V1Config } from './v1-config';
+import { Asset, EmberAsset, ImplicitAssetType, AppAdapter, AppBuilder, EmberENV } from './app';
 import { definitelyReplace, maybeReplace } from './dom-util';
 
 class Options {
@@ -133,6 +133,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.oldPackage.isModuleUnification ? "src/main" : "app";
   }
 
+  mainModuleConfig(): unknown {
+    return this.configTree.readConfig().APP;
+  }
+
+  emberENV(): EmberENV {
+    return this.configTree.readConfig().EmberENV;
+  }
+
+  modulePrefix(): string {
+    return this.configTree.readConfig().modulePrefix;
+  }
+
   impliedAssets(type: ImplicitAssetType): string[] {
     let imports = new TrackedImports(this.oldPackage.name, this.oldPackage.trackedImports).meta[type];
     return imports || [];
@@ -155,10 +167,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   babelConfig(finalRoot: string) {
     return this.oldPackage.babelConfig(finalRoot);
-  }
-
-  configContents(): ConfigContents {
-    return this.configTree.readConfig();
   }
 
   externals(): string[] {

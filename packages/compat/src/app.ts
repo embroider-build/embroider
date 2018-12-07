@@ -14,7 +14,6 @@ import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from '@embroider/core/src/app-differ';
 import { insertNewline, insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
 import { JSDOM } from 'jsdom';
-import { EmberENV, ConfigContents } from './v1-config';
 import { compile } from './js-handlebars';
 
 export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
@@ -72,15 +71,19 @@ export interface EmberAsset extends BaseAsset {
 
 export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;
 
+export type EmberENV = unknown;
+
 export interface AppAdapter<TreeNames> {
   appJSSrcDir(treePaths: OutputPaths<TreeNames>): string;
   assets(treePaths: OutputPaths<TreeNames>): Asset[];
   autoRun(): boolean;
   mainModule(): string;
+  mainModuleConfig(): unknown;
+  modulePrefix(): string;
   impliedAssets(type: ImplicitAssetType): string[];
   templateCompilerSource(config: EmberENV): string;
   babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
-  configContents(): ConfigContents;
+  emberENV(): EmberENV;
   externals(): string[];
 }
 
@@ -154,11 +157,11 @@ export class AppBuilder<TreeNames> {
     return babel;
   }
 
-  private insertEmberApp(asset: EmberAsset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
+  private insertEmberApp(asset: EmberAsset, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
     let newAssets: Asset[] = [];
 
     let appJS = getOrCreate(jsEntrypoints, `assets/${this.app.name}.js`, () => {
-      let js = this.javascriptEntrypoint(this.app.name, config, appFiles);
+      let js = this.javascriptEntrypoint(this.app.name, appFiles);
       newAssets.push(js);
       return js;
     });
@@ -212,7 +215,7 @@ export class AppBuilder<TreeNames> {
     return this.appDiffer.files;
   }
 
-  private emitAsset(asset: Asset, config: ConfigContents, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>) {
+  private emitAsset(asset: Asset, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>) {
     let destination = join(this.root, asset.relativePath);
     let newAssets: Asset[] = [];
     ensureDirSync(dirname(destination));
@@ -224,7 +227,7 @@ export class AppBuilder<TreeNames> {
         copySync(asset.sourcePath, destination, { dereference: true });
         break;
       case 'ember':
-        newAssets = this.insertEmberApp(asset, config, appFiles, jsEntrypoints);
+        newAssets = this.insertEmberApp(asset, appFiles, jsEntrypoints);
         writeFileSync(destination, asset.dom.serialize(), "utf8");
         break;
       default:
@@ -235,7 +238,7 @@ export class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
-    let config = this.adapter.configContents();
+    let emberENV = this.adapter.emberENV();
     let assets = this.adapter.assets(inputPaths);
 
     // this serves as a shared cache as we're filling out each of the html entrypoints
@@ -244,13 +247,13 @@ export class AppBuilder<TreeNames> {
     let queue = assets.slice();
     while (queue.length > 0) {
       let asset = queue.shift()!;
-      let newAssets = this.emitAsset(asset, config, appFiles, jsEntrypoints);
+      let newAssets = this.emitAsset(asset, appFiles, jsEntrypoints);
       queue = queue.concat(newAssets);
     }
 
-    this.addTemplateCompiler(config.EmberENV);
+    this.addTemplateCompiler(emberENV);
     this.addBabelConfig();
-    this.addEmberEnv(config.EmberENV);
+    this.addEmberEnv(emberENV);
 
     let externals = this.combineExternals();
 
@@ -336,14 +339,15 @@ export class AppBuilder<TreeNames> {
     writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
   }
 
-  private javascriptEntrypoint(name: string, config: ConfigContents, appFiles: Set<string>): Asset {
+  private javascriptEntrypoint(name: string, appFiles: Set<string>): Asset {
+    let modulePrefix = this.adapter.modulePrefix();
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
       if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
         let noJS = relativePath.replace(/\.js$/, "");
         let noHBS = noJS.replace(/\.hbs$/, "");
         return {
-          runtime: `${config.modulePrefix}/${noHBS}`,
+          runtime: `${modulePrefix}/${noHBS}`,
           buildtime: `../${noJS}`,
         };
       }
@@ -364,7 +368,7 @@ export class AppBuilder<TreeNames> {
       lazyModules,
       autoRun: this.adapter.autoRun(),
       mainModule: relative(dirname(relativePath), this.adapter.mainModule()),
-      appConfig: config.APP,
+      appConfig: this.adapter.mainModuleConfig(),
     });
 
     return {

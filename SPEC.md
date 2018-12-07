@@ -443,20 +443,17 @@ One feature that *is* allowed in a v2 app is the `externals` key in **Ember pack
 These are features that are only supported in apps, not addons:
 
 
-- `"entrypoints"`: in **Ember package metadata**, a list of relative paths to files. The intent of `"entrypoints"`  is that it declares that each file in the list should result in a valid URL in the final app.
+- `"assets"`: in **Ember package metadata**, a list of relative paths to files. The intent of `"assets"`  is that it declares that each file in the list must result in a valid URL in the final app.
 
-
-  The most important entrypoints are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.)  It is the job of the final stage packager to examine each entrypoint HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
+  The most important assets are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.)  It is the job of the final stage packager to examine each asset HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
 
   Note that packagers must respect the HTML semantics of `<script type="module">` vs  `<script>` vs `<script async>`.  For example:
   - don’t go looking for `import` in `<script>`, it’s only correct in `<script type="module">`
   - a series of `<script>` tags may be concatenated (in order!) into one file while preserving correctness. A series of `<script async>` tags cannot.
 
+  File types other than HTML are allowed to appear in `"assets"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by HTTP). For example, a Javascript file in `"assets"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
 
-  File types other than HTML are allowed to appear in `"entrypoints"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by HTTP). For example, a Javascript file in `"entrypoints"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
-
-
-  A conventional app will have an `"entrypoints"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
+  A conventional app will have an `"assets"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
 
 - synchronous dynamic imports are allowed in the app’s Javascript. See next subsection.
 - `"template-compiler"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
@@ -616,14 +613,14 @@ Status: encouraged
 
 Path to a package's build-time hooks file.
 
-## entrypoints
+## assets
 
 ```
 Allowed in: apps
 Status: encouraged
 ```
 
-List of paths to files (of any type) that must be present as valid URLs in the final output. HTML files are typical entrypoints, but so is anything that we cannot otherwise rule out. For example: everything in `/public` in a traditional Ember app goes into `entrypoints`, since we can't know if anybody expects them to be remain present on the web.
+List of paths to files (of any type) that must be present as valid URLs in the final output. HTML files are typical assets, but so is anything that we cannot otherwise rule out. For example: everything in `/public` in a traditional Ember app goes into `assets`, since we can't know if anybody expects them to be remain present on the web.
 
 Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
 

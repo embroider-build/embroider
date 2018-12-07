@@ -258,7 +258,7 @@ export class AppBuilder<TreeNames> {
     let meta: AppMeta = {
       version: 2,
       externals,
-      entrypoints: assets.map(a => a.relativePath),
+      assets: assets.map(a => a.relativePath),
       ["template-compiler"]: "_template_compiler_.js",
       ["babel-config"]: "_babel_config_.js",
     };

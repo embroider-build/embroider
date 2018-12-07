@@ -4,7 +4,7 @@ type filename = string;
 // stage 2 build (the app that we hand off to a packager).
 export interface AppMeta {
   version: 2;
-  entrypoints: filename[];
+  assets: filename[];
   externals?: string[];
   "template-compiler": filename;
   "babel-config": filename;

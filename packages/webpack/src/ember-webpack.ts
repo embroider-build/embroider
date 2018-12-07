@@ -117,7 +117,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private examineApp(): AppInfo {
     let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
-    let entrypoints = meta.entrypoints.map(entrypoint => {
+    let entrypoints = meta.assets.map(entrypoint => {
       return new Entrypoint(this.pathToVanillaApp, entrypoint);
     });
     let externals = meta.externals || [];
@@ -287,7 +287,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private writeFiles(stats: StatSummary, { entrypoints }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
-    // that handles multiple entrypoints correctly.
+    // that handles multiple HTML entrypoints correctly.
     for (let entrypoint of entrypoints) {
       let assets = stats.entrypoints.get(entrypoint.name);
       if (assets) {

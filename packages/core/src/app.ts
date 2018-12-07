@@ -10,7 +10,7 @@ import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
-import { insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
+import { insertScriptTag, insertStyleLink } from './dom-util';
 import { JSDOM } from 'jsdom';
 import { getOrCreate } from './get-or-create';
 
@@ -237,7 +237,6 @@ export class AppBuilder<TreeNames> {
       this.addImplicitCSS(asset, asset.implicitTestStyles || asset.implicitStyles, "implicit-test-styles");
     }
 
-    stripInsertionMarkers(asset);
     return newAssets;
   }
 

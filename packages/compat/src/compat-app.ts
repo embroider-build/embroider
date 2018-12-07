@@ -199,7 +199,7 @@ function definitelyReplace(dom: JSDOM, element: Element | undefined, description
   if (!element) {
     throw new Error(`could not find ${description} in ${file}`);
   }
-  let placeholder = dom.window.document.createComment('');
+  let placeholder = dom.window.document.createTextNode('');
   element.replaceWith(placeholder);
   return placeholder;
 }

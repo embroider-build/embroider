@@ -1,5 +1,3 @@
-import { EmberAsset } from './app';
-
 export function insertNewline(at: Node) {
   at.parentElement!.insertBefore(
     at.ownerDocument!.createTextNode("\n"),
@@ -25,21 +23,4 @@ export function insertStyleLink(location: Node, relativeHref: string) {
   insertNewline(location);
   location.parentElement!.insertBefore(newTag, location);
   return newTag;
-}
-
-export function stripInsertionMarkers(asset: EmberAsset) {
-  let nodes = [
-    asset.javascript,
-    asset.styles,
-    asset.implicitScripts,
-    asset.implicitStyles,
-    asset.testJavascript,
-    asset.implicitTestScripts,
-    asset.implicitTestStyles
-  ];
-  for (let node of nodes) {
-    if (node && node.parentElement) {
-        node.parentElement.removeChild(node);
-    }
-  }
 }

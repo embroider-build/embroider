@@ -3,6 +3,7 @@ import {
   AppMeta,
   OutputPaths,
   getOrCreate,
+  jsHandlebarsCompile,
 } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
@@ -14,7 +15,6 @@ import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from '@embroider/core/src/app-differ';
 import { insertNewline, insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
 import { JSDOM } from 'jsdom';
-import { compile } from './js-handlebars';
 
 export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
 
@@ -421,7 +421,7 @@ export class AppBuilder<TreeNames> {
   }
 }
 
-const entryTemplate = compile(`
+const entryTemplate = jsHandlebarsCompile(`
 let w = window;
 let d = w.define;
 

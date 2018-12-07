@@ -14,3 +14,4 @@ export { default as BasicPackage } from './basic-package';
 export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
 export { default as BuildStage } from './build-stage';
 export { getOrCreate } from './get-or-create';
+export { compile as jsHandlebarsCompile } from './js-handlebars';

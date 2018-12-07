@@ -1,4 +1,4 @@
-import { compile } from "./js-handlebars";
+import { jsHandlebarsCompile as compile } from "@embroider/core";
 
 // this method is adapted directly out of broccoli-babel-transpiler
 function buildFromParallelApiInfo(parallelApiInfo: any) {

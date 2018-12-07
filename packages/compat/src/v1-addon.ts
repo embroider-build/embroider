@@ -169,7 +169,7 @@ export default class V1Addon implements V1Package {
     if (!packageOptions.babel.plugins) {
       packageOptions.babel.plugins = [];
     }
-    packageOptions.babel.plugins.push([require.resolve('./babel-plugin'), {
+    packageOptions.babel.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
       ownName: this.name
     } ]);
   }

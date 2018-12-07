@@ -35,8 +35,6 @@
     "debug": "^3.1.0",
     "fs-extra": "^7.0.0",
     "fs-tree-diff": "0.5.7",
-    "handlebars": "^4.0.11",
-    "js-string-escape": "^1.0.1",
     "jsdom": "^12.0.0",
     "lodash": "^4.17.10",
     "pkg-up": "^2.0.0",

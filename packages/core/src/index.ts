@@ -4,6 +4,7 @@ export { AppMeta, AddonMeta } from './metadata';
 export { default as Package } from './package';
 export { default as Stage } from './stage';
 export { Compiler as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
+export { Asset, EmberAsset, ImplicitAssetType, AppAdapter, AppBuilder, EmberENV } from './app';
 
 // Shared utilities
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

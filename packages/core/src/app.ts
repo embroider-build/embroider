@@ -1,10 +1,7 @@
-import {
-  Package,
-  AppMeta,
-  OutputPaths,
-  getOrCreate,
-  jsHandlebarsCompile,
-} from '@embroider/core';
+import { AppMeta } from './metadata';
+import { OutputPaths } from './wait-for-trees';
+import { compile } from './js-handlebars';
+import Package from './package';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
@@ -12,9 +9,10 @@ import { writeFileSync, ensureDirSync, copySync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
-import AppDiffer from '@embroider/core/src/app-differ';
+import AppDiffer from './app-differ';
 import { insertNewline, insertScriptTag, insertStyleLink, stripInsertionMarkers } from './dom-util';
 import { JSDOM } from 'jsdom';
+import { getOrCreate } from './get-or-create';
 
 export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
 
@@ -421,7 +419,7 @@ export class AppBuilder<TreeNames> {
   }
 }
 
-const entryTemplate = jsHandlebarsCompile(`
+const entryTemplate = compile(`
 let w = window;
 let d = w.define;
 

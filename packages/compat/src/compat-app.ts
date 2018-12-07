@@ -5,6 +5,12 @@ import {
   PackageCache,
   OutputPaths,
   BuildStage,
+  Asset,
+  EmberAsset,
+  ImplicitAssetType,
+  AppAdapter,
+  AppBuilder,
+  EmberENV
 } from '@embroider/core';
 import { TrackedImports } from './tracked-imports';
 import V1InstanceCache from './v1-instance-cache';
@@ -15,7 +21,6 @@ import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
-import { Asset, EmberAsset, ImplicitAssetType, AppAdapter, AppBuilder, EmberENV } from './app';
 
 class Options {
   extraPublicTrees?: Tree[];

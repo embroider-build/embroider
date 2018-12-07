@@ -1,5 +1,5 @@
 # Stack
- - keep refactoring compat-app bottom up.
+ - separate compat & core babel-plugin functionality
  - our use of "entrypoint" in the spec is weird relative to common usage, let's change it to "asset" and keep "entrypoint" only for URLs users would visit
  - optimize the workspace compat-app build hook for rebuilds
  - generalize the derequire transformation. Probably applies to everything other than our own synthesized entrypoints.

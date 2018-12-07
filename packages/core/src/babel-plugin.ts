@@ -6,7 +6,7 @@ interface State {
   opts: {
     ownName?: string;
     basedir?: string;
-    rename: {
+    rename?: {
       [fromName: string]: string;
     }
   };
@@ -54,7 +54,7 @@ export default function main(){
       },
       'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path: any, state: State) {
         let { opts, emberCLIVanillaJobs } = state;
-        const {source} = path.node;
+        const { source } = path.node;
         if (source === null) {
           return;
         }

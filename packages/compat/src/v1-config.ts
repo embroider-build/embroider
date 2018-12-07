@@ -1,7 +1,7 @@
 import Plugin, { Tree } from "broccoli-plugin";
 import { join } from 'path';
 import { readFileSync, outputFileSync } from "fs-extra";
-import { EmberENV } from './app';
+import { EmberENV } from '@embroider/core';
 
 export interface ConfigContents {
   modulePrefix: string;
@@ -12,7 +12,7 @@ export interface ConfigContents {
 export class V1Config extends Plugin {
   private lastConfig: ConfigContents | undefined;
   constructor(configTree: Tree, private env: string) {
-    super([configTree], {});
+  super([configTree], {});
   }
   build() {
     this.lastConfig = JSON.parse(readFileSync(join(this.inputPaths[0], 'environments', `${this.env}.json`), 'utf8'));

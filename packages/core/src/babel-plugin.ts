@@ -1,4 +1,4 @@
-import { packageName } from '@embroider/core';
+import packageName from './package-name';
 import { join, relative, dirname } from 'path';
 
 interface State {

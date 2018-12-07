@@ -98,6 +98,7 @@ export interface AppAdapter<TreeNames> {
   assets(treePaths: OutputPaths<TreeNames>): Asset[];
   autoRun(): boolean;
   mainModule(): string;
+  impliedAssets(type: ImplicitAssetType): string[];
 }
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
@@ -127,7 +128,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       let adapter = new this(
         oldPackage,
       );
-      return new CompatAppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), oldPackage, configTree, analyzer, adapter);
+      return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), oldPackage, configTree, analyzer, adapter);
     };
 
     return { inTrees, instantiate };
@@ -197,12 +198,17 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.oldPackage.isModuleUnification ? "src/main" : "app";
   }
 
+  impliedAssets(type: ImplicitAssetType): string[] {
+    let imports = new TrackedImports(this.oldPackage.name, this.oldPackage.trackedImports).meta[type];
+    return imports || [];
+  }
+
   // todo
   private shouldBuildTests = true;
 
 }
 
-class CompatAppBuilder<TreeNames> {
+class AppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
@@ -230,7 +236,8 @@ class CompatAppBuilder<TreeNames> {
   }
 
   private impliedAssets(type: ImplicitAssetType): any {
-    let result = this.impliedAddonAssets(type).concat(this.impliedAppAssets(type));
+    let appAssets = this.adapter.impliedAssets(type).map(mod => resolve.sync(mod, { basedir: this. root }));
+    let result = this.impliedAddonAssets(type).concat(appAssets);
 
     // This file gets created by addEmberEnv(). We need to insert it at the
     // beginning of the scripts.
@@ -238,15 +245,6 @@ class CompatAppBuilder<TreeNames> {
       result.unshift(join(this.root, "_ember_env_.js"));
     }
     return result;
-  }
-
-  private impliedAppAssets(type: ImplicitAssetType): string[] {
-    let imports = new TrackedImports(this.app.name, this.oldPackage.trackedImports).meta[type];
-    if (imports) {
-      return imports.map(mod => resolve.sync(mod, { basedir: this.root }));
-    } else {
-      return [];
-    }
   }
 
   private impliedAddonAssets(type: ImplicitAssetType): any {

@@ -20,6 +20,7 @@ import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
+import { statSync } from 'fs';
 
 class Options {
   extraPublicTrees?: Tree[];
@@ -81,12 +82,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   assets(treePaths: OutputPaths<TreeNames>): Asset[] {
     // Everything in our traditional public tree is an on-disk asset
-    let assets = walkSync(treePaths.publicTree, {
+    let assets = walkSync.entries(treePaths.publicTree, {
       directories: false,
-    }).map((file): Asset => ({
+    }).map((entry): Asset => ({
       kind: 'on-disk',
-      relativePath: file,
-      sourcePath: join(treePaths.publicTree, file)
+      relativePath: entry.relativePath,
+      sourcePath: entry.fullPath,
+      mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
+      size: entry.size
     }));
 
     for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
@@ -105,11 +108,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       classicEntrypoints.pop();
     }
     for (let { entrypoint, includeTests } of classicEntrypoints) {
+      let sourcePath = join(htmlTreePath, entrypoint);
+      let stats = statSync(sourcePath);
       let asset: EmberAsset = {
         kind: 'ember',
         relativePath: entrypoint,
         includeTests,
-        sourcePath: join(htmlTreePath, entrypoint),
+        sourcePath,
+        mtime: stats.mtime.getTime(),
+        size: stats.size,
         prepare: (dom: JSDOM) => {
           let scripts = [...dom.window.document.querySelectorAll("script")];
           let styles = [

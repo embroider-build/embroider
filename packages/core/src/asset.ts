@@ -13,6 +13,8 @@ export interface OnDiskAsset extends BaseAsset {
 
   // absolute path to where we will find it
   sourcePath: string;
+  mtime: number;
+  size: number;
 }
 
 export interface InMemoryAsset extends BaseAsset {
@@ -28,6 +30,11 @@ export interface EmberAsset extends BaseAsset {
 
   // absolute path to where we will find the html file
   sourcePath: string;
+
+  // these describe the file at sourcePath so we can avoid rebuilding when it
+  // hasn't changed
+  mtime: number;
+  size: number;
 
   // whether we should include the test suite (in addition to the ember app)
   includeTests: boolean;

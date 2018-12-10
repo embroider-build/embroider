@@ -5,14 +5,13 @@ import Package from './package';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
-import { writeFileSync, ensureDirSync, copySync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
-import { getOrCreate } from './get-or-create';
 import { PreparedEmberHTML } from './ember-html';
-import { Asset, ImplicitAssetType, EmberAsset } from './asset';
+import { Asset, ImplicitAssetType, EmberAsset, InMemoryAsset, OnDiskAsset } from './asset';
 
 export type EmberENV = unknown;
 
@@ -87,7 +86,42 @@ export interface AppAdapter<TreeNames> {
   externals(): string[];
 }
 
+class ParsedEmberAsset {
+  kind: 'parsed-ember' = 'parsed-ember';
+  relativePath: string;
+  fileAsset: EmberAsset;
+  html: PreparedEmberHTML;
+
+  constructor(asset: EmberAsset) {
+    this.fileAsset = asset;
+    this.html = new PreparedEmberHTML(asset);
+    this.relativePath = asset.relativePath;
+  }
+
+  validFor(other: EmberAsset) {
+    return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
+  }
+}
+
+class BuiltEmberAsset {
+  kind: 'built-ember' = 'built-ember';
+  relativePath: string;
+  parsedAsset: ParsedEmberAsset;
+  source: string;
+
+  constructor(asset: ParsedEmberAsset) {
+    this.parsedAsset = asset;
+    this.source = asset.html.dom.serialize();
+    this.relativePath = asset.relativePath;
+  }
+}
+
+type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
+
 export class AppBuilder<TreeNames> {
+  // for each relativePath, an Asset we have already emitted
+  private assets: Map<string, InternalAsset> = new Map();
+
   constructor(
     private root: string,
     private app: Package,
@@ -157,16 +191,14 @@ export class AppBuilder<TreeNames> {
     return babel;
   }
 
-  private insertEmberApp(asset: EmberAsset, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>): Asset[] {
-    let newAssets: Asset[] = [];
+  private insertEmberApp(asset: ParsedEmberAsset, appFiles: Set<string>, prepared: Map<string, InternalAsset>) {
+    let appJS = prepared.get(`assets/${this.app.name}.js`);
+    if (!appJS) {
+      appJS = this.javascriptEntrypoint(this.app.name, appFiles);
+      prepared.set(appJS.relativePath, appJS);
+    }
 
-    let appJS = getOrCreate(jsEntrypoints, `assets/${this.app.name}.js`, () => {
-      let js = this.javascriptEntrypoint(this.app.name, appFiles);
-      newAssets.push(js);
-      return js;
-    });
-
-    let html = new PreparedEmberHTML(asset);
+    let html = asset.html;
 
     html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
@@ -177,12 +209,12 @@ export class AppBuilder<TreeNames> {
       html.insertStyleLink(html.implicitStyles, relative(this.root, style));
     }
 
-    if (asset.includeTests) {
-      let testJS = getOrCreate(jsEntrypoints, `assets/test.js`, () => {
-        let js = this.testJSEntrypoint(appFiles);
-        newAssets.push(js);
-        return js;
-      });
+    if (asset.fileAsset.includeTests) {
+      let testJS = prepared.get(`assets/test.js`);
+      if (!testJS) {
+        testJS = this.testJSEntrypoint(appFiles);
+        prepared.set(testJS.relativePath, testJS);
+      }
       html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
       for (let script of this.impliedAssets("implicit-test-scripts")) {
         html.insertScriptTag(html.implicitTestScripts, relative(this.root, script));
@@ -191,14 +223,6 @@ export class AppBuilder<TreeNames> {
         html.insertStyleLink(html.implicitTestStyles, relative(this.root, style));
       }
     }
-
-    newAssets.push({
-      kind: 'in-memory',
-      relativePath: asset.relativePath,
-      source: html.dom.serialize()
-    });
-
-    return newAssets;
   }
 
   private appDiffer: AppDiffer | undefined;
@@ -211,24 +235,89 @@ export class AppBuilder<TreeNames> {
     return this.appDiffer.files;
   }
 
-  private emitAsset(asset: Asset, appFiles: Set<string>, jsEntrypoints: Map<string, Asset>) {
-    let destination = join(this.root, asset.relativePath);
-    let newAssets: Asset[] = [];
-    ensureDirSync(dirname(destination));
-    switch (asset.kind) {
-      case 'in-memory':
-        writeFileSync(destination, asset.source, "utf8");
-        break;
-      case 'on-disk':
-        copySync(asset.sourcePath, destination, { dereference: true });
-        break;
-      case 'ember':
-        newAssets = this.insertEmberApp(asset, appFiles, jsEntrypoints);
-        break;
-      default:
-        assertNever(asset);
+  private prepareAsset(asset: Asset, appFiles: Set<string>, prepared: Map<string, InternalAsset>) {
+    if (asset.kind === 'ember') {
+      let prior = this.assets.get(asset.relativePath);
+      let parsed: ParsedEmberAsset;
+      if (prior && prior.kind === 'built-ember' && prior.parsedAsset.validFor(asset)) {
+        // we can reuse the parsed html
+        parsed = prior.parsedAsset;
+        parsed.html.clear();
+      } else {
+        parsed = new ParsedEmberAsset(asset);
+      }
+      this.insertEmberApp(parsed, appFiles, prepared);
+      prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
+    } else {
+      prepared.set(asset.relativePath, asset);
     }
-    return newAssets;
+  }
+
+  private prepareAssets(requestedAssets: Asset[], appFiles: Set<string>): Map<string, InternalAsset> {
+    let prepared: Map<string, InternalAsset> = new Map();
+    for (let asset of requestedAssets) {
+      this.prepareAsset(asset, appFiles, prepared);
+    }
+    return prepared;
+  }
+
+  private updateOnDiskAsset(asset: OnDiskAsset, prior: InternalAsset | undefined) {
+    if (prior && prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime) {
+      // prior was already valid
+      return;
+    }
+    let destination = join(this.root, asset.relativePath);
+    ensureDirSync(dirname(destination));
+    copySync(asset.sourcePath, destination, { dereference: true });
+  }
+
+  private updateInMemoryAsset(asset: InMemoryAsset, prior: InternalAsset | undefined) {
+    if (prior && prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source)) {
+      // prior was already valid
+      return;
+    }
+    let destination = join(this.root, asset.relativePath);
+    ensureDirSync(dirname(destination));
+    writeFileSync(destination, asset.source, "utf8");
+  }
+
+  private updateBuiltEmberAsset(asset: BuiltEmberAsset, prior: InternalAsset | undefined) {
+    if (
+      prior && prior.kind === 'built-ember' &&
+      prior.source === asset.source
+    ) {
+      // prior was already valid
+      return;
+    }
+    let destination = join(this.root, asset.relativePath);
+    ensureDirSync(dirname(destination));
+    writeFileSync(destination, asset.source, "utf8");
+  }
+
+  private updateAssets(requestedAssets: Asset[], appFiles: Set<string>) {
+    let assets = this.prepareAssets(requestedAssets, appFiles);
+    for (let asset of assets.values()) {
+      let prior = this.assets.get(asset.relativePath);
+      switch (asset.kind) {
+        case 'on-disk':
+          this.updateOnDiskAsset(asset, prior);
+          break;
+        case 'in-memory':
+          this.updateInMemoryAsset(asset, prior);
+          break;
+        case 'built-ember':
+          this.updateBuiltEmberAsset(asset, prior);
+          break;
+        default:
+          assertNever(asset);
+      }
+    }
+    for (let oldAsset of this.assets.values()) {
+      if (!assets.has(oldAsset.relativePath)) {
+        unlinkSync(join(this.root, oldAsset.relativePath));
+      }
+    }
+    this.assets = assets;
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -236,16 +325,7 @@ export class AppBuilder<TreeNames> {
     let emberENV = this.adapter.emberENV();
     let assets = this.adapter.assets(inputPaths);
 
-    // this serves as a shared cache as we're filling out each of the html entrypoints
-    let jsEntrypoints: Map<string, Asset> = new Map();
-
-    let queue = assets.slice();
-    while (queue.length > 0) {
-      let asset = queue.shift()!;
-      let newAssets = this.emitAsset(asset, appFiles, jsEntrypoints);
-      queue = queue.concat(newAssets);
-    }
-
+    this.updateAssets(assets, appFiles);
     this.addTemplateCompiler(emberENV);
     this.addBabelConfig();
     this.addEmberEnv(emberENV);
@@ -334,7 +414,7 @@ export class AppBuilder<TreeNames> {
     writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
   }
 
-  private javascriptEntrypoint(name: string, appFiles: Set<string>): Asset {
+  private javascriptEntrypoint(name: string, appFiles: Set<string>): InternalAsset {
     let modulePrefix = this.adapter.modulePrefix();
     // for the app tree, we take everything
     let lazyModules = [...appFiles].map(relativePath => {
@@ -373,7 +453,7 @@ export class AppBuilder<TreeNames> {
     };
   }
 
-  private testJSEntrypoint(appFiles: Set<string>): Asset {
+  private testJSEntrypoint(appFiles: Set<string>): InternalAsset {
     let testModules = [...appFiles].map(relativePath => {
       if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
         return `../${relativePath}`;
@@ -470,3 +550,13 @@ let d = w.define;
 `);
 
 function assertNever(_: never) {}
+
+function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a === b;
+  }
+  if (a instanceof Buffer && b instanceof Buffer) {
+    return Buffer.compare(a,b) === 0;
+  }
+  return false;
+}

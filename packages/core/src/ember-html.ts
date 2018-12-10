@@ -35,8 +35,8 @@ class NodeRange {
     this.end = initial;
   }
   clear() {
-    while (this.start.nextSibling === this.end) {
-      this.start.parentElement!.removeChild(this.start.nextSibling);
+    while (this.start.nextSibling !== this.end) {
+      this.start.parentElement!.removeChild(this.start.nextSibling!);
     }
   }
   insert(node: Node) {

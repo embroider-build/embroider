@@ -6,6 +6,11 @@ import cloneDeep from 'lodash/cloneDeep';
 
 const { test } = QUnit;
 
+// https://github.com/joliss/node-walk-sync/pull/38
+function buggyDate(timestamp: number) {
+  return timestamp as unknown as Date;
+}
+
 QUnit.module('tracked-merge-dirs', function() {
   test('it combines files from all inDirs', function(assert) {
     let a = new MockTree(['alpha', 'tomster']);
@@ -105,7 +110,7 @@ QUnit.module('tracked-merge-dirs', function() {
       relativePath: 'alpha',
       mode: 33188,
       size: 1000,
-      mtime: new Date(),
+      mtime: buggyDate(Date.now()),
       isDirectory: () => false
     });
 
@@ -163,7 +168,7 @@ class MockTree {
           relativePath: join(...breadcrumbs, name),
           mode: 33188,
           size: 1000,
-          mtime: new Date(),
+          mtime: buggyDate(Date.now()),
           isDirectory: () => true
         };
         yield * this.walk([...breadcrumbs, name], value);
@@ -172,7 +177,7 @@ class MockTree {
           relativePath: join(...breadcrumbs, name),
           mode: 33188,
           size: 1000,
-          mtime: new Date(),
+          mtime: buggyDate(Date.now()),
           isDirectory: () => false
         };
       }
@@ -187,7 +192,7 @@ class MockTree {
 }
 
 function dirty(entry: Entry) {
-  entry.mtime = new Date(entry.mtime.getTime() + 1000);
+  entry.mtime = buggyDate(entry.mtime as unknown as number + 1000);
 }
 
 function fileOps(operations: Operation[]) {

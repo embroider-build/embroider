@@ -266,21 +266,21 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       owner.packageJSON.keywords.includes('ember-addon');
   }
 
-  private lastConfig: Configuration | undefined;
+  private lastAppInfo: AppInfo | undefined;
   private lastWebpack: webpack.Compiler | undefined;
 
-  private getWebpack(config: Configuration) {
-    if (this.lastWebpack && isEqual(config, this.lastConfig)) {
+  private getWebpack(appInfo: AppInfo) {
+    if (this.lastWebpack && this.lastAppInfo && isEqual(appInfo, this.lastAppInfo)) {
       return this.lastWebpack;
     }
-    this.lastConfig = config;
+    let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
+    this.lastAppInfo = appInfo;
     return this.lastWebpack = webpack(config);
   }
 
   async build(): Promise<void> {
     let appInfo = this.examineApp();
-    let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
-    let webpack = this.getWebpack(config);
+    let webpack = this.getWebpack(appInfo);
     let stats = this.summarizeStats(await this.runWebpack(webpack));
     this.writeFiles(stats, appInfo);
   }

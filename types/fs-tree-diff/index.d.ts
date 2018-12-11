@@ -16,7 +16,7 @@ declare module 'fs-tree-diff' {
     relativePath: string;
     mode: number;
     size: number;
-    mtime: Date;
+    mtime: number;
     isDirectory(): boolean;
   }
 }

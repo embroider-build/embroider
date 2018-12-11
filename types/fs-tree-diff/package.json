@@ -2,6 +2,6 @@
   "name": "@types/fs-tree-diff",
   "version": "0.0.0",
   "dependencies": {
-    "walk-sync": "^0.3.3"
+    "walk-sync": "^1.0.1"
   }
 }

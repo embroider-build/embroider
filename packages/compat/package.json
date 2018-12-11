@@ -42,7 +42,7 @@
     "semver": "^5.5.0",
     "symlink-or-copy": "^1.2.0",
     "typescript-memoize": "^1.0.0-alpha.3",
-    "walk-sync": "^0.3.2"
+    "walk-sync": "^1.0.1"
   },
   "peerDependencies": {
     "@embroider/core": "*"

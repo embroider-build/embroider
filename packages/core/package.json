@@ -36,6 +36,6 @@
     "resolve": "^1.8.1",
     "strip-bom": "^3.0.0",
     "typescript-memoize": "^1.0.0-alpha.3",
-    "walk-sync": "^0.3.2"
+    "walk-sync": "^1.0.1"
   }
 }

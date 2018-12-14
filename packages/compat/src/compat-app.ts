@@ -193,7 +193,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 export default class CompatApp extends BuildStage<TreeNames> {
   constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
     let { inTrees, instantiate } = setup(legacyEmberAppInstance, options);
-    super(addons, inTrees, instantiate);
+    super(addons, inTrees, '@embroider/compat/app', instantiate);
   }
 }
 

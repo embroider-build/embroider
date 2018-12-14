@@ -13,7 +13,8 @@ export default function toBroccoliPlugin<Options>(packagerClass: Packager<Option
     constructor(private stage: Stage, private options?: Options) {
       super([stage.tree], {
         persistentOutput: true,
-        needsCache: false
+        needsCache: false,
+        annotation: packagerClass.annotation
       });
     }
 

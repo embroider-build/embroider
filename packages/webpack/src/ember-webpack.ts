@@ -101,6 +101,8 @@ interface Options {
 // just exporting our class directly, we export a const constructor of the
 // correct type.
 const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
+  static annotation = "@embroider/webpack";
+
   pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
 

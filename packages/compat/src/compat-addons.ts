@@ -33,7 +33,8 @@ export default class CompatAddons implements Stage {
     }
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
-    this.tree = new WaitForTrees({ movedAddons: [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache)) }, this.build.bind(this));
+    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
+    this.tree = new WaitForTrees({ movedAddons }, '@embroider/compat/addons', this.build.bind(this));
     this.inputPath = v1Cache.app.root;
   }
 

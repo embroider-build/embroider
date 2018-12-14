@@ -24,11 +24,13 @@ import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
   constructor(
     private trees: NamedTrees,
+    annotation: string,
     private buildHook: (trees: OutputPaths<NamedTrees>) => Promise<void>,
   ){
     super(flatTrees(trees), {
       persistentOutput: true,
-      needsCache: false
+      needsCache: false,
+      annotation: annotation,
     });
   }
 

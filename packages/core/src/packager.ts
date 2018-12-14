@@ -25,6 +25,9 @@ export interface Packager<Options> {
     // configuration can go.
     options?: Options,
   ): PackagerInstance;
+
+  // a description for this packager that aids debugging & profiling
+  annotation: string;
 }
 
 export interface PackagerInstance {

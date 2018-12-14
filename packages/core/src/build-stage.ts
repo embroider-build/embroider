@@ -6,7 +6,7 @@ import { Memoize } from "typescript-memoize";
 
 // This is a utility class for defining new Stages. It aids in handling the
 // boilerplate required to split your functionality between the
-// broccoli-pipeline-construction base and the actual building phase.
+// broccoli-pipeline-construction phase and the actual building phase.
 export default class BuildStage<NamedTrees> implements Stage {
   private active: BuilderInstance<NamedTrees> | undefined;
   private outputPath: string | undefined;
@@ -15,12 +15,13 @@ export default class BuildStage<NamedTrees> implements Stage {
   constructor(
     private prevStage: Stage,
     private inTrees: NamedTrees,
+    private annotation: string,
     private instantiate: (root: string, appSrcDir: string, packageCache: PackageCache) => Promise<BuilderInstance<NamedTrees>>
   ) {}
 
   @Memoize()
   get tree(): Tree {
-    return new WaitForTrees(this.augment(this.inTrees), async (treePaths) => {
+    return new WaitForTrees(this.augment(this.inTrees), this.annotation, async (treePaths) => {
       if (!this.active) {
         let { outputPath, packageCache } = await this.prevStage.ready();
         if (!packageCache) {

@@ -497,6 +497,7 @@ export class AppBuilder<TreeNames> {
 }
 
 const entryTemplate = compile(`
+import { require as r } from '@embroider/core';
 let w = window;
 let d = w.define;
 
@@ -535,16 +536,16 @@ let d = w.define;
 {{/each}}
 
 {{#each lazyModules as |lazyModule| ~}}
-  d("{{js-string-escape lazyModule.runtime}}", function(){ return require("{{js-string-escape lazyModule.buildtime}}");});
+  d("{{js-string-escape lazyModule.runtime}}", function(){ return r("{{js-string-escape lazyModule.buildtime}}");});
 {{/each}}
 
 {{#if autoRun ~}}
-  require("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+  r("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
 {{/if}}
 
 {{#if testSuffix ~}}
   {{!- this is the traditional tests-suffix.js -}}
-  require('../tests/test-helper');
+  r('../tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `);

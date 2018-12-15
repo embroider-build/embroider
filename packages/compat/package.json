@@ -26,7 +26,7 @@
   "dependencies": {
     "babel-core": "^6.26.3",
     "babel-plugin-debug-macros": "^0.1.11",
-    "babel-plugin-ember-modules-api-polyfill": "^2.4.0",
+    "babel-plugin-ember-modules-api-polyfill": "git+https://github.com/ember-cli/babel-plugin-ember-modules-api-polyfill#d0c7772bc9f995f83641a4292afd5e05e7e9bbba",
     "babylon": "^6.18.0",
     "broccoli-funnel": "^2.0.1",
     "broccoli-merge-trees": "^3.0.0",

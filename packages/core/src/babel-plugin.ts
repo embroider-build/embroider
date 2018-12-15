@@ -3,6 +3,7 @@ import { join, relative, dirname } from 'path';
 
 interface State {
   emberCLIVanillaJobs: Function[];
+  generatedRequires: Set<Node>;
   opts: {
     ownName?: string;
     basedir?: string;
@@ -41,15 +42,34 @@ function makeHBSExplicit(specifier: string, _: string) {
   return specifier;
 }
 
-export default function main(){
+export default function main({ types: t} : { types: any }){
   return {
     visitor: {
       Program: {
         enter: function(_: any, state: State) {
           state.emberCLIVanillaJobs = [];
+          state.generatedRequires = new Set();
         },
         exit: function(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
+        }
+      },
+      ReferencedIdentifier(path: any, state: State) {
+        if (path.node.name === 'require' && !state.generatedRequires.has(path.node) && !path.scope.hasBinding('require')) {
+          // any existing bare "require" should remain a *runtime* require, so
+          // we rename it to window.require so that final stage packagers will
+          // leave it alone.
+          path.replaceWith(
+            t.memberExpression(t.identifier('window'), path.node)
+          );
+        }
+        if (path.referencesImport('@embroider/core', 'require')) {
+          // whereas our own explicit *build-time* require (used in the
+          // generated entrypoints) gets rewritten to a plain require so that
+          // final stage packagers *will* see it.
+          let r = t.identifier('require');
+          state.generatedRequires.add(r);
+          path.replaceWith(r);
         }
       },
       'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path: any, state: State) {
@@ -58,6 +78,16 @@ export default function main(){
         if (source === null) {
           return;
         }
+
+        // strip our own build-time-only require directive
+        if (source.value === '@embroider/core' &&
+            path.node.specifiers.length === 1 &&
+            path.node.specifiers[0].imported.name === 'require'
+        ) {
+          emberCLIVanillaJobs.push(() => path.remove());
+          return;
+        }
+
         let sourceFileName = path.hub.file.opts.filename;
         let specifier = adjustSpecifier(source.value, sourceFileName, opts);
         specifier = makeHBSExplicit(specifier, sourceFileName);

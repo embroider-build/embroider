@@ -181,11 +181,13 @@ export default class V1App implements V1Package {
     }
 
     let config = {
-      moduleIds: true,
       babelrc: false,
       plugins,
       presets: [
-        [resolve.sync("babel-preset-env", { basedir: this.root }), { targets: babelInstance._getTargets() }]
+        [resolve.sync("babel-preset-env", { basedir: this.root }), {
+          targets: babelInstance._getTargets(),
+          modules: false
+        }]
       ]
     };
     return { config, syntheticPlugins };

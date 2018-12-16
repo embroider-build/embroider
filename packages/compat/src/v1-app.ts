@@ -39,11 +39,6 @@ export default class V1App implements V1Package {
   }
 
   @Memoize()
-  private get rootTree() {
-    return new WatchedDir(this.root);
-  }
-
-  @Memoize()
   get isModuleUnification() {
     let experiments = this.requireFromEmberCLI('./lib/experiments');
     return experiments.MODULE_UNIFICATION && !!this.app.trees.src;
@@ -98,16 +93,16 @@ export default class V1App implements V1Package {
   get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
-    let index: Tree = new Funnel(this.rootTree, {
+    let index: Tree = new Funnel(new WatchedDir(join(this.root, 'app')), {
       allowEmpty: true,
-      include: [`app/index.html`],
+      include: [`index.html`],
       getDestinationPath: () => indexFilePath,
       annotation: 'app/index.html',
     });
 
     if (this.isModuleUnification) {
-      let srcIndex = new Funnel(this.rootTree, {
-        files: ['src/ui/index.html'],
+      let srcIndex = new Funnel(new WatchedDir(join(this.root, 'src')), {
+        files: ['ui/index.html'],
         getDestinationPath: () => indexFilePath,
         annotation: 'src/ui/index.html',
       });

@@ -3,8 +3,17 @@ import { Package } from '@embroider/core';
 import SmooshPackageJSON from "./smoosh-package-json";
 import broccoliMergeTrees from "broccoli-merge-trees";
 import { Tree } from "broccoli-plugin";
+import OneShot from "./one-shot";
 
-export default function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
+export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
+  let tree = buildCompatAddon(originalPackage, v1Cache);
+  if (!originalPackage.mayRebuild) {
+    tree = new OneShot(tree);
+  }
+  return tree;
+}
+
+function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
   if (originalPackage.isV2) {
     // todo: this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and

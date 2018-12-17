@@ -3,6 +3,7 @@ import MultiTreeDiff, { InputTree } from "./multi-tree-diff";
 import walkSync from 'walk-sync';
 import { join } from 'path';
 import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync } from "fs-extra";
+import { debug } from './messages';
 
 export default class AppDiffer {
   private differ: MultiTreeDiff;
@@ -38,6 +39,7 @@ export default class AppDiffer {
 
   update() {
     let { ops, sources } = this.differ.update();
+    debug(`app-differ operations count: %s`, ops.length);
     for (let [operation, relativePath] of ops) {
       let outputPath = join(this.outputPath, relativePath);
       switch (operation) {

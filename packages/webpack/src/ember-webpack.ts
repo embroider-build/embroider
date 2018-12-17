@@ -1,6 +1,6 @@
 import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
-import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync } from 'fs-extra';
+import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync } from 'fs-extra';
 import { join, dirname, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
@@ -105,6 +105,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
+  private passthroughCache: Map<string, Stats> = new Map();
 
   constructor(
     pathToVanillaApp: string,
@@ -322,8 +323,17 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
       } else {
         // this branch handles other assets that we are just passing through
-        copySync(entrypoint.absoluteFilename, join(this.outputPath, entrypoint.filename));
+        this.copyThrough(entrypoint);
       }
+    }
+  }
+
+  private copyThrough(entrypoint: Entrypoint) {
+    let newStats = statSync(entrypoint.absoluteFilename);
+    let oldStats = this.passthroughCache.get(entrypoint.absoluteFilename);
+    if (!oldStats || oldStats.mtimeMs !== newStats.mtimeMs || oldStats.size !== newStats.size) {
+      copySync(entrypoint.absoluteFilename, join(this.outputPath, entrypoint.filename));
+      this.passthroughCache.set(entrypoint.absoluteFilename, newStats);
     }
   }
 

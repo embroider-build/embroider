@@ -26,8 +26,11 @@ export class V1Config extends Plugin {
 }
 
 export class WriteV1Config extends Plugin {
+  private lastContents: string | undefined;
   constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private appName: string) {
-    super([inputTree], {});
+    super([inputTree], {
+      persistentOutput: true
+    });
   }
   build() {
     let filename = join(this.outputPath, 'config/environment.js');
@@ -37,7 +40,10 @@ export class WriteV1Config extends Plugin {
     } else {
       contents = `export default ${JSON.stringify(this.inputTree.readConfig())};`;
     }
-    outputFileSync(filename, contents);
+    if (!this.lastContents || this.lastContents !== contents) {
+      outputFileSync(filename, contents);
+    }
+    this.lastContents = contents;
   }
 }
 

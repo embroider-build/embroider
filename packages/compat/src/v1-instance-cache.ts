@@ -29,10 +29,6 @@ export default class V1InstanceCache {
   packageCache = new MovablePackageCache();
 
   private constructor(oldApp: any, private options: AddonOptionsWithDefaults = defaultOptions()) {
-    if (!oldApp._activeAddonInclude) {
-      throw new Error('@embroider/core requires a patch to ember-cli that provides tracking of who calls app.import');
-    }
-
     this.app = new V1App(oldApp, this.packageCache);
 
     // no reason to do this on demand because oldApp already eagerly loaded

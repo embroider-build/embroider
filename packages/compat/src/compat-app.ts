@@ -7,12 +7,11 @@ import {
   BuildStage,
   Asset,
   EmberAsset,
-  ImplicitAssetType,
   AppAdapter,
   AppBuilder,
-  EmberENV
+  EmberENV,
+  Package
 } from '@embroider/core';
-import { TrackedImports } from './tracked-imports';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
@@ -62,6 +61,7 @@ function setup(legacyEmberAppInstance: object, options?: Options ) {
       oldPackage,
       configTree,
       analyzer,
+      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor'))
     );
     return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter);
   };
@@ -74,6 +74,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
+    private synthVendor: Package,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -157,9 +158,8 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().modulePrefix;
   }
 
-  impliedAssets(type: ImplicitAssetType): string[] {
-    let imports = new TrackedImports(this.oldPackage.name, this.oldPackage.trackedImports).meta[type];
-    return imports || [];
+  extraDependencies(): Package[] {
+    return [this.synthVendor];
   }
 
   templateCompilerSource(config: EmberENV) {

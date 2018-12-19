@@ -9,7 +9,6 @@ import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from './messages';
-import { TrackedImports } from './tracked-imports';
 import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
@@ -264,11 +263,6 @@ export default class V1Addon implements V1Package {
       staticMeta['renamed-modules'] = {
         [this.addonInstance.name]: this.name
       };
-    }
-
-    {
-      let tracked = new TrackedImports(this.name, this.addonInstance._trackedImports);
-      Object.assign(staticMeta, tracked.meta);
     }
 
     if (this.customizes('treeFor')) {

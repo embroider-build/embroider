@@ -7,19 +7,23 @@ import {
   realpathSync,
   mkdtempSync,
   copySync,
+  writeJSONSync,
+  pathExistsSync,
 } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees, AddonMeta } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
 import { Memoize } from "typescript-memoize";
 import buildCompatAddon from './build-compat-addon';
 import AddonOptions, { defaultOptions, AddonOptionsWithDefaults } from './options';
+import V1App from "./v1-app";
 
 export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
+  private v1App: V1App;
   readonly inputPath: string;
   readonly tree: Tree;
 
@@ -36,6 +40,7 @@ export default class CompatAddons implements Stage {
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
     this.tree = new WaitForTrees({ movedAddons }, '@embroider/compat/addons', this.build.bind(this));
     this.inputPath = v1Cache.app.root;
+    this.v1App = v1Cache.app;
   }
 
   async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
@@ -69,8 +74,36 @@ export default class CompatAddons implements Stage {
     });
     this.linkNonCopiedDeps(this.app, this.appDestDir);
     await this.packageCache.updatePreexistingResolvableSymlinks();
+    this.synthesizeVendorPackage();
     this.didBuild = true;
     this.deferReady.resolve();
+  }
+
+  private synthesizeVendorPackage() {
+    let target = join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-vendor');
+    ensureDirSync(target);
+    for (let [ oldPkg, newPkg ] of this.packageCache.moved.entries()) {
+      if (!oldPkg.isV2 && newPkg.isV2) {
+        let vendorDir = join(newPkg.root, 'vendor');
+        if (pathExistsSync(vendorDir)) {
+          copySync(vendorDir, target);
+        }
+      }
+    }
+    let addonMeta: AddonMeta = {
+      version: 2,
+      "implicit-scripts": this.v1App.implicitAssets('implicit-scripts'),
+      "implicit-styles": this.v1App.implicitAssets('implicit-styles'),
+      "implicit-test-scripts": this.v1App.implicitAssets('implicit-test-scripts'),
+      "implicit-test-styles": this.v1App.implicitAssets('implicit-test-styles'),
+    };
+    let meta = {
+      name: '@embroider/synthesized-vendor',
+      version: '0.0.0',
+      keywords: 'ember-addon',
+      'ember-addon': addonMeta
+    };
+    writeJSONSync(join(target, 'package.json'), meta, { spaces: 2 });
   }
 
   @Memoize()

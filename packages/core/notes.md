@@ -1,6 +1,4 @@
 # Stack
- - generalize the derequire transformation. Probably applies to everything other than our own synthesized entrypoints.
-   - this implies generalizing split babel configs (we don't really want to apply the app's plugins to addon code unnecessarily anyway)
  - finish making every legacyTrees into a protected method so it can be overidden
  - start documenting things addons do that are impossible to patch over
   - having the same import do different things in test and non-test

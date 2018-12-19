@@ -12,6 +12,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
 import { Asset, ImplicitAssetType, EmberAsset, InMemoryAsset, OnDiskAsset } from './asset';
+import flatMap from 'lodash/flatMap';
 
 export type EmberENV = unknown;
 
@@ -55,11 +56,9 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
-  // The scripts and styles that the app needs to be present, that aren't
-  // otherwise directly imported or include via tags in the HTML. In a classic
-  // application, this is the stuff that you included via `app.import()` in
-  // ember-cli-build.js.
-  impliedAssets(type: ImplicitAssetType): string[];
+  // optional method to force extra packages to be treated as dependencies of
+  // the app.
+  extraDependencies?(): Package[];
 
   // this is actual Javascript for a module that provides template compilation.
   // See how CompatAppAdapter does it for an example.
@@ -131,7 +130,15 @@ export class AppBuilder<TreeNames> {
   @Memoize()
   private get activeAddonDescendants(): Package[] {
     // todo: filter by addon-provided hook
-    return this.app.findDescendants(dep => dep.isEmberPackage);
+    let shouldInclude = (dep: Package) => dep.isEmberPackage;
+
+    let result = this.app.findDescendants(shouldInclude);
+    if (this.adapter.extraDependencies) {
+      let extras = this.adapter.extraDependencies().filter(shouldInclude);
+      let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
+      result = [...result, ...extras, ...extraDescendants];
+    }
+    return result;
   }
 
   private scriptPriority(pkg: Package) {
@@ -146,8 +153,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private impliedAssets(type: ImplicitAssetType): any {
-    let appAssets = this.adapter.impliedAssets(type).map(mod => resolve.sync(mod, { basedir: this. root }));
-    let result = this.impliedAddonAssets(type).concat(appAssets);
+    let result = this.impliedAddonAssets(type);
 
     // This file gets created by addEmberEnv(). We need to insert it at the
     // beginning of the scripts.

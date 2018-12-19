@@ -11,7 +11,7 @@ import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
-import { Asset, ImplicitAssetType, EmberAsset, InMemoryAsset, OnDiskAsset } from './asset';
+import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
 import flatMap from 'lodash/flatMap';
 
 export type EmberENV = unknown;
@@ -152,7 +152,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private impliedAssets(type: ImplicitAssetType): any {
+  private impliedAssets(type: keyof ImplicitAssetPaths): any {
     let result = this.impliedAddonAssets(type);
 
     // This file gets created by addEmberEnv(). We need to insert it at the
@@ -163,7 +163,7 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
-  private impliedAddonAssets(type: ImplicitAssetType): any {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths): any {
     let result = [];
     for (let addon of sortBy(
       this.activeAddonDescendants,

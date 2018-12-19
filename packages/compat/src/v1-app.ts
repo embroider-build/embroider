@@ -12,7 +12,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache, TemplateCompilerPlugins, ImplicitAssetType } from '@embroider/core';
+import { PackageCache, TemplateCompilerPlugins, ImplicitAssetPaths } from '@embroider/core';
 import { todo } from './messages';
 import { synthesize } from './parallel-babel-shim';
 
@@ -220,34 +220,18 @@ export default class V1App implements V1Package {
         }
       }
       throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${asset}`);
-    } else if (asset.startsWith('vendor/')) {
-      // represent all vendor dependencies as local paths (we're going to plop
-      // them onto our special @embroider/synthesized-vendor package anyway,
-      // where this will be their correct path).
-      return '.' + asset.slice('vendor'.length);
     } else {
       return asset;
     }
   }
 
-  private listImplicitAssets(type: ImplicitAssetType): string[] {
-    switch(type) {
-      case 'implicit-scripts':
-        return this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js];
-      case 'implicit-styles':
-        return this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css];
-      case 'implicit-test-scripts':
-        return this.app.legacyTestFilesToAppend;
-      case 'implicit-test-styles':
-        return this.app.vendorTestStaticStyles;
-      default:
-        assertNever(type);
-        return [];
-    }
-  }
-
-  implicitAssets(type: ImplicitAssetType): string[] {
-    return this.listImplicitAssets(type).map((asset: string) => this.locateAsset(asset));
+  implicitAssets(): ImplicitAssetPaths {
+    return {
+      'implicit-scripts': this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js].map((asset: string) => this.locateAsset(asset)),
+      'implicit-styles': this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css].map((asset: string) => this.locateAsset(asset)),
+      'implicit-test-scripts': this.app.legacyTestFilesToAppend.map((asset: string) => this.locateAsset(asset)),
+      'implicit-test-styles': this.app.vendorTestStaticStyles.map((asset: string) => this.locateAsset(asset)),
+    };
   }
 
   private preprocessJS(tree: Tree): Tree {
@@ -365,4 +349,3 @@ interface Preprocessors {
   preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
   preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
 }
-function assertNever(_: never) {}

@@ -5,7 +5,7 @@ export { default as Package } from './package';
 export { default as Stage } from './stage';
 export { Compiler as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
-export { Asset, EmberAsset, ImplicitAssetType } from './asset';
+export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 
 // Shared utilities
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

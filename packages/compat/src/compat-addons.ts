@@ -10,7 +10,7 @@ import {
   writeJSONSync,
   pathExistsSync,
 } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees, AddonMeta } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
@@ -90,18 +90,11 @@ export default class CompatAddons implements Stage {
         }
       }
     }
-    let addonMeta: AddonMeta = {
-      version: 2,
-      "implicit-scripts": this.v1App.implicitAssets('implicit-scripts'),
-      "implicit-styles": this.v1App.implicitAssets('implicit-styles'),
-      "implicit-test-scripts": this.v1App.implicitAssets('implicit-test-scripts'),
-      "implicit-test-styles": this.v1App.implicitAssets('implicit-test-styles'),
-    };
     let meta = {
       name: '@embroider/synthesized-vendor',
       version: '0.0.0',
       keywords: 'ember-addon',
-      'ember-addon': addonMeta
+      'ember-addon': this.v1App.implicitAssets()
     };
     writeJSONSync(join(target, 'package.json'), meta, { spaces: 2 });
   }

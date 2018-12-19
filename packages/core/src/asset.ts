@@ -1,7 +1,12 @@
 import { JSDOM } from "jsdom";
 import { EmberHTML } from "./ember-html";
 
-export type ImplicitAssetType = "implicit-scripts" | "implicit-styles" | "implicit-test-scripts" | "implicit-test-styles";
+export interface ImplicitAssetPaths {
+  "implicit-scripts": string[];
+  "implicit-test-scripts": string[];
+  "implicit-styles": string[];
+  "implicit-test-styles": string[];
+}
 
 interface BaseAsset {
   // where this asset should be placed, relative to the app's root

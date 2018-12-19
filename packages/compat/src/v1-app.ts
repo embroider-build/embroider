@@ -220,6 +220,10 @@ export default class V1App implements V1Package {
         }
       }
       throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${asset}`);
+    } else if (asset.startsWith('vendor/')) {
+      // our vendor paths become local paths, because we're going to suck them
+      // all into our special @embroider/synthesized-vendor package.
+      return asset.replace('vendor/', './');
     } else {
       return asset;
     }
@@ -267,6 +271,10 @@ export default class V1App implements V1Package {
     return this.preprocessJS(new Funnel(this.app.trees.tests, {
       destDir: 'tests'
     }));
+  }
+
+  get vendorTree(): Tree {
+    return this.app.trees.vendor;
   }
 
   @Memoize()

@@ -4,6 +4,7 @@ import walkSync from 'walk-sync';
 import { join } from 'path';
 import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync } from "fs-extra";
 import { debug } from './messages';
+import assertNever from 'assert-never';
 
 export default class AppDiffer {
   private differ: MultiTreeDiff;
@@ -66,5 +67,3 @@ export default class AppDiffer {
     }
   }
 }
-
-function assertNever(_: never) {}

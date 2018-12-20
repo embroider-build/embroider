@@ -13,6 +13,7 @@ import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
 import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
 import flatMap from 'lodash/flatMap';
+import assertNever from 'assert-never';
 
 export type EmberENV = unknown;
 
@@ -555,8 +556,6 @@ let d = w.define;
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `);
-
-function assertNever(_: never) {}
 
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {

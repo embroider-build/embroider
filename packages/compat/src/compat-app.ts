@@ -21,7 +21,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
 
-class Options {
+export class Options {
   extraPublicTrees?: Tree[];
 }
 

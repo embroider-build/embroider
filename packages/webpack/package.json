@@ -1,6 +1,6 @@
 {
   "name": "@embroider/webpack",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Builds EmberJS apps with Webpack",
   "main": "src/ember-webpack.js",
   "author": "Edward Faulkner",
@@ -37,6 +37,6 @@
     "webpack": "^4.17.1"
   },
   "peerDependencies": {
-    "@embroider/core": "*"
+    "@embroider/core": "0.0.3"
   }
 }

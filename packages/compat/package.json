@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Backward compatibility layer for the Embroider build system.",
   "main": "src/index.js",
   "author": "Edward Faulkner",
@@ -46,6 +46,6 @@
     "walk-sync": "^1.0.1"
   },
   "peerDependencies": {
-    "@embroider/core": "*"
+    "@embroider/core": "0.0.3"
   }
 }

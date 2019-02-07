@@ -219,9 +219,12 @@ export default class V1Addon implements V1Package {
 
   protected treeForAddon(): Tree|undefined {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      return new MultiFunnel(this.invokeOriginalTreeFor('addon'), {
-        srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
-      });
+      let tree = this.invokeOriginalTreeFor('addon');
+      if (tree) {
+        return new MultiFunnel(tree, {
+          srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
+        });
+      }
       // todo: also invoke treeForAddonTemplates
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon', {

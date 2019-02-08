@@ -7,10 +7,8 @@ import {
   realpathSync,
   mkdtempSync,
   copySync,
-  writeJSONSync,
-  pathExistsSync,
 } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees, AddonMeta } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from "./v1-instance-cache";
 import { tmpdir } from 'os';
 import { MovedPackageCache } from "./moved-package-cache";
@@ -23,7 +21,6 @@ export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
-  private v1App: V1App;
   readonly inputPath: string;
   readonly tree: Tree;
 
@@ -38,9 +35,9 @@ export default class CompatAddons implements Stage {
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
-    this.tree = new WaitForTrees({ movedAddons, appVendor: v1Cache.app.vendorTree }, '@embroider/compat/addons', this.build.bind(this));
+    let synthVendor = this.getVendorPackage(v1Cache.app, movedAddons);
+    this.tree = new WaitForTrees({ movedAddons, synthVendor }, '@embroider/compat/addons', this.build.bind(this));
     this.inputPath = v1Cache.app.root;
-    this.v1App = v1Cache.app;
   }
 
   async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
@@ -59,7 +56,7 @@ export default class CompatAddons implements Stage {
     return this.packageCache.app;
   }
 
-  private async build({ movedAddons, appVendor }: { movedAddons: string[], appVendor: string }) {
+  private async build({ movedAddons, synthVendor }: { movedAddons: string[], synthVendor: string }) {
     if (this.didBuild) {
       // TODO: we can selectively allow some addons to rebuild, equivalent to
       // the old isDevelopingAddon. This should be based off Package#mayRebuild.
@@ -74,34 +71,21 @@ export default class CompatAddons implements Stage {
     });
     this.linkNonCopiedDeps(this.app, this.appDestDir);
     await this.packageCache.updatePreexistingResolvableSymlinks();
-    this.synthesizeVendorPackage(appVendor);
+    copySync(synthVendor, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-vendor'), { dereference: true });
     this.didBuild = true;
     this.deferReady.resolve();
   }
 
-  private synthesizeVendorPackage(appVendorPath: string) {
-    let target = join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-vendor');
-    ensureDirSync(target);
-    for (let [ oldPkg, newPkg ] of this.packageCache.moved.entries()) {
-      if (!oldPkg.isV2 && newPkg.isV2) {
-        let vendorDir = join(newPkg.root, 'vendor');
-        if (pathExistsSync(vendorDir)) {
-          copySync(vendorDir, target);
-        }
+  private getVendorPackage(v1App: V1App, movedAddons: Tree[]): Tree {
+    let index = 0;
+    let upgradedAddonTrees = [];
+    for (let [ oldPkg ] of this.packageCache.moved.entries()) {
+      if (!oldPkg.isV2) {
+        upgradedAddonTrees.push(movedAddons[index]);
       }
+      index++;
     }
-    copySync(appVendorPath, target, { dereference: true });
-    let addonMeta: AddonMeta = {
-      version: 2,
-      ...this.v1App.implicitAssets(),
-    };
-    let meta = {
-      name: '@embroider/synthesized-vendor',
-      version: '0.0.0',
-      keywords: 'ember-addon',
-      'ember-addon': addonMeta
-    };
-    writeJSONSync(join(target, 'package.json'), meta, { spaces: 2 });
+    return v1App.synthesizeVendorPackage(upgradedAddonTrees);
   }
 
   @Memoize()

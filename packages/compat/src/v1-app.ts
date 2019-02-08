@@ -1,7 +1,6 @@
 import { Memoize } from 'typescript-memoize';
-import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
@@ -12,9 +11,11 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache, TemplateCompilerPlugins, ImplicitAssetPaths } from '@embroider/core';
+import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
 import { todo } from './messages';
 import { synthesize } from './parallel-babel-shim';
+import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
+import AddToTree from './add-to-tree';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -208,34 +209,96 @@ export default class V1App implements V1Package {
     return [DebugMacros, options];
   }
 
-  private locateAsset(asset: string): string {
+  @Memoize()
+  private transformedNodeFiles(): Map<string, string> {
+    // any app.imports from node_modules that need custom transforms will need
+    // to get copied into our own synthesized vendor package. app.imports from
+    // node_modules that *don't* need custom transforms can just stay where they
+    // are.
+    let transformed = new Map();
+    for (let transformConfig of this.app._customTransformsMap.values()) {
+      for (let filename of (transformConfig.files as string[])) {
+        let preresolved = this.preresolvedNodeFile(filename);
+        if (preresolved) {
+          transformed.set(filename, preresolved);
+        }
+      }
+    }
+    return transformed;
+  }
+
+  private preresolvedNodeFile(filename: string) {
     // this regex is an exact copy of how ember-cli does this, so we align.
-    let match = asset.match(/^node_modules\/((@[^/]+\/)?[^/]+)\//);
+    let match = filename.match(/^node_modules\/((@[^/]+\/)?[^/]+)\//);
     if (match) {
       // ember-cli has already done its own resolution of
       // `app.import('node_modules/something/...')`, so we go find its answer.
       for (let { name, path } of this.app._nodeModules.values()) {
         if (match[1] === name) {
-          return asset.replace(match[0], path + '/');
+          return filename.replace(match[0], path + '/');
         }
       }
-      throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${asset}`);
-    } else if (asset.startsWith('vendor/')) {
-      // our vendor paths become local paths, because we're going to suck them
-      // all into our special @embroider/synthesized-vendor package.
-      return asset.replace('vendor/', './');
-    } else {
-      return asset;
+      throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${filename}`);
     }
   }
 
-  implicitAssets(): ImplicitAssetPaths {
-    return {
-      'implicit-scripts': this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js].map((asset: string) => this.locateAsset(asset)),
-      'implicit-styles': this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css].map((asset: string) => this.locateAsset(asset)),
-      'implicit-test-scripts': this.app.legacyTestFilesToAppend.map((asset: string) => this.locateAsset(asset)),
-      'implicit-test-styles': this.app.vendorTestStaticStyles.map((asset: string) => this.locateAsset(asset)),
-    };
+  synthesizeVendorPackage(addonTrees: Tree[]): Tree {
+    let combinedVendor = mergeTrees(
+      [
+        ...addonTrees.map(tree => new Funnel(tree, {
+          allowEmpty: true,
+          srcDir: 'vendor',
+          destDir: 'vendor',
+        })),
+        new Funnel(this.vendorTree, {
+          destDir: 'vendor'
+        })
+      ],
+      { overwrite: true }
+    );
+
+    let transformedNodeFiles = this.transformedNodeFiles();
+    return new AddToTree(combinedVendor, (outputPath) => {
+      for (let [localDestPath, sourcePath] of transformedNodeFiles) {
+        let destPath = join(outputPath, localDestPath);
+        ensureDirSync(dirname(destPath));
+        copySync(sourcePath, destPath);
+      }
+
+      let addonMeta: AddonMeta = {
+        version: 2,
+        'implicit-scripts': this.remapImplicitAssets(this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]),
+        'implicit-styles': this.remapImplicitAssets(this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css]),
+        'implicit-test-scripts': this.remapImplicitAssets(this.app.legacyTestFilesToAppend),
+        'implicit-test-styles': this.remapImplicitAssets(this.app.vendorTestStaticStyles),
+      };
+      let meta = {
+        name: '@embroider/synthesized-vendor',
+        version: '0.0.0',
+        keywords: 'ember-addon',
+        'ember-addon': addonMeta
+      };
+      writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+    });
+  }
+
+  private remapImplicitAssets(assets: string[]) {
+    let transformedNodeFiles = this.transformedNodeFiles();
+    return assets.map(asset => {
+      if (transformedNodeFiles.has(asset)) {
+        // transformed node assets become local paths, because we have copied
+        // those ones into our synthesized vendor package.
+        return './' + asset;
+      }
+      let preresolved = this.preresolvedNodeFile(asset);
+      if (preresolved) {
+        // non-transformed node assets point directly at their pre-resolved
+        // original files (this is an absolute path).
+        return preresolved;
+      }
+      // non node assets are local paths.
+      return './' + asset;
+    });
   }
 
   private preprocessJS(tree: Tree): Tree {

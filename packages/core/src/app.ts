@@ -538,12 +538,13 @@ let d = w.define;
   };
 {{/if}}
 
-{{#each eagerModules as |eagerModule| ~}}
-  import "{{js-string-escape eagerModule}}";
-{{/each}}
 
 {{#each lazyModules as |lazyModule| ~}}
   d("{{js-string-escape lazyModule.runtime}}", function(){ return r("{{js-string-escape lazyModule.buildtime}}");});
+{{/each}}
+
+{{#each eagerModules as |eagerModule| ~}}
+  r("{{js-string-escape eagerModule}}");
 {{/each}}
 
 {{#if autoRun ~}}

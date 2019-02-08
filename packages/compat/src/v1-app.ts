@@ -242,8 +242,8 @@ export default class V1App implements V1Package {
     }
   }
 
-  synthesizeVendorPackage(addonTrees: Tree[]): Tree {
-    let combinedVendor = mergeTrees(
+  private combinedVendor(addonTrees: Tree[]): Tree {
+    return mergeTrees(
       [
         ...addonTrees.map(tree => new Funnel(tree, {
           allowEmpty: true,
@@ -256,9 +256,11 @@ export default class V1App implements V1Package {
       ],
       { overwrite: true }
     );
+  }
 
+  private addNodeAssets(inputTree: Tree): Tree {
     let transformedNodeFiles = this.transformedNodeFiles();
-    return new AddToTree(combinedVendor, (outputPath) => {
+    return new AddToTree(inputTree, (outputPath) => {
       for (let [localDestPath, sourcePath] of transformedNodeFiles) {
         let destPath = join(outputPath, localDestPath);
         ensureDirSync(dirname(destPath));
@@ -280,6 +282,29 @@ export default class V1App implements V1Package {
       };
       writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
     });
+  }
+
+  synthesizeVendorPackage(addonTrees: Tree[]): Tree {
+    return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
+  }
+
+  // this is taken nearly verbatim from ember-cli.
+  private applyCustomTransforms(externalTree: Tree) {
+    for (let customTransformEntry of this.app._customTransformsMap) {
+      let transformName = customTransformEntry[0];
+      let transformConfig = customTransformEntry[1];
+
+      let transformTree = new Funnel(externalTree, {
+        files: transformConfig.files,
+        annotation: `Funnel (custom transform: ${transformName})`,
+      });
+
+      externalTree = mergeTrees([externalTree, transformConfig.callback(transformTree, transformConfig.options)], {
+        annotation: `TreeMerger (custom transform: ${transformName})`,
+        overwrite: true,
+      });
+    }
+    return externalTree;
   }
 
   private remapImplicitAssets(assets: string[]) {

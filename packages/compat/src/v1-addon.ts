@@ -116,6 +116,14 @@ export default class V1Addon implements V1Package {
     return new UnwatchedDir(this.root);
   }
 
+  @Memoize()
+  private get moduleName() {
+    if (typeof this.addonInstance.moduleName === 'function') {
+      return this.addonInstance.moduleName();
+    }
+    return this.addonInstance.name;
+  }
+
   // In an ideal world, there would be no options to this. We would just run
   // every kind of tree through every kind of transpiler, and they could freely
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
@@ -130,7 +138,7 @@ export default class V1Addon implements V1Package {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
-    return this.addonInstance.preprocessJs(tree, '/', this.addonInstance.name, {
+    return this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry : this.addonInstance.registry
     });
   }
@@ -222,7 +230,7 @@ export default class V1Addon implements V1Package {
       let tree = this.invokeOriginalTreeFor('addon');
       if (tree) {
         return new MultiFunnel(tree, {
-          srcDirs: [this.addonInstance.name, `modules/${this.addonInstance.name}`]
+          srcDirs: [this.moduleName, `modules/${this.moduleName}`]
         });
       }
       // todo: also invoke treeForAddonTemplates
@@ -262,9 +270,9 @@ export default class V1Addon implements V1Package {
     let staticMeta: { [metaField: string]: any } = {};
     let dynamicMeta: (() => any)[] = [];
 
-    if (this.addonInstance.name !== this.name) {
+    if (this.moduleName !== this.name ) {
       staticMeta['renamed-modules'] = {
-        [this.addonInstance.name]: this.name
+        [this.moduleName]: this.name
       };
     }
 

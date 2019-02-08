@@ -10,6 +10,10 @@
     "prepare": "tsc"
   },
   "devDependencies": {
+    "@types/babel__core": "^7.0.4",
+    "@types/babel__generator": "^7.0.1",
+    "@types/babel__template": "^7.0.1",
+    "@types/babel__traverse": "^7.0.5",
     "@types/babylon": "^6.16.4",
     "@types/debug": "^0.0.31",
     "@types/fs-extra": "^5.0.4",
@@ -24,6 +28,7 @@
     "typescript": "^3.1.6"
   },
   "dependencies": {
+    "@babel/core": "^7.2.2",
     "babel-core": "^6.26.3",
     "babel-plugin-debug-macros": "^0.1.11",
     "babel-plugin-ember-modules-api-polyfill": "git+https://github.com/ember-cli/babel-plugin-ember-modules-api-polyfill#d0c7772bc9f995f83641a4292afd5e05e7e9bbba",

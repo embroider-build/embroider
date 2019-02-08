@@ -30,10 +30,12 @@ export function forceIncludeTestModule(meta: AddonMeta, localPath: string) {
   return meta;
 }
 
-// a babel plugin that removes reexports that point at nonexistent files.
+// A babel plugin that removes reexports that point at nonexistent files.
 // Unfortunately needed because some popular addons have bogus unused reexports.
-export function addStripBadReexportsPlugin(pluginList: unknown[], filenamePattern: RegExp, resolveBase: string) {
-  pluginList.push([stripBadReexportsTransform, { filenamePattern, resolveBase }]);
+//
+// Append the output of this function to the `plugins` array in a babel config.
+export function stripBadReexportsPlugin(opts: { filenamePattern?: RegExp, resolveBase?: string } = {}) {
+  return [stripBadReexportsTransform, { filenamePattern: opts.filenamePattern, resolveBase: opts.resolveBase } ];
 }
 
 function stripBadReexportsTransform() {
@@ -41,7 +43,7 @@ function stripBadReexportsTransform() {
     visitor: {
       ExportNamedDeclaration(path: any, state: any) {
         if (
-          state.opts.filenamePattern.test(path.hub.file.opts.filename) &&
+          (!state.opts.filenamePattern || state.opts.filenamePattern.test(path.hub.file.opts.filename)) &&
           path.node.source &&
           path.node.source.type === 'StringLiteral'
         ) {

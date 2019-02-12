@@ -46,3 +46,13 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 
 3. Use `ember serve`, `ember test`, and `ember build` as usual.
 
+# Contributing / Developing
+
+1. Clone this repo.
+2. Run `yarn compile` (or `yarn compile --watch`).
+3. In each of the `./packages/*` directories, run `yarn link`.
+4. In your app, `yarn link @embroider/core` and the other packages you need.
+
+# Tests
+
+There aren't any yet. Initial development has been done entirely against real apps, because even characterizing all the current behaviors we need to be compatible with is a big piece of the work.

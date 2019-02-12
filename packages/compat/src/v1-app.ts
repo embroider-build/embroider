@@ -130,6 +130,44 @@ export default class V1App implements V1Package {
     });
   }
 
+  // babel lets you use relative paths, absolute paths, package names, and
+  // package name shorthands.
+  //
+  // my-plugin  -> my-plugin
+  // my-plugin  -> babel-plugin-my-plugin
+  // @me/thing  -> @me/thing
+  // @me/thing  -> @me/babel-plugin-thing
+  // ./here     -> /your/app/here
+  // /tmp/there -> /tmp/there
+  //
+  private resolveBabelPlugin(name: string, basedir: string) {
+    try {
+      return resolve.sync(name, { basedir });
+    } catch (err) {
+      if (err.code !== 'MODULE_NOT_FOUND') {
+        throw err;
+      }
+      if (name.startsWith('.') || name.startsWith('/')) {
+        throw err;
+      }
+      try {
+        let expanded;
+        if (name.startsWith('@')) {
+          let [space, pkg, ...rest] = name.split('/');
+          expanded = [space, `babel-plugin-${pkg}`, ...rest].join('/');
+        } else {
+          expanded = `babel-plugin-${name}`;
+        }
+        return resolve.sync(expanded, { basedir });
+      } catch (err2) {
+        if (err2.code !== 'MODULE_NOT_FOUND') {
+          throw err2;
+        }
+        throw new Error(`unable to resolve babel plugin ${name} from ${basedir}`);
+      }
+    }
+  }
+
   babelConfig(finalRoot: string) {
     let syntheticPlugins = new Map();
 
@@ -144,12 +182,12 @@ export default class V1App implements V1Package {
 
       // bare string plugin name
       if (typeof plugin === 'string') {
-        return resolve.sync(`babel-plugin-${plugin}`, { basedir: finalRoot });
+        return this.resolveBabelPlugin(plugin, finalRoot);
       }
 
       // pair of [pluginName, pluginOptions]
       if (typeof plugin[0] === 'string') {
-        return [resolve.sync(`babel-plugin-${plugin[0]}`, { basedir: finalRoot }), plugin[1]];
+        return [this.resolveBabelPlugin(plugin[0], finalRoot), plugin[1]];
       }
 
       // broccoli-babel-transpiler's custom parallel API. Here we synthesize

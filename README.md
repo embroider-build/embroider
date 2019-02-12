@@ -18,3 +18,31 @@ This is pre-alpha, don't use it, you have been warned.
 
 I have been testing it against real applications and it already covers a large number of use cases. Soon I hope to reach a level of completeness that will benefit from testing by more people in more applications.
 
+# How to try it
+
+1. Add dependencies:
+
+```
+yarn add --dev @embroider/core @embroider/compat @embroider/webpack
+```
+
+2. Edit `ember-cli-build.js`:
+
+   ```diff
+   -return app.toTree();
+   +const Webpack = require('@embroider/webpack').Webpack;
+   +return require('@embroider/compat').compatBuild(app, Webpack);
+   ```
+
+    Alternatively, if you are passing optional extra broccoli trees into `app.toTree()`, you can rewrite like:
+
+    ```diff
+   -return app.toTree(extraTreeHere);
+   +const Webpack = require('@embroider/webpack').Webpack;
+   +return require('@embroider/compat').compatBuild(app, Webpack, {
+   +  extraPublicTrees: [extraTreeHere]
+   +});
+    ```
+
+3. Use `ember serve`, `ember test`, and `ember build` as usual.
+

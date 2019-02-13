@@ -306,6 +306,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               let newScript = entrypoint.dom.window.document.createElement('script');
               newScript.src = `/assets/${asset}`; // todo adjust for rootURL
               firstTag.parentElement.insertBefore(newScript, firstTag);
+              insertNewline(newScript);
             }
           } else if (isCSS(asset)) {
             let firstLink = entrypoint.styleLinks[0] as InDOMHTMLElement;
@@ -314,6 +315,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               newLink.href = `/assets/${asset}`; // todo adjust for rootURL
               newLink.rel = 'stylesheet';
               firstLink.parentElement.insertBefore(newLink, firstLink);
+              insertNewline(newLink);
             }
           }
         }
@@ -414,6 +416,13 @@ function isCSS(filename: string) {
 
 function isJS(filename: string) {
   return /\.js$/i.test(filename);
+}
+
+function insertNewline(at: Node) {
+  at.parentElement!.insertBefore(
+    at.ownerDocument!.createTextNode("\n"),
+    at
+  );
 }
 
 interface StatSummary {

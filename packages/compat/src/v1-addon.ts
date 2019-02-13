@@ -53,6 +53,39 @@ const appPublicationDir = '_app_';
 export default class V1Addon implements V1Package {
   constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: AddonOptionsWithDefaults) {
     this.updateBabelConfig();
+    if (addonInstance.registry) {
+      this.updateRegistry(addonInstance.registry);
+    }
+  }
+
+  private updateRegistry(registry: any) {
+    // note that we don't remove ember-cli-babel here, instead we have pared
+    // down its config so that it will only run nonstandard plugins, leaving all
+    // other normal ESlatest features in place.
+
+    // auto-import gets disabled because we support it natively
+    registry.remove('js', 'ember-auto-import-analyzer');
+
+    // here we're replacing the stock template compiler with our own. Ours
+    // leaves hbs files as hbs, not js. The only transformation it is supposed
+    // to do is applying any custom AST transforms and reserializing the results
+    // back to HBS.
+    //
+    // Even when no AST transforms are registered, we'll still need to register
+    // a no-op transform here to avoid an exception coming out of ember-cli like
+    // "Addon templates were detected, but there are no template compilers
+    // registered".
+    registry.remove('template', 'ember-cli-htmlbars');
+    if (registry.load('htmlbars-ast-plugin').length > 0) {
+      todo(`${this.name} has a custom AST transform that we need to apply`);
+    }
+    registry.add('template', {
+      name: 'embroider-addon-templates',
+      ext: 'hbs',
+      toTree(tree: Tree): Tree {
+        return tree;
+      }
+    });
   }
 
   get name(): string {
@@ -129,12 +162,6 @@ export default class V1Addon implements V1Package {
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
   // ember-cli-sass will blow up if they don't find some files.
   private transpile(tree: Tree, { includeCSS } = { includeCSS: false}) {
-    // auto-import gets disabled because we support it natively
-    this.addonInstance.registry.remove('js', 'ember-auto-import-analyzer');
-    // note that we don't remove ember-cli-babel here, instead we have pared
-    // down its config so that it will only run nonstandard plugins, leaving all
-    // other normal ESlatest features in place.
-
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }

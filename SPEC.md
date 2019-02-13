@@ -428,7 +428,7 @@ Several features in the v2 addon format are designed to be consumed *by the app*
 These features include:
 
 
-- the `implicit-scripts` and `implicit-test-scripts` keys in Ember package metadata.
+- the `implicit-*` keys in Ember package metadata.
 - the `app-js` key in **Ember package metadata**
 - the `build` key in **Ember package metadata**. (We should consider updating the *authoring* format so that apps can use a build file with the standard package hooks, because that makes a lot of sense. But it’s not appropriate in the v2 build output, and this change can be a separate RFC, and it will be an easier RFC after landing this one.)
 - automatic inclusion of resolvable types (components, services, etc) from the **Own Javascript** of all **Active Dependencies.**
@@ -527,7 +527,7 @@ To describe our interoperability strategy, we must first distinguish “run-time
 
 For many modules, the run-time and build-time specifiers happily coincide (or at least they do once we have run the v1 to v2 compiler step, which (for example) moves `ember-percy/addon/index.js` to `ember-percy/index.js` so that `import { percySnapshot } from` `"ember-percy"` follows normal node_modules resolution. This is the case for all `/app` and `/addon` Javascript that is authored in ES modules. It’s also already true for packages that adopt Module Unification (good job MU authors).
 
-But for many other cases (include the examples like `@ember/component`), the build- and run-time specifiers are different.
+But for many other cases (including the examples like `@ember/component`), the build- and run-time specifiers are different.
 
 The good news is, even though the `define` side is generally too dynamic to analyze, in practice Ember apps overwhelmingly use `import` on the consuming side, which we *can* analyze. Any `import` specifier that appears in a v1 package can safely be assumed to already be available at runtime (or if it isn’t, the package was already broken and we aren’t making it any worse).
 

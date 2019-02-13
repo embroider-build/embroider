@@ -29,11 +29,16 @@ class Entrypoint {
     return this.filename;
   }
 
+  @Memoize()
+  get ignoredScriptTags() {
+    return [...this.dom.window.document.querySelectorAll('script[data-embroider-ignore]')];
+  }
+
   // we deal in synchronous, relative scripts. All others we leave alone.
   @Memoize()
   get scriptTags() {
     return [...this.dom.window.document.querySelectorAll('script')]
-      .filter(s => s.hasAttribute('src') && !s.hasAttribute('async') && !isAbsoluteURL(s.src));
+      .filter(s => s.hasAttribute('src') && !s.hasAttribute('async') && !isAbsoluteURL(s.src) && !s.hasAttribute('data-embroider-ignore'));
   }
 
   @Memoize()
@@ -321,6 +326,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
         entrypoint.scriptTags.forEach(tag => tag.remove());
         entrypoint.styleLinks.forEach(tag => tag.remove());
+        entrypoint.ignoredScriptTags.forEach(tag => tag.removeAttribute('data-embroider-ignore'));
         ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
         writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
       } else {

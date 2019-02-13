@@ -34,7 +34,7 @@ interface TreeNames {
 }
 
 // This runs at broccoli-pipeline-construction time, whereas our actual
-// CompatAppAdapter instance only becomes available during actual tree-building
+// CompatAppAdapter instance only becomes available during tree-building
 // time.
 function setup(legacyEmberAppInstance: object, options?: Options ) {
   let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance).app;
@@ -123,6 +123,17 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
           let styles = [
             ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
           ] as HTMLLinkElement[];
+
+          // these are scripts that are served up by middleware in ember-cli
+          // that should not be considered by the final stage packager.
+          // todo: probably we should make this extensible.
+          let ignored = ['/ember-cli-live-reload.js', '/testem.js'];
+          for (let script of scripts) {
+            if (ignored.includes(script.src) {
+              script.setAttribute('data-embroider-ignore', '');
+            }
+          }
+
           return {
             javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
             styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),

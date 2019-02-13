@@ -129,7 +129,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
           // todo: probably we should make this extensible.
           let ignored = ['/ember-cli-live-reload.js', '/testem.js'];
           for (let script of scripts) {
-            if (ignored.includes(script.src) {
+            if (ignored.includes(script.src)) {
               script.setAttribute('data-embroider-ignore', '');
             }
           }

@@ -65,6 +65,10 @@ export default class V1App implements V1Package {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
   }
 
+  get shouldBuildTests(): boolean {
+    return this.app.tests || false;
+  }
+
   private get configTree() {
     return new (this.configLoader)(dirname(this.app.project.configPath()), {
       env: this.app.env,
@@ -87,7 +91,11 @@ export default class V1App implements V1Package {
   }
 
   get htmlTree() {
-    return mergeTrees([this.indexTree, this.app.testIndex()]);
+    if (this.app.tests) {
+      return mergeTrees([this.indexTree, this.app.testIndex()]);
+    } {
+      return this.indexTree;
+    }
   }
 
   get indexTree() {

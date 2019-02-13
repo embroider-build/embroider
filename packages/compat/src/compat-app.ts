@@ -105,7 +105,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       { entrypoint: 'index.html', includeTests: false },
       { entrypoint: 'tests/index.html', includeTests: true },
     ];
-    if (!this.shouldBuildTests) {
+    if (!this.oldPackage.shouldBuildTests) {
       classicEntrypoints.pop();
     }
     for (let { entrypoint, includeTests } of classicEntrypoints) {
@@ -195,10 +195,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   externals(): string[] {
     return this.analyzer.externals;
   }
-
-  // todo
-  private shouldBuildTests = true;
-
 }
 
 export default class CompatApp extends BuildStage<TreeNames> {

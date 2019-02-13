@@ -401,15 +401,18 @@ export default class V1Addon implements V1Package {
   private buildPublicTree(built: IntermediateBuild) {
     let publicTree;
     if (this.customizes('treeForPublic')) {
-      publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
-        // The normal behavior is to namespace your public files under your
-        // own name. But addons can flaunt that, and that goes beyond what
-        // the v2 format is allowed to do.
-        allowedPaths: new RegExp(`^${this.name}/`),
-        foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
-      }, {
-        destDir: 'public'
-      });
+      let original = this.invokeOriginalTreeFor('public');
+      if (original) {
+        publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
+          // The normal behavior is to namespace your public files under your
+          // own name. But addons can flaunt that, and that goes beyond what
+          // the v2 format is allowed to do.
+          allowedPaths: new RegExp(`^${this.name}/`),
+          foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
+        }, {
+          destDir: 'public'
+        });
+      }
     } else if (this.hasStockTree('public')) {
       publicTree = this.stockTree('public', {
         destDir: 'public'

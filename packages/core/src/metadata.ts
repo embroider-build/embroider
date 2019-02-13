@@ -1,4 +1,5 @@
 type filename = string;
+type appRelativeURL = string;
 
 // This describes the ember-specific parts of package.json of an app after the
 // stage 2 build (the app that we hand off to a packager).
@@ -15,6 +16,9 @@ export interface AppMeta {
 export interface AddonMeta {
   version: 2;
   externals?: string[];
+  'public-assets'?: {
+    [filename: string]: appRelativeURL;
+  };
   "implicit-scripts"?: filename[];
   "implicit-test-scripts"?: filename[];
   "implicit-styles"?: filename[];

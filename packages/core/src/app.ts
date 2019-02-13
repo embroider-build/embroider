@@ -327,10 +327,30 @@ export class AppBuilder<TreeNames> {
     this.assets = assets;
   }
 
+  private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
+    // first gather all the assets out of addons
+    let assets: Asset[] = [];
+    for (let pkg of this.activeAddonDescendants) {
+      if (pkg.meta['public-assets']) {
+        for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'])) {
+          assets.push({
+            kind: 'on-disk',
+            sourcePath: join(pkg.root, filename),
+            relativePath: appRelativeURL,
+            mtime: 0,
+            size: 0
+          });
+        }
+      }
+    }
+    // and finally tack on the ones from our app itself
+    return assets.concat(this.adapter.assets(inputPaths));
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
-    let assets = this.adapter.assets(inputPaths);
+    let assets = this.gatherAssets(inputPaths);
 
     this.updateAssets(assets, appFiles);
     this.addTemplateCompiler(emberENV);

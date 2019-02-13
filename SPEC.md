@@ -704,6 +704,17 @@ Status: encouraged
 
 This field predates the v2 package spec. It's already used by ember-cli to provide an alternative location for the addon's build-time hooks (as opposed to using the top-level `main` from `package.json`). It's definition is unchanged by this spec: old EmberCLI can keep on using this and finding compatible hooks. v2-aware versions of EmberCLI will ignore this in favor of `build`. Addon authors are encouraged to use this field to allow V2 packages to work in older EmberCLI versions.
 
+## public-assets
+
+```
+Allowed in: addons
+Status: encouraged
+```
+
+This is a mapping from local filenames (relative to the addon's root) to
+app-relative-URLs. When a given addon is active, any public-assets will be
+available at the corresponding URLs.
+
 ## renamed-modules
 
 ```

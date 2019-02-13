@@ -17,8 +17,10 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, BasicPackage } from "@embroider/core";
+import { Package, PackageCache, BasicPackage, AddonMeta } from "@embroider/core";
 import { AddonOptionsWithDefaults } from "./options";
+import walkSync from 'walk-sync';
+import AddToTree from "./add-to-tree";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -295,7 +297,7 @@ export default class V1Addon implements V1Package {
     let trees = [];
     let importParsers = [];
     let staticMeta: { [metaField: string]: any } = {};
-    let dynamicMeta: (() => any)[] = [];
+    let dynamicMeta: (() => Partial<AddonMeta>)[] = [];
 
     if (this.moduleName !== this.name ) {
       staticMeta['renamed-modules'] = {
@@ -404,27 +406,36 @@ export default class V1Addon implements V1Package {
       trees.push(tree);
     }
 
-    if (this.customizes('treeForPublic')) {
-      let tree = this.invokeOriginalTreeFor('public');
-      if (tree) {
-        trees.push(
-          new Snitch(tree, {
-            // The normal behavior is to namespace your public files under your
-            // own name. But addons can flaunt that, and that goes beyond what
-            // the v2 format is allowed to do.
-            allowedPaths: new RegExp(`^${this.name}/`),
-            foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
-          }, {
-            destDir: 'public'
-          })
-        );
-      }
-    } else if (this.hasStockTree('public')) {
-      trees.push(
-        this.stockTree('public', {
+    {
+      let publicTree;
+      if (this.customizes('treeForPublic')) {
+        publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
+          // The normal behavior is to namespace your public files under your
+          // own name. But addons can flaunt that, and that goes beyond what
+          // the v2 format is allowed to do.
+          allowedPaths: new RegExp(`^${this.name}/`),
+          foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
+        }, {
           destDir: 'public'
-        })
-      );
+        });
+      } else if (this.hasStockTree('public')) {
+        publicTree = this.stockTree('public', {
+          destDir: 'public'
+        });
+      }
+      if (publicTree) {
+        let publicAssets: { [filename: string]: string } = {};
+        publicTree = new AddToTree(publicTree, (outputPath: string) => {
+          publicAssets = {};
+          for (let filename of walkSync(join(outputPath, 'public'))) {
+            if (!filename.endsWith('/')) {
+              publicAssets[`public/${filename}`] = filename;
+            }
+          }
+        });
+        trees.push(publicTree);
+        dynamicMeta.push(() => ({ 'public-assets': publicAssets }));
+      }
     }
 
     if (this.customizes('treeForVendor')) {

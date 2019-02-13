@@ -572,6 +572,15 @@ let d = w.define;
 {{/if}}
 
 {{#if testSuffix ~}}
+  {{!- TODO: both of these suffixes should get dynamically generated so they incorporate
+       any content-for added by addons. -}}
+
+  {{!- this is the traditional test-support-suffix.js -}}
+  runningTests = true;
+  if (window.Testem) {
+    window.Testem.hookIntoTestFramework();
+  }
+
   {{!- this is the traditional tests-suffix.js -}}
   r('../tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;

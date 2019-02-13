@@ -139,7 +139,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   // todo
-  private mode = 'development';
+  private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
   private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
     // keep track of known scripts (as opposed to modules), as those are

@@ -375,10 +375,21 @@ export default class V1Addon implements V1Package {
   }
 
   private buildTreeForApp(built: IntermediateBuild) {
+    let appTree;
     if (this.customizes('treeForApp', 'treeForTemplates')) {
-      todo(`${this.name} may have customized the app tree`);
+      let original = this.invokeOriginalTreeFor('app');
+      if (original) {
+        appTree = new Funnel(original, {
+          destDir: appPublicationDir
+        });
+      }
+    } else if (this.hasStockTree('app')) {
+      appTree = this.stockTree('app', {
+        exclude: ['styles/**'],
+        destDir: appPublicationDir
+      });
     }
-    if (this.hasStockTree('app')) {
+    if (appTree) {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
       // the consuming app, not our own package. That is some of what is lame
@@ -389,12 +400,8 @@ export default class V1Addon implements V1Package {
       // allowed dependencies are anymore and would get false positive
       // externals.
       built.staticMeta['app-js'] = appPublicationDir;
-      let tree = this.stockTree('app', {
-        exclude: ['styles/**'],
-        destDir: appPublicationDir
-      });
-      built.importParsers.push(this.parseImports(tree));
-      built.trees.push(tree);
+      built.importParsers.push(this.parseImports(appTree));
+      built.trees.push(appTree);
     }
   }
 

@@ -221,12 +221,17 @@ export default class V1Addon implements V1Package {
   // this is split out so that compatability shims can override it to add more
   // things to the package metadata.
   protected get packageMeta() {
-    return this.legacyTrees().getMeta();
+    let built = this.build();
+    return mergeWithAppend(
+      {},
+      built.staticMeta,
+      ...built.dynamicMeta.map(d => d())
+    );
   }
 
   @Memoize()
   private makeV2Trees() {
-    let { trees, importParsers } = this.legacyTrees();
+    let { trees, importParsers } = this.build();
 
     // Compat Adapters are allowed to override the packageJSON getter. So we
     // must create a Package that respects that version of packageJSON, so the
@@ -292,46 +297,30 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  @Memoize()
-  private legacyTrees() : { trees: Tree[], importParsers: ImportParser[], getMeta: () => any } {
-    let trees = [];
-    let importParsers = [];
-    let staticMeta: { [metaField: string]: any } = {};
-    let dynamicMeta: (() => Partial<AddonMeta>)[] = [];
-
-    if (this.moduleName !== this.name ) {
-      staticMeta['renamed-modules'] = {
-        [this.moduleName]: this.name
-      };
-    }
-
-    if (this.customizes('treeFor')) {
-      unsupported(`${this.name} has customized treeFor`);
-    }
-
-    {
-      let addonTree = this.treeForAddon();
-      if (addonTree) {
-        let addonParser = this.parseImports(addonTree);
-        importParsers.push(addonParser);
-        trees.push(addonTree);
-        if (this.addonOptions.forceIncludeAddonTrees) {
-          dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
-        }
+  private buildTreeForAddon(built: IntermediateBuild) {
+    let addonTree = this.treeForAddon();
+    if (addonTree) {
+      let addonParser = this.parseImports(addonTree);
+      built.importParsers.push(addonParser);
+      built.trees.push(addonTree);
+      if (this.addonOptions.forceIncludeAddonTrees) {
+        built.dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }
+  }
 
-    {
-      let addonStylesTree = this.addonStylesTree();
-      if (addonStylesTree) {
-        trees.push(addonStylesTree);
-        if (!staticMeta['implicit-styles']) {
-          staticMeta['implicit-styles'] = [];
-        }
-        staticMeta['implicit-styles'].push(`./${this.name}.css`);
+  private buildAddonStyles(built: IntermediateBuild) {
+    let addonStylesTree = this.addonStylesTree();
+    if (addonStylesTree) {
+      built.trees.push(addonStylesTree);
+      if (!built.staticMeta['implicit-styles']) {
+        built.staticMeta['implicit-styles'] = [];
       }
+      built.staticMeta['implicit-styles'].push(`./${this.name}.css`);
     }
+  }
 
+  private buildTreeForStyles(built: IntermediateBuild) {
     if (this.customizes('treeForStyles')) {
       todo(`${this.name} may have customized the app style tree`);
     } else if (this.hasStockTree('styles')) {
@@ -344,46 +333,48 @@ export default class V1Addon implements V1Package {
       // just ship inside the package root and be importable at the same name
       // as before. Detect people doing anything other than that and yell at
       // them and set up a fallback.
-      trees.push(
+      built.trees.push(
         this.transpile(this.stockTree('styles', {
           destDir: '_app_styles_'
         }), { includeCSS: true })
       );
     }
+  }
 
-    {
-      let addonTestSupportTree;
-      if (this.customizes('treeForAddonTestSupport')) {
-        let { tree, getMeta } = rewriteAddonTestSupport(
-          this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true }),
-          this.name
-        );
-        addonTestSupportTree = this.transpile(tree);
-        dynamicMeta.push(getMeta);
-      } else if (this.hasStockTree('addon-test-support')) {
-        addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {
-          destDir: 'test-support'
-        }));
-      }
-      if (addonTestSupportTree) {
-        let testSupportParser = this.parseImports(addonTestSupportTree);
-        importParsers.push(testSupportParser);
-        trees.push(addonTestSupportTree);
-        if (this.addonOptions.forceIncludeAddonTestSupportTrees) {
-          dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
-        }
+  private buildAddonTestSupport(built: IntermediateBuild) {
+    let addonTestSupportTree;
+    if (this.customizes('treeForAddonTestSupport')) {
+      let { tree, getMeta } = rewriteAddonTestSupport(
+        this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true }),
+        this.name
+      );
+      addonTestSupportTree = this.transpile(tree);
+      built.dynamicMeta.push(getMeta);
+    } else if (this.hasStockTree('addon-test-support')) {
+      addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {
+        destDir: 'test-support'
+      }));
+    }
+    if (addonTestSupportTree) {
+      let testSupportParser = this.parseImports(addonTestSupportTree);
+      built.importParsers.push(testSupportParser);
+      built.trees.push(addonTestSupportTree);
+      if (this.addonOptions.forceIncludeAddonTestSupportTrees) {
+        built.dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }
+  }
 
-    {
-      let tree = this.treeForTestSupport();
-      if (tree) {
-        importParsers.push(this.parseImports(tree));
-        trees.push(tree);
-        staticMeta['app-js'] = appPublicationDir;
-      }
+  private buildTestSupport(built: IntermediateBuild) {
+    let tree = this.treeForTestSupport();
+    if (tree) {
+      built.importParsers.push(this.parseImports(tree));
+      built.trees.push(tree);
+      built.staticMeta['app-js'] = appPublicationDir;
     }
+  }
 
+  private buildTreeForApp(built: IntermediateBuild) {
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       todo(`${this.name} may have customized the app tree`);
     }
@@ -397,76 +388,94 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      staticMeta['app-js'] = appPublicationDir;
+      built.staticMeta['app-js'] = appPublicationDir;
       let tree = this.stockTree('app', {
         exclude: ['styles/**'],
         destDir: appPublicationDir
       });
-      importParsers.push(this.parseImports(tree));
-      trees.push(tree);
+      built.importParsers.push(this.parseImports(tree));
+      built.trees.push(tree);
     }
+  }
 
-    {
-      let publicTree;
-      if (this.customizes('treeForPublic')) {
-        publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
-          // The normal behavior is to namespace your public files under your
-          // own name. But addons can flaunt that, and that goes beyond what
-          // the v2 format is allowed to do.
-          allowedPaths: new RegExp(`^${this.name}/`),
-          foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
-        }, {
-          destDir: 'public'
-        });
-      } else if (this.hasStockTree('public')) {
-        publicTree = this.stockTree('public', {
-          destDir: 'public'
-        });
-      }
-      if (publicTree) {
-        let publicAssets: { [filename: string]: string } = {};
-        publicTree = new AddToTree(publicTree, (outputPath: string) => {
-          publicAssets = {};
-          for (let filename of walkSync(join(outputPath, 'public'))) {
-            if (!filename.endsWith('/')) {
-              publicAssets[`public/${filename}`] = filename;
-            }
+  private buildPublicTree(built: IntermediateBuild) {
+    let publicTree;
+    if (this.customizes('treeForPublic')) {
+      publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
+        // The normal behavior is to namespace your public files under your
+        // own name. But addons can flaunt that, and that goes beyond what
+        // the v2 format is allowed to do.
+        allowedPaths: new RegExp(`^${this.name}/`),
+        foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
+      }, {
+        destDir: 'public'
+      });
+    } else if (this.hasStockTree('public')) {
+      publicTree = this.stockTree('public', {
+        destDir: 'public'
+      });
+    }
+    if (publicTree) {
+      let publicAssets: { [filename: string]: string } = {};
+      publicTree = new AddToTree(publicTree, (outputPath: string) => {
+        publicAssets = {};
+        for (let filename of walkSync(join(outputPath, 'public'))) {
+          if (!filename.endsWith('/')) {
+            publicAssets[`public/${filename}`] = filename;
           }
-        });
-        trees.push(publicTree);
-        dynamicMeta.push(() => ({ 'public-assets': publicAssets }));
-      }
+        }
+      });
+      built.trees.push(publicTree);
+      built.dynamicMeta.push(() => ({ 'public-assets': publicAssets }));
     }
+  }
 
+  private buildVendorTree(built: IntermediateBuild) {
     if (this.customizes('treeForVendor')) {
       // We don't have any particular opinions about the structure inside
       // vendor, so even when it's customized we can just use the customized
       // one.
       let tree = this.invokeOriginalTreeFor('vendor');
       if (tree) {
-        trees.push(
+        built.trees.push(
           new Funnel(tree, {
             destDir: 'vendor'
           })
         );
       }
     } else if (this.hasStockTree('vendor')) {
-      trees.push(
+      built.trees.push(
         this.stockTree('vendor', {
           destDir: 'vendor'
         })
       );
     }
+  }
 
-    let getMeta = () => {
-      return mergeWithAppend(
-        {},
-        staticMeta,
-        ...dynamicMeta.map(d => d())
-      );
-    };
+  @Memoize()
+  private build() : IntermediateBuild {
+    let built = new IntermediateBuild();
 
-    return { trees, importParsers, getMeta };
+    if (this.moduleName !== this.name ) {
+      built.staticMeta['renamed-modules'] = {
+        [this.moduleName]: this.name
+      };
+    }
+
+    if (this.customizes('treeFor')) {
+      unsupported(`${this.name} has customized treeFor`);
+    }
+
+    this.buildTreeForAddon(built);
+    this.buildAddonStyles(built);
+    this.buildTreeForStyles(built);
+    this.buildAddonTestSupport(built);
+    this.buildTestSupport(built);
+    this.buildTreeForApp(built);
+    this.buildPublicTree(built);
+    this.buildVendorTree(built);
+
+    return built;
   }
 }
 
@@ -481,4 +490,11 @@ class TweakedPackage extends BasicPackage {
   get packageJSON() {
     return this.overridePackageJSON;
   }
+}
+
+class IntermediateBuild {
+  trees: Tree[] = [];
+  importParsers: ImportParser[] = [];
+  staticMeta: { [metaField: string]: any } = {};
+  dynamicMeta: (() => Partial<AddonMeta>)[] = [];
 }

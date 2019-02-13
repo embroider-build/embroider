@@ -434,16 +434,18 @@ export default class V1App implements V1Package {
   processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
+    let lintTree = this.app.getLintTests();
     let analyzer = new DependencyAnalyzer([
       new ImportParser(appTree),
-      new ImportParser(testsTree)
+      new ImportParser(testsTree),
+      new ImportParser(lintTree),
     ], this.packageCache.getApp(this.root));
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [appTree, this.styleTree, config, testsTree];
+    let trees = [appTree, this.styleTree, config, testsTree, lintTree];
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

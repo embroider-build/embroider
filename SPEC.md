@@ -449,7 +449,6 @@ These are features that are only supported in apps, not addons:
 
   Note that packagers must respect the HTML semantics of `<script type="module">` vs  `<script>` vs `<script async>`.  For example:
   - don’t go looking for `import` in `<script>`, it’s only correct in `<script type="module">`
-  - a series of `<script>` tags may be concatenated (in order!) into one file while preserving correctness. A series of `<script async>` tags cannot.
 
   File types other than HTML are allowed to appear in `"assets"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by HTTP). For example, a Javascript file in `"assets"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
 

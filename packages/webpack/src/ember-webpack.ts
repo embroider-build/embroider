@@ -1,3 +1,14 @@
+/*
+  Most of the work this module does is putting an HTML-oriented facade around
+  Webpack. That is, we want both the input and output to be primarily HTML files
+  with proper spec semantics, and we use webpack to optimize the assets referred
+  to by those files.
+
+  While there are webpack plugins for handling HTML, none of them handle
+  multiple HTML entrypoints and apply correct HTML semantics (for example,
+  getting script vs module context correct).
+*/
+
 import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync } from 'fs-extra';
@@ -9,7 +20,7 @@ import partition from 'lodash/partition';
 import { Memoize } from 'typescript-memoize';
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 
-class Entrypoint {
+class Asset {
   constructor(private pathToVanillaApp: string, public filename: string){}
 
   get isHTML() {
@@ -91,7 +102,7 @@ class Entrypoint {
 }
 
 interface AppInfo {
-  entrypoints: Entrypoint[];
+  entrypoints: Asset[];
   externals: string[];
   templateCompiler: Function;
   babelConfig: any;
@@ -126,7 +137,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private examineApp(): AppInfo {
     let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
     let entrypoints = meta.assets.map(entrypoint => {
-      return new Entrypoint(this.pathToVanillaApp, entrypoint);
+      return new Asset(this.pathToVanillaApp, entrypoint);
     });
     let externals = meta.externals || [];
     let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
@@ -336,7 +347,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
   }
 
-  private copyThrough(entrypoint: Entrypoint) {
+  private copyThrough(entrypoint: Asset) {
     let newStats = statSync(entrypoint.absoluteFilename);
     let oldStats = this.passthroughCache.get(entrypoint.absoluteFilename);
     if (!oldStats || oldStats.mtimeMs !== newStats.mtimeMs || oldStats.size !== newStats.size) {

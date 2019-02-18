@@ -120,6 +120,9 @@ class BuiltEmberAsset {
 class ConcatenatedAsset {
   kind: 'concatenated-asset' = 'concatenated-asset';
   constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]){}
+  get sourcemapPath() {
+    return this.relativePath.replace(/\.js$/, '') + '.map';
+  }
 }
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
@@ -394,6 +397,7 @@ export class AppBuilder<TreeNames> {
       }
     }
     this.assets = assets;
+    return [...assets.values()];
   }
 
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
@@ -421,16 +425,26 @@ export class AppBuilder<TreeNames> {
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
 
-    await this.updateAssets(assets, appFiles, emberENV);
+    let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     this.addTemplateCompiler(emberENV);
     this.addBabelConfig();
 
     let externals = this.combineExternals();
 
+    let assetPaths = assets.map(asset => asset.relativePath);
+    for (let asset of finalAssets) {
+      // our concatenated assets all have map files that ride along. Here we're
+      // telling the final stage packager to be sure and serve the map files
+      // too.
+      if (asset.kind === 'concatenated-asset') {
+        assetPaths.push(asset.sourcemapPath);
+      }
+    }
+
     let meta: AppMeta = {
       version: 2,
       externals,
-      assets: assets.map(a => a.relativePath),
+      assets: assetPaths,
       ["template-compiler"]: "_template_compiler_.js",
       ["babel-config"]: "_babel_config_.js",
     };

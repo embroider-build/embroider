@@ -58,7 +58,7 @@ class HTMLEntrypoint {
   }
 
   private relativeToApp(relativeToHTML: string) {
-    return resolve('/', this.dir, relativeToHTML).slice(1)
+    return resolve('/', this.dir, relativeToHTML).slice(1);
   }
 
   private handledScripts() {
@@ -173,12 +173,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       context: this.pathToVanillaApp,
       entry,
       plugins: [
-        // this is needed for script-loader to have sourcemaps. It's a backward
-        // compatibility thing, presumably script-loader will eventually update
-        // to the modern webpack way of taking these options.
-        new webpack.LoaderOptionsPlugin({
-          debug: this.mode === 'development'
-        }),
         new MiniCssExtractPlugin()
       ],
       module: {
@@ -224,7 +218,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           // these loaders are our dependencies, not the app's dependencies. I'm
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
-          'script-loader': require.resolve('script-loader'),
           'thread-loader': require.resolve('thread-loader'),
           'babel-loader': require.resolve('babel-loader'),
           'css-loader': require.resolve('css-loader'),

@@ -33,7 +33,6 @@
     "script-loader": "^0.7.2",
     "style-loader": "^0.23.0",
     "thread-loader": "^1.2.0",
-    "typescript-memoize": "^1.0.0-alpha.3",
     "webpack": "^4.17.1"
   },
   "peerDependencies": {

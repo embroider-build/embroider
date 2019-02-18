@@ -12,97 +12,76 @@
 import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync } from 'fs-extra';
-import { join, dirname, resolve } from 'path';
+import { join, dirname, relative, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
-import { Memoize } from 'typescript-memoize';
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import Placeholder from './html-placeholder';
 
-class Asset {
-  constructor(private pathToVanillaApp: string, public filename: string){}
+class HTMLEntrypoint {
+  private dom: JSDOM;
+  private dir: string;
+  private placeholders: Map<string, Placeholder[]> = new Map();
+  modules: string[] = [];
+  scripts: string[] = [];
 
-  get isHTML() {
-    return /\.html$/i.test(this.filename);
-  }
+  constructor(private pathToVanillaApp: string, public filename: string){
+    this.dir = dirname(this.filename);
+    this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
-  get absoluteFilename() {
-    return join(this.pathToVanillaApp, this.filename);
-  }
+    for (let scriptTag of this.handledScripts()) {
+      // scriptTag.src is relative to this HTML file. Convert it to be relative
+      // to the app.
+      let src = resolve('/', this.dir, scriptTag.src).slice(1);
 
-  @Memoize()
-  get dom() {
-    return new JSDOM(readFileSync(this.absoluteFilename, 'utf8'));
-  }
+      if (scriptTag.type === 'module') {
+        this.modules.push(src);
+      } else {
+        this.scripts.push(src);
+      }
 
-  get name() {
-    return this.filename;
-  }
-
-  @Memoize()
-  get ignoredScriptTags() {
-    return [...this.dom.window.document.querySelectorAll('script[data-embroider-ignore]')];
-  }
-
-  // we deal in synchronous, relative scripts. All others we leave alone.
-  @Memoize()
-  get scriptTags() {
-    return [...this.dom.window.document.querySelectorAll('script')]
-      .filter(s => s.hasAttribute('src') && !s.hasAttribute('async') && !isAbsoluteURL(s.src) && !s.hasAttribute('data-embroider-ignore'));
-  }
-
-  @Memoize()
-  get styleLinks() {
-    return ([...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[])
-      .filter(s => !isAbsoluteURL(s.href));
-  }
-
-  @Memoize()
-  private partitionedSources() {
-    let [modules, scripts] = partition(this.scriptTags, tag => tag.type === 'module');
-    return {
-      modules: modules.map(t => this.resolvePath(t.src)),
-      scripts: scripts.map(t=> this.resolvePath(t.src)),
-      styles: this.styleLinks.map(link => this.resolvePath(link.href))
-    };
-  }
-
-  get modules() {
-    return this.partitionedSources().modules;
-  }
-
-  get scripts() {
-    return this.partitionedSources().scripts;
-  }
-
-  get styles() {
-    return this.partitionedSources().styles;
-  }
-
-  private resolvePath(p: string) {
-    if (p[0] === '/') {
-      // this path is relative to the app root
-      return resolve(this.pathToVanillaApp, p.slice(1));
-    } else {
-      // the path is relative to the entrypoint file, which is relative to the
-      // app root.
-      return resolve(this.pathToVanillaApp, dirname(this.filename), p);
+      let placeholder = new Placeholder(scriptTag);
+      let list = this.placeholders.get(src);
+      if (list) {
+        list.push(placeholder);
+      } else {
+        this.placeholders.set(src, [placeholder]);
+      }
     }
   }
 
-  @Memoize()
-  get specifiers() {
-    // "script-loader!" is a webpack-ism. It's forcing our plain script tags to
-    // be evaluated in script context, as opposed to module context.
-    return this.scripts.map(script => `script-loader!${script}`)
-    .concat(this.modules)
-    .concat(this.styles);
+  private handledScripts() {
+    let scriptTags = [...this.dom.window.document.querySelectorAll('script')] as HTMLScriptElement[];
+    let [ignoredScriptTags, handledScriptTags] = partition(scriptTags, scriptTag => {
+      return !scriptTag.src || scriptTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(scriptTag.src);
+    });
+    for (let scriptTag of ignoredScriptTags) {
+      scriptTag.removeAttribute('data-embroider-ignore');
+    }
+    return handledScriptTags;
+  }
+
+  render(bundles: Map<string, string[]>): string {
+    for (let [src, placeholders] of this.placeholders) {
+      let matchingBundles = bundles.get(src);
+      if (matchingBundles) {
+        for (let placeholder of placeholders) {
+          for (let matchingBundle of matchingBundles) {
+            let src = relative(this.dir, matchingBundle);
+            placeholder.insertScriptTag(src);
+          }
+        }
+      }
+    }
+    return this.dom.serialize();
   }
 }
 
 interface AppInfo {
-  entrypoints: Asset[];
+  entrypoints: HTMLEntrypoint[];
+  otherAssets: string[];
   externals: string[];
   templateCompiler: Function;
   babelConfig: any;
@@ -134,11 +113,27 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.extraConfig = options && options.webpackConfig;
   }
 
+  async build(): Promise<void> {
+    let appInfo = this.examineApp();
+    let webpack = this.getWebpack(appInfo);
+    let stats = this.summarizeStats(await this.runWebpack(webpack));
+    this.writeFiles(stats, appInfo);
+  }
+
   private examineApp(): AppInfo {
     let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
-    let entrypoints = meta.assets.map(entrypoint => {
-      return new Asset(this.pathToVanillaApp, entrypoint);
-    });
+
+    let entrypoints = [];
+    let otherAssets = [];
+
+    for (let relativePath of meta.assets) {
+      if (/\.html/i.test(relativePath)) {
+        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, relativePath));
+      } else {
+        otherAssets.push(relativePath);
+      }
+    }
+
     let externals = meta.externals || [];
     let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
     let babelConfigFile = meta['babel-config'];
@@ -146,31 +141,18 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     if (babelConfigFile) {
       babelConfig = require(join(this.pathToVanillaApp, babelConfigFile));
     }
-    return { entrypoints, externals, templateCompiler, babelConfig };
+    return { entrypoints, otherAssets, externals, templateCompiler, babelConfig };
   }
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
   private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
-    // keep track of known scripts (as opposed to modules), as those are
-    // conventionally not transpiled by babel (they are the old `vendor` assets
-    // that were simply concatenated).
-    let scripts = new Set();
-
-    // keep track of files added via <link rel="stylesheet">, because those are
-    // not parsed and traversed, whereas CSS files that are `import`ed from
-    // Javascript are. This is analogous to the script vs module distinction for
-    // Javascript.
-    let stylesheets = new Set();
-
-    let entry: { [name: string]: string[] } = {};
-    entrypoints.forEach(entrypoint => {
-      if (entrypoint.isHTML && entrypoint.specifiers.length > 0) {
-        entry[entrypoint.name] = entrypoint.specifiers;
-        entrypoint.scripts.forEach(script => scripts.add(script));
-        entrypoint.styles.forEach(stylesheet => stylesheets.add(stylesheet));
+    let entry: { [name: string]: string } = {};
+    for (let entrypoint of entrypoints) {
+      for (let moduleName of entrypoint.modules) {
+        entry[moduleName] = './' + moduleName;
       }
-    });
+    }
 
     let amdExternals: { [name: string]: string } = {};
     externals.forEach(external => {
@@ -202,7 +184,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             ]
           },
           {
-            test: this.shouldTranspileFile.bind(this, scripts),
+            test: this.shouldTranspileFile.bind(this),
             use: [
               process.env.JOBS === '1' ? null : 'thread-loader',
               {
@@ -212,13 +194,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             ].filter(Boolean)
           },
           {
-            test: this.isCSSModule.bind(this, stylesheets),
-            use: this.makeCSSRule(true)
+            test: isCSS,
+            use: this.makeCSSRule()
           },
-          {
-            test: this.isStylesheet.bind(this, stylesheets),
-            use: this.makeCSSRule(false)
-          }
         ]
       },
       output: {
@@ -247,22 +225,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     };
   }
 
-  private isCSSModule(stylesheets: Set<string>, filename: string) {
-    return isCSS(filename) && !stylesheets.has(filename);
-  }
-
-  private isStylesheet(stylesheets: Set<string>, filename: string) {
-    return isCSS(filename) && stylesheets.has(filename);
-  }
-
-  private shouldTranspileFile(scripts: Set<string>, filename: string) {
+  private shouldTranspileFile(filename: string) {
     if (!isJS(filename)) {
       // quick exit for non JS extensions
-      return false;
-    }
-
-    if (scripts.has(filename)) {
-      // our vendored scripts don't get babel
       return false;
     }
 
@@ -296,80 +261,50 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return this.lastWebpack = webpack(config);
   }
 
-  async build(): Promise<void> {
-    let appInfo = this.examineApp();
-    let webpack = this.getWebpack(appInfo);
-    let stats = this.summarizeStats(await this.runWebpack(webpack));
-    this.writeFiles(stats, appInfo);
-  }
-
-  private writeFiles(stats: StatSummary, { entrypoints }: AppInfo) {
+  private writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
+
+    let bundles = new Map(stats.entrypoints);
     for (let entrypoint of entrypoints) {
-      let assets = stats.entrypoints.get(entrypoint.name);
-      if (assets) {
-        // this branch handles html entrypoints that we passed through webpack
-        for (let asset of assets) {
-          if (isJS(asset)) {
-            let firstTag = entrypoint.scriptTags[0] as InDOMHTMLElement;
-            // this conditional is here because if there were no scripts in the
-            // input, we're not about to add some in the output, even though
-            // webpack sometimes does funny things like adding empty script
-            // chunks just because we have some CSS.
-            if (firstTag) {
-              let newScript = entrypoint.dom.window.document.createElement('script');
-              newScript.src = `/assets/${asset}`; // todo adjust for rootURL
-              firstTag.parentElement.insertBefore(newScript, firstTag);
-              insertNewline(newScript);
-            }
-          } else if (isCSS(asset)) {
-            let firstLink = entrypoint.styleLinks[0] as InDOMHTMLElement;
-            if (firstLink) {
-              let newLink = entrypoint.dom.window.document.createElement('link');
-              newLink.href = `/assets/${asset}`; // todo adjust for rootURL
-              newLink.rel = 'stylesheet';
-              firstLink.parentElement.insertBefore(newLink, firstLink);
-              insertNewline(newLink);
-            }
-          }
+      for (let script of entrypoint.scripts) {
+        if (!bundles.has(script)) {
+          // scripts are getting passed through without any renaming at the
+          // moment.
+          bundles.set(script, [script]);
+          this.copyThrough(script);
         }
-        entrypoint.scriptTags.forEach(tag => tag.remove());
-        entrypoint.styleLinks.forEach(tag => tag.remove());
-        entrypoint.ignoredScriptTags.forEach(tag => tag.removeAttribute('data-embroider-ignore'));
-        ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-        writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.dom.serialize(), 'utf8');
-      } else {
-        // this branch handles other assets that we are just passing through
-        this.copyThrough(entrypoint);
       }
+    }
+
+    for (let entrypoint of entrypoints) {
+      ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
+      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(bundles), 'utf8');
+    }
+
+    for (let relativePath of otherAssets) {
+      this.copyThrough(relativePath);
     }
   }
 
-  private copyThrough(entrypoint: Asset) {
-    let newStats = statSync(entrypoint.absoluteFilename);
-    let oldStats = this.passthroughCache.get(entrypoint.absoluteFilename);
+  private copyThrough(relativePath: string) {
+    let sourcePath = join(this.pathToVanillaApp, relativePath);
+    let newStats = statSync(sourcePath);
+    let oldStats = this.passthroughCache.get(sourcePath);
     if (!oldStats || oldStats.mtimeMs !== newStats.mtimeMs || oldStats.size !== newStats.size) {
-      copySync(entrypoint.absoluteFilename, join(this.outputPath, entrypoint.filename));
-      this.passthroughCache.set(entrypoint.absoluteFilename, newStats);
+      copySync(sourcePath, join(this.outputPath, relativePath));
+      this.passthroughCache.set(sourcePath, newStats);
     }
   }
 
   private summarizeStats(stats: any): StatSummary {
-    let output: { lazyAssets: string[], entrypoints: Map<string, string[]> } = {
+    let output: { entrypoints: Map<string, string[]> } = {
       entrypoints: new Map(),
-      lazyAssets: [],
     };
-    let nonLazyAssets = new Set();
     for (let id of Object.keys(stats.entrypoints)) {
       let entrypoint = stats.entrypoints[id];
-      output.entrypoints.set(id, entrypoint.assets);
-      (entrypoint.assets as string[]).forEach(asset => nonLazyAssets.add(asset));
-    }
-    for (let asset of stats.assets) {
-      if (!nonLazyAssets.has(asset.name)) {
-        output.lazyAssets.push(asset.name);
-      }
+      let assets = (entrypoint.assets as string[]).map(asset => 'assets/' + asset);
+      output.entrypoints.set(id, assets);
     }
     return output;
   }
@@ -400,15 +335,15 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     });
   }
 
-  private makeCSSRule(moduleMode: boolean) {
+  private makeCSSRule() {
     return [
-      moduleMode && this.mode === 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
+      this.mode === 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
       {
         loader: 'css-loader',
         options: {
-          url: moduleMode,
-          import: moduleMode,
-          modules: moduleMode
+          url: true,
+          import: true,
+          modules: true
         }
       }
     ];
@@ -434,20 +369,8 @@ function isJS(filename: string) {
   return /\.js$/i.test(filename);
 }
 
-function insertNewline(at: Node) {
-  at.parentElement!.insertBefore(
-    at.ownerDocument!.createTextNode("\n"),
-    at
-  );
-}
-
 interface StatSummary {
-  lazyAssets: string[];
   entrypoints: Map<string, string[]>;
-}
-
-interface InDOMHTMLElement extends HTMLElement {
-  parentElement: HTMLElement;
 }
 
 export { Webpack };

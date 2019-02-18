@@ -5,7 +5,7 @@ import Package from './package';
 import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
-import { writeFileSync, ensureDirSync, copySync, unlinkSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
@@ -14,6 +14,7 @@ import { PreparedEmberHTML } from './ember-html';
 import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
 import flatMap from 'lodash/flatMap';
 import assertNever from 'assert-never';
+import SourceMapConcat from 'fast-sourcemap-concat';
 
 export type EmberENV = unknown;
 
@@ -116,7 +117,12 @@ class BuiltEmberAsset {
   }
 }
 
-type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
+class ConcatenatedAsset {
+  kind: 'concatenated-asset' = 'concatenated-asset';
+  constructor(public relativePath: string, public sources: OnDiskAsset[]){}
+}
+
+type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
@@ -209,9 +215,23 @@ export class AppBuilder<TreeNames> {
 
     html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
-    for (let script of this.impliedAssets("implicit-scripts")) {
-      html.insertScriptTag(html.implicitScripts, relative(this.root, script));
+
+    let implicitScripts = this.impliedAssets("implicit-scripts").map((sourcePath: string): OnDiskAsset => {
+      let stats = statSync(sourcePath);
+      return {
+        kind: 'on-disk',
+        relativePath: relative(this.root, sourcePath),
+        sourcePath,
+        mtime: stats.mtimeMs,
+        size: stats.size,
+      };
+    });
+    if (implicitScripts.length > 0) {
+      let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts);
+      prepared.set(vendorJS.relativePath, vendorJS);
+      html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
+
     for (let style of this.impliedAssets("implicit-styles")) {
       html.insertStyleLink(html.implicitStyles, relative(this.root, style));
     }
@@ -301,7 +321,29 @@ export class AppBuilder<TreeNames> {
     writeFileSync(destination, asset.source, "utf8");
   }
 
-  private updateAssets(requestedAssets: Asset[], appFiles: Set<string>) {
+  private async updateConcatenatedAsset(asset: ConcatenatedAsset, prior: InternalAsset | undefined) {
+    if (
+      prior &&
+      prior.kind === 'concatenated-asset' &&
+      prior.sources.length === asset.sources.length &&
+      prior.sources.every((priorFile, index) => {
+        let newFile = asset.sources[index];
+        return priorFile.size === newFile.size && priorFile.mtime === newFile.mtime;
+      })
+    ) {
+      // prior was already valid
+      console.log(`not rebuilding concatenated asset ${asset.relativePath}`);
+      return;
+    }
+    console.log('building concatenated asset');
+    let concat = new SourceMapConcat({ outputFile: join(this.root, asset.relativePath) });
+    for (let source of asset.sources) {
+      concat.addFile(source.sourcePath);
+    }
+    await concat.end();
+  }
+
+  private async updateAssets(requestedAssets: Asset[], appFiles: Set<string>) {
     let assets = this.prepareAssets(requestedAssets, appFiles);
     for (let asset of assets.values()) {
       let prior = this.assets.get(asset.relativePath);
@@ -314,6 +356,9 @@ export class AppBuilder<TreeNames> {
           break;
         case 'built-ember':
           this.updateBuiltEmberAsset(asset, prior);
+          break;
+        case 'concatenated-asset':
+          await this.updateConcatenatedAsset(asset, prior);
           break;
         default:
           assertNever(asset);
@@ -352,10 +397,10 @@ export class AppBuilder<TreeNames> {
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
 
-    this.updateAssets(assets, appFiles);
+    this.addEmberEnv(emberENV);
+    await this.updateAssets(assets, appFiles);
     this.addTemplateCompiler(emberENV);
     this.addBabelConfig();
-    this.addEmberEnv(emberENV);
 
     let externals = this.combineExternals();
 
@@ -438,8 +483,12 @@ export class AppBuilder<TreeNames> {
   // HTML that we hand to the final stage packager.
   private addEmberEnv(config: EmberENV) {
     let content = `window.EmberENV=${JSON.stringify(config, null, 2)};`;
-    writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
+    if (content !== this.lastEmberEnv) {
+      writeFileSync(join(this.root, "_ember_env_.js"), content, "utf8");
+      this.lastEmberEnv = content;
+    }
   }
+  private lastEmberEnv = "{}";
 
   private javascriptEntrypoint(name: string, appFiles: Set<string>): InternalAsset {
     let modulePrefix = this.adapter.modulePrefix();

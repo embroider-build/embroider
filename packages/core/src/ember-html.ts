@@ -19,7 +19,7 @@ export interface EmberHTML {
   // can leave these off and we will simply put them in the same places as the
   // non-test things.
   //
-  // Do not confus these with controlling whether or not we will insert tests.
+  // Do not confuse these with controlling whether or not we will insert tests.
   // That is separately controlled via `includeTests`.
   testJavascript?: Node;
   implicitTestScripts?: Node;

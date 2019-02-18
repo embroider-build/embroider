@@ -347,11 +347,12 @@ export class AppBuilder<TreeNames> {
     let concat = new SourceMapConcat({
       outputFile: join(this.root, asset.relativePath),
       mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
+      baseDir: this.root,
     });
     for (let source of asset.sources) {
       switch (source.kind) {
         case 'on-disk':
-          concat.addFile(source.sourcePath);
+          concat.addFile(relative(this.root, source.sourcePath));
           break;
         case 'in-memory':
           if (typeof source.source !== 'string') {

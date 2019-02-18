@@ -30,7 +30,9 @@
     "lodash": "^4.17.10",
     "mini-css-extract-plugin": "^0.4.3",
     "pkg-up": "^2.0.0",
+    "source-map-url": "^0.4.0",
     "style-loader": "^0.23.0",
+    "terser": "^3.16.1",
     "thread-loader": "^1.2.0",
     "webpack": "^4.17.1"
   },

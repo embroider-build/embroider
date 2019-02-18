@@ -3,7 +3,8 @@ declare module 'fast-sourcemap-concat' {
   export default class {
     constructor(opts: {
       outputFile?: string,
-      mapCommentType?: "line" | "block"
+      mapCommentType?: "line" | "block",
+      baseDir?: string,
     });
     addFile(filename: string): void;
     addSpace(source: string): void;

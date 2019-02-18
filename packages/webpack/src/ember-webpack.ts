@@ -11,7 +11,7 @@
 
 import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
 import webpack, { Configuration } from 'webpack';
-import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync } from 'fs-extra';
+import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
@@ -19,6 +19,11 @@ import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import Placeholder from './html-placeholder';
+
+// This is a type-only import, so it gets compiled away. At runtime, we load
+// terser lazily so it's only loaded for production builds that use it. Don't
+// add any non-type-only imports here.
+import { MinifyOptions } from 'terser';
 
 class HTMLEntrypoint {
   private dom: JSDOM;
@@ -126,7 +131,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let appInfo = this.examineApp();
     let webpack = this.getWebpack(appInfo);
     let stats = this.summarizeStats(await this.runWebpack(webpack));
-    this.writeFiles(stats, appInfo);
+    await this.writeFiles(stats, appInfo);
   }
 
   private examineApp(): AppInfo {
@@ -263,9 +268,48 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return this.lastWebpack = webpack(config);
   }
 
-  private writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
+  private async writeScript(script: string, written: Set<string>) {
+    if (this.mode !== 'production') {
+      this.copyThrough(script);
+      return script;
+    }
+
+    // loading these lazily here so they never load in non-production builds.
+    // The node cache will ensures we only load them once.
+    const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
+
+    let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
+    let terserOpts: MinifyOptions = {};
+    let fileRelativeSourceMapURL;
+    let appRelativeSourceMapURL;
+    if (srcURL.default.existsIn(inCode)) {
+      fileRelativeSourceMapURL = srcURL.default.getFrom(inCode)!;
+      appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
+      terserOpts.sourceMap = {
+        content: readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL)),
+        url: fileRelativeSourceMapURL
+      };
+    }
+    let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
+    writeFileSync(join(this.outputPath, script), outCode);
+    written.add(script);
+    if (appRelativeSourceMapURL && outMap) {
+      writeFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
+      written.add(appRelativeSourceMapURL);
+    }
+    return script;
+  }
+
+  private async writeStyle(style: string) {
+    this.copyThrough(style);
+    return style;
+  }
+
+  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
+
+    let written: Set<string> = new Set();
 
     // scripts (as opposed to modules) and stylesheets (as opposed to CSS
     // modules that are imported from JS modules) get passed through without
@@ -274,14 +318,12 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     for (let entrypoint of entrypoints) {
       for (let script of entrypoint.scripts) {
         if (!bundles.has(script)) {
-          bundles.set(script, [script]);
-          this.copyThrough(script);
+          bundles.set(script, [await this.writeScript(script, written)]);
         }
       }
       for (let style of entrypoint.styles) {
         if (!bundles.has(style)) {
-          bundles.set(style, [style]);
-          this.copyThrough(style);
+          bundles.set(style, [await this.writeStyle(style, written)]);
         }
       }
     }
@@ -289,10 +331,13 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     for (let entrypoint of entrypoints) {
       ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
       writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(bundles), 'utf8');
+      written.add(entrypoint.filename);
     }
 
     for (let relativePath of otherAssets) {
-      this.copyThrough(relativePath);
+      if (!written.has(relativePath)) {
+        this.copyThrough(relativePath);
+      }
     }
   }
 

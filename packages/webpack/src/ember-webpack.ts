@@ -300,8 +300,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return script;
   }
 
-  private async writeStyle(style: string) {
+  private async writeStyle(style: string, written: Set<string>) {
     this.copyThrough(style);
+    written.add(style);
     return style;
   }
 

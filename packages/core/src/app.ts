@@ -153,7 +153,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private impliedAssets(type: keyof ImplicitAssetPaths): any {
+  private impliedAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = this.impliedAddonAssets(type);
 
     // This file gets created by addEmberEnv(). We need to insert it at the
@@ -164,7 +164,7 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths): any {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
     for (let addon of sortBy(
       this.activeAddonDescendants,

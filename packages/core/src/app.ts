@@ -7,7 +7,7 @@ import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
-import { todo, unsupported } from './messages';
+import { todo, unsupported, debug } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
@@ -288,54 +288,47 @@ export class AppBuilder<TreeNames> {
     return prepared;
   }
 
-  private updateOnDiskAsset(asset: OnDiskAsset, prior: InternalAsset | undefined) {
-    if (prior && prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime) {
-      // prior was already valid
-      return;
+  private assetIsValid(asset: InternalAsset, prior: InternalAsset | undefined): boolean {
+    if (!prior) {
+      return false;
     }
+    switch(asset.kind) {
+      case 'on-disk':
+        return prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime;
+      case 'in-memory':
+        return prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source);
+      case 'built-ember':
+        return prior.kind === 'built-ember' && prior.source === asset.source;
+      case 'concatenated-asset':
+        return prior.kind === 'concatenated-asset' &&
+          prior.sources.length === asset.sources.length &&
+          prior.sources.every((priorFile, index) => {
+            let newFile = asset.sources[index];
+            return priorFile.size === newFile.size && priorFile.mtime === newFile.mtime;
+          });
+    }
+    assertNever(asset);
+  }
+
+  private updateOnDiskAsset(asset: OnDiskAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
     copySync(asset.sourcePath, destination, { dereference: true });
   }
 
-  private updateInMemoryAsset(asset: InMemoryAsset, prior: InternalAsset | undefined) {
-    if (prior && prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source)) {
-      // prior was already valid
-      return;
-    }
+  private updateInMemoryAsset(asset: InMemoryAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, "utf8");
   }
 
-  private updateBuiltEmberAsset(asset: BuiltEmberAsset, prior: InternalAsset | undefined) {
-    if (
-      prior && prior.kind === 'built-ember' &&
-      prior.source === asset.source
-    ) {
-      // prior was already valid
-      return;
-    }
+  private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, "utf8");
   }
 
-  private async updateConcatenatedAsset(asset: ConcatenatedAsset, prior: InternalAsset | undefined) {
-    if (
-      prior &&
-      prior.kind === 'concatenated-asset' &&
-      prior.sources.length === asset.sources.length &&
-      prior.sources.every((priorFile, index) => {
-        let newFile = asset.sources[index];
-        return priorFile.size === newFile.size && priorFile.mtime === newFile.mtime;
-      })
-    ) {
-      // prior was already valid
-      console.log(`not rebuilding concatenated asset ${asset.relativePath}`);
-      return;
-    }
-    console.log('building concatenated asset');
+  private async updateConcatenatedAsset(asset: ConcatenatedAsset) {
     let concat = new SourceMapConcat({ outputFile: join(this.root, asset.relativePath) });
     for (let source of asset.sources) {
       concat.addFile(source.sourcePath);
@@ -346,19 +339,23 @@ export class AppBuilder<TreeNames> {
   private async updateAssets(requestedAssets: Asset[], appFiles: Set<string>) {
     let assets = this.prepareAssets(requestedAssets, appFiles);
     for (let asset of assets.values()) {
-      let prior = this.assets.get(asset.relativePath);
+      if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
+        debug('not rebuilding %s', asset.relativePath);
+        continue;
+      }
+      debug('rebuilding %s', asset.relativePath);
       switch (asset.kind) {
         case 'on-disk':
-          this.updateOnDiskAsset(asset, prior);
+          this.updateOnDiskAsset(asset);
           break;
         case 'in-memory':
-          this.updateInMemoryAsset(asset, prior);
+          this.updateInMemoryAsset(asset);
           break;
         case 'built-ember':
-          this.updateBuiltEmberAsset(asset, prior);
+          this.updateBuiltEmberAsset(asset);
           break;
         case 'concatenated-asset':
-          await this.updateConcatenatedAsset(asset, prior);
+          await this.updateConcatenatedAsset(asset);
           break;
         default:
           assertNever(asset);

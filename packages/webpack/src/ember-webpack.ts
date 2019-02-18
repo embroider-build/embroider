@@ -149,7 +149,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return { entrypoints, externals, templateCompiler, babelConfig };
   }
 
-  // todo
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
   private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {

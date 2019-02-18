@@ -26,15 +26,20 @@ class HTMLEntrypoint {
   private placeholders: Map<string, Placeholder[]> = new Map();
   modules: string[] = [];
   scripts: string[] = [];
+  styles: string[] = [];
 
   constructor(private pathToVanillaApp: string, public filename: string){
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
+    for (let styleTag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
+      this.styles.push(this.relativeToApp((styleTag as HTMLLinkElement).href));
+    }
+
     for (let scriptTag of this.handledScripts()) {
       // scriptTag.src is relative to this HTML file. Convert it to be relative
       // to the app.
-      let src = resolve('/', this.dir, scriptTag.src).slice(1);
+      let src = this.relativeToApp(scriptTag.src);
 
       if (scriptTag.type === 'module') {
         this.modules.push(src);
@@ -50,6 +55,10 @@ class HTMLEntrypoint {
         this.placeholders.set(src, [placeholder]);
       }
     }
+  }
+
+  private relativeToApp(relativeToHTML: string) {
+    return resolve('/', this.dir, relativeToHTML).slice(1)
   }
 
   private handledScripts() {
@@ -265,14 +274,21 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
+    // scripts (as opposed to modules) and stylesheets (as opposed to CSS
+    // modules that are imported from JS modules) get passed through without
+    // going through webpack.
     let bundles = new Map(stats.entrypoints);
     for (let entrypoint of entrypoints) {
       for (let script of entrypoint.scripts) {
         if (!bundles.has(script)) {
-          // scripts are getting passed through without any renaming at the
-          // moment.
           bundles.set(script, [script]);
           this.copyThrough(script);
+        }
+      }
+      for (let style of entrypoint.styles) {
+        if (!bundles.has(style)) {
+          bundles.set(style, [style]);
+          this.copyThrough(style);
         }
       }
     }

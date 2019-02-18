@@ -19,6 +19,9 @@ import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import Placeholder from './html-placeholder';
+import makeDebug from 'debug';
+
+const debug = makeDebug('embroider:webpack:debug');
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
 // terser lazily so it's only loaded for production builds that use it. Don't
@@ -99,6 +102,14 @@ interface AppInfo {
   externals: string[];
   templateCompiler: Function;
   babelConfig: any;
+}
+
+// AppInfos are equal if they result in the same webpack config.
+function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
+  return isEqual(left.externals, right.externals) &&
+    isEqual(left.babelConfig, right.babelConfig) &&
+    left.entrypoints.length === right.entrypoints.length &&
+    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules));
 }
 
 interface Options {
@@ -260,9 +271,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private lastWebpack: webpack.Compiler | undefined;
 
   private getWebpack(appInfo: AppInfo) {
-    if (this.lastWebpack && this.lastAppInfo && isEqual(appInfo, this.lastAppInfo)) {
+    if (this.lastWebpack && this.lastAppInfo && equalAppInfo(appInfo, this.lastAppInfo)) {
+      debug(`reusing webpack config`);
       return this.lastWebpack;
     }
+    debug(`configuring webpack`);
     let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
     this.lastAppInfo = appInfo;
     return this.lastWebpack = webpack(config);
@@ -347,6 +360,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let newStats = statSync(sourcePath);
     let oldStats = this.passthroughCache.get(sourcePath);
     if (!oldStats || oldStats.mtimeMs !== newStats.mtimeMs || oldStats.size !== newStats.size) {
+      debug(`emitting ${relativePath}`);
       copySync(sourcePath, join(this.outputPath, relativePath));
       this.passthroughCache.set(sourcePath, newStats);
     }

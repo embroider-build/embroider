@@ -371,7 +371,6 @@ export class AppBuilder<TreeNames> {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
-        debug('not rebuilding %s', asset.relativePath);
         continue;
       }
       debug('rebuilding %s', asset.relativePath);

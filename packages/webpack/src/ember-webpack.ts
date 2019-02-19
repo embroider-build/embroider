@@ -20,6 +20,7 @@ import partition from 'lodash/partition';
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import Placeholder from './html-placeholder';
 import makeDebug from 'debug';
+import { format } from 'util';
 
 const debug = makeDebug('embroider:webpack:debug');
 
@@ -319,6 +320,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return style;
   }
 
+  private async provideErrorContext(message: string, messageParams: any[], fn: () => Promise<void>) {
+    try {
+      return await fn();
+    } catch (err) {
+      let context = format(message, ...messageParams);
+      err.message = context + ': ' + err.message;
+      throw err;
+    }
+  }
+
   private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
@@ -330,16 +341,18 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     // going through webpack.
     let bundles = new Map(stats.entrypoints);
     for (let entrypoint of entrypoints) {
-      for (let script of entrypoint.scripts) {
-        if (!bundles.has(script)) {
-          bundles.set(script, [await this.writeScript(script, written)]);
+      await this.provideErrorContext('needed by %s', [entrypoint.filename], async () => {
+        for (let script of entrypoint.scripts) {
+          if (!bundles.has(script)) {
+            bundles.set(script, [await this.writeScript(script, written)]);
+          }
         }
-      }
-      for (let style of entrypoint.styles) {
-        if (!bundles.has(style)) {
-          bundles.set(style, [await this.writeStyle(style, written)]);
+        for (let style of entrypoint.styles) {
+          if (!bundles.has(style)) {
+            bundles.set(style, [await this.writeStyle(style, written)]);
+          }
         }
-      }
+      });
     }
 
     for (let entrypoint of entrypoints) {
@@ -350,7 +363,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     for (let relativePath of otherAssets) {
       if (!written.has(relativePath)) {
-        this.copyThrough(relativePath);
+        await this.provideErrorContext(`while copying app's assets`, [], async () => {
+          this.copyThrough(relativePath);
+        });
       }
     }
   }

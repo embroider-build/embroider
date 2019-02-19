@@ -1,9 +1,11 @@
 import { Package } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import { relative } from 'path';
+import assertNever from 'assert-never';
 
 interface Options {
   "project-dir": string;
+  "level": string;
 }
 
 function recordConsumers(pkg: Package, consumers: Map<Package, Set<Package>>) {
@@ -17,6 +19,21 @@ function recordConsumers(pkg: Package, consumers: Map<Package, Set<Package>>) {
   }
 }
 
+function makePackageFilter(options: Options, consumers: Map<Package, Set<Package>>) {
+  // this typecast is the only thing I've found so far that Yargs's typings
+  // doesn't understand automatically.
+  let level = options.level as 'only-addons' | 'addons-and-deps' | 'all';
+  switch (level) {
+    case 'only-addons':
+      return (pkg: Package) => pkg.isEmberPackage;
+    case 'addons-and-deps':
+      return (pkg: Package) => pkg.isEmberPackage || Boolean([...consumers.get(pkg)!].find(c => c.isEmberPackage));
+    case 'all':
+      return (_: Package) => true;
+  }
+  assertNever(level);
+}
+
 async function traverse(options: Options) {
   let mod = await import('@embroider/core');
   let packageCache = new mod.PackageCache();
@@ -24,9 +41,18 @@ async function traverse(options: Options) {
   let versionMap: Map<string, Set<Package>> = new Map();
   let consumers: Map<Package, Set<Package>> = new Map();
 
+  let packageFilter = makePackageFilter(options, consumers);
+
   recordConsumers(app, consumers);
-  for (let dep of app.findDescendants(dep => dep.isEmberPackage)) {
+  let deps = app.findDescendants(dep => {
     recordConsumers(dep, consumers);
+    // for now we're limiting ourselves only to ember addons. We can relax this
+    // to eventually also include things that are directly consumed by ember
+    // addons, or even the entire node_modules graph.
+    return packageFilter(dep);
+  });
+
+  for (let dep of deps) {
     let copies = versionMap.get(dep.name);
     if (copies) {
       copies.add(dep);
@@ -36,7 +62,6 @@ async function traverse(options: Options) {
   }
 
   let duplicates = sortBy([...versionMap.values()].filter(versions => versions.size > 1), (list) => list.values().next().value.name);
-
   return { duplicates, consumers };
 }
 

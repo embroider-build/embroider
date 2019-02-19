@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@embroider/core": "0.0.4",
+    "assert-never": "^1.1.0",
     "lodash": "^4.17.11",
     "yargs": "^13.2.1"
   }

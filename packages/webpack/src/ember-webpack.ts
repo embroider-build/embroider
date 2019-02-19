@@ -347,7 +347,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       await this.provideErrorContext('needed by %s', [entrypoint.filename], async () => {
         for (let script of entrypoint.scripts) {
           if (!bundles.has(script)) {
-            bundles.set(script, [await this.writeScript(script, written)]);
+            try {
+              bundles.set(script, [await this.writeScript(script, written)]);
+            } catch (err) {
+              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
+                this.consoleWrite(`warning: in ${entrypoint.filename} <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`);
+                bundles.set(script, [script]);
+              } else {
+                throw err;
+              }
+            }
           }
         }
         for (let style of entrypoint.styles) {

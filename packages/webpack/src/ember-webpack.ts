@@ -42,7 +42,10 @@ class HTMLEntrypoint {
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
     for (let styleTag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
-      this.styles.push(this.relativeToApp((styleTag as HTMLLinkElement).href));
+      let href = (styleTag as HTMLLinkElement).href;
+      if (!isAbsoluteURL(href)) {
+        this.styles.push(this.relativeToApp(href));
+      }
     }
 
     for (let scriptTag of this.handledScripts()) {

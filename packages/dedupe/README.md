@@ -19,6 +19,10 @@ Embroider _does_ support multiple copies of the same Ember addon within one app.
 
 Each time you run `npm install` or `yarn install`, also run the `dedupe` command from this package. It modifies your `node_modules` directory through a combination of deleting packages and symlinking packages.
 
-# Limitations
+# Limitations & Alternatives
 
 This package is not a full optimizer, in the sense of looking at all possible published versions of each package and solving for the smallest combination. Rather, it works only with the set of versions that are already present based on the output of `npm` or `yarn`.
+
+I expect Yarn Plug n Play will do an equally good job at deduplication. As soon as it's ready and working with ember-cli, consider adopting that.
+
+`yarn-deduplicate` is similar to dedupe in that it prunes existing output from `yarn`. In that case by modifying `yarn.lock`. It probably can't optimize as much as `dedupe`, because we're willing to create symlinks, and I think it only creates a normal node_modules tree.

@@ -1,0 +1,27 @@
+{
+  "name": "@embroider/dedupe",
+  "version": "0.0.4",
+  "description": "Ember Addon deduplicator tool",
+  "main": "src/index.js",
+  "author": "Edward Faulkner",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "prepare": "tsc"
+  },
+  "bin": {
+    "dedupe": "./src/cli.js"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.121",
+    "@types/node": "^10.5.2",
+    "@types/yargs": "^12.0.9",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
+  },
+  "dependencies": {
+    "@embroider/core": "0.0.4",
+    "lodash": "^4.17.11",
+    "yargs": "^13.2.1"
+  }
+}

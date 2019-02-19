@@ -13,6 +13,13 @@
       "args": [
         "tests"
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Dedupe",
+      "program": "${workspaceFolder}/packages/dedupe/src/cli.js",
+      "cwd": "${workspaceFolder}/../travis-web"
     }
   ]
 }

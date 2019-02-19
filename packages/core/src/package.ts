@@ -9,8 +9,12 @@ export default abstract class Package {
   abstract readonly root: string;
   abstract readonly dependencies: Package[];
 
-  get name() {
+  get name(): string {
     return this.packageJSON.name;
+  }
+
+  get version(): string {
+    return this.packageJSON.version;
   }
 
   @Memoize()

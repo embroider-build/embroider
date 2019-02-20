@@ -19,7 +19,8 @@
       "request": "launch",
       "name": "Dedupe",
       "program": "${workspaceFolder}/packages/dedupe/src/cli.js",
-      "cwd": "${workspaceFolder}/../travis-web"
+      "cwd": "${workspaceFolder}/../travis-web",
+      "args": ["plan"]
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { Package } from '@embroider/core';
+import { Package, PackageCache } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import { relative } from 'path';
 import assertNever from 'assert-never';
@@ -35,8 +35,7 @@ function makePackageFilter(options: Options, consumers: Map<Package, Set<Package
 }
 
 async function traverse(options: Options) {
-  let mod = await import('@embroider/core');
-  let packageCache = new mod.PackageCache();
+  let packageCache = new PackageCache();
   let app = packageCache.getApp(options['project-dir']);
   let versionMap: Map<string, Set<Package>> = new Map();
   let consumers: Map<Package, Set<Package>> = new Map();

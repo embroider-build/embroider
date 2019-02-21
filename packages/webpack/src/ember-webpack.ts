@@ -94,6 +94,13 @@ class HTMLEntrypoint {
             placeholder.insertScriptTag(src);
           }
         }
+      } else {
+        // no match means keep the original HTML content for this placeholder.
+        // (If we really wanted it empty instead, there would be matchingBundles
+        // and it would be an empty list.)
+        for (let placeholder of placeholders) {
+          placeholder.reset();
+        }
       }
     }
     return this.dom.serialize();
@@ -352,7 +359,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
                 this.consoleWrite(`warning: in ${entrypoint.filename} <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`);
-                bundles.set(script, [script]);
               } else {
                 throw err;
               }

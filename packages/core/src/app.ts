@@ -217,16 +217,25 @@ export class AppBuilder<TreeNames> {
     return babel;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private appJSAsset(appFiles: Set<string>, prepared: Map<string, InternalAsset>): InternalAsset {
     let appJS = prepared.get(`assets/${this.app.name}.js`);
     if (!appJS) {
       appJS = this.javascriptEntrypoint(this.app.name, appFiles);
       prepared.set(appJS.relativePath, appJS);
     }
+    return appJS;
+  }
 
+  private insertEmberApp(asset: ParsedEmberAsset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     let html = asset.html;
 
-    html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
+    // our tests entrypoint already includes a correct module dependency on the
+    // app, so we only insert the app when we're not inserting tests
+    if (!asset.fileAsset.includeTests) {
+      let appJS = this.appJSAsset(appFiles, prepared);
+      html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
+    }
+
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     let implicitScripts = this.impliedAssets("implicit-scripts", emberENV);
@@ -246,7 +255,7 @@ export class AppBuilder<TreeNames> {
     if (asset.fileAsset.includeTests) {
       let testJS = prepared.get(`assets/test.js`);
       if (!testJS) {
-        testJS = this.testJSEntrypoint(appFiles);
+        testJS = this.testJSEntrypoint(appFiles, prepared);
         prepared.set(testJS.relativePath, testJS);
       }
       html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
@@ -553,12 +562,20 @@ export class AppBuilder<TreeNames> {
     };
   }
 
-  private testJSEntrypoint(appFiles: Set<string>): InternalAsset {
+  private testJSEntrypoint(appFiles: Set<string>, prepared: Map<string, InternalAsset>): InternalAsset {
+    const myName = 'assets/test.js';
     let testModules = [...appFiles].map(relativePath => {
       if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
         return `../${relativePath}`;
       }
     }).filter(Boolean) as string[];
+
+    // tests necessarily also include the app. This is where we account for
+    // that. The classic solution was to always include the app's separate
+    // script tag in the tests HTML, but that isn't as easy for final stage
+    // packagers to understand. It's better to express it here as a direct
+    // module dependency.
+    testModules.unshift('./' + relative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
 
     let lazyModules: { runtime: string, buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -574,7 +591,7 @@ export class AppBuilder<TreeNames> {
     return {
       kind: 'in-memory',
       source,
-      relativePath: 'assets/test.js'
+      relativePath: myName
     };
   }
 

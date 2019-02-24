@@ -367,7 +367,11 @@ export default class V1App implements V1Package {
         // original files (this is an absolute path).
         return preresolved;
       }
-      // non node assets are local paths.
+      // non node assets are local paths. They need an explicit `/` or `.` at
+      // the start.
+      if (asset.startsWith('/') || asset.startsWith('.')) {
+        return asset;
+      }
       return './' + asset;
     });
   }

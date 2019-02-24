@@ -3,7 +3,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { join } from 'path';
-import { existsSync } from 'fs-extra';
+import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -393,12 +393,30 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  private maybeSetAppJS(built: IntermediateBuild, tree: Tree): Tree {
+    // unforunately Funnel doesn't create destDir if its input exists but is
+    // empty. And we want to only put the app-js key in package.json if
+    // there's really a directory for it to point to. So we need to monitor
+    // the output and use dynamicMeta.
+    let dirExists = false;
+    built.dynamicMeta.push(() => {
+      if (dirExists) {
+        return { 'app-js': appPublicationDir };
+      } else {
+        return {};
+      }
+    });
+    return  new AddToTree(tree, (outputPath: string) => {
+      dirExists = pathExistsSync(join(outputPath, appPublicationDir));
+    });
+  }
+
   private buildTestSupport(built: IntermediateBuild) {
     let tree = this.treeForTestSupport();
     if (tree) {
+      tree = this.maybeSetAppJS(built, tree);
       built.importParsers.push(this.parseImports(tree));
       built.trees.push(tree);
-      built.staticMeta['app-js'] = appPublicationDir;
     }
   }
 
@@ -427,7 +445,7 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      built.staticMeta['app-js'] = appPublicationDir;
+      appTree = this.maybeSetAppJS(built, appTree);
       built.importParsers.push(this.parseImports(appTree));
       built.trees.push(appTree);
     }

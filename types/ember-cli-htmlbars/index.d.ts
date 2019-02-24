@@ -6,6 +6,9 @@ declare module 'ember-cli-htmlbars' {
   export interface Options {
     templateCompilerPath: string;
     name?: string;
+    plugins?: {
+      [type: string]: unknown[]
+    }
   }
 
   export default class HTMLBarsTransform extends Plugin {

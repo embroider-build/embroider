@@ -7,15 +7,19 @@ interface AST {
   _deliberatelyOpaque: 'AST';
 }
 
-// see processString in ember-cli-htmlbars/index.js. We are going to build almost exactly the same transform, but instead of templateCompiler.precomiple we call ssyntax.print(yntax.preprocess())
 interface PreprocessOptions {
-  contents: string;   // the original source of the template
-  moduleName: string; // example: "ember-basic-dropdown/templates/components/basic-dropdown-content.hbs"
+  contents: string;
+  moduleName: string;
+  plugins?: {
+    [type: string]: unknown[]
+  };
 }
 
 interface GlimmerSyntax {
   preprocess: (html: string, options?: PreprocessOptions) => AST;
   print: (ast: AST) => string;
+  defaultOptions: (options: PreprocessOptions) => PreprocessOptions;
+  registerPlugin: (type: string, plugin: unknown) => void;
 }
 
 let glimmerSyntaxCache: GlimmerSyntax | undefined;
@@ -46,6 +50,9 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
       glimmerSyntaxCache = {
         print: obj['@glimmer/syntax'].print,
         preprocess: obj['@glimmer/syntax'].preprocess,
+        defaultOptions: obj['ember-template-compiler/lib/system/compile-options'].default,
+        registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
+
       };
       return glimmerSyntaxCache;
     }
@@ -55,6 +62,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
 
 export default class extends HTMLBarsTransform {
   private syntax: GlimmerSyntax;
+  private userPluginsCount: number;
 
   constructor(inputTree: Tree, options: HTMLBarsOptions) {
     options.name = 'embroider-apply-ast-transforms';
@@ -63,13 +71,39 @@ export default class extends HTMLBarsTransform {
 
     // unlike our parent class, we don't want to rename hbs to js
     this.targetExtension = null;
+    this.userPluginsCount = 0;
+    this.embroiderRegisterPlugins(options);
   }
+
+  embroiderRegisterPlugins(options: HTMLBarsOptions) {
+    let plugins = options.plugins;
+    if (plugins) {
+      for (let type in plugins) {
+        for (let i = 0, l = plugins[type].length; i < l; i++) {
+          this.syntax.registerPlugin(type, plugins[type][i]);
+          this.userPluginsCount++;
+        }
+      }
+    }
+  }
+
   processString(source: string, relativePath: string) {
-    console.log(`we are processing ${relativePath}`);
-    let ast = this.syntax.preprocess(source, {
+    let opts = this.syntax.defaultOptions({
       contents: source,
       moduleName: relativePath
     });
+    if (opts.plugins && opts.plugins.ast) {
+      // the user-provided plugins come first in the list, and those are the
+      // only ones we want to run. The built-in plugins don't need to run here
+      // in stage1, it's better that they run in stage3 when the appropriate
+      // ember version is in charge.
+      //
+      // rather than slicing them off, we could choose instead to not call
+      // syntax.defaultOptions, but then we lose some of the compatibility
+      // normalization that it does on the user-provided plugins.
+      opts.plugins.ast = opts.plugins.ast.slice(0, this.userPluginsCount);
+    }
+    let ast = this.syntax.preprocess(source, opts);
     return this.syntax.print(ast);
   }
   cacheKeyProcessString(source: string, relativePath: string) {

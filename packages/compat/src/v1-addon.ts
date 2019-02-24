@@ -21,6 +21,9 @@ import { Package, PackageCache, BasicPackage, AddonMeta } from "@embroider/core"
 import { AddonOptionsWithDefaults } from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
+import ApplyASTTransforms from './apply-ast-transforms';
+import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
+import resolve from "resolve";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -50,6 +53,18 @@ const dynamicTreeHooks = Object.freeze([
 
 const appPublicationDir = '_app_';
 
+let locatePreprocessRegistry: (addonInstance: any) => any;
+{
+  let preprocessRegistry: any;
+  locatePreprocessRegistry = function(addonInstance: any) {
+    if (!preprocessRegistry) {
+      let cliPath = resolve.sync('ember-cli', { basedir: addonInstance._findHost().project.root });
+      preprocessRegistry = require(resolve.sync('ember-cli-preprocess-registry/preprocessors', { basedir: cliPath }));
+    }
+    return preprocessRegistry;
+  };
+}
+
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
@@ -77,17 +92,25 @@ export default class V1Addon implements V1Package {
     // a no-op transform here to avoid an exception coming out of ember-cli like
     // "Addon templates were detected, but there are no template compilers
     // registered".
-    registry.remove('template', 'ember-cli-htmlbars');
-    if (registry.load('htmlbars-ast-plugin').length > 0) {
-      todo(`${this.name} has a custom AST transform that we need to apply`);
+    let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    if (htmlbars) {
+      registry.remove('template', 'ember-cli-htmlbars');
+      let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
+      registry.add('template', {
+        name: 'embroider-addon-templates',
+        ext: 'hbs',
+        _addon: this,
+        toTree(tree: Tree): Tree {
+          if (registry.load('htmlbars-ast-plugin').length === 0) {
+            // when there are no custom AST transforms, we don't need to do
+            // anything at all.
+            return tree;
+          } else {
+            return new ApplyASTTransforms(tree, options);
+          }
+        }
+      });
     }
-    registry.add('template', {
-      name: 'embroider-addon-templates',
-      ext: 'hbs',
-      toTree(tree: Tree): Tree {
-        return tree;
-      }
-    });
   }
 
   get name(): string {
@@ -167,9 +190,15 @@ export default class V1Addon implements V1Package {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
-    return this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
+    tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry : this.addonInstance.registry
     });
+    if (this.addonInstance.registry.load('template').length > 0) {
+      tree = locatePreprocessRegistry(this.addonInstance).preprocessTemplates(tree, {
+        registry: this.addonInstance.registry
+      });
+    }
+    return tree;
   }
 
   @Memoize()
@@ -267,7 +296,6 @@ export default class V1Addon implements V1Package {
           srcDirs: [this.moduleName, `modules/${this.moduleName}`]
         });
       }
-      // todo: also invoke treeForAddonTemplates
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon', {
         exclude: ['styles/**']

@@ -69,7 +69,7 @@ export default interface Options extends CoreOptions {
 
 }
 
-const defaults = Object.assign(coreWithDefaults(undefined), {
+const defaults = Object.assign(coreWithDefaults(), {
   forceIncludeAddonTrees: true,
   forceIncludeAddonTestSupportTrees: true,
   compatAdapters: new Map(),
@@ -77,6 +77,6 @@ const defaults = Object.assign(coreWithDefaults(undefined), {
   workspaceDir: null
 });
 
-export function optionsWithDefaults(options: Options | undefined): Required<Options> {
+export function optionsWithDefaults(options?: Options): Required<Options> {
   return Object.assign({}, defaults, options);
 }

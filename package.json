@@ -4,6 +4,7 @@
     "scripts": {
       "compile": "tsc",
       "lint": "tslint --project .",
-      "clean": "git clean -x -f"
+      "clean": "git clean -x -f",
+      "test": "qunit packages/*/tests"
     }
   }

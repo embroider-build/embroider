@@ -60,7 +60,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor'))
     );
-    return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter);
+    return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
   };
 
   return { inTrees, instantiate };

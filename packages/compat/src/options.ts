@@ -1,11 +1,12 @@
 import { V1AddonConstructor } from "./v1-addon";
 import { Tree } from "broccoli-plugin";
+import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from '@embroider/core';
 
 // These options control how hard we will try to achieve compatibility with v1
 // addons. The defaults are conservative and try to maximize compatibility, at
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
-export default interface Options {
+export default interface Options extends CoreOptions {
 
   // Whether to force the contents of each v1 addon's treeForAddon (the "Own
   // Javascript" as described in SPEC.md) to be incorporated into the build.
@@ -68,16 +69,14 @@ export default interface Options {
 
 }
 
+const defaults = Object.assign(coreWithDefaults(undefined), {
+  forceIncludeAddonTrees: true,
+  forceIncludeAddonTestSupportTrees: true,
+  compatAdapters: new Map(),
+  extraPublicTrees: [],
+  workspaceDir: null
+});
+
 export function optionsWithDefaults(options: Options | undefined): Required<Options> {
-  let defaults = {
-    forceIncludeAddonTrees: true,
-    forceIncludeAddonTestSupportTrees: true,
-    compatAdapters: new Map(),
-    extraPublicTrees: [],
-    workspaceDir: null
-  };
-  if (options) {
-    return Object.assign(defaults, options);
-  }
-  return defaults;
+  return Object.assign({}, defaults, options);
 }

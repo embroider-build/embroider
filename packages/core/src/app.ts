@@ -2,17 +2,18 @@ import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package from './package';
-import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported, debug } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
+import flatMap from 'lodash/flatMap';
+import sortBy from 'lodash/sortBy';
+import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
 import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
-import flatMap from 'lodash/flatMap';
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
@@ -128,6 +129,40 @@ class ConcatenatedAsset {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
+class AppFiles {
+  readonly tests: ReadonlyArray<string>;
+  readonly components: ReadonlyArray<string>;
+  readonly helpers: ReadonlyArray<string>;
+  readonly otherAppFiles: ReadonlyArray<string>;
+
+  constructor(relativePaths: Set<string>) {
+    let tests: string[] = [];
+    let components: string[] = [];
+    let helpers: string[] = [];
+    let otherAppFiles: string[] = [];
+    for (let relativePath of relativePaths) {
+      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
+        tests.push(relativePath);
+        continue;
+      }
+      if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
+        if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components')) {
+          components.push(relativePath);
+        } else if (relativePath.startsWith('helpers/')) {
+          helpers.push(relativePath);
+        } else {
+          otherAppFiles.push(relativePath);
+        }
+        continue;
+      }
+    }
+    this.tests = tests;
+    this.components = components;
+    this.helpers = helpers;
+    this.otherAppFiles = otherAppFiles;
+  }
+}
+
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
@@ -136,12 +171,8 @@ export class AppBuilder<TreeNames> {
     private root: string,
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
-    options: Required<Options>
-  ) {
-    if (options.staticComponents) {
-      throw new Error(`staticComponents is not implemented yet`);
-    }
-  }
+    private options: Required<Options>
+  ) {}
 
   @Memoize()
   private get activeAddonDescendants(): Package[] {
@@ -223,7 +254,7 @@ export class AppBuilder<TreeNames> {
     return babel;
   }
 
-  private appJSAsset(appFiles: Set<string>, prepared: Map<string, InternalAsset>): InternalAsset {
+  private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
     let appJS = prepared.get(`assets/${this.app.name}.js`);
     if (!appJS) {
       appJS = this.javascriptEntrypoint(this.app.name, appFiles);
@@ -232,7 +263,7 @@ export class AppBuilder<TreeNames> {
     return appJS;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     let html = asset.html;
 
     // our tests entrypoint already includes a correct module dependency on the
@@ -284,15 +315,15 @@ export class AppBuilder<TreeNames> {
 
   private appDiffer: AppDiffer | undefined;
 
-  private updateAppJS(appJSPath: string): Set<string> {
+  private updateAppJS(appJSPath: string): AppFiles {
     if (!this.appDiffer) {
       this.appDiffer = new AppDiffer(this.root, appJSPath, this.activeAddonDescendants);
     }
     this.appDiffer.update();
-    return this.appDiffer.files;
+    return new AppFiles(this.appDiffer.files);
   }
 
-  private prepareAsset(asset: Asset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -310,7 +341,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: Set<string>, emberENV: EmberENV): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared, emberENV);
@@ -382,7 +413,7 @@ export class AppBuilder<TreeNames> {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: Set<string>, emberENV: EmberENV) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV) {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -529,18 +560,24 @@ export class AppBuilder<TreeNames> {
     );
   }
 
-  private javascriptEntrypoint(name: string, appFiles: Set<string>): InternalAsset {
+  private javascriptEntrypoint(name: string, appFiles: AppFiles): InternalAsset {
     let modulePrefix = this.adapter.modulePrefix();
-    // for the app tree, we take everything
-    let lazyModules = [...appFiles].map(relativePath => {
-      if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
-        let noJS = relativePath.replace(/\.js$/, "");
-        let noHBS = noJS.replace(/\.hbs$/, "");
-        return {
-          runtime: `${modulePrefix}/${noHBS}`,
-          buildtime: `../${noJS}`,
-        };
-      }
+
+    let requiredAppFiles = [appFiles.otherAppFiles];
+    if (!this.options.staticComponents) {
+      requiredAppFiles.push(appFiles.components);
+    }
+    if(!this.options.staticHelpers) {
+      requiredAppFiles.push(appFiles.helpers);
+    }
+
+    let lazyModules = flatten(requiredAppFiles).map(relativePath => {
+      let noJS = relativePath.replace(/\.js$/, "");
+      let noHBS = noJS.replace(/\.hbs$/, "");
+      return {
+        runtime: `${modulePrefix}/${noHBS}`,
+        buildtime: `../${noJS}`,
+      };
     }).filter(Boolean) as { runtime: string, buildtime: string }[];
 
     // for the src tree, we can limit ourselves to only known resolvable
@@ -568,12 +605,10 @@ export class AppBuilder<TreeNames> {
     };
   }
 
-  private testJSEntrypoint(appFiles: Set<string>, prepared: Map<string, InternalAsset>): InternalAsset {
+  private testJSEntrypoint(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
     const myName = 'assets/test.js';
-    let testModules = [...appFiles].map(relativePath => {
-      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
-        return `../${relativePath}`;
-      }
+    let testModules = appFiles.tests.map(relativePath => {
+      return `../${relativePath}`;
     }).filter(Boolean) as string[];
 
     // tests necessarily also include the app. This is where we account for

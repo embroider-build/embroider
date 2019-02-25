@@ -1,4 +1,5 @@
 import stripBom from 'strip-bom';
+import { ResolverInstance, Resolution } from './resolver';
 
 export interface Plugins {
   [type: string]: unknown[];
@@ -10,32 +11,35 @@ export interface Compiler {
   _Ember: any;
 }
 
-const dependencies: Map<string, Set<string>> = new Map();
+const dependencies: Map<string, Set<Resolution>> = new Map();
 
-function buildTimeResolver(env: { moduleName: string }) {
-  let deps = new Set();
-  dependencies.set(env.moduleName, deps);
-  return {
-    name: 'embroider-build-time-resolver',
-    visitor: {
-      MustacheStatement(node: any) {
-        //deps.add(node.path.original);
-        if (node.path.original === 'welcome-page') {
-          console.log(env);
-          debugger;
-        }
-        console.log(`mustache path: ${node.path.original}`);
-      },
-      ElementNode(node: any) {
-        console.log(`element: ${node.tag}`);
-      },
-    }
+function makeResolverTransform(resolver: ResolverInstance) {
+  return function resolverTransform(env: { moduleName: string }) {
+    let deps: Set<Resolution> = new Set();
+    dependencies.set(env.moduleName, deps);
+    return {
+      name: 'embroider-build-time-resolver',
+      visitor: {
+        MustacheStatement(node: any) {
+          let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
+          if (resolution) {
+            deps.add(resolution);
+          }
+        },
+        ElementNode(node: any) {
+          let resolution = resolver.resolveElement(node.tag);
+          if (resolution) {
+            deps.add(resolution);
+          }
+        },
+      }
+    };
   };
 }
 
-export default function(compiler: Compiler, EmberENV: unknown, plugins: Plugins) {
+export default function(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
   registerPlugins(compiler, plugins);
-  compiler.registerPlugin('ast', buildTimeResolver);
+  compiler.registerPlugin('ast', makeResolverTransform(resolver));
   initializeEmberENV(compiler, EmberENV);
   return function(moduleName: string, contents: string) {
     let compiled = compiler.precompile(
@@ -44,8 +48,17 @@ export default function(compiler: Compiler, EmberENV: unknown, plugins: Plugins)
         moduleName
       }
     );
+    let lines: string[] = [];
     let deps = dependencies.get(moduleName);
-    let lines = [...deps!].map(d => `import "${d}";`);
+    if (deps) {
+      let counter = 0;
+      for (let dep of deps) {
+        for (let { runtimeName, path } of dep.modules) {
+          lines.push(`import a${counter} from "${path}";`);
+          lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
+        }
+      }
+    }
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
     return lines.join("\n");
   };

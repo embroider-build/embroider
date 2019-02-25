@@ -1,10 +1,11 @@
 import { V1AddonConstructor } from "./v1-addon";
+import { Tree } from "broccoli-plugin";
 
 // These options control how hard we will try to achieve compatibility with v1
 // addons. The defaults are conservative and try to maximize compatibility, at
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
-export default interface AddonOptions {
+export default interface Options {
 
   // Whether to force the contents of each v1 addon's treeForAddon (the "Own
   // Javascript" as described in SPEC.md) to be incorporated into the build.
@@ -58,20 +59,27 @@ export default interface AddonOptions {
 
   // temporary directory where we will work when we're rewriting your addons
   // and/or app to v2-compatible formats.
-  workspaceDir?: string;
+  workspaceDir?: string | null;
+
+  // optional list of additional broccoli trees that should be incorporated into
+  // the final build. This exists because the classic `app.toTree()` method
+  // accepts an optional tree argument that has the same purpose.
+  extraPublicTrees?: Tree[];
 
 }
 
-export interface AddonOptionsWithDefaults extends AddonOptions {
-  forceIncludeAddonTrees: boolean;
-  forceIncludeAddonTestSupportTrees: boolean;
-  compatAdapters: Map<string, V1AddonConstructor>;
-}
+export type OptionsWithDefaults = Required<Options>;
 
-export function defaultOptions(): AddonOptionsWithDefaults {
-  return {
+export function optionsWithDefaults(options: Options | undefined): OptionsWithDefaults {
+  let defaults: OptionsWithDefaults = {
     forceIncludeAddonTrees: true,
     forceIncludeAddonTestSupportTrees: true,
-    compatAdapters: new Map()
+    compatAdapters: new Map(),
+    extraPublicTrees: [],
+    workspaceDir: null
   };
+  if (options) {
+    return Object.assign(defaults, options);
+  }
+  return defaults;
 }

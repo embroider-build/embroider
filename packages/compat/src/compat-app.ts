@@ -20,10 +20,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
-
-export class Options {
-  extraPublicTrees?: Tree[];
-}
+import Options, { OptionsWithDefaults, optionsWithDefaults } from './options';
 
 interface TreeNames {
   appJS: Tree;
@@ -36,8 +33,8 @@ interface TreeNames {
 // This runs at broccoli-pipeline-construction time, whereas our actual
 // CompatAppAdapter instance only becomes available during tree-building
 // time.
-function setup(legacyEmberAppInstance: object, options?: Options ) {
-  let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance).app;
+function setup(legacyEmberAppInstance: object, options: OptionsWithDefaults ) {
+  let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
 
   let { analyzer, appJS } = oldPackage.processAppJS();
   let htmlTree = oldPackage.htmlTree;
@@ -189,7 +186,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
 export default class CompatApp extends BuildStage<TreeNames> {
   constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
-    let { inTrees, instantiate } = setup(legacyEmberAppInstance, options);
+    let { inTrees, instantiate } = setup(legacyEmberAppInstance, optionsWithDefaults(options));
     super(addons, inTrees, '@embroider/compat/app', instantiate);
   }
 }

@@ -59,7 +59,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       oldPackage,
       configTree,
       analyzer,
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor'))
+      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      options
     );
     return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
   };
@@ -74,6 +75,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
+    private options: Required<Options>,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -174,7 +176,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     if (!plugins) {
       throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
     }
-    var resolver = new Resolver(${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix() })});
+    var resolver = new Resolver(${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix(), options: this.options })});
     module.exports = setupCompiler(compiler, resolver, EmberENV, plugins);
     `;
   }

@@ -141,9 +141,6 @@ export class AppBuilder<TreeNames> {
     if (options.staticComponents) {
       throw new Error(`staticComponents is not implemented yet`);
     }
-    if (options.staticHelpers) {
-      throw new Error(`staticHelpers is not implemented yet`);
-    }
   }
 
   @Memoize()

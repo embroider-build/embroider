@@ -20,6 +20,12 @@ function makeResolverTransform(resolver: ResolverInstance) {
     return {
       name: 'embroider-build-time-resolver',
       visitor: {
+        SubExpression(node: any) {
+          let resolution = resolver.resolveSubExpression(node.path.original, env.moduleName);
+          if (resolution) {
+            deps.add(resolution);
+          }
+        },
         MustacheStatement(node: any) {
           let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
           if (resolution) {

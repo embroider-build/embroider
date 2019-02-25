@@ -20,7 +20,7 @@ import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
-import Options, { OptionsWithDefaults, optionsWithDefaults } from './options';
+import Options, { optionsWithDefaults } from './options';
 
 interface TreeNames {
   appJS: Tree;
@@ -33,7 +33,7 @@ interface TreeNames {
 // This runs at broccoli-pipeline-construction time, whereas our actual
 // CompatAppAdapter instance only becomes available during tree-building
 // time.
-function setup(legacyEmberAppInstance: object, options: OptionsWithDefaults ) {
+function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
   let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
 
   let { analyzer, appJS } = oldPackage.processAppJS();

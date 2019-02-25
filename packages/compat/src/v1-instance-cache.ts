@@ -7,13 +7,13 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
-import { OptionsWithDefaults } from './options';
+import Options from './options';
 import isEqual from 'lodash/isEqual';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object, options: OptionsWithDefaults): V1InstanceCache {
+  static forApp(emberApp: object, options: Required<Options>): V1InstanceCache {
     let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
     if (options && !isEqual(instance.options, options)) {
       throw new Error(`attempted double set of app Options`);
@@ -29,7 +29,7 @@ export default class V1InstanceCache {
   app: V1App;
   packageCache = new MovablePackageCache();
 
-  private constructor(oldApp: any, private options: OptionsWithDefaults) {
+  private constructor(oldApp: any, private options: Required<Options>) {
     this.app = new V1App(oldApp, this.packageCache);
 
     // no reason to do this on demand because oldApp already eagerly loaded

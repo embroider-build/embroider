@@ -68,10 +68,8 @@ export default interface Options {
 
 }
 
-export type OptionsWithDefaults = Required<Options>;
-
-export function optionsWithDefaults(options: Options | undefined): OptionsWithDefaults {
-  let defaults: OptionsWithDefaults = {
+export function optionsWithDefaults(options: Options | undefined): Required<Options> {
+  let defaults = {
     forceIncludeAddonTrees: true,
     forceIncludeAddonTestSupportTrees: true,
     compatAdapters: new Map(),

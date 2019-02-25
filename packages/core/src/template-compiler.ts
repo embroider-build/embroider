@@ -33,7 +33,7 @@ function makeResolverTransform(resolver: ResolverInstance) {
           }
         },
         ElementNode(node: any) {
-          let resolution = resolver.resolveElement(node.tag);
+          let resolution = resolver.resolveElement(node.tag, env.moduleName);
           if (resolution) {
             deps.add(resolution);
           }

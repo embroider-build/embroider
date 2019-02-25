@@ -1,16 +1,21 @@
+// things in support of the tests
 import 'qunit';
-import Resolver from '../src/resolver';
 import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import { optionsWithDefaults } from '../src/options';
+import emberTemplateCompiler from './vendor/ember-template-compiler.js';
+
+// the things under test
+import Resolver from '../src/resolver';
+import setupCompiler from '@embroider/core/src/template-compiler';
 
 const { test } = QUnit;
 
-QUnit.module('resolver', function(hooks) {
+QUnit.module('template-compiler', function(hooks) {
   let appDir: string;
 
   hooks.beforeEach(function() {
-    appDir = mkdtempSync('embroider-compat-resolver-tests');
+    appDir = mkdtempSync('embroider-compat-tests');
   });
 
   hooks.afterEach(function() {
@@ -23,6 +28,17 @@ QUnit.module('resolver', function(hooks) {
       ensureDirSync(dirname(target));
       writeFileSync(target, '');
     }
+  }
+
+  function setup() {
+    let EmberENV = {};
+    let plugins = { ast: [] };
+    let resolver = new Resolver({
+      root: appDir,
+      modulePrefix: 'the-app',
+      options: optionsWithDefaults()
+    });
+    return setupCompiler(emberTemplateCompiler, resolver, EmberENV, plugins);
   }
 
   test('it works', function(assert) {

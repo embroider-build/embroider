@@ -18,7 +18,7 @@ import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
 import { Package, PackageCache, BasicPackage, AddonMeta } from "@embroider/core";
-import { AddonOptionsWithDefaults } from "./options";
+import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
 import ApplyASTTransforms from './apply-ast-transforms';
@@ -68,7 +68,7 @@ let locatePreprocessRegistry: (addonInstance: any) => any;
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: AddonOptionsWithDefaults) {
+  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: Required<Options>) {
     this.updateBabelConfig();
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
@@ -536,7 +536,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, packageCache: PackageCache, options: AddonOptionsWithDefaults): V1Addon;
+  new(addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
 }
 
 class TweakedPackage extends BasicPackage {

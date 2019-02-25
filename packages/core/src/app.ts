@@ -15,6 +15,7 @@ import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } fro
 import flatMap from 'lodash/flatMap';
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
+import Options from './options';
 
 export type EmberENV = unknown;
 
@@ -134,8 +135,16 @@ export class AppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
-    private adapter: AppAdapter<TreeNames>
-  ) {}
+    private adapter: AppAdapter<TreeNames>,
+    options: Required<Options>
+  ) {
+    if (options.staticComponents) {
+      throw new Error(`staticComponents is not implemented yet`);
+    }
+    if (options.staticHelpers) {
+      throw new Error(`staticHelpers is not implemented yet`);
+    }
+  }
 
   @Memoize()
   private get activeAddonDescendants(): Package[] {

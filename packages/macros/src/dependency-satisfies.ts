@@ -23,6 +23,7 @@ export default function dependencySatisfies(path: NodePath, state: State, packag
     let us = packageCache.ownerOfFile(sourceFileName);
     if (!us) {
       path.parentPath.replaceWith(booleanLiteral(false));
+      state.removed.push(path.parentPath);
       return;
     }
     let version = packageCache.resolve(packageName.value, us).version;

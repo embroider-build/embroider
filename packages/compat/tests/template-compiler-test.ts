@@ -132,6 +132,91 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('block form curly component', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('block form angle component', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('curly contextual component', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#hello-world as |h|}} {{h.title flavor="chocolate"}} {{/hello-world}}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('angle contextual component, upper', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('angle contextual component, lower', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
   test('mustache missing, no args', function(assert) {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     assert.deepEqual(
@@ -205,7 +290,6 @@ QUnit.module('template-compiler', function(hooks) {
       []
     );
   });
-
 
   test('dynamic component helper warning in content position', function(assert) {
     let findDependencies = configure({ staticComponents: true });
@@ -367,6 +451,15 @@ QUnit.module('template-compiler', function(hooks) {
     givenFile('helpers/capitalize.js');
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`),
+      []
+    );
+  });
+
+  test('local binding takes precedence over component in element position', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('components/the-thing.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`),
       []
     );
   });

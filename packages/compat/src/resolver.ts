@@ -6,14 +6,19 @@ import { dasherize } from './string';
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.
 const builtInHelpers = [
+  '-get-dynamic-var',
+  '-in-element',
+  '-with-dynamic-vars',
   'action',
   'array',
   'component',
   'concat',
   'debugger',
-  'each',
   'each-in',
+  'each',
   'get',
+  'hasBlock',
+  'hasBlockParams',
   'hash',
   'if',
   'input',
@@ -26,14 +31,12 @@ const builtInHelpers = [
   'outlet',
   'partial',
   'query-params',
+  'readonly',
   'textarea',
   'unbound',
   'unless',
   'with',
   'yield',
-  '-in-element',
-  '-get-dynamic-var',
-  '-with-dynamic-vars',
 ];
 
 class CompatResolverInstance implements ResolverInstance {

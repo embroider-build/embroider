@@ -67,6 +67,12 @@ export default interface Options extends CoreOptions {
   // accepts an optional tree argument that has the same purpose.
   extraPublicTrees?: Tree[];
 
+  // when staticComponents is true, it's a build error if we can't find some
+  // component that appears in your templates. But you might know that you don't
+  // actually try to invoke that component, so you can put its name in this
+  // list.
+  optionalComponents?: string[];
+
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -74,7 +80,8 @@ const defaults = Object.assign(coreWithDefaults(), {
   forceIncludeAddonTestSupportTrees: true,
   compatAdapters: new Map(),
   extraPublicTrees: [],
-  workspaceDir: null
+  workspaceDir: null,
+  optionalComponents: [],
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

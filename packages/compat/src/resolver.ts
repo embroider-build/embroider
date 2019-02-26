@@ -1,4 +1,5 @@
-import { Resolver, ResolverInstance, Resolution, Options } from "@embroider/core";
+import { Resolver, ResolverInstance, Resolution } from "@embroider/core";
+import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
@@ -42,7 +43,7 @@ const builtInHelpers = [
 class CompatResolverInstance implements ResolverInstance {
   private root: string;
   private modulePrefix: string;
-  private options: Options;
+  private options: Required<Options>;
 
   constructor({ root, modulePrefix, options }: { root: string, modulePrefix: string, options: Required<Options>}) {
     this.root = root;
@@ -124,7 +125,13 @@ class CompatResolverInstance implements ResolverInstance {
         return found;
       }
     }
-    if (hasArgs && this.options.staticComponents && this.options.staticHelpers && !builtInHelpers.includes(path)) {
+    if (
+      hasArgs &&
+      this.options.staticComponents &&
+      this.options.staticHelpers &&
+      !builtInHelpers.includes(path) &&
+      !this.options.optionalComponents.includes(path)
+    ) {
       return {
         type: 'error',
         hardFail: true,
@@ -146,9 +153,15 @@ class CompatResolverInstance implements ResolverInstance {
       return null;
     }
 
-    let found = this.tryComponent(dasherize(tagName), from);
+    let dName = dasherize(tagName);
+
+    let found = this.tryComponent(dName, from);
     if (found) {
       return found;
+    }
+
+    if (this.options.optionalComponents.includes(dName)) {
+      return null;
     }
 
     return {

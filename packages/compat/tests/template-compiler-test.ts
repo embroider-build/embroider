@@ -217,6 +217,30 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('optional component missing in mustache', function(assert) {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{this-one x=true}}`),
+      []
+    );
+  });
+
+  test('optional component missing in mustache block', function(assert) {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`),
+      []
+    );
+  });
+
+  test('optional component missing in element', function(assert) {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<ThisOne/>`),
+      []
+    );
+  });
+
   test('mustache missing, no args', function(assert) {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     assert.deepEqual(

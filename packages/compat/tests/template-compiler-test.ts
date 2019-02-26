@@ -133,7 +133,7 @@ QUnit.module('template-compiler', function(hooks) {
   });
 
   test('mustache missing, no args', function(assert) {
-    let findDependencies = configure({ staticComponents: true });
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{hello-world}}`),
       []
@@ -141,10 +141,10 @@ QUnit.module('template-compiler', function(hooks) {
   });
 
   test('mustache missing, with args', function(assert) {
-    let findDependencies = configure({ staticComponents: true });
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     assert.throws(() => {
       findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
-    }, new RegExp(`Missing component or helper hello-world in ${appDir}/templates/applicationCache.hbs`));
+    }, new RegExp(`Missing component or helper hello-world in ${appDir}/templates/application.hbs`));
   });
 
   test('string literal passed to component helper in content position', function(assert) {
@@ -274,15 +274,15 @@ QUnit.module('template-compiler', function(hooks) {
   test('missing subexpression with args', function(assert) {
     let findDependencies = configure({ staticHelpers: true });
     assert.throws(() => {
-      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`);
-    }, new RegExp(`Missing helper array in ${appDir}/templates/application.js`));
+      findDependencies('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
+    }, new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
 
   test('missing subexpression no args', function(assert) {
     let findDependencies = configure({ staticHelpers: true });
     assert.throws(() => {
-      findDependencies('templates/application.hbs', `{{#each (array) as |num|}} {{num}} {{/each}}`);
-    }, new RegExp(`Missing helper array in ${appDir}/templates/application.js`));
+      findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
+    }, new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
 
   test('emits no helpers when staticHelpers is off', function(assert) {

@@ -81,7 +81,8 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           if (node.path.original === 'component' && node.params.length > 0) {
             return handleComponentHelper(node.params[0], resolver, env.moduleName, deps);
           }
-          let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
+          let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
           if (resolution) {
             deps.push(resolution);
           }

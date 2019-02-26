@@ -3,6 +3,39 @@ import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
 
+// TODO: this depends on the ember version. And it's probably missing some
+// private-but-used values.
+const builtInHelpers = [
+  'action',
+  'array',
+  'component',
+  'concat',
+  'debugger',
+  'each',
+  'each-in',
+  'get',
+  'hash',
+  'if',
+  'input',
+  'let',
+  'link-to',
+  'loc',
+  'log',
+  'mount',
+  'mut',
+  'outlet',
+  'partial',
+  'query-params',
+  'textarea',
+  'unbound',
+  'unless',
+  'with',
+  'yield',
+  '-in-element',
+  '-get-dynamic-var',
+  '-with-dynamic-vars',
+];
+
 class CompatResolverInstance implements ResolverInstance {
   private root: string;
   private modulePrefix: string;
@@ -15,9 +48,6 @@ class CompatResolverInstance implements ResolverInstance {
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
-    if (!this.options.staticHelpers) {
-      return null;
-    }
     let absPath = join(this.root, 'helpers', path) + '.js';
     if (pathExistsSync(absPath)) {
       return {
@@ -32,9 +62,6 @@ class CompatResolverInstance implements ResolverInstance {
   }
 
   private tryComponent(path: string, from: string): Resolution | null {
-    if (!this.options.staticComponents) {
-      return null;
-    }
     let componentModules = [
       {
         runtimeName: `${this.modulePrefix}/components/${path}`,
@@ -64,22 +91,63 @@ class CompatResolverInstance implements ResolverInstance {
   }
 
   resolveSubExpression(path: string, from: string): Resolution | null {
-    return this.tryHelper(path, from);
+    if (!this.options.staticHelpers) {
+      return null;
+    }
+    let found = this.tryHelper(path, from);
+    if (found) {
+      return found;
+    }
+    if (builtInHelpers.includes(path)) {
+      return null;
+    }
+    return {
+      type: 'error',
+      hardFail: true,
+      message: `Missing helper ${path} in ${from}`
+    };
   }
 
-  resolveMustache(path: string, from: string): Resolution | null {
-    return this.tryHelper(path, from) || this.tryComponent(path, from);
+  resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null {
+    if (this.options.staticHelpers) {
+      let found = this.tryHelper(path, from);
+      if (found) {
+        return found;
+      }
+    }
+    if (this.options.staticComponents) {
+      let found = this.tryComponent(path, from);
+      if (found) {
+        return found;
+      }
+    }
+    if (hasArgs && this.options.staticComponents && this.options.staticHelpers && !builtInHelpers.includes(path)) {
+      return {
+        type: 'error',
+        hardFail: true,
+        message: `Missing component or helper ${path} in ${from}`
+      };
+    } else {
+      return null;
+    }
   }
 
   resolveElement(tagName: string, from: string): Resolution | null {
     if (!this.options.staticComponents) {
       return null;
     }
+
     if (tagName[0] === tagName[0].toLowerCase()) {
       // components can't start with lower case
       return null;
     }
-    return this.tryComponent(dasherize(tagName), from) ||  {
+
+    let found = this.tryComponent(dasherize(tagName), from);
+    if (found) {
+      return found;
+    }
+
+    return {
       type: 'error',
       hardFail: true,
       message: `Missing component ${tagName} in ${from}`

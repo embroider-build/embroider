@@ -1,6 +1,6 @@
 {
     "private": true,
-    "workspaces": ["packages/*"],
+    "workspaces": ["packages/*", "types/babel-core"],
     "scripts": {
       "compile": "tsc",
       "lint": "tslint --project .",

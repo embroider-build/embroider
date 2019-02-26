@@ -8,14 +8,16 @@ import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from 
 // behavior you can benefit from the more aggressive modes.
 export default interface Options extends CoreOptions {
 
-  // Whether to force the contents of each v1 addon's treeForAddon (the "Own
-  // Javascript" as described in SPEC.md) to be incorporated into the build.
+  // Controls whether your addon's "addon" trees should be resolved statically
+  // at build time.
   //
-  //   true (the default): implies maximum backward compatibility at the cost of
-  //   bigger builds.
+  //   false (the default): implies maximum backward compatibility at the cost
+  //   of bigger builds. In this mode, we force every file into the Ember app,
+  //   which is the legacy behavior.
   //
-  //   false: produces smaller builds. The addon files must be imported from
-  //   somewhere we can statically see during the build.
+  //   true: produces smaller builds. The addon files must be imported from
+  //   somewhere we can statically see during the build. In this mode, your app
+  //   will only include files that are actually imported from somewhere.
   //
   // Commentary: most v1 addons already work well with this set to true, because
   // they tend to either offer Javascript that users are supposed to directly
@@ -26,20 +28,21 @@ export default interface Options extends CoreOptions {
   // To workaround an addon that is preventing you from enabling this flag, you
   // can add a compatAdapter that uses forceIncludeModule. Look at examples in
   // ./compat-adapters.
-  forceIncludeAddonTrees?: boolean;
+  staticAddonTrees?: boolean;
 
-  // Whether to force the contents of each v1 addon's treeForTestSupport to be
-  // incorporated into test builds.
+  // Controls whether your addon's "addonTestSupport" trees should be resolved
+  // statically at build time.
   //
-  //   true (the default): implies maximum backward compatibility at the cost of
-  //   bigger builds.
+  //   false (the default): implies maximum backward compatibility at the cost
+  //   of bigger builds. All test support files will be forced into your Ember
+  //   app, which is the legacy behavior.
   //
-  //   false: produces smaller builds. The files must be imported from somewhere
-  //   we can statically see during the build.
+  //   true: produces smaller builds. Only files that are explicitly imported
+  //   will end up in your app.
   //
-  // Commentary: this is analogous to forceIncludeAddonTrees and the same
-  // guidelines applies.
-  forceIncludeAddonTestSupportTrees?: boolean;
+  // Commentary: this is analogous to staticAddonTrees and the same guidelines
+  // apply.
+  staticAddonTestSupportTrees?: boolean;
 
   // Allows you to override how specific addons will build. Like:
   //
@@ -67,16 +70,25 @@ export default interface Options extends CoreOptions {
   // accepts an optional tree argument that has the same purpose.
   extraPublicTrees?: Tree[];
 
+  // when staticComponents is true, it's a build error if we can't find some
+  // component that appears in a template. But you might know that you don't
+  // actually try to invoke that component, so you can put its name in this list
+  // to suppress the build error.
+  //
+  // This should be understood as a temporary workaround until you can fix the
+  // offending template to not refer to a non-existent component.
+  optionalComponents?: string[];
 }
 
-const defaults = Object.assign(coreWithDefaults(undefined), {
-  forceIncludeAddonTrees: true,
-  forceIncludeAddonTestSupportTrees: true,
+const defaults = Object.assign(coreWithDefaults(), {
+  staticAddonTrees: false,
+  staticAddonTestSupportTrees: false,
   compatAdapters: new Map(),
   extraPublicTrees: [],
-  workspaceDir: null
+  workspaceDir: null,
+  optionalComponents: [],
 });
 
-export function optionsWithDefaults(options: Options | undefined): Required<Options> {
+export function optionsWithDefaults(options?: Options): Required<Options> {
   return Object.assign({}, defaults, options);
 }

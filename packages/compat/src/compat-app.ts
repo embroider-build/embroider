@@ -55,10 +55,12 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
     let adapter = new CompatAppAdapter(
+      root,
       oldPackage,
       configTree,
       analyzer,
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor'))
+      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      options
     );
     return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
   };
@@ -68,10 +70,12 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
   constructor(
+    private root: string,
     private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
+    private options: Required<Options>,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -166,12 +170,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return `
     var compiler = require('ember-source/vendor/ember/ember-template-compiler');
     var setupCompiler = require('@embroider/core/src/template-compiler').default;
+    var Resolver = require('@embroider/compat/src/resolver').default;
     var EmberENV = ${JSON.stringify(config)};
     var plugins = global.__embroiderHtmlbarsPlugins__;
     if (!plugins) {
       throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
     }
-    module.exports = setupCompiler(compiler, EmberENV, plugins);
+    var resolver = new Resolver(${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix(), options: this.options })});
+    module.exports = setupCompiler(compiler, resolver, EmberENV, plugins).compile;
     `;
   }
 

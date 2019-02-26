@@ -7,11 +7,13 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Core tests",
+      "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
-      "cwd": "${workspaceFolder}/packages/core",
+      "cwd": "${workspaceFolder}",
       "args": [
-        "tests"
+        "packages/compat/tests",
+        "packages/core/tests",
+        //"--filter", "string literal passed",
       ]
     }
   ]

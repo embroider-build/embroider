@@ -12,7 +12,7 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { todo } from './messages';
+import { todo } from '@embroider/core/src/messages';
 import { synthesize } from './parallel-babel-shim';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';

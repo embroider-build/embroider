@@ -1,3 +1,6 @@
+import { join } from "path";
+import { PluginItem } from "@babel/core";
+
 export function modulePresent(moduleName: string): boolean {
   throw new Oops(moduleName);
 }
@@ -23,6 +26,12 @@ export function setConfig<T>(fromPath: string, packageName: string, config: () =
 // Macros for accessing the value that was passed to setConfig.
 export function getConfig<T>(packageName: string): T {
   throw new Oops(packageName);
+}
+
+// to be called from within your build system. Returns the thing you should push
+// into your babel plugins list.
+export function babelPluginConfig(): PluginItem {
+  return [join(__dirname, 'macros-babel-plugin.js'), {}];
 }
 
 type Merger<T> = (configs: T[]) => T;

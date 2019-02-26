@@ -13,6 +13,7 @@
       "args": [
         "packages/compat/tests",
         "packages/core/tests",
+        "packages/macros/tests",
         //"--filter", "string literal passed",
       ]
     }

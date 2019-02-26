@@ -1,5 +1,6 @@
 import stripBom from 'strip-bom';
 import { ResolverInstance, Resolution } from './resolver';
+import { warn } from './messages';
 
 export interface Plugins {
   [type: string]: unknown[];
@@ -18,6 +19,22 @@ function inScope(scopeStack: string[][], name: string) {
     }
   }
   return false;
+}
+
+function handleComponentHelper(param: any, resolver: ResolverInstance, moduleName: string, deps: Resolution[]) {
+  if (param.type === 'StringLiteral') {
+    let resolution = resolver.resolveMustache(param.value, moduleName);
+    if (resolution) {
+      deps.push(resolution);
+    }
+    return;
+  } else {
+    deps.push({
+      type: 'error',
+      hardFail: false,
+      message: `cannot resolve dynamic component ${param.original} in ${moduleName}`
+    });
+  }
 }
 
 function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<string, Resolution[]>) {
@@ -47,6 +64,9 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           if (inScope(scopeStack, node.path.original)) {
             return;
           }
+          if (node.path.original === 'component' && node.params.length > 0) {
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, deps);
+          }
           let resolution = resolver.resolveSubExpression(node.path.original, env.moduleName);
           if (resolution) {
             deps.push(resolution);
@@ -55,6 +75,9 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
         MustacheStatement(node: any) {
           if (inScope(scopeStack, node.path.original)) {
             return;
+          }
+          if (node.path.original === 'component' && node.params.length > 0) {
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, deps);
           }
           let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
           if (resolution) {
@@ -98,9 +121,17 @@ export default function setupCompiler(compiler: Compiler, resolver: ResolverInst
     if (deps) {
       let counter = 0;
       for (let dep of deps) {
-        for (let { runtimeName, path } of dep.modules) {
-          lines.push(`import a${counter} from "${path}";`);
-          lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
+        if (dep.type === 'error') {
+          if (dep.hardFail) {
+            throw new Error(dep.message);
+          } else {
+            warn(dep.message);
+          }
+        } else {
+          for (let { runtimeName, path } of dep.modules) {
+            lines.push(`import a${counter} from "${path}";`);
+            lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
+          }
         }
       }
     }

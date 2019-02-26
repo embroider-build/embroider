@@ -1,9 +1,17 @@
 import Options from './options';
 
-export interface Resolution {
+interface ResolutionResult {
   type: "component" | "helper";
   modules: ({runtimeName: string, path: string})[];
 }
+
+interface ResolutionFail {
+  type: "error";
+  hardFail: boolean;
+  message: string;
+}
+
+export type Resolution = ResolutionResult | ResolutionFail;
 
 export interface ResolverInstance {
   resolveSubExpression(path: string, from: string): Resolution | null;

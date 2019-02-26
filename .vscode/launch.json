@@ -13,7 +13,7 @@
       "args": [
         "packages/compat/tests",
         "packages/core/tests",
-        //"--filter", "local binding",
+        //"--filter", "string literal passed",
       ]
     }
   ]

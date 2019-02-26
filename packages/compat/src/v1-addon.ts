@@ -8,7 +8,7 @@ import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
-import { todo, unsupported } from './messages';
+import { todo, unsupported } from '@embroider/core/src/messages';
 import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";

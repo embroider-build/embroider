@@ -1,20 +1,31 @@
 // things in support of the tests
 import 'qunit';
-import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
+import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
-import emberTemplateCompiler from './vendor/ember-template-compiler.js';
 import { Resolution } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 
 // the things under test
 import Resolver from '../src/resolver';
-import setupCompiler from '@embroider/core/src/template-compiler';
+import setupCompiler, { Compiler } from '@embroider/core/src/template-compiler';
+import { expectWarning } from '@embroider/core/src/messages';
 
 const { test } = QUnit;
+const emberTemplateCompilerSource = readFileSync(join(__dirname, 'vendor', 'ember-template-compiler.js'), 'utf8');
+
+// we don't want to share one instance, so we can't use "require".
+function loadEmberCompiler() {
+  let module = {
+    exports: {}
+  };
+  eval(emberTemplateCompilerSource);
+  return module.exports as Compiler;
+}
 
 QUnit.module('template-compiler', function(hooks) {
   let appDir: string;
+  let assertWarning: (pattern: RegExp, fn: () => void) => void;
 
   function configure(options: Options) {
     let EmberENV = {};
@@ -25,16 +36,24 @@ QUnit.module('template-compiler', function(hooks) {
       modulePrefix: 'the-app',
       options: optionsWithDefaults(options)
     });
-    let { compile, dependenciesOf } = setupCompiler(emberTemplateCompiler, resolver, EmberENV, plugins);
+    let { compile, dependenciesOf } = setupCompiler(loadEmberCompiler(), resolver, EmberENV, plugins);
     return function(relativePath: string, contents: string): Resolution[] {
       let moduleName = givenFile(relativePath);
       compile(moduleName, contents);
       return dependenciesOf(moduleName)!.map(d => {
-        d.modules = sortBy(d.modules, r => r.path);
+        if (d.type !== 'error') {
+          d.modules = sortBy(d.modules, r => r.path);
+        }
         return d;
       });
     };
   }
+
+  hooks.beforeEach(function(assert) {
+    assertWarning =function(pattern: RegExp, fn: () => void) {
+      assert.ok(expectWarning(pattern, fn), `expected to get a warning matching ${pattern}`);
+    };
+  });
 
   hooks.afterEach(function() {
     if (appDir) {
@@ -108,6 +127,67 @@ QUnit.module('template-compiler', function(hooks) {
             "path": "./components/hello-world.hbs",
             "runtimeName": "the-app/templates/components/hello-world"
           }]
+        }
+      ]
+    );
+  });
+
+  test('string literal passed to component helper in content position', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{component "hello-world"}}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('string literal passed to component helper in helper position', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    givenFile('components/my-thing.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/my-thing.js",
+            "runtimeName": "the-app/components/my-thing"
+          }]
+        },
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('dynamic component helper warning in content position', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    let deps;
+    assertWarning(/cannot resolve dynamic component this\.which/, () => {
+      deps = findDependencies('templates/application.hbs', `{{component this.which}}`);
+    });
+    assert.deepEqual(
+      deps,
+      [
+        {
+          type: 'error',
+          hardFail: false,
+          message: `cannot resolve dynamic component this.which in ${appDir}/templates/application.hbs`
         }
       ]
     );

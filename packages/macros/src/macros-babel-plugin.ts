@@ -1,8 +1,14 @@
 import { NodePath } from '@babel/traverse';
 import { ImportDeclaration } from '@babel/types';
+import { PackageCache } from '@embroider/core';
 import State from './state';
 import modulePresent from './modulePresent';
 import dependencySatisfies from './dependencySatisfies';
+
+// we're assuming parallelized babel, so this doesn't try to share with anybody
+// other than our own module scope. As an optimization we could optionally
+// accept an existing PackageCache in our plugin config.
+const packageCache = new PackageCache();
 
 export default function main() {
   return {
@@ -39,7 +45,7 @@ export default function main() {
           modulePresent(path, state);
         }
         if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-          dependencySatisfies(path, state);
+          dependencySatisfies(path, state, packageCache);
         }
       },
     }

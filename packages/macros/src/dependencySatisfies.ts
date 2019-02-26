@@ -1,12 +1,10 @@
-import resolve from 'resolve';
-import { dirname } from 'path';
 import { NodePath } from '@babel/traverse';
 import { booleanLiteral } from '@babel/types';
 import State from './state';
-import { readJSONSync } from 'fs-extra';
 import { satisfies } from 'semver';
+import { PackageCache } from '@embroider/core';
 
-export default function dependencySatisfies(path: NodePath, state: State) {
+export default function dependencySatisfies(path: NodePath, state: State, packageCache: PackageCache) {
   if (path.parent.type !== 'CallExpression') {
     throw new Error(`You can only use dependencySatisfies as a function call`);
   }
@@ -22,8 +20,12 @@ export default function dependencySatisfies(path: NodePath, state: State) {
   }
   let sourceFileName = path.hub.file.opts.filename;
   try {
-    let pkg = resolve.sync(packageName.value + '/package.json', { basedir: dirname(sourceFileName) });
-    let version = readJSONSync(pkg).version;
+    let us = packageCache.ownerOfFile(sourceFileName);
+    if (!us) {
+      path.parentPath.replaceWith(booleanLiteral(false));
+      return;
+    }
+    let version = packageCache.resolve(packageName.value, us).version;
     path.parentPath.replaceWith(booleanLiteral(satisfies(version, range.value)));
   } catch (err) {
     path.parentPath.replaceWith(booleanLiteral(false));

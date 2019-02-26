@@ -6,8 +6,8 @@ import { join } from 'path';
 
 const { test } = QUnit;
 
-function createTests(transform: (code: string) => string, babelVersion: number) {
-  QUnit.module(`modulePresent (babel ${babelVersion})`, function() {
+function createTests(transform: (code: string) => string) {
+  QUnit.module(`modulePresent`, function() {
 
     test('module is present', function(assert) {
       let code = transform(`
@@ -106,8 +106,12 @@ const options6: Options6 = {
   plugins: [babelPluginConfig()]
 };
 
-createTests(function(code: string){ return transform6(code, options6).code!; }, 6);
-createTests(function(code: string){ return transform7(code, options7)!.code!; }, 7);
+QUnit.module('babel6', function() {
+  createTests(function(code: string){ return transform6(code, options6).code!; });
+});
+QUnit.module('babel7', function() {
+  createTests(function(code: string){ return transform7(code, options7)!.code!; });
+});
 
 function runDefault(code: string): any {
   let cjsCode = transform7(code, {

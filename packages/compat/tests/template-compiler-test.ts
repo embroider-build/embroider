@@ -5,6 +5,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import emberTemplateCompiler from './vendor/ember-template-compiler.js';
 import { Resolution } from '@embroider/core';
+import sortBy from 'lodash/sortBy';
 
 // the things under test
 import Resolver from '../src/resolver';
@@ -28,7 +29,10 @@ QUnit.module('template-compiler', function(hooks) {
     return function(relativePath: string, contents: string): Resolution[] {
       let moduleName = givenFile(relativePath);
       compile(moduleName, contents);
-      return dependenciesOf(moduleName)!;
+      return dependenciesOf(moduleName)!.map(d => {
+        d.modules = sortBy(d.modules, r => r.path);
+        return d;
+      });
     };
   }
 
@@ -85,6 +89,121 @@ QUnit.module('template-compiler', function(hooks) {
           }]
         }
       ]
+    );
+  });
+
+  test('bare dasherized component, js and hbs', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    givenFile('templates/components/hello-world.hbs');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{hello-world}}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }, {
+            "path": "./components/hello-world.hbs",
+            "runtimeName": "the-app/templates/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper in sub expression', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/array.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/array',
+            path: '../helpers/array.js',
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper as component argument', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/array.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/array',
+            path: '../helpers/array.js',
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper as html attribute', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/capitalize',
+            path: '../helpers/capitalize.js',
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper in bare mustache, no args', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{capitalize}}`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/capitalize',
+            path: '../helpers/capitalize.js',
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper in bare mustache, with args', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{capitalize name}}`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/capitalize',
+            path: '../helpers/capitalize.js',
+          }]
+        }
+      ]
+    );
+  });
+
+  test('local binding takes precedence over helper in bare mustache', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`),
+      []
     );
   });
 

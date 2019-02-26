@@ -1,13 +1,13 @@
 import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
-import { setConfig } from '..';
+import { GlobalConfig } from '..';
 const { test, skip } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string) {
+allBabelVersions(function (transform: (code: string) => string, config: GlobalConfig) {
   QUnit.module(`getConfig`, function() {
 
-    skip(`returns correct value for own package's config`, function(assert) {
-      setConfig(__filename, '@embroider/macros', () => ({ beverage: 'coffee' }));
+    test(`returns correct value for own package's config`, function(assert) {
+      config.setConfig(__filename, '@embroider/macros', () => ({ beverage: 'coffee' }));
       let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {

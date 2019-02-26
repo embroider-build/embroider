@@ -1,7 +1,7 @@
 import 'qunit';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
-import { babelPluginConfig } from '..';
+import { GlobalConfig } from '..';
 import { join } from 'path';
 
 export function runDefault(code: string): any {
@@ -13,25 +13,27 @@ export function runDefault(code: string): any {
   return (exports as any).default();
 }
 
-export function allBabelVersions(createTests: (transform: (code: string) => string) => void) {
+export function allBabelVersions(createTests: (transform: (code: string) => string, config: GlobalConfig) => void) {
   QUnit.module('babel6', function() {
+    let config = new GlobalConfig();
     createTests(function(code: string){
       const options6: Options6 = {
         filename: join(__dirname, 'sample.js'),
         presets: [],
-        plugins: [babelPluginConfig()]
+        plugins: [config.babelPluginConfig()]
       };
       return transform6(code, options6).code!;
-    });
+    }, config);
   });
   QUnit.module('babel7', function() {
+    let config = new GlobalConfig();
     createTests(function(code: string) {
       const options7: Options7 = {
         filename: join(__dirname, 'sample.js'),
         presets: [],
-        plugins: [babelPluginConfig()]
+        plugins: [config.babelPluginConfig()]
       };
       return transform7(code, options7)!.code!;
-    });
+    }, config);
   });
 }

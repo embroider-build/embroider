@@ -11,6 +11,8 @@
     "test": "qunit tests"
   },
   "devDependencies": {
+    "@types/node": "^10.5.2",
+    "@types/qunit": "^2.5.3",
     "qunit": "^2.8.0",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6"

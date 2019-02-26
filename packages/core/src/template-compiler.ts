@@ -23,16 +23,18 @@ function inScope(scopeStack: string[][], name: string) {
 
 function handleComponentHelper(param: any, resolver: ResolverInstance, moduleName: string, deps: Resolution[]) {
   if (param.type === 'StringLiteral') {
-    let resolution = resolver.resolveMustache(param.value, moduleName);
+    let resolution = resolver.resolveLiteralComponentHelper(param.value, moduleName);
     if (resolution) {
       deps.push(resolution);
     }
     return;
   } else {
+    // in this case there's not even a point in talking to the resolver. We
+    // statically definitely don't know.
     deps.push({
       type: 'error',
       hardFail: false,
-      message: `cannot resolve dynamic component ${param.original} in ${moduleName}`
+      message: `ignoring dynamic component ${param.original} in ${moduleName}`
     });
   }
 }

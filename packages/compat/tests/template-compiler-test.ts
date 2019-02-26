@@ -174,11 +174,19 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('string literal passed to component helper fails to resolve', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/my-thing.js');
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)
+    }, new RegExp(`Missing component hello-world in ${appDir}/templates/application.hb`));
+  });
+
   test('dynamic component helper warning in content position', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     let deps;
-    assertWarning(/cannot resolve dynamic component this\.which/, () => {
+    assertWarning(/ignoring dynamic component this\.which/, () => {
       deps = findDependencies('templates/application.hbs', `{{component this.which}}`);
     });
     assert.deepEqual(
@@ -187,13 +195,13 @@ QUnit.module('template-compiler', function(hooks) {
         {
           type: 'error',
           hardFail: false,
-          message: `cannot resolve dynamic component this.which in ${appDir}/templates/application.hbs`
+          message: `ignoring dynamic component this.which in ${appDir}/templates/application.hbs`
         }
       ]
     );
   });
 
-  test('angle component component, js and hbs', function(assert) {
+  test('angle component, js and hbs', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
@@ -212,6 +220,13 @@ QUnit.module('template-compiler', function(hooks) {
         }
       ]
     );
+  });
+
+  test('angle component missing', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `<HelloWorld />`);
+    }, new RegExp(`Missing component HelloWorld in ${appDir}/templates/application.hbs`));
   });
 
   test('helper in subexpression', function(assert) {

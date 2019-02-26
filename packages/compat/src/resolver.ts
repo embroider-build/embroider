@@ -72,7 +72,26 @@ class CompatResolverInstance implements ResolverInstance {
   }
 
   resolveElement(tagName: string, from: string): Resolution | null {
-    return this.tryComponent(dasherize(tagName), from);
+    if (!this.options.staticComponents) {
+      return null;
+    }
+    if (tagName[0] === tagName[0].toLowerCase()) {
+      // components can't start with lower case
+      return null;
+    }
+    return this.tryComponent(dasherize(tagName), from) ||  {
+      type: 'error',
+      hardFail: true,
+      message: `Missing component ${tagName} in ${from}`
+    };
+  }
+
+  resolveLiteralComponentHelper(path: string, from: string): Resolution {
+    return this.tryComponent(path, from) || {
+      type: 'error',
+      hardFail: true,
+      message: `Missing component ${path} in ${from}`
+    };
   }
 }
 

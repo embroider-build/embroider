@@ -14,7 +14,7 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        "--filter", "modulePresent",
+        "--filter", "import gets removed",
       ]
     }
   ]

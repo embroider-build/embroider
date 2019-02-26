@@ -11,26 +11,60 @@ export interface Compiler {
   _Ember: any;
 }
 
+function inScope(scopeStack: string[][], name: string) {
+  for (let scope of scopeStack) {
+    if (scope.includes(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<string, Resolution[]>) {
   return function resolverTransform(env: { moduleName: string }) {
     let deps: Resolution[] = [];
     dependencies.set(env.moduleName, deps);
+
+    let scopeStack: string[][] = [];
+
     return {
       name: 'embroider-build-time-resolver',
+
       visitor: {
+        Program: {
+          enter(node: any) {
+            if (node.blockParams.length > 0) {
+              scopeStack.push(node.blockParams);
+            }
+          },
+          exit(node: any) {
+            if (node.blockParams.length > 0) {
+              scopeStack.pop();
+            }
+          }
+        },
         SubExpression(node: any) {
+          if (inScope(scopeStack, node.path.original)) {
+            return;
+          }
           let resolution = resolver.resolveSubExpression(node.path.original, env.moduleName);
           if (resolution) {
             deps.push(resolution);
           }
         },
         MustacheStatement(node: any) {
+          if (inScope(scopeStack, node.path.original)) {
+            return;
+          }
           let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
           if (resolution) {
             deps.push(resolution);
           }
         },
         ElementNode(node: any) {
+          if (inScope(scopeStack, node.tag)) {
+            return;
+          }
           let resolution = resolver.resolveElement(node.tag, env.moduleName);
           if (resolution) {
             deps.push(resolution);

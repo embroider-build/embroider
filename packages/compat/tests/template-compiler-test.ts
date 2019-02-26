@@ -237,4 +237,21 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('local binding only applies within block', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}`),
+      [
+        {
+          type: 'helper',
+          modules: [{
+            runtimeName: 'the-app/helpers/capitalize',
+            path: '../helpers/capitalize.js',
+          }]
+        }
+      ]
+    );
+  });
+
 });

@@ -177,7 +177,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
     }
     var resolver = new Resolver(${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix(), options: this.options })});
-    module.exports = setupCompiler(compiler, resolver, EmberENV, plugins);
+    module.exports = setupCompiler(compiler, resolver, EmberENV, plugins).compile;
     `;
   }
 

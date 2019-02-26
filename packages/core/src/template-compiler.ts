@@ -11,11 +11,9 @@ export interface Compiler {
   _Ember: any;
 }
 
-const dependencies: Map<string, Set<Resolution>> = new Map();
-
-function makeResolverTransform(resolver: ResolverInstance) {
+function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<string, Resolution[]>) {
   return function resolverTransform(env: { moduleName: string }) {
-    let deps: Set<Resolution> = new Set();
+    let deps: Resolution[] = [];
     dependencies.set(env.moduleName, deps);
     return {
       name: 'embroider-build-time-resolver',
@@ -23,19 +21,19 @@ function makeResolverTransform(resolver: ResolverInstance) {
         SubExpression(node: any) {
           let resolution = resolver.resolveSubExpression(node.path.original, env.moduleName);
           if (resolution) {
-            deps.add(resolution);
+            deps.push(resolution);
           }
         },
         MustacheStatement(node: any) {
           let resolution = resolver.resolveMustache(node.path.original, env.moduleName);
           if (resolution) {
-            deps.add(resolution);
+            deps.push(resolution);
           }
         },
         ElementNode(node: any) {
           let resolution = resolver.resolveElement(node.tag, env.moduleName);
           if (resolution) {
-            deps.add(resolution);
+            deps.push(resolution);
           }
         },
       }
@@ -43,11 +41,18 @@ function makeResolverTransform(resolver: ResolverInstance) {
   };
 }
 
-export default function(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
+export default function setupCompiler(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
+  let dependencies:  Map<string, Resolution[]> = new Map();
+
   registerPlugins(compiler, plugins);
-  compiler.registerPlugin('ast', makeResolverTransform(resolver));
+  compiler.registerPlugin('ast', makeResolverTransform(resolver, dependencies));
   initializeEmberENV(compiler, EmberENV);
-  return function(moduleName: string, contents: string) {
+
+  function dependenciesOf(moduleName: string): Resolution[] | undefined {
+    return dependencies.get(moduleName);
+  }
+
+  function compile(moduleName: string, contents: string) {
     let compiled = compiler.precompile(
       stripBom(contents), {
         contents,
@@ -55,7 +60,7 @@ export default function(compiler: Compiler, resolver: ResolverInstance, EmberENV
       }
     );
     let lines: string[] = [];
-    let deps = dependencies.get(moduleName);
+    let deps = dependenciesOf(moduleName);
     if (deps) {
       let counter = 0;
       for (let dep of deps) {
@@ -67,7 +72,8 @@ export default function(compiler: Compiler, resolver: ResolverInstance, EmberENV
     }
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
     return lines.join("\n");
-  };
+  }
+  return { compile, dependenciesOf };
 }
 
 function registerPlugins(compiler: Compiler, plugins: Plugins) {

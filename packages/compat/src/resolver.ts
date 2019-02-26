@@ -23,7 +23,7 @@ class CompatResolverInstance implements ResolverInstance {
         type: 'helper',
         modules: [{
           runtimeName: `${this.modulePrefix}/helpers/${path}`,
-          path: relative(dirname(from), absPath),
+          path: explicitRelative(from, absPath),
         }]
       };
     }
@@ -53,7 +53,7 @@ class CompatResolverInstance implements ResolverInstance {
       return {
         type: 'component',
         modules: componentModules.map(p => ({
-          path: relative(dirname(from), p.path),
+          path: explicitRelative(from, p.path),
           runtimeName: p.runtimeName,
         }))
       };
@@ -68,6 +68,20 @@ class CompatResolverInstance implements ResolverInstance {
     console.log(`TODO: resolve element ${tagName}`);
     return null;
   }
+}
+
+// by "explicit", I mean that we want "./local/thing" instead of "local/thing"
+// because
+//     import "./local/thing"
+// has a different meaning than
+//     import "local/thing"
+//
+function explicitRelative(fromFile: string, toFile: string) {
+  let result = relative(dirname(fromFile), toFile);
+  if (!result.startsWith('/') && !result.startsWith('.')) {
+    result = './' + result;
+  }
+  return result;
 }
 
 const CompatResolver: Resolver = CompatResolverInstance;

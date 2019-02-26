@@ -154,9 +154,16 @@ class CompatResolverInstance implements ResolverInstance {
     };
   }
 
-  resolveLiteralComponentHelper(path: string, from: string): Resolution | null {
+  resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null {
     if (!this.options.staticComponents) {
       return null;
+    }
+    if (!isLiteral) {
+      return {
+        type: 'error',
+        hardFail: false,
+        message: `ignoring dynamic component ${path} in ${from}`
+      };
     }
     return this.tryComponent(path, from) || {
       type: 'error',

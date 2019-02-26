@@ -33,7 +33,7 @@ export interface ResolverInstance {
   resolveSubExpression(path: string, from: string): Resolution | null;
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null;
   resolveElement(tagName: string, from: string): Resolution | null;
-  resolveLiteralComponentHelper(path: string, from: string): Resolution | null;
+  resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null;
 }
 
 export interface ResolverParams {

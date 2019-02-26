@@ -2,8 +2,8 @@ import { NodePath } from '@babel/traverse';
 import { ImportDeclaration } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State from './state';
-import modulePresent from './modulePresent';
-import dependencySatisfies from './dependencySatisfies';
+import modulePresent from './module-present';
+import dependencySatisfies from './dependency-satisfies';
 
 // we're assuming parallelized babel, so this doesn't try to share with anybody
 // other than our own module scope. As an optimization we could optionally

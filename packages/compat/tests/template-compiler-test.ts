@@ -5,11 +5,12 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import { Resolution } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
+import { tmpdir } from 'os';
+import { expectWarning } from '@embroider/core/src/messages';
 
 // the things under test
 import Resolver from '../src/resolver';
 import setupCompiler, { Compiler } from '@embroider/core/src/template-compiler';
-import { expectWarning } from '@embroider/core/src/messages';
 
 const { test } = QUnit;
 const emberTemplateCompilerSource = readFileSync(join(__dirname, 'vendor', 'ember-template-compiler.js'), 'utf8');
@@ -30,7 +31,7 @@ QUnit.module('template-compiler', function(hooks) {
   function configure(options: Options) {
     let EmberENV = {};
     let plugins = { ast: [] };
-    appDir = mkdtempSync('embroider-compat-tests');
+    appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
     let resolver = new Resolver({
       root: appDir,
       modulePrefix: 'the-app',

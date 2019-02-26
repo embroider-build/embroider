@@ -319,7 +319,7 @@ QUnit.module('template-compiler', function(hooks) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
     assert.throws(() => {
-      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)
+      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }, new RegExp(`Missing component hello-world in ${appDir}/templates/application.hb`));
   });
 

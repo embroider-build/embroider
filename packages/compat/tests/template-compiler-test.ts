@@ -167,7 +167,7 @@ QUnit.module('template-compiler', function(hooks) {
   });
 
   test('curly contextual component', function(assert) {
-    let findDependencies = configure({ staticComponents: true });
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     givenFile('components/hello-world.js');
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{#hello-world as |h|}} {{h.title flavor="chocolate"}} {{/hello-world}}`),
@@ -237,6 +237,23 @@ QUnit.module('template-compiler', function(hooks) {
     givenFile('components/hello-world.js');
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{component "hello-world"}}`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('string literal passed to component helper with block', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#component "hello-world"}} {{/component}}`),
       [
         {
           type: 'component',
@@ -460,6 +477,15 @@ QUnit.module('template-compiler', function(hooks) {
     givenFile('components/the-thing.js');
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`),
+      []
+    );
+  });
+
+  test('angle components can establish local bindings', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`),
       []
     );
   });

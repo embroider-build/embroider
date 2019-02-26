@@ -141,7 +141,8 @@ class CompatResolverInstance implements ResolverInstance {
     }
 
     if (tagName[0] === tagName[0].toLowerCase()) {
-      // components can't start with lower case
+      // starts with lower case, so this can't be a component we need to
+      // globally resolve
       return null;
     }
 

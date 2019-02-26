@@ -56,8 +56,23 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
             }
           }
         },
+        BlockStatement(node: any) {
+          if (inScope(scopeStack, node.path.parts[0])) {
+            return;
+          }
+          if (node.path.original === 'component' && node.params.length > 0) {
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, deps);
+          }
+          // a block counts as args from our perpsective (it's enough to prove
+          // this thing must be a component, not content)
+          let hasArgs = true;
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          if (resolution) {
+            deps.push(resolution);
+          }
+        },
         SubExpression(node: any) {
-          if (inScope(scopeStack, node.path.original)) {
+          if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
@@ -69,7 +84,7 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           }
         },
         MustacheStatement(node: any) {
-          if (inScope(scopeStack, node.path.original)) {
+          if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
@@ -81,15 +96,24 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
             deps.push(resolution);
           }
         },
-        ElementNode(node: any) {
-          if (inScope(scopeStack, node.tag)) {
-            return;
+        ElementNode: {
+          enter(node: any) {
+            if (!inScope(scopeStack, node.tag.split('.')[0])) {
+              let resolution = resolver.resolveElement(node.tag, env.moduleName);
+              if (resolution) {
+                deps.push(resolution);
+              }
+            }
+            if (node.blockParams.length > 0) {
+              scopeStack.push(node.blockParams);
+            }
+          },
+          exit(node: any) {
+            if (node.blockParams.length > 0) {
+              scopeStack.pop();
+            }
           }
-          let resolution = resolver.resolveElement(node.tag, env.moduleName);
-          if (resolution) {
-            deps.push(resolution);
-          }
-        },
+        }
       }
     };
   };

@@ -68,11 +68,13 @@ export default interface Options extends CoreOptions {
   extraPublicTrees?: Tree[];
 
   // when staticComponents is true, it's a build error if we can't find some
-  // component that appears in your templates. But you might know that you don't
+  // component that appears in a template. But you might know that you don't
   // actually try to invoke that component, so you can put its name in this
   // list.
+  //
+  // This should be understood as a temporary workaround until you can fix the
+  // offending template to not refer to a non-existent component.
   optionalComponents?: string[];
-
 }
 
 const defaults = Object.assign(coreWithDefaults(), {

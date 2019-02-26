@@ -113,7 +113,28 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
-  test('helper in sub expression', function(assert) {
+  test('angle component component, js and hbs', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    givenFile('templates/components/hello-world.hbs');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<HelloWorld />`),
+      [
+        {
+          type: 'component',
+          modules: [{
+            "path": "../components/hello-world.js",
+            "runtimeName": "the-app/components/hello-world"
+          }, {
+            "path": "./components/hello-world.hbs",
+            "runtimeName": "the-app/templates/components/hello-world"
+          }]
+        }
+      ]
+    );
+  });
+
+  test('helper in subexpression', function(assert) {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
     assert.deepEqual(
@@ -127,6 +148,15 @@ QUnit.module('template-compiler', function(hooks) {
           }]
         }
       ]
+    );
+  });
+
+  test('emits no helpers when staticHelpers is off', function(assert) {
+    let findDependencies = configure({ staticHelpers: false });
+    givenFile('helpers/array.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`),
+      []
     );
   });
 

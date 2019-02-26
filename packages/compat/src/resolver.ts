@@ -1,6 +1,7 @@
 import { Resolver, ResolverInstance, Resolution, Options } from "@embroider/core";
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
+import { dasherize } from './string';
 
 class CompatResolverInstance implements ResolverInstance {
   private root: string;
@@ -13,7 +14,7 @@ class CompatResolverInstance implements ResolverInstance {
     this.options = options;
   }
 
-  resolveSubExpression(path: string, from: string): Resolution | null {
+  private tryHelper(path: string, from: string): Resolution | null {
     if (!this.options.staticHelpers) {
       return null;
     }
@@ -30,7 +31,7 @@ class CompatResolverInstance implements ResolverInstance {
     return null;
   }
 
-  resolveMustache(path: string, from: string): Resolution | null {
+  private tryComponent(path: string, from: string): Resolution | null {
     if (!this.options.staticComponents) {
       return null;
     }
@@ -61,12 +62,17 @@ class CompatResolverInstance implements ResolverInstance {
 
     return null;
   }
-  resolveElement(tagName: string): Resolution | null {
-    if (!this.options.staticComponents) {
-      return null;
-    }
-    console.log(`TODO: resolve element ${tagName}`);
-    return null;
+
+  resolveSubExpression(path: string, from: string): Resolution | null {
+    return this.tryHelper(path, from);
+  }
+
+  resolveMustache(path: string, from: string): Resolution | null {
+    return this.tryHelper(path, from) || this.tryComponent(path, from);
+  }
+
+  resolveElement(tagName: string, from: string): Resolution | null {
+    return this.tryComponent(dasherize(tagName), from);
   }
 }
 

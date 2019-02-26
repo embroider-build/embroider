@@ -86,7 +86,10 @@ class CompatResolverInstance implements ResolverInstance {
     };
   }
 
-  resolveLiteralComponentHelper(path: string, from: string): Resolution {
+  resolveLiteralComponentHelper(path: string, from: string): Resolution | null {
+    if (!this.options.staticComponents) {
+      return null;
+    }
     return this.tryComponent(path, from) || {
       type: 'error',
       hardFail: true,

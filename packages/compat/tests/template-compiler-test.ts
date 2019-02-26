@@ -132,6 +132,21 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('mustache missing, no args', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{hello-world}}`),
+      []
+    );
+  });
+
+  test('mustache missing, with args', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
+    }, new RegExp(`Missing component or helper hello-world in ${appDir}/templates/applicationCache.hbs`));
+  });
+
   test('string literal passed to component helper in content position', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
@@ -181,6 +196,16 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)
     }, new RegExp(`Missing component hello-world in ${appDir}/templates/application.hb`));
   });
+
+  test('string literal passed to component helper fails to resolve when staticComponents is off', function(assert) {
+    let findDependencies = configure({ staticComponents: false });
+    givenFile('components/my-thing.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`),
+      []
+    );
+  });
+
 
   test('dynamic component helper warning in content position', function(assert) {
     let findDependencies = configure({ staticComponents: true });
@@ -244,6 +269,20 @@ QUnit.module('template-compiler', function(hooks) {
         }
       ]
     );
+  });
+
+  test('missing subexpression with args', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`);
+    }, new RegExp(`Missing helper array in ${appDir}/templates/application.js`));
+  });
+
+  test('missing subexpression no args', function(assert) {
+    let findDependencies = configure({ staticHelpers: true });
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `{{#each (array) as |num|}} {{num}} {{/each}}`);
+    }, new RegExp(`Missing helper array in ${appDir}/templates/application.js`));
   });
 
   test('emits no helpers when staticHelpers is off', function(assert) {
@@ -346,6 +385,19 @@ QUnit.module('template-compiler', function(hooks) {
           }]
         }
       ]
+    );
+  });
+
+  test('ignores builtins', function(assert) {
+    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `
+        {{outlet "foo"}}
+        {{yield bar}}
+        {{#with (hash submit=(action doit)) as |thing| }}
+        {{/with}}
+      `),
+      []
     );
   });
 

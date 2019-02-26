@@ -331,7 +331,7 @@ export default class V1Addon implements V1Package {
       let addonParser = this.parseImports(addonTree);
       built.importParsers.push(addonParser);
       built.trees.push(addonTree);
-      if (this.addonOptions.forceIncludeAddonTrees) {
+      if (!this.addonOptions.staticAddonTrees) {
         built.dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }
@@ -387,7 +387,7 @@ export default class V1Addon implements V1Package {
       let testSupportParser = this.parseImports(addonTestSupportTree);
       built.importParsers.push(testSupportParser);
       built.trees.push(addonTestSupportTree);
-      if (this.addonOptions.forceIncludeAddonTestSupportTrees) {
+      if (!this.addonOptions.staticAddonTestSupportTrees) {
         built.dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }

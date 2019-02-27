@@ -6,14 +6,14 @@ const { test } = QUnit;
 allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
   QUnit.module(`getConfig`, function() {
 
-    config.setConfig(__filename, '@embroider/macros', { beverage: 'coffee' });
+    config.setOwnConfig(__filename, { beverage: 'coffee' });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
 
     test(`returns correct value for own package's config`, function(assert) {
       let code = transform(`
-      import { getConfig } from '@embroider/macros';
+      import { getOwnConfig } from '@embroider/macros';
       export default function() {
-        return getConfig('@embroider/macros');
+        return getOwnConfig();
       }
       `);
       assert.deepEqual(runDefault(code), { beverage: 'coffee' });

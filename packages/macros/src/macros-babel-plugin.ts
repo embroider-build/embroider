@@ -52,7 +52,10 @@ export default function main() {
           dependencySatisfies(path, state, packageCache);
         }
         if (path.referencesImport('@embroider/macros', 'getConfig')) {
-          getConfig(path, state, packageCache);
+          getConfig(path, state, packageCache, false);
+        }
+        if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
+          getConfig(path, state, packageCache, true);
         }
         if (path.referencesImport('@embroider/macros', 'ifMacro')) {
           state.pendingTasks.push(() => ifMacro(path, state));

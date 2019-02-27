@@ -13,8 +13,19 @@ export default class MacrosConfig {
   // Your config type must be json-serializable. You must always set fromPath to
   // `__filename`.
   setConfig(fromPath: string, packageName: string, config: unknown) {
+    return this.internalSetConfig(fromPath, packageName, config);
+  }
+
+  // Registers a new source of configuration to be given to your own package.
+  // Your config type must be json-serializable. You must always set fromPath to
+  // `__filename`.
+  setOwnConfig(fromPath: string, config: unknown) {
+    return this.internalSetConfig(fromPath, undefined, config);
+  }
+
+  private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
     if (this.emittedBabelConfig) {
-      throw new Error(`attempted to call setConfig after we have already emitted our babel config`);
+      throw new Error(`attempted to set config after we have already emitted our babel config`);
     }
     let targetPackage = this.targetPackage(fromPath, packageName);
     let peers = this.configs.get(targetPackage);
@@ -25,14 +36,14 @@ export default class MacrosConfig {
     }
   }
 
-  // Allows you to set the merging strategy for a given package. The merging
-  // strategy applies when multiple other packages all try to send configuration
-  // to the same target package.
-  useMerger(fromPath: string, packageName: string, merger: Merger) {
+  // Allows you to set the merging strategy used for your package's config. The
+  // merging strategy applies when multiple other packages all try to send
+  // configuration to you.
+  useMerger(fromPath: string, merger: Merger) {
     if (this.emittedBabelConfig) {
       throw new Error(`attempted to call useMerger after we have already emitted our babel config`);
     }
-    let targetPackage = this.targetPackage(fromPath, packageName);
+    let targetPackage = this.targetPackage(fromPath, undefined);
     let other = this.mergers.get(targetPackage);
     if (other) {
       throw new Error(`conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${other.fromPath} and ${fromPath}.`);
@@ -65,12 +76,16 @@ export default class MacrosConfig {
     return defaultMerger;
   }
 
-  private targetPackage(fromPath: string, packageName: string) {
+  private targetPackage(fromPath: string, packageName: string | undefined) {
     let us = packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`unable to determine which npm package owns the file ${fromPath}`);
     }
-    return packageCache.resolve(packageName, us);
+    if (packageName) {
+      return packageCache.resolve(packageName, us);
+    } else {
+      return us;
+    }
   }
 }
 

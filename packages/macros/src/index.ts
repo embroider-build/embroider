@@ -16,6 +16,10 @@ export function getConfig<T>(packageName: string): T {
   throw new Oops(packageName);
 }
 
+export function getOwnConfig<T>(): T {
+  throw new Oops();
+}
+
 // Unlike the other methods in this module, this one is intended to be used from
 // within your build system, in node.
 export function sharedMacrosConfig(): MacrosConfig {

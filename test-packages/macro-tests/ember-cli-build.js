@@ -1,10 +1,15 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { sharedMacrosConfig } = require('@embroider/macros');
+
+sharedMacrosConfig().setOwnConfig(__filename, { mode: 'amazing' });
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
-    // Add options here
+    babel: {
+      plugins: [sharedMacrosConfig().babelPluginConfig()]
+    }
   });
 
   // Use `app.import` to add additional libraries to the generated

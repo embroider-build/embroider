@@ -13,7 +13,8 @@
       "args": [
         "packages/compat/tests",
         "packages/core/tests",
-        //"--filter", "string literal passed",
+        "packages/macros/tests",
+        "--filter", "can see booleans inside",
       ]
     }
   ]

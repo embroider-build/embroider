@@ -9,7 +9,7 @@ export default function ifMacro(path: NodePath, state: State) {
   }
   let args = parentPath.get('arguments');
   if (args.length !== 2 && args.length !== 3) {
-    throw new Error(`ifMacro takes tow or three arguments, you passed ${args.length}`);
+    throw new Error(`ifMacro takes two or three arguments, you passed ${args.length}`);
   }
 
   let [predicatePath, consequent, alternate] = args;

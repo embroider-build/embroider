@@ -74,6 +74,20 @@ allBabelVersions(function (transform: (code: string) => string) {
       assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
     });
 
+    test('leaves unrelated used imports alone', function(assert) {
+      let code = transform(`
+      import { ifMacro } from '@embroider/macros';
+      import a from 'module-a';
+      import b from 'module-b';
+      import c from 'module-c';
+      export default function() {
+        c();
+        return ifMacro(true, () => a, () => b);
+      }
+      `);
+      assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
+    });
+
     test('composes with other macros', function(assert) {
       let code = transform(`
       import { ifMacro, modulePresent } from '@embroider/macros';

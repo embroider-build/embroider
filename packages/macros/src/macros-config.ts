@@ -4,7 +4,7 @@ import { PackageCache, Package } from "@embroider/core";
 
 const packageCache = new PackageCache();
 
-export default class GlobalConfig {
+export default class MacrosConfig {
   private configs: Map<Package, unknown[]> = new Map();
   private mergers: Map<Package, { merger: Merger, fromPath: string }> = new Map();
   private emittedBabelConfig = false;

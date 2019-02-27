@@ -1,7 +1,7 @@
 import 'qunit';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
-import { GlobalConfig } from '..';
+import { MacrosConfig } from '..';
 import { join } from 'path';
 
 export function runDefault(code: string): any {
@@ -13,9 +13,9 @@ export function runDefault(code: string): any {
   return (exports as any).default();
 }
 
-export function allBabelVersions(createTests: (transform: (code: string) => string, config: GlobalConfig) => void) {
+export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
   QUnit.module('babel6', function() {
-    let config = new GlobalConfig();
+    let config = new MacrosConfig();
     createTests(function(code: string){
       const options6: Options6 = {
         filename: join(__dirname, 'sample.js'),
@@ -26,7 +26,7 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
     }, config);
   });
   QUnit.module('babel7', function() {
-    let config = new GlobalConfig();
+    let config = new MacrosConfig();
     createTests(function(code: string) {
       const options7: Options7 = {
         filename: join(__dirname, 'sample.js'),

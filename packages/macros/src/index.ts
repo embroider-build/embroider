@@ -1,4 +1,4 @@
-import GlobalConfig, { Merger } from "./global-config";
+import MacrosConfig, { Merger } from "./macros-config";
 
 export function modulePresent(moduleName: string): boolean {
   throw new Oops(moduleName);
@@ -12,22 +12,21 @@ export function ifMacro(predicate: boolean, consequent: () => void, alternate: (
   throw new Oops(predicate, consequent, alternate);
 }
 
-// Macro for accessing the value that was passed to setConfig.
 export function getConfig<T>(packageName: string): T {
   throw new Oops(packageName);
 }
 
 // Unlike the other methods in this module, this one is intended to be used from
 // within your build system, in node.
-export function globalConfig(): GlobalConfig {
+export function sharedMacrosConfig(): MacrosConfig {
   let g = global as any;
   if (!g.__embroider_macros_global__) {
-    g.__embroider_macros_global__ = new GlobalConfig();
+    g.__embroider_macros_global__ = new MacrosConfig();
   }
   return g.__embroider_macros_global__;
 }
 
-export { GlobalConfig, Merger };
+export { MacrosConfig, Merger };
 
 class Oops extends Error {
   params: any[];

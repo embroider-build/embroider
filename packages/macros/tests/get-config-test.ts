@@ -1,9 +1,9 @@
 import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
-import { GlobalConfig } from '..';
+import { MacrosConfig } from '..';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string, config: GlobalConfig) {
+allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
   QUnit.module(`getConfig`, function() {
 
     config.setConfig(__filename, '@embroider/macros', { beverage: 'coffee' });

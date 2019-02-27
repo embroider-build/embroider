@@ -7,6 +7,7 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
   QUnit.module(`getConfig`, function() {
 
     config.setConfig(__filename, '@embroider/macros', { beverage: 'coffee' });
+    config.setConfig(__filename, '@babel/core', [1, 2, 3]);
 
     test(`returns correct value for own package's config`, function(assert) {
       let code = transform(`
@@ -16,6 +17,16 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       }
       `);
       assert.deepEqual(runDefault(code), { beverage: 'coffee' });
+    });
+
+    test(`returns correct value for another package's config`, function(assert) {
+      let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return getConfig('@babel/core');
+      }
+      `);
+      assert.deepEqual(runDefault(code), [1,2,3]);
     });
 
     test(`returns undefined when there's no config but the package exists`, function(assert) {

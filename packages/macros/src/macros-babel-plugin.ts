@@ -49,7 +49,7 @@ export default function main() {
           dependencySatisfies(path, state, packageCache);
         }
         if (path.referencesImport('@embroider/macros', 'getConfig')) {
-          getConfig(path, state);
+          getConfig(path, state, packageCache);
         }
       },
     }

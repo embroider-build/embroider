@@ -1,6 +1,6 @@
 import { NodePath } from '@babel/traverse';
 import { booleanLiteral } from '@babel/types';
-import State from './state';
+import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
 import { PackageCache } from '@embroider/core';
 
@@ -18,7 +18,7 @@ export default function dependencySatisfies(path: NodePath, state: State, packag
   if (range.type !== 'StringLiteral') {
     throw new Error(`the second argument to dependencySatisfies must be a string literal`);
   }
-  let sourceFileName = path.hub.file.opts.filename;
+  let sourceFileName = sourceFile(path, state);
   try {
     let us = packageCache.ownerOfFile(sourceFileName);
     if (!us) {

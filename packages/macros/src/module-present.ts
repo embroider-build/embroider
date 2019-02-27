@@ -2,7 +2,7 @@ import resolve from 'resolve';
 import { dirname } from 'path';
 import { NodePath } from '@babel/traverse';
 import { booleanLiteral } from '@babel/types';
-import State from './state';
+import State, { sourceFile } from './state';
 
 export default function modulePresent(path: NodePath, state: State) {
   if (path.parent.type !== 'CallExpression') {
@@ -15,7 +15,7 @@ export default function modulePresent(path: NodePath, state: State) {
   if (arg.type !== 'StringLiteral') {
     throw new Error(`the argument to modulePresent must be a string literal`);
   }
-  let sourceFileName = path.hub.file.opts.filename;
+  let sourceFileName = sourceFile(path, state);
   try {
     resolve.sync(arg.value, { basedir: dirname(sourceFileName) });
     path.parentPath.replaceWith(booleanLiteral(true));

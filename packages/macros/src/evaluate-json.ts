@@ -27,6 +27,10 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
     return { confident: true, value: path.node.value };
   }
 
+  if (path.isNullLiteral()) {
+    return { confident: true, value: null };
+  }
+
   if (path.isObjectExpression()) {
     let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key'))), evaluateJSON(assertNotArray(p.get('value'))) ]);
     let result: any = {};

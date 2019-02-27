@@ -6,7 +6,7 @@ const { test } = QUnit;
 allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
   QUnit.module(`ifMacro`, function() {
 
-    config.setConfig(__filename, 'qunit', { items: [ { approved: true } ]});
+    config.setConfig(__filename, 'qunit', { items: [ { approved: true, other: null, size: 2.3 } ]});
 
     test('select consequent, drop alternate', function(assert) {
       let code = transform(`

@@ -3,7 +3,10 @@
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 const { sharedMacrosConfig } = require('@embroider/macros');
 
-sharedMacrosConfig().setOwnConfig(__filename, { mode: 'amazing' });
+sharedMacrosConfig().setOwnConfig(__filename, {
+  mode: 'amazing',
+  count: 42,
+});
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {

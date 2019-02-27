@@ -1,5 +1,6 @@
 import { NodePath } from '@babel/traverse';
 import State from './state';
+import evaluateJSON from './evaluate-json';
 
 export default function ifMacro(path: NodePath, state: State) {
   let parentPath = path.parentPath;
@@ -12,7 +13,7 @@ export default function ifMacro(path: NodePath, state: State) {
   }
 
   let [predicatePath, consequent, alternate] = args;
-  let predicate = predicatePath.evaluate();
+  let predicate = evaluate(predicatePath);
   if (!predicate.confident) {
     throw new Error(`the first argument to ifMacro must be statically known`);
   }
@@ -37,4 +38,15 @@ export default function ifMacro(path: NodePath, state: State) {
   if (dropped) {
     state.removed.push(dropped);
   }
+}
+
+function evaluate(path: NodePath): { confident: boolean, value: any } {
+  let builtIn = path.evaluate();
+  if (builtIn.confident) {
+    return builtIn;
+  }
+
+  // we can go further than babel's evaluate() because we know that we're
+  // typically used on JSON, not full Javascript.
+  return evaluateJSON(path);
 }

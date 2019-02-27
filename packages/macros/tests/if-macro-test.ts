@@ -1,9 +1,12 @@
 import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
+import { MacrosConfig } from '../src';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string) {
+allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
   QUnit.module(`ifMacro`, function() {
+
+    config.setConfig(__filename, 'qunit', { items: [ { approved: true } ]});
 
     test('select consequent, drop alternate', function(assert) {
       let code = transform(`
@@ -93,6 +96,19 @@ allBabelVersions(function (transform: (code: string) => string) {
       import { ifMacro, modulePresent } from '@embroider/macros';
       export default function() {
         return ifMacro(modulePresent('qunit'), () => 'alpha', () => 'beta');
+      }
+      `);
+      assert.equal(runDefault(code), 'alpha');
+      assert.ok(!/beta/.test(code), 'beta should be dropped');
+    });
+
+    test('can see booleans inside getConfig', function(assert) {
+      let code = transform(`
+      import { ifMacro, getConfig } from '@embroider/macros';
+      export default function() {
+        // this deliberately chains three kinds of property access syntax: by
+        // identifier, by numeric index, and by string literal.
+        return ifMacro(getConfig('qunit').items[0]["approved"], () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'alpha');

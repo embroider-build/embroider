@@ -12,6 +12,11 @@ export function ifMacro(predicate: boolean, consequent: () => void, alternate: (
   throw new Oops(predicate, consequent, alternate);
 }
 
+// Macro for accessing the value that was passed to setConfig.
+export function getConfig<T>(packageName: string): T {
+  throw new Oops(packageName);
+}
+
 // Unlike the other methods in this module, this one is intended to be used from
 // within your build system, in node.
 export function globalConfig(): GlobalConfig {
@@ -23,11 +28,6 @@ export function globalConfig(): GlobalConfig {
 }
 
 export { GlobalConfig, Merger };
-
-// Macros for accessing the value that was passed to setConfig.
-export function getConfig<T>(packageName: string): T {
-  throw new Oops(packageName);
-}
 
 class Oops extends Error {
   params: any[];

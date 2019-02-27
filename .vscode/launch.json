@@ -14,7 +14,7 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        "--filter", "returns correct value for own",
+        "--filter", "composes with other",
       ]
     }
   ]

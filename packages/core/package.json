@@ -29,7 +29,7 @@
     "debug": "^3.1.0",
     "fast-sourcemap-concat": "^1.4.0",
     "fs-extra": "^7.0.1",
-    "fs-tree-diff": "0.5.7",
+    "fs-tree-diff": "git+https://github.com/ef4/fs-tree-diff#24cefb34cf2ca55785b9a837c417323741821651",
     "handlebars": "^4.0.11",
     "js-string-escape": "^1.0.1",
     "jsdom": "^12.0.0",

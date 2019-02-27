@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A build system for EmberJS applications.",
   "main": "src/index.js",
   "author": "Edward Faulkner",

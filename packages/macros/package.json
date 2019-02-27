@@ -1,6 +1,6 @@
 {
   "name": "@embroider/macros",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Standardized build-time macros for ember apps.",
   "main": "src/index.js",
   "author": "Edward Faulkner",
@@ -32,6 +32,6 @@
     "semver": "^5.6.0"
   },
   "peerDependencies": {
-    "@embroider/core": "0.0.6"
+    "@embroider/core": "0.0.7"
   }
 }

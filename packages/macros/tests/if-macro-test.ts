@@ -186,5 +186,26 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       assert.ok(!/beta/.test(code), 'beta should be dropped');
     });
 
+    test(`direct export of macroIf`, function(assert) {
+      let code = transform(`
+      import { dependencySatisfies, macroIf } from '@embroider/macros';
+
+      function a() {
+        return 'a';
+      }
+
+      function b() {
+        return 'b';
+      }
+
+      export default macroIf(
+        false,
+        () => a,
+        () => b,
+      );
+      `);
+      assert.equal(runDefault(code), 'b');
+
+    });
   });
 });

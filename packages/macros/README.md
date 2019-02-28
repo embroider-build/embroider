@@ -34,8 +34,8 @@ This package works in both Embroider builds and normal ember-cli builds, so that
     Assuming you have `ember-source` 3.9.0 available, this code:
 
     ```js
-    import { semverSatisfies } from '@embroider/macros';
-    let hasNativeArrayHelper = semverSatisfies('ember-source', '>=3.8.0');
+    import { dependencySatisfies } from '@embroider/macros';
+    let hasNativeArrayHelper = dependencySatisfies('ember-source', '>=3.8.0');
     ```
 
     Compiles to:
@@ -47,9 +47,38 @@ This package works in both Embroider builds and normal ember-cli builds, so that
 
 - `macroIf(predicate, consequent, alternate)`: a compile time conditional. Lets you choose between two blocks of code and only include one of them. Critically, it will also strip import statements that are used only inside the dead block. The predicate is usually one of the other macros.
 
-```js
+    This code:
 
-```
+    ```js
+    import { dependencySatisfies, macroIf } from '@embroider/macros';
+    import OldComponent from './old-component';
+    import NewComponent from './new-component';
+    const implementation = macroIf(
+      dependencySatisfies('ember-source', '>=3.8.0'),
+      () => NewComponent,
+      () => OldComponent,
+    );
+    export default implementation;
+    ```
+
+    Will compile to either this:
+
+    ```js
+    import { dependencySatisfies, macroIf } from '@embroider/macros';
+    import NewComponent from './new-component';
+    const implementation = NewComponent;
+    export default implementation;
+    ```
+
+    Or this:
+
+    ```js
+    import { dependencySatisfies, macroIf } from '@embroider/macros';
+    import OldComponent from './old-component';
+    const implementation = OldComponent;
+    export default implementation;
+    ```
+
 
 
 

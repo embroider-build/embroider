@@ -93,9 +93,9 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('composes with other macros', function(assert) {
       let code = transform(`
-      import { ifMacro, modulePresent } from '@embroider/macros';
+      import { ifMacro, dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return ifMacro(modulePresent('qunit'), () => 'alpha', () => 'beta');
+        return ifMacro(dependencySatisfies('qunit', '*'), () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'alpha');

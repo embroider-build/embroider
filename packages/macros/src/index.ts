@@ -1,9 +1,5 @@
 import MacrosConfig, { Merger } from "./macros-config";
 
-export function modulePresent(moduleName: string): boolean {
-  throw new Oops(moduleName);
-}
-
 export function dependencySatisfies(packageName: string, semverRange: string): boolean {
   throw new Oops(packageName, semverRange);
 }

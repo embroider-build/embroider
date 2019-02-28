@@ -2,7 +2,6 @@ import { NodePath } from '@babel/traverse';
 import { ImportDeclaration } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State from './state';
-import modulePresent from './module-present';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import ifMacro from './if-macro';
@@ -45,9 +44,6 @@ export default function main() {
         }
       },
       ReferencedIdentifier(path: NodePath, state: State) {
-        if (path.referencesImport('@embroider/macros', 'modulePresent')) {
-          modulePresent(path, state);
-        }
         if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
           dependencySatisfies(path, state, packageCache);
         }

@@ -30,6 +30,12 @@ module('Integration | Macro | macroIf', function(hooks) {
     await render(hbs`{{my-assertion (macroIf true 'red' 'blue') }}`);
   });
 
+  test('macroIf inside string', async function(assert) {
+    assert.expect(1);
+    await render(hbs`<div class="target {{macroIf true 'red' 'blue' }}"></div>`);
+    assert.ok(this.element.querySelector('.target').matches('.red'));
+  });
+
   test('macroIf in subexpression position when false', async function(assert) {
     assert.expect(1);
     this.owner.register('helper:my-assertion', helper(function([value]) {

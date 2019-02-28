@@ -123,6 +123,17 @@ export function makeSecondTransform() {
               maybeAttrs(node, modifier, env.syntax.builders);
             }
           });
+        },
+        MustacheStatement(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (inScope(scopeStack, node.path.parts[0])) {
+            return;
+          }
+          if (node.path.original === 'macroIf') {
+            return env.syntax.builders.mustache(macroIfExpression(node, env.syntax.builders));
+          }
         }
       }
     };

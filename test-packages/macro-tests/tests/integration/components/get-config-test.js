@@ -59,4 +59,11 @@ module('Integration | Macro | getConfig', function(hooks) {
     await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "notAThing") }}`);
   });
 
+  test('macroGetConfig emits undefined for missing config', async function(assert) {
+    assert.expect(1);
+    this.owner.register('helper:my-assertion', helper(function([value]) {
+      assert.strictEqual(value, undefined);
+    }));
+    await render(hbs`{{my-assertion (macroGetConfig "ember-cli") }}`);
+  });
 });

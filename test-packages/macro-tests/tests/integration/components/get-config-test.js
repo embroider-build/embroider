@@ -35,6 +35,14 @@ module('Integration | Macro | getConfig', function(hooks) {
     await render(hbs`{{my-assertion (macroGetOwnConfig "count") }}`);
   });
 
+  test('macroGetOwnConfig emits boolean', async function(assert) {
+    assert.expect(1);
+    this.owner.register('helper:my-assertion', helper(function([value]) {
+      assert.equal(value, true);
+    }));
+    await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "items" "0" "awesome") }}`);
+  });
+
   test('macroGetOwnConfig emits string', async function(assert) {
     assert.expect(1);
     this.owner.register('helper:my-assertion', helper(function([value]) {
@@ -49,6 +57,23 @@ module('Integration | Macro | getConfig', function(hooks) {
       assert.strictEqual(value, null);
     }));
     await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "description") }}`);
+  });
+
+  test('macroGetOwnConfig emits complex pojo', async function(assert) {
+    assert.expect(1);
+    this.owner.register('helper:my-assertion', helper(function([value]) {
+      assert.deepEqual(value, {
+        mode: 'amazing',
+        count: 42,
+        inner: {
+          items: [
+            { name: 'Arthur', awesome: true }
+          ],
+          description: null
+        }
+      });
+    }));
+    await render(hbs`{{my-assertion (macroGetOwnConfig) }}`);
   });
 
   test('macroGetOwnConfig emits undefined for missing key', async function(assert) {

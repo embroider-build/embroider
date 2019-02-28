@@ -29,10 +29,10 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return getConfig(node, config, baseDir, true, env.syntax.builders);
+            return literal(getConfig(node, config, baseDir, true), env.syntax.builders);
           }
           if (node.path.original === 'macroGetConfig') {
-            return getConfig(node, config, baseDir, false, env.syntax.builders);
+            return literal(getConfig(node, config, baseDir, false), env.syntax.builders);
           }
         },
         MustacheStatement(node: any) {
@@ -43,10 +43,10 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return env.syntax.builders.mustache(getConfig(node, config, baseDir, true, env.syntax.builders));
+            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, true), env.syntax.builders));
           }
           if (node.path.original === 'macroGetConfig') {
-            return env.syntax.builders.mustache(getConfig(node, config, baseDir, false, env.syntax.builders));
+            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, false), env.syntax.builders));
           }
         },
       }
@@ -63,7 +63,7 @@ function inScope(scopeStack: string[][], name: string) {
   return false;
 }
 
-function getConfig(node: any, config: MacrosConfig, baseDir: string, own: boolean, builders: any) {
+function getConfig(node: any, config: MacrosConfig, baseDir: string, own: boolean) {
   let targetConfig;
   let params = node.params.slice();
   if (!params.every((p: any) => p.type === 'StringLiteral')) {
@@ -83,19 +83,31 @@ function getConfig(node: any, config: MacrosConfig, baseDir: string, own: boolea
     let key = params.shift();
     targetConfig = targetConfig[key.value] as any;
   }
-  if (typeof targetConfig === 'number') {
-    return builders.number(targetConfig);
+  return targetConfig;
+}
+
+function literal(value: any, builders: any): any {
+  if (typeof value === 'number') {
+    return builders.number(value);
   }
-  if (typeof targetConfig === 'string') {
-    return builders.string(targetConfig);
+  if (typeof value === 'boolean') {
+    return builders.boolean(value);
   }
-  if (targetConfig === null) {
+  if (typeof value === 'string') {
+    return builders.string(value);
+  }
+  if (value === null) {
     return builders.null();
   }
-
-  if (targetConfig === undefined) {
+  if (value === undefined) {
     return builders.undefined();
   }
+  if (Array.isArray(value)) {
+    return builders.sexpr('array', value.map(element => literal(element, builders)));
+  }
+  if (typeof value === 'object') {
+    return builders.sexpr('hash', undefined, builders.hash(Object.entries(value).map(([k,v]) => builders.pair(k,literal(v, builders)))));
+  }
 
-  throw new Error(`unimplemented`);
+  throw new Error(`don't know how to emit a literal form of value ${value}`);
 }

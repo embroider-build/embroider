@@ -5,6 +5,7 @@
       "compile": "tsc",
       "lint": "tslint --project .",
       "clean": "git clean -x -f",
-      "test": "qunit packages/*/tests"
+      "node-test": "qunit packages/*/tests",
+      "test": "./scripts/test.sh"
     }
   }

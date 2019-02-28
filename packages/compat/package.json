@@ -44,7 +44,7 @@
     "debug": "^3.1.0",
     "ember-cli-htmlbars": "^3.0.1",
     "fs-extra": "^7.0.0",
-    "fs-tree-diff": "git+https://github.com/ef4/fs-tree-diff#24cefb34cf2ca55785b9a837c417323741821651",
+    "fs-tree-diff": "git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f",
     "jsdom": "^12.0.0",
     "lodash": "^4.17.10",
     "pkg-up": "^2.0.0",

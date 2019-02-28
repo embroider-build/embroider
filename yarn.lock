@@ -5353,9 +5353,19 @@ fs-tree-diff@^0.5.2, fs-tree-diff@^0.5.3, fs-tree-diff@^0.5.4, fs-tree-diff@^0.5
     path-posix "^1.0.0"
     symlink-or-copy "^1.1.8"
 
-fs-tree-diff@^1.0.0, fs-tree-diff@^1.0.2, "fs-tree-diff@git+https://github.com/ef4/fs-tree-diff#24cefb34cf2ca55785b9a837c417323741821651":
+fs-tree-diff@^1.0.0, fs-tree-diff@^1.0.2:
   version "1.0.2"
   resolved "git+https://github.com/ef4/fs-tree-diff#24cefb34cf2ca55785b9a837c417323741821651"
+  dependencies:
+    "@types/symlink-or-copy" "^1.2.0"
+    heimdalljs-logger "^0.1.7"
+    object-assign "^4.1.0"
+    path-posix "^1.0.0"
+    symlink-or-copy "^1.1.8"
+
+"fs-tree-diff@git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f":
+  version "1.0.2-custom.0"
+  resolved "git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f"
   dependencies:
     "@types/symlink-or-copy" "^1.2.0"
     heimdalljs-logger "^0.1.7"

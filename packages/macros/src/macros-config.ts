@@ -69,10 +69,22 @@ export default class MacrosConfig {
     return this.cachedUserConfigs;
   }
 
-  // to be called from within your build system. Returns the thing you should push
-  // into your babel plugins list.
-  babelPluginConfig(): PluginItem {
-    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), { userConfigs: this.userConfigs }];
+  // to be called from within your build system. Returns the thing you should
+  // push into your babel plugins list.
+  //
+  // owningPackageRoot is needed when the files you will process (1) all belongs
+  // to one package, (2) will not be located in globally correct paths such that
+  // normal node_modules resolution can find their dependencies. In other words,
+  // owningPackageRoot is needed when you use this inside classic ember-cli, and
+  // it's not appropriate inside embroider.
+  babelPluginConfig(owningPackageRoot?: string): PluginItem {
+    let self = this;
+    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), {
+      // this is deliberately lazy because we want to allow everyone to finish
+      // setting config before we generate the userConfigs
+      get userConfigs() { return self.userConfigs; },
+      owningPackageRoot,
+    }];
   }
 
   private mergerFor(pkg: Package) {

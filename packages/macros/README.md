@@ -161,21 +161,14 @@ These are analogous to the Javascript macros, although here (because we don't im
     '@embroider/macros': {
       // this is how you configure your own package
       setOwnConfig: {
-        mode: 'amazing',
-        count: 42,
-        inner: {
-          items: [
-            { name: 'Arthur', awesome: true }
-          ],
-          description: null
-        }
+        // your config goes here
       },
       // this is how you can optionally send configuration into your
       // dependencies, if those dependencies choose to use
       // @embroider/macros configs.
       setConfig: {
-        'ember-source': {
-          color: 'orange'
+        'some-dependency': {
+          // config for some-dependency
         }
       }
     }
@@ -187,6 +180,21 @@ These are analogous to the Javascript macros, although here (because we don't im
 2. In `index.js`, do:
 
     ```js
+   module.exports = {
+     name: require('./package').name,
+     options: {
+       '@embroider/macros': {
+         setOwnConfig: {
+           // your config goes here
+         },
+         setConfig: {
+           'some-dependency': {
+             // config for some-dependency
+           }
+         }
+       }
+     }
+   };
 
     ```
 

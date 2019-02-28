@@ -6,6 +6,7 @@ export = {
   name: '@embroider/macros',
 
   included(this: any, parent: any) {
+    this._super.included.apply(this, arguments);
     let parentOptions = (parent.options = parent.options || {});
     let ownOptions = (parentOptions['@embroider/macros'] =
       parentOptions['@embroider/macros'] || {});
@@ -23,16 +24,9 @@ export = {
       }
     }
 
-    // the super call goes here so that everyone calls setConfig first (on the
-    // way down the stack) and then calls `babelPluginConfig` second (on the way
-    // back up the stack). This guarantees that your own compilation will see
-    // (at least) the configuration for every package that is an ancestor or
-    // descendant of yourself.
-    this._super.included.apply(this, arguments);
-
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
-    babelPlugins.unshift(sharedMacrosConfig().babelPluginConfig());
+    babelPlugins.unshift(sharedMacrosConfig().babelPluginConfig(source));
   },
 
   setupPreprocessorRegistry(type: "parent" | "self", registry: any) {

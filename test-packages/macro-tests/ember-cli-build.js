@@ -18,6 +18,9 @@ module.exports = function(defaults) {
       setConfig: {
         'ember-source': {
           color: 'orange'
+        },
+        'macro-sample-addon': {
+          configFromMacrosTests: 'exists'
         }
       }
     }

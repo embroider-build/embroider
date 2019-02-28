@@ -72,7 +72,7 @@ export default class MacrosConfig {
   // to be called from within your build system. Returns the thing you should push
   // into your babel plugins list.
   babelPluginConfig(): PluginItem {
-    return [join(__dirname, 'macros-babel-plugin.js'), { userConfigs: this.userConfigs }];
+    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), { userConfigs: this.userConfigs }];
   }
 
   private mergerFor(pkg: Package) {

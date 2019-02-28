@@ -1,4 +1,4 @@
-import { MacrosConfig } from '.';
+import { MacrosConfig } from '..';
 
 export default function makeTransform(baseDir: string, config: MacrosConfig) {
   return function embroiderMacrosTransform(env: { moduleName: string, syntax: { builders: any } }) {

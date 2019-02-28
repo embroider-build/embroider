@@ -1,4 +1,4 @@
-import makeTransform from './ast-transform';
+import makeTransform from './glimmer/ast-transform';
 import { join } from 'path';
 import { sharedMacrosConfig } from '.';
 

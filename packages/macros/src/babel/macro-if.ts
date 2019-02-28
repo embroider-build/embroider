@@ -35,6 +35,7 @@ export default function macroIf(path: NodePath, state: State) {
   } else {
     parentPath.remove();
   }
+  state.removed.push(path);
   if (dropped) {
     state.removed.push(dropped);
   }

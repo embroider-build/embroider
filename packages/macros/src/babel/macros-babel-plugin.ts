@@ -62,5 +62,5 @@ export default function main() {
 }
 
 function wasRemoved(path: NodePath, state: State) {
-  return Boolean(path.findParent(p => state.removed.includes(p)));
+  return state.removed.includes(path) || Boolean(path.findParent(p => state.removed.includes(p)));
 }

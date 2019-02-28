@@ -17,6 +17,8 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       `);
       assert.equal(runDefault(code), 'alpha');
       assert.ok(!/beta/.test(code), 'beta should be dropped');
+      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
+      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
     });
 
     test('select consequent, drop alternate', function(assert) {
@@ -28,6 +30,33 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       `);
       assert.equal(runDefault(code), 'beta');
       assert.ok(!/alpha/.test(code), 'alpha should be dropped');
+      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
+      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
+    });
+
+    test('works with block forms', function(assert) {
+      let code = transform(`
+      import { macroIf } from '@embroider/macros';
+      export default function() {
+        return macroIf(false, () => { return 'alpha'; }, () => { return 'beta'; });
+      }
+      `);
+      assert.equal(runDefault(code), 'beta');
+      assert.ok(!/alpha/.test(code), 'alpha should be dropped');
+    });
+
+    test('block lifting', function(assert) {
+      let code = transform(`
+      import { macroIf } from '@embroider/macros';
+      export default function() {
+        let value = macroIf(true, () => {
+          let value = 1;
+          return value + 1;
+        });
+        return value;
+      }
+      `);
+      assert.equal(runDefault(code), 2);
     });
 
     test('select consequent, no alternate', function(assert) {
@@ -38,6 +67,8 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       }
       `);
       assert.equal(runDefault(code), 'alpha');
+      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
+      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
     });
 
     test('drop consequent, no alternate', function(assert) {

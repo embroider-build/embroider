@@ -2,7 +2,11 @@ import { MacrosConfig } from '..';
 import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
-import { macroIfBlock, macroIfExpression } from './macro-if';
+import {
+  macroIfBlock,
+  macroIfExpression,
+  macroIfElementModifier
+} from './macro-if';
 
 export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
   return function embroiderFirstMacrosTransform(env: { syntax: { builders: any } }) {
@@ -58,7 +62,7 @@ export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
           if (node.path.original === 'macroDependencySatisfies') {
             return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir), env.syntax.builders));
           }
-        },
+        }
       }
     };
   };
@@ -105,6 +109,17 @@ export function makeSecondTransform() {
           }
           if (node.path.original === 'macroIf') {
             return macroIfExpression(node, env.syntax.builders);
+          }
+        },
+        ElementModifierStatement(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (inScope(scopeStack, node.path.parts[0])) {
+            return;
+          }
+          if (node.path.original === 'macroIf') {
+            return macroIfElementModifier(node, env.syntax.builders);
           }
         }
       }

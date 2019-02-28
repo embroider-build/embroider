@@ -38,6 +38,10 @@ export function macroIfExpression(node: any, builders: any) {
 
 }
 
+export function macroIfElementModifier(node: any, builders: any) {
+  console.log('todo', node, builders);
+}
+
 function evaluate(node: any): { confident: true, value: any } | { confident: false } {
   switch (node.type) {
     case 'StringLiteral':

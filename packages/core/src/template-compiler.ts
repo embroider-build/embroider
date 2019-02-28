@@ -57,6 +57,9 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           }
         },
         BlockStatement(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
@@ -72,6 +75,9 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           }
         },
         SubExpression(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
@@ -84,6 +90,9 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
           }
         },
         MustacheStatement(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }

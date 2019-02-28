@@ -133,6 +133,14 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
+  test('tolerates non path mustaches', function(assert) {
+    let findDependencies = configure({ staticComponents: false, staticHelpers: true });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<Thing @foo={{1}} />`),
+      []
+    );
+  });
+
   test('block form curly component', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');

@@ -26,7 +26,7 @@ export default class MacrosConfig {
     if (this.cachedUserConfigs) {
       throw new Error(`attempted to set config after we have already emitted our config`);
     }
-    let targetPackage = this.targetPackage(fromPath, packageName);
+    let targetPackage = this.resolvePackage(fromPath, packageName);
     let peers = this.configs.get(targetPackage);
     if (peers) {
       peers.push(config);
@@ -42,7 +42,7 @@ export default class MacrosConfig {
     if (this.cachedUserConfigs) {
       throw new Error(`attempted to call useMerger after we have already emitted our config`);
     }
-    let targetPackage = this.targetPackage(fromPath, undefined);
+    let targetPackage = this.resolvePackage(fromPath, undefined);
     let other = this.mergers.get(targetPackage);
     if (other) {
       throw new Error(`conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${other.fromPath} and ${fromPath}.`);
@@ -84,14 +84,14 @@ export default class MacrosConfig {
   }
 
   getConfig(fromPath: string, packageName: string) {
-    return this.userConfigs[this.targetPackage(fromPath, packageName).root];
+    return this.userConfigs[this.resolvePackage(fromPath, packageName).root];
   }
 
   getOwnConfig(fromPath: string) {
-    return this.userConfigs[this.targetPackage(fromPath, undefined).root];
+    return this.userConfigs[this.resolvePackage(fromPath, undefined).root];
   }
 
-  private targetPackage(fromPath: string, packageName: string | undefined) {
+  resolvePackage(fromPath: string, packageName?: string | undefined) {
     let us = packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`unable to determine which npm package owns the file ${fromPath}`);

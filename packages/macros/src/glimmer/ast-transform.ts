@@ -1,6 +1,7 @@
 import { MacrosConfig } from '..';
 import literal from './literal';
 import getConfig from './get-config';
+import dependencySatisfies from './dependency-satisfies';
 
 export default function makeTransform(baseDir: string, config: MacrosConfig) {
   return function embroiderMacrosTransform(env: { moduleName: string, syntax: { builders: any } }) {
@@ -36,6 +37,9 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           if (node.path.original === 'macroGetConfig') {
             return literal(getConfig(node, config, baseDir, false), env.syntax.builders);
           }
+          if (node.path.original === 'macroDependencySatisfies') {
+            return literal(dependencySatisfies(node, config, baseDir), env.syntax.builders);
+          }
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -49,6 +53,9 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           }
           if (node.path.original === 'macroGetConfig') {
             return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, false), env.syntax.builders));
+          }
+          if (node.path.original === 'macroDependencySatisfies') {
+            return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir), env.syntax.builders));
           }
         },
       }

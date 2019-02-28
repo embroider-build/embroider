@@ -1,4 +1,6 @@
 import { MacrosConfig } from '..';
+import literal from './literal';
+import getConfig from './get-config';
 
 export default function makeTransform(baseDir: string, config: MacrosConfig) {
   return function embroiderMacrosTransform(env: { moduleName: string, syntax: { builders: any } }) {
@@ -61,53 +63,4 @@ function inScope(scopeStack: string[][], name: string) {
     }
   }
   return false;
-}
-
-function getConfig(node: any, config: MacrosConfig, baseDir: string, own: boolean) {
-  let targetConfig;
-  let params = node.params.slice();
-  if (!params.every((p: any) => p.type === 'StringLiteral')) {
-    throw new Error(`all arguments to ${own ? 'macroGetOwnConfig' : 'macroGetConfig'} must be string literals`);
-  }
-
-  if (own) {
-    targetConfig = config.getOwnConfig(baseDir);
-  } else {
-    let packageName = params.shift();
-    if (!packageName) {
-      throw new Error(`macroGetConfig requires at least one argument`);
-    }
-    targetConfig = config.getConfig(baseDir, packageName.value);
-  }
-  while (typeof targetConfig === 'object' && targetConfig && params.length > 0) {
-    let key = params.shift();
-    targetConfig = targetConfig[key.value] as any;
-  }
-  return targetConfig;
-}
-
-function literal(value: any, builders: any): any {
-  if (typeof value === 'number') {
-    return builders.number(value);
-  }
-  if (typeof value === 'boolean') {
-    return builders.boolean(value);
-  }
-  if (typeof value === 'string') {
-    return builders.string(value);
-  }
-  if (value === null) {
-    return builders.null();
-  }
-  if (value === undefined) {
-    return builders.undefined();
-  }
-  if (Array.isArray(value)) {
-    return builders.sexpr('array', value.map(element => literal(element, builders)));
-  }
-  if (typeof value === 'object') {
-    return builders.sexpr('hash', undefined, builders.hash(Object.entries(value).map(([k,v]) => builders.pair(k,literal(v, builders)))));
-  }
-
-  throw new Error(`don't know how to emit a literal form of value ${value}`);
 }

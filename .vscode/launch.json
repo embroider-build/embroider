@@ -14,8 +14,21 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        "--filter", "can see booleans inside",
+//        "--filter", "tolerates",
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build macro-tests app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-tests",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1"
+      }
     }
   ]
 }

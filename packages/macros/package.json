@@ -2,6 +2,9 @@
   "name": "@embroider/macros",
   "version": "0.0.7",
   "description": "Standardized build-time macros for ember apps.",
+  "keywords": [
+    "ember-addon"
+  ],
   "main": "src/index.js",
   "author": "Edward Faulkner",
   "license": "MIT",
@@ -33,5 +36,8 @@
   },
   "peerDependencies": {
     "@embroider/core": "0.0.7"
+  },
+  "ember-addon": {
+    "main": "src/ember-addon-main.js"
   }
 }

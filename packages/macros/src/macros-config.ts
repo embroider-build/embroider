@@ -7,7 +7,6 @@ const packageCache = new PackageCache();
 export default class MacrosConfig {
   private configs: Map<Package, unknown[]> = new Map();
   private mergers: Map<Package, { merger: Merger, fromPath: string }> = new Map();
-  private emittedBabelConfig = false;
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to
@@ -24,8 +23,8 @@ export default class MacrosConfig {
   }
 
   private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
-    if (this.emittedBabelConfig) {
-      throw new Error(`attempted to set config after we have already emitted our babel config`);
+    if (this.cachedUserConfigs) {
+      throw new Error(`attempted to set config after we have already emitted our config`);
     }
     let targetPackage = this.targetPackage(fromPath, packageName);
     let peers = this.configs.get(targetPackage);
@@ -40,8 +39,8 @@ export default class MacrosConfig {
   // merging strategy applies when multiple other packages all try to send
   // configuration to you.
   useMerger(fromPath: string, merger: Merger) {
-    if (this.emittedBabelConfig) {
-      throw new Error(`attempted to call useMerger after we have already emitted our babel config`);
+    if (this.cachedUserConfigs) {
+      throw new Error(`attempted to call useMerger after we have already emitted our config`);
     }
     let targetPackage = this.targetPackage(fromPath, undefined);
     let other = this.mergers.get(targetPackage);
@@ -51,21 +50,29 @@ export default class MacrosConfig {
     this.mergers.set(targetPackage, { merger, fromPath });
   }
 
+  private cachedUserConfigs: { [packageRoot: string]: unknown } | undefined;
+
+  private get userConfigs() {
+    if (!this.cachedUserConfigs) {
+      let userConfigs: { [packageRoot: string]: unknown } = {};
+      for (let [pkg, configs] of this.configs) {
+        let combined: unknown;
+        if (configs.length > 1) {
+          combined = this.mergerFor(pkg)(configs);
+        } else {
+          combined = configs[0];
+        }
+        userConfigs[pkg.root] = combined;
+      }
+      this.cachedUserConfigs = userConfigs;
+    }
+    return this.cachedUserConfigs;
+  }
+
   // to be called from within your build system. Returns the thing you should push
   // into your babel plugins list.
   babelPluginConfig(): PluginItem {
-    this.emittedBabelConfig = true;
-    let userConfigs: { [packageRoot: string]: unknown } = {};
-    for (let [pkg, configs] of this.configs) {
-      let combined: unknown;
-      if (configs.length > 1) {
-        combined = this.mergerFor(pkg)(configs);
-      } else {
-        combined = configs[0];
-      }
-      userConfigs[pkg.root] = combined;
-    }
-    return [join(__dirname, 'macros-babel-plugin.js'), { userConfigs }];
+    return [join(__dirname, 'macros-babel-plugin.js'), { userConfigs: this.userConfigs }];
   }
 
   private mergerFor(pkg: Package) {
@@ -74,6 +81,14 @@ export default class MacrosConfig {
       return entry.merger;
     }
     return defaultMerger;
+  }
+
+  getConfig(fromPath: string, packageName: string) {
+    return this.userConfigs[this.targetPackage(fromPath, packageName).root];
+  }
+
+  getOwnConfig(fromPath: string) {
+    return this.userConfigs[this.targetPackage(fromPath, undefined).root];
   }
 
   private targetPackage(fromPath: string, packageName: string | undefined) {

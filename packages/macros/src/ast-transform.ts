@@ -31,6 +31,9 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           if (node.path.original === 'macroGetOwnConfig') {
             return getConfig(node, config, baseDir, true, env.syntax.builders);
           }
+          if (node.path.original === 'macroGetConfig') {
+            return getConfig(node, config, baseDir, false, env.syntax.builders);
+          }
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -41,6 +44,9 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           }
           if (node.path.original === 'macroGetOwnConfig') {
             return env.syntax.builders.mustache(getConfig(node, config, baseDir, true, env.syntax.builders));
+          }
+          if (node.path.original === 'macroGetConfig') {
+            return env.syntax.builders.mustache(getConfig(node, config, baseDir, false, env.syntax.builders));
           }
         },
       }

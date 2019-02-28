@@ -6,6 +6,16 @@ const { sharedMacrosConfig } = require('@embroider/macros');
 sharedMacrosConfig().setOwnConfig(__filename, {
   mode: 'amazing',
   count: 42,
+  inner: {
+    items: [
+      { name: 'Arthur', awesome: true }
+    ],
+    description: null
+  }
+});
+
+sharedMacrosConfig().setConfig(__filename, 'ember-source', {
+  color: 'orange'
 });
 
 module.exports = function(defaults) {

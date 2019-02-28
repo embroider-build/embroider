@@ -1,6 +1,7 @@
 import { NodePath } from '@babel/traverse';
 import State from './state';
 import evaluateJSON from './evaluate-json';
+import { callExpression } from '@babel/types';
 
 export default function macroIf(path: NodePath, state: State) {
   let parentPath = path.parentPath;
@@ -31,7 +32,12 @@ export default function macroIf(path: NodePath, state: State) {
 
   let [kept, dropped] = predicate.value ? [consequent, alternate] : [ alternate, consequent];
   if (kept) {
-    parentPath.replaceWith(kept.get('body'));
+    let body = kept.get('body');
+    if (body.type === 'BlockStatement') {
+      parentPath.replaceWith(callExpression(kept.node, []));
+    } else {
+      parentPath.replaceWith(body);
+    }
   } else {
     parentPath.remove();
   }

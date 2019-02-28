@@ -59,6 +59,46 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       assert.equal(runDefault(code), 2);
     });
 
+    test('preserves this when using single-expression arrows', function(assert) {
+      let code = transform(`
+      import { macroIf } from '@embroider/macros';
+
+      class Example {
+        constructor() {
+          this.name = 'Quint';
+        }
+        method() {
+          return macroIf(true, () => this.name, () => 'Other');
+        }
+      }
+
+      export default function() {
+        return new Example().method();
+      }
+      `);
+      assert.equal(runDefault(code), 'Quint');
+    });
+
+    test('preserves this when using block arrows', function(assert) {
+      let code = transform(`
+      import { macroIf } from '@embroider/macros';
+
+      class Example {
+        constructor() {
+          this.name = 'Quint';
+        }
+        method() {
+          return macroIf(true, () => { return this.name;}, () => { return 'Other'; });
+        }
+      }
+
+      export default function() {
+        return new Example().method();
+      }
+      `);
+      assert.equal(runDefault(code), 'Quint');
+    });
+
     test('select consequent, no alternate', function(assert) {
       let code = transform(`
       import { macroIf } from '@embroider/macros';

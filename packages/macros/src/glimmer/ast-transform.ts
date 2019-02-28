@@ -2,6 +2,7 @@ import { MacrosConfig } from '..';
 import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
+import { macroIfBlock } from './macro-if';
 
 export default function makeTransform(baseDir: string, config: MacrosConfig) {
   return function embroiderMacrosTransform(env: { moduleName: string, syntax: { builders: any } }) {
@@ -21,6 +22,19 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           exit(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
+            }
+          }
+        },
+        BlockStatement: {
+          exit(node: any) {
+            if (node.path.type !== 'PathExpression') {
+              return;
+            }
+            if (inScope(scopeStack, node.path.parts[0])) {
+              return;
+            }
+            if (node.path.original === 'macroIf') {
+              return macroIfBlock(node);
             }
           }
         },

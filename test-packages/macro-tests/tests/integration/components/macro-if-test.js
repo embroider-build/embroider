@@ -17,6 +17,11 @@ module('Integration | Macro | macroIf', function(hooks) {
     assert.equal(this.element.textContent.trim(), 'blue');
   });
 
+  test('macroIf in content position when false with no alternate', async function(assert) {
+    await render(hbs`{{#macroIf false}}red{{/macroIf}}`);
+    assert.equal(this.element.textContent.trim(), '');
+  });
+
   test('macroIf in subexpression position when true', async function(assert) {
     assert.expect(1);
     this.owner.register('helper:my-assertion', helper(function([value]) {

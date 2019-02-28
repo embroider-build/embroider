@@ -46,19 +46,26 @@ module('Integration | Macro | macroIf', function(hooks) {
     await render(hbs`{{my-assertion (macroIf false 'red') }}`);
   });
 
-  // test('macroIf in element modifier position, when true', async function(assert) {
-  //   await render(hbs`<div data-test-target {{macroIf true data-optional data-flavor="vanilla" }} ></div>`);
-  //   let target = this.element.querySelector('[data-test-target]');
-  //   assert.ok(target.matches('[data-optional]'));
-  //   assert.ok(target.matches('[data-flavor="vanilla"]'));
-  // });
+  test('macroMaybeAttrs when true', async function(assert) {
+    await render(hbs`<div data-test-target {{macroMaybeAttrs true data-optional data-flavor="vanilla" }} ></div>`);
+    let target = this.element.querySelector('[data-test-target]');
+    assert.ok(target.matches('[data-optional]'), 'found data-optional');
+    assert.ok(target.matches('[data-flavor="vanilla"]'), 'found data-flavor');
+  });
 
-  // test('macroIf in element modifier position, when false', async function(assert) {
-  //   await render(hbs`<div data-test-target {{macroIf false data-optional data-flavor="vanilla" }} ></div>`);
-  //   let target = this.element.querySelector('[data-test-target]');
-  //   assert.ok(!target.matches('[data-optional]'));
-  //   assert.ok(!target.matches('[data-flavor="vanilla"]'));
-  // });
+  test('macroMaybeAttrs propagates bound paths', async function(assert) {
+    this.set('flavor', 'vanilla');
+    await render(hbs`<div data-test-target {{macroMaybeAttrs true data-flavor=this.flavor }} ></div>`);
+    let target = this.element.querySelector('[data-test-target]');
+    assert.ok(target.matches('[data-flavor="vanilla"]'), 'found data-flavor');
+  });
+
+  test('macroMaybeAttrs in element modifier position, when false', async function(assert) {
+    await render(hbs`<div data-test-target {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`);
+    let target = this.element.querySelector('[data-test-target]');
+    assert.ok(!target.matches('[data-optional]'));
+    assert.ok(!target.matches('[data-flavor="vanilla"]'));
+  });
 
   test('macroIf composes with other macros, true case', async function(assert) {
     assert.expect(1);

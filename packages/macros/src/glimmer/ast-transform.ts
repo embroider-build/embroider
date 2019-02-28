@@ -5,7 +5,7 @@ import dependencySatisfies from './dependency-satisfies';
 import {
   macroIfBlock,
   macroIfExpression,
-  macroIfElementModifier
+  maybeAttrs,
 } from './macro-if';
 
 export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
@@ -111,16 +111,18 @@ export function makeSecondTransform() {
             return macroIfExpression(node, env.syntax.builders);
           }
         },
-        ElementModifierStatement(node: any) {
-          if (node.path.type !== 'PathExpression') {
-            return;
-          }
-          if (inScope(scopeStack, node.path.parts[0])) {
-            return;
-          }
-          if (node.path.original === 'macroIf') {
-            return macroIfElementModifier(node, env.syntax.builders);
-          }
+        ElementNode(node: any) {
+          node.modifiers = node.modifiers.filter((modifier: any) => {
+            if (modifier.path.type !== 'PathExpression') {
+              return true;
+            }
+            if (inScope(scopeStack, modifier.path.parts[0])) {
+              return true;
+            }
+            if (modifier.path.original === 'macroMaybeAttrs') {
+              maybeAttrs(node, modifier, env.syntax.builders);
+            }
+          });
         }
       }
     };

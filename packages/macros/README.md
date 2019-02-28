@@ -156,11 +156,40 @@ These are analogous to the Javascript macros, although here (because we don't im
 1. Add `@embroider/macros` as `devDependency`.
 2. In `ember-cli-build.js`, do:
 
-    ```
-    import
+    ```js
+    let app = new EmberApp(defaults, {
+    '@embroider/macros': {
+      // this is how you configure your own package
+      setOwnConfig: {
+        mode: 'amazing',
+        count: 42,
+        inner: {
+          items: [
+            { name: 'Arthur', awesome: true }
+          ],
+          description: null
+        }
+      },
+      // this is how you can optionally send configuration into your
+      // dependencies, if those dependencies choose to use
+      // @embroider/macros configs.
+      setConfig: {
+        'ember-source': {
+          color: 'orange'
+        }
+      }
+    }
     ```
 
-`@embroider/macros`
+## Setting Configuration: from an Ember Addon
+
+1. Add `@embroider/macros` as `dependency`.
+2. In `index.js`, do:
+
+    ```js
+
+    ```
+
 
 ## Setting Configuration: Low Level API
 

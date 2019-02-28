@@ -4,15 +4,15 @@ import { MacrosConfig } from '../src';
 const { test } = QUnit;
 
 allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
-  QUnit.module(`ifMacro`, function() {
+  QUnit.module(`macroIf`, function() {
 
     config.setConfig(__filename, 'qunit', { items: [ { approved: true, other: null, size: 2.3 } ]});
 
     test('select consequent, drop alternate', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       export default function() {
-        return ifMacro(true, () => 'alpha', () => 'beta');
+        return macroIf(true, () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'alpha');
@@ -21,9 +21,9 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('select consequent, drop alternate', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       export default function() {
-        return ifMacro(false, () => 'alpha', () => 'beta');
+        return macroIf(false, () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'beta');
@@ -32,9 +32,9 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('select consequent, no alternate', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       export default function() {
-        return ifMacro(true, () => 'alpha');
+        return macroIf(true, () => 'alpha');
       }
       `);
       assert.equal(runDefault(code), 'alpha');
@@ -42,9 +42,9 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('drop consequent, no alternate', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       export default function() {
-        return ifMacro(false, () => 'alpha');
+        return macroIf(false, () => 'alpha');
       }
       `);
       assert.equal(runDefault(code), undefined);
@@ -52,12 +52,12 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('drops imports that are only used in the unused branch', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       import a from 'module-a';
       import b from 'module-b';
       import c from 'module-c';
       export default function() {
-        return ifMacro(true, () => a, () => b);
+        return macroIf(true, () => a, () => b);
       }
       `);
       assert.ok(/module-a/.test(code), 'have module-a');
@@ -66,12 +66,12 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('leaves unrelated unused imports alone', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       import a from 'module-a';
       import b from 'module-b';
       import c from 'module-c';
       export default function() {
-        return ifMacro(true, () => a, () => b);
+        return macroIf(true, () => a, () => b);
       }
       `);
       assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
@@ -79,13 +79,13 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('leaves unrelated used imports alone', function(assert) {
       let code = transform(`
-      import { ifMacro } from '@embroider/macros';
+      import { macroIf } from '@embroider/macros';
       import a from 'module-a';
       import b from 'module-b';
       import c from 'module-c';
       export default function() {
         c();
-        return ifMacro(true, () => a, () => b);
+        return macroIf(true, () => a, () => b);
       }
       `);
       assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
@@ -93,9 +93,9 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('composes with other macros', function(assert) {
       let code = transform(`
-      import { ifMacro, dependencySatisfies } from '@embroider/macros';
+      import { macroIf, dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return ifMacro(dependencySatisfies('qunit', '*'), () => 'alpha', () => 'beta');
+        return macroIf(dependencySatisfies('qunit', '*'), () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'alpha');
@@ -104,11 +104,11 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
 
     test('can see booleans inside getConfig', function(assert) {
       let code = transform(`
-      import { ifMacro, getConfig } from '@embroider/macros';
+      import { macroIf, getConfig } from '@embroider/macros';
       export default function() {
         // this deliberately chains three kinds of property access syntax: by
         // identifier, by numeric index, and by string literal.
-        return ifMacro(getConfig('qunit').items[0]["approved"], () => 'alpha', () => 'beta');
+        return macroIf(getConfig('qunit').items[0]["approved"], () => 'alpha', () => 'beta');
       }
       `);
       assert.equal(runDefault(code), 'alpha');

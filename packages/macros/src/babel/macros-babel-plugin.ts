@@ -4,7 +4,7 @@ import { PackageCache } from '@embroider/core';
 import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
-import ifMacro from './if-macro';
+import macroIf from './macro-if';
 
 // we're assuming parallelized babel, so this doesn't try to share with anybody
 // other than our own module scope. As an optimization we could optionally
@@ -53,8 +53,8 @@ export default function main() {
         if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
           getConfig(path, state, packageCache, true);
         }
-        if (path.referencesImport('@embroider/macros', 'ifMacro')) {
-          state.pendingTasks.push(() => ifMacro(path, state));
+        if (path.referencesImport('@embroider/macros', 'macroIf')) {
+          state.pendingTasks.push(() => macroIf(path, state));
         }
       },
     }

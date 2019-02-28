@@ -4,7 +4,7 @@ export function dependencySatisfies(packageName: string, semverRange: string): b
   throw new Oops(packageName, semverRange);
 }
 
-export function ifMacro(predicate: boolean, consequent: () => void, alternate: () => void) {
+export function macroIf(predicate: boolean, consequent: () => void, alternate: () => void) {
   throw new Oops(predicate, consequent, alternate);
 }
 

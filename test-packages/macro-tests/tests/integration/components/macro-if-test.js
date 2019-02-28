@@ -38,6 +38,14 @@ module('Integration | Macro | macroIf', function(hooks) {
     await render(hbs`{{my-assertion (macroIf false 'red' 'blue') }}`);
   });
 
+  test('macroIf in subexpression position when false with no alternate', async function(assert) {
+    assert.expect(1);
+    this.owner.register('helper:my-assertion', helper(function([value]) {
+      assert.strictEqual(value, undefined);
+    }));
+    await render(hbs`{{my-assertion (macroIf false 'red') }}`);
+  });
+
   test('macroIf in element modifier position, when true', async function(assert) {
     await render(hbs`<div data-test-target {{macroIf true data-optional data-flavor="vanilla" }} ></div>`);
     let target = this.element.querySelector('[data-test-target]');

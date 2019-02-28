@@ -2,15 +2,15 @@ import { MacrosConfig } from '..';
 import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
-import { macroIfBlock } from './macro-if';
+import { macroIfBlock, macroIfExpression } from './macro-if';
 
-export default function makeTransform(baseDir: string, config: MacrosConfig) {
-  return function embroiderMacrosTransform(env: { moduleName: string, syntax: { builders: any } }) {
+export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
+  return function embroiderFirstMacrosTransform(env: { syntax: { builders: any } }) {
 
     let scopeStack: string[][] = [];
 
     return {
-      name: '@embroider/macros',
+      name: '@embroider/macros/first',
 
       visitor: {
         Program: {
@@ -22,19 +22,6 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
           exit(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
-            }
-          }
-        },
-        BlockStatement: {
-          exit(node: any) {
-            if (node.path.type !== 'PathExpression') {
-              return;
-            }
-            if (inScope(scopeStack, node.path.parts[0])) {
-              return;
-            }
-            if (node.path.original === 'macroIf') {
-              return macroIfBlock(node);
             }
           }
         },
@@ -72,6 +59,54 @@ export default function makeTransform(baseDir: string, config: MacrosConfig) {
             return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir), env.syntax.builders));
           }
         },
+      }
+    };
+  };
+}
+
+export function makeSecondTransform() {
+  return function embroiderSecondMacrosTransform(env: { syntax: { builders: any } }) {
+
+    let scopeStack: string[][] = [];
+
+    return {
+      name: '@embroider/macros/second',
+
+      visitor: {
+        Program: {
+          enter(node: any) {
+            if (node.blockParams.length > 0) {
+              scopeStack.push(node.blockParams);
+            }
+          },
+          exit(node: any) {
+            if (node.blockParams.length > 0) {
+              scopeStack.pop();
+            }
+          }
+        },
+        BlockStatement(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (inScope(scopeStack, node.path.parts[0])) {
+            return;
+          }
+          if (node.path.original === 'macroIf') {
+            return macroIfBlock(node);
+          }
+        },
+        SubExpression(node: any) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (inScope(scopeStack, node.path.parts[0])) {
+            return;
+          }
+          if (node.path.original === 'macroIf') {
+            return macroIfExpression(node, env.syntax.builders);
+          }
+        }
       }
     };
   };

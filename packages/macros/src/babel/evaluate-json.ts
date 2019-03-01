@@ -1,18 +1,25 @@
 import { NodePath } from '@babel/traverse';
 
+function evaluateKey(path: NodePath): { confident: boolean, value: any } {
+  let first = evaluateJSON(path);
+  if (first.confident) {
+    return first;
+  }
+  if (path.isIdentifier()) {
+    return { confident: true, value: path.node.name };
+  }
+  return { confident: false, value: undefined };
+}
+
 export default function evaluateJSON(path: NodePath): { confident: boolean, value: any } {
   if (path.isMemberExpression()) {
-    let property = evaluateJSON(assertNotArray(path.get('property')));
+    let property = evaluateKey(assertNotArray(path.get('property')));
     if (property.confident) {
       let object = evaluateJSON(path.get('object'));
       if (object.confident) {
         return { confident: true, value: object.value[property.value] };
       }
     }
-  }
-
-  if (path.isIdentifier()) {
-    return { confident: true, value: path.node.name };
   }
 
   if (path.isStringLiteral()) {
@@ -58,14 +65,14 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
 // these are here because the type definitions we're using don't seem to know
 // exactly which NodePath properties are arrays and which aren't.
 
-function assertNotArray<T>(input: T | T[]): T {
+export function assertNotArray<T>(input: T | T[]): T {
   if (Array.isArray(input)) {
     throw new Error(`bug: not supposed to be an array`);
   }
   return input;
 }
 
-function assertArray<T>(input: T | T[]): T[] {
+export function assertArray<T>(input: T | T[]): T[] {
   if (!Array.isArray(input)) {
     throw new Error(`bug: supposed to be an array`);
   }

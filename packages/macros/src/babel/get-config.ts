@@ -3,26 +3,28 @@ import { identifier, File, ExpressionStatement, CallExpression } from '@babel/ty
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
+import error from './error';
+import { assertArray } from './evaluate-json';
 
 export default function getConfig(path: NodePath, state: State, packageCache: PackageCache, own: boolean) {
   if (path.parent.type !== 'CallExpression') {
-    throw new Error(`You can only use getConfig as a function call`);
+    throw error(path, `You can only use ${own ? 'getOwnConfig' : 'getConfig'} as a function call`);
   }
   let packageName: string | undefined;
   if (own) {
     if (path.parent.arguments.length !== 0) {
-      throw new Error(`getOwnConfig takes zero arguments, you passed ${path.parent.arguments.length}`);
+      throw error(path.parentPath, `getOwnConfig takes zero arguments, you passed ${path.parent.arguments.length}`);
     }
     packageName = undefined;
   } else {
     if (path.parent.arguments.length !== 1) {
-      throw new Error(`getConfig takes exactly one argument, you passed ${path.parent.arguments.length}`);
+      throw error(path.parentPath, `getConfig takes exactly one argument, you passed ${path.parent.arguments.length}`);
     }
-    let packagePath = path.parent.arguments[0];
-    if (packagePath.type !== 'StringLiteral') {
-      throw new Error(`the argument to getConfig must be a string literal`);
+    let packageNode = path.parent.arguments[0];
+    if (packageNode.type !== 'StringLiteral') {
+      throw error(assertArray(path.parentPath.get('arguments'))[0], `the argument to getConfig must be a string literal`);
     }
-    packageName = packagePath.value;
+    packageName = packageNode.value;
   }
   let config: unknown | undefined;
   let pkg = targetPackage(sourceFile(path, state), packageName, packageCache);

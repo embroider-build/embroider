@@ -3,20 +3,22 @@ import { booleanLiteral } from '@babel/types';
 import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
 import { PackageCache } from '@embroider/core';
+import error from './error';
+import { assertArray } from './evaluate-json';
 
 export default function dependencySatisfies(path: NodePath, state: State, packageCache: PackageCache) {
   if (path.parent.type !== 'CallExpression') {
-    throw new Error(`You can only use dependencySatisfies as a function call`);
+    throw error(path, `You can only use dependencySatisfies as a function call`);
   }
   if (path.parent.arguments.length !== 2) {
-    throw new Error(`dependencySatisfies takes exactly two arguments, you passed ${path.parent.arguments.length}`);
+    throw error(path.parentPath, `dependencySatisfies takes exactly two arguments, you passed ${path.parent.arguments.length}`);
   }
   let [packageName, range] = path.parent.arguments;
   if (packageName.type !== 'StringLiteral') {
-    throw new Error(`the first argument to dependencySatisfies must be a string literal`);
+    throw error(assertArray(path.parentPath.get('arguments'))[0], `the first argument to dependencySatisfies must be a string literal`);
   }
   if (range.type !== 'StringLiteral') {
-    throw new Error(`the second argument to dependencySatisfies must be a string literal`);
+    throw error(assertArray(path.parentPath.get('arguments'))[1], `the second argument to dependencySatisfies must be a string literal`);
   }
   let sourceFileName = sourceFile(path, state);
   try {

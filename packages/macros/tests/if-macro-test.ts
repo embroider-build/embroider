@@ -135,6 +135,18 @@ allBabelVersions(function (transform: (code: string) => string, config: MacrosCo
       assert.ok(!/module-b/.test(code), 'do not have module-b');
     });
 
+    test('non-static predicate refuses to build', function(assert) {
+      assert.throws(() => {
+        transform(`
+        import { macroIf } from '@embroider/macros';
+        import other from 'other';
+        export default function() {
+          return macroIf(other, () => a, () => b);
+        }
+        `);
+      },/the first argument to macroIf must be statically known/);
+    });
+
     test('leaves unrelated unused imports alone', function(assert) {
       let code = transform(`
       import { macroIf } from '@embroider/macros';

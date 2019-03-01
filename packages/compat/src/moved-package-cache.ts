@@ -232,17 +232,16 @@ class MovedSet {
 }
 
 function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) {
-  return new Proxy(pkg, {
+  let p: Package = new Proxy(pkg, {
     get(pkg: Package, prop: string | number | symbol) {
       if (prop === 'dependencies') {
         return pkg.dependencies.map(getMovedPackage);
       }
       if (prop === 'findDescendants') {
-        return function(...args: any[]) {
-          return pkg.findDescendants(...args).map(getMovedPackage);
-        };
+        return pkg.findDescendants.bind(p);
       }
       return (pkg as any)[prop];
     }
   });
+  return p;
 }

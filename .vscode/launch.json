@@ -50,7 +50,8 @@
         "build"
       ],
       "env": {
-        "JOBS": "1"
+        "JOBS": "1",
+        //"CLASSIC": "true",
       }
     },
   ]

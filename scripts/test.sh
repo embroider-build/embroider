@@ -2,9 +2,9 @@
 
 ./scripts/parallel --tag <<EOF
 yarn node-test
-cd test-packages/macro-tests && CLASSIC=true ember test
-cd test-packages/macro-tests && ember test
-cd test-packages/macro-sample-addon && CLASSIC=true ember test
+cd test-packages/macro-tests && CLASSIC=true yarn test
+cd test-packages/macro-tests && yarn test
+cd test-packages/macro-sample-addon && CLASSIC=true yarn test
 EOF
 
 status=$?

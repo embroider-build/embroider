@@ -32,7 +32,6 @@ export default function getConfig(path: NodePath, state: State, packageCache: Pa
     config = state.opts.userConfigs[pkg.root];
   }
   path.parentPath.replaceWith(literalConfig(config));
-  state.removed.push(path.parentPath);
 }
 
 function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {

@@ -19,28 +19,10 @@ export default function main() {
           state.removed = [];
           state.pendingTasks = [];
         },
-        exit(_: NodePath, state: State) {
+        exit(path: NodePath, state: State) {
           state.pendingTasks.forEach(task => task());
-          // Here we prune away the imports of macros that only exist at compile
-          // time.
-          if (state.removed.length === 0) {
-            return;
-          }
-          let moduleScope = state.removed[0].findParent(path => path.type === 'Program').scope;
-          for (let name of Object.keys(moduleScope.bindings)) {
-            let binding = moduleScope.bindings[name];
-            let bindingPath = binding.path;
-            if (bindingPath.isImportSpecifier() || bindingPath.isImportDefaultSpecifier()) {
-              if (binding.referencePaths.length > 0 && binding.referencePaths.every(path => wasRemoved(path, state))) {
-                bindingPath.remove();
-                let importPath = bindingPath.parentPath as NodePath<ImportDeclaration>;
-                if (importPath.get('specifiers').length === 0) {
-                  importPath.remove();
-                }
-              }
-            }
-          }
-
+          pruneRemovedImports(state);
+          pruneMacroImports(path);
         }
       },
       ReferencedIdentifier(path: NodePath, state: State) {
@@ -63,4 +45,39 @@ export default function main() {
 
 function wasRemoved(path: NodePath, state: State) {
   return state.removed.includes(path) || Boolean(path.findParent(p => state.removed.includes(p)));
+}
+
+// This removes imports that are only referred to from within code blocks that
+// we killed.
+function pruneRemovedImports(state: State) {
+  if (state.removed.length === 0) {
+    return;
+  }
+  let moduleScope = state.removed[0].findParent(path => path.type === 'Program').scope;
+  for (let name of Object.keys(moduleScope.bindings)) {
+    let binding = moduleScope.bindings[name];
+    let bindingPath = binding.path;
+    if (bindingPath.isImportSpecifier() || bindingPath.isImportDefaultSpecifier()) {
+      if (binding.referencePaths.length > 0 && binding.referencePaths.every(path => wasRemoved(path, state))) {
+        bindingPath.remove();
+        let importPath = bindingPath.parentPath as NodePath<ImportDeclaration>;
+        if (importPath.get('specifiers').length === 0) {
+          importPath.remove();
+        }
+      }
+    }
+  }
+}
+
+// This removes imports from "@embroider/macros" itself, because we have no
+// runtime behavior at all.
+function pruneMacroImports(path: NodePath) {
+  if (!path.isProgram()) {
+    return;
+  }
+  for (let topLevelPath of path.get('body')) {
+    if (topLevelPath.isImportDeclaration() && topLevelPath.get('source').node.value === '@embroider/macros') {
+      topLevelPath.remove();
+    }
+  }
 }

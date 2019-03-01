@@ -56,6 +56,18 @@ allBabelVersions(function (transform: (code: string) => string) {
       assert.ok(!/@embroider\/macros/.test(code), `entire import statement should not be in the output: ${code}`);
     });
 
+    test('unused import gets removed', function(assert) {
+      let code = transform(`
+      import { dependencySatisfies } from '@embroider/macros';
+      export default function() {
+        return 1;
+      }
+      `);
+      assert.ok(!/dependencySatisfies/.test(code), `dependencySatisfies should not be in the output: ${code}`);
+      assert.ok(!/@embroider\/macros/.test(code), `entire import statement should not be in the output: ${code}`);
+    });
+
+
     test('non call error', function(assert) {
       assert.throws(() => {
         transform(`

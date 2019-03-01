@@ -456,7 +456,10 @@ These are features that are only supported in apps, not addons:
 
 - synchronous dynamic imports are allowed in the app’s Javascript. See next subsection.
 - `"template-compiler"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
-- `"babel-config"`: in Ember package metadata, the relative path to a module that exports *serializable* babel options. These are the app’s preferred settings, and final stage packagers should use these as input when they configure their own babel support.
+- `"babel-config"`: in Ember package metadata, the relative path to a module that exports a value with three properties:
+  - `babel`: the app’s preferred babel settings
+  - `parallelSafe`: a boolean, true if the `babel` settings can be used in a new node process.
+  - `version`: the version of babel the app's settings were written for.
 - Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with its exposed `"babel-config"`. This is an optimization — we *could* logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
 
 **Apps can use synchronous dynamic “imports”**

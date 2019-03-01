@@ -12,8 +12,7 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { todo } from '@embroider/core/src/messages';
-import { synthesize } from './parallel-babel-shim';
+import { synthesize, synthesizeGlobal } from './parallel-babel-shim';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 
@@ -178,6 +177,7 @@ export default class V1App implements V1Package {
 
   babelConfig(finalRoot: string) {
     let syntheticPlugins = new Map();
+    let parallelSafe = true;
 
     let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (!plugins) {
@@ -206,7 +206,13 @@ export default class V1App implements V1Package {
         return name;
       }
 
-      todo(`Found a babel plugin that we couldn't deal with`);
+      // if we get this far, we have an opaque, non-serializable plugin. We can
+      // still work with that, but it will force us to be non-parallel in the
+      // stage3 packager.
+      let name = `_synthetic_babel_plugin_${syntheticPlugins.size}_.js`;
+      syntheticPlugins.set(name, synthesizeGlobal(plugin));
+      parallelSafe = false;
+      return name;
     }).filter(Boolean);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
@@ -231,7 +237,7 @@ export default class V1App implements V1Package {
         }]
       ]
     };
-    return { config, syntheticPlugins };
+    return { config, syntheticPlugins, parallelSafe };
   }
 
   private debugMacrosPlugin() {

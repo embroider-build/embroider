@@ -6,7 +6,7 @@ import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
-import { todo, unsupported, debug } from './messages';
+import { todo, unsupported, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import flatMap from 'lodash/flatMap';
 import sortBy from 'lodash/sortBy';
@@ -77,7 +77,8 @@ export interface AppAdapter<TreeNames> {
   // - `syntheticPlugins` is a map from plugin names to Javascript source code
   //    for babel plugins. This can make it possible to serialize babel
   //    configs that would otherwise not be serializable.
-  babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
+  // - `parallelSafe` true if this config can be used in a new node process
+  babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string>, parallelSafe: boolean };
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -542,7 +543,11 @@ export class AppBuilder<TreeNames> {
   }
 
   private addBabelConfig() {
-    let { config, syntheticPlugins } = this.babelConfig;
+    let { config, syntheticPlugins, parallelSafe } = this.babelConfig;
+
+    if (!parallelSafe) {
+      warn('Your build is slower because some babel plugins are non-serializable');
+    }
 
     for (let [name, source] of syntheticPlugins) {
       let fullName = join(this.root, name);
@@ -554,7 +559,10 @@ export class AppBuilder<TreeNames> {
     writeFileSync(
       join(this.root, "_babel_config_.js"),
       `
-    module.exports = ${JSON.stringify(config, null, 2)};
+    module.exports = ${JSON.stringify({
+      babel: config,
+      parallelSafe,
+    }, null, 2)};
     `,
       "utf8"
     );

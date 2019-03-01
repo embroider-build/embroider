@@ -216,10 +216,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              process.env.JOBS === '1' ? null : 'thread-loader',
+              (process.env.JOBS === '1' || !babelConfig.parallelSafe)? null : 'thread-loader',
               {
-                loader: 'babel-loader',
-                options: Object.assign({}, babelConfig)
+                loader: 'babel-loader', // todo use babelConfig.version to ensure the correct loader
+                options: Object.assign({}, babelConfig.babel)
               }
             ].filter(Boolean)
           },

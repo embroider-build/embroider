@@ -29,6 +29,16 @@
       "env": {
         "JOBS": "1"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Serve macro-tests app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-tests",
+      "args": [
+        "s"
+      ]
     }
   ]
 }

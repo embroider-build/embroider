@@ -49,6 +49,26 @@ export function synthesize(config: any) {
   return template({ here: __filename, config });
 }
 
+export function synthesizeGlobal(pluginInfo: any) {
+  let g = global as any;
+  if (!g.__embroiderSlowBabelPlugins__) {
+    g.__embroiderSlowBabelPlugins__ = [];
+  }
+  let index = g.__embroiderSlowBabelPlugins__.length;
+
+  if (Array.isArray(pluginInfo)) {
+    let [plugin, options] = pluginInfo;
+    g.__embroiderSlowBabelPlugins__.push(withOptions(plugin, options));
+  } else {
+    g.__embroiderSlowBabelPlugins__.push(pluginInfo);
+  }
+
+  return `if (!global.__embroiderSlowBabelPlugins__) {
+    throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable babel plugins')
+  };
+  module.exports = global.__embroiderSlowBabelPlugins__[${index}];`;
+}
+
 export default function parallelBabelShim(parallelApiInfo: any) {
   // this returns a babel plugin configuration entry, which is either a pair or
   // a scalar, so we need to unpack both cases.

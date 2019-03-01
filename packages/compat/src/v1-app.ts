@@ -245,8 +245,11 @@ export default class V1App implements V1Package {
         [resolve.sync("babel-preset-env", { basedir: this.root }), {
           targets: babelInstance._getTargets(),
           modules: false
-        }]
-      ]
+        }],
+      ],
+      // this is here because broccoli-middleware can't render a codeFrame full
+      // of terminal codes.
+      highlightCode: false
     };
     return { config, syntheticPlugins, parallelSafe };
   }

@@ -420,13 +420,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           return;
         }
         if (stats.hasErrors()) {
-          let templateError = stats.compilation.errors.find(e => e.error && e.error.type === 'Template Compiler Error');
-          if (templateError) {
-            reject(templateError.error);
-          } else {
-            this.consoleWrite(stats.toString());
-            reject(new Error('webpack returned errors to @embroider/webpack'));
-          }
+          reject(this.findBestError(stats.compilation.errors));
           return;
         }
         if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
@@ -449,6 +443,31 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
       }
     ];
+  }
+
+  private findBestError(errors: any[]) {
+    for (let error of errors) {
+      let file;
+      while (error) {
+        if (error.module && error.module.rawRequest) {
+          file = relative(this.pathToVanillaApp, error.module.userRequest);
+        }
+        if (error.codeFrame || error.loc) {
+          // this looks like a good error. Let's also make sure any location info
+          // is copied onto the root of the error because that's where broccoli
+          // looks for it.
+          if (!error.file) {
+            error.file = file || (error.loc ? error.loc.file : null) || (error.location ? error.location.file : null);
+          }
+          if (error.line == null) {
+            error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
+          }
+          return error;
+        }
+        error = error.error;
+      }
+    }
+    return errors[0];
   }
 
 };
@@ -476,3 +495,4 @@ interface StatSummary {
 }
 
 export { Webpack };
+

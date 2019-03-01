@@ -126,6 +126,8 @@ export default class ImportParser extends Plugin {
       if (err.name !== 'SyntaxError') {
         throw err;
       }
+      // This is OK. The file is still going to get sent through the rest of the
+      // normal babel processing, which will generate a nice error for it.
       debug('Ignoring an unparseable file');
     }
     let imports : Import[] = [];

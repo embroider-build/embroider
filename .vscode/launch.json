@@ -38,7 +38,11 @@
       "cwd": "${workspaceFolder}/test-packages/macro-tests",
       "args": [
         "s"
-      ]
+      ],
+      "env": {
+        //"CLASSIC": "true",
+        "JOBS": "1",
+      }
     },
     {
       "type": "node",

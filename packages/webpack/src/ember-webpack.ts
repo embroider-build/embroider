@@ -495,4 +495,3 @@ interface StatSummary {
 }
 
 export { Webpack };
-

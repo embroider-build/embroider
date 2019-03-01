@@ -39,6 +39,19 @@
       "args": [
         "s"
       ]
-    }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build macro-sample-addon",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-sample-addon",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1"
+      }
+    },
   ]
 }

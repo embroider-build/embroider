@@ -100,7 +100,7 @@ export default class V1App implements V1Package {
   get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
-    let index: Tree = new Funnel(new WatchedDir(join(this.root, 'app')), {
+    let index: Tree = new Funnel(this.app.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
@@ -295,19 +295,17 @@ export default class V1App implements V1Package {
   }
 
   private combinedVendor(addonTrees: Tree[]): Tree {
-    return mergeTrees(
-      [
-        ...addonTrees.map(tree => new Funnel(tree, {
-          allowEmpty: true,
-          srcDir: 'vendor',
-          destDir: 'vendor',
-        })),
-        new Funnel(this.vendorTree, {
-          destDir: 'vendor'
-        })
-      ],
-      { overwrite: true }
-    );
+    let trees = addonTrees.map(tree => new Funnel(tree, {
+      allowEmpty: true,
+      srcDir: 'vendor',
+      destDir: 'vendor',
+    }));
+    if (this.vendorTree) {
+      trees.push(new Funnel(this.vendorTree, {
+        destDir: 'vendor'
+      }));
+    }
+    return mergeTrees(trees, { overwrite: true });
   }
 
   private addNodeAssets(inputTree: Tree): Tree {

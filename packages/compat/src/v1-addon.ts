@@ -24,6 +24,8 @@ import AddToTree from "./add-to-tree";
 import ApplyASTTransforms from './apply-ast-transforms';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
+import { isEmbroiderMacrosPlugin } from "@embroider/macros";
+import { TransformOptions } from "@babel/core";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -218,6 +220,7 @@ export default class V1Addon implements V1Package {
     if (!packageOptions.babel) {
       packageOptions.babel = {};
     }
+    let babelConfig = packageOptions.babel as TransformOptions;
 
     Object.assign(packageOptions['ember-cli-babel'], {
       compileModules: false,
@@ -231,10 +234,19 @@ export default class V1Addon implements V1Package {
       return;
     }
 
-    if (!packageOptions.babel.plugins) {
-      packageOptions.babel.plugins = [];
+    if (!babelConfig.plugins) {
+      babelConfig.plugins = [];
+    } else {
+      let plugins = babelConfig.plugins;
+      let macros = plugins.find(isEmbroiderMacrosPlugin);
+      if (macros) {
+        // the point of @embroider/macros is that it's allowed to stay in v2
+        // addon publication format, so it doesn't need to run here in stage1.
+        // We always run it in stage3.
+        plugins.splice(plugins.indexOf(macros), 1);
+      }
     }
-    packageOptions.babel.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
+    babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
       ownName: this.name
     } ]);
   }

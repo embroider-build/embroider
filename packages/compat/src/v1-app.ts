@@ -16,6 +16,8 @@ import { synthesize, synthesizeGlobal } from './parallel-babel-shim';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
+import { TransformOptions } from '@babel/core';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -199,6 +201,12 @@ export default class V1App implements V1Package {
       // We want to resolve (not require) the app's configured plugins relative
       // to the app. We want to keep everything serializable.
 
+      if (isEmbroiderMacrosPlugin(plugin)) {
+        // we deliberately drop @embroider/macros in favor of the global one in
+        // stage3. It's configured differently.
+        return;
+      }
+
       // bare string plugin name
       if (typeof plugin === 'string') {
         return this.resolveBabelPlugin(plugin, finalRoot);
@@ -238,7 +246,7 @@ export default class V1App implements V1Package {
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
 
-    let config = {
+    let config: TransformOptions = {
       babelrc: false,
       plugins,
       presets: [
@@ -410,6 +418,7 @@ export default class V1App implements V1Package {
   }
 
   get htmlbarsPlugins(): TemplateCompilerPlugins {
+    // TODO: remove the @embroider/macros plugin here too
     let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     let options = addon.htmlbarsOptions();
     return options.plugins;

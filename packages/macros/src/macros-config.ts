@@ -113,6 +113,10 @@ export default class MacrosConfig {
       // setting config before we generate the userConfigs
       get userConfigs() { return self.userConfigs; },
       owningPackageRoot,
+
+      // This is used as a signature so we can detect ourself among the plugins
+      // emitted from v1 addons.
+      embroiderMacrosConfigMarker: true,
     }];
   }
 

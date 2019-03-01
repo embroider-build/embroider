@@ -17,6 +17,8 @@ import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } fro
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
+import { TransformOptions } from '@babel/core';
+import { MacrosConfig } from '@embroider/macros';
 
 export type EmberENV = unknown;
 
@@ -78,7 +80,7 @@ export interface AppAdapter<TreeNames> {
   //    for babel plugins. This can make it possible to serialize babel
   //    configs that would otherwise not be serializable.
   // - `parallelSafe` true if this config can be used in a new node process
-  babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string>, parallelSafe: boolean };
+  babelConfig(finalRoot: string): { config: TransformOptions, syntheticPlugins: Map<string, string>, parallelSafe: boolean };
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -244,6 +246,13 @@ export class AppBuilder<TreeNames> {
       ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
     );
     let babel = this.adapter.babelConfig(this.root);
+
+    if (!babel.config.plugins) {
+      babel.config.plugins = [];
+    }
+
+    // this is @embroider/macros configured for full stage3 resolution
+    babel.config.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
@@ -552,8 +561,8 @@ export class AppBuilder<TreeNames> {
     for (let [name, source] of syntheticPlugins) {
       let fullName = join(this.root, name);
       writeFileSync(fullName, source, 'utf8');
-      let index = config.plugins.indexOf(name);
-      config.plugins[index] = fullName;
+      let index = config.plugins!.indexOf(name);
+      config.plugins![index] = fullName;
     }
 
     writeFileSync(

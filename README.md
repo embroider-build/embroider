@@ -55,4 +55,4 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 
 # Tests
 
-There aren't any yet. Initial development has been done entirely against real apps, because even characterizing all the current behaviors we need to be compatible with is a big piece of the work.
+`yarn test` depends on bash, so you will have a bad time on non-UNIX. Sorry not sorry. It runs multiple test suites via GNU Parallel. You can also run each of the individual suites directly.

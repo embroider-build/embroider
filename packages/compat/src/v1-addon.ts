@@ -435,6 +435,7 @@ export default class V1Addon implements V1Package {
         destDir: appPublicationDir
       });
     }
+
     if (appTree) {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
@@ -448,6 +449,15 @@ export default class V1Addon implements V1Package {
       appTree = this.maybeSetAppJS(built, appTree);
       built.importParsers.push(this.parseImports(appTree));
       built.trees.push(appTree);
+    }
+
+    if (this.addonInstance.isDevelopingAddon() && this.addonInstance.hintingEnabled()) {
+      let hintTree = this.addonInstance.jshintAddonTree();
+      if (hintTree) {
+        hintTree = this.maybeSetAppJS(built, new Funnel(hintTree, { destDir: appPublicationDir }));
+        built.importParsers.push(this.parseImports(hintTree));
+        built.trees.push(hintTree);
+      }
     }
   }
 

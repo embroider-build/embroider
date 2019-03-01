@@ -46,9 +46,10 @@ export class MovedPackageCache extends PackageCache {
       // Update our rootCache so we don't need to rediscover moved packages
       let movedPkg;
       if (originalPkg === origApp) {
-        // this replaces the origApp package with one that will use moved
-        // dependencies (origApp has already cached the pre-moved dependencies)
-        movedPkg = new Package(origApp.root, true, this);
+        // this wraps the original app package with one that will use moved
+        // dependencies. The app itself hasn't moved yet, which is why a proxy
+        // is needed at this level.
+        movedPkg = packageProxy(origApp, (pkg: Package) => this.moved.get(pkg) || pkg);
         this.app = movedPkg;
         rootCache.set(movedPkg.root, movedPkg);
       } else {
@@ -228,4 +229,20 @@ class MovedSet {
       return shorter.slice(0, i);
     }, pathSegments(this.app.root)).length;
   }
+}
+
+function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) {
+  return new Proxy(pkg, {
+    get(pkg: Package, prop: string | number | symbol) {
+      if (prop === 'dependencies') {
+        return pkg.dependencies.map(getMovedPackage);
+      }
+      if (prop === 'findDescendants') {
+        return function(...args: any[]) {
+          return pkg.findDescendants(...args).map(getMovedPackage);
+        };
+      }
+      return (pkg as any)[prop];
+    }
+  });
 }

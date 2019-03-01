@@ -30,7 +30,7 @@ export default class V1InstanceCache {
   packageCache = new MovablePackageCache();
 
   private constructor(oldApp: any, private options: Required<Options>) {
-    this.app = new V1App(oldApp, this.packageCache);
+    this.app = V1App.create(oldApp, this.packageCache);
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants

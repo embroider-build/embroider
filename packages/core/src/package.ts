@@ -13,7 +13,7 @@ export default class Package {
   constructor(
     readonly root: string,
     mayUseDevDeps: boolean,
-    private packageCache: PackageCache
+    protected packageCache: PackageCache
   ) {
     this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies', 'peerDependencies'] : ['dependencies', 'peerDependencies'];
   }
@@ -84,4 +84,8 @@ export default class Package {
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
     return names.map(name => this.packageCache.resolve(name, this));
   }
+}
+
+export interface PackageConstructor {
+  new(root: string, mayUseDevDeps: boolean, packageCache: PackageCache): Package;
 }

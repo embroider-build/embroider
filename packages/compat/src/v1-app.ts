@@ -15,11 +15,22 @@ import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/cor
 import { synthesize, synthesizeGlobal } from './parallel-babel-shim';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
+import DummyPackage from './dummy-package';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
+
 export default class V1App implements V1Package {
-  constructor(private app: any, private packageCache: PackageCache) {
+  static create(app: any, packageCache: PackageCache): V1App {
+    if (app.project.pkg.keywords && app.project.pkg.keywords.includes('ember-addon')) {
+      // we are a dummy app, which is unfortunately weird and special
+      return new V1DummyApp(app, packageCache);
+    } else {
+      return new V1App(app, packageCache);
+    }
+  }
+
+  protected constructor(protected app: any, private packageCache: PackageCache) {
   }
 
   // always the name from package.json. Not the one that apps may have weirdly
@@ -494,6 +505,26 @@ export default class V1App implements V1Package {
 
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
+  }
+}
+
+class V1DummyApp extends V1App {
+  constructor(app: any, packageCache: PackageCache) {
+    super(app, packageCache);
+    let owningAddon = packageCache.getAddon(this.app.project.root);
+    let dummyPackage = new DummyPackage(this.root, owningAddon, packageCache);
+    packageCache.overridePackage(dummyPackage);
+    packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, owningAddon);
+  }
+
+  get name() : string {
+    // here we accept the ember-cli behavior
+    return this.app.name;
+  }
+
+  get root(): string {
+    // this is the Known Hack for finding the true root of the dummy app.
+    return join(this.app.project.configPath(), '..', '..');
   }
 }
 

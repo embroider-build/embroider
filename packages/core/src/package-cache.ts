@@ -18,6 +18,16 @@ export default class PackageCache {
     return this.getPackage(packageRoot, false);
   }
 
+  overridePackage(pkg: Package) {
+    this.rootCache.set(pkg.root, pkg);
+  }
+
+  overrideResolution(packageName: string, fromPackage: Package, answer: Package) {
+    this.rootCache.set(answer.root, answer);
+    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
+    cache.set(packageName, answer);
+  }
+
   protected rootCache: Map<string, Package> = new Map();
   protected resolutionCache: Map<Package, Map<string, Package>> = new Map();
 

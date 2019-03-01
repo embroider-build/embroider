@@ -1,4 +1,3 @@
-import BasicPackage from "./basic-package";
 import Package from './package';
 import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
@@ -29,7 +28,7 @@ export default class PackageCache {
   private getPackage(packageRoot: string, isAddon: boolean): Package {
     let root = realpathSync(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
-      return new BasicPackage(root, !isAddon, this);
+      return new Package(root, !isAddon, this);
     });
     return p;
   }

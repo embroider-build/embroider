@@ -4,10 +4,19 @@ import { join } from 'path';
 import get from 'lodash/get';
 import { AddonMeta } from './metadata';
 import { Tree } from 'broccoli-plugin';
+import PackageCache from './package-cache';
+import flatMap from 'lodash/flatMap';
 
-export default abstract class Package {
-  abstract readonly root: string;
-  abstract readonly dependencies: Package[];
+export default class Package {
+  private dependencyKeys: ("dependencies" | "devDependencies" | "peerDependencies")[];
+
+  constructor(
+    readonly root: string,
+    mayUseDevDeps: boolean,
+    private packageCache: PackageCache
+  ) {
+    this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies', 'peerDependencies'] : ['dependencies', 'peerDependencies'];
+  }
 
   get name(): string {
     return this.packageJSON.name;
@@ -68,5 +77,11 @@ export default abstract class Package {
   // you are actively developing one.
   get mayRebuild(): boolean {
     return false;
+  }
+
+  @Memoize()
+  get dependencies(): Package[] {
+    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
+    return names.map(name => this.packageCache.resolve(name, this));
   }
 }

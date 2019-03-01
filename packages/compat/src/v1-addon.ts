@@ -17,7 +17,7 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, BasicPackage, AddonMeta } from "@embroider/core";
+import { Package, PackageCache, AddonMeta } from "@embroider/core";
 import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
@@ -539,7 +539,7 @@ export interface V1AddonConstructor {
   new(addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
 }
 
-class TweakedPackage extends BasicPackage {
+class TweakedPackage extends Package {
   constructor(realPackage: Package, private overridePackageJSON: any, packageCache: PackageCache) {
     super(realPackage.root, false, packageCache);
   }

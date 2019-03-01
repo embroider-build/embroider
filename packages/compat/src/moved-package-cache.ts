@@ -6,7 +6,7 @@ import {
   realpath,
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
-import { PackageCache, Package, getOrCreate, BasicPackage } from "@embroider/core";
+import { PackageCache, Package, getOrCreate } from "@embroider/core";
 
 export class MovablePackageCache extends PackageCache {
   moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
@@ -48,7 +48,7 @@ export class MovedPackageCache extends PackageCache {
       if (originalPkg === origApp) {
         // this replaces the origApp package with one that will use moved
         // dependencies (origApp has already cached the pre-moved dependencies)
-        movedPkg = new BasicPackage(origApp.root, true, this);
+        movedPkg = new Package(origApp.root, true, this);
         this.app = movedPkg;
         rootCache.set(movedPkg.root, movedPkg);
       } else {
@@ -75,7 +75,7 @@ export class MovedPackageCache extends PackageCache {
 
   private movedPackage(originalPkg: Package): Package {
     let newRoot = this.localPath(originalPkg.root);
-    return getOrCreate(this.rootCache, newRoot, () => new BasicPackage(newRoot, false, this));
+    return getOrCreate(this.rootCache, newRoot, () => new Package(newRoot, false, this));
   }
 
   private localPath(filename: string) {

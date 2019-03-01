@@ -1,6 +1,6 @@
 {
   "name": "@embroider/macros",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Standardized build-time macros for ember apps.",
   "keywords": [
     "ember-addon"
@@ -30,7 +30,7 @@
     "@babel/core": "^7.2.2",
     "@babel/traverse": "^7.2.4",
     "@babel/types": "^7.3.2",
-    "@embroider/core": "0.0.7",
+    "@embroider/core": "0.0.8",
     "babel-core": "^6.26.3",
     "resolve": "^1.8.1",
     "semver": "^5.6.0"

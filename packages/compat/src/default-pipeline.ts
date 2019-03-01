@@ -11,11 +11,6 @@ export default function defaultPipeline<PackagerOptions>(
   packager: Packager<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Tree {
-
-  options = Object.assign({
-    workspaceDir: '/tmp/embroider-workspace',
-  }, options);
-
   let addons;
   if (process.env.REUSE_WORKSPACE) {
     addons = new PrebuiltAddons(__dirname, '/tmp/embroider-workspace');

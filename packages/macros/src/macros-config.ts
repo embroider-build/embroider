@@ -4,7 +4,36 @@ import { PackageCache, Package } from "@embroider/core";
 
 const packageCache = new PackageCache();
 
+export type Merger = (configs: unknown[]) => unknown;
+
+// Do not change the public signature of this class without pondering deeply the
+// mysteries of being compatible with unwritten future versions of this library.
+class GlobalSharedState {
+  configs: Map<string, unknown[]> = new Map();
+  mergers: Map<string, { merger: Merger, fromPath: string }> = new Map();
+}
+
+// this is a module-scoped cache. If multiple callers ask _this copy_ of
+// @embroider/macros for the shared MacrosConfig, they'll all get the same one.
+// And if somebody asks a *different* copy of @embroider/macros for the shared
+// MacrosConfig, it will have its own instance with its own code, but will still
+// share the GlobalSharedState beneath.
+let localSharedState: MacrosConfig | undefined;
+
 export default class MacrosConfig {
+  static shared(): MacrosConfig {
+    if (!localSharedState) {
+      let g = global as any;
+      if (!g.__embroider_macros_global__) {
+        g.__embroider_macros_global__ = new GlobalSharedState();
+      }
+      localSharedState = new MacrosConfig();
+      localSharedState.configs = g.__embroider_macros_global__.configs;
+      localSharedState.mergers = g.__embroider_macros_global__ .mergers;
+    }
+    return localSharedState;
+  }
+
   private configs: Map<Package, unknown[]> = new Map();
   private mergers: Map<Package, { merger: Merger, fromPath: string }> = new Map();
 
@@ -115,8 +144,6 @@ export default class MacrosConfig {
     }
   }
 }
-
-export type Merger = (configs: unknown[]) => unknown;
 
 function defaultMerger(configs: unknown[]): unknown {
   return Object.assign({}, ...configs);

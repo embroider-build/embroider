@@ -209,6 +209,4 @@ The entrypoints to the low level API are:
 
  - `import { MacrosConfig } from '@embroider/macros'`: constructs the shared global object that stores config. It has methods for setting configuration and for retrieving the necessary Babel and HTMLBars plugins that will implment the config. See `macros-config.ts` for details.
 
- - `import { sharedMacrosConfig } from '@embroider/macros'`: a helper for getting an already constructed global instance of `MacrosConfig`.
-
 ```

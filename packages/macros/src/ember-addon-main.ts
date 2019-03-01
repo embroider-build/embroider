@@ -1,6 +1,6 @@
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import { join } from 'path';
-import { sharedMacrosConfig } from '.';
+import { MacrosConfig } from '.';
 
 export = {
   name: '@embroider/macros',
@@ -15,18 +15,18 @@ export = {
     let source = parent.root || parent.project.root;
 
     if (ownOptions.setOwnConfig) {
-      sharedMacrosConfig().setOwnConfig(source, ownOptions.setOwnConfig);
+      MacrosConfig.shared().setOwnConfig(source, ownOptions.setOwnConfig);
     }
 
     if (ownOptions.setConfig) {
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        sharedMacrosConfig().setConfig(source, packageName, config);
+        MacrosConfig.shared().setConfig(source, packageName, config);
       }
     }
 
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
-    babelPlugins.unshift(sharedMacrosConfig().babelPluginConfig(source));
+    babelPlugins.unshift(MacrosConfig.shared().babelPluginConfig(source));
   },
 
   setupPreprocessorRegistry(type: "parent" | "self", registry: any) {
@@ -44,7 +44,7 @@ export = {
       });
       registry.add('htmlbars-ast-plugin', {
         name: '@embroider/macros/first',
-        plugin: makeFirstTransform((this as any).parent.root, sharedMacrosConfig()),
+        plugin: makeFirstTransform((this as any).parent.root, MacrosConfig.shared()),
         baseDir() {
           return join(__dirname, '..');
         }

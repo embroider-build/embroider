@@ -451,7 +451,11 @@ export default class V1Addon implements V1Package {
       built.trees.push(appTree);
     }
 
-    if (this.addonInstance.isDevelopingAddon() && this.addonInstance.hintingEnabled()) {
+    if (
+      typeof this.addonInstance.isDevelopingAddon === 'function' &&
+      this.addonInstance.isDevelopingAddon() &&
+      this.addonInstance.hintingEnabled()
+    ) {
       let hintTree = this.addonInstance.jshintAddonTree();
       if (hintTree) {
         hintTree = this.maybeSetAppJS(built, new Funnel(hintTree, { destDir: appPublicationDir }));

@@ -8888,6 +8888,14 @@ resolve-from@^1.0.0:
   resolved "https://registry.yarnpkg.com/resolve-from/-/resolve-from-1.0.1.tgz#26cbfe935d1aeeeabb29bc3fe5aeb01e93d44226"
   integrity sha1-Jsv+k10a7uq7Kbw/5a6wHpPUQiY=
 
+resolve-package-path@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/resolve-package-path/-/resolve-package-path-1.2.2.tgz#0c6f7cfeffdd96215c97a0082eadd6dc98a1de57"
+  integrity sha512-Rva99mD09iKulXPC7JnH3CAtdD3n5pZtTHtyhqknXcPKyu+bVkYUvUV0qxaO/+STvY8/JQsZdlmcBEgbPdFU4w==
+  dependencies:
+    path-root "^0.1.1"
+    resolve "^1.10.0"
+
 resolve-path@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/resolve-path/-/resolve-path-1.4.0.tgz#c4bda9f5efb2fce65247873ab36bb4d834fe16f7"

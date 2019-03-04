@@ -1,15 +1,15 @@
 import Package from './package';
 import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
-import resolve from 'resolve';
-import { join, dirname } from 'path';
+import resolvePackagePath from 'resolve-package-path';
+import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
     return getOrCreate(cache, packageName, () => {
-      let root = dirname(resolve.sync(join(packageName, 'package.json'), { basedir: this.basedir(fromPackage) }));
+      let root = dirname(resolvePackagePath(packageName, this.basedir(fromPackage)));
       return this.getAddon(root);
     });
   }

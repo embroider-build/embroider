@@ -17,6 +17,7 @@ import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
+import resolvePackagePath from 'resolve-package-path';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -57,7 +58,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   private get emberCLILocation() {
-    return dirname(resolve.sync('ember-cli/package.json', { basedir: this.root }));
+    return dirname(resolvePackagePath('ember-cli', this.root));
   }
 
   private requireFromEmberCLI(specifier: string) {

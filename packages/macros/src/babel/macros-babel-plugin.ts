@@ -5,6 +5,7 @@ import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroIf from './macro-if';
+import moduleExists from './module-exists';
 
 // we're assuming parallelized babel, so this doesn't try to share with anybody
 // other than our own module scope. As an optimization we could optionally
@@ -34,6 +35,9 @@ export default function main() {
         }
         if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
           getConfig(path, state, packageCache, true);
+        }
+        if (path.referencesImport('@embroider/macros', 'moduleExists')) {
+          moduleExists(path, state);
         }
         if (path.referencesImport('@embroider/macros', 'macroIf')) {
           state.pendingTasks.push(() => macroIf(path, state));

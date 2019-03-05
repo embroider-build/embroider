@@ -40,7 +40,7 @@ allBabelVersions(function (transform) {
       let preamble = `
         let window = { require: { has(name){ return 'runtime check for ' + name; } } };
       `;
-      assert.equal(runDefault(code, preamble), 'runtime check for ember-cli/lib/broccoli-ember-app');
+      assert.equal(runDefault(code, preamble), 'runtime check for ember-cli/lib/broccoli/ember-app');
     });
   });
 }, { classicMode: true });

@@ -16,6 +16,7 @@ import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -152,6 +153,10 @@ export default class V1App implements V1Package {
     let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (!plugins) {
       plugins = [];
+    } else {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      plugins = plugins.filter(p => !isEmbroiderMacrosPlugin(p));
     }
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
@@ -166,7 +171,7 @@ export default class V1App implements V1Package {
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
 
-    let config = {
+    let config: TransformOptions = {
       babelrc: false,
       plugins,
       presets: [
@@ -340,6 +345,11 @@ export default class V1App implements V1Package {
   get htmlbarsPlugins(): TemplateCompilerPlugins {
     let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     let options = addon.htmlbarsOptions();
+    if (options.plugins.ast) {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+    }
     return options.plugins;
   }
 

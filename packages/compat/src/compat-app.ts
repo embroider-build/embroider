@@ -10,7 +10,8 @@ import {
   AppAdapter,
   AppBuilder,
   EmberENV,
-  Package
+  Package,
+  TemplateCompilerPlugins
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -55,12 +56,10 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
     let adapter = new CompatAppAdapter(
-      root,
       oldPackage,
       configTree,
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      options
     );
     return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
   };
@@ -70,12 +69,10 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
   constructor(
-    private root: string,
     private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
-    private options: Required<Options>,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -164,21 +161,16 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return [this.synthVendor];
   }
 
-  templateCompilerSource(config: EmberENV) {
-    let plugins = this.oldPackage.htmlbarsPlugins;
-    (global as any).__embroiderHtmlbarsPlugins__ = plugins;
-    return `
-    var compiler = require('ember-source/vendor/ember/ember-template-compiler');
-    var setupCompiler = require('@embroider/core/src/template-compiler').default;
-    var Resolver = require('@embroider/compat/src/resolver').default;
-    var EmberENV = ${JSON.stringify(config)};
-    var plugins = global.__embroiderHtmlbarsPlugins__;
-    if (!plugins) {
-      throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
-    }
-    var resolver = new Resolver(${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix(), options: this.options })});
-    module.exports = setupCompiler(compiler, resolver, EmberENV, plugins).compile;
-    `;
+  templateCompilerPath(): string {
+    return 'ember-source/vendor/ember/ember-template-compiler';
+  }
+
+  templateResolverPath(): string {
+    return '@embroider/compat/src/resolver';
+  }
+
+  htmlbarsPlugins(): TemplateCompilerPlugins {
+    return this.oldPackage.htmlbarsPlugins;
   }
 
   babelConfig() {

@@ -98,6 +98,9 @@ export default class V1Addon implements V1Package {
     if (htmlbars) {
       registry.remove('template', 'ember-cli-htmlbars');
       let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
+      if (options.plugins && options.plugins.ast) {
+        options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+      }
       registry.add('template', {
         name: 'embroider-addon-templates',
         ext: 'hbs',

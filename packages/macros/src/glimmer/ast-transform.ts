@@ -9,7 +9,7 @@ import {
 } from './macro-if';
 
 export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
-  return function embroiderFirstMacrosTransform(env: { syntax: { builders: any } }) {
+  function embroiderFirstMacrosTransform(env: { syntax: { builders: any } }) {
 
     let scopeStack: string[][] = [];
 
@@ -65,11 +65,13 @@ export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
         }
       }
     };
-  };
+  }
+  (embroiderFirstMacrosTransform as any).embroiderMacrosASTMarker = true;
+  return embroiderFirstMacrosTransform;
 }
 
 export function makeSecondTransform() {
-  return function embroiderSecondMacrosTransform(env: { syntax: { builders: any } }) {
+  function embroiderSecondMacrosTransform(env: { syntax: { builders: any } }) {
 
     let scopeStack: string[][] = [];
 
@@ -137,7 +139,9 @@ export function makeSecondTransform() {
         }
       }
     };
-  };
+  }
+  (embroiderSecondMacrosTransform as any).embroiderMacrosASTMarker = true;
+  return embroiderSecondMacrosTransform;
 }
 
 function inScope(scopeStack: string[][], name: string) {

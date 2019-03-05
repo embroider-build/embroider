@@ -343,9 +343,11 @@ export default class V1App implements V1Package {
   }
 
   get htmlbarsPlugins(): TemplateCompilerPlugins {
-    // TODO: remove the @embroider/macros plugin here too
     let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     let options = addon.htmlbarsOptions();
+    if (options.plugins.ast) {
+      options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+    }
     return options.plugins;
   }
 

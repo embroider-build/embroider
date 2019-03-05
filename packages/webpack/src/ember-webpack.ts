@@ -171,7 +171,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     let externals = meta.externals || [];
-    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
+    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
     let babelConfigFile = meta['babel-config'];
     let babel;
     if (babelConfigFile) {

@@ -22,6 +22,8 @@ import { V1Config } from './v1-config';
 import { statSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import resolve from 'resolve';
+import { PortableTemplateCompilerConfig } from '@embroider/core/src/portable-plugin-config';
+import { SetupCompilerParams } from '@embroider/core/src/template-compiler';
 
 interface TreeNames {
   appJS: Tree;
@@ -166,20 +168,19 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   templateCompilerSource(config: EmberENV) {
-    let plugins = this.oldPackage.htmlbarsPlugins;
-    (global as any).__embroiderHtmlbarsPlugins__ = plugins;
-    return `
-    const compilerPath = '${resolve.sync('ember-source/vendor/ember/ember-template-compiler', { basedir: this.root })}';
-    const setupCompiler = require('@embroider/core/src/template-compiler').default;
-    const resolverPath = '${join(__dirname, 'resolver')}';
-    var EmberENV = ${JSON.stringify(config)};
-    var plugins = global.__embroiderHtmlbarsPlugins__;
-    if (!plugins) {
-      throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable AST plugins');
-    }
-    var resolverParams = ${JSON.stringify({ root: this.root, modulePrefix: this.modulePrefix(), options: this.options })};
-    module.exports = setupCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins }).compile;
-    `;
+    let params: SetupCompilerParams = {
+      plugins: this.oldPackage.htmlbarsPlugins,
+      compilerPath: 'ember-source/vendor/ember/ember-template-compiler',
+      resolverPath: '@embroider/compat/src/resolver',
+      EmberENV: config,
+      resolverParams: {
+        root: this.root,
+        modulePrefix: this.modulePrefix(),
+        options: this.options
+      }
+    };
+
+    return new PortableTemplateCompilerConfig(params, { basedir: this.root }).serialize();
   }
 
   babelConfig() {

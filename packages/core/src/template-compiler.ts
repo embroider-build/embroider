@@ -139,16 +139,18 @@ function loadEmberCompiler(absoluteCompilerPath: string) {
   return module.exports as Compiler;
 }
 
+export interface SetupCompilerParams {
+  compilerPath: string;
+  resolverPath: string;
+  resolverParams: ResolverParams;
+  EmberENV: unknown;
+  plugins: Plugins;
+}
+
 // This signature of this function may feel a little weird, but that's because
 // it's designed to be easy to invoke via our portable plugin config in a new
 // process.
-export default function setupCompiler(params: {
-  compilerPath: string,
-  resolverPath: string,
-  resolverParams: ResolverParams,
-  EmberENV: unknown,
-  plugins: Plugins
-}) {
+export default function setupCompiler(params: SetupCompilerParams) {
   let compiler: Compiler = loadEmberCompiler(params.compilerPath);
   let ResolverClass: Resolver = require(params.resolverPath).default;
   let resolver = new ResolverClass(params.resolverParams);

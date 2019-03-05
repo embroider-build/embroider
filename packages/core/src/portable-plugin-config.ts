@@ -3,6 +3,7 @@ import resolve from 'resolve';
 import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
+import { SetupCompilerParams } from './template-compiler';
 
 const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -67,7 +68,7 @@ export class PortablePluginConfig {
     if (value === null) {
       return value;
     } else if (implementsParallelAPI(value)) {
-      return parallelBabelPlaceholder(value._parallelBabel);
+      return parallelPlaceholder(value._parallelBabel);
     } else if (Array.isArray(value)) {
       return value.map((element, index) => this.makePortable(element, accessPath.concat(String(index))));
     }
@@ -189,6 +190,39 @@ export class PortableBabelConfig extends PortablePluginConfig {
   }
 }
 
+const compilerTemplate = compile(`
+const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
+const setupCompiler = require('@embroider/core/src/template-compiler').default;
+module.exports = {
+  compile: setupCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}})).compile,
+  isParallelSafe: {{ isParallelSafe }},
+};
+`) as (params: {
+  portable: any,
+  here: string,
+  isParallelSafe: boolean,
+}) => string;
+
+export class PortableTemplateCompilerConfig extends PortablePluginConfig {
+  constructor(config: SetupCompilerParams, resolveOptions: ResolveOptions) {
+    super(config, resolveOptions);
+  }
+
+  protected makePortable(value: any, accessPath: string[] = []) {
+    if (accessPath.length === 1 && accessPath[0] === 'compilerPath') {
+      return this.resolve(value);
+    }
+    if (accessPath.length === 1 && accessPath[0] === 'resolverPath') {
+      return this.resolve(value);
+    }
+    return super.makePortable(value, accessPath);
+  }
+
+  serialize() {
+    return compilerTemplate({ here: __filename, portable: this.portable, isParallelSafe: this.isParallelSafe })
+  }
+}
+
 function setupGlobals() {
   let G = global as any as { [protocol]: { globalValues: any[], nonce: number }  };
   if (!G[protocol]) {
@@ -198,7 +232,7 @@ function setupGlobals() {
   return G[protocol];
 }
 
-function parallelBabelPlaceholder(parallelBabel: any): ParallelPlaceholder {
+function parallelPlaceholder(parallelBabel: any): ParallelPlaceholder {
   return {
     embroiderPlaceholder: true,
     type: 'parallel',

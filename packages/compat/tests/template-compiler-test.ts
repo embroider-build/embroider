@@ -1,28 +1,16 @@
-// things in support of the tests
 import 'qunit';
-import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, readFileSync } from 'fs-extra';
+import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import { Resolution } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
 import { expectWarning } from '@embroider/core/src/messages';
-
-// the things under test
-import Resolver from '../src/resolver';
-import setupCompiler, { Compiler } from '@embroider/core/src/template-compiler';
+import setupCompiler from '@embroider/core/src/template-compiler';
 
 const { test } = QUnit;
-const emberTemplateCompilerSource = readFileSync(join(__dirname, 'vendor', 'ember-template-compiler.js'), 'utf8');
-
-// we don't want to share one instance, so we can't use "require".
-function loadEmberCompiler() {
-  let module = {
-    exports: {}
-  };
-  eval(emberTemplateCompilerSource);
-  return module.exports as Compiler;
-}
+const compilerPath = join(__dirname, 'vendor', 'ember-template-compiler.js');
+const resolverPath = join(__dirname, '../src/resolver');
 
 QUnit.module('template-compiler', function(hooks) {
   let appDir: string;
@@ -32,12 +20,12 @@ QUnit.module('template-compiler', function(hooks) {
     let EmberENV = {};
     let plugins = { ast: [] };
     appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
-    let resolver = new Resolver({
+    let resolverParams = {
       root: appDir,
       modulePrefix: 'the-app',
       options: optionsWithDefaults(options)
-    });
-    let { compile, dependenciesOf } = setupCompiler(loadEmberCompiler(), resolver, EmberENV, plugins);
+    };
+    let { compile, dependenciesOf } = setupCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins });
     return function(relativePath: string, contents: string): Resolution[] {
       let moduleName = givenFile(relativePath);
       compile(moduleName, contents);

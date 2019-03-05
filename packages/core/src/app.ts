@@ -245,7 +245,9 @@ export class AppBuilder<TreeNames> {
     }
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+
+    // TEMPORARY
+    // babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.

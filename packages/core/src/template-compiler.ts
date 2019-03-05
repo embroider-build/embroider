@@ -1,6 +1,7 @@
 import stripBom from 'strip-bom';
-import { ResolverInstance, Resolution } from './resolver';
+import { ResolverInstance, Resolution, Resolver, ResolverParams } from './resolver';
 import { warn } from './messages';
+import { readFileSync } from 'fs';
 
 export interface Plugins {
   [type: string]: unknown[];
@@ -128,7 +129,33 @@ function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<str
   };
 }
 
-export default function setupCompiler(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
+// we don't want to share one instance, so we can't use "require".
+function loadEmberCompiler(absoluteCompilerPath: string) {
+  let source = readFileSync(absoluteCompilerPath, 'utf8');
+  let module = {
+    exports: {}
+  };
+  eval(source);
+  return module.exports as Compiler;
+}
+
+// This signature of this function may feel a little weird, but that's because
+// it's designed to be easy to invoke via our portable plugin config in a new
+// process.
+export default function setupCompiler(params: {
+  compilerPath: string,
+  resolverPath: string,
+  resolverParams: ResolverParams,
+  EmberENV: unknown,
+  plugins: Plugins
+}) {
+  let compiler: Compiler = loadEmberCompiler(params.compilerPath);
+  let ResolverClass: Resolver = require(params.resolverPath).default;
+  let resolver = new ResolverClass(params.resolverParams);
+  return theCompiler(compiler, resolver, params.EmberENV, params.plugins);
+}
+
+function theCompiler(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
   let dependencies:  Map<string, Resolution[]> = new Map();
 
   registerPlugins(compiler, plugins);

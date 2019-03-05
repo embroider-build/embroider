@@ -44,6 +44,29 @@ This package works in both Embroider builds and normal ember-cli builds, so that
     let hasNativeArrayHelper = true;
     ```
 
+- `moduleExists(moduleName)`: a macro that compiles to a boolean literal. It will be true if the given module can be resolved. This macro **deliberately behaves differently** in Embroider vs classic ember-cli, as an aid to compatibility. In classic ember-cli, it compiles to `window.require.has(moduleName)`, which will check at *runtime* whether the given module exists. In Embroider, we will resolve the module at *compile time* and inline the boolean result.
+
+    This is different from `dependencySatisfies` because it accepts not just package names, but entire module paths. This givecs it higher resolution, but also means we can only statically compute the answer when running inside Embroider, not when running inside classic ember-cli.
+
+    Assuming you have `ember-animated/easings/linear` available, this code:
+
+    ```js
+    import { moduleExists } from '@embroider/macros';
+    let foundLinear = modulesExists('ember-animated/easings/linear');
+    ```
+
+    Compiles to this in Embroider:
+
+    ```js
+    let foundLinear = true;
+    ```
+
+    And this in classic ember-cli:
+
+    ```js
+    let foundLinear = window.require.has('ember-animated/easing/linear');
+    ```
+
 
 - `macroIf(predicate, consequent, alternate)`: a compile time conditional. Lets you choose between two blocks of code and only include one of them. Critically, it will also strip import statements that are used only inside the dead block. The predicate is usually one of the other macros.
 
@@ -118,6 +141,17 @@ These are analogous to the Javascript macros, although here (because we don't im
    {{! ⬆️compiles to ⬇️ }}
    <SomeComponent @canAnimate={{true}} />
    ```
+
+- `macroModuleExists`: same as the `moduleExists` javascript macro described above, with the same caveat that for compatibility it works at compile time only in Embroider, and it works at runtime in classic ember-cli.
+
+   ```hbs
+   <SomeComponent @hasLinear={{macroModuleExists "ember-animated/easings/linear"}} />
+   {{! ⬆️compiles to ⬇️ in embroider }}
+   <SomeComponent @hasLinear={{true}} />
+   {{! and compiles to ⬇️ in classic ember-cli }}
+   <SomeComponent @hasLinear={{embroiderModuleExists "ember-animated/easings/linear"}} />
+   ```
+
 
  - `macroIf`: Like Ember's own `if`, this can be used in both block form and expresion form. The bock form looks like:
 

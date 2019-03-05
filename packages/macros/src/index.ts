@@ -20,6 +20,10 @@ export function getOwnConfig<T>(): T {
   throw new Oops();
 }
 
+export function moduleExists(moduleName: string): boolean {
+  throw new Oops(moduleName);
+}
+
 class Oops extends Error {
   params: any[];
   constructor(...params: any[]) {

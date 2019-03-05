@@ -181,7 +181,9 @@ export default class V1App implements V1Package {
         }],
       ],
       // this is here because broccoli-middleware can't render a codeFrame full
-      // of terminal codes.
+      // of terminal codes. It would be nice to add something like
+      // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
+      // leave color enabled.
       highlightCode: false
     };
     return config;

@@ -9,10 +9,14 @@ const { globalValues, nonce } = setupGlobals();
 
 const babelTemplate = compile(`
 const { PortableBabelConfig } = require('{{{js-string-escape here}}}');
-module.exports = PortableBabelConfig.deserialize({{{json-stringify config 2}}});
+module.exports = {
+  config: PortableBabelConfig.deserialize({{{json-stringify config 2}}}),
+  isParallelSafe: {{ isParallelSafe }},
+};
 `) as (params: {
   config: TransformOptions,
   here: string,
+  isParallelSafe: boolean,
 }) => string;
 
 type ResolveOptions  = { basedir: string } | { resolve: (name: string) => any };
@@ -133,7 +137,7 @@ export class PortableBabelConfig {
   }
 
   serialize(): string {
-    return babelTemplate({ config: this.config, here: __filename });
+    return babelTemplate({ config: this.config, here: __filename, isParallelSafe: this.isParallelSafe });
   }
 
   // babel lets you use relative paths, absolute paths, package names, and

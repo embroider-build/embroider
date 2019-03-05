@@ -14,6 +14,16 @@ allBabelVersions(function (transform) {
       `);
       assert.equal(runDefault(code), true);
     });
+
+    test('does not find module', function(assert) {
+      let code = transform(`
+      import { moduleExists } from '@embroider/macros';
+      export default function() {
+        return moduleExists('ember-cli/lib/broccoli/not-a-thing');
+      }
+      `);
+      assert.equal(runDefault(code), false);
+    });
   });
 });
 

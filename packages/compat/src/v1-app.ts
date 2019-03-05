@@ -346,6 +346,8 @@ export default class V1App implements V1Package {
     let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     let options = addon.htmlbarsOptions();
     if (options.plugins.ast) {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
       options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
     }
     return options.plugins;

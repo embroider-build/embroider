@@ -254,9 +254,7 @@ export class AppBuilder<TreeNames> {
     }
 
     // this is @embroider/macros configured for full stage3 resolution
-
-    // TEMPORARY
-    // babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
@@ -549,8 +547,16 @@ export class AppBuilder<TreeNames> {
   // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
 
+    let plugins = this.adapter.htmlbarsPlugins();
+    if (!plugins.ast) {
+      plugins.ast = [];
+    }
+    for (let macroPlugin of MacrosConfig.shared().astPlugins()) {
+      plugins.ast.push(macroPlugin);
+    }
+
     let params: SetupCompilerParams = {
-      plugins: this.adapter.htmlbarsPlugins(),
+      plugins,
       compilerPath: this.adapter.templateCompilerPath(),
       resolverPath: this.adapter.templateResolverPath(),
       EmberENV: config,

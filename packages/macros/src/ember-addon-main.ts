@@ -1,4 +1,3 @@
-import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import { join } from 'path';
 import { MacrosConfig } from '.';
 
@@ -35,19 +34,16 @@ export = {
       // the htmlbars-ast-plugins are split into two parts because order is
       // important. Weirdly, they appear to run in the reverse order that you
       // register them here.
-      registry.add('htmlbars-ast-plugin', {
-        name: '@embroider/macros/second',
-        plugin: makeSecondTransform(),
-        baseDir() {
-          return join(__dirname, '..');
-        }
-      });
-      registry.add('htmlbars-ast-plugin', {
-        name: '@embroider/macros/first',
-        plugin: makeFirstTransform((this as any).parent.root, MacrosConfig.shared()),
-        baseDir() {
-          return join(__dirname, '..');
-        }
+
+      let plugins = MacrosConfig.shared().astPlugins((this as any).parent.root);
+      plugins.reverse().forEach((plugin, index) => {
+        registry.add('htmlbars-ast-plugin', {
+          name: `@embroider/macros/${index}`,
+          plugin,
+          baseDir() {
+            return join(__dirname, '..');
+          }
+        });
       });
     }
   }

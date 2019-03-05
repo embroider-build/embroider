@@ -1,6 +1,7 @@
 import { join } from "path";
 import { PluginItem } from "@babel/core";
 import { PackageCache, Package } from "@embroider/core";
+import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 
 const packageCache = new PackageCache();
 
@@ -118,6 +119,13 @@ export default class MacrosConfig {
       // emitted from v1 addons.
       embroiderMacrosConfigMarker: true,
     }];
+  }
+
+  astPlugins(owningPackageRoot?: string): Function[] {
+    if (!owningPackageRoot) {
+      owningPackageRoot = 'fixme-no-such-path';
+    }
+    return [makeFirstTransform(owningPackageRoot, this), makeSecondTransform()];
   }
 
   private mergerFor(pkg: Package) {

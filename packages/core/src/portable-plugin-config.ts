@@ -1,4 +1,4 @@
-import { PluginItem, TransformOptions } from '@babel/core';
+import { TransformOptions } from '@babel/core';
 import resolve from 'resolve';
 import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
@@ -7,14 +7,14 @@ import assertNever from 'assert-never';
 const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
 
-const babelTemplate = compile(`
-const { PortableBabelConfig } = require('{{{js-string-escape here}}}');
+const template = compile(`
+const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
 module.exports = {
-  config: PortableBabelConfig.deserialize({{{json-stringify config 2}}}),
+  config: PortablePluginConfig.load({{{json-stringify portable 2}}}),
   isParallelSafe: {{ isParallelSafe }},
 };
 `) as (params: {
-  config: TransformOptions,
+  portable: any,
   here: string,
   isParallelSafe: boolean,
 }) => string;
@@ -28,73 +28,55 @@ interface GlobalPlaceholder {
   index: number;
 }
 
-interface ParallelBabelPlaceholder {
+interface ParallelPlaceholder {
   embroiderPlaceholder: true;
-  type: "parallelBabel";
+  type: "parallel";
   requireFile: "string";
   useMethod: "string" | undefined;
   buildUsing: "string" | undefined;
   params: any;
 }
 
-type Placeholder = GlobalPlaceholder | ParallelBabelPlaceholder;
+type Placeholder = GlobalPlaceholder | ParallelPlaceholder;
 
-export class PortableBabelConfig {
-  private basedir: string | undefined;
-  private resolve: (name: string) => any;
-  isParallelSafe = true;
+export class PortablePluginConfig {
+  protected basedir: string | undefined;
+  protected resolve: (name: string) => any;
 
-  constructor(private config: TransformOptions, resolveOptions: ResolveOptions) {
+  private parallelSafeFlag = true;
+
+  readonly portable: any;
+  readonly isParallelSafe: boolean;
+
+  constructor(private config: any, resolveOptions: ResolveOptions) {
     if ('resolve' in resolveOptions) {
       this.resolve = resolveOptions.resolve;
     } else {
       this.basedir = resolveOptions.basedir;
       this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
     }
-    if (!config.plugins) {
-      config.plugins = [];
-    } else {
-      config.plugins = config.plugins.map((item: PluginItem) => this.portablePlugin(item));
-    }
-    if (!config.presets) {
-      config.presets = [];
-    } else {
-      config.presets = config.presets.map((preset: PluginItem) => this.portablePlugin(preset));
-    }
+    this.portable = this.makePortable(this.config);
+    this.isParallelSafe = this.parallelSafeFlag;
   }
 
-  private portablePlugin(item: PluginItem): PluginItem {
-    if (typeof item === 'string') {
-      return this.resolveBabelPlugin(item);
-    }
-    if (Array.isArray(item) && typeof item[0] === 'string') {
-      let result = [this.resolveBabelPlugin(item[0])];
-      if (item.length > 1) {
-        result.push(this.makeJSONClean(item[1]));
-      }
-      if (item.length > 2) {
-        result.push(item[2]);
-      }
-      return result as PluginItem;
-    }
-
-    return this.makeJSONClean(item);
+  serialize(): string {
+    return template({ portable: this.portable, here: __filename, isParallelSafe: this.isParallelSafe });
   }
 
-  private makeJSONClean(value: any): any {
+  protected makePortable(value: any, accessPath: string[] = []): any {
     if (value === null) {
       return value;
     } else if (implementsParallelAPI(value)) {
       return parallelBabelPlaceholder(value._parallelBabel);
     } else if (Array.isArray(value)) {
-      return value.map(element => this.makeJSONClean(element));
+      return value.map((element, index) => this.makePortable(element, accessPath.concat(String(index))));
     }
 
     switch (typeof value) {
       case 'string':
       case 'number':
       case 'boolean': return value;
-      case 'object': return mapValues(value, propertyValue => this.makeJSONClean(propertyValue));
+      case 'object': return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
     }
 
     return this.globalPlaceholder(value);
@@ -103,7 +85,7 @@ export class PortableBabelConfig {
   private globalPlaceholder(value: any): GlobalPlaceholder {
     let index = globalValues.length;
     globalValues.push(value);
-    this.isParallelSafe = false;
+    this.parallelSafeFlag = false;
     return {
       embroiderPlaceholder: true,
       type: 'global',
@@ -112,9 +94,9 @@ export class PortableBabelConfig {
     };
   }
 
-  static deserialize(input: any): any {
+  static load(input: any): any {
     if (Array.isArray(input)) {
-      return input.map(element => this.deserialize(element));
+      return input.map(element => this.load(element));
     }
     if (input && typeof input === 'object') {
       if (input.embroiderPlaceholder) {
@@ -125,19 +107,43 @@ export class PortableBabelConfig {
               throw new Error(`unable to use this non-serializable babel config in this node process`);
             }
             return globalValues[placeholder.index];
-          case 'parallelBabel':
+          case 'parallel':
             return buildFromParallelApiInfo(placeholder);
         }
         assertNever(placeholder);
       } else {
-        return mapValues(input, value => this.deserialize(value));
+        return mapValues(input, value => this.load(value));
       }
     }
     return input;
   }
+}
 
-  serialize(): string {
-    return babelTemplate({ config: this.config, here: __filename, isParallelSafe: this.isParallelSafe });
+export class PortableBabelConfig extends PortablePluginConfig {
+  constructor(config: TransformOptions, resolveOptions: ResolveOptions) {
+    super(config, resolveOptions);
+  }
+
+  protected makePortable(value: any, accessPath: string[] = []) {
+    if (
+      accessPath.length === 2 &&
+      (accessPath[0] === 'plugins' || accessPath[0] === 'presets')
+    ) {
+      if (typeof value === 'string') {
+        return this.resolveBabelPlugin(value);
+      }
+      if (Array.isArray(value) && typeof value[0] === 'string') {
+        let result = [this.resolveBabelPlugin(value[0])];
+        if (value.length > 1) {
+          result.push(this.makePortable(value[1], accessPath.concat("1")));
+        }
+        if (value.length > 2) {
+          result.push(value[2]);
+        }
+        return result;
+      }
+    }
+    return super.makePortable(value, accessPath);
   }
 
   // babel lets you use relative paths, absolute paths, package names, and
@@ -192,10 +198,10 @@ function setupGlobals() {
   return G[protocol];
 }
 
-function parallelBabelPlaceholder(parallelBabel: any): ParallelBabelPlaceholder {
+function parallelBabelPlaceholder(parallelBabel: any): ParallelPlaceholder {
   return {
     embroiderPlaceholder: true,
-    type: 'parallelBabel',
+    type: 'parallel',
     requireFile: parallelBabel.requireFile,
     buildUsing: parallelBabel.buildUsing,
     useMethod: parallelBabel.useMethod,
@@ -204,7 +210,7 @@ function parallelBabelPlaceholder(parallelBabel: any): ParallelBabelPlaceholder 
 }
 
 // this method is adapted directly out of broccoli-babel-transpiler
-function buildFromParallelApiInfo(parallelApiInfo: ParallelBabelPlaceholder) {
+function buildFromParallelApiInfo(parallelApiInfo: ParallelPlaceholder) {
   let requiredStuff = require(parallelApiInfo.requireFile);
 
   if (parallelApiInfo.useMethod) {

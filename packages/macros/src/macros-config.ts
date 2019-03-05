@@ -1,6 +1,6 @@
 import { join } from "path";
 import { PluginItem } from "@babel/core";
-import { PackageCache, Package } from "@embroider/core";
+import { PackageCache } from "@embroider/core";
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 
 const packageCache = new PackageCache();

@@ -1,9 +1,8 @@
 import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '../src';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
+allBabelVersions(function (transform, config) {
   QUnit.module(`macroIf`, function() {
 
     config.setConfig(__filename, 'qunit', { items: [ { approved: true, other: null, size: 2.3 } ]});

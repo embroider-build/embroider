@@ -4,8 +4,8 @@ import { transform as transform7, TransformOptions as Options7 } from '@babel/co
 import { MacrosConfig } from '..';
 import { join } from 'path';
 
-export function runDefault(code: string): any {
-  let cjsCode = transform7(code, {
+export function runDefault(code: string, preamble = ""): any {
+  let cjsCode = transform7(preamble + "\n" + code, {
     plugins: ['@babel/plugin-transform-modules-commonjs']
   })!.code!;
   let exports = {};
@@ -13,14 +13,14 @@ export function runDefault(code: string): any {
   return (exports as any).default();
 }
 
-export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
+export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void, opts?: { classicMode?: boolean }) {
   QUnit.module('babel6', function() {
     let config = new MacrosConfig();
     createTests(function(code: string){
       const options6: Options6 = {
         filename: join(__dirname, 'sample.js'),
         presets: [],
-        plugins: [config.babelPluginConfig()]
+        plugins: [config.babelPluginConfig(opts && opts.classicMode ? '/imaginary/path/to/package' : undefined)]
       };
       return transform6(code, options6).code!;
     }, config);
@@ -31,7 +31,7 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
       const options7: Options7 = {
         filename: join(__dirname, 'sample.js'),
         presets: [],
-        plugins: [config.babelPluginConfig()]
+        plugins: [config.babelPluginConfig(opts && opts.classicMode ? '/imaginary/path/to/package' : undefined)]
       };
       return transform7(code, options7)!.code!;
     }, config);

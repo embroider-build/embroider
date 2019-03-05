@@ -1,9 +1,8 @@
 import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '..';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
+allBabelVersions(function (transform, config) {
   QUnit.module(`getConfig`, function() {
 
     config.setOwnConfig(__filename, { beverage: 'coffee' });

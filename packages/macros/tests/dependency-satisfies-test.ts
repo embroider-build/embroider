@@ -2,7 +2,7 @@ import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string) {
+allBabelVersions(function (transform) {
   QUnit.module(`dependencySatisfies`, function() {
 
     test('is satisfied', function(assert) {

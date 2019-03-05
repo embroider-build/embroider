@@ -1,15 +1,16 @@
-import { PluginItem, PluginOptions, PluginTarget, TransformOptions } from '@babel/core';
+import { PluginItem, TransformOptions } from '@babel/core';
 import resolve from 'resolve';
 import { jsHandlebarsCompile as compile } from "@embroider/core";
 import isEqual from 'lodash/isEqual';
 import mapValues from 'lodash/mapValues';
+import assertNever from 'assert-never';
 
-const protocol = '__embroider_normalize_plugin_values__';
+const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
 
 const babelTemplate = compile(`
-const { NormalizedBabelConfig } = require('{{{js-string-escape here}}}');
-module.exports = NormalizedBabelConfig.deserialize({{{json-stringify config}}});
+const { PortableBabelConfig } = require('{{{js-string-escape here}}}');
+module.exports = PortableBabelConfig.deserialize({{{json-stringify config 2}}});
 `) as (params: {
   config: TransformOptions,
   here: string,
@@ -17,8 +18,25 @@ module.exports = NormalizedBabelConfig.deserialize({{{json-stringify config}}});
 
 type ResolveOptions  = { basedir: string } | { resolve: (name: string) => any };
 
-export class NormalizedBabelConfig {
-  private expressions: string[] = [];
+interface GlobalPlaceholder {
+  embroiderPlaceholder: true;
+  type: "global";
+  nonce: number;
+  index: number;
+}
+
+interface ParallelBabelPlaceholder {
+  embroiderPlaceholder: true;
+  type: "parallelBabel";
+  requireFile: "string";
+  useMethod: "string" | undefined;
+  buildUsing: "string" | undefined;
+  params: any;
+}
+
+type Placeholder = GlobalPlaceholder | ParallelBabelPlaceholder;
+
+export class PortableBabelConfig {
   private basedir: string | undefined;
   private resolve: (name: string) => any;
   isParallelSafe = true;
@@ -33,11 +51,16 @@ export class NormalizedBabelConfig {
     if (!config.plugins) {
       config.plugins = [];
     } else {
-      config.plugins = config.plugins.map((item: PluginItem) => this.normalizePlugin(item));
+      config.plugins = config.plugins.map((item: PluginItem) => this.portablePlugin(item));
+    }
+    if (!config.presets) {
+      config.presets = [];
+    } else {
+      config.presets = config.presets.map((preset: PluginItem) => this.portablePlugin(preset));
     }
   }
 
-  private normalizePlugin(item: PluginItem): PluginItem {
+  private portablePlugin(item: PluginItem): PluginItem {
     if (typeof item === 'string') {
       return this.resolveBabelPlugin(item);
     }
@@ -55,14 +78,35 @@ export class NormalizedBabelConfig {
     return this.makeJSONClean(item);
   }
 
-  private makeJSONClean(value: any) {
-    if (isJSONSafe(value)) {
+  private makeJSONClean(value: any): any {
+    if (value === null) {
       return value;
+    } else if (implementsParallelAPI(value)) {
+      return parallelBabelPlaceholder(value._parallelBabel);
+    } else if (Array.isArray(value)) {
+      return value.map(element => this.makeJSONClean(element));
     }
+
+    switch (typeof value) {
+      case 'string':
+      case 'number':
+      case 'boolean': return value;
+      case 'object': return mapValues(value, propertyValue => this.makeJSONClean(propertyValue));
+    }
+
+    return this.globalPlaceholder(value);
+  }
+
+  private globalPlaceholder(value: any): GlobalPlaceholder {
     let index = globalValues.length;
     globalValues.push(value);
     this.isParallelSafe = false;
-    return { embroiderPlaceholder: { nonce, index } };
+    return {
+      embroiderPlaceholder: true,
+      type: 'global',
+      nonce,
+      index
+    };
   }
 
   static deserialize(input: any): any {
@@ -71,10 +115,17 @@ export class NormalizedBabelConfig {
     }
     if (input && typeof input === 'object') {
       if (input.embroiderPlaceholder) {
-        if (input.embroiderPlaceholder.nonce !== nonce) {
-          throw new Error(`unable to use this non-serializable babel config in this node process`);
+        let placeholder = input as Placeholder;
+        switch (placeholder.type) {
+          case 'global':
+            if (placeholder.nonce !== nonce) {
+              throw new Error(`unable to use this non-serializable babel config in this node process`);
+            }
+            return globalValues[placeholder.index];
+          case 'parallelBabel':
+            return buildFromParallelApiInfo(placeholder);
         }
-        return globalValues[input.embroiderPlaceholder.index];
+        assertNever(placeholder);
       } else {
         return mapValues(input, value => this.deserialize(value));
       }
@@ -132,24 +183,25 @@ export class NormalizedBabelConfig {
 function setupGlobals() {
   let G = global as any as { [protocol]: { globalValues: any[], nonce: number }  };
   if (!G[protocol]) {
-    G[protocol] = { globalValues: [], nonce: Math.floor(Math.random() * Math.pow(2, 32)) }
+    G[protocol] = { globalValues: [], nonce: Math.floor(Math.random() * Math.pow(2, 32)) };
 
   }
   return G[protocol];
 }
 
-function isJSONSafe(obj: any) {
-  try {
-    let after = JSON.parse(JSON.stringify(obj));
-    return isEqual(after, obj);
-  } catch (err) {
-    return false;
-  }
+function parallelBabelPlaceholder(parallelBabel: any): ParallelBabelPlaceholder {
+  return {
+    embroiderPlaceholder: true,
+    type: 'parallelBabel',
+    requireFile: parallelBabel.requireFile,
+    buildUsing: parallelBabel.buildUsing,
+    useMethod: parallelBabel.useMethod,
+    params: parallelBabel.params,
+  };
 }
 
-
 // this method is adapted directly out of broccoli-babel-transpiler
-function buildFromParallelApiInfo(parallelApiInfo: any) {
+function buildFromParallelApiInfo(parallelApiInfo: ParallelBabelPlaceholder) {
   let requiredStuff = require(parallelApiInfo.requireFile);
 
   if (parallelApiInfo.useMethod) {
@@ -169,65 +221,12 @@ function buildFromParallelApiInfo(parallelApiInfo: any) {
   return requiredStuff;
 }
 
-function withOptions(plugin: PluginTarget, options: PluginOptions) {
-  return function(...args: any[]) {
-    let pluginInstance = plugin(...args);
-    if (!pluginInstance.visitor) {
-      return pluginInstance;
-    }
-    let wrappedInstance = Object.assign({}, pluginInstance);
-    wrappedInstance.visitor = {};
-    for (let key of Object.keys(pluginInstance.visitor)) {
-      wrappedInstance.visitor[key] = function(path: any, state: any) {
-        state.opts = options;
-        return pluginInstance.visitor[key](path, state);
-      };
-    }
-    return wrappedInstance;
-  };
-}
+function implementsParallelAPI(object) {
+  const type = typeof object;
+  const hasProperties = type === 'function' || (type === 'object' && object !== null) || Array.isArray(object);
 
-const template =  compile(`
-const parallelBabelShim = require('{{{js-string-escape here}}}').default;;
-const config = {{{json-stringify config}}};
-module.exports = parallelBabelShim(config);
-`);
-
-export function synthesize(config: any) {
-  return template({ here: __filename, config });
-}
-
-export function synthesizeGlobal(pluginInfo: PluginItem ) {
-  let g = global as any;
-  if (!g.__embroiderSlowBabelPlugins__) {
-    g.__embroiderSlowBabelPlugins__ = [];
-  }
-  let index = g.__embroiderSlowBabelPlugins__.length;
-
-  if (Array.isArray(pluginInfo)) {
-    let [plugin, options] = pluginInfo;
-    g.__embroiderSlowBabelPlugins__.push(withOptions(plugin, options));
-  } else {
-    g.__embroiderSlowBabelPlugins__.push(pluginInfo);
-  }
-
-  return `if (!global.__embroiderSlowBabelPlugins__) {
-    throw new Error('You must run your final stage packager in the same process as CompatApp, because there are unserializable babel plugins')
-  };
-  module.exports = global.__embroiderSlowBabelPlugins__[${index}];`;
-}
-
-export default function parallelBabelShim(parallelApiInfo: any) {
-  // this returns a babel plugin configuration entry, which is either a pair or
-  // a scalar, so we need to unpack both cases.
-  let built = buildFromParallelApiInfo(parallelApiInfo);
-  if (Array.isArray(built)) {
-    let [plugin, options] = built;
-    return withOptions(plugin, options);
-  } else {
-    // we don't have any options, so there's no wrapping needed. This would be
-    // an unusual case because there was no point in using _parallelBabel for
-    // this in the first place.
-    return built;
-  }
+  return hasProperties &&
+    object._parallelBabel !== null &&
+    typeof object._parallelBabel === 'object' &&
+    typeof object._parallelBabel.requireFile === 'string';
 }

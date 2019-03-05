@@ -21,8 +21,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import resolve from 'resolve';
-import { PortableTemplateCompilerConfig } from '@embroider/core/src/portable-plugin-config';
+import PortableTemplateCompilerConfig from '@embroider/core/src/portable-compiler';
 import { SetupCompilerParams } from '@embroider/core/src/template-compiler';
 
 interface TreeNames {

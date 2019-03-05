@@ -1,9 +1,7 @@
-import { TransformOptions } from '@babel/core';
 import resolve from 'resolve';
 import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
-import { SetupCompilerParams } from './template-compiler';
 
 const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -20,7 +18,7 @@ module.exports = {
   isParallelSafe: boolean,
 }) => string;
 
-type ResolveOptions  = { basedir: string } | { resolve: (name: string) => any };
+export type ResolveOptions  = { basedir: string } | { resolve: (name: string) => any };
 
 interface GlobalPlaceholder {
   embroiderPlaceholder: true;
@@ -43,6 +41,7 @@ type Placeholder = GlobalPlaceholder | ParallelPlaceholder;
 export class PortablePluginConfig {
   protected basedir: string | undefined;
   protected resolve: (name: string) => any;
+  protected here = __filename;
 
   private parallelSafeFlag = true;
 
@@ -61,7 +60,7 @@ export class PortablePluginConfig {
   }
 
   serialize(): string {
-    return template({ portable: this.portable, here: __filename, isParallelSafe: this.isParallelSafe });
+    return template({ portable: this.portable, here: this.here, isParallelSafe: this.isParallelSafe });
   }
 
   protected makePortable(value: any, accessPath: string[] = []): any {
@@ -117,109 +116,6 @@ export class PortablePluginConfig {
       }
     }
     return input;
-  }
-}
-
-export class PortableBabelConfig extends PortablePluginConfig {
-  constructor(config: TransformOptions, resolveOptions: ResolveOptions) {
-    super(config, resolveOptions);
-  }
-
-  protected makePortable(value: any, accessPath: string[] = []) {
-    if (
-      accessPath.length === 2 &&
-      (accessPath[0] === 'plugins' || accessPath[0] === 'presets')
-    ) {
-      if (typeof value === 'string') {
-        return this.resolveBabelPlugin(value);
-      }
-      if (Array.isArray(value) && typeof value[0] === 'string') {
-        let result = [this.resolveBabelPlugin(value[0])];
-        if (value.length > 1) {
-          result.push(this.makePortable(value[1], accessPath.concat("1")));
-        }
-        if (value.length > 2) {
-          result.push(value[2]);
-        }
-        return result;
-      }
-    }
-    return super.makePortable(value, accessPath);
-  }
-
-  // babel lets you use relative paths, absolute paths, package names, and
-  // package name shorthands.
-  //
-  // my-plugin  -> my-plugin
-  // my-plugin  -> babel-plugin-my-plugin
-  // @me/thing  -> @me/thing
-  // @me/thing  -> @me/babel-plugin-thing
-  // ./here     -> /your/app/here
-  // /tmp/there -> /tmp/there
-  //
-  private resolveBabelPlugin(name: string) {
-    try {
-      return this.resolve(name);
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
-      }
-      if (name.startsWith('.') || name.startsWith('/')) {
-        throw err;
-      }
-      try {
-        let expanded;
-        if (name.startsWith('@')) {
-          let [space, pkg, ...rest] = name.split('/');
-          expanded = [space, `babel-plugin-${pkg}`, ...rest].join('/');
-        } else {
-          expanded = `babel-plugin-${name}`;
-        }
-        return this.resolve(expanded);
-      } catch (err2) {
-        if (err2.code !== 'MODULE_NOT_FOUND') {
-          throw err2;
-        }
-        if (this.basedir) {
-          throw new Error(`unable to resolve babel plugin ${name} from ${this.basedir}`);
-        } else {
-          throw new Error(`unable to resolve babel plugin ${name}`);
-        }
-      }
-    }
-  }
-}
-
-const compilerTemplate = compile(`
-const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
-const setupCompiler = require('@embroider/core/src/template-compiler').default;
-module.exports = {
-  compile: setupCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}})).compile,
-  isParallelSafe: {{ isParallelSafe }},
-};
-`) as (params: {
-  portable: any,
-  here: string,
-  isParallelSafe: boolean,
-}) => string;
-
-export class PortableTemplateCompilerConfig extends PortablePluginConfig {
-  constructor(config: SetupCompilerParams, resolveOptions: ResolveOptions) {
-    super(config, resolveOptions);
-  }
-
-  protected makePortable(value: any, accessPath: string[] = []) {
-    if (accessPath.length === 1 && accessPath[0] === 'compilerPath') {
-      return this.resolve(value);
-    }
-    if (accessPath.length === 1 && accessPath[0] === 'resolverPath') {
-      return this.resolve(value);
-    }
-    return super.makePortable(value, accessPath);
-  }
-
-  serialize() {
-    return compilerTemplate({ here: __filename, portable: this.portable, isParallelSafe: this.isParallelSafe })
   }
 }
 

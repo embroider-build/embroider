@@ -1,5 +1,5 @@
 import 'qunit';
-import { PortableBabelConfig } from '../src/portable-plugin-config';
+import PortableBabelConfig from '../src/portable-babel-config';
 import { join } from 'path';
 const { test } = QUnit;
 

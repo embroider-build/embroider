@@ -19,7 +19,7 @@ import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
 import { TransformOptions } from '@babel/core';
-import { PortableBabelConfig } from './portable-plugin-config';
+import PortableBabelConfig from './portable-babel-config';
 
 export type EmberENV = unknown;
 

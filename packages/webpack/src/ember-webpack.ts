@@ -112,13 +112,13 @@ interface AppInfo {
   otherAssets: string[];
   externals: string[];
   templateCompiler: Function;
-  babelConfig: any;
+  babel: any;
 }
 
 // AppInfos are equal if they result in the same webpack config.
 function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   return isEqual(left.externals, right.externals) &&
-    isEqual(left.babelConfig, right.babelConfig) &&
+    isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
     left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules));
 }
@@ -173,16 +173,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let externals = meta.externals || [];
     let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
     let babelConfigFile = meta['babel-config'];
-    let babelConfig;
+    let babel;
     if (babelConfigFile) {
-      babelConfig = require(join(this.pathToVanillaApp, babelConfigFile));
+      babel = require(join(this.pathToVanillaApp, babelConfigFile));
     }
-    return { entrypoints, otherAssets, externals, templateCompiler, babelConfig };
+    return { entrypoints, otherAssets, externals, templateCompiler, babel };
   }
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
+  private configureWebpack({ entrypoints, externals, templateCompiler, babel }: AppInfo) {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -216,10 +216,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              (process.env.JOBS === '1' || !babelConfig.parallelSafe)? null : 'thread-loader',
+              (process.env.JOBS === '1' || !babel.isParallelSafe)? null : 'thread-loader',
               {
-                loader: 'babel-loader', // todo use babelConfig.version to ensure the correct loader
-                options: Object.assign({}, babelConfig.babel)
+                loader: 'babel-loader', // todo use babel.version to ensure the correct loader
+                options: Object.assign({}, babel.config)
               }
             ].filter(Boolean)
           },

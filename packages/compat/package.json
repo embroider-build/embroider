@@ -33,6 +33,7 @@
   "dependencies": {
     "@babel/core": "^7.2.2",
     "@embroider/macros": "0.0.8",
+    "assert-never": "^1.1.0",
     "babel-core": "^6.26.3",
     "babel-plugin-debug-macros": "^0.1.11",
     "babel-plugin-ember-modules-api-polyfill": "git+https://github.com/ember-cli/babel-plugin-ember-modules-api-polyfill#d0c7772bc9f995f83641a4292afd5e05e7e9bbba",

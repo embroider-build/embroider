@@ -67,7 +67,6 @@ allBabelVersions(function (transform: (code: string) => string) {
       assert.ok(!/@embroider\/macros/.test(code), `entire import statement should not be in the output: ${code}`);
     });
 
-
     test('non call error', function(assert) {
       assert.throws(() => {
         transform(`

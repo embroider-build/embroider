@@ -12,7 +12,6 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { synthesize, synthesizeGlobal } from './parallel-babel-shim';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
@@ -150,89 +149,15 @@ export default class V1App implements V1Package {
     });
   }
 
-  // babel lets you use relative paths, absolute paths, package names, and
-  // package name shorthands.
-  //
-  // my-plugin  -> my-plugin
-  // my-plugin  -> babel-plugin-my-plugin
-  // @me/thing  -> @me/thing
-  // @me/thing  -> @me/babel-plugin-thing
-  // ./here     -> /your/app/here
-  // /tmp/there -> /tmp/there
-  //
-  private resolveBabelPlugin(name: string, basedir: string) {
-    try {
-      return resolve.sync(name, { basedir });
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
-      }
-      if (name.startsWith('.') || name.startsWith('/')) {
-        throw err;
-      }
-      try {
-        let expanded;
-        if (name.startsWith('@')) {
-          let [space, pkg, ...rest] = name.split('/');
-          expanded = [space, `babel-plugin-${pkg}`, ...rest].join('/');
-        } else {
-          expanded = `babel-plugin-${name}`;
-        }
-        return resolve.sync(expanded, { basedir });
-      } catch (err2) {
-        if (err2.code !== 'MODULE_NOT_FOUND') {
-          throw err2;
-        }
-        throw new Error(`unable to resolve babel plugin ${name} from ${basedir}`);
-      }
-    }
-  }
-
-  babelConfig(finalRoot: string) {
-    let syntheticPlugins = new Map();
-    let parallelSafe = true;
-
+  babelConfig(): TransformOptions {
     let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (!plugins) {
       plugins = [];
+    } else {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      plugins = plugins.filter(p => !isEmbroiderMacrosPlugin(p));
     }
-
-    plugins = plugins.map(plugin => {
-      // We want to resolve (not require) the app's configured plugins relative
-      // to the app. We want to keep everything serializable.
-
-      if (isEmbroiderMacrosPlugin(plugin)) {
-        // we deliberately drop @embroider/macros in favor of the global one in
-        // stage3. It's configured differently.
-        return;
-      }
-
-      // bare string plugin name
-      if (typeof plugin === 'string') {
-        return this.resolveBabelPlugin(plugin, finalRoot);
-      }
-
-      // pair of [pluginName, pluginOptions]
-      if (typeof plugin[0] === 'string') {
-        return [this.resolveBabelPlugin(plugin[0], finalRoot), plugin[1]];
-      }
-
-      // broccoli-babel-transpiler's custom parallel API. Here we synthesize
-      // normal babel plugins that wrap their configuration.
-      if (plugin._parallelBabel) {
-        let name = `_synthetic_babel_plugin_${syntheticPlugins.size}_.js`;
-        syntheticPlugins.set(name, synthesize(plugin._parallelBabel));
-        return name;
-      }
-
-      // if we get this far, we have an opaque, non-serializable plugin. We can
-      // still work with that, but it will force us to be non-parallel in the
-      // stage3 packager.
-      let name = `_synthetic_babel_plugin_${syntheticPlugins.size}_.js`;
-      syntheticPlugins.set(name, synthesizeGlobal(plugin));
-      parallelSafe = false;
-      return name;
-    }).filter(Boolean);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
     // call it, but it require()s all the plugins up front, so not serializable.
@@ -250,7 +175,7 @@ export default class V1App implements V1Package {
       babelrc: false,
       plugins,
       presets: [
-        [resolve.sync("babel-preset-env", { basedir: this.root }), {
+        [require.resolve("babel-preset-env"), {
           targets: babelInstance._getTargets(),
           modules: false
         }],
@@ -259,7 +184,7 @@ export default class V1App implements V1Package {
       // of terminal codes.
       highlightCode: false
     };
-    return { config, syntheticPlugins, parallelSafe };
+    return config;
   }
 
   private debugMacrosPlugin() {

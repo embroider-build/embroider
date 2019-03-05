@@ -17,8 +17,9 @@ import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } fro
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
-import { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros';
+import { TransformOptions } from '@babel/core';
+import { PortableBabelConfig } from './portable-plugin-config';
 
 export type EmberENV = unknown;
 
@@ -70,17 +71,9 @@ export interface AppAdapter<TreeNames> {
   // See how CompatAppAdapter does it for an example.
   templateCompilerSource(config: EmberENV): string;
 
-  // this lets us figure out the babel config used by the app. You receive
-  // "finalRoot" which is where the app will be when we run babel against it,
-  // and you must make sure that the configuration will resolve correctly from
-  // that path.
-  //
-  // - `config` is the actual babel configuration object.
-  // - `syntheticPlugins` is a map from plugin names to Javascript source code
-  //    for babel plugins. This can make it possible to serialize babel
-  //    configs that would otherwise not be serializable.
-  // - `parallelSafe` true if this config can be used in a new node process
-  babelConfig(finalRoot: string): { config: TransformOptions, syntheticPlugins: Map<string, string>, parallelSafe: boolean };
+  // the app's preferred babel config. No need to worry about making it portable
+  // yet, we will do that for you.
+  babelConfig(): TransformOptions;
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -245,23 +238,23 @@ export class AppBuilder<TreeNames> {
       {},
       ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
     );
-    let babel = this.adapter.babelConfig(this.root);
+    let babel = this.adapter.babelConfig();
 
-    if (!babel.config.plugins) {
-      babel.config.plugins = [];
+    if (!babel.plugins) {
+      babel.plugins = [];
     }
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.config.plugins.push(MacrosConfig.shared().babelPluginConfig());
+    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
-    babel.config.plugins.push([require.resolve('./babel-plugin'), {
+    babel.plugins.push([require.resolve('./babel-plugin'), {
       ownName: this.app.name,
       basedir: this.root,
       rename
     }]);
-    return babel;
+    return new PortableBabelConfig(babel, { basedir: this.root });
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
@@ -552,27 +545,12 @@ export class AppBuilder<TreeNames> {
   }
 
   private addBabelConfig() {
-    let { config, syntheticPlugins, parallelSafe } = this.babelConfig;
-
-    if (!parallelSafe) {
+    if (!this.babelConfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
-
-    for (let [name, source] of syntheticPlugins) {
-      let fullName = join(this.root, name);
-      writeFileSync(fullName, source, 'utf8');
-      let index = config.plugins!.indexOf(name);
-      config.plugins![index] = fullName;
-    }
-
     writeFileSync(
       join(this.root, "_babel_config_.js"),
-      `
-    module.exports = ${JSON.stringify({
-      babel: config,
-      parallelSafe,
-    }, null, 2)};
-    `,
+      this.babelConfig.serialize(),
       "utf8"
     );
   }

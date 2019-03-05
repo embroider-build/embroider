@@ -181,8 +181,8 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     `;
   }
 
-  babelConfig(finalRoot: string) {
-    return this.oldPackage.babelConfig(finalRoot);
+  babelConfig() {
+    return this.oldPackage.babelConfig();
   }
 
   externals(): string[] {

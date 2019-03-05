@@ -1,7 +1,6 @@
 import { PluginItem, TransformOptions } from '@babel/core';
 import resolve from 'resolve';
-import { jsHandlebarsCompile as compile } from "@embroider/core";
-import isEqual from 'lodash/isEqual';
+import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
 
@@ -221,7 +220,7 @@ function buildFromParallelApiInfo(parallelApiInfo: ParallelBabelPlaceholder) {
   return requiredStuff;
 }
 
-function implementsParallelAPI(object) {
+function implementsParallelAPI(object: any) {
   const type = typeof object;
   const hasProperties = type === 'function' || (type === 'object' && object !== null) || Array.isArray(object);
 

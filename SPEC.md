@@ -105,7 +105,7 @@ Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve
   Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how node module resolution works. This is different from how run-time AMD module resolution has historically worked in Ember Apps, so the build step that produces the v2 publication format will need to adjust import paths appropriately. For example, if `your-package/a.js` tries to import from `"your-package/b"`, that needs to get rewritten to “`./b`".
 
 
-Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
+Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies.
 
 Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension (a v1-to-v2 compiler can adjust these specifiers automatically).
 
@@ -275,49 +275,9 @@ Finally, your `build` module may export named constants that will be made availa
 
 The v2 format deliberately moves a lot of dynamic behavior to publication time. So how do we deal with remaining cases where different code needs to be included based on dynamic information?
 
-You may export named `const` values from your `build` module (as defined in the **Addon Hooks** section). These constants will be available to your Javascript via `import { someConstant } from` `'@ember/build-time-config/your-package-name'`, and we guarantee that a dead-code elimination step can see any boolean constant branch predicates (this is how feature flags already work inside Ember itself). For example:
+The `@embroider/macros` package provides a set of Javascript functions and template helpers that are implemented as build-time macros. See the [Macros README](https://github.com/embroider-build/embroider/blob/master/packages/macros/README.md) for the complete API.
 
-
-    import { needsLegacySupport } from '@ember/build-time-config/my-package';
-    let MyComponent = Component.extend({
-      //....
-    });
-    if (needsLegacySupport) {
-      MyComponent.reopen({
-        // add some extra code here. It will be stripped from builds that don't need it.
-      });
-    }
-    export default MyComponent;
-
-This is also a motivating example for our support of dynamic `imports()`: it allows you to conditionally depend on other JS modules or CSS:
-
-
-    import { provideDefaultStyles } from '@ember/build-time-config/my-package';
-    if (provideDefaultStyles) {
-      import("../css/default-styles.css");
-    }
-
-Your `build` module is evaluated in Node, not the browser. We just promise that any JSON-serializable constants it exports will get packaged up into the special Ember-provided `@ember/build-time-config` package.
-
-**Template Build-time conditionals**
-
-TODO: this section is a rough first pass. Once clarified, it should also get reflected in the other places where we talk about the template publication format.
-
-We also need build-time conditional capability in templates, because (for example) many of the AST transforms we will be asking addons to pre-apply are supposed to behave differently depending on the Ember version.
-
-The input data is exactly the same as used for Javascript build-time conditionals (any JSON-serializable constants exported from your build module are available via the `@ember/build-config-config` package). We add a helper for accessing those values:
-
-
-    {{#if (ember-build-time-config "my-package" "needsOldFeature")}}
-       ...
-    {{else}}
-       ...
-    {{/if}}
-
-And we implement a transform in the template compiler that does branch elimination based off the values.
-
-Note that only Boolean predicates are handled by the dead-code elimination. You can produce Booleans from arbitrary logic in your `build` module (including things like semver tests or feature probing).
-
+v2-formatted packages are allowed to contain usages of the `@embroider/macros` in both Javascript and Handlebars. We promise to support these macros in the final app build.
 
 ## Active Dependencies
 
@@ -581,7 +541,7 @@ The prebuilt addons RFC addresses build performance by doing the same kind of wo
 
 This spec makes some promises about app-build-time behavior that all v2-formatted addons can rely on. This behavior goes beyond "just Javascript" semantics by making some optimizations mandatory. V2-formatted addons that depend on the following packages get optimization guarantees:
 
- - `@ember/build-time-config`
+ - `@embroider/macros`
  - `ember-cli-htmlbars-inline-precompile`
 
 The details of each should be described elsewhere in this spec.

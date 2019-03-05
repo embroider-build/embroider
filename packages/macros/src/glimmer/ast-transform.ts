@@ -7,6 +7,10 @@ import {
   macroIfExpression,
   maybeAttrs,
 } from './macro-if';
+import {
+  moduleExistsExpression,
+  moduleExistsMustache,
+ } from './module-exists';
 
 export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
   function embroiderFirstMacrosTransform(env: { syntax: { builders: any }, meta: { moduleName: string } }) {
@@ -45,6 +49,9 @@ export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
           if (node.path.original === 'macroDependencySatisfies') {
             return literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders);
           }
+          if (node.path.original === 'macroModuleExists') {
+            return moduleExistsExpression(node, baseDir, env.meta.moduleName, env.syntax.builders);
+          }
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -61,6 +68,9 @@ export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
           }
           if (node.path.original === 'macroDependencySatisfies') {
             return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders));
+          }
+          if (node.path.original === 'macroModuleExists') {
+            return moduleExistsMustache(node, baseDir, env.meta.moduleName, env.syntax.builders);
           }
         }
       }

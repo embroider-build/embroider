@@ -8,8 +8,8 @@ import {
   maybeAttrs,
 } from './macro-if';
 
-export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
-  function embroiderFirstMacrosTransform(env: { syntax: { builders: any } }) {
+export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
+  function embroiderFirstMacrosTransform(env: { syntax: { builders: any }, meta: { moduleName: string } }) {
 
     let scopeStack: string[][] = [];
 
@@ -37,13 +37,13 @@ export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return literal(getConfig(node, config, baseDir, true), env.syntax.builders);
+            return literal(getConfig(node, config, baseDir, env.meta.moduleName, true), env.syntax.builders);
           }
           if (node.path.original === 'macroGetConfig') {
-            return literal(getConfig(node, config, baseDir, false), env.syntax.builders);
+            return literal(getConfig(node, config, baseDir, env.meta.moduleName, false), env.syntax.builders);
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return literal(dependencySatisfies(node, config, baseDir), env.syntax.builders);
+            return literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders);
           }
         },
         MustacheStatement(node: any) {
@@ -54,13 +54,13 @@ export function makeFirstTransform(baseDir: string, config: MacrosConfig) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, true), env.syntax.builders));
+            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, env.meta.moduleName, true), env.syntax.builders));
           }
           if (node.path.original === 'macroGetConfig') {
-            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, false), env.syntax.builders));
+            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, env.meta.moduleName, false), env.syntax.builders));
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir), env.syntax.builders));
+            return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders));
           }
         }
       }

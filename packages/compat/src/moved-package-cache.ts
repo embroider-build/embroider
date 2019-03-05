@@ -7,6 +7,7 @@ import {
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
 import { PackageCache, Package, getOrCreate } from "@embroider/core";
+import { MacrosConfig } from '@embroider/macros';
 
 export class MovablePackageCache extends PackageCache {
   moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
@@ -41,6 +42,7 @@ export class MovedPackageCache extends PackageCache {
 
     // so we can now determine where the app will go inside the workspace
     this.appDestDir = this.localPath(origApp.root);
+    MacrosConfig.shared().packageMoved(origApp.root, this.appDestDir);
 
     for (let originalPkg of movedSet.packages) {
       // Update our rootCache so we don't need to rediscover moved packages
@@ -55,6 +57,7 @@ export class MovedPackageCache extends PackageCache {
       } else {
         movedPkg = this.movedPackage(originalPkg);
         this.moved.set(originalPkg, movedPkg);
+        MacrosConfig.shared().packageMoved(originalPkg.root, movedPkg.root);
       }
 
       // Update our resolutionCache so we still know as much about the moved

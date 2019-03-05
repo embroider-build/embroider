@@ -30,7 +30,7 @@ export default class CompatAddons implements Stage {
       ensureDirSync(options.workspaceDir);
       this.destDir = realpathSync(options.workspaceDir);
     } else {
-      this.destDir = mkdtempSync(join(tmpdir(), 'embroider-'));
+      this.destDir = realpathSync(mkdtempSync(join(tmpdir(), 'embroider-')));
     }
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);

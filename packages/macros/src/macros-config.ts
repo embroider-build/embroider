@@ -24,7 +24,7 @@ let localSharedState: MacrosConfig | undefined;
 export default class MacrosConfig {
   static shared(): MacrosConfig {
     if (!localSharedState) {
-      let g = global as any;
+      let g = global as any as { __embroider_macros_global__: GlobalSharedState | undefined };
       if (!g.__embroider_macros_global__) {
         g.__embroider_macros_global__ = new GlobalSharedState();
       }
@@ -35,8 +35,8 @@ export default class MacrosConfig {
     return localSharedState;
   }
 
-  private configs: Map<Package, unknown[]> = new Map();
-  private mergers: Map<Package, { merger: Merger, fromPath: string }> = new Map();
+  private configs: Map<string, unknown[]> = new Map();
+  private mergers: Map<string, { merger: Merger, fromPath: string }> = new Map();
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to
@@ -57,11 +57,11 @@ export default class MacrosConfig {
       throw new Error(`attempted to set config after we have already emitted our config`);
     }
     let targetPackage = this.resolvePackage(fromPath, packageName);
-    let peers = this.configs.get(targetPackage);
+    let peers = this.configs.get(targetPackage.root);
     if (peers) {
       peers.push(config);
     } else {
-      this.configs.set(targetPackage, [config]);
+      this.configs.set(targetPackage.root, [config]);
     }
   }
 
@@ -73,11 +73,11 @@ export default class MacrosConfig {
       throw new Error(`attempted to call useMerger after we have already emitted our config`);
     }
     let targetPackage = this.resolvePackage(fromPath, undefined);
-    let other = this.mergers.get(targetPackage);
+    let other = this.mergers.get(targetPackage.root);
     if (other) {
       throw new Error(`conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${other.fromPath} and ${fromPath}.`);
     }
-    this.mergers.set(targetPackage, { merger, fromPath });
+    this.mergers.set(targetPackage.root, { merger, fromPath });
   }
 
   private cachedUserConfigs: { [packageRoot: string]: unknown } | undefined;
@@ -85,14 +85,14 @@ export default class MacrosConfig {
   private get userConfigs() {
     if (!this.cachedUserConfigs) {
       let userConfigs: { [packageRoot: string]: unknown } = {};
-      for (let [pkg, configs] of this.configs) {
+      for (let [pkgRoot, configs] of this.configs) {
         let combined: unknown;
         if (configs.length > 1) {
-          combined = this.mergerFor(pkg)(configs);
+          combined = this.mergerFor(pkgRoot)(configs);
         } else {
           combined = configs[0];
         }
-        userConfigs[pkg.root] = combined;
+        userConfigs[pkgRoot] = combined;
       }
       this.cachedUserConfigs = userConfigs;
     }
@@ -122,18 +122,24 @@ export default class MacrosConfig {
   }
 
   astPlugins(owningPackageRoot?: string): Function[] {
-    if (!owningPackageRoot) {
-      owningPackageRoot = 'fixme-no-such-path';
-    }
-    return [makeFirstTransform(owningPackageRoot, this), makeSecondTransform()];
+    return [makeFirstTransform(this, owningPackageRoot), makeSecondTransform()];
   }
 
-  private mergerFor(pkg: Package) {
-    let entry = this.mergers.get(pkg);
+  private mergerFor(pkgRoot: string) {
+    let entry = this.mergers.get(pkgRoot);
     if (entry) {
       return entry.merger;
     }
     return defaultMerger;
+  }
+
+  // this exists because @embroider/compat rewrites and moves v1 addons, and
+  // their macro configs need to follow them to their new homes.
+  packageMoved(oldPath: string, newPath: string) {
+    let config = this.userConfigs[oldPath];
+    if (config) {
+      this.userConfigs[newPath] = config;
+    }
   }
 
   getConfig(fromPath: string, packageName: string) {

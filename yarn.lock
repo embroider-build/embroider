@@ -5363,9 +5363,10 @@ fs-tree-diff@^1.0.0, fs-tree-diff@^1.0.2:
     path-posix "^1.0.0"
     symlink-or-copy "^1.1.8"
 
-"fs-tree-diff@git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f":
-  version "1.0.2-custom.0"
-  resolved "git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f"
+fs-tree-diff@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/fs-tree-diff/-/fs-tree-diff-2.0.0.tgz#3c74e8219e4174690e85190b29ab4fd4a916744a"
+  integrity sha512-faaAi8T3bl6zy6dpLnHDZJG5I7wSvoRWcrD9zR8VIK6AecpdpF2jVAM6G9zElhYLAFZPBiFVbkMFxLsYIicYIQ==
   dependencies:
     "@types/symlink-or-copy" "^1.2.0"
     heimdalljs-logger "^0.1.7"

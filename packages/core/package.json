@@ -32,7 +32,7 @@
     "debug": "^3.1.0",
     "fast-sourcemap-concat": "^1.4.0",
     "fs-extra": "^7.0.1",
-    "fs-tree-diff": "git+https://github.com/ef4/fs-tree-diff#374ac822908b5bbc3c95710dea59cd46e33cd17f",
+    "fs-tree-diff": "^2.0.0",
     "handlebars": "^4.0.11",
     "js-string-escape": "^1.0.1",
     "jsdom": "^12.0.0",

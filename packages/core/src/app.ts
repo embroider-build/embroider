@@ -20,6 +20,9 @@ import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
 import { TransformOptions } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
+import { TemplateCompilerPlugins } from '.';
+import { SetupCompilerParams } from './template-compiler';
+import PortableTemplateCompilerConfig from './portable-compiler';
 
 export type EmberENV = unknown;
 
@@ -67,9 +70,15 @@ export interface AppAdapter<TreeNames> {
   // the app.
   extraDependencies?(): Package[];
 
-  // this is actual Javascript for a module that provides template compilation.
-  // See how CompatAppAdapter does it for an example.
-  templateCompilerSource(config: EmberENV): string;
+  // The path to ember's template compiler source
+  templateCompilerPath(): string;
+
+  // Path to a build-time Resolver module to be used during template
+  // compilation.
+  templateResolverPath(): string;
+
+  // The template preprocessor plugins that are configured in the app.
+  htmlbarsPlugins(): TemplateCompilerPlugins;
 
   // the app's preferred babel config. No need to worry about making it portable
   // yet, we will do that for you.
@@ -539,9 +548,24 @@ export class AppBuilder<TreeNames> {
   // apparently ember-cli adds some extra steps on top (like stripping BOM), so
   // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
+
+    let params: SetupCompilerParams = {
+      plugins: this.adapter.htmlbarsPlugins(),
+      compilerPath: this.adapter.templateCompilerPath(),
+      resolverPath: this.adapter.templateResolverPath(),
+      EmberENV: config,
+      resolverParams: {
+        root: this.root,
+        modulePrefix: this.adapter.modulePrefix(),
+        options: this.options
+      }
+    };
+
+    let source = new PortableTemplateCompilerConfig(params, { basedir: this.root }).serialize();
+
     writeFileSync(
       join(this.root, "_template_compiler_.js"),
-      this.adapter.templateCompilerSource(config),
+      source,
       "utf8"
     );
   }

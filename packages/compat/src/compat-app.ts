@@ -10,7 +10,8 @@ import {
   AppAdapter,
   AppBuilder,
   EmberENV,
-  Package
+  Package,
+  TemplateCompilerPlugins
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -21,8 +22,6 @@ import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import PortableTemplateCompilerConfig from '@embroider/core/src/portable-compiler';
-import { SetupCompilerParams } from '@embroider/core/src/template-compiler';
 
 interface TreeNames {
   appJS: Tree;
@@ -57,12 +56,10 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
     let adapter = new CompatAppAdapter(
-      root,
       oldPackage,
       configTree,
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      options
     );
     return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
   };
@@ -72,12 +69,10 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
   constructor(
-    private root: string,
     private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
-    private options: Required<Options>,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -166,20 +161,16 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return [this.synthVendor];
   }
 
-  templateCompilerSource(config: EmberENV) {
-    let params: SetupCompilerParams = {
-      plugins: this.oldPackage.htmlbarsPlugins,
-      compilerPath: 'ember-source/vendor/ember/ember-template-compiler',
-      resolverPath: '@embroider/compat/src/resolver',
-      EmberENV: config,
-      resolverParams: {
-        root: this.root,
-        modulePrefix: this.modulePrefix(),
-        options: this.options
-      }
-    };
+  templateCompilerPath(): string {
+    return 'ember-source/vendor/ember/ember-template-compiler';
+  }
 
-    return new PortableTemplateCompilerConfig(params, { basedir: this.root }).serialize();
+  templateResolverPath(): string {
+    return '@embroider/compat/src/resolver';
+  }
+
+  htmlbarsPlugins(): TemplateCompilerPlugins {
+    return this.oldPackage.htmlbarsPlugins;
   }
 
   babelConfig() {

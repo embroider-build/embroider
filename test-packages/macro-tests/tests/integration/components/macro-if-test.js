@@ -1,6 +1,6 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
-import { render } from '@ember/test-helpers';
+import { render, click } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import { helper } from '@ember/component/helper';
 
@@ -66,11 +66,21 @@ module('Integration | Macro | macroIf', function(hooks) {
     assert.ok(target.matches('[data-flavor="vanilla"]'), 'found data-flavor');
   });
 
-  test('macroMaybeAttrs in element modifier position, when false', async function(assert) {
+  test('macroMaybeAttrs when false', async function(assert) {
     await render(hbs`<div data-test-target {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`);
     let target = this.element.querySelector('[data-test-target]');
     assert.ok(!target.matches('[data-optional]'));
     assert.ok(!target.matches('[data-flavor="vanilla"]'));
+  });
+
+  test('macroMaybeAttrs leaves other modifiers alone', async function(assert) {
+    assert.expect(1);
+    this.doThing = function() {
+      assert.ok(true, 'it ran');
+    }
+    await render(hbs`<div data-test-target {{action doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`);
+    let target = this.element.querySelector('[data-test-target]');
+    await click(target);
   });
 
   test('macroIf composes with other macros, true case', async function(assert) {

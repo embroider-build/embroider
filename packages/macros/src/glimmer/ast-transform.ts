@@ -123,6 +123,8 @@ export function makeSecondTransform() {
             }
             if (modifier.path.original === 'macroMaybeAttrs') {
               maybeAttrs(node, modifier, env.syntax.builders);
+            } else {
+              return true;
             }
           });
         },

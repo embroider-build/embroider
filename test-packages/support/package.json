@@ -1,0 +1,12 @@
+{
+  "name": "@embroider/test-support",
+  "version": "0.0.8",
+  "private": true,
+  "dependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/node": "^10.5.2",
+    "console-ui": "^3.0.0",
+    "ember-cli": "~3.7.1",
+    "fs-extra": "^7.0.0"
+  }
+}

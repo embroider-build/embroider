@@ -179,7 +179,7 @@ export function emberProject(embroiderOptions: Options = {}) {
 }
 
 export function addAddon(app: Project, name: string) {
-  let addon = app.addDependency('my-addon');
+  let addon = app.addDependency(name);
   addon.files = {
     'index.js': addonIndexFile,
     addon: {
@@ -193,5 +193,6 @@ export function addAddon(app: Project, name: string) {
   addon.linkPackage('ember-cli-babel');
 
   addon.pkg.keywords = ['ember-addon'];
+  addon.pkg['ember-addon'] = {};
   return addon;
 }

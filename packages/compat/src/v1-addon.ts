@@ -3,7 +3,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync } from 'fs-extra';
+import { existsSync, pathExistsSync, realpathSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -60,7 +60,7 @@ let locatePreprocessRegistry: (addonInstance: any) => any;
   let preprocessRegistry: any;
   locatePreprocessRegistry = function(addonInstance: any) {
     if (!preprocessRegistry) {
-      let cliPath = resolve.sync('ember-cli', { basedir: addonInstance._findHost().project.root });
+      let cliPath = dirname(realpathSync(resolve.sync('ember-cli/package.json', { basedir: addonInstance._findHost().project.root })));
       preprocessRegistry = require(resolve.sync('ember-cli-preprocess-registry/preprocessors', { basedir: cliPath }));
     }
     return preprocessRegistry;

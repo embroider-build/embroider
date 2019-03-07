@@ -1,6 +1,7 @@
 import {
   emberProject,
-  addAddon
+  addAddon,
+  Project
 } from './helpers';
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
@@ -13,10 +14,11 @@ QUnit.module('v1-addon', function() {
 
     let { hooks, test, skip } = installFileAssertions(origHooks);
     let builder: Builder;
+    let app: Project;
 
     hooks.before(async function(assert) {
       // A simple ember app with no tests
-      let app = emberProject();
+      app = emberProject();
 
       // We create an addon
       let addon = addAddon(app, 'my-addon');
@@ -74,6 +76,7 @@ QUnit.module('v1-addon', function() {
     });
 
     hooks.after(async function() {
+      await app.dispose();
       await builder.cleanup();
     });
 

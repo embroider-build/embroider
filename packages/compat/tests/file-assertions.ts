@@ -75,10 +75,10 @@ export class BoundFileAssert {
   }
 
   matches(pattern: string | RegExp, message?: string): void {
-    return this.doMatch(pattern, message, false);
+    this.doMatch(pattern, message, false);
   }
   doesNotMatch(pattern: string | RegExp, message?: string): void {
-    return this.doMatch(pattern, message, true);
+    this.doMatch(pattern, message, true);
   }
   json(propertyPath?: string): JSONAssert {
     return new JSONAssert(this.assert, this.path, () => {
@@ -116,11 +116,33 @@ export class JSONAssert {
     return new JSONAssert(this.assert, this.path, () => this.contents, propertyPath);
   }
 
-  deepEquals(expected: any, message?: string) {
+  deepEquals(expected: any, message?: string): void {
     if (!this.contents.result) {
-      return this.contents;
+      this.assert.pushResult(this.contents);
+      return;
     }
-    return this.assert.deepEqual(this.contents.data, expected, message);
+    this.assert.deepEqual(this.contents.data, expected, message);
+  }
+
+  equals(expected: any, message?: string): void {
+    if (!this.contents.result) {
+      this.assert.pushResult(this.contents);
+      return;
+    }
+    return this.assert.equal(this.contents.data, expected, message);
+  }
+
+  includes(expected: any, message?: string): void {
+    if (!this.contents.result) {
+      this.assert.pushResult(this.contents);
+      return;
+    }
+    this.assert.pushResult({
+      result: Array.isArray(this.contents.data) && this.contents.data.includes(expected),
+      actual: this.contents.data,
+      expected,
+      message: message || `expected value missing from array`
+    });
   }
 
   @Memoize()

@@ -3,13 +3,11 @@ import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
 import Options from '../src/options';
 
-function cliBuildFile(embroiderOptions: Options = {}) {
+function cliBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
   return `
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 module.exports = function(defaults) {
-  let app = new EmberApp(defaults, {
-    tests: false
-  });
+  let app = new EmberApp(defaults, ${JSON.stringify(emberAppOptions, null, 2)});
   if (process.env.CLASSIC) {
     return app.toTree();
   }
@@ -19,11 +17,14 @@ module.exports = function(defaults) {
 `;
 }
 
-const addonIndexFile = `
+function addonIndexFile(content: string) {
+  return `
 module.exports = {
   name: require('./package').name,
+  ${content}
 };
 `;
+}
 
 function environmentFile(appName: string) {
   return `
@@ -142,11 +143,11 @@ export class Project extends FixturifyProject {
   }
 }
 
-export function emberProject(embroiderOptions: Options = {}) {
+export function emberProject(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
   let name = 'my-app';
   let app = new Project(name);
   app.files = {
-    'ember-cli-build.js': cliBuildFile(embroiderOptions),
+    'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
     config: {
       'environment.js': environmentFile(name)
     },
@@ -171,10 +172,10 @@ export function emberProject(embroiderOptions: Options = {}) {
   return app;
 }
 
-export function addAddon(app: Project, name: string) {
+export function addAddon(app: Project, name: string, indexContent = "") {
   let addon = app.addDependency(name);
   addon.files = {
-    'index.js': addonIndexFile,
+    'index.js': addonIndexFile(indexContent),
     addon: {
       templates: {
         components: {

@@ -27,7 +27,10 @@ QUnit.module('v1-addon', function() {
           'hello-world.js': `
             import Component from '@ember/component';
             import layout from '../templates/components/hello-world';
+            import { getOwnConfig } from '@embroider/macros';
             export default Component.extend({
+              'data-test-example': 'remove me',
+              config: getOwnConfig(),
               layout
             });
           `
@@ -108,7 +111,17 @@ QUnit.module('v1-addon', function() {
         'node_modules/my-addon/components/hello-world.js',
         `import layout from '../templates/components/hello-world.hbs'`,
         `template imports have explicit .hbs extension added`
-        );
+      );
+      assert.fileMatches(
+        'node_modules/my-addon/components/hello-world.js',
+        `getOwnConfig()`,
+        `JS macros have not run yet`
+      );
+      assert.fileDoesNotMatch(
+        'node_modules/my-addon/components/hello-world.js',
+        `data-test-example`,
+        `custom babel plugins have run`
+      );
     });
 
     test('component template in addon tree', function(assert) {
@@ -120,7 +133,7 @@ QUnit.module('v1-addon', function() {
       assert.fileMatches(
         'node_modules/my-addon/templates/components/hello-world.hbs',
         '<span>{{macroDependencySatisfies "ember-source" ">3"}}</span>',
-        'macros have not run'
+        'template macros have not run'
       );
     });
 
@@ -133,7 +146,7 @@ QUnit.module('v1-addon', function() {
       assert.fileMatches(
         'node_modules/my-addon/_app_/components/has-inline-template.js',
         "<span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>",
-        'macros have not run'
+        'template macros have not run'
       );
     });
   });

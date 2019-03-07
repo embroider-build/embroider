@@ -9,6 +9,7 @@ export interface FileAssert extends Assert {
   setBasePath(path: string): void;
   fileExists(path: string, message?: string): void;
   fileMatches(path: string, pattern: string | RegExp, message?: string): void;
+  fileDoesNotMatch(path: string, pattern: string | RegExp, message?: string): void;
   fileJSON(path: string, expected: any, propertyPath?: string, message?: string): void;
 }
 
@@ -73,12 +74,20 @@ export function installFileAssertions(hooks: NestedHooks) {
   }
 
   function fileMatches(this: FileAssert, path: string, pattern: string | RegExp, message?: string) {
+    return fileMatch(this, path, pattern, message, false);
+  }
+
+  function fileDoesNotMatch(this: FileAssert, path: string, pattern: string | RegExp, message?: string) {
+    return fileMatch(this, path, pattern, message, true);
+  }
+
+  function fileMatch(assert: FileAssert, path: string, pattern: string | RegExp, message: string | undefined, invert: boolean) {
     let shortPath = path;
     if (basePath) {
       path = join(basePath, path);
     }
     if (!pathExistsSync(path)) {
-      this.pushResult({
+      assert.pushResult({
         result: false,
         actual: 'missing',
         expected: 'present',
@@ -92,7 +101,10 @@ export function installFileAssertions(hooks: NestedHooks) {
       } else {
         result = pattern.test(contents);
       }
-      this.pushResult({
+      if (invert) {
+        result = !result;
+      }
+      assert.pushResult({
         result,
         actual: contents,
         expected: pattern,
@@ -106,6 +118,7 @@ export function installFileAssertions(hooks: NestedHooks) {
     assert.setBasePath = setBasePath;
     assert.fileExists = fileExists;
     assert.fileMatches = fileMatches;
+    assert.fileDoesNotMatch = fileDoesNotMatch;
     assert.fileJSON = fileJSON;
   }
 

@@ -89,12 +89,17 @@ QUnit.module('v1-addon', function() {
 
     test('addon metadata', function(assert) {
       let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
-      assertMeta.get('app-js').deepEquals('_app_', 'should have app-js metadata');
+      assertMeta.get('app-js').equals('_app_', 'should have app-js metadata');
       assertMeta.get('externals').deepEquals(['@ember/component', 'htmlbars-inline-precompile'], 'should detect external modules');
-      assertMeta.get('implicit-modules').deepEquals(
-        ['./components/hello-world'],
+      assertMeta.get('implicit-modules').includes(
+        './components/hello-world',
         'staticAddonTrees is off so we should include the component implicitly'
       );
+      assertMeta.get('implicit-modules').includes(
+        './templates/components/hello-world.hbs',
+        'staticAddonTrees is off so we should include the template implicitly'
+      );
+      assertMeta.get('version').equals(2);
     });
 
     test('component in addon tree', function(assert) {

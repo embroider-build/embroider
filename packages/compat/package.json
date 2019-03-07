@@ -11,6 +11,7 @@
     "test": "qunit tests"
   },
   "devDependencies": {
+    "@embroider/sample-transforms": "0.0.0",
     "@embroider/test-support": "0.0.8",
     "@types/babel__core": "^7.0.4",
     "@types/babel__generator": "^7.0.1",
@@ -28,7 +29,6 @@
     "@types/semver": "^5.5.0",
     "@types/strip-bom": "^3.0.0",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
-    "ember-test-selectors": "^2.0.0",
     "fixturify-project": "^1.8.0",
     "qunit": "^2.8.0",
     "tslint": "^5.11.0",

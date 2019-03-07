@@ -29,7 +29,7 @@ QUnit.module('v1-addon', function() {
             import layout from '../templates/components/hello-world';
             import { getOwnConfig } from '@embroider/macros';
             export default Component.extend({
-              'data-test-example': 'remove me',
+              message: 'embroider-sample-transforms-target',
               config: getOwnConfig(),
               layout
             });
@@ -38,14 +38,14 @@ QUnit.module('v1-addon', function() {
             import Component from '@ember/component';
             import hbs from 'htmlbars-inline-precompile';
             export default Component.extend({
-              layout: ${"hbs`<div data-test-example>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"}
+              layout: ${"hbs`<div class={{embroider-sample-transforms-target}}>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"}
             });
           `
         },
         templates: {
           components: {
             'hello-world.hbs': `
-              <div data-test-example>hello world</div>
+              <div class={{embroider-sample-transforms-target}}>hello world</div>
               <span>{{macroDependencySatisfies "ember-source" ">3"}}</span>
             `
           }
@@ -57,21 +57,14 @@ QUnit.module('v1-addon', function() {
         }
       };
 
-      // Our addon will use ember-test-selectors as an example of a custom AST
-      // transform.
-      addon.linkPackage('ember-test-selectors');
+      // Our addon will use @embroider/sample-transforms as examples of custom
+      // AST and babel transforms.
+      addon.linkPackage('@embroider/sample-transforms');
       addon.linkPackage('ember-cli-htmlbars-inline-precompile');
       addon.linkPackage('@embroider/macros');
 
       app.writeSync();
-      let compat = new CompatAddons(emberApp(app.baseDir, {
-        // this is used by our addon, but ember-test-selectors always looks here
-        // (in the app config) for options. In this case we're making sure it
-        // always runs.
-        'ember-test-selectors': {
-          strip: true
-        }
-      }));
+      let compat = new CompatAddons(emberApp(app.baseDir));
       builder = new Builder(compat.tree);
       let builderPromise = builder.build();
       assert.basePath = (await compat.ready()).outputPath;
@@ -112,8 +105,8 @@ QUnit.module('v1-addon', function() {
         `getOwnConfig()`,
         `JS macros have not run yet`
       );
-      assertFile.doesNotMatch(
-        `data-test-example`,
+      assertFile.matches(
+        `embroider-sample-transforms-result`,
         `custom babel plugins have run`
       );
     });
@@ -121,7 +114,7 @@ QUnit.module('v1-addon', function() {
     test('component template in addon tree', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/templates/components/hello-world.hbs');
       assertFile.matches(
-        '<div>hello world</div>',
+        '<div class={{embroider-sample-transforms-result}}>hello world</div>',
         'template is still hbs and custom transforms have run'
       );
       assertFile.matches(
@@ -133,7 +126,7 @@ QUnit.module('v1-addon', function() {
     skip('component with inline template', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
-        'hbs`<div>Inline</div>',
+        'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
         'template is still hbs and custom transforms have run'
       );
       assertFile.matches(

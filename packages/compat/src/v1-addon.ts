@@ -26,7 +26,8 @@ import ApplyASTTransforms from './apply-ast-transforms';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
-import { TransformOptions } from "@babel/core";
+import { TransformOptions, PluginItem } from "@babel/core";
+import { isInlinePrecompilePlugin } from "./inline-precompile";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -242,14 +243,7 @@ export default class V1Addon implements V1Package {
     if (!babelConfig.plugins) {
       babelConfig.plugins = [];
     } else {
-      let plugins = babelConfig.plugins;
-      let macros = plugins.find(isEmbroiderMacrosPlugin);
-      if (macros) {
-        // the point of @embroider/macros is that it's allowed to stay in v2
-        // addon publication format, so it doesn't need to run here in stage1.
-        // We always run it in stage3.
-        plugins.splice(plugins.indexOf(macros), 1);
-      }
+      babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
     }
     babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
       ownName: this.name
@@ -584,4 +578,23 @@ class IntermediateBuild {
   importParsers: ImportParser[] = [];
   staticMeta: { [metaField: string]: any } = {};
   dynamicMeta: (() => Partial<AddonMeta>)[] = [];
+}
+
+function babelPluginAllowedInStage1(plugin: PluginItem) {
+  if (isEmbroiderMacrosPlugin(plugin)) {
+    // the point of @embroider/macros is that it's allowed to stay in v2
+    // addon publication format, so it doesn't need to run here in stage1.
+    // We always run it in stage3.
+    return false;
+  }
+
+  if (isInlinePrecompilePlugin(plugin)) {
+    // Similarly, the inline precompile plugin must not run in stage1. We
+    // want all templates uncompiled. Instead, we will be adding our own
+    // plugin that only runs custom AST transforms inside inline
+    // templates.
+    return false;
+  }
+
+  return true;
 }

@@ -12,7 +12,7 @@ import { installFileAssertions } from './file-assertions';
 QUnit.module('v1-addon', function() {
   QUnit.module('max compatibility', function(origHooks) {
 
-    let { hooks, test, skip } = installFileAssertions(origHooks);
+    let { hooks, test } = installFileAssertions(origHooks);
     let builder: Builder;
     let app: Project;
 
@@ -123,7 +123,7 @@ QUnit.module('v1-addon', function() {
       );
     });
 
-    skip('component with inline template', function(assert) {
+    test('component with inline template', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',

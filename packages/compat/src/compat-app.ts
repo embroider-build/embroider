@@ -61,7 +61,17 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
     );
-    return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
+
+    // Our options are a superset of the core options. It's *mostly* harmless to
+    // keep the extra parts in there, except some of our extra options are not
+    // serializable, and the options end up propagating to the template
+    // resolver, which benefits from having a serializable config. So we hide
+    // the non-serial-safe parts of our options from the app.
+    let coreOptions = Object.assign({}, options);
+    delete coreOptions.compatAdapters;
+    delete coreOptions.extraPublicTrees;
+
+    return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, coreOptions);
   };
 
   return { inTrees, instantiate };

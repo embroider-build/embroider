@@ -27,16 +27,24 @@ interface GlobalPlaceholder {
   index: number;
 }
 
-interface ParallelPlaceholder {
+interface BroccoliParallelPlaceholder {
   embroiderPlaceholder: true;
-  type: "parallel";
-  requireFile: "string";
-  useMethod: "string" | undefined;
-  buildUsing: "string" | undefined;
+  type: "broccoli-parallel";
+  requireFile: string;
+  useMethod: string | undefined;
+  buildUsing: string | undefined;
   params: any;
 }
 
-type Placeholder = GlobalPlaceholder | ParallelPlaceholder;
+interface HTMLBarsParallelPlaceholder {
+  embroiderPlaceholder: true;
+  type: "htmlbars-parallel";
+  requireFile: string;
+  buildUsing: string;
+  params: any;
+}
+
+type Placeholder = GlobalPlaceholder | BroccoliParallelPlaceholder | HTMLBarsParallelPlaceholder;
 
 export class PortablePluginConfig {
   protected basedir: string | undefined;
@@ -66,9 +74,19 @@ export class PortablePluginConfig {
   protected makePortable(value: any, accessPath: string[] = []): any {
     if (value === null) {
       return value;
-    } else if (implementsParallelAPI(value)) {
-      return parallelPlaceholder(value._parallelBabel);
-    } else if (Array.isArray(value)) {
+    }
+
+    let broccoli = maybeBroccoli(value);
+    if (broccoli) {
+      return broccoli;
+    }
+
+    let htmlbars = maybeHTMLBars(value);
+    if (htmlbars) {
+      return htmlbars;
+    }
+
+    if (Array.isArray(value)) {
       return value.map((element, index) => this.makePortable(element, accessPath.concat(String(index))));
     }
 
@@ -107,8 +125,10 @@ export class PortablePluginConfig {
               throw new Error(`unable to use this non-serializable babel config in this node process`);
             }
             return globalValues[placeholder.index];
-          case 'parallel':
-            return buildFromParallelApiInfo(placeholder);
+          case 'broccoli-parallel':
+            return buildBroccoli(placeholder);
+          case 'htmlbars-parallel':
+            return buildHTMLBars(placeholder);
         }
         assertNever(placeholder);
       } else {
@@ -128,19 +148,29 @@ function setupGlobals() {
   return G[protocol];
 }
 
-function parallelPlaceholder(parallelBabel: any): ParallelPlaceholder {
-  return {
-    embroiderPlaceholder: true,
-    type: 'parallel',
-    requireFile: parallelBabel.requireFile,
-    buildUsing: parallelBabel.buildUsing,
-    useMethod: parallelBabel.useMethod,
-    params: parallelBabel.params,
-  };
+// === broccoli-babel-transpiler support ===
+
+function maybeBroccoli(object: any): BroccoliParallelPlaceholder | undefined {
+  const type = typeof object;
+  const hasProperties = type === 'function' || (type === 'object' && object !== null);
+
+  if (hasProperties &&
+    object._parallelBabel !== null &&
+    typeof object._parallelBabel === 'object' &&
+    typeof object._parallelBabel.requireFile === 'string'
+  ) {
+    return {
+      embroiderPlaceholder: true,
+      type: 'broccoli-parallel',
+      requireFile: object._parallelBabel.requireFile,
+      buildUsing: object._parallelBabel.buildUsing,
+      useMethod: object._parallelBabel.useMethod,
+      params: object._parallelBabel.params,
+    };
+  }
 }
 
-// this method is adapted directly out of broccoli-babel-transpiler
-function buildFromParallelApiInfo(parallelApiInfo: ParallelPlaceholder) {
+function buildBroccoli(parallelApiInfo: BroccoliParallelPlaceholder) {
   let requiredStuff = require(parallelApiInfo.requireFile);
 
   if (parallelApiInfo.useMethod) {
@@ -160,12 +190,30 @@ function buildFromParallelApiInfo(parallelApiInfo: ParallelPlaceholder) {
   return requiredStuff;
 }
 
-function implementsParallelAPI(object: any) {
+// ember-cli-htmlbars-inline-precompile support ===
+function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
   const type = typeof object;
-  const hasProperties = type === 'function' || (type === 'object' && object !== null) || Array.isArray(object);
+  const hasProperties = type === 'function' || (type === 'object' && object !== null);
 
-  return hasProperties &&
-    object._parallelBabel !== null &&
-    typeof object._parallelBabel === 'object' &&
-    typeof object._parallelBabel.requireFile === 'string';
+  if (hasProperties &&
+    object.parallelBabel !== null &&
+    typeof object.parallelBabel === 'object' &&
+    typeof object.parallelBabel.requireFile === 'string'
+  ) {
+    return {
+      embroiderPlaceholder: true,
+      type: 'htmlbars-parallel',
+      requireFile: object._parallelBabel.requireFile,
+      buildUsing: String(object._parallelBabel.buildUsing),
+      params: object._parallelBabel.params,
+    };
+  }
+}
+
+function buildHTMLBars(parallelApiInfo: HTMLBarsParallelPlaceholder) {
+  let requiredStuff = require(parallelApiInfo.requireFile);
+  if (typeof requiredStuff[parallelApiInfo.buildUsing] !== 'function') {
+    throw new Error("'" + parallelApiInfo.buildUsing + "' is not a function in file " + parallelApiInfo.requireFile);
+  }
+  return requiredStuff[parallelApiInfo.buildUsing](parallelApiInfo.params);
 }

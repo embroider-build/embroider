@@ -74,7 +74,7 @@ QUnit.module('v1-addon', function() {
       }));
       builder = new Builder(compat.tree);
       let builderPromise = builder.build();
-      assert.setBasePath((await compat.ready()).outputPath);
+      assert.basePath = (await compat.ready()).outputPath;
       await builderPromise;
     });
 
@@ -84,67 +84,54 @@ QUnit.module('v1-addon', function() {
     });
 
     test('component in app tree', function(assert) {
-      assert.fileExists('node_modules/my-addon/_app_/components/hello-world.js');
-      assert.fileJSON('node_modules/my-addon/package.json', '_app_', 'ember-addon.app-js', 'should have app-js metadata');
+      assert.file('node_modules/my-addon/_app_/components/hello-world.js').exists();
     });
 
-    test('detects externals', function(assert) {
-      assert.fileJSON(
-        'node_modules/my-addon/package.json',
-        ['@ember/component', 'htmlbars-inline-precompile'],
-        'ember-addon.externals',
-        'should detect external modules'
-      );
-    });
-
-    test('implicity include all addon js', function(assert) {
-      assert.fileJSON(
-        'node_modules/my-addon/package.json',
+    test('addon metadata', function(assert) {
+      let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
+      assertMeta.get('app-js').deepEquals('_app_', 'should have app-js metadata');
+      assertMeta.get('externals').deepEquals(['@ember/component', 'htmlbars-inline-precompile'], 'should detect external modules');
+      assertMeta.get('implicit-modules').deepEquals(
         ['./components/hello-world'],
-        'ember-addon.implicit-modules',
         'staticAddonTrees is off so we should include the component implicitly'
       );
     });
 
     test('component in addon tree', function(assert) {
-      assert.fileMatches(
-        'node_modules/my-addon/components/hello-world.js',
+      let assertFile = assert.file('node_modules/my-addon/components/hello-world.js');
+      assertFile.matches(
         `import layout from '../templates/components/hello-world.hbs'`,
         `template imports have explicit .hbs extension added`
       );
-      assert.fileMatches(
-        'node_modules/my-addon/components/hello-world.js',
+      assertFile.matches(
         `getOwnConfig()`,
         `JS macros have not run yet`
       );
-      assert.fileDoesNotMatch(
-        'node_modules/my-addon/components/hello-world.js',
+      assertFile.doesNotMatch(
         `data-test-example`,
         `custom babel plugins have run`
       );
     });
 
     test('component template in addon tree', function(assert) {
-      assert.fileMatches(
-        'node_modules/my-addon/templates/components/hello-world.hbs',
+      let assertFile = assert.file('node_modules/my-addon/templates/components/hello-world.hbs');
+      assertFile.matches(
         '<div>hello world</div>',
         'template is still hbs and custom transforms have run'
       );
-      assert.fileMatches(
-        'node_modules/my-addon/templates/components/hello-world.hbs',
+      assertFile.matches(
         '<span>{{macroDependencySatisfies "ember-source" ">3"}}</span>',
         'template macros have not run'
       );
     });
 
     skip('component with inline template', function(assert) {
-      assert.fileMatches(
-        'node_modules/my-addon/_app_/components/has-inline-template.js',
+      let assertFile = assert.file('node_modules/my-addon/_app_/components/has-inline-template.js');
+      assertFile.matches(
         'hbs`<div>Inline</div>',
         'template is still hbs and custom transforms have run'
       );
-      assert.fileMatches(
-        'node_modules/my-addon/_app_/components/has-inline-template.js',
+      assertFile.matches(
         "<span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>",
         'template macros have not run'
       );

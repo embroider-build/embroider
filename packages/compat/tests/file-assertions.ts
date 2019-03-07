@@ -3,7 +3,7 @@ import { pathExistsSync, readFileSync, readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import get from 'lodash/get';
 
-const { test } = QUnit;
+const { test, skip } = QUnit;
 
 export interface FileAssert extends Assert {
   setBasePath(path: string): void;
@@ -21,7 +21,13 @@ export interface FileHooks {
 
 function fileTest(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
   test(name, function(plainAssert: Assert) {
-    return definition(plainAssert as  FileAssert);
+    return definition(plainAssert as FileAssert);
+  });
+}
+
+function fileSkip(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
+  skip(name, function(plainAssert: Assert) {
+    return definition(plainAssert as FileAssert);
   });
 }
 
@@ -109,5 +115,5 @@ export function installFileAssertions(hooks: NestedHooks) {
   hooks.before(installAssertions);
   hooks.beforeEach(installAssertions);
 
-  return { test: fileTest, hooks: hooks as FileHooks };
+  return { test: fileTest, skip: fileSkip, hooks: hooks as FileHooks };
 }

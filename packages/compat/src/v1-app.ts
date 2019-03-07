@@ -47,7 +47,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync(this.app.root)!);
+    return dirname(pkgUpSync(this.app.project.root)!);
   }
 
   @Memoize()
@@ -364,10 +364,12 @@ export default class V1App implements V1Package {
     }));
   }
 
-  private get testsTree(): Tree {
-    return this.preprocessJS(new Funnel(this.app.trees.tests, {
-      destDir: 'tests'
-    }));
+  private get testsTree(): Tree | undefined {
+    if (this.app.trees.tests) {
+      return this.preprocessJS(new Funnel(this.app.trees.tests, {
+        destDir: 'tests'
+      }));
+    }
   }
 
   get vendorTree(): Tree {
@@ -406,17 +408,27 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.app.getLintTests();
-    let analyzer = new DependencyAnalyzer([
+    let importParsers = [
       new ImportParser(appTree),
-      new ImportParser(testsTree),
       new ImportParser(lintTree),
-    ], this.packageCache.getApp(this.root));
+    ];
+    if (testsTree) {
+      importParsers.push(new ImportParser(testsTree));
+    }
+    let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [appTree, this.styleTree, config, testsTree, lintTree];
+    let trees: Tree[] = [];
+    trees.push(appTree);
+    trees.push(this.styleTree);
+    trees.push(config);
+    if (testsTree) {
+      trees.push(testsTree);
+    }
+    trees.push(lintTree);
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

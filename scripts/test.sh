@@ -5,7 +5,9 @@
 function main {
   case "$1" in
   "node")
-    yarn node-test
+    # the JOBS=1 is an attempt to workaround hanging broccoli-babel-transpiler
+    # workers in Travis
+    JOBS=1 yarn node-test
     ;;
   "macro-classic")
     cd test-packages/macro-tests && CLASSIC=true yarn test

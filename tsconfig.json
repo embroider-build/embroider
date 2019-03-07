@@ -1,5 +1,5 @@
 {
-  "include": ["./packages/*/src/**/*.ts", "./packages/*/tests/**/*.ts"],
+  "include": ["./packages/*/src/**/*.ts", "./packages/*/tests/**/*.ts", "./test-packages/support/**/*.ts"],
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",

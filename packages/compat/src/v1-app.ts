@@ -12,7 +12,7 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, realpathSync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';

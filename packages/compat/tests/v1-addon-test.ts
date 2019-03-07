@@ -33,6 +33,13 @@ QUnit.module('v1-addon', function() {
               config: getOwnConfig(),
               layout
             });
+          `,
+          'has-inline-template.js': `
+            import Component from '@ember/component';
+            import hbs from 'htmlbars-inline-precompile';
+            export default Component.extend({
+              layout: ${"hbs`<div data-test-example>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"}
+            });
           `
         },
         templates: {
@@ -47,13 +54,6 @@ QUnit.module('v1-addon', function() {
       addon.files.app = {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
-          'has-inline-template.js': `
-            import Component from '@ember/component';
-            import hbs from 'htmlbars-inline-precompile';
-            export default Component.extend({
-              layout: ${"hbs`<div data-test-example>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"}
-            });
-          `
         }
       };
 
@@ -90,7 +90,7 @@ QUnit.module('v1-addon', function() {
     test('addon metadata', function(assert) {
       let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
       assertMeta.get('app-js').equals('_app_', 'should have app-js metadata');
-      assertMeta.get('externals').deepEquals(['@ember/component', 'htmlbars-inline-precompile'], 'should detect external modules');
+      assertMeta.get('externals').includes('@ember/component', 'should detect external modules');
       assertMeta.get('implicit-modules').includes(
         './components/hello-world',
         'staticAddonTrees is off so we should include the component implicitly'
@@ -131,7 +131,7 @@ QUnit.module('v1-addon', function() {
     });
 
     skip('component with inline template', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/_app_/components/has-inline-template.js');
+      let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div>Inline</div>',
         'template is still hbs and custom transforms have run'

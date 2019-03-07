@@ -1,7 +1,6 @@
 import FixturifyProject from 'fixturify-project';
 import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
-import { execFileSync } from 'child_process';
 import Options from '../src/options';
 
 function cliBuildFile(embroiderOptions: Options = {}) {
@@ -95,12 +94,6 @@ loadInitializers(App, config.modulePrefix);
 
 export default App;
 `;
-}
-
-export function emberBuild(dir: string, extraEnv?: any) {
-  let bin = require.resolve('ember-cli/bin/ember');
-  let env = Object.assign({}, process.env, { CI: 'true'}, extraEnv);
-  return execFileSync('node', [bin, 'build'], { cwd: dir, env });
 }
 
 export class Project extends FixturifyProject {

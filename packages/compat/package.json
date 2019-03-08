@@ -36,6 +36,8 @@
   },
   "dependencies": {
     "@babel/core": "^7.2.2",
+    "@babel/traverse": "^7.2.4",
+    "@babel/types": "^7.3.2",
     "@embroider/macros": "0.0.8",
     "assert-never": "^1.1.0",
     "babel-core": "^6.26.3",

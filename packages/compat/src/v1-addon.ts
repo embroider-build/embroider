@@ -22,7 +22,7 @@ import { Package, PackageCache, AddonMeta } from "@embroider/core";
 import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
-import ApplyASTTransforms from './apply-ast-transforms';
+import ASTPrecompiler from './apply-ast-transforms';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
@@ -79,6 +79,21 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  @Memoize()
+  private get astPrecompiler(): ASTPrecompiler | undefined {
+    let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    if (htmlbars) {
+      let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
+      if (options.plugins && options.plugins.ast) {
+        // our macros don't run here in stage1
+        options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+        if (options.plugins.ast.length > 0) {
+          return new ASTPrecompiler(options);
+        }
+      }
+    }
+  }
+
   private updateRegistry(registry: any) {
     // note that we don't remove ember-cli-babel here, instead we have pared
     // down its config so that it will only run nonstandard plugins, leaving all
@@ -96,29 +111,21 @@ export default class V1Addon implements V1Package {
     // a no-op transform here to avoid an exception coming out of ember-cli like
     // "Addon templates were detected, but there are no template compilers
     // registered".
-    let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
-    if (htmlbars) {
-      registry.remove('template', 'ember-cli-htmlbars');
-      let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
-      if (options.plugins && options.plugins.ast) {
-        // our macros don't run here in stage1
-        options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-      }
-      registry.add('template', {
-        name: 'embroider-addon-templates',
-        ext: 'hbs',
-        _addon: this,
-        toTree(tree: Tree): Tree {
-          if (registry.load('htmlbars-ast-plugin').length === 0) {
-            // when there are no custom AST transforms, we don't need to do
-            // anything at all.
-            return tree;
-          } else {
-            return new ApplyASTTransforms(tree, options);
-          }
+    registry.remove('template', 'ember-cli-htmlbars');
+    registry.add('template', {
+      name: 'embroider-addon-templates',
+      ext: 'hbs',
+      _addon: this,
+      toTree(this: { _addon: V1Addon }, tree: Tree): Tree {
+        if (this._addon.astPrecompiler) {
+          return this._addon.astPrecompiler.transform(tree);
+        } else {
+          // when there are no custom AST transforms, we don't need to do
+          // anything at all.
+          return tree;
         }
-      });
-    }
+      }
+    });
   }
 
   get name(): string {
@@ -245,6 +252,11 @@ export default class V1Addon implements V1Package {
     } else {
       babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
     }
+
+    if (this.astPrecompiler) {
+      babelConfig.plugins.push(this.astPrecompiler.inlineBabelPlugin());
+    }
+
     babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
       ownName: this.name
     } ]);

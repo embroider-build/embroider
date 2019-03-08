@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import HTMLBarsTransform, { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { Tree } from 'broccoli-plugin';
 import { join } from 'path';
+import { PluginItem } from '@babel/core';
 
 interface AST {
   _deliberatelyOpaque: 'AST';
@@ -60,34 +61,27 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   throw new Error(`unable to find @glimmer/syntax methods in ${templateCompilerPath}`);
 }
 
-export default class extends HTMLBarsTransform {
+export default class ASTPrecompiler {
   private syntax: GlimmerSyntax;
   private userPluginsCount: number;
 
-  constructor(inputTree: Tree, options: HTMLBarsOptions) {
-    options.name = 'embroider-apply-ast-transforms';
-    super(inputTree, options);
-    this.syntax = loadGlimmerSyntax(options.templateCompilerPath);
-
-    // unlike our parent class, we don't want to rename hbs to js
-    this.targetExtension = null;
-    this.userPluginsCount = 0;
-    this.embroiderRegisterPlugins(options);
-  }
-
-  embroiderRegisterPlugins(options: HTMLBarsOptions) {
+  constructor(readonly options: HTMLBarsOptions) {
+    let syntax = loadGlimmerSyntax(options.templateCompilerPath);
+    let userPluginsCount = 0;
     let plugins = options.plugins;
     if (plugins) {
       for (let type in plugins) {
         for (let i = 0, l = plugins[type].length; i < l; i++) {
-          this.syntax.registerPlugin(type, plugins[type][i]);
-          this.userPluginsCount++;
+          syntax.registerPlugin(type, plugins[type][i]);
+          userPluginsCount++;
         }
       }
     }
+    this.syntax = syntax;
+    this.userPluginsCount = userPluginsCount;
   }
 
-  processString(source: string, relativePath: string) {
+  precompile(source: string, relativePath: string) {
     let opts = this.syntax.defaultOptions({
       contents: source,
       moduleName: relativePath
@@ -105,6 +99,31 @@ export default class extends HTMLBarsTransform {
     }
     let ast = this.syntax.preprocess(source, opts);
     return this.syntax.print(ast);
+  }
+
+  transform(tree: Tree): Tree {
+    return new ApplyASTTransforms(tree, this);
+  }
+
+  inlineBabelPlugin(): PluginItem {
+    // TODO: add parallelBabel protocol
+    return [join(__dirname, 'inline-apply-ast-transforms.js'), { precompile: this.precompile.bind(this) }];
+  }
+}
+
+class ApplyASTTransforms extends HTMLBarsTransform {
+  private precompiler: ASTPrecompiler;
+  constructor(inputTree: Tree, precompiler: ASTPrecompiler) {
+    precompiler.options.name = 'embroider-apply-ast-transforms';
+    super(inputTree, precompiler.options);
+
+    // unlike our parent class, we don't want to rename hbs to js
+    this.targetExtension = null;
+    this.precompiler = precompiler;
+  }
+
+  processString(source: string, relativePath: string) {
+    return this.precompiler.precompile(source, relativePath);
   }
   cacheKeyProcessString(source: string, relativePath: string) {
     return `embroider-` + super.cacheKeyProcessString(source, relativePath);

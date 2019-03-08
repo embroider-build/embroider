@@ -12,7 +12,7 @@ import { installFileAssertions } from './file-assertions';
 QUnit.module('v1-addon', function() {
   QUnit.module('max compatibility', function(origHooks) {
 
-    let { hooks, test, skip } = installFileAssertions(origHooks);
+    let { hooks, test } = installFileAssertions(origHooks);
     let builder: Builder;
     let app: Project;
 
@@ -38,7 +38,10 @@ QUnit.module('v1-addon', function() {
             import Component from '@ember/component';
             import hbs from 'htmlbars-inline-precompile';
             export default Component.extend({
-              layout: ${"hbs`<div class={{embroider-sample-transforms-target}}>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"}
+              // tagged template form:
+              layout: ${"hbs`<div class={{embroider-sample-transforms-target}}>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"},
+              // call expression form:
+              extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
             });
           `
         },
@@ -123,14 +126,18 @@ QUnit.module('v1-addon', function() {
       );
     });
 
-    skip('component with inline template', function(assert) {
+    test('component with inline template', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
-        'template is still hbs and custom transforms have run'
+        'tagged template is still hbs and custom transforms have run'
       );
       assertFile.matches(
-        "<span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>",
+        /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+        'called template is still hbs and custom transforms have run'
+      );
+      assertFile.matches(
+        /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
         'template macros have not run'
       );
     });

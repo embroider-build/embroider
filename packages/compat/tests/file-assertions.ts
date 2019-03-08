@@ -68,7 +68,7 @@ export class BoundFileAssert {
       this.assert.pushResult({
         result,
         actual: this.contents.data,
-        expected: pattern,
+        expected: pattern.toString(),
         message: message || `${this.path} contents unexpected`
       });
     }

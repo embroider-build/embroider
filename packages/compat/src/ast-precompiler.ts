@@ -79,6 +79,8 @@ export default class ASTPrecompiler {
     }
     this.syntax = syntax;
     this.userPluginsCount = userPluginsCount;
+    this.precompile = this.precompile.bind(this);
+    (this.precompile as any).baseDir = () => join(__dirname, '..');
   }
 
   precompile(source: string, relativePath: string) {
@@ -107,7 +109,7 @@ export default class ASTPrecompiler {
 
   inlineBabelPlugin(): PluginItem {
     // TODO: add parallelBabel protocol
-    return [join(__dirname, 'inline-apply-ast-transforms.js'), { precompile: this.precompile.bind(this) }];
+    return [join(__dirname, 'inline-apply-ast-transforms.js'), { precompile: this.precompile }];
   }
 }
 

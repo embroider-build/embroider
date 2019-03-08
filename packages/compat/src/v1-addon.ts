@@ -22,7 +22,7 @@ import { Package, PackageCache, AddonMeta } from "@embroider/core";
 import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
-import ASTPrecompiler from './apply-ast-transforms';
+import ASTPrecompiler from './ast-precompiler';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";

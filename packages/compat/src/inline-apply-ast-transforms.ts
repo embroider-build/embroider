@@ -10,7 +10,7 @@ import {
 } from "@babel/types";
 import { NodePath } from "@babel/traverse";
 import { join } from "path";
-import ASTPrecompiler from './apply-ast-transforms';
+import ASTPrecompiler from './ast-precompiler';
 
 // These are the known names that people are using to import the `hbs` macro
 // from. In theory the plugin lets people customize these names, but that is a

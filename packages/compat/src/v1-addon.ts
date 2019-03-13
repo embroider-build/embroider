@@ -27,7 +27,7 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
 import { TransformOptions, PluginItem } from "@babel/core";
-import { isInlinePrecompilePlugin } from "./inline-precompile";
+import { isInlinePrecompilePlugin } from "./inline-apply-ast-transforms";
 
 const stockTreeNames = Object.freeze([
   'addon',

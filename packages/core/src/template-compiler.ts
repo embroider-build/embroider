@@ -4,7 +4,7 @@ import { warn } from './messages';
 import { readFileSync } from 'fs';
 
 export interface Plugins {
-  [type: string]: unknown[];
+  ast?: unknown[];
 }
 
 export interface Compiler {
@@ -201,9 +201,9 @@ function theCompiler(compiler: Compiler, resolver: ResolverInstance, EmberENV: u
 }
 
 function registerPlugins(compiler: Compiler, plugins: Plugins) {
-  for (let type in plugins) {
-    for (let i = 0, l = plugins[type].length; i < l; i++) {
-      compiler.registerPlugin(type, plugins[type][i]);
+  if (plugins.ast) {
+    for (let i = 0, l = plugins.ast.length; i < l; i++) {
+      compiler.registerPlugin('ast', plugins.ast[i]);
     }
   }
 }

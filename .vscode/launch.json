@@ -14,7 +14,7 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        "--filter", "v1-addon"
+        //"--filter", "stage3 with presets"
       ]
     },
     {
@@ -28,7 +28,8 @@
       ],
       "env": {
         "JOBS": "1"
-      }
+      },
+      "outputCapture": "std"
     },
     {
       "type": "node",

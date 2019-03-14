@@ -17,10 +17,10 @@ interface PreprocessOptions {
 }
 
 interface GlimmerSyntax {
-  preprocess: (html: string, options?: PreprocessOptions) => AST;
-  print: (ast: AST) => string;
-  defaultOptions: (options: PreprocessOptions) => PreprocessOptions;
-  registerPlugin: (type: string, plugin: unknown) => void;
+  preprocess(html: string, options?: PreprocessOptions): AST;
+  print(ast: AST): string;
+  defaultOptions(options: PreprocessOptions): PreprocessOptions;
+  registerPlugin(type: string, plugin: unknown): void;
 }
 
 // we could directly depend on @glimmer/syntax and have nice types and

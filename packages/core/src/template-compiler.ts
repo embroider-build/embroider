@@ -37,29 +37,36 @@ export interface SetupCompilerParams {
 // The signature of this function may feel a little weird, but that's because
 // it's designed to be easy to invoke via our portable plugin config in a new
 // process.
-export default function setupCompiler(params: SetupCompilerParams) {
-  let compiler = loadEmberCompiler(params.compilerPath);
-  let ResolverClass: Resolver = require(params.resolverPath).default;
-  let resolver = new ResolverClass(params.resolverParams);
-  let dependencies:  Map<string, Resolution[]> = new Map();
+export default class TemplateCompiler {
+  private dependencies:  Map<string, Resolution[]> = new Map();
+  private compiler: Compiler;
 
-  registerPlugins(compiler, params.plugins);
-  compiler.registerPlugin('ast', makeResolverTransform(resolver, dependencies));
-  initializeEmberENV(compiler, params.EmberENV);
+  constructor(params: SetupCompilerParams) {
+    let compiler = loadEmberCompiler(params.compilerPath);
+    let ResolverClass: Resolver = require(params.resolverPath).default;
+    let resolver = new ResolverClass(params.resolverParams);
 
-  function dependenciesOf(moduleName: string): Resolution[] | undefined {
-    return dependencies.get(moduleName);
+    registerPlugins(compiler, params.plugins);
+    compiler.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
+    initializeEmberENV(compiler, params.EmberENV);
+    this.compiler = compiler;
   }
 
-  function compile(moduleName: string, contents: string) {
-    let compiled = compiler.precompile(
+  // This is only public to make testing easier. During normal usage it's not
+  // called from outside.
+  dependenciesOf(moduleName: string): Resolution[] | undefined {
+    return this.dependencies.get(moduleName);
+  }
+
+  compile(moduleName: string, contents: string) {
+    let compiled = this.compiler.precompile(
       stripBom(contents), {
         contents,
         moduleName
       }
     );
     let lines: string[] = [];
-    let deps = dependenciesOf(moduleName);
+    let deps = this.dependenciesOf(moduleName);
     if (deps) {
       let counter = 0;
       for (let dep of deps) {
@@ -80,7 +87,6 @@ export default function setupCompiler(params: SetupCompilerParams) {
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
     return lines.join("\n");
   }
-  return { compile, dependenciesOf };
 }
 
 function registerPlugins(compiler: Compiler, plugins: Plugins) {

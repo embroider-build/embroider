@@ -4,9 +4,10 @@ import { compile } from './js-handlebars';
 
 const compilerTemplate = compile(`
 const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
-const setupCompiler = require('@embroider/core/src/template-compiler').default;
+const TemplateCompiler = require('@embroider/core/src/template-compiler').default;
+const templateCompiler = new TemplateCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}}));
 module.exports = {
-  compile: setupCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}})).compile,
+  compile: templateCompiler.compile.bind(templateCompiler),
   isParallelSafe: {{ isParallelSafe }},
 };
 `) as (params: {

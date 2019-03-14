@@ -17,7 +17,7 @@ async function parserFor(babelMajorVersion: number, parserOptions: any) {
   } else if (babelMajorVersion === 6) {
     const { parse } = await import('babylon');
     return (content: string) => parse(content, parserOptions) as any;
-  } else  {
+  } else {
     throw new Error(`Embroider:Compat#importParser only supports babel '6' or '7', but got: '${babelMajorVersion}'`);
   }
 }
@@ -37,14 +37,18 @@ export default class ImportParser extends Plugin {
   private parserOptions: any;
   private modules: Import[] | null = [];
   private paths: Map<string, Import[]> = new Map();
-  private parse: (content: string, options?: any) => File = (_) => {
+  private parse: (content: string, options?: any) => File = _ => {
     throw new Error(`ImportParser#parse for babelMajorVersion: '${this.babelMajorVersion}' not implemented`);
-  }
+  };
   private parserSetup = false;
 
   readonly babelMajorVersion: number;
 
-  constructor(inputTree: Tree, options: { babelMajorVersion: number } = { babelMajorVersion: 7 },  private extensions = ['.js', '.hbs']) {
+  constructor(
+    inputTree: Tree,
+    options: { babelMajorVersion: number } = { babelMajorVersion: 7 },
+    private extensions = ['.js', '.hbs']
+  ) {
     super([inputTree], {
       annotation: 'embroider:core:import-parser',
       persistentOutput: true,
@@ -150,7 +154,7 @@ export default class ImportParser extends Plugin {
     let ast;
     try {
       ast = this.parse(source, this.parserOptions);
-    } catch(err){
+    } catch (err) {
       if (typeof err === 'object' && err !== null && err.name !== 'SyntaxError') {
         throw err;
       }

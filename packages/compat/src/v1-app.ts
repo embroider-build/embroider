@@ -466,12 +466,12 @@ export default class V1App implements V1Package {
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
     let babelMajorVersion = this.babelMajorVersion();
-    let importParsers = [new ImportParser(appTree,{ babelMajorVersion })];
+    let importParsers = [new ImportParser(appTree, { babelMajorVersion })];
     if (testsTree) {
       importParsers.push(new ImportParser(testsTree, { babelMajorVersion }));
     }
     if (lintTree) {
-      importParsers.push(new ImportParser(lintTree, { babelMajorVersion }));
+      importParsers.push(new ImportParser(lintTree));
     }
     let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);

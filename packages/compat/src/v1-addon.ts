@@ -386,7 +386,7 @@ export default class V1Addon implements V1Package {
       if (!built.staticMeta['implicit-styles']) {
         built.staticMeta['implicit-styles'] = [];
       }
-      built.staticMeta['implicit-styles'].push(`./${this.name}.css`);
+      // built.staticMeta['implicit-styles'].push(`./${this.name}.css`);
     }
   }
 

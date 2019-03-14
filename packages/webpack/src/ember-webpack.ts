@@ -266,7 +266,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
           'thread-loader': require.resolve('thread-loader'),
-          'babel-loader': require.resolve('babel-loader'),
+          'babel-loader': require.resolve('@embroider/babel-loader-8'),
           'css-loader': require.resolve('css-loader'),
           'style-loader': require.resolve('style-loader'),
         },

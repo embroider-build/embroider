@@ -50,14 +50,17 @@ export default function inlineHBSTransform() {
           }
         }
       },
-      ReferencedIdentifier(path: NodePath, state: State) {
+      TaggedTemplateExpression(path: NodePath<TaggedTemplateExpression>, state: State) {
         for (let modulePath of modulePaths) {
-          if (path.referencesImport(modulePath, 'default')) {
-            if (isTaggedTemplateExpression(path.parentPath.node)) {
-              handleTagged(path.parentPath as NodePath<TaggedTemplateExpression>, state);
-            } else if (isCallExpression(path.parentPath.node)) {
-              handleCalled(path.parentPath as NodePath<CallExpression>, state);
-            }
+          if (path.get('tag').referencesImport(modulePath, 'default')) {
+            handleTagged(path, state);
+          }
+        }
+      },
+      CallExpression(path: NodePath<CallExpression>, state: State) {
+        for (let modulePath of modulePaths) {
+          if (path.get('callee').referencesImport(modulePath, 'default')) {
+            handleCalled(path, state);
           }
         }
       }

@@ -6,7 +6,7 @@ import {
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
-import { Builder } from 'broccoli-builder';
+import { Builder } from 'broccoli';
 import { installFileAssertions } from './file-assertions';
 
 QUnit.module('v1-addon', function() {

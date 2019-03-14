@@ -2387,7 +2387,7 @@ broccoli-babel-transpiler@^7.1.1, broccoli-babel-transpiler@^7.1.2:
     rsvp "^4.8.4"
     workerpool "^3.1.1"
 
-broccoli-builder@^0.18.11, broccoli-builder@^0.18.14:
+broccoli-builder@^0.18.14:
   version "0.18.14"
   resolved "https://registry.yarnpkg.com/broccoli-builder/-/broccoli-builder-0.18.14.tgz#4b79e2f844de11a4e1b816c3f49c6df4776c312d"
   integrity sha1-S3ni+ETeEaThuBbD9Jxt9HdsMS0=
@@ -2825,6 +2825,31 @@ broccoli@^2.0.0:
     findup-sync "^2.0.0"
     handlebars "^4.0.11"
     heimdalljs "^0.2.5"
+    heimdalljs-logger "^0.1.9"
+    mime-types "^2.1.19"
+    promise.prototype.finally "^3.1.0"
+    resolve-path "^1.4.0"
+    rimraf "^2.6.2"
+    sane "^4.0.0"
+    tmp "0.0.33"
+    tree-sync "^1.2.2"
+    underscore.string "^3.2.2"
+    watch-detector "^0.1.0"
+
+broccoli@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/broccoli/-/broccoli-2.2.0.tgz#52f3cfdd4b2463030de211de8ebb36898734fe5b"
+  integrity sha512-g+3h+vpxTccfhIXkVqb+Ep43Cp0I9RjL27BY63/IpjOLlBI9RGcAjL5aYnCxB7ewfb4y0212xp4tFj+oDWAe+A==
+  dependencies:
+    broccoli-node-info "1.1.0"
+    broccoli-slow-trees "^3.0.1"
+    broccoli-source "^1.1.0"
+    commander "^2.15.1"
+    connect "^3.6.6"
+    esm "^3.2.4"
+    findup-sync "^2.0.0"
+    handlebars "^4.0.11"
+    heimdalljs "^0.2.6"
     heimdalljs-logger "^0.1.9"
     mime-types "^2.1.19"
     promise.prototype.finally "^3.1.0"
@@ -4792,6 +4817,11 @@ eslint@^4.0.0:
     strip-json-comments "~2.0.1"
     table "4.0.2"
     text-table "~0.2.0"
+
+esm@^3.2.4:
+  version "3.2.17"
+  resolved "https://registry.yarnpkg.com/esm/-/esm-3.2.17.tgz#ae74c34f502ab2ee8f03c64cc785ebeb1786526a"
+  integrity sha512-C9o9bz51z5upkD7wCsTKgWwWSZ+OztN2eXLL8senHAULFAXCXGSmw1EW2zengsoyyDh9D/H4Twxk7ZkMEW360Q==
 
 espree@^3.5.4:
   version "3.5.4"

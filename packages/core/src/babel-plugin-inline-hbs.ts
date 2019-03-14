@@ -4,8 +4,6 @@ import {
   isStringLiteral,
   templateLiteral,
   templateElement,
-  isTaggedTemplateExpression,
-  isCallExpression,
   ExpressionStatement,
   stringLiteral,
   File,

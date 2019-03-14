@@ -47,10 +47,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   let orig = Object.create;
   let grabbed: any[] = [];
   let source = readFileSync(templateCompilerPath, 'utf8');
-
-  // we need this in scope here so our eval below will use it (instead of our
-  // own module scoped one)
-  let module = { exports: {} };
+  let theExports: any;
 
   (Object as any).create = function(proto: any, propertiesObject: any) {
     let result = orig.call(this, proto, propertiesObject);
@@ -58,9 +55,13 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
     return result;
   };
   try {
-    // eval evades the require cache, which we need because the template
-    // compiler shares internal module scoped state.
-    eval(source);
+    // evades the require cache, which we need because the template compiler
+    // shares internal module scoped state.
+    theExports = new Function(`
+    let module = { exports: {} };
+    ${source};
+    return module.exports
+    `)();
   } finally {
     Object.create = orig;
   }
@@ -72,8 +73,8 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
         preprocess: obj['@glimmer/syntax'].preprocess,
         defaultOptions: obj['ember-template-compiler/lib/system/compile-options'].default,
         registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
-        precompile: (module.exports as any).precompile,
-        _Ember: (module.exports as any)._Ember,
+        precompile: theExports.precompile,
+        _Ember: theExports._Ember,
         cacheKey: createHash('md5').update(source).digest('hex'),
       };
     }
@@ -91,13 +92,12 @@ interface SetupCompilerParams {
 
 export class PortableTemplateCompiler extends PortablePluginConfig {
   private static template = compile(`
+  "use strict";
   const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
   const TemplateCompiler = require('@embroider/core/src/template-compiler').default;
   const templateCompiler = new TemplateCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}}));
-  module.exports = {
-    compile: templateCompiler.compile.bind(templateCompiler),
-    isParallelSafe: {{ isParallelSafe }},
-  };
+  templateCompiler.isParallelSafe = {{ isParallelSafe }};
+  module.exports = templateCompiler;
   `) as (params: {
     portable: any,
     here: string,
@@ -123,15 +123,16 @@ export class PortableTemplateCompiler extends PortablePluginConfig {
   }
 }
 
-// The signature of this function may feel a little weird, but that's because
-// it's designed to be easy to invoke via our portable plugin config in a new
-// process.
 export default class TemplateCompiler {
   private dependencies:  Map<string, Resolution[]> = new Map();
   private syntax: GlimmerSyntax;
   private userPluginsCount = 0;
   readonly cacheKey: string;
+  isParallelSafe = false;
 
+  // The signature of this function may feel a little weird, but that's because
+  // it's designed to be easy to invoke via our portable plugin config in a new
+  // process.
   constructor(params: SetupCompilerParams) {
     this.syntax = loadGlimmerSyntax(params.compilerPath);
     this.registerPlugins(params.plugins);
@@ -147,6 +148,10 @@ export default class TemplateCompiler {
     }
     this.initializeEmberENV(params.EmberENV);
     this.cacheKey = createHash('md5').update(stringify(cacheKeyInput)).digest('hex');
+
+    // stage3 packagers don't need to know about our instance, they can just
+    // grab the compile function and use it.
+    this.compile = this.compile.bind(this);
   }
 
   // This is only public to make testing easier. During normal usage it's not
@@ -155,18 +160,17 @@ export default class TemplateCompiler {
     return this.dependencies.get(moduleName);
   }
 
-  // Compiles all the way from a template string to a javascript module string.
-  compile(moduleName: string, contents: string) {
+  // Compiles to the wire format plus dependency list.
+  precompile(moduleName: string, contents: string) {
     let compiled = this.syntax.precompile(
       stripBom(contents), {
         contents,
         moduleName
       }
     );
-    let lines: string[] = [];
+    let flatDeps: { runtimeName: string, path: string }[] = [];
     let deps = this.dependenciesOf(moduleName);
     if (deps) {
-      let counter = 0;
       for (let dep of deps) {
         if (dep.type === 'error') {
           if (dep.hardFail) {
@@ -176,11 +180,22 @@ export default class TemplateCompiler {
           }
         } else {
           for (let { runtimeName, path } of dep.modules) {
-            lines.push(`import a${counter} from "${path}";`);
-            lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
+            flatDeps.push({ runtimeName, path });
           }
         }
       }
+    }
+    return { compiled, dependencies: flatDeps };
+  }
+
+  // Compiles all the way from a template string to a javascript module string.
+  compile(moduleName: string, contents: string) {
+    let { compiled, dependencies } = this.precompile(moduleName, contents);
+    let lines = [];
+    let counter = 0;
+    for (let { runtimeName, path } of dependencies) {
+      lines.push(`import a${counter} from "${path}";`);
+      lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
     return lines.join("\n");
@@ -213,8 +228,7 @@ export default class TemplateCompiler {
   // Use applyTransforms on the contents of inline hbs template strings inside
   // Javascript.
   inlineTransformsBabelPlugin(): PluginItem {
-    // TODO: add parallelBabel protocol
-    return [join(__dirname, 'babel-plugin-inline-hbs.js'), { templateCompiler: this }];
+    return [join(__dirname, 'babel-plugin-inline-hbs.js'), { templateCompiler: this, stage: 1 }];
   }
 
   private registerPlugins(plugins: Plugins) {

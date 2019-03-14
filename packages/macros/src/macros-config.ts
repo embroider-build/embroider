@@ -122,7 +122,7 @@ export default class MacrosConfig {
   }
 
   astPlugins(owningPackageRoot?: string): Function[] {
-    return [makeFirstTransform(this, owningPackageRoot), makeSecondTransform()];
+    return [makeFirstTransform(this, owningPackageRoot), makeSecondTransform()].reverse();
   }
 
   private mergerFor(pkgRoot: string) {

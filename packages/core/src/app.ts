@@ -255,6 +255,16 @@ export class AppBuilder<TreeNames> {
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
+    // this is our built-in support for the inline hbs macro
+    babel.plugins.push([join(__dirname, 'babel-plugin-inline-hbs.js'), {
+      templateCompiler: {
+        _parallelBabel: {
+          requireFile: join(this.root, '_template_compiler_.js')
+        }
+      },
+      stage: 3
+    }]);
+
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
     babel.plugins.push([require.resolve('./babel-plugin'), {
@@ -541,9 +551,6 @@ export class AppBuilder<TreeNames> {
     return [...externals.values()];
   }
 
-  // we could just use ember-source/dist/ember-template-compiler directly, but
-  // apparently ember-cli adds some extra steps on top (like stripping BOM), so
-  // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
 
     let plugins = this.adapter.htmlbarsPlugins();

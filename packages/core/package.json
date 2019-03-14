@@ -11,6 +11,8 @@
     "test": "qunit tests"
   },
   "devDependencies": {
+    "@embroider/sample-transforms": "0.0.0",
+    "@embroider/test-support": "0.0.8",
     "@types/babel__core": "^7.0.4",
     "@types/debug": "^0.0.31",
     "@types/jsdom": "^12.2.0",

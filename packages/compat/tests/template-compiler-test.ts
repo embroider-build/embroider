@@ -6,10 +6,11 @@ import { Resolution } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
 import { expectWarning } from '@embroider/core/src/messages';
-import setupCompiler from '@embroider/core/src/template-compiler';
+import TemplateCompiler from '@embroider/core/src/template-compiler';
+import { emberTemplateCompilerPath } from '@embroider/test-support';
 
 const { test } = QUnit;
-const compilerPath = join(__dirname, 'vendor', 'ember-template-compiler.js');
+const compilerPath = emberTemplateCompilerPath();
 const resolverPath = join(__dirname, '../src/resolver');
 
 QUnit.module('template-compiler', function(hooks) {
@@ -25,11 +26,11 @@ QUnit.module('template-compiler', function(hooks) {
       modulePrefix: 'the-app',
       options: optionsWithDefaults(options)
     };
-    let { compile, dependenciesOf } = setupCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins });
+    let compiler = new TemplateCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins });
     return function(relativePath: string, contents: string): Resolution[] {
       let moduleName = givenFile(relativePath);
-      compile(moduleName, contents);
-      return dependenciesOf(moduleName)!.map(d => {
+      compiler.compile(moduleName, contents);
+      return compiler.dependenciesOf(moduleName)!.map(d => {
         if (d.type !== 'error') {
           d.modules = sortBy(d.modules, r => r.path);
         }

@@ -21,8 +21,7 @@ import { MacrosConfig } from '@embroider/macros';
 import { TransformOptions } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import { SetupCompilerParams } from './template-compiler';
-import PortableTemplateCompilerConfig from './portable-compiler';
+import { PortableTemplateCompiler } from './template-compiler';
 
 export type EmberENV = unknown;
 
@@ -255,6 +254,16 @@ export class AppBuilder<TreeNames> {
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+
+    // this is our built-in support for the inline hbs macro
+    babel.plugins.push([join(__dirname, 'babel-plugin-inline-hbs.js'), {
+      templateCompiler: {
+        _parallelBabel: {
+          requireFile: join(this.root, '_template_compiler_.js')
+        }
+      },
+      stage: 3
+    }]);
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
@@ -542,9 +551,6 @@ export class AppBuilder<TreeNames> {
     return [...externals.values()];
   }
 
-  // we could just use ember-source/dist/ember-template-compiler directly, but
-  // apparently ember-cli adds some extra steps on top (like stripping BOM), so
-  // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
 
     let plugins = this.adapter.htmlbarsPlugins();
@@ -555,7 +561,7 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    let params: SetupCompilerParams = {
+    let params = {
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
       resolverPath: this.adapter.templateResolverPath(),
@@ -567,7 +573,7 @@ export class AppBuilder<TreeNames> {
       }
     };
 
-    let source = new PortableTemplateCompilerConfig(params, { basedir: this.root }).serialize();
+    let source = new PortableTemplateCompiler(params, { basedir: this.root }).serialize();
 
     writeFileSync(
       join(this.root, "_template_compiler_.js"),

@@ -16,6 +16,9 @@
   "exclude": [
     "node_modules",
     "packages/*/tmp",
-    "packages/*/dist"
+    "packages/*/dist",
+    "test-packages/*/tmp",
+    "test-packages/*/dist",
+    "tmp",
   ]
 }

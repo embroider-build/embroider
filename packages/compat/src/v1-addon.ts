@@ -18,16 +18,14 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, AddonMeta } from "@embroider/core";
+import { Package, PackageCache, AddonMeta, TemplateCompiler } from "@embroider/core";
 import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
-import ASTPrecompiler from './ast-precompiler';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
 import { TransformOptions, PluginItem } from "@babel/core";
-import { isInlinePrecompilePlugin } from "./inline-precompile";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -80,7 +78,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private get astPrecompiler(): ASTPrecompiler | undefined {
+  private get templateCompiler(): TemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
       let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
@@ -88,7 +86,11 @@ export default class V1Addon implements V1Package {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         if (options.plugins.ast.length > 0) {
-          return new ASTPrecompiler(options);
+          return new TemplateCompiler({
+            compilerPath: options.templateCompilerPath,
+            EmberENV: {},
+            plugins: options.plugins,
+          });
         }
       }
     }
@@ -117,8 +119,8 @@ export default class V1Addon implements V1Package {
       ext: 'hbs',
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Tree): Tree {
-        if (this._addon.astPrecompiler) {
-          return this._addon.astPrecompiler.transform(tree);
+        if (this._addon.templateCompiler) {
+          return this._addon.templateCompiler.applyTransformsToTree(tree);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.
@@ -253,8 +255,8 @@ export default class V1Addon implements V1Package {
       babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
     }
 
-    if (this.astPrecompiler) {
-      babelConfig.plugins.push(this.astPrecompiler.inlineBabelPlugin());
+    if (this.templateCompiler) {
+      babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
 
     babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
@@ -600,7 +602,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (isInlinePrecompilePlugin(plugin)) {
+  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline

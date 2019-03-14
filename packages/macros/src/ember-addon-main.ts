@@ -36,7 +36,7 @@ export = {
       // register them here.
 
       let plugins = MacrosConfig.shared().astPlugins((this as any).parent.root);
-      plugins.reverse().forEach((plugin, index) => {
+      plugins.forEach((plugin, index) => {
         registry.add('htmlbars-ast-plugin', {
           name: `@embroider/macros/${index}`,
           plugin,

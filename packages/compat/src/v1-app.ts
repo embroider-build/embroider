@@ -11,7 +11,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
+import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
@@ -155,9 +155,17 @@ export default class V1App implements V1Package {
     if (!plugins) {
       plugins = [];
     } else {
-      // even if the app was using @embroider/macros, we drop it from the config
-      // here in favor of our globally-configured one.
-      plugins = plugins.filter(p => !isEmbroiderMacrosPlugin(p));
+      plugins = plugins.filter(p => {
+        // even if the app was using @embroider/macros, we drop it from the config
+        // here in favor of our globally-configured one.
+        return !isEmbroiderMacrosPlugin(p) &&
+          // similarly, if the app was already using
+          // ember-cli-htmlbars-inline-precompile, we remove it here because we
+          // have our own always-installed version of that (v2 addons are
+          // allowed to assume it will be present in the final app build, the
+          // app doesn't get to turn that off or configure it.).
+          !TemplateCompiler.isInlinePrecompilePlugin(p);
+      });
     }
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just

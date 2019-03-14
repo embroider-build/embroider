@@ -1,5 +1,5 @@
 import Plugin, { Tree } from "broccoli-plugin";
-import { Builder } from 'broccoli-builder';
+import { Builder } from 'broccoli';
 import { copySync } from "fs-extra";
 
 // Wraps a broccoli tree such that it (and everything it depends on) will only
@@ -19,8 +19,8 @@ export default class OneShot extends Plugin {
     if (this.didBuild) {
       return;
     }
-    let { directory } = await this.builder.build();
-    copySync(directory, this.outputPath, { dereference: true });
+    await this.builder.build();
+    copySync(this.builder.outputPath, this.outputPath, { dereference: true });
     await this.builder.cleanup();
     this.didBuild = true;
   }

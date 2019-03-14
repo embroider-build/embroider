@@ -26,7 +26,6 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
 import { TransformOptions, PluginItem } from "@babel/core";
-import { isInlinePrecompilePlugin } from "./inline-apply-ast-transforms";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -603,7 +602,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (isInlinePrecompilePlugin(plugin)) {
+  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline

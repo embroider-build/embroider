@@ -9,7 +9,6 @@ import {
   stringLiteral,
 } from "@babel/types";
 import { NodePath } from "@babel/traverse";
-import { PluginItem } from "@babel/core";
 import { join } from "path";
 import TemplateCompiler from './template-compiler';
 
@@ -76,30 +75,4 @@ function handleCalled(pathToReplace: NodePath, node: CallExpression, state: Stat
   let template = arg.value;
   let compiled = state.opts.templateCompiler.applyTransforms(state.file.opts.filename, template);
   pathToReplace.replaceWith(stringLiteral(compiled));
-}
-
-function matchesSourceFile(filename: string) {
-  return /babel-plugin-htmlbars-inline-precompile\/(index|lib\/require-from-worker)\.js$/.test(filename);
-}
-
-function hasProperties(item: any) {
-  return item && (typeof item === 'object' || typeof item === 'function');
-}
-
-export function isInlinePrecompilePlugin(item: PluginItem) {
-  if (typeof item === 'string') {
-    return matchesSourceFile(item);
-  }
-  if (hasProperties(item) && (item as any)._parallelBabel) {
-    return matchesSourceFile((item as any)._parallelBabel.requireFile);
-  }
-  if (Array.isArray(item) && item.length > 0) {
-    if (typeof item[0] === 'string') {
-      return matchesSourceFile(item[0]);
-    }
-    if (hasProperties(item[0]) && (item[0] as any)._parallelBabel) {
-      return matchesSourceFile((item[0] as any)._parallelBabel.requireFile);
-    }
-  }
-  return false;
 }

@@ -457,16 +457,21 @@ export default class V1App implements V1Package {
     return this.app.trees.public;
   }
 
+  babelMajorVersion() {
+    return Number(this.app.project.findAddonByName('ember-cli-babel').pkg.version.split('.')[0]);
+  }
+
   processAppJS(): { appJS: Tree; analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let importParsers = [new ImportParser(appTree)];
+    let babelMajorVersion = this.babelMajorVersion();
+    let importParsers = [new ImportParser(appTree,{ babelMajorVersion })];
     if (testsTree) {
-      importParsers.push(new ImportParser(testsTree));
+      importParsers.push(new ImportParser(testsTree, { babelMajorVersion }));
     }
     if (lintTree) {
-      importParsers.push(new ImportParser(lintTree));
+      importParsers.push(new ImportParser(lintTree, { babelMajorVersion }));
     }
     let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);

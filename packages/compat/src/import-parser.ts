@@ -4,12 +4,23 @@ import { unlinkSync, rmdirSync, mkdirSync, readFileSync, existsSync, mkdirpSync 
 import FSTree from 'fs-tree-diff';
 import makeDebug from 'debug';
 import { Pipeline, File } from 'babel-core';
-import { parse } from 'babylon';
 import { sync as symlinkOrCopySync } from 'symlink-or-copy';
 import { join, dirname, extname } from 'path';
 import { isEqual, flatten } from 'lodash';
 
 const debug = makeDebug('embroider:import-parser');
+
+async function parserFor(babelMajorVersion: number, parserOptions: any) {
+  if (babelMajorVersion === 7) {
+    const { parseSync } = await import('@babel/core');
+    return (content: string) => parseSync(content) as any;
+  } else if (babelMajorVersion === 6) {
+    const { parse } = await import('babylon');
+    return (content: string) => parse(content, parserOptions) as any;
+  } else  {
+    throw new Error(`Embroider:Compat#importParser only supports babel '6' or '7', but got: '${babelMajorVersion}'`);
+  }
+}
 
 export interface Import {
   path: string;
@@ -26,13 +37,26 @@ export default class ImportParser extends Plugin {
   private parserOptions: any;
   private modules: Import[] | null = [];
   private paths: Map<string, Import[]> = new Map();
+  private parse: (content: string, options?: any) => File = (_) => {
+    throw new Error(`ImportParser#parse for babelMajorVersion: '${this.babelMajorVersion}' not implemented`);
+  }
+  private parserSetup = false;
 
-  constructor(inputTree: Tree, private extensions = ['.js', '.hbs']) {
+  readonly babelMajorVersion: number;
+
+  constructor(inputTree: Tree, options: { babelMajorVersion: number } = { babelMajorVersion: 7 },  private extensions = ['.js', '.hbs']) {
     super([inputTree], {
       annotation: 'embroider:core:import-parser',
       persistentOutput: true,
     });
-    this.parserOptions = this.buildParserOptions();
+
+    this.babelMajorVersion = options.babelMajorVersion;
+    if (typeof this.babelMajorVersion === 'number' && this.babelMajorVersion !== this.babelMajorVersion) {
+      throw new Error(`ImportParser was given an invalid babelMajorVersion of: ${this.babelMajorVersion}`);
+    }
+    if (this.babelMajorVersion === 6) {
+      this.parserOptions = this.buildBabel6ParserOptions();
+    }
   }
 
   get imports(): Import[] {
@@ -47,14 +71,19 @@ export default class ImportParser extends Plugin {
     return [...this.paths.keys()];
   }
 
-  private buildParserOptions() {
+  private buildBabel6ParserOptions() {
     let babelOptions = {};
     let p = new Pipeline();
     let f = new File(babelOptions, p);
     return f.parserOpts;
   }
 
-  build() {
+  async build() {
+    if (this.parserSetup === false) {
+      this.parse = await parserFor(this.babelMajorVersion, this.parserOptions);
+      this.parserSetup = true;
+    }
+
     this.getPatchset().forEach(([operation, relativePath]) => {
       let outputPath = join(this.outputPath, relativePath);
 
@@ -120,9 +149,9 @@ export default class ImportParser extends Plugin {
 
     let ast;
     try {
-      ast = parse(source, this.parserOptions);
-    } catch (err) {
-      if (err.name !== 'SyntaxError') {
+      ast = this.parse(source, this.parserOptions);
+    } catch(err){
+      if (typeof err === 'object' && err !== null && err.name !== 'SyntaxError') {
         throw err;
       }
       // This is OK. The file is still going to get sent through the rest of the
@@ -133,7 +162,7 @@ export default class ImportParser extends Plugin {
     if (!ast) {
       return imports;
     }
-
+    // @ts-ignore
     forEachNode(ast.program.body, (node: any) => {
       if (node.type === 'CallExpression' && node.callee && node.callee.type === 'Import') {
         // it's a syntax error to have anything other than exactly one
@@ -146,6 +175,7 @@ export default class ImportParser extends Plugin {
       }
     });
 
+    // @ts-ignore
     // No need to recurse here, because we only deal with top-level static import declarations
     for (let node of ast.program.body) {
       let specifier: string | undefined;

@@ -1,5 +1,5 @@
 import stripBom from 'strip-bom';
-import { ResolverInstance, Resolution, Resolver, ResolverParams } from './resolver';
+import { Resolution, Resolver, ResolverParams } from './resolver';
 import { warn } from './messages';
 import { readFileSync } from 'fs';
 import { makeResolverTransform } from './resolver-transform';
@@ -8,6 +8,8 @@ export interface Plugins {
   ast?: unknown[];
 }
 
+// this is the ember template compiler's external interface (though it's
+// internal to this module).
 interface Compiler {
   precompile(templateContents: string, options: any): string;
   registerPlugin(type: string, plugin: unknown): void;
@@ -32,22 +34,18 @@ export interface SetupCompilerParams {
   plugins: Plugins;
 }
 
-// This signature of this function may feel a little weird, but that's because
+// The signature of this function may feel a little weird, but that's because
 // it's designed to be easy to invoke via our portable plugin config in a new
 // process.
 export default function setupCompiler(params: SetupCompilerParams) {
-  let compiler: Compiler = loadEmberCompiler(params.compilerPath);
+  let compiler = loadEmberCompiler(params.compilerPath);
   let ResolverClass: Resolver = require(params.resolverPath).default;
   let resolver = new ResolverClass(params.resolverParams);
-  return theCompiler(compiler, resolver, params.EmberENV, params.plugins);
-}
-
-function theCompiler(compiler: Compiler, resolver: ResolverInstance, EmberENV: unknown, plugins: Plugins) {
   let dependencies:  Map<string, Resolution[]> = new Map();
 
-  registerPlugins(compiler, plugins);
+  registerPlugins(compiler, params.plugins);
   compiler.registerPlugin('ast', makeResolverTransform(resolver, dependencies));
-  initializeEmberENV(compiler, EmberENV);
+  initializeEmberENV(compiler, params.EmberENV);
 
   function dependenciesOf(moduleName: string): Resolution[] | undefined {
     return dependencies.get(moduleName);

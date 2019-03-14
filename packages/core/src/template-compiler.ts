@@ -8,22 +8,63 @@ export interface Plugins {
   ast?: unknown[];
 }
 
-// this is the ember template compiler's external interface (though it's
-// internal to this module).
-interface Compiler {
-  precompile(templateContents: string, options: any): string;
-  registerPlugin(type: string, plugin: unknown): void;
-  _Ember: any;
+interface AST {
+  _deliberatelyOpaque: 'AST';
 }
 
-// we don't want to share one instance, so we can't use "require".
-function loadEmberCompiler(absoluteCompilerPath: string) {
-  let source = readFileSync(absoluteCompilerPath, 'utf8');
-  let module = {
-    exports: {}
+interface PreprocessOptions {
+  contents: string;
+  moduleName: string;
+  plugins?: Plugins;
+}
+
+interface GlimmerSyntax {
+  preprocess(html: string, options?: PreprocessOptions): AST;
+  print(ast: AST): string;
+  defaultOptions(options: PreprocessOptions): PreprocessOptions;
+  registerPlugin(type: string, plugin: unknown): void;
+  precompile(templateContents: string, options: { contents: string, moduleName: string }): string;
+  _Ember: { FEATURES: any, ENV: any };
+}
+
+// we could directly depend on @glimmer/syntax and have nice types and
+// everything. But the problem is, we really want to use the exact version that
+// the app itself is using, and its copy is bundled away inside
+// ember-template-compiler.js.
+function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
+  let orig = Object.create;
+  let grabbed: any[] = [];
+
+  // we need this in scope here so our eval below will use it (instead of our
+  // own module scoped one)
+  let module = { exports: {} };
+
+  (Object as any).create = function(proto: any, propertiesObject: any) {
+    let result = orig.call(this, proto, propertiesObject);
+    grabbed.push(result);
+    return result;
   };
-  eval(source);
-  return module.exports as Compiler;
+  try {
+    // eval evades the require cache, which we need because the template
+    // compiler shares internal module scoped state.
+    eval(readFileSync(templateCompilerPath, 'utf8'));
+  } finally {
+    Object.create = orig;
+  }
+  for (let obj of grabbed) {
+    if (obj['@glimmer/syntax'] && obj['@glimmer/syntax'].print) {
+      // we found the loaded modules
+      return {
+        print: obj['@glimmer/syntax'].print,
+        preprocess: obj['@glimmer/syntax'].preprocess,
+        defaultOptions: obj['ember-template-compiler/lib/system/compile-options'].default,
+        registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
+        precompile: (module.exports as any).precompile,
+        _Ember: (module.exports as any)._Ember,
+      };
+    }
+  }
+  throw new Error(`unable to find @glimmer/syntax methods in ${templateCompilerPath}`);
 }
 
 export interface SetupCompilerParams {
@@ -39,17 +80,15 @@ export interface SetupCompilerParams {
 // process.
 export default class TemplateCompiler {
   private dependencies:  Map<string, Resolution[]> = new Map();
-  private compiler: Compiler;
+  private syntax: GlimmerSyntax;
 
   constructor(params: SetupCompilerParams) {
-    let compiler = loadEmberCompiler(params.compilerPath);
+    this.syntax = loadGlimmerSyntax(params.compilerPath);
+    this.registerPlugins(params.plugins);
     let ResolverClass: Resolver = require(params.resolverPath).default;
     let resolver = new ResolverClass(params.resolverParams);
-
-    registerPlugins(compiler, params.plugins);
-    compiler.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
-    initializeEmberENV(compiler, params.EmberENV);
-    this.compiler = compiler;
+    this.syntax.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
+    this.initializeEmberENV(params.EmberENV);
   }
 
   // This is only public to make testing easier. During normal usage it's not
@@ -59,7 +98,7 @@ export default class TemplateCompiler {
   }
 
   compile(moduleName: string, contents: string) {
-    let compiled = this.compiler.precompile(
+    let compiled = this.syntax.precompile(
       stripBom(contents), {
         contents,
         moduleName
@@ -87,36 +126,33 @@ export default class TemplateCompiler {
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
     return lines.join("\n");
   }
-}
 
-function registerPlugins(compiler: Compiler, plugins: Plugins) {
-  if (plugins.ast) {
-    for (let i = 0, l = plugins.ast.length; i < l; i++) {
-      compiler.registerPlugin('ast', plugins.ast[i]);
+  private registerPlugins(plugins: Plugins) {
+    if (plugins.ast) {
+      for (let i = 0, l = plugins.ast.length; i < l; i++) {
+        this.syntax.registerPlugin('ast', plugins.ast[i]);
+      }
     }
   }
-}
 
-function initializeEmberENV(templateCompiler: Compiler, EmberENV: any) {
-  if (!templateCompiler || !EmberENV) { return; }
+  private initializeEmberENV(EmberENV: any) {
+    if (!EmberENV) { return; }
 
-  let props;
+    let props;
 
-  if (EmberENV.FEATURES) {
-    props = Object.keys(EmberENV.FEATURES);
+    if (EmberENV.FEATURES) {
+      props = Object.keys(EmberENV.FEATURES);
+      props.forEach(prop => {
+        this.syntax._Ember.FEATURES[prop] = EmberENV.FEATURES[prop];
+      });
+    }
 
-    props.forEach(prop => {
-      templateCompiler._Ember.FEATURES[prop] = EmberENV.FEATURES[prop];
-    });
-  }
-
-  if (EmberENV) {
-    props = Object.keys(EmberENV);
-
-    props.forEach(prop => {
-      if (prop === 'FEATURES') { return; }
-
-      templateCompiler._Ember.ENV[prop] = EmberENV[prop];
-    });
+    if (EmberENV) {
+      props = Object.keys(EmberENV);
+      props.forEach(prop => {
+        if (prop === 'FEATURES') { return; }
+        this.syntax._Ember.ENV[prop] = EmberENV[prop];
+      });
+    }
   }
 }

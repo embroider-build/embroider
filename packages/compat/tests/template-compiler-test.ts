@@ -7,9 +7,10 @@ import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
 import { expectWarning } from '@embroider/core/src/messages';
 import TemplateCompiler from '@embroider/core/src/template-compiler';
+import { emberTemplateCompilerPath } from '@embroider/test-support';
 
 const { test } = QUnit;
-const compilerPath = join(__dirname, 'vendor', 'ember-template-compiler.js');
+const compilerPath = emberTemplateCompilerPath();
 const resolverPath = join(__dirname, '../src/resolver');
 
 QUnit.module('template-compiler', function(hooks) {

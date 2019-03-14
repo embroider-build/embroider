@@ -28,3 +28,7 @@ export function emberApp(dir: string, userOpts: any = {}): any {
   let project = new Project(dir, readJSONSync(join(dir, 'package.json',)), cli.ui, cli);
   return new EmberApp({ project }, userOpts);
 }
+
+export function emberTemplateCompilerPath() {
+  return join(__dirname, 'vendor', 'ember-template-compiler.js');
+}

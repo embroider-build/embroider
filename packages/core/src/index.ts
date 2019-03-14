@@ -3,7 +3,7 @@ export { Resolver, ResolverInstance, Resolution } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
 export { default as Package } from './package';
 export { default as Stage } from './stage';
-export { Compiler as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
+export { Plugins as TemplateCompilerPlugins } from './template-compiler';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

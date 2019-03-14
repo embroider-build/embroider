@@ -21,8 +21,7 @@ import { MacrosConfig } from '@embroider/macros';
 import { TransformOptions } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import { SetupCompilerParams } from './template-compiler';
-import PortableTemplateCompilerConfig from './portable-compiler';
+import { PortableTemplateCompiler } from './template-compiler';
 
 export type EmberENV = unknown;
 
@@ -555,7 +554,7 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    let params: SetupCompilerParams = {
+    let params = {
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
       resolverPath: this.adapter.templateResolverPath(),
@@ -567,7 +566,7 @@ export class AppBuilder<TreeNames> {
       }
     };
 
-    let source = new PortableTemplateCompilerConfig(params, { basedir: this.root }).serialize();
+    let source = new PortableTemplateCompiler(params, { basedir: this.root }).serialize();
 
     writeFileSync(
       join(this.root, "_template_compiler_.js"),

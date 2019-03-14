@@ -1,5 +1,6 @@
 import stripBom from 'strip-bom';
 import { Resolution, Resolver, ResolverParams } from './resolver';
+import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
 import { warn } from './messages';
 import { readFileSync } from 'fs';
 import { makeResolverTransform } from './resolver-transform';
@@ -7,7 +8,7 @@ import { Tree } from 'broccoli-plugin';
 import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
-
+import { compile } from './js-handlebars';
 import { join } from 'path';
 import { PluginItem } from '@babel/core';
 
@@ -80,12 +81,46 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   throw new Error(`unable to find @glimmer/syntax methods in ${templateCompilerPath}`);
 }
 
-export interface SetupCompilerParams {
+interface SetupCompilerParams {
   compilerPath: string;
   resolverPath?: string;
   resolverParams?: ResolverParams;
   EmberENV: unknown;
   plugins: Plugins;
+}
+
+export class PortableTemplateCompiler extends PortablePluginConfig {
+  private static template = compile(`
+  const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
+  const TemplateCompiler = require('@embroider/core/src/template-compiler').default;
+  const templateCompiler = new TemplateCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}}));
+  module.exports = {
+    compile: templateCompiler.compile.bind(templateCompiler),
+    isParallelSafe: {{ isParallelSafe }},
+  };
+  `) as (params: {
+    portable: any,
+    here: string,
+    isParallelSafe: boolean,
+  }) => string;
+
+  constructor(config: SetupCompilerParams, resolveOptions: ResolveOptions) {
+    super(config, resolveOptions);
+  }
+
+  protected makePortable(value: any, accessPath: string[] = []) {
+    if (accessPath.length === 1 && accessPath[0] === 'compilerPath') {
+      return this.resolve(value);
+    }
+    if (accessPath.length === 1 && accessPath[0] === 'resolverPath') {
+      return this.resolve(value);
+    }
+    return super.makePortable(value, accessPath);
+  }
+
+  serialize() {
+    return PortableTemplateCompiler.template({ here: this.here, portable: this.portable, isParallelSafe: this.isParallelSafe });
+  }
 }
 
 // The signature of this function may feel a little weird, but that's because
@@ -271,4 +306,3 @@ function matchesSourceFile(filename: string) {
 function hasProperties(item: any) {
   return item && (typeof item === 'object' || typeof item === 'function');
 }
-

@@ -23,16 +23,11 @@ interface GlimmerSyntax {
   registerPlugin: (type: string, plugin: unknown) => void;
 }
 
-let glimmerSyntaxCache: GlimmerSyntax | undefined;
-
 // we could directly depend on @glimmer/syntax and have nice types and
 // everything. But the problem is, we really want to use the exact version that
 // the app itself is using, and its copy is bundled away inside
 // ember-template-compiler.js.
 function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
-  if (glimmerSyntaxCache) {
-    return glimmerSyntaxCache;
-  }
   let orig = Object.create;
   let grabbed: any[] = [];
   (Object as any).create = function(proto: any, propertiesObject: any) {
@@ -48,14 +43,13 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   for (let obj of grabbed) {
     if (obj['@glimmer/syntax'] && obj['@glimmer/syntax'].print) {
       // we found the loaded modules
-      glimmerSyntaxCache = {
+      return {
         print: obj['@glimmer/syntax'].print,
         preprocess: obj['@glimmer/syntax'].preprocess,
         defaultOptions: obj['ember-template-compiler/lib/system/compile-options'].default,
         registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
 
       };
-      return glimmerSyntaxCache;
     }
   }
   throw new Error(`unable to find @glimmer/syntax methods in ${templateCompilerPath}`);

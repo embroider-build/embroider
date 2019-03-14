@@ -12,7 +12,7 @@ interface PreprocessOptions {
   contents: string;
   moduleName: string;
   plugins?: {
-    [type: string]: unknown[]
+    ast?: unknown[]
   };
 }
 
@@ -69,12 +69,10 @@ export default class ASTPrecompiler {
     let syntax = loadGlimmerSyntax(options.templateCompilerPath);
     let userPluginsCount = 0;
     let plugins = options.plugins;
-    if (plugins) {
-      for (let type in plugins) {
-        for (let i = 0, l = plugins[type].length; i < l; i++) {
-          syntax.registerPlugin(type, plugins[type][i]);
-          userPluginsCount++;
-        }
+    if (plugins && plugins.ast) {
+      for (let i = 0, l = plugins.ast.length; i < l; i++) {
+        syntax.registerPlugin('ast', plugins.ast[i]);
+        userPluginsCount++;
       }
     }
     this.syntax = syntax;

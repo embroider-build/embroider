@@ -14,7 +14,7 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        //"--filter", "direct build"
+        "--filter", "v1-addon"
       ]
     },
     {

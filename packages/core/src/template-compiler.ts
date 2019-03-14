@@ -3,6 +3,13 @@ import { Resolution, Resolver, ResolverParams } from './resolver';
 import { warn } from './messages';
 import { readFileSync } from 'fs';
 import { makeResolverTransform } from './resolver-transform';
+import { Tree } from 'broccoli-plugin';
+import Filter from 'broccoli-persistent-filter';
+import stringify from 'json-stable-stringify';
+import { createHash } from 'crypto';
+
+import { join } from 'path';
+import { PluginItem } from '@babel/core';
 
 export interface Plugins {
   ast?: unknown[];
@@ -18,6 +25,9 @@ interface PreprocessOptions {
   plugins?: Plugins;
 }
 
+// This just reflects the API we're extracting from ember-template-compiler.js,
+// plus a cache key that lets us know when the underlying source has remained
+// stable.
 interface GlimmerSyntax {
   preprocess(html: string, options?: PreprocessOptions): AST;
   print(ast: AST): string;
@@ -25,6 +35,7 @@ interface GlimmerSyntax {
   registerPlugin(type: string, plugin: unknown): void;
   precompile(templateContents: string, options: { contents: string, moduleName: string }): string;
   _Ember: { FEATURES: any, ENV: any };
+  cacheKey: string;
 }
 
 // we could directly depend on @glimmer/syntax and have nice types and
@@ -34,6 +45,7 @@ interface GlimmerSyntax {
 function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   let orig = Object.create;
   let grabbed: any[] = [];
+  let source = readFileSync(templateCompilerPath, 'utf8');
 
   // we need this in scope here so our eval below will use it (instead of our
   // own module scoped one)
@@ -47,7 +59,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   try {
     // eval evades the require cache, which we need because the template
     // compiler shares internal module scoped state.
-    eval(readFileSync(templateCompilerPath, 'utf8'));
+    eval(source);
   } finally {
     Object.create = orig;
   }
@@ -61,6 +73,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
         registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
         precompile: (module.exports as any).precompile,
         _Ember: (module.exports as any)._Ember,
+        cacheKey: createHash('md5').update(source).digest('hex'),
       };
     }
   }
@@ -69,8 +82,8 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
 
 export interface SetupCompilerParams {
   compilerPath: string;
-  resolverPath: string;
-  resolverParams: ResolverParams;
+  resolverPath?: string;
+  resolverParams?: ResolverParams;
   EmberENV: unknown;
   plugins: Plugins;
 }
@@ -81,14 +94,24 @@ export interface SetupCompilerParams {
 export default class TemplateCompiler {
   private dependencies:  Map<string, Resolution[]> = new Map();
   private syntax: GlimmerSyntax;
+  private userPluginsCount = 0;
+  readonly cacheKey: string;
 
   constructor(params: SetupCompilerParams) {
     this.syntax = loadGlimmerSyntax(params.compilerPath);
     this.registerPlugins(params.plugins);
-    let ResolverClass: Resolver = require(params.resolverPath).default;
-    let resolver = new ResolverClass(params.resolverParams);
-    this.syntax.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
+    let cacheKeyInput: any = { syntax: this.syntax.cacheKey };
+    if (params.resolverPath && params.resolverParams) {
+      let resolverPath = require.resolve(params.resolverPath);
+      let ResolverClass: Resolver = require(resolverPath).default;
+      let resolver = new ResolverClass(params.resolverParams);
+      this.syntax.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
+      this.userPluginsCount++;
+      cacheKeyInput['resolverParams'] = params.resolverParams;
+      cacheKeyInput['resolverSource'] = readFileSync(resolverPath, 'utf8');
+    }
     this.initializeEmberENV(params.EmberENV);
+    this.cacheKey = createHash('md5').update(stringify(cacheKeyInput)).digest('hex');
   }
 
   // This is only public to make testing easier. During normal usage it's not
@@ -97,6 +120,7 @@ export default class TemplateCompiler {
     return this.dependencies.get(moduleName);
   }
 
+  // Compiles all the way from a template string to a javascript module string.
   compile(moduleName: string, contents: string) {
     let compiled = this.syntax.precompile(
       stripBom(contents), {
@@ -127,10 +151,42 @@ export default class TemplateCompiler {
     return lines.join("\n");
   }
 
+  // Applies all custom AST transforms and emits the results still as
+  // handlebars.
+  applyTransforms(moduleName: string, contents: string) {
+    let opts = this.syntax.defaultOptions({ contents, moduleName });
+    if (opts.plugins && opts.plugins.ast) {
+      // the user-provided plugins come first in the list, and those are the
+      // only ones we want to run. The built-in plugins don't need to run here
+      // in stage1, it's better that they run in stage3 when the appropriate
+      // ember version is in charge.
+      //
+      // rather than slicing them off, we could choose instead to not call
+      // syntax.defaultOptions, but then we lose some of the compatibility
+      // normalization that it does on the user-provided plugins.
+      opts.plugins.ast = opts.plugins.ast.slice(0, this.userPluginsCount);
+    }
+    let ast = this.syntax.preprocess(contents, opts);
+    return this.syntax.print(ast);
+  }
+
+  // Use applyTransforms on every file in a broccoli tree.
+  applyTransformsToTree(tree: Tree): Tree {
+    return new TemplateCompileTree(tree, this, 1);
+  }
+
+  // Use applyTransforms on the contents of inline hbs template strings inside
+  // Javascript.
+  inlineTransformsBabelPlugin(): PluginItem {
+    // TODO: add parallelBabel protocol
+    return [join(__dirname, 'babel-plugin-inline-hbs.js'), { templateCompiler: this }];
+  }
+
   private registerPlugins(plugins: Plugins) {
     if (plugins.ast) {
       for (let i = 0, l = plugins.ast.length; i < l; i++) {
         this.syntax.registerPlugin('ast', plugins.ast[i]);
+        this.userPluginsCount++;
       }
     }
   }
@@ -154,5 +210,36 @@ export default class TemplateCompiler {
         this.syntax._Ember.ENV[prop] = EmberENV[prop];
       });
     }
+  }
+
+  baseDir() {
+    return join(__dirname, '..');
+  }
+}
+
+class TemplateCompileTree extends Filter {
+  constructor(inputTree: Tree, private templateCompiler: TemplateCompiler, private stage: 1 | 3) {
+    super(inputTree, {
+      name: `embroider-template-compile-stage${stage}`,
+      persist: true,
+      extensions: ['hbs', 'handlebars'],
+      // in stage3 we are changing the file extensions from hbs to js. In
+      // stage1, we are just keeping hbs.
+      targetExtension: stage === 3 ? 'js' : undefined
+    });
+  }
+
+  processString(source: string, relativePath: string) {
+    if (this.stage === 1) {
+      return this.templateCompiler.applyTransforms(relativePath, source);
+    } else {
+      return this.templateCompiler.compile(relativePath, source);
+    }
+  }
+  cacheKeyProcessString(source: string, relativePath: string) {
+    return `${this.stage}-${this.templateCompiler.cacheKey}` + super.cacheKeyProcessString(source, relativePath);
+  }
+  baseDir() {
+    return join(__dirname, '..');
   }
 }

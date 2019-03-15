@@ -179,13 +179,13 @@ class CompatResolverInstance implements ResolverInstance {
       return {
         type: 'error',
         hardFail: false,
-        message: `ignoring dynamic component ${path} in ${from}`
+        message: `ignoring dynamic component ${path} in ${humanReadableFile(this.root, from)}`
       };
     }
     return this.tryComponent(path, from) || {
       type: 'error',
       hardFail: true,
-      message: `Missing component ${path} in ${from}`
+      message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`
     };
   }
 }
@@ -202,6 +202,16 @@ function explicitRelative(fromFile: string, toFile: string) {
     result = './' + result;
   }
   return result;
+}
+
+function humanReadableFile(root: string, file: string) {
+  if (!root.endsWith('/')) {
+    root += '/';
+  }
+  if (file.startsWith(root)) {
+    return file.slice(root.length);
+  }
+  return file;
 }
 
 const CompatResolver: Resolver = CompatResolverInstance;

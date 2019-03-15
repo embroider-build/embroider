@@ -1,10 +1,11 @@
 import { NodePath } from '@babel/traverse';
-import { ImportDeclaration } from '@babel/types';
+import { ImportDeclaration, CallExpression } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroIf from './macro-if';
+import error from './error';
 
 // we're assuming parallelized babel, so this doesn't try to share with anybody
 // other than our own module scope. As an optimization we could optionally
@@ -25,20 +26,35 @@ export default function main() {
           pruneMacroImports(path);
         }
       },
-      ReferencedIdentifier(path: NodePath, state: State) {
-        if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-          dependencySatisfies(path.parentPath, state, packageCache);
+      CallExpression(path: NodePath<CallExpression>, state: State) {
+        let callee = path.get('callee');
+        if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+          dependencySatisfies(path, state, packageCache);
         }
-        if (path.referencesImport('@embroider/macros', 'getConfig')) {
-          getConfig(path.parentPath, state, packageCache, false);
+        if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+          getConfig(path, state, packageCache, false);
         }
-        if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
-          getConfig(path.parentPath, state, packageCache, true);
+        if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+          getConfig(path, state, packageCache, true);
         }
-        if (path.referencesImport('@embroider/macros', 'macroIf')) {
-          state.pendingTasks.push(() => macroIf(path.parentPath, state));
+        if (callee.referencesImport('@embroider/macros', 'macroIf')) {
+          macroIf(path, state, packageCache);
         }
       },
+      ReferencedIdentifier(path: NodePath) {
+        if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+          throw error(path, `You can only use dependencySatisfies as a function call`);
+        }
+        if (path.referencesImport('@embroider/macros', 'getConfig')) {
+          throw error(path, `You can only use getConfig as a function call`);
+        }
+        if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
+          throw error(path, `You can only use getOwnConfig as a function call`);
+        }
+        if (path.referencesImport('@embroider/macros', 'macroIf')) {
+          throw error(path, `You can only use macroIf as a function call`);
+        }
+      }
     }
   };
 }

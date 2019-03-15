@@ -1,15 +1,12 @@
 import { NodePath } from '@babel/traverse';
-import { booleanLiteral } from '@babel/types';
+import { booleanLiteral, CallExpression } from '@babel/types';
 import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
 import { PackageCache } from '@embroider/core';
 import error from './error';
 import { assertArray } from './evaluate-json';
 
-export default function dependencySatisfies(path: NodePath, state: State, packageCache: PackageCache) {
-  if (path.node.type !== 'CallExpression') {
-    throw error(path, `You can only use dependencySatisfies as a function call`);
-  }
+export default function dependencySatisfies(path: NodePath<CallExpression>, state: State, packageCache: PackageCache) {
   if (path.node.arguments.length !== 2) {
     throw error(path, `dependencySatisfies takes exactly two arguments, you passed ${path.node.arguments.length}`);
   }

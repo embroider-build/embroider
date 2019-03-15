@@ -1,7 +1,11 @@
 import { NodePath } from '@babel/traverse';
+import getConfig from './get-config';
+import State from './state';
+import { PackageCache } from '@embroider/core';
+import dependencySatisfies from './dependency-satisfies';
 
-function evaluateKey(path: NodePath): { confident: boolean, value: any } {
-  let first = evaluateJSON(path);
+function evaluateKey(path: NodePath, state: State, packageCache: PackageCache): { confident: boolean, value: any } {
+  let first = evaluateJSON(path, state, packageCache);
   if (first.confident) {
     return first;
   }
@@ -11,11 +15,11 @@ function evaluateKey(path: NodePath): { confident: boolean, value: any } {
   return { confident: false, value: undefined };
 }
 
-export default function evaluateJSON(path: NodePath): { confident: boolean, value: any } {
+export default function evaluateJSON(path: NodePath, state: State, packageCache: PackageCache): { confident: boolean, value: any } {
   if (path.isMemberExpression()) {
-    let property = evaluateKey(assertNotArray(path.get('property')));
+    let property = evaluateKey(assertNotArray(path.get('property')), state, packageCache);
     if (property.confident) {
-      let object = evaluateJSON(path.get('object'));
+      let object = evaluateJSON(path.get('object'), state, packageCache);
       if (object.confident) {
         return { confident: true, value: object.value[property.value] };
       }
@@ -39,7 +43,7 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
   }
 
   if (path.isObjectExpression()) {
-    let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key'))), evaluateJSON(assertNotArray(p.get('value'))) ]);
+    let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key')), state, packageCache), evaluateJSON(assertNotArray(p.get('value')), state, packageCache) ]);
     let result: any = {};
     for (let [k,v] of props) {
       if (!k.confident || !v.confident) {
@@ -52,10 +56,28 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
 
   if (path.isArrayExpression()) {
     let elements = path.get('elements').map(element => {
-      return evaluateJSON(element as NodePath);
+      return evaluateJSON(element as NodePath, state, packageCache);
     });
     if (elements.every(element => element.confident)) {
       return { confident: true, value: elements.map(element => element.value) };
+    }
+  }
+
+  if (path.isCallExpression()) {
+    let callee = path.get('callee');
+    if (callee.isIdentifier()) {
+      if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+        getConfig(path, state, packageCache, false);
+        return evaluateJSON(path, state, packageCache);
+      }
+      if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+        getConfig(path, state, packageCache, true);
+        return evaluateJSON(path, state, packageCache);
+      }
+      if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+        dependencySatisfies(path, state, packageCache);
+        return evaluateJSON(path, state, packageCache);
+      }
     }
   }
 

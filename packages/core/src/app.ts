@@ -150,7 +150,7 @@ class AppFiles {
         continue;
       }
       if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
-        if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components')) {
+        if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components/')) {
           components.push(relativePath);
         } else if (relativePath.startsWith('helpers/')) {
           helpers.push(relativePath);

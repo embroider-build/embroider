@@ -3,9 +3,8 @@ import { allBabelVersions, runDefault } from './helpers';
 import { MacrosConfig } from '..';
 const { test } = QUnit;
 
-allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
-  QUnit.module(`getConfig`, function() {
-
+QUnit.module(`getConfig`, function() {
+  allBabelVersions(function (transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { beverage: 'coffee' });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
 

@@ -2,6 +2,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { AddonMeta } from '@embroider/core';
 import resolve from 'resolve';
 import { resolve as pathResolve } from 'path';
+import { PluginItem } from '@babel/core';
 
 export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
   let pkg = cloneDeep(packageJSON);
@@ -34,7 +35,7 @@ export function forceIncludeTestModule(meta: AddonMeta, localPath: string) {
 // Unfortunately needed because some popular addons have bogus unused reexports.
 //
 // Append the output of this function to the `plugins` array in a babel config.
-export function stripBadReexportsPlugin(opts: { filenamePattern?: RegExp, resolveBase?: string } = {}) {
+export function stripBadReexportsPlugin(opts: { filenamePattern?: RegExp, resolveBase?: string } = {}): PluginItem {
   return [stripBadReexportsTransform, { filenamePattern: opts.filenamePattern, resolveBase: opts.resolveBase } ];
 }
 

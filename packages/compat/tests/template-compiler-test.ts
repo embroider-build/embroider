@@ -318,7 +318,7 @@ QUnit.module('template-compiler', function(hooks) {
     givenFile('components/my-thing.js');
     assert.throws(() => {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
-    }, new RegExp(`Missing component hello-world in ${appDir}/templates/application.hb`));
+    }, new RegExp(`Missing component hello-world in templates/application.hb`));
   });
 
   test('string literal passed to component helper fails to resolve when staticComponents is off', function(assert) {
@@ -343,7 +343,7 @@ QUnit.module('template-compiler', function(hooks) {
         {
           type: 'error',
           hardFail: false,
-          message: `ignoring dynamic component this.which in ${appDir}/templates/application.hbs`
+          message: `ignoring dynamic component this.which in templates/application.hbs`
         }
       ]
     );

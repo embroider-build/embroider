@@ -59,5 +59,20 @@
         //"CLASSIC": "true",
       }
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build static-app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/static-app",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1",
+        //"CLASSIC": "true",
+      },
+      "outputCapture": "std"
+    },
   ]
 }

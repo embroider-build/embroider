@@ -12,7 +12,7 @@ import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync, readdirSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
@@ -296,6 +296,54 @@ export default class V1App implements V1Package {
     return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
   }
 
+  private combinedStyles(addonTrees: Tree[]): Tree {
+    let trees = addonTrees.map(tree => new Funnel(tree, {
+      allowEmpty: true,
+      srcDir: '_app_styles_',
+    }));
+    if (this.app.trees.styles) {
+      trees.push(this.app.trees.styles);
+    }
+    return mergeTrees(trees, { overwrite: true });
+  }
+
+  synthesizeStylesPackage(addonTrees: Tree[]): Tree {
+    let options = {
+      // we're deliberately not allowing this to be customized. It's an
+      // internal implementation detail, and respecting outputPaths here is
+      // unnecessary complexity. The corresponding code that adjusts the HTML
+      // <link> is in updateHTML in app.ts.
+     outputPaths: { app: `/assets/${this.name}.css` },
+     registry: this.app.registry,
+     minifyCSS: this.app.options.minifyCSS.options,
+   };
+
+   let styles = this.preprocessors.preprocessCss(
+     this.combinedStyles(addonTrees),
+     '.',
+     '/assets',
+     options
+   );
+
+   return new AddToTree(styles, outputPath => {
+    let addonMeta: AddonMeta = {
+      version: 2,
+      'public-assets': {
+      }
+    };
+    for (let file of readdirSync(join(outputPath, 'assets'))) {
+      addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+    }
+    let meta = {
+      name: '@embroider/synthesized-styles',
+      version: '0.0.0',
+      keywords: 'ember-addon',
+      'ember-addon': addonMeta
+    };
+    writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+   });
+  }
+
   // this is taken nearly verbatim from ember-cli.
   private applyCustomTransforms(externalTree: Tree) {
     for (let customTransformEntry of this.app._customTransformsMap) {
@@ -389,25 +437,6 @@ export default class V1App implements V1Package {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  private get styleTree(): Tree {
-    let options = {
-       // we're deliberately not allowing this to be customized. It's an
-       // internal implementation detail, and respecting outputPaths here is
-       // unnecessary complexity. The corresponding code that adjusts the HTML
-       // <link> is in updateHTML in app.ts.
-      outputPaths: { app: `/assets/${this.name}.css` },
-      registry: this.app.registry,
-      minifyCSS: this.app.options.minifyCSS.options,
-    };
-
-    return this.preprocessors.preprocessCss(
-      this.app.trees.styles,
-      `.`,
-      '/assets',
-      options
-    );
-  }
-
   get publicTree(): Tree {
     return this.app.trees.public;
   }
@@ -431,7 +460,6 @@ export default class V1App implements V1Package {
     );
     let trees: Tree[] = [];
     trees.push(appTree);
-    trees.push(this.styleTree);
     trees.push(config);
     if (testsTree) {
       trees.push(testsTree);

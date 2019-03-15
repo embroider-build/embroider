@@ -1,17 +1,3 @@
 /node_modules
-/packages/*/node_modules
-/packages/*/src/**/*.js
-/packages/*/src/**/*.d.ts
-/packages/*/src/**/*.map
-/packages/*/tests/**/*.js
-/packages/*/tests/**/*.d.ts
-/packages/*/tests/**/*.map
-/test-packages/*/node_modules
-/test-packages/*/src/**/*.js
-/test-packages/*/src/**/*.d.ts
-/test-packages/*/src/**/*.map
-/test-packages/*/tests/**/*.js
-/test-packages/*/tests/**/*.d.ts
-/test-packages/*/tests/**/*.map
 /tmp
 *.log

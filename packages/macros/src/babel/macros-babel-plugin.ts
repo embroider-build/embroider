@@ -27,16 +27,16 @@ export default function main() {
       },
       ReferencedIdentifier(path: NodePath, state: State) {
         if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-          dependencySatisfies(path, state, packageCache);
+          dependencySatisfies(path.parentPath, state, packageCache);
         }
         if (path.referencesImport('@embroider/macros', 'getConfig')) {
-          getConfig(path, state, packageCache, false);
+          getConfig(path.parentPath, state, packageCache, false);
         }
         if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
-          getConfig(path, state, packageCache, true);
+          getConfig(path.parentPath, state, packageCache, true);
         }
         if (path.referencesImport('@embroider/macros', 'macroIf')) {
-          state.pendingTasks.push(() => macroIf(path, state));
+          state.pendingTasks.push(() => macroIf(path.parentPath, state));
         }
       },
     }

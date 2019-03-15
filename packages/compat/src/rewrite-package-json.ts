@@ -13,7 +13,7 @@ export default class RewritePackageJSON extends Plugin {
     });
   }
 
-  private cachedLast: AddonMeta | undefined;
+  private cachedLast: { 'ember-addon': AddonMeta } | undefined;
 
   get lastPackageJSON() {
     if (!this.cachedLast) {

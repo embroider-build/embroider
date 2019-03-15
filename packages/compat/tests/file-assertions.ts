@@ -15,7 +15,11 @@ type ContentsResult = { result: true, data: string } | { result: false, actual: 
 type JSONResult = { result: true, data: any } | { result: false, actual: any, expected: any, message: string };
 
 export class BoundFileAssert {
-  constructor(private path: string, private assert: FileAssert) {}
+  constructor(readonly path: string, private assert: FileAssert) {}
+
+  get basePath() {
+    return this.assert.basePath;
+  }
 
   @Memoize()
   get fullPath() {
@@ -27,7 +31,7 @@ export class BoundFileAssert {
   }
 
   @Memoize()
-  private get contents(): ContentsResult {
+  protected get contents(): ContentsResult {
     try {
       return {
         result: true,
@@ -102,6 +106,35 @@ export class BoundFileAssert {
       };
     }, propertyPath);
   }
+  transform(fn: (contents: string, file: BoundFileAssert) => string) {
+    return new TransformedFileAssert(this.path, this.assert, fn);
+  }
+}
+
+export class TransformedFileAssert extends BoundFileAssert {
+  constructor(path: string, assert: FileAssert, private transformer: (contents: string, file: BoundFileAssert) => string) {
+    super(path, assert);
+  }
+  protected get contents(): ContentsResult {
+    let raw = super.contents;
+    if (!raw.result) {
+      return raw;
+    }
+    try {
+      return {
+        result: true,
+        data: this.transformer(raw.data, this)
+      };
+    } catch (err) {
+      return {
+        result: false,
+        actual: err,
+        expected: 'transformer to run',
+        message: err.message
+      };
+    }
+
+  }
 }
 
 export class JSONAssert {
@@ -175,6 +208,13 @@ function fileTest(name: string, definition: (assert: FileAssert) => void | Promi
   });
 }
 
+interface FileTest {
+  (name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
+  skip(name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
+}
+
+fileTest.skip = fileSkip;
+
 function fileSkip(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
   skip(name, function(plainAssert: Assert) {
     return definition(plainAssert as FileAssert);
@@ -211,5 +251,5 @@ export function installFileAssertions(hooks: NestedHooks) {
   hooks.before(installAssertions);
   hooks.beforeEach(installAssertions);
 
-  return { test: fileTest, skip: fileSkip, hooks: hooks as FileHooks };
+  return { test: fileTest as FileTest, skip: fileSkip, hooks: hooks as FileHooks };
 }

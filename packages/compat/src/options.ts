@@ -107,6 +107,8 @@ const defaults = Object.assign(coreWithDefaults(), {
   extraPublicTrees: [],
   workspaceDir: null,
   optionalComponents: [],
+  dependencyRules: {},
+  addonDependencyRules: []
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

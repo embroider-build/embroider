@@ -2,7 +2,6 @@ import 'qunit';
 import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
-import { Resolution } from '@embroider/core';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
 import { expectWarning } from '@embroider/core/src/messages';
@@ -303,7 +302,7 @@ QUnit.module('template-compiler', function(hooks) {
     );
   });
 
-  test('dynamic component helper warning in content position', function(assert) {
+  test('dynamic component helper warning in content position', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     assertWarning(/ignoring dynamic component this\.which/, () => {

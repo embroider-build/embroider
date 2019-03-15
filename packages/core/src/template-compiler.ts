@@ -154,12 +154,6 @@ export default class TemplateCompiler {
     this.compile = this.compile.bind(this);
   }
 
-  // This is only public to make testing easier. During normal usage it's not
-  // called from outside.
-  dependenciesOf(moduleName: string): Resolution[] | undefined {
-    return this.dependencies.get(moduleName);
-  }
-
   // Compiles to the wire format plus dependency list.
   precompile(moduleName: string, contents: string) {
     let compiled = this.syntax.precompile(
@@ -168,8 +162,8 @@ export default class TemplateCompiler {
         moduleName
       }
     );
-    let flatDeps: { runtimeName: string, path: string }[] = [];
-    let deps = this.dependenciesOf(moduleName);
+    let flatDeps: Map<string, string> = new Map();
+    let deps = this.dependencies.get(moduleName);
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
@@ -180,12 +174,12 @@ export default class TemplateCompiler {
           }
         } else {
           for (let { runtimeName, path } of dep.modules) {
-            flatDeps.push({ runtimeName, path });
+            flatDeps.set(runtimeName, path);
           }
         }
       }
     }
-    return { compiled, dependencies: flatDeps };
+    return { compiled, dependencies: [...flatDeps].map(([runtimeName, path]) => ({ runtimeName, path })) };
   }
 
   // Compiles all the way from a template string to a javascript module string.

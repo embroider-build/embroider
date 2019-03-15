@@ -27,15 +27,10 @@ QUnit.module('template-compiler', function(hooks) {
       options: optionsWithDefaults(options)
     };
     let compiler = new TemplateCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins });
-    return function(relativePath: string, contents: string): Resolution[] {
+    return function(relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
-      compiler.compile(moduleName, contents);
-      return compiler.dependenciesOf(moduleName)!.map(d => {
-        if (d.type !== 'error') {
-          d.modules = sortBy(d.modules, r => r.path);
-        }
-        return d;
-      });
+      let { dependencies } = compiler.precompile(moduleName, contents);
+      return sortBy(dependencies, d => d.runtimeName);
     };
   }
 
@@ -74,11 +69,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{hello-world}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -91,11 +83,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{hello-world}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "./components/hello-world.hbs",
-            "runtimeName": "the-app/templates/components/hello-world"
-          }]
+          "path": "./components/hello-world.hbs",
+          "runtimeName": "the-app/templates/components/hello-world"
         }
       ]
     );
@@ -109,14 +98,25 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{hello-world}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }, {
-            "path": "./components/hello-world.hbs",
-            "runtimeName": "the-app/templates/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
+        }, {
+          "path": "./components/hello-world.hbs",
+          "runtimeName": "the-app/templates/components/hello-world"
+        }
+      ]
+    );
+  });
+
+  test('coalesces repeated components', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world.js');
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`),
+      [
+        {
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -137,11 +137,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -154,11 +151,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -171,11 +165,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{#hello-world as |h|}} {{h.title flavor="chocolate"}} {{/hello-world}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -188,11 +179,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -205,11 +193,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -261,11 +246,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{component "hello-world"}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -278,11 +260,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{#component "hello-world"}} {{/component}}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         }
       ]
     );
@@ -296,18 +275,12 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/my-thing.js",
-            "runtimeName": "the-app/components/my-thing"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
         },
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }]
+          "path": "../components/my-thing.js",
+          "runtimeName": "the-app/components/my-thing"
         }
       ]
     );
@@ -333,20 +306,9 @@ QUnit.module('template-compiler', function(hooks) {
   test('dynamic component helper warning in content position', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    let deps;
     assertWarning(/ignoring dynamic component this\.which/, () => {
-      deps = findDependencies('templates/application.hbs', `{{component this.which}}`);
+      findDependencies('templates/application.hbs', `{{component this.which}}`);
     });
-    assert.deepEqual(
-      deps,
-      [
-        {
-          type: 'error',
-          hardFail: false,
-          message: `ignoring dynamic component this.which in templates/application.hbs`
-        }
-      ]
-    );
   });
 
   test('angle component, js and hbs', function(assert) {
@@ -357,14 +319,11 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `<HelloWorld />`),
       [
         {
-          type: 'component',
-          modules: [{
-            "path": "../components/hello-world.js",
-            "runtimeName": "the-app/components/hello-world"
-          }, {
-            "path": "./components/hello-world.hbs",
-            "runtimeName": "the-app/templates/components/hello-world"
-          }]
+          "path": "../components/hello-world.js",
+          "runtimeName": "the-app/components/hello-world"
+        }, {
+          "path": "./components/hello-world.hbs",
+          "runtimeName": "the-app/templates/components/hello-world"
         }
       ]
     );
@@ -384,11 +343,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/array',
-            path: '../helpers/array.js',
-          }]
+          runtimeName: 'the-app/helpers/array',
+          path: '../helpers/array.js',
         }
       ]
     );
@@ -424,11 +380,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/array',
-            path: '../helpers/array.js',
-          }]
+          runtimeName: 'the-app/helpers/array',
+          path: '../helpers/array.js',
         }
       ]
     );
@@ -441,11 +394,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/capitalize',
-            path: '../helpers/capitalize.js',
-          }]
+          runtimeName: 'the-app/helpers/capitalize',
+          path: '../helpers/capitalize.js',
         }
       ]
     );
@@ -458,11 +408,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{capitalize}}`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/capitalize',
-            path: '../helpers/capitalize.js',
-          }]
+          runtimeName: 'the-app/helpers/capitalize',
+          path: '../helpers/capitalize.js',
         }
       ]
     );
@@ -475,11 +422,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{capitalize name}}`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/capitalize',
-            path: '../helpers/capitalize.js',
-          }]
+          runtimeName: 'the-app/helpers/capitalize',
+          path: '../helpers/capitalize.js',
         }
       ]
     );
@@ -519,11 +463,8 @@ QUnit.module('template-compiler', function(hooks) {
       findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}`),
       [
         {
-          type: 'helper',
-          modules: [{
-            runtimeName: 'the-app/helpers/capitalize',
-            path: '../helpers/capitalize.js',
-          }]
+          runtimeName: 'the-app/helpers/capitalize',
+          path: '../helpers/capitalize.js',
         }
       ]
     );

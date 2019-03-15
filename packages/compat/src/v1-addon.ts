@@ -26,6 +26,7 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import resolve from "resolve";
 import { isEmbroiderMacrosPlugin } from "@embroider/macros";
 import { TransformOptions, PluginItem } from "@babel/core";
+import cloneDeep from "lodash/cloneDeep";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -162,6 +163,16 @@ export default class V1Addon implements V1Package {
   protected get options() {
     if (!this.addonInstance.options) {
       this.addonInstance.options = {};
+    } else {
+      // some addons (like ember-cli-inline-content) assign the *app's* options
+      // onto their own this.options. Which means they (accidentally or on
+      // purpose), always get the app's babel config, and it means when we try
+      // to modify the addon's babel config we're accidentally modifying the
+      // app's too.
+      //
+      // So here we do cloning to ensure that we can modify the babel config
+      // without altering anybody else.
+      this.addonInstance.options = cloneDeep(this.addonInstance.options);
     }
     return this.addonInstance.options;
   }

@@ -93,6 +93,9 @@ export default interface Options extends CoreOptions {
   //
   // See the addon-dependency-rules directory for the built-in rules.
   //
+  // These ONLY APPLY to v1-formatted addons. An addon that ships as native v2
+  // is expected to do the right thing on its own.
+  //
   // Follow to the definition of PackageRules for more info.
   addonDependencyRules?: PackageRules[];
 }

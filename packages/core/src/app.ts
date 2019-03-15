@@ -31,7 +31,7 @@ export type EmberENV = unknown;
 
     - CompatAppAdapter in `@embroider/compat` implements this interface for
       building based of a legacy ember-cli EmberApp instance
-    - We will want to make a different class that implmenets this interface for
+    - We will want to make a different class that implements this interface for
       building apps that don't need an EmberApp instance at all (presumably
       because they opt into new authoring standards.
 */

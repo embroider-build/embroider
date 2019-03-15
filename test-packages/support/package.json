@@ -1,6 +1,6 @@
 {
   "name": "@embroider/test-support",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "private": true,
   "dependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",

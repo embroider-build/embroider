@@ -1,10 +1,12 @@
 import { NodePath } from '@babel/traverse';
-import { ImportDeclaration } from '@babel/types';
+import { ImportDeclaration, CallExpression } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroIf from './macro-if';
+import error from './error';
+import { bindState } from './visitor';
 
 // we're assuming parallelized babel, so this doesn't try to share with anybody
 // other than our own module scope. As an optimization we could optionally
@@ -12,35 +14,49 @@ import macroIf from './macro-if';
 const packageCache = new PackageCache();
 
 export default function main() {
-  return {
-    visitor: {
-      Program: {
-        enter(_: NodePath, state: State) {
-          state.removed = [];
-          state.pendingTasks = [];
-        },
-        exit(path: NodePath, state: State) {
-          state.pendingTasks.forEach(task => task());
-          pruneRemovedImports(state);
-          pruneMacroImports(path);
-        }
+  let visitor = {
+    Program: {
+      enter(_: NodePath, state: State) {
+        state.removed = [];
+        state.pendingTasks = [];
       },
-      ReferencedIdentifier(path: NodePath, state: State) {
-        if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-          dependencySatisfies(path, state, packageCache);
-        }
-        if (path.referencesImport('@embroider/macros', 'getConfig')) {
-          getConfig(path, state, packageCache, false);
-        }
-        if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
-          getConfig(path, state, packageCache, true);
-        }
-        if (path.referencesImport('@embroider/macros', 'macroIf')) {
-          state.pendingTasks.push(() => macroIf(path, state));
-        }
-      },
+      exit(path: NodePath, state: State) {
+        state.pendingTasks.forEach(task => task());
+        pruneRemovedImports(state);
+        pruneMacroImports(path);
+      }
+    },
+    CallExpression(path: NodePath<CallExpression>, state: State) {
+      let callee = path.get('callee');
+      if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+        dependencySatisfies(path, state, packageCache);
+      }
+      if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+        getConfig(path, state, packageCache, false);
+      }
+      if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+        getConfig(path, state, packageCache, true);
+      }
+      if (callee.referencesImport('@embroider/macros', 'macroIf')) {
+        macroIf(path, state, bindState(visitor, state));
+      }
+    },
+    ReferencedIdentifier(path: NodePath) {
+      if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+        throw error(path, `You can only use dependencySatisfies as a function call`);
+      }
+      if (path.referencesImport('@embroider/macros', 'getConfig')) {
+        throw error(path, `You can only use getConfig as a function call`);
+      }
+      if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
+        throw error(path, `You can only use getOwnConfig as a function call`);
+      }
+      if (path.referencesImport('@embroider/macros', 'macroIf')) {
+        throw error(path, `You can only use macroIf as a function call`);
+      }
     }
   };
+  return { visitor };
 }
 
 function wasRemoved(path: NodePath, state: State) {

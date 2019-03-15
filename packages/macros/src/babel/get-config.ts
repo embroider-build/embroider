@@ -6,23 +6,20 @@ import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { assertArray } from './evaluate-json';
 
-export default function getConfig(path: NodePath, state: State, packageCache: PackageCache, own: boolean) {
-  if (path.parent.type !== 'CallExpression') {
-    throw error(path, `You can only use ${own ? 'getOwnConfig' : 'getConfig'} as a function call`);
-  }
+export default function getConfig(path: NodePath<CallExpression>, state: State, packageCache: PackageCache, own: boolean) {
   let packageName: string | undefined;
   if (own) {
-    if (path.parent.arguments.length !== 0) {
-      throw error(path.parentPath, `getOwnConfig takes zero arguments, you passed ${path.parent.arguments.length}`);
+    if (path.node.arguments.length !== 0) {
+      throw error(path, `getOwnConfig takes zero arguments, you passed ${path.node.arguments.length}`);
     }
     packageName = undefined;
   } else {
-    if (path.parent.arguments.length !== 1) {
-      throw error(path.parentPath, `getConfig takes exactly one argument, you passed ${path.parent.arguments.length}`);
+    if (path.node.arguments.length !== 1) {
+      throw error(path, `getConfig takes exactly one argument, you passed ${path.node.arguments.length}`);
     }
-    let packageNode = path.parent.arguments[0];
+    let packageNode = path.node.arguments[0];
     if (packageNode.type !== 'StringLiteral') {
-      throw error(assertArray(path.parentPath.get('arguments'))[0], `the argument to getConfig must be a string literal`);
+      throw error(assertArray(path.get('arguments'))[0], `the argument to getConfig must be a string literal`);
     }
     packageName = packageNode.value;
   }
@@ -31,7 +28,7 @@ export default function getConfig(path: NodePath, state: State, packageCache: Pa
   if (pkg) {
     config = state.opts.userConfigs[pkg.root];
   }
-  path.parentPath.replaceWith(literalConfig(config));
+  path.replaceWith(literalConfig(config));
 }
 
 function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {

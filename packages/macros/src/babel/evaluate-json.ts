@@ -1,7 +1,8 @@
 import { NodePath } from '@babel/traverse';
+import { BoundVisitor } from './visitor';
 
-function evaluateKey(path: NodePath): { confident: boolean, value: any } {
-  let first = evaluateJSON(path);
+function evaluateKey(path: NodePath, visitor: BoundVisitor): { confident: boolean, value: any } {
+  let first = evaluateJSON(path, visitor);
   if (first.confident) {
     return first;
   }
@@ -11,11 +12,11 @@ function evaluateKey(path: NodePath): { confident: boolean, value: any } {
   return { confident: false, value: undefined };
 }
 
-export default function evaluateJSON(path: NodePath): { confident: boolean, value: any } {
+export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean, value: any } {
   if (path.isMemberExpression()) {
-    let property = evaluateKey(assertNotArray(path.get('property')));
+    let property = evaluateKey(assertNotArray(path.get('property')), visitor);
     if (property.confident) {
-      let object = evaluateJSON(path.get('object'));
+      let object = evaluateJSON(path.get('object'), visitor);
       if (object.confident) {
         return { confident: true, value: object.value[property.value] };
       }
@@ -39,7 +40,7 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
   }
 
   if (path.isObjectExpression()) {
-    let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key'))), evaluateJSON(assertNotArray(p.get('value'))) ]);
+    let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key')), visitor), evaluateJSON(assertNotArray(p.get('value')), visitor) ]);
     let result: any = {};
     for (let [k,v] of props) {
       if (!k.confident || !v.confident) {
@@ -52,11 +53,16 @@ export default function evaluateJSON(path: NodePath): { confident: boolean, valu
 
   if (path.isArrayExpression()) {
     let elements = path.get('elements').map(element => {
-      return evaluateJSON(element as NodePath);
+      return evaluateJSON(element as NodePath, visitor);
     });
     if (elements.every(element => element.confident)) {
       return { confident: true, value: elements.map(element => element.value) };
     }
+  }
+
+  if (path.isCallExpression()) {
+    visitor.CallExpression(path);
+    return evaluateJSON(path, visitor);
   }
 
   return { confident: false, value: undefined };

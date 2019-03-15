@@ -42,8 +42,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
   let publicTree = oldPackage.publicTree;
   let configTree = oldPackage.config;
 
-  if (options && options.extraPublicTrees) {
-    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees]);
+  if (options.extraPublicTrees.length > 0) {
+    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean));
   }
 
   let inTrees = {
@@ -92,16 +92,22 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   assets(treePaths: OutputPaths<TreeNames>): Asset[] {
+    let assets: Asset[] = [];
+
     // Everything in our traditional public tree is an on-disk asset
-    let assets = walkSync.entries(treePaths.publicTree, {
-      directories: false,
-    }).map((entry): Asset => ({
-      kind: 'on-disk',
-      relativePath: entry.relativePath,
-      sourcePath: entry.fullPath,
-      mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
-      size: entry.size
-    }));
+    if (treePaths.publicTree) {
+      walkSync.entries(treePaths.publicTree, {
+        directories: false,
+      }).forEach((entry) => {
+        assets.push({
+          kind: 'on-disk',
+          relativePath: entry.relativePath,
+          sourcePath: entry.fullPath,
+          mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
+          size: entry.size
+        });
+      });
+    }
 
     for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
       assets.push(asset);

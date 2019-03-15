@@ -24,6 +24,9 @@ function main {
   "static-app")
     cd test-packages/static-app && yarn test
     ;;
+  "static-app-classic")
+    cd test-packages/static-app && CLASSIC=true yarn test
+    ;;
   *)
     allSuites
     ;;
@@ -38,6 +41,7 @@ function allSuites {
   macro-addon
   macro-addon-classic
   static-app
+  static-app-classic
 EOF
 }
 

@@ -1,12 +1,13 @@
 import { module, test } from 'qunit';
 import { visit } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
+import { getOwnConfig, macroIf } from '@embroider/macros';
 
-module('Acceptance | helpers', function(hooks) {
+module('Acceptance | helpers-example', function(hooks) {
   setupApplicationTest(hooks);
 
   test('static helpers', async function(assert) {
-    await visit('/');
+    await visit('/helpers-example');
 
     assert.deepEqual(
       [...document.querySelectorAll("[data-word]")].map(elt => elt.dataset.word),
@@ -16,7 +17,11 @@ module('Acceptance | helpers', function(hooks) {
 
     let helpers = [...document.querySelectorAll("[data-helper-name]")].map(elt => elt.dataset.helperName);
     assert.ok(helpers.includes('reverse'), 'expected to find reverse');
-    assert.ok(!helpers.includes('intersect'), 'expected not to find intersect');
 
+    macroIf(getOwnConfig().isClassic, () => {
+      assert.ok(helpers.includes('intersect'), 'expected to find intersect');
+    }, () => {
+      assert.ok(!helpers.includes('intersect'), 'expected not to find intersect');
+    });
   });
 });

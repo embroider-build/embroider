@@ -1,9 +1,14 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { MacrosConfig } = require('@embroider/macros');
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
+  });
+
+  MacrosConfig.shared().setOwnConfig(__filename, {
+    isClassic: Boolean(process.env.CLASSIC)
   });
 
   if (process.env.CLASSIC) {

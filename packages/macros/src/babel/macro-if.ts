@@ -3,16 +3,16 @@ import State from './state';
 import evaluateJSON from './evaluate-json';
 import { callExpression, CallExpression } from '@babel/types';
 import error from './error';
-import { PackageCache } from '@embroider/core';
+import { BoundVisitor } from './visitor';
 
-export default function macroIf(path: NodePath<CallExpression>, state: State, packageCache: PackageCache) {
+export default function macroIf(path: NodePath<CallExpression>, state: State, visitor: BoundVisitor) {
   let args = path.get('arguments');
   if (args.length !== 2 && args.length !== 3) {
     throw error(path, `macroIf takes two or three arguments, you passed ${args.length}`);
   }
 
   let [predicatePath, consequent, alternate] = args;
-  let predicate = evaluate(predicatePath, state, packageCache);
+  let predicate = evaluate(predicatePath, visitor);
   if (!predicate.confident) {
     throw error(args[0], `the first argument to macroIf must be statically known`);
   }
@@ -43,7 +43,7 @@ export default function macroIf(path: NodePath<CallExpression>, state: State, pa
   }
 }
 
-function evaluate(path: NodePath, state: State, packageCache: PackageCache): { confident: boolean, value: any } {
+function evaluate(path: NodePath, visitor: BoundVisitor) {
   let builtIn = path.evaluate();
   if (builtIn.confident) {
     return builtIn;
@@ -51,5 +51,5 @@ function evaluate(path: NodePath, state: State, packageCache: PackageCache): { c
 
   // we can go further than babel's evaluate() because we know that we're
   // typically used on JSON, not full Javascript.
-  return evaluateJSON(path, state, packageCache);
+  return evaluateJSON(path, visitor);
 }

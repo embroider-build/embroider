@@ -60,6 +60,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       configTree,
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
     );
 
     // Our options are a superset of the core options. It's *mostly* harmless to
@@ -83,6 +84,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
+    private synthStyles: Package,
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -168,7 +170,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   extraDependencies(): Package[] {
-    return [this.synthVendor];
+    return [this.synthVendor, this.synthStyles];
   }
 
   templateCompilerPath(): string {

@@ -315,11 +315,11 @@ export default class V1Addon implements V1Package {
 
   protected treeForAddon(): Tree|undefined {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      let tree = this.invokeOriginalTreeFor('addon');
+      let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
-        return new MultiFunnel(tree, {
+        return this.transpile(new MultiFunnel(tree, {
           srcDirs: [this.moduleName, `modules/${this.moduleName}`]
-        });
+        }));
       }
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon', {
@@ -374,23 +374,24 @@ export default class V1Addon implements V1Package {
   }
 
   private buildTreeForStyles(built: IntermediateBuild) {
+    let tree;
     if (this.customizes('treeForStyles')) {
-      todo(`${this.name} may have customized the app style tree`);
-    } else if (this.hasStockTree('styles')) {
-      // The typical way these get used is via css @import from the app's own
-      // CSS (or SCSS). There is no enforced namespacing but that is the
-      // common pattern as far as I can tell.
-      //
-      // TODO: detect people doing the right thing (namespacing with their own
-      // package name) and send them down the happy path. Their styles can
-      // just ship inside the package root and be importable at the same name
-      // as before. Detect people doing anything other than that and yell at
-      // them and set up a fallback.
-      built.trees.push(
-        this.transpile(this.stockTree('styles', {
+      // the user's tree returns their own styles with no "app/styles" wrapping
+      // around, which is actually what we want
+      tree = this.invokeOriginalTreeFor('styles');
+      if (tree) {
+        tree = new Funnel(tree, {
+          srcDir: 'app/styles',
           destDir: '_app_styles_'
-        }), { includeCSS: true })
-      );
+        });
+      }
+    } else if (this.hasStockTree('styles')) {
+      tree = this.stockTree('styles', {
+        destDir: '_app_styles_'
+      });
+    }
+    if (tree) {
+      built.trees.push(tree);
     }
   }
 
@@ -431,7 +432,7 @@ export default class V1Addon implements V1Package {
         return {};
       }
     });
-    return  new AddToTree(tree, (outputPath: string) => {
+    return new AddToTree(tree, (outputPath: string) => {
       dirExists = pathExistsSync(join(outputPath, appPublicationDir));
     });
   }

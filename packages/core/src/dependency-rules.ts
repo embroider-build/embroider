@@ -1,7 +1,8 @@
 
 // A component snippet is a string containing valid HBS that is a singlie
 // component invocation. We use it to refer to compnents in a way that doesn't
-// require any new syntax or rules.
+// require any new syntax or rules, and that's necessarily supported by whatever
+// build-time template resolver is in use.
 //
 // Examples of valid ComponentSnippets:
 //

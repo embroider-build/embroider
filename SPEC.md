@@ -597,6 +597,15 @@ Status: intent to deprecate
 
 A list of paths to folders that should be merged with the app's own namespace. This is a backward-compatibility feature, avoiding using it.
 
+## auto-upgraded
+
+```
+Allowed in: addons
+Status: internal use only
+```
+
+Boolean. Marks a package as having been compiled on the fly from v1 to v2. It's probably not a good idea to ever publish a package to NPM with this set.
+
 ## babel-config
 
 ```

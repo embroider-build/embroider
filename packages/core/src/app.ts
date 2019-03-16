@@ -267,7 +267,7 @@ export class AppBuilder<TreeNames> {
 
     // this is our own plugin that patches up issues like non-explicit hbs
     // extensions and packages importing their own names.
-    babel.plugins.push([require.resolve('./babel-plugin'), {
+    babel.plugins.push([require.resolve('./babel-plugin-adjust-imports'), {
       ownName: this.app.name,
       basedir: this.root,
       rename

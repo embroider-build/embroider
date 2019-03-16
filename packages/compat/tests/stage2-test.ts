@@ -73,8 +73,8 @@ QUnit.module('stage2 build', function() {
       let options: Options = {
         staticComponents: true,
         staticHelpers: true,
-        addonDependencyRules: [{
-          name: 'my-addon',
+        packageRules: [{
+          package: 'my-addon',
           modules: {
             './templates/components/hello-world.hbs': {
               dynamicComponentSources: {

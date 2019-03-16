@@ -3,9 +3,7 @@ import { Tree } from "broccoli-plugin";
 import {
   Options as CoreOptions,
   optionsWithDefaults as
-  coreWithDefaults,
-  OwnPackageRules,
-  PackageRules
+  coreWithDefaults
 } from '@embroider/core';
 
 // These options control how hard we will try to achieve compatibility with v1
@@ -83,26 +81,6 @@ export default interface Options extends CoreOptions {
   // This should be understood as a temporary workaround until you can fix the
   // offending template to not refer to a non-existent component.
   optionalComponents?: string[];
-
-  // Allows you to tell Embroider about otherwise dynamic dependencies within
-  // your app that it can't figure out on its own.
-  //
-  // Follow to the definition of OwnPackageRules for more info.
-  dependencyRules?: OwnPackageRules;
-
-  // Allows you to tell Embroider about otherwise dynamic dependencies within
-  // your addons that it can't figure out on its own. These are combined with
-  // the default rules that ship with Embroider. Your own rules take precedence
-  // over the built-ins. Order matters, first matching rule will apply to any
-  // given addon.
-  //
-  // See the addon-dependency-rules directory for the built-in rules.
-  //
-  // These ONLY APPLY to v1-formatted addons. An addon that ships as native v2
-  // is expected to do the right thing on its own.
-  //
-  // Follow to the definition of PackageRules for more info.
-  addonDependencyRules?: PackageRules[];
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -112,8 +90,6 @@ const defaults = Object.assign(coreWithDefaults(), {
   extraPublicTrees: [],
   workspaceDir: null,
   optionalComponents: [],
-  dependencyRules: {},
-  addonDependencyRules: []
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

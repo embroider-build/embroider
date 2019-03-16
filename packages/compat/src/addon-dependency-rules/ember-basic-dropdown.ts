@@ -1,7 +1,7 @@
 import { PackageRules } from "@embroider/core";
 
 let rules: PackageRules = {
-  name: 'ember-basic-dropdown',
+  package: 'ember-basic-dropdown',
   modules: {
     './components/basic-dropdown.js': {
       dependsOnComponents: [

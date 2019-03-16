@@ -1,7 +1,7 @@
 import { PackageRules } from "@embroider/core";
 
 let rules: PackageRules = {
-  name: 'ember-power-select',
+  package: 'ember-power-select',
   modules: {
     './components/power-select.js': {
       dependsOnComponents: [

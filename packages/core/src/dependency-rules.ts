@@ -12,7 +12,9 @@
 //
 type ComponentSnippet = string;
 
-export interface OwnPackageRules {
+export interface PackageRules {
+  package: string;
+  semverRange?: string;
   modules?: {
     // `filename` is relative to your package root, and it assumes v2 package
     // format. Like "./templates/components/foo.hbs".
@@ -25,11 +27,6 @@ export interface OwnPackageRules {
   // really be invoked (it's inside a conditional branch you know you'll never
   // go down).
   optionalComponents?: string[];
-}
-
-export interface PackageRules extends OwnPackageRules {
-  name: string;
-  semverRange?: string;
 }
 
 export interface ModuleRules {

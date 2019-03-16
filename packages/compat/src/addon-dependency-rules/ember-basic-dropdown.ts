@@ -1,4 +1,4 @@
-import { PackageRules } from "../dependency-rules";
+import { PackageRules } from "@embroider/core";
 
 let rules: PackageRules = {
   name: 'ember-basic-dropdown',

@@ -1,7 +1,12 @@
 import { V1AddonConstructor } from "./v1-addon";
 import { Tree } from "broccoli-plugin";
-import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from '@embroider/core';
-import { OwnPackageRules, PackageRules } from "./dependency-rules";
+import {
+  Options as CoreOptions,
+  optionsWithDefaults as
+  coreWithDefaults,
+  OwnPackageRules,
+  PackageRules
+} from '@embroider/core';
 
 // These options control how hard we will try to achieve compatibility with v1
 // addons. The defaults are conservative and try to maximize compatibility, at

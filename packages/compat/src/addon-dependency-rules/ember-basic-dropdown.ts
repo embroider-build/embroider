@@ -10,9 +10,9 @@ let rules: PackageRules = {
       ]
     },
     './templates/components/basic-dropdown.hbs': {
-      dynamicComponents: {
-        triggerComponent: { fromComponent: "{{basic-dropdown}}" },
-        contentComponent: { fromComponent: "{{basic-dropdown}}" },
+      dynamicComponentSources: {
+        triggerComponent: { fromArgument: "triggerComponent" },
+        contentComponent: { fromArgument: "triggerComponent" },
       }
     }
   }

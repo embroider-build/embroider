@@ -19,12 +19,12 @@ let rules: PackageRules = {
       ]
     },
     './templates/components/power-select.hbs': {
-      dynamicComponents: {
-        triggerComponent: { fromComponent: "{{power-select}}" },
-        beforeOptionsComponent: { fromComponent: "{{power-select}}" },
-        searchMessageComponent: { fromComponent: "{{power-select}}" },
-        optionsComponent: { fromComponent: "{{power-select}}" },
-        afterOptionsComponent: { fromComponent: "{{power-select}}" },
+      dynamicComponentSources: {
+        triggerComponent: { fromArgument: 'triggerComponent' },
+        beforeOptionsComponent: { fromArgument: 'beforeOptionsComponent' },
+        searchMessageComponent: { fromArgument: 'searchMessageComponent' },
+        optionsComponent: { fromArgument: 'optionsComponent' },
+        afterOptionsComponent: { fromArgument: 'afterOptionsComponent' },
       }
     }
   }

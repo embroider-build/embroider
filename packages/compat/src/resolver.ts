@@ -87,7 +87,9 @@ class CompatResolverInstance implements ResolverInstance {
         modules: componentModules.map(p => ({
           path: explicitRelative(from, p.path),
           runtimeName: p.runtimeName,
-        }))
+        })),
+        yieldsComponents: [],
+        argumentsAreComponents: [],
       };
     }
 

@@ -1,9 +1,15 @@
 import Options from './options';
+import { ModuleRules } from './dependency-rules';
 
-interface ResolutionResult {
-  type: "component" | "helper";
+type ResolutionResult = {
+  type: "component";
   modules: ({runtimeName: string, path: string})[];
-}
+  yieldsComponents: ModuleRules["yieldsSafeComponents"];
+  argumentsAreComponents: string[];
+} | {
+  type: "helper";
+  modules: ({runtimeName: string, path: string})[];
+};
 
 interface ResolutionFail {
   type: "error";

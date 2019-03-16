@@ -1,6 +1,6 @@
 import { ResolverInstance, Resolution } from './resolver';
 
-// This is the AST transform that resolver components and helpers at build time
+// This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<string, Resolution[]>) {
   return function resolverTransform(env: { moduleName: string }) {

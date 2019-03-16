@@ -14,7 +14,7 @@
         "packages/compat/tests",
         "packages/core/tests",
         "packages/macros/tests",
-        //"--filter", "stage3 with presets"
+        "--filter", "stage2 build"
       ]
     },
     {

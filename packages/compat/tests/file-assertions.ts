@@ -115,6 +115,7 @@ export class TransformedFileAssert extends BoundFileAssert {
   constructor(path: string, assert: FileAssert, private transformer: (contents: string, file: BoundFileAssert) => string) {
     super(path, assert);
   }
+  @Memoize()
   protected get contents(): ContentsResult {
     let raw = super.contents;
     if (!raw.result) {

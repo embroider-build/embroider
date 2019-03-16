@@ -29,6 +29,10 @@ QUnit.module('stage2 build', function() {
           <HelloWorld @useDynamic={{"secondchoice"}} />
           <HelloWorld @useDynamic={{component "third-choice"}} />
         `,
+        'curly.hbs': `
+          {{hello-world useDynamic="first-choice" }}
+          {{hello-world useDynamic=(component "third-choice") }}
+        `,
         components: {
           'first-choice.hbs': 'first',
           'second-choice.hbs': 'second',
@@ -73,8 +77,8 @@ QUnit.module('stage2 build', function() {
           name: 'my-addon',
           modules: {
             './templates/components/hello-world.hbs': {
-              dynamicComponents: {
-                dynamicComponentName: { fromComponent: '<HelloWorld />', argument: 'useDynamic' }
+              dynamicComponentSources: {
+                dynamicComponentName: { fromArgument: 'useDynamic' }
               }
             }
           }
@@ -105,6 +109,13 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');
       assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
       assertFile.matches(/import \w+ from ["'].\/components\/second-choice\.hbs["']/, 'rule-driven mustache string literal');
+    });
+
+    test.skip('curly.hbs', function(assert) {
+      let assertFile = assert.file('templates/curly.hbs').transform(transpile);
+      assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
+      assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');
+      assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
     });
 
   });

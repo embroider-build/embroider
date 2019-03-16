@@ -70,4 +70,21 @@ export default class PackageCache {
     }
   }
 
+  // register to be shared as the per-process package cache with the given name
+  shareAs(identifier: string) {
+    shared.set(identifier, this);
+  }
+
+  static shared(identifier: string) {
+    let p = shared.get(identifier);
+    if (p) {
+      return p;
+    }
+    p =  new PackageCache();
+    shared.set(identifier,p);
+    return p;
+  }
+
 }
+
+const shared: Map<string, PackageCache> = new Map();

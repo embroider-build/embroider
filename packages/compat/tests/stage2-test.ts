@@ -112,7 +112,7 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import \w+ from ["'].\/components\/second-choice\.hbs["']/, 'rule-driven mustache string literal');
     });
 
-    test.skip('curly.hbs', function(assert) {
+    test('curly.hbs', function(assert) {
       let assertFile = assert.file('templates/curly.hbs').transform(transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
       assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');

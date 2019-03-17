@@ -6,7 +6,11 @@ const unsupported = makeDebug('embroider:unsupported');
 const debug = makeDebug('embroider:debug');
 
 function realWarn(message: string, ...params: any[]) {
-  console.log('WARNING: ' + format(message, ...params));
+  if (hardFailMode > 0) {
+    throw new Error(`Unexpected warning in test suite: ${format(message, ...params)}`);
+  } else {
+    console.log('WARNING: ' + format(message, ...params));
+  }
 }
 
 let expectStack = [] as RegExp[];
@@ -28,6 +32,17 @@ export function warn(message: string, ...params: any[]) {
     realWarn(message, params);
   } else {
     expectedWarn(message, params);
+  }
+}
+
+// for use in our test suites
+let hardFailMode = 0;
+export function throwOnWarnings(fn: () => void) {
+  hardFailMode++;
+  try {
+    fn();
+  } finally {
+    hardFailMode--;
   }
 }
 

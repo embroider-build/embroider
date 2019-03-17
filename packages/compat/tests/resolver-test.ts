@@ -591,7 +591,7 @@ QUnit.module('compat-resolver', function(hooks) {
     });
   });
 
-  QUnit.skip('acceptsComponentArguments with valid literal', function(assert) {
+  test('acceptsComponentArguments on mustache with valid literal', function(assert) {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -610,18 +610,18 @@ QUnit.module('compat-resolver', function(hooks) {
       findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`),
       [
         {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-        {
           runtimeName: 'the-app/templates/components/fancy-title',
           path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
         }
       ]
     );
   });
 
-  QUnit.skip('acceptsComponentArguments with invalid literal', function(assert) {
+  test('acceptsComponentArguments on mustache with invalid literal', function(assert) {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -637,6 +637,6 @@ QUnit.module('compat-resolver', function(hooks) {
 
     assert.throws(() => {
       findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
-    }, /missing component fancy-title in templates\/application\.hbs/);
+    }, /Missing component fancy-title in templates\/application\.hbs/);
   });
 });

@@ -68,7 +68,15 @@ export function makeResolverTransform(resolver: Resolver) {
             return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          if (resolution && resolution.type === 'component') {
+            for (let name of resolution.argumentsAreComponents) {
+              let pair = node.hash.pairs.find((pair: any) => pair.key === name);
+              if (pair) {
+                handleComponentHelper(pair.value, resolver, env.moduleName, scopeStack);
+              }
+            }
+          }
         },
         ElementNode: {
           enter(node: any) {

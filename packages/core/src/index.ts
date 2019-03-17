@@ -1,5 +1,5 @@
 export { Packager, PackagerInstance } from './packager';
-export { Resolver, Resolution } from './resolver';
+export { Resolver } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
 export { default as Package } from './package';
 export { default as Stage } from './stage';
@@ -15,5 +15,5 @@ export { default as BuildStage } from './build-stage';
 export { getOrCreate } from './get-or-create';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
-export { PackageRules } from './dependency-rules';
+export { PackageRules, ModuleRules } from './dependency-rules';
 export { todo, unsupported, warn, debug, expectWarning } from './messages';

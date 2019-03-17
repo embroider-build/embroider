@@ -1,11 +1,27 @@
-import { Resolver, Resolution, warn } from "@embroider/core";
+import { Resolver, warn, ModuleRules } from "@embroider/core";
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
 
-export { Resolution };
+type ResolutionResult = {
+  type: "component";
+  modules: ({runtimeName: string, path: string})[];
+  yieldsComponents: ModuleRules["yieldsSafeComponents"];
+  argumentsAreComponents: string[];
+} | {
+  type: "helper";
+  modules: ({runtimeName: string, path: string})[];
+};
+
+interface ResolutionFail {
+  type: "error";
+  hardFail: boolean;
+  message: string;
+}
+
+export type Resolution = ResolutionResult | ResolutionFail;
 
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.

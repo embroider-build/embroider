@@ -65,18 +65,22 @@ const builtInHelpers = [
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents" | "packageRules"  >;
+type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents">;
 
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
     staticHelpers: options.staticHelpers,
     staticComponents: options.staticComponents,
-    packageRules: options.packageRules,
   };
 }
 
-export function rehydrate(params: { root: string, modulePrefix: string, options: ResolverOptions }) {
-  return new CompatResolver(params);
+export function rehydrate(params: {
+  root: string,
+  modulePrefix: string,
+  options: ResolverOptions,
+  activePackageRules: PackageRules[]
+}) {
+  return new CompatResolver(params.root, params.modulePrefix, params.options, params.activePackageRules);
 }
 
 interface PreprocessedComponentRule {
@@ -86,25 +90,22 @@ interface PreprocessedComponentRule {
 }
 
 export default class CompatResolver implements Resolver {
-  private root: string;
-  private modulePrefix: string;
   private options: ResolverOptions;
   private dependencies:  Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
 
   _parallelBabel: any;
 
-  constructor({ root, modulePrefix, options }: { root: string, modulePrefix: string, options: Required<Options> | ResolverOptions}) {
-    this.root = root;
-    this.modulePrefix = modulePrefix;
+  constructor(private root: string, private modulePrefix: string, options: ResolverOptions, private activePackageRules: PackageRules[]) {
     this.options = extractOptions(options);
     this._parallelBabel = {
       requireFile: __filename,
       buildUsing: 'rehydrate',
       params: {
-        root: this.root,
-        modulePrefix: this.modulePrefix,
+        root: root,
+        modulePrefix: modulePrefix,
         options: this.options,
+        activePackageRules: activePackageRules,
       }
     };
   }
@@ -142,7 +143,7 @@ export default class CompatResolver implements Resolver {
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
-    for (let rule of this.options.packageRules) {
+    for (let rule of this.activePackageRules) {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
           if (componentRules.safeToIgnore) {

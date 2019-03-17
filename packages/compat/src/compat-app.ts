@@ -181,11 +181,12 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   templateResolver(): Resolver {
-    return new CompatResolver({
-      modulePrefix: this.modulePrefix(),
-      root: this.root,
-      options: this.options,
-    });
+    return new CompatResolver(
+      this.root,
+      this.modulePrefix(),
+      this.options,
+      this.options.packageRules,
+    );
   }
 
   htmlbarsPlugins(): TemplateCompilerPlugins {

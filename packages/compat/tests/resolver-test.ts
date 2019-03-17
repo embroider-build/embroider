@@ -504,6 +504,29 @@ QUnit.module('compat-resolver', function(hooks) {
     });
   });
 
+  test('respects yieldsSafeComponents rule on element, position 0', function(assert) {
+    assert.expect(0);
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsSafeComponents: [true]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    throwOnWarnings(() => {
+      findDependencies('templates/application.hbs', `
+        <FormBuilder as |field| >
+          {{component field}}
+        </FormBuilder>
+      `);
+    });
+  });
+
   test('respects yieldsSafeComponents rule, position 1', function() {
     let packageRules = [
       {
@@ -589,9 +612,6 @@ QUnit.module('compat-resolver', function(hooks) {
         {{/form-builder}}
     `);
     });
-  });
-
-  QUnit.skip('respects yieldsSafeComponents rule on element', function() {
   });
 
   test('acceptsComponentArguments on mustache with valid literal', function(assert) {

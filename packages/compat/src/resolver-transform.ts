@@ -83,6 +83,9 @@ export function makeResolverTransform(resolver: Resolver) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
               let resolution = resolver.resolveElement(node.tag, env.moduleName);
               if (resolution && resolution.type === 'component') {
+                if (node.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
+                  scopeStack.yieldingComponents(resolution.yieldsComponents);
+                }
                 for (let name of resolution.argumentsAreComponents) {
                   let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
                   if (attr) {

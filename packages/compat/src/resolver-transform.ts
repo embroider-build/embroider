@@ -7,7 +7,7 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
     let deps: Resolution[] = [];
     dependencies.set(env.moduleName, deps);
 
-    let scopeStack: string[][] = [];
+    let scopeStack = new ScopeStack();
 
     return {
       name: 'embroider-build-time-resolver',
@@ -29,7 +29,7 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+          if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
@@ -41,13 +41,18 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
           if (resolution) {
             deps.push(resolution);
+            if (resolution.type === 'component' && node.program.blockParams.length > 0) {
+              // TODO: the component is yielding values. If one of those values is
+              // later passed to a component helper, we may need to consult our
+              // rules to implement yieldsSafeComponents
+            }
           }
         },
         SubExpression(node: any) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+          if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
@@ -62,7 +67,7 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+          if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
@@ -76,7 +81,7 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
         },
         ElementNode: {
           enter(node: any) {
-            if (!inScope(scopeStack, node.tag.split('.')[0])) {
+            if (!scopeStack.inScope(node.tag.split('.')[0])) {
               let resolution = resolver.resolveElement(node.tag, env.moduleName);
               if (resolution) {
                 deps.push(resolution);
@@ -97,13 +102,22 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
   };
 }
 
-function inScope(scopeStack: string[][], name: string) {
-  for (let scope of scopeStack) {
-    if (scope.includes(name)) {
-      return true;
-    }
+class ScopeStack {
+  private stack: string[][] = [];
+  push(blockParams: string[]) {
+    this.stack.push(blockParams);
   }
-  return false;
+  pop() {
+    this.stack.pop();
+  }
+  inScope(name: string) {
+    for (let scope of this.stack) {
+      if (scope.includes(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, deps: Resolution[]) {

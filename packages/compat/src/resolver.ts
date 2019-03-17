@@ -109,6 +109,16 @@ export default class CompatResolver implements Resolver {
     };
   }
 
+  enter(moduleName: string) {
+    this.dependencies.set(moduleName, []);
+  }
+
+  private add(resolution: Resolution, from: string) {
+    // this "!" is safe because we always `enter()` a module before hitting this
+    this.dependencies.get(from)!.push(resolution);
+    return resolution;
+  }
+
   @Memoize()
   private get rules() {
     if (!this.templateCompiler) {
@@ -153,7 +163,7 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
     this.templateCompiler = templateCompiler;
-    return makeResolverTransform(this, this.dependencies);
+    return makeResolverTransform(this);
   }
 
   dependenciesOf(moduleName: string) {
@@ -232,29 +242,29 @@ export default class CompatResolver implements Resolver {
     }
     let found = this.tryHelper(path, from);
     if (found) {
-      return found;
+      return this.add(found, from);
     }
     if (builtInHelpers.includes(path)) {
       return null;
     }
-    return {
+    return this.add({
       type: 'error',
       hardFail: true,
       message: `Missing helper ${path} in ${from}`
-    };
+    }, from);
   }
 
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null {
     if (this.options.staticHelpers) {
       let found = this.tryHelper(path, from);
       if (found) {
-        return found;
+        return this.add(found, from);
       }
     }
     if (this.options.staticComponents) {
       let found = this.tryComponent(path, from);
       if (found) {
-        return found;
+        return this.add(found, from);
       }
     }
     if (
@@ -264,11 +274,11 @@ export default class CompatResolver implements Resolver {
       !builtInHelpers.includes(path) &&
       !this.options.optionalComponents.includes(path)
     ) {
-      return {
+      return this.add({
         type: 'error',
         hardFail: true,
         message: `Missing component or helper ${path} in ${from}`
-      };
+      }, from);
     } else {
       return null;
     }
@@ -289,18 +299,18 @@ export default class CompatResolver implements Resolver {
 
     let found = this.tryComponent(dName, from);
     if (found) {
-      return found;
+      return this.add(found, from);
     }
 
     if (this.options.optionalComponents.includes(dName)) {
       return null;
     }
 
-    return {
+    return this.add({
       type: 'error',
       hardFail: true,
       message: `Missing component ${tagName} in ${from}`
-    };
+    }, from);
   }
 
   resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null {
@@ -308,17 +318,21 @@ export default class CompatResolver implements Resolver {
       return null;
     }
     if (!isLiteral) {
-      return {
+      return this.add({
         type: 'error',
         hardFail: false,
         message: `ignoring dynamic component ${path} in ${humanReadableFile(this.root, from)}`
-      };
+      }, from);
     }
-    return this.tryComponent(path, from) || {
+    let found = this.tryComponent(path, from);
+    if (found) {
+      return this.add(found, from);
+    }
+    return this.add({
       type: 'error',
       hardFail: true,
       message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`
-    };
+    }, from);
   }
 }
 

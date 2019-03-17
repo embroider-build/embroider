@@ -1,12 +1,11 @@
-import { default as Resolver, Resolution } from './resolver';
+import { default as Resolver } from './resolver';
 import { ComponentRules } from './dependency-rules';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
-export function makeResolverTransform(resolver: Resolver, dependencies: Map<string, Resolution[]>) {
+export function makeResolverTransform(resolver: Resolver) {
   return function resolverTransform(env: { moduleName: string }) {
-    let deps: Resolution[] = [];
-    dependencies.set(env.moduleName, deps);
+    resolver.enter(env.moduleName);
 
     let scopeStack = new ScopeStack();
 
@@ -34,14 +33,13 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack, deps);
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
           if (resolution) {
-            deps.push(resolution);
             if (resolution.type === 'component' && node.program.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
               scopeStack.yieldingComponents(resolution.yieldsComponents);
             }
@@ -55,12 +53,9 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack, deps);
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
           }
-          let resolution = resolver.resolveSubExpression(node.path.original, env.moduleName);
-          if (resolution) {
-            deps.push(resolution);
-          }
+          resolver.resolveSubExpression(node.path.original, env.moduleName);
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -70,21 +65,15 @@ export function makeResolverTransform(resolver: Resolver, dependencies: Map<stri
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack, deps);
+            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
-          if (resolution) {
-            deps.push(resolution);
-          }
+          resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
         },
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              let resolution = resolver.resolveElement(node.tag, env.moduleName);
-              if (resolution) {
-                deps.push(resolution);
-              }
+              resolver.resolveElement(node.tag, env.moduleName);
             }
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);
@@ -169,16 +158,12 @@ class ScopeStack {
   }
 }
 
-function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack, deps: Resolution[]) {
-  let resolution;
+function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
   if (param.type === 'StringLiteral') {
-    resolution = resolver.resolveComponentHelper(param.value, true, moduleName);
+    resolver.resolveComponentHelper(param.value, true, moduleName);
   } else {
     if (!scopeStack.safeComponentInScope(param.original)) {
-      resolution = resolver.resolveComponentHelper(param.original, false, moduleName);
+      resolver.resolveComponentHelper(param.original, false, moduleName);
     }
-  }
-  if (resolution) {
-    deps.push(resolution);
   }
 }

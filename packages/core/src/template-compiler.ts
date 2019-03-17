@@ -1,5 +1,5 @@
 import stripBom from 'strip-bom';
-import { Resolver } from './resolver';
+import { Resolver, ResolvedDep } from './resolver';
 import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
 import { readFileSync } from 'fs';
 import { Tree } from 'broccoli-plugin';
@@ -160,14 +160,14 @@ export default class TemplateCompiler {
   }
 
   // Compiles to the wire format plus dependency list.
-  precompile(moduleName: string, contents: string) {
+  precompile(moduleName: string, contents: string): { compiled: string, dependencies: ResolvedDep[] } {
     let compiled = this.syntax.precompile(
       stripBom(contents), {
         contents,
         moduleName
       }
     );
-    let dependencies: { runtimeName: string, path: string }[];
+    let dependencies: ResolvedDep[];
     if (this.params.resolver) {
       dependencies = this.params.resolver.dependenciesOf(moduleName);
     } else {

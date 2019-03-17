@@ -29,7 +29,10 @@ QUnit.module('compat-resolver', function(hooks) {
     return function(relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);
-      return sortBy(dependencies, d => d.runtimeName);
+      return sortBy(dependencies, d => d.runtimeName).map(d => ({
+        path: d.path,
+        runtimeName: d.runtimeName,
+      }));
     };
   }
 
@@ -667,7 +670,6 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-
   test('acceptsComponentArguments on mustache with component subexpression', function(assert) {
     let packageRules = [
       {
@@ -807,7 +809,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  QUnit.skip('acceptsComponentArguments interior usage of path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of path generates no warning', function(assert) {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -826,7 +828,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  QUnit.skip('acceptsComponentArguments interior usage of this.path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of this.path generates no warning', function(assert) {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -845,7 +847,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  QUnit.skip('acceptsComponentArguments interior usage of @path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of @path generates no warning', function(assert) {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',

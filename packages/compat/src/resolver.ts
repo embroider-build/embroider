@@ -6,15 +6,16 @@ import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
 import { Memoize } from "typescript-memoize";
+import { ResolvedDep } from "@embroider/core/src/resolver";
 
 type ResolutionResult = {
   type: "component";
-  modules: ({runtimeName: string, path: string})[];
+  modules: ResolvedDep[];
   yieldsComponents: Required<ComponentRules>["yieldsSafeComponents"];
   argumentsAreComponents: string[];
 } | {
   type: "helper";
-  modules: ({runtimeName: string, path: string})[];
+  modules: ResolvedDep[];
 };
 
 interface ResolutionFail {
@@ -82,6 +83,7 @@ export function rehydrate(params: { root: string, modulePrefix: string, options:
 interface PreprocessedComponentRule {
   yieldsSafeComponents: Required<ComponentRules>["yieldsSafeComponents"];
   argumentsAreComponents: string[];
+  safeInteriorPaths: string[];
 }
 
 export default class CompatResolver implements Resolver {
@@ -146,20 +148,30 @@ export default class CompatResolver implements Resolver {
           if (precompiled.dependencies.length === 0) {
             throw new Error(`Component name "${snippet}" did not resolve to any modules in rule ${JSON.stringify(rule, null, 2)}`);
           }
-          components.set(precompiled.dependencies[0].runtimeName, {
-            yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-            argumentsAreComponents: componentRules.acceptsComponentArguments ? componentRules.acceptsComponentArguments.map(entry => {
-              let name;
+
+          let argumentsAreComponents = [];
+          let safeInteriorPaths = [];
+          if (componentRules.acceptsComponentArguments) {
+            for (let entry of componentRules.acceptsComponentArguments) {
+              let name, interior;
               if (typeof entry === 'string') {
-                name = entry;
+                name = interior = entry;
               } else {
-               name = entry.name;
+                name = entry.name;
+                interior = entry.becomes;
               }
               if (name.startsWith('@')) {
                 name = name.slice(1);
               }
-              return name;
-            }): [],
+              argumentsAreComponents.push(name);
+              safeInteriorPaths.push(interior);
+            }
+          }
+
+          components.set(precompiled.dependencies[0].absPath, {
+            yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+            argumentsAreComponents,
+            safeInteriorPaths,
           });
         }
       }
@@ -172,8 +184,8 @@ export default class CompatResolver implements Resolver {
     return makeResolverTransform(this);
   }
 
-  dependenciesOf(moduleName: string) {
-    let flatDeps: Map<string, string> = new Map();
+  dependenciesOf(moduleName: string): ResolvedDep[] {
+    let flatDeps: Map<string, ResolvedDep> = new Map();
     let deps = this.dependencies.get(moduleName);
     if (deps) {
       for (let dep of deps) {
@@ -184,13 +196,14 @@ export default class CompatResolver implements Resolver {
             warn(dep.message);
           }
         } else {
-          for (let { runtimeName, path } of dep.modules) {
-            flatDeps.set(runtimeName, path);
+          for (let entry of dep.modules) {
+            let { runtimeName } = entry;
+            flatDeps.set(runtimeName, entry);
           }
         }
       }
     }
-    return [...flatDeps].map(([runtimeName, path]) => ({ runtimeName, path }));
+    return [...flatDeps.values()];
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
@@ -201,6 +214,7 @@ export default class CompatResolver implements Resolver {
         modules: [{
           runtimeName: `${this.modulePrefix}/helpers/${path}`,
           path: explicitRelative(from, absPath),
+          absPath,
         }]
       };
     }
@@ -209,29 +223,35 @@ export default class CompatResolver implements Resolver {
 
   private tryComponent(path: string, from: string): Resolution | null {
     let componentModules = [
+      // The order here is important! We always put our .hbs paths first here,
+      // so that if we have an hbs file of our own, that will be the first
+      // resolved dependency. The first resolved dependency is special because
+      // we use that as a key into the rules, and we want to be able to find our
+      // rules when checking from our own template (among other times).
+      {
+        runtimeName: `${this.modulePrefix}/templates/components/${path}`,
+        absPath: join(this.root, 'templates', 'components', path) + '.hbs',
+      },
       {
         runtimeName: `${this.modulePrefix}/components/${path}`,
-        path: join(this.root, 'components', path) + '.js',
+        absPath: join(this.root, 'components', path) + '.js',
       },
       {
         runtimeName: `${this.modulePrefix}/templates/components/${path}`,
-        path: join(this.root, 'templates', 'components', path) + '.hbs',
-      },
-      {
-        runtimeName: `${this.modulePrefix}/templates/components/${path}`,
-        path: join(this.root, 'templates', 'components', path) + '.js',
+        absPath: join(this.root, 'templates', 'components', path) + '.js',
       }
-    ].filter(candidate => pathExistsSync(candidate.path));
+    ].filter(candidate => pathExistsSync(candidate.absPath));
 
     if (componentModules.length > 0) {
       let componentRules;
       if (!this.initializingRules) {
-        componentRules = this.rules.components.get(componentModules[0].runtimeName);
+        componentRules = this.rules.components.get(componentModules[0].absPath);
       }
       return {
         type: 'component',
         modules: componentModules.map(p => ({
-          path: explicitRelative(from, p.path),
+          path: explicitRelative(from, p.absPath),
+          absPath: p.absPath,
           runtimeName: p.runtimeName,
         })),
         yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
@@ -324,6 +344,10 @@ export default class CompatResolver implements Resolver {
       return null;
     }
     if (!isLiteral) {
+      let ownComponentRules = this.rules.components.get(from);
+      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(path)) {
+        return null;
+      }
       return this.add({
         type: 'error',
         hardFail: false,

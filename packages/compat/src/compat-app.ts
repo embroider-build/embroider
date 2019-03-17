@@ -25,6 +25,8 @@ import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import CompatResolver from './resolver';
 import { activePackageRules, PackageRules } from './dependency-rules';
+import flatMap from 'lodash/flatMap';
+import { Memoize } from 'typescript-memoize';
 
 interface TreeNames {
   appJS: Tree;
@@ -58,8 +60,10 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
+    let appPackage = packageCache.getApp(appSrcDir);
     let adapter = new CompatAppAdapter(
       root,
+      appPackage,
       options,
       oldPackage,
       configTree,
@@ -68,7 +72,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
     );
 
-    return new AppBuilder<TreeNames>(root, packageCache.getApp(appSrcDir), adapter, options);
+    return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
   };
 
   return { inTrees, instantiate };
@@ -77,6 +81,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 class CompatAppAdapter implements AppAdapter<TreeNames> {
   constructor(
     private root: string,
+    private appPackage: Package,
     private options: Required<Options>,
     private oldPackage: V1App,
     private configTree: V1Config,
@@ -112,6 +117,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     }
 
     return assets;
+  }
+
+  @Memoize()
+  get activeAddonDescendants(): Package[] {
+    // todo: filter by addon-provided hook
+    let shouldInclude = (dep: Package) => dep.isEmberPackage;
+
+    let result = this.appPackage.findDescendants(shouldInclude);
+    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude);
+    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
+    result = [...result, ...extras, ...extraDescendants];
+    return result;
   }
 
   private * emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
@@ -173,32 +190,24 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().modulePrefix;
   }
 
-  extraDependencies(): Package[] {
-    return [this.synthVendor, this.synthStyles];
-  }
-
   templateCompilerPath(): string {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
-  defaultAddonPackageRules(): PackageRules[] {
-    return readdirSync(join(__dirname, 'addon-dependency-rules')).map(filename => {
-      if (filename.endsWith('.js')) {
-        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
-      }
-    }).filter(Boolean).reduce((a,b) => a.concat(b), []);
+  @Memoize()
+  private activeRules() {
+    return activePackageRules(
+      this.options.packageRules.concat(defaultAddonPackageRules()),
+      this.activeAddonDescendants
+    );
   }
 
-  templateResolver(activeAddonDescendants: Package[]): Resolver {
-    let activeRules = activePackageRules(
-      this.options.packageRules.concat(this.defaultAddonPackageRules()),
-      activeAddonDescendants
-    );
+  templateResolver(): Resolver {
     return new CompatResolver(
       this.root,
       this.modulePrefix(),
       this.options,
-      activeRules,
+      this.activeRules(),
     );
   }
 
@@ -235,4 +244,12 @@ function definitelyReplace(dom: JSDOM, element: Element | undefined, description
   let placeholder = dom.window.document.createTextNode('');
   element.replaceWith(placeholder);
   return placeholder;
+}
+
+function defaultAddonPackageRules(): PackageRules[] {
+  return readdirSync(join(__dirname, 'addon-dependency-rules')).map(filename => {
+    if (filename.endsWith('.js')) {
+      return require(join(__dirname, 'addon-dependency-rules', filename)).default;
+    }
+  }).filter(Boolean).reduce((a,b) => a.concat(b), []);
 }

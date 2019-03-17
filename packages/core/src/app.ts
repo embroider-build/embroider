@@ -8,7 +8,6 @@ import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs
 import { join, dirname, relative } from 'path';
 import { todo, unsupported, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
-import flatMap from 'lodash/flatMap';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -38,6 +37,9 @@ export type EmberENV = unknown;
 */
 export interface AppAdapter<TreeNames> {
 
+  // the set of addon packages that are active.
+  readonly activeAddonDescendants: Package[];
+
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
   // AppBuilder.
@@ -66,16 +68,12 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
-  // optional method to force extra packages to be treated as dependencies of
-  // the app.
-  extraDependencies?(): Package[];
-
   // The path to ember's template compiler source
   templateCompilerPath(): string;
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  templateResolver(activeAddonDescendants: Package[]): Resolver;
+  templateResolver(): Resolver;
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -179,20 +177,6 @@ export class AppBuilder<TreeNames> {
     private options: Required<Options>
   ) {}
 
-  @Memoize()
-  private get activeAddonDescendants(): Package[] {
-    // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage;
-
-    let result = this.app.findDescendants(shouldInclude);
-    if (this.adapter.extraDependencies) {
-      let extras = this.adapter.extraDependencies().filter(shouldInclude);
-      let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
-      result = [...result, ...extras, ...extraDescendants];
-    }
-    return result;
-  }
-
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
       case "loader.js":
@@ -228,7 +212,7 @@ export class AppBuilder<TreeNames> {
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
     for (let addon of sortBy(
-      this.activeAddonDescendants,
+      this.adapter.activeAddonDescendants,
       this.scriptPriority.bind(this)
     )) {
       let implicitScripts = addon.meta[type];
@@ -245,7 +229,7 @@ export class AppBuilder<TreeNames> {
   private get babelConfig() {
     let rename = Object.assign(
       {},
-      ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
+      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
     );
     let babel = this.adapter.babelConfig();
 
@@ -339,7 +323,7 @@ export class AppBuilder<TreeNames> {
 
   private updateAppJS(appJSPath: string): AppFiles {
     if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.activeAddonDescendants);
+      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.activeAddonDescendants);
     }
     this.appDiffer.update();
     return new AppFiles(this.appDiffer.files);
@@ -471,7 +455,7 @@ export class AppBuilder<TreeNames> {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.activeAddonDescendants) {
+    for (let pkg of this.adapter.activeAddonDescendants) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'])) {
           assets.push({
@@ -527,9 +511,9 @@ export class AppBuilder<TreeNames> {
   }
 
   private combineExternals() {
-    let allAddonNames = new Set(this.activeAddonDescendants.map(d => d.name));
+    let allAddonNames = new Set(this.adapter.activeAddonDescendants.map(d => d.name));
     let externals = new Set();
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       if (!addon.meta.externals) {
         continue;
       }
@@ -565,7 +549,7 @@ export class AppBuilder<TreeNames> {
     let source = new TemplateCompiler({
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
-      resolver: this.adapter.templateResolver(this.activeAddonDescendants),
+      resolver: this.adapter.templateResolver(),
       EmberENV: config,
     }).serialize(this.root);
 
@@ -664,7 +648,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         for (let name of implicitModules) {

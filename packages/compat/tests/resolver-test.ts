@@ -205,7 +205,16 @@ QUnit.module('compat-resolver', function(hooks) {
   });
 
   test('optional component missing in mustache', function(assert) {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [{
+        package: 'the-test-package',
+        components: {
+          '{{this-one}}': { safeToIgnore: true }
+        }
+      }]
+    });
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{this-one x=true}}`),
       []
@@ -213,7 +222,50 @@ QUnit.module('compat-resolver', function(hooks) {
   });
 
   test('optional component missing in mustache block', function(assert) {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [{
+        package: 'the-test-package',
+        components: {
+          '{{this-one}}': { safeToIgnore: true }
+        }
+      }]
+    });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`),
+      []
+    );
+  });
+
+  test('optional component missing in mustache', function(assert) {
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [{
+        package: 'the-test-package',
+        components: {
+          '{{this-one}}': { safeToIgnore: true }
+        }
+      }]
+    });
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{this-one x=true}}`),
+      []
+    );
+  });
+
+  test('optional component declared as element missing in mustache block', function(assert) {
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [{
+        package: 'the-test-package',
+        components: {
+          '<ThisOne />': { safeToIgnore: true }
+        }
+      }]
+    });
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`),
       []
@@ -221,7 +273,16 @@ QUnit.module('compat-resolver', function(hooks) {
   });
 
   test('optional component missing in element', function(assert) {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true, optionalComponents: ['this-one'] });
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [{
+        package: 'the-test-package',
+        components: {
+          '{{this-one}}': { safeToIgnore: true }
+        }
+      }]
+    });
     assert.deepEqual(
       findDependencies('templates/application.hbs', `<ThisOne/>`),
       []
@@ -863,6 +924,47 @@ QUnit.module('compat-resolver', function(hooks) {
     assert.deepEqual(
       findDependencies('templates/components/form-builder.hbs', `{{component @title}}`),
       []
+    );
+  });
+
+  test('safeToIgnore a missing component', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            safeToIgnore: true
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+
+    assert.deepEqual(
+      findDependencies('templates/components/x.hbs', `<FormBuilder />`),
+      []
+    );
+  });
+
+  test('safeToIgnore a present component', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            safeToIgnore: true
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    assert.deepEqual(
+      findDependencies('templates/components/x.hbs', `<FormBuilder />`),
+      [{
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      }]
     );
   });
 

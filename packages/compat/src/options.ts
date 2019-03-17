@@ -74,15 +74,6 @@ export default interface Options extends CoreOptions {
   // accepts an optional tree argument that has the same purpose.
   extraPublicTrees?: Tree[];
 
-  // when staticComponents is true, it's a build error if we can't find some
-  // component that appears in a template. But you might know that you don't
-  // actually try to invoke that component, so you can put its name in this list
-  // to suppress the build error.
-  //
-  // This should be understood as a temporary workaround until you can fix the
-  // offending template to not refer to a non-existent component.
-  optionalComponents?: string[];
-
   // Allows you to tell Embroider about otherwise dynamic dependencies within
   // your app and addons that it can't figure out on its own. These are combined
   // with the default rules that ship with Embroider. Your own rules take

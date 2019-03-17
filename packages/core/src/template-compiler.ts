@@ -208,6 +208,12 @@ export default class TemplateCompiler {
     return this.syntax.print(ast);
   }
 
+  parse(moduleName: string, contents: string): AST {
+    // this is just a parse, so we deliberately don't run any plugins.
+    let opts = { contents, moduleName, plugins: {} };
+    return this.syntax.preprocess(contents, opts);
+  }
+
   // Use applyTransforms on every file in a broccoli tree.
   applyTransformsToTree(tree: Tree): Tree {
     return new TemplateCompileTree(tree, this, 1);

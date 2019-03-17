@@ -1,5 +1,5 @@
 import { Resolver, warn, TemplateCompiler } from "@embroider/core";
-import { ComponentRules } from './dependency-rules';
+import { ComponentRules, PackageRules } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
@@ -65,13 +65,12 @@ const builtInHelpers = [
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents" | "optionalComponents" | "packageRules">;
+type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents" | "packageRules"  >;
 
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
     staticHelpers: options.staticHelpers,
     staticComponents: options.staticComponents,
-    optionalComponents: options.optionalComponents,
     packageRules: options.packageRules,
   };
 }
@@ -92,7 +91,6 @@ export default class CompatResolver implements Resolver {
   private options: ResolverOptions;
   private dependencies:  Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
-  private initializingRules = false;
 
   _parallelBabel: any;
 
@@ -121,6 +119,14 @@ export default class CompatResolver implements Resolver {
     return resolution;
   }
 
+  private findComponentRules(absPath: string) {
+    return this.rules.components.get(absPath);
+  }
+
+  private isIgnoredComponent(dasherizedName: string) {
+    return this.rules.ignoredComponents.includes(dasherizedName);
+  }
+
   @Memoize()
   private get rules() {
     if (!this.templateCompiler) {
@@ -130,53 +136,48 @@ export default class CompatResolver implements Resolver {
     // keyed by their first resolved dependency's runtimeName.
     let components: Map<string, PreprocessedComponentRule> = new Map();
 
+    // keyed by our own dasherized interpretatino of the component's name.
+    let ignoredComponents: string[] = [];
+
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
     for (let rule of this.options.packageRules) {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
-          let precompiled;
-          try {
-            this.initializingRules = true;
-            precompiled = this.templateCompiler.precompile('rule.hbs', snippet);
-          } catch (err) {
-            throw new Error(`Cannot understand component name "${snippet}" because "${err.message}" in ${JSON.stringify(rule, null, 2)}`);
-          } finally {
-            this.initializingRules = false;
+          if (componentRules.safeToIgnore) {
+            ignoredComponents.push(this.standardDasherize(snippet, this.templateCompiler));
+            continue;
           }
-          if (precompiled.dependencies.length === 0) {
-            throw new Error(`Component name "${snippet}" did not resolve to any modules in rule ${JSON.stringify(rule, null, 2)}`);
-          }
-
-          let argumentsAreComponents = [];
-          let safeInteriorPaths = [];
-          if (componentRules.acceptsComponentArguments) {
-            for (let entry of componentRules.acceptsComponentArguments) {
-              let name, interior;
-              if (typeof entry === 'string') {
-                name = interior = entry;
-              } else {
-                name = entry.name;
-                interior = entry.becomes;
-              }
-              if (name.startsWith('@')) {
-                name = name.slice(1);
-              }
-              argumentsAreComponents.push(name);
-              safeInteriorPaths.push(interior);
-            }
-          }
-
-          components.set(precompiled.dependencies[0].absPath, {
-            yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-            argumentsAreComponents,
-            safeInteriorPaths,
-          });
+          let resolvedDep = this.resolveComponentSnippet(snippet, rule, this.templateCompiler);
+          components.set(resolvedDep.absPath, preprocessRule(componentRules));
         }
       }
     }
-    return { components };
+    return { components, ignoredComponents };
+  }
+
+  private resolveComponentSnippet(snippet: string, rule: PackageRules, templateCompiler: TemplateCompiler): ResolvedDep {
+    let name = this.standardDasherize(snippet, templateCompiler);
+    let found = this.tryComponent(name, 'rule-snippet.hbs', false);
+    if (found && found.type === 'component') {
+      return found.modules[0];
+    }
+    throw new Error(`unable to locate component ${snippet} referred to in packageRule ${JSON.stringify(rule, null, 2)}`);
+  }
+
+  private standardDasherize(snippet: string, templateCompiler: TemplateCompiler): string {
+    let ast: any = templateCompiler.parse('snippet.hbs', snippet);
+    if (ast.type === 'Program' && ast.body.length > 0) {
+      let first = ast.body[0];
+      if (first.type === 'MustacheStatement' && first.path.type === 'PathExpression') {
+        return first.path.original;
+      }
+      if (first.type === 'ElementNode') {
+        return dasherize(first.tag);
+      }
+    }
+    throw new Error(`cannot identify a component in rule snippet: "${snippet}"`);
   }
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
@@ -221,7 +222,7 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
-  private tryComponent(path: string, from: string): Resolution | null {
+  private tryComponent(path: string, from: string, withRuleLookup=true): Resolution | null {
     let componentModules = [
       // The order here is important! We always put our .hbs paths first here,
       // so that if we have an hbs file of our own, that will be the first
@@ -244,8 +245,8 @@ export default class CompatResolver implements Resolver {
 
     if (componentModules.length > 0) {
       let componentRules;
-      if (!this.initializingRules) {
-        componentRules = this.rules.components.get(componentModules[0].absPath);
+      if (withRuleLookup) {
+        componentRules = this.findComponentRules(componentModules[0].absPath);
       }
       return {
         type: 'component',
@@ -298,7 +299,7 @@ export default class CompatResolver implements Resolver {
       this.options.staticComponents &&
       this.options.staticHelpers &&
       !builtInHelpers.includes(path) &&
-      !this.options.optionalComponents.includes(path)
+      !this.isIgnoredComponent(path)
     ) {
       return this.add({
         type: 'error',
@@ -328,7 +329,7 @@ export default class CompatResolver implements Resolver {
       return this.add(found, from);
     }
 
-    if (this.options.optionalComponents.includes(dName)) {
+    if (this.isIgnoredComponent(dName)) {
       return null;
     }
 
@@ -344,7 +345,7 @@ export default class CompatResolver implements Resolver {
       return null;
     }
     if (!isLiteral) {
-      let ownComponentRules = this.rules.components.get(from);
+      let ownComponentRules = this.findComponentRules(from);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(path)) {
         return null;
       }
@@ -396,4 +397,30 @@ function humanReadableFile(root: string, file: string) {
     return file.slice(root.length);
   }
   return file;
+}
+
+function preprocessRule(componentRules: ComponentRules): PreprocessedComponentRule {
+  let argumentsAreComponents = [];
+  let safeInteriorPaths = [];
+  if (componentRules.acceptsComponentArguments) {
+    for (let entry of componentRules.acceptsComponentArguments) {
+      let name, interior;
+      if (typeof entry === 'string') {
+        name = interior = entry;
+      } else {
+        name = entry.name;
+        interior = entry.becomes;
+      }
+      if (name.startsWith('@')) {
+        name = name.slice(1);
+      }
+      argumentsAreComponents.push(name);
+      safeInteriorPaths.push(interior);
+    }
+  }
+  return {
+    argumentsAreComponents,
+    safeInteriorPaths,
+    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+  };
 }

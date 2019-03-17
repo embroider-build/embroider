@@ -1,4 +1,5 @@
-import { Resolver, warn, ModuleRules } from "@embroider/core";
+import { Resolver, warn } from "@embroider/core";
+import { ModuleRules } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";

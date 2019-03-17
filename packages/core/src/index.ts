@@ -15,5 +15,4 @@ export { default as BuildStage } from './build-stage';
 export { getOrCreate } from './get-or-create';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
-export { PackageRules, ModuleRules } from './dependency-rules';
 export { todo, unsupported, warn, debug, expectWarning } from './messages';

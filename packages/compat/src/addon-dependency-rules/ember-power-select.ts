@@ -1,4 +1,4 @@
-import { PackageRules } from "@embroider/core";
+import { PackageRules } from "..";
 
 let rules: PackageRules = {
   package: 'ember-power-select',

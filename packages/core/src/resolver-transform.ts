@@ -1,8 +1,8 @@
-import { ResolverInstance, Resolution } from './resolver';
+import { Resolver, Resolution } from './resolver';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
-export function makeResolverTransform(resolver: ResolverInstance, dependencies: Map<string, Resolution[]>) {
+export function makeResolverTransform(resolver: Resolver, dependencies: Map<string, Resolution[]>) {
   return function resolverTransform(env: { moduleName: string }) {
     let deps: Resolution[] = [];
     dependencies.set(env.moduleName, deps);
@@ -106,7 +106,7 @@ function inScope(scopeStack: string[][], name: string) {
   return false;
 }
 
-function handleComponentHelper(param: any, resolver: ResolverInstance, moduleName: string, deps: Resolution[]) {
+function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, deps: Resolution[]) {
   let resolution;
   if (param.type === 'StringLiteral') {
     resolution = resolver.resolveComponentHelper(param.value, true, moduleName);

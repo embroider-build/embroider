@@ -1,4 +1,3 @@
-import Options from './options';
 import { ModuleRules } from './dependency-rules';
 
 type ResolutionResult = {
@@ -35,19 +34,9 @@ export type Resolution = ResolutionResult | ResolutionFail;
 // On the other hand, when you know a thing is bad you should use one of the
 // ResolutionFail cases.
 //
-export interface ResolverInstance {
+export interface Resolver {
   resolveSubExpression(path: string, from: string): Resolution | null;
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null;
   resolveElement(tagName: string, from: string): Resolution | null;
   resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null;
-}
-
-export interface ResolverParams {
-  root: string;
-  modulePrefix: string;
-  options: Required<Options>;
-}
-
-export interface Resolver {
-  new (params: ResolverParams): ResolverInstance;
 }

@@ -1,5 +1,5 @@
 import stripBom from 'strip-bom';
-import { Resolution, Resolver, ResolverParams } from './resolver';
+import { Resolution, Resolver } from './resolver';
 import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
 import { warn } from './messages';
 import { readFileSync } from 'fs';
@@ -85,8 +85,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
 
 interface SetupCompilerParams {
   compilerPath: string;
-  resolverPath?: string;
-  resolverParams?: ResolverParams;
+  resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
 }
@@ -111,9 +110,6 @@ class PortableTemplateCompiler extends PortablePluginConfig {
 
   protected makePortable(value: any, accessPath: string[] = []) {
     if (accessPath.length === 1 && accessPath[0] === 'compilerPath') {
-      return this.resolve(value);
-    }
-    if (accessPath.length === 1 && accessPath[0] === 'resolverPath') {
       return this.resolve(value);
     }
     return super.makePortable(value, accessPath);
@@ -153,20 +149,16 @@ export default class TemplateCompiler {
   @Memoize()
   private setup() {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
-    let cacheKeyInput: any = { syntax: syntax.cacheKey };
-
     this.userPluginsCount += registerPlugins(syntax, this.params.plugins);
-    if (this.params.resolverPath && this.params.resolverParams) {
-      let resolverPath = require.resolve(this.params.resolverPath);
-      let ResolverClass: Resolver = require(resolverPath).default;
-      let resolver = new ResolverClass(this.params.resolverParams);
-      syntax.registerPlugin('ast', makeResolverTransform(resolver, this.dependencies));
+    if (this.params.resolver) {
+      syntax.registerPlugin('ast', makeResolverTransform(this.params.resolver, this.dependencies));
       this.userPluginsCount++;
-      cacheKeyInput['resolverParams'] = this.params.resolverParams;
-      cacheKeyInput['resolverSource'] = readFileSync(resolverPath, 'utf8');
     }
     initializeEmberENV(syntax, this.params.EmberENV);
-    let cacheKey = createHash('md5').update(stringify(cacheKeyInput)).digest('hex');
+    let cacheKey = createHash('md5').update(stringify({
+      // todo: get resolver reflected in cacheKey
+      syntax: syntax.cacheKey,
+    })).digest('hex');
     return { syntax, cacheKey };
   }
 

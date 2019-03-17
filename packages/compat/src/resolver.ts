@@ -1,4 +1,4 @@
-import { Resolver, ResolverInstance, Resolution } from "@embroider/core";
+import { Resolver, Resolution } from "@embroider/core";
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
@@ -40,15 +40,46 @@ const builtInHelpers = [
   'yield',
 ];
 
-class CompatResolverInstance implements ResolverInstance {
+// this is a subset of the full Options. We care about serializability, and we
+// only needs parts that are easily serializable, which is why we don't keep the
+// whole thing.
+interface ResolverOptions {
+  staticHelpers: boolean;
+  staticComponents: boolean;
+  optionalComponents: string[];
+}
+function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
+  return {
+    staticHelpers: options.staticHelpers,
+    staticComponents: options.staticComponents,
+    optionalComponents: options.optionalComponents,
+  };
+}
+
+export function rehydrate(params: { root: string, modulePrefix: string, options: ResolverOptions }) {
+  return new CompatResolver(params);
+}
+
+export default class CompatResolver implements Resolver {
   private root: string;
   private modulePrefix: string;
-  private options: Required<Options>;
+  private options: ResolverOptions;
 
-  constructor({ root, modulePrefix, options }: { root: string, modulePrefix: string, options: Required<Options>}) {
+  _parallelBabel: any;
+
+  constructor({ root, modulePrefix, options }: { root: string, modulePrefix: string, options: Required<Options> | ResolverOptions}) {
     this.root = root;
     this.modulePrefix = modulePrefix;
-    this.options = options;
+    this.options = extractOptions(options);
+    this._parallelBabel = {
+      requireFile: __filename,
+      buildUsing: 'rehydrate',
+      params: {
+        root: this.root,
+        modulePrefix: this.modulePrefix,
+        options: this.options,
+      }
+    };
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
@@ -215,6 +246,3 @@ function humanReadableFile(root: string, file: string) {
   }
   return file;
 }
-
-const CompatResolver: Resolver = CompatResolverInstance;
-export default CompatResolver;

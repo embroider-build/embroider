@@ -22,6 +22,7 @@ import { TransformOptions } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
+import { Resolver } from './resolver';
 
 export type EmberENV = unknown;
 
@@ -561,19 +562,19 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    let params = {
+    // TODO move this construction into the adapter itself
+    let resolver: Resolver = new (require(this.adapter.templateResolverPath()).default)({
+      root: this.root,
+      modulePrefix: this.adapter.modulePrefix(),
+      options: this.options
+    });
+
+    let source = new TemplateCompiler({
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
-      resolverPath: this.adapter.templateResolverPath(),
+      resolver,
       EmberENV: config,
-      resolverParams: {
-        root: this.root,
-        modulePrefix: this.adapter.modulePrefix(),
-        options: this.options
-      }
-    };
-
-    let source = new TemplateCompiler(params).serialize(this.root);
+    }).serialize(this.root);
 
     writeFileSync(
       join(this.root, "_template_compiler_.js"),

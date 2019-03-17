@@ -1,5 +1,5 @@
 export { Packager, PackagerInstance } from './packager';
-export { Resolver, ResolverInstance, Resolution } from './resolver';
+export { Resolver, Resolution } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
 export { default as Package } from './package';
 export { default as Stage } from './stage';

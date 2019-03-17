@@ -7,10 +7,10 @@ import { tmpdir } from 'os';
 import { expectWarning } from '@embroider/core/src/messages';
 import TemplateCompiler from '@embroider/core/src/template-compiler';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
+import Resolver from '../src/resolver';
 
 const { test } = QUnit;
 const compilerPath = emberTemplateCompilerPath();
-const resolverPath = join(__dirname, '../src/resolver');
 
 QUnit.module('template-compiler', function(hooks) {
   let appDir: string;
@@ -20,12 +20,12 @@ QUnit.module('template-compiler', function(hooks) {
     let EmberENV = {};
     let plugins = { ast: [] };
     appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
-    let resolverParams = {
+    let resolver = new Resolver({
       root: appDir,
       modulePrefix: 'the-app',
       options: optionsWithDefaults(options)
-    };
-    let compiler = new TemplateCompiler({ compilerPath, resolverPath, resolverParams, EmberENV, plugins });
+    });
+    let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function(relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);

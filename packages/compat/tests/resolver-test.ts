@@ -11,7 +11,7 @@ import Resolver from '../src/resolver';
 const { test } = QUnit;
 const compilerPath = emberTemplateCompilerPath();
 
-QUnit.module('template-compiler', function(hooks) {
+QUnit.module('compat-resolver', function(hooks) {
   let appDir: string;
   let assertWarning: (pattern: RegExp, fn: () => void) => void;
 

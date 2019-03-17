@@ -16,3 +16,4 @@ export { getOrCreate } from './get-or-create';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
 export { PackageRules } from './dependency-rules';
+export { todo, unsupported, warn, debug, expectWarning } from './messages';

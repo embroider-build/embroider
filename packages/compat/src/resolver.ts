@@ -334,6 +334,14 @@ export default class CompatResolver implements Resolver {
       message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`
     }, from);
   }
+
+  unresolvableComponentArgument(componentName: string, argumentName: string, from: string) {
+    this.add({
+      type: 'error',
+      hardFail: false,
+      message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(this.root, from)} is treated as a component, but the value you're passing is dynamic`
+    }, from);
+  }
 }
 
 // by "explicit", I mean that we want "./local/thing" instead of "local/thing"

@@ -33,7 +33,8 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            return;
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
@@ -53,7 +54,8 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            return;
           }
           resolver.resolveSubExpression(node.path.original, env.moduleName);
         },
@@ -65,7 +67,8 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            return handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
@@ -73,7 +76,7 @@ export function makeResolverTransform(resolver: Resolver) {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
               if (pair) {
-                handleComponentHelper(pair.value, resolver, env.moduleName, scopeStack);
+                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, env.moduleName, scopeStack);
               }
             }
           }
@@ -89,7 +92,7 @@ export function makeResolverTransform(resolver: Resolver) {
                 for (let name of resolution.argumentsAreComponents) {
                   let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
                   if (attr) {
-                    handleComponentHelper(attr.value, resolver, env.moduleName, scopeStack);
+                    handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
                   }
                 }
               }
@@ -177,20 +180,30 @@ class ScopeStack {
   }
 }
 
-function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
-  if (param.type === 'StringLiteral') {
-    resolver.resolveComponentHelper(param.value, true, moduleName);
-  } else if (param.type === 'MustacheStatement') {
-    // we get here if an acceptsComponentArguments rule causes us to treat an
-    // `@arg={{...}}` as implicitly like a component helper.
-    handleComponentHelper(param.path, resolver, moduleName, scopeStack);
+function handleImpliedComponentHelper(componentName: string, argumentName: string, param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
+  if (handleComponentHelper(param, resolver, moduleName, scopeStack)) {
+    // it worked we're done
+  } else if (param.type === 'MustacheStatement' && handleComponentHelper(param.path, resolver, moduleName, scopeStack)) {
+    // likewise
   } else if (param.type === 'TextNode') {
-    // we get here if an acceptsComponentArguments rule causes us to treat an
-    // `@arg="..."` as implicitly like a component helper.
     resolver.resolveComponentHelper(param.chars, true, moduleName);
+  } else if (param.type === 'SubExpression' && param.path.type === 'PathExpression' && param.path.original === 'component') {
+    // safe because we will handle this inner `(component ...)` subexpression on its own
   } else {
-    if (!scopeStack.safeComponentInScope(param.original)) {
-      resolver.resolveComponentHelper(param.original, false, moduleName);
-    }
+    resolver.unresolvableComponentArgument(componentName, argumentName, moduleName);
   }
+}
+
+function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
+  switch (param.type) {
+    case 'StringLiteral':
+      resolver.resolveComponentHelper(param.value, true, moduleName);
+      return true;
+    case 'PathExpression':
+      if (!scopeStack.safeComponentInScope(param.original)) {
+        resolver.resolveComponentHelper(param.original, false, moduleName);
+      }
+      return true;
+  }
+  return false;
 }

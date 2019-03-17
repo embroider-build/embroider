@@ -37,13 +37,13 @@ export function warn(message: string, ...params: any[]) {
 
 // for use in our test suites
 let hardFailMode = 0;
-export function throwOnWarnings(fn: () => void) {
-  hardFailMode++;
-  try {
-    fn();
-  } finally {
+export function throwOnWarnings(hooks: any) {
+  hooks.beforeEach(() => {
+    hardFailMode++;
+  });
+  hooks.afterEach(() => {
     hardFailMode--;
-  }
+  });
 }
 
 export function expectWarning(pattern: RegExp, fn: () => void) {

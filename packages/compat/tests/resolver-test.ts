@@ -32,6 +32,8 @@ QUnit.module('compat-resolver', function(hooks) {
     };
   }
 
+  throwOnWarnings(hooks);
+
   hooks.beforeEach(function(assert) {
     assertWarning =function(pattern: RegExp, fn: () => void) {
       assert.ok(expectWarning(pattern, fn), `expected to get a warning matching ${pattern}`);
@@ -495,13 +497,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    throwOnWarnings(() => {
-      findDependencies('templates/application.hbs', `
-        {{#form-builder as |field| }}
-          {{component field}}
-        {{/form-builder}}
-      `);
-    });
+    findDependencies('templates/application.hbs', `
+      {{#form-builder as |field| }}
+        {{component field}}
+      {{/form-builder}}
+    `);
   });
 
   test('respects yieldsSafeComponents rule on element, position 0', function(assert) {
@@ -518,13 +518,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    throwOnWarnings(() => {
-      findDependencies('templates/application.hbs', `
-        <FormBuilder as |field| >
-          {{component field}}
-        </FormBuilder>
-      `);
-    });
+    findDependencies('templates/application.hbs', `
+      <FormBuilder as |field| >
+        {{component field}}
+      </FormBuilder>
+    `);
   });
 
   test('respects yieldsSafeComponents rule, position 1', function() {
@@ -540,13 +538,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    throwOnWarnings(() => {
-      findDependencies('templates/application.hbs', `
-        {{#form-builder as |other field| }}
-          {{component field}}
-        {{/form-builder}}
-      `);
-    });
+    findDependencies('templates/application.hbs', `
+      {{#form-builder as |other field| }}
+        {{component field}}
+      {{/form-builder}}
+    `);
     assertWarning(/ignoring dynamic component other/, () => {
       findDependencies('templates/application.hbs', `
         {{#form-builder as |other field| }}
@@ -569,13 +565,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    throwOnWarnings(() => {
-      findDependencies('templates/application.hbs', `
-        {{#form-builder as |f| }}
-          {{component f.field}}
-        {{/form-builder}}
-      `);
-    });
+    findDependencies('templates/application.hbs', `
+      {{#form-builder as |f| }}
+        {{component f.field}}
+      {{/form-builder}}
+    `);
     assertWarning(/ignoring dynamic component f.other/, () => {
       findDependencies('templates/application.hbs', `
         {{#form-builder as |f| }}
@@ -598,13 +592,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    throwOnWarnings(() => {
-      findDependencies('templates/application.hbs', `
-        {{#form-builder as |x f| }}
-          {{component f.field}}
-        {{/form-builder}}
-      `);
-    });
+    findDependencies('templates/application.hbs', `
+      {{#form-builder as |x f| }}
+        {{component f.field}}
+      {{/form-builder}}
+    `);
     assertWarning(/ignoring dynamic component f.other/, () => {
       findDependencies('templates/application.hbs', `
         {{#form-builder as |x f| }}
@@ -631,6 +623,36 @@ QUnit.module('compat-resolver', function(hooks) {
 
     assert.deepEqual(
       findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
+  test('acceptsComponentArguments on mustache with component subexpression', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`),
       [
         {
           runtimeName: 'the-app/templates/components/fancy-title',

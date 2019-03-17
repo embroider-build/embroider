@@ -666,6 +666,36 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  test('acceptsComponentArguments on element with component helper mustache', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<FormBuilder @title={{component "fancy-title"}} />`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
   test('acceptsComponentArguments on mustache with invalid literal', function(assert) {
     let packageRules = [
       {

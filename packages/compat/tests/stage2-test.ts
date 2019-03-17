@@ -26,7 +26,7 @@ QUnit.module('stage2 build', function() {
       (app.files.app as Project["files"]).templates = {
         'index.hbs': `
           <HelloWorld @useDynamic="first-choice" />
-          <HelloWorld @useDynamic={{"secondchoice"}} />
+          <HelloWorld @useDynamic={{"second-choice"}} />
           <HelloWorld @useDynamic={{component "third-choice"}} />
         `,
         'curly.hbs': `
@@ -104,7 +104,7 @@ QUnit.module('stage2 build', function() {
       await builder.cleanup();
     });
 
-    test.skip('index.hbs', function(assert) {
+    test('index.hbs', function(assert) {
       let assertFile = assert.file('templates/index.hbs').transform(transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
       assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');

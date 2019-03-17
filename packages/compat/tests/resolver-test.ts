@@ -289,7 +289,7 @@ QUnit.module('compat-resolver', function(hooks) {
     givenFile('components/my-thing.js');
     assert.throws(() => {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
-    }, new RegExp(`Missing component hello-world in templates/application.hb`));
+    }, new RegExp(`Missing component hello-world in templates/application.hbs`));
   });
 
   test('string literal passed to component helper fails to resolve when staticComponents is off', function(assert) {
@@ -589,5 +589,54 @@ QUnit.module('compat-resolver', function(hooks) {
         {{/form-builder}}
       `);
     });
+  });
+
+  QUnit.skip('acceptsComponentArguments with valid literal', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        }
+      ]
+    );
+  });
+
+  QUnit.skip('acceptsComponentArguments with invalid literal', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    assert.throws(() => {
+      findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
+    }, /missing component fancy-title in templates\/application\.hbs/);
   });
 });

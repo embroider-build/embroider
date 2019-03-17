@@ -481,7 +481,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  QUnit.skip('respects yieldsSafeComponents rule', function(assert) {
+  test('respects yieldsSafeComponents rule, position 0', function(assert) {
     assert.expect(0);
     let packageRules = [
       {
@@ -494,12 +494,99 @@ QUnit.module('compat-resolver', function(hooks) {
       }
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
-    givenFile('templates/component/form-builder.hbs');
+    givenFile('templates/components/form-builder.hbs');
     throwOnWarnings(() => {
       findDependencies('templates/application.hbs', `
-        {{#with form-builder as |field| }}
+        {{#form-builder as |field| }}
           {{component field}}
-        {{/with}}
+        {{/form-builder}}
+      `);
+    });
+  });
+
+  test('respects yieldsSafeComponents rule, position 1', function() {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsSafeComponents: [false, true]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    throwOnWarnings(() => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |other field| }}
+          {{component field}}
+        {{/form-builder}}
+      `);
+    });
+    assertWarning(/ignoring dynamic component other/, () => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |other field| }}
+          {{component other}}
+        {{/form-builder}}
+      `);
+    });
+  });
+
+  test('respects yieldsSafeComponents rule, position 0.field', function() {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsSafeComponents: [{ field: true }]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    throwOnWarnings(() => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |f| }}
+          {{component f.field}}
+        {{/form-builder}}
+      `);
+    });
+    assertWarning(/ignoring dynamic component f.other/, () => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |f| }}
+          {{component f.other}}
+        {{/form-builder}}
+      `);
+    });
+  });
+
+  test('respects yieldsSafeComponents rule, position 1.field', function() {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsSafeComponents: [false, { field: true }]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    throwOnWarnings(() => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |x f| }}
+          {{component f.field}}
+        {{/form-builder}}
+      `);
+    });
+    assertWarning(/ignoring dynamic component f.other/, () => {
+      findDependencies('templates/application.hbs', `
+        {{#form-builder as |x f| }}
+          {{component f.other}}
+        {{/form-builder}}
       `);
     });
   });

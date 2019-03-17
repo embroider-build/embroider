@@ -148,7 +148,7 @@ export default class TemplateCompiler {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
     this.userPluginsCount += registerPlugins(syntax, this.params.plugins);
     if (this.params.resolver) {
-      syntax.registerPlugin('ast', this.params.resolver.astTransformer());
+      syntax.registerPlugin('ast', this.params.resolver.astTransformer(this));
       this.userPluginsCount++;
     }
     initializeEmberENV(syntax, this.params.EmberENV);

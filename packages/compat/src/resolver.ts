@@ -1,15 +1,16 @@
-import { Resolver, warn } from "@embroider/core";
+import { Resolver, warn, TemplateCompiler } from "@embroider/core";
 import { ComponentRules } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
+import { Memoize } from "typescript-memoize";
 
 type ResolutionResult = {
   type: "component";
   modules: ({runtimeName: string, path: string})[];
-  yieldsComponents: ComponentRules["yieldsSafeComponents"];
+  yieldsComponents: Required<ComponentRules>["yieldsSafeComponents"];
   argumentsAreComponents: string[];
 } | {
   type: "helper";
@@ -63,16 +64,14 @@ const builtInHelpers = [
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-interface ResolverOptions {
-  staticHelpers: boolean;
-  staticComponents: boolean;
-  optionalComponents: string[];
-}
+type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents" | "optionalComponents" | "packageRules">;
+
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
     staticHelpers: options.staticHelpers,
     staticComponents: options.staticComponents,
     optionalComponents: options.optionalComponents,
+    packageRules: options.packageRules,
   };
 }
 
@@ -80,11 +79,18 @@ export function rehydrate(params: { root: string, modulePrefix: string, options:
   return new CompatResolver(params);
 }
 
+interface PreprocessedComponentRule {
+  yieldsSafeComponents: Required<ComponentRules>["yieldsSafeComponents"];
+  argumentsAreComponents: string[];
+}
+
 export default class CompatResolver implements Resolver {
   private root: string;
   private modulePrefix: string;
   private options: ResolverOptions;
   private dependencies:  Map<string, Resolution[]> = new Map();
+  private templateCompiler: TemplateCompiler | undefined;
+  private initializingRules = false;
 
   _parallelBabel: any;
 
@@ -103,7 +109,50 @@ export default class CompatResolver implements Resolver {
     };
   }
 
-  astTransformer(): unknown {
+  @Memoize()
+  private get rules() {
+    if (!this.templateCompiler) {
+      throw new Error(`Bug: Resolver needs to get linked into a TemplateCompiler before it can understand packageRules`);
+    }
+
+    // keyed by their first resolved dependency's runtimeName.
+    let components: Map<string, PreprocessedComponentRule> = new Map();
+
+    // we're not responsible for filtering out rules for inactive packages here,
+    // that is done before getting to us. So we should assume these are all in
+    // force.
+    for (let rule of this.options.packageRules) {
+      if (rule.components) {
+        for (let [snippet, componentRules] of Object.entries(rule.components)) {
+          let precompiled;
+          try {
+            this.initializingRules = true;
+            precompiled = this.templateCompiler.precompile('rule.hbs', snippet);
+          } catch (err) {
+            throw new Error(`Cannot understand component name "${snippet}" because "${err.message}" in ${JSON.stringify(rule, null, 2)}`);
+          } finally {
+            this.initializingRules = false;
+          }
+          if (precompiled.dependencies.length === 0) {
+            throw new Error(`Component name "${snippet}" did not resolve to any modules in rule ${JSON.stringify(rule, null, 2)}`);
+          }
+          components.set(precompiled.dependencies[0].runtimeName, {
+            yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+            argumentsAreComponents: componentRules.acceptsComponentArguments ? componentRules.acceptsComponentArguments.map(entry => {
+              if (typeof entry === 'string') {
+                return entry;
+              }
+              return entry.name;
+            }): [],
+          });
+        }
+      }
+    }
+    return { components };
+  }
+
+  astTransformer(templateCompiler: TemplateCompiler): unknown {
+    this.templateCompiler = templateCompiler;
     return makeResolverTransform(this, this.dependencies);
   }
 
@@ -159,14 +208,18 @@ export default class CompatResolver implements Resolver {
     ].filter(candidate => pathExistsSync(candidate.path));
 
     if (componentModules.length > 0) {
+      let componentRules;
+      if (!this.initializingRules) {
+        componentRules = this.rules.components.get(componentModules[0].runtimeName);
+      }
       return {
         type: 'component',
         modules: componentModules.map(p => ({
           path: explicitRelative(from, p.path),
           runtimeName: p.runtimeName,
         })),
-        yieldsComponents: [],
-        argumentsAreComponents: [],
+        yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : []
       };
     }
 

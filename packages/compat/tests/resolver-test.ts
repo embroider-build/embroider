@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
-import { TemplateCompiler, expectWarning } from '@embroider/core';
+import { TemplateCompiler, expectWarning, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';
 
@@ -481,4 +481,26 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  QUnit.skip('respects yieldsSafeComponents rule', function(assert) {
+    assert.expect(0);
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        modules: {
+          'templates/components/form-builder.hbs': {
+            yieldsSafeComponents: [true]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/component/form-builder.hbs');
+    throwOnWarnings(() => {
+      findDependencies('templates/application.hbs', `
+        {{#with form-builder as |field| }}
+          {{component field}}
+        {{/with}}
+      `);
+    });
+  });
 });

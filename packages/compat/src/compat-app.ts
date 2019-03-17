@@ -21,9 +21,10 @@ import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
-import { statSync } from 'fs';
+import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import CompatResolver from './resolver';
+import { activePackageRules, PackageRules } from './dependency-rules';
 
 interface TreeNames {
   appJS: Tree;
@@ -180,12 +181,24 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
-  templateResolver(): Resolver {
+  defaultAddonPackageRules(): PackageRules[] {
+    return readdirSync(join(__dirname, 'addon-dependency-rules')).map(filename => {
+      if (filename.endsWith('.js')) {
+        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
+      }
+    }).filter(Boolean).reduce((a,b) => a.concat(b), []);
+  }
+
+  templateResolver(activeAddonDescendants: Package[]): Resolver {
+    let activeRules = activePackageRules(
+      this.options.packageRules.concat(this.defaultAddonPackageRules()),
+      activeAddonDescendants
+    );
     return new CompatResolver(
       this.root,
       this.modulePrefix(),
       this.options,
-      this.options.packageRules,
+      activeRules,
     );
   }
 

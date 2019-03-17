@@ -1,3 +1,5 @@
+import { Package } from "@embroider/core";
+import { satisfies } from "semver";
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -16,6 +18,11 @@ export interface PackageRules {
     // format. Like "./templates/components/foo.hbs".
     [filename: string]: ModuleRules;
   };
+}
+
+export interface ActivePackageRules extends PackageRules {
+  // the location(s) of active packages that match this rule.
+  roots: string;
 }
 
 export interface ComponentRules {
@@ -93,3 +100,61 @@ export type ArgumentMapping = string | {
 //    "{{component 'my-component'}}"
 //
 type ComponentSnippet = string;
+
+export interface PreprocessedComponentRule {
+  yieldsSafeComponents: Required<ComponentRules>["yieldsSafeComponents"];
+  argumentsAreComponents: string[];
+  safeInteriorPaths: string[];
+}
+
+// take a component rule from the authoring format to a format more optimized
+// for consumption in the resolver
+export function preprocessComponentRule(componentRules: ComponentRules): PreprocessedComponentRule {
+  let argumentsAreComponents = [];
+  let safeInteriorPaths = [];
+  if (componentRules.acceptsComponentArguments) {
+    for (let entry of componentRules.acceptsComponentArguments) {
+      let name, interior;
+      if (typeof entry === 'string') {
+        name = interior = entry;
+      } else {
+        name = entry.name;
+        interior = entry.becomes;
+      }
+      if (name.startsWith('@')) {
+        name = name.slice(1);
+      }
+      argumentsAreComponents.push(name);
+      safeInteriorPaths.push(interior);
+    }
+  }
+  return {
+    argumentsAreComponents,
+    safeInteriorPaths,
+    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+  };
+}
+
+export function activePackageRules(packageRules: PackageRules[], activePackages: Package[]): ActivePackageRules[] {
+  // rule order implies precedence. The first rule that matches a given package
+  // applies to that package, and no other rule does.
+  let rootsPerRule = new Map();
+  for (let pkg of activePackages) {
+    for (let rule of packageRules) {
+      if (rule.package === pkg.name && (!rule.semverRange || satisfies(pkg.version, rule.semverRange))) {
+        let roots = rootsPerRule.get(rule);
+        if (roots) {
+          roots.push(pkg.root);
+        } else {
+          rootsPerRule.set(rule, [pkg.root]);
+        }
+      }
+      break;
+    }
+  }
+  let output = [];
+  for (let [rule, roots] of rootsPerRule) {
+    output.push(Object.assign({ roots }, rule ));
+  }
+  return output;
+}

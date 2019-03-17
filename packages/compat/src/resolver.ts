@@ -1,5 +1,5 @@
 import { Resolver, warn, TemplateCompiler } from "@embroider/core";
-import { ComponentRules, PackageRules } from './dependency-rules';
+import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
@@ -83,12 +83,6 @@ export function rehydrate(params: {
   return new CompatResolver(params.root, params.modulePrefix, params.options, params.activePackageRules);
 }
 
-interface PreprocessedComponentRule {
-  yieldsSafeComponents: Required<ComponentRules>["yieldsSafeComponents"];
-  argumentsAreComponents: string[];
-  safeInteriorPaths: string[];
-}
-
 export default class CompatResolver implements Resolver {
   private options: ResolverOptions;
   private dependencies:  Map<string, Resolution[]> = new Map();
@@ -151,7 +145,7 @@ export default class CompatResolver implements Resolver {
             continue;
           }
           let resolvedDep = this.resolveComponentSnippet(snippet, rule, this.templateCompiler);
-          components.set(resolvedDep.absPath, preprocessRule(componentRules));
+          components.set(resolvedDep.absPath, preprocessComponentRule(componentRules));
         }
       }
     }
@@ -398,30 +392,4 @@ function humanReadableFile(root: string, file: string) {
     return file.slice(root.length);
   }
   return file;
-}
-
-function preprocessRule(componentRules: ComponentRules): PreprocessedComponentRule {
-  let argumentsAreComponents = [];
-  let safeInteriorPaths = [];
-  if (componentRules.acceptsComponentArguments) {
-    for (let entry of componentRules.acceptsComponentArguments) {
-      let name, interior;
-      if (typeof entry === 'string') {
-        name = interior = entry;
-      } else {
-        name = entry.name;
-        interior = entry.becomes;
-      }
-      if (name.startsWith('@')) {
-        name = name.slice(1);
-      }
-      argumentsAreComponents.push(name);
-      safeInteriorPaths.push(interior);
-    }
-  }
-  return {
-    argumentsAreComponents,
-    safeInteriorPaths,
-    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-  };
 }

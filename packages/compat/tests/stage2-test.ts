@@ -10,7 +10,7 @@ import App from '../src/compat-app';
 import { Builder } from 'broccoli';
 import { installFileAssertions, BoundFileAssert } from './file-assertions';
 import { join } from 'path';
-import { TemplateCompiler } from '@embroider/core';
+import { TemplateCompiler, throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
 
 QUnit.module('stage2 build', function() {
@@ -20,6 +20,8 @@ QUnit.module('stage2 build', function() {
     let builder: Builder;
     let app: Project;
     let transpile: (contents: string, file: BoundFileAssert) => string;
+
+    throwOnWarnings(hooks);
 
     hooks.before(async function(assert) {
       app = emberProject();
@@ -80,7 +82,10 @@ QUnit.module('stage2 build', function() {
               acceptsComponentArguments: [{
                 name: 'useDynamic',
                 becomes: 'dynamicComponentName',
-              }]
+              }],
+              layout: {
+                addonPath: 'templates/components/hello-world.hbs'
+              }
             }
           }
         }]
@@ -117,6 +122,16 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
       assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');
       assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
+    });
+
+    test('hello-world.hbs', function(assert) {
+      // the point of this test is to ensure that we can transpile with no
+      // warning about the dynamicComponentName.
+      let assertFile = assert.file('node_modules/my-addon/templates/components/hello-world.hbs').transform(transpile);
+
+      // this is a pretty trivial test, but it's needed to force the
+      // transpilation to happen because transform() is lazy.
+      assertFile.matches(/dynamicComponentName/);
     });
 
   });

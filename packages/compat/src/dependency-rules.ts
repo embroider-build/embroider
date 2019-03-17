@@ -22,7 +22,7 @@ export interface PackageRules {
 
 export interface ActivePackageRules extends PackageRules {
   // the location(s) of active packages that match this rule.
-  roots: string;
+  roots: string[];
 }
 
 export interface ComponentRules {

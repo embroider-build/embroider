@@ -1,5 +1,5 @@
 import { Resolver, warn, TemplateCompiler } from "@embroider/core";
-import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule } from './dependency-rules';
+import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule, ActivePackageRules } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
@@ -78,7 +78,7 @@ export function rehydrate(params: {
   root: string,
   modulePrefix: string,
   options: ResolverOptions,
-  activePackageRules: PackageRules[]
+  activePackageRules: ActivePackageRules[]
 }) {
   return new CompatResolver(params.root, params.modulePrefix, params.options, params.activePackageRules);
 }
@@ -90,7 +90,7 @@ export default class CompatResolver implements Resolver {
 
   _parallelBabel: any;
 
-  constructor(private root: string, private modulePrefix: string, options: ResolverOptions, private activePackageRules: PackageRules[]) {
+  constructor(private root: string, private modulePrefix: string, options: ResolverOptions, private activePackageRules: ActivePackageRules[]) {
     this.options = extractOptions(options);
     this._parallelBabel = {
       requireFile: __filename,
@@ -145,7 +145,25 @@ export default class CompatResolver implements Resolver {
             continue;
           }
           let resolvedDep = this.resolveComponentSnippet(snippet, rule, this.templateCompiler);
-          components.set(resolvedDep.absPath, preprocessComponentRule(componentRules));
+          let processedRules = preprocessComponentRule(componentRules);
+
+          // we always register our rules on the component's own first resolved
+          // module, which must be a module in the app's module namespace.
+          components.set(resolvedDep.absPath, processedRules);
+
+          // if there's a custom layout, we also need to register our rules on
+          // those templates.
+          if (componentRules.layout) {
+            if (componentRules.layout.appPath) {
+              components.set(join(this.root, componentRules.layout.appPath), processedRules);
+            } else if (componentRules.layout.addonPath) {
+              for (let root of rule.roots) {
+                components.set(join(root, componentRules.layout.addonPath), processedRules);
+              }
+            } else {
+              throw new Error(`layout property in component rule must contain either appPath or addonPath: ${JSON.stringify(rule, null, 2)}`);
+            }
+          }
         }
       }
     }

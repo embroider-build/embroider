@@ -24,7 +24,9 @@ QUnit.module('compat-resolver', function(hooks) {
       appDir,
       'the-app',
       optionsWithDefaults(options),
-      optionsWithDefaults(options).packageRules,
+      optionsWithDefaults(options).packageRules.map(rule => {
+        return Object.assign({ roots: [appDir] }, rule);
+      })
     );
     let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function(relativePath: string, contents: string) {

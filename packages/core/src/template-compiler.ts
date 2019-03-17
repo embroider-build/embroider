@@ -1,9 +1,7 @@
 import stripBom from 'strip-bom';
-import { Resolution, Resolver } from './resolver';
+import { Resolver } from './resolver';
 import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
-import { warn } from './messages';
 import { readFileSync } from 'fs';
-import { makeResolverTransform } from './resolver-transform';
 import { Tree } from 'broccoli-plugin';
 import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
@@ -121,7 +119,6 @@ class PortableTemplateCompiler extends PortablePluginConfig {
 }
 
 export default class TemplateCompiler {
-  private dependencies:  Map<string, Resolution[]> = new Map();
   private userPluginsCount = 0;
   isParallelSafe = false;
 
@@ -151,7 +148,7 @@ export default class TemplateCompiler {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
     this.userPluginsCount += registerPlugins(syntax, this.params.plugins);
     if (this.params.resolver) {
-      syntax.registerPlugin('ast', makeResolverTransform(this.params.resolver, this.dependencies));
+      syntax.registerPlugin('ast', this.params.resolver.astTransformer());
       this.userPluginsCount++;
     }
     initializeEmberENV(syntax, this.params.EmberENV);
@@ -170,24 +167,13 @@ export default class TemplateCompiler {
         moduleName
       }
     );
-    let flatDeps: Map<string, string> = new Map();
-    let deps = this.dependencies.get(moduleName);
-    if (deps) {
-      for (let dep of deps) {
-        if (dep.type === 'error') {
-          if (dep.hardFail) {
-            throw new Error(dep.message);
-          } else {
-            warn(dep.message);
-          }
-        } else {
-          for (let { runtimeName, path } of dep.modules) {
-            flatDeps.set(runtimeName, path);
-          }
-        }
-      }
+    let dependencies: { runtimeName: string, path: string }[];
+    if (this.params.resolver) {
+      dependencies = this.params.resolver.dependenciesOf(moduleName);
+    } else {
+      dependencies = [];
     }
-    return { compiled, dependencies: [...flatDeps].map(([runtimeName, path]) => ({ runtimeName, path })) };
+    return { compiled, dependencies };
   }
 
   // Compiles all the way from a template string to a javascript module string.

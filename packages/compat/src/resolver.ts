@@ -1,8 +1,11 @@
-import { Resolver, Resolution } from "@embroider/core";
+import { Resolver, Resolution, warn } from "@embroider/core";
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
 import { dasherize } from './string';
+import { makeResolverTransform } from './resolver-transform';
+
+export { Resolution };
 
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.
@@ -64,6 +67,7 @@ export default class CompatResolver implements Resolver {
   private root: string;
   private modulePrefix: string;
   private options: ResolverOptions;
+  private dependencies:  Map<string, Resolution[]> = new Map();
 
   _parallelBabel: any;
 
@@ -80,6 +84,31 @@ export default class CompatResolver implements Resolver {
         options: this.options,
       }
     };
+  }
+
+  astTransformer(): unknown {
+    return makeResolverTransform(this, this.dependencies);
+  }
+
+  dependenciesOf(moduleName: string) {
+    let flatDeps: Map<string, string> = new Map();
+    let deps = this.dependencies.get(moduleName);
+    if (deps) {
+      for (let dep of deps) {
+        if (dep.type === 'error') {
+          if (dep.hardFail) {
+            throw new Error(dep.message);
+          } else {
+            warn(dep.message);
+          }
+        } else {
+          for (let { runtimeName, path } of dep.modules) {
+            flatDeps.set(runtimeName, path);
+          }
+        }
+      }
+    }
+    return [...flatDeps].map(([runtimeName, path]) => ({ runtimeName, path }));
   }
 
   private tryHelper(path: string, from: string): Resolution | null {

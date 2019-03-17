@@ -39,4 +39,6 @@ export interface Resolver {
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null;
   resolveElement(tagName: string, from: string): Resolution | null;
   resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null;
+  astTransformer(): unknown;
+  dependenciesOf(moduleName: string): { runtimeName: string, path: string }[];
 }

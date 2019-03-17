@@ -1,4 +1,4 @@
-import { Resolver, Resolution } from './resolver';
+import { default as Resolver, Resolution } from './resolver';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.

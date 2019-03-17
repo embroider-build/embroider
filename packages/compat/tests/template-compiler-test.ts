@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
-import { expectWarning } from '@embroider/core/src/messages';
+import { expectWarning } from '@embroider/core';
 import TemplateCompiler from '@embroider/core/src/template-compiler';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';

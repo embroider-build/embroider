@@ -486,8 +486,8 @@ QUnit.module('compat-resolver', function(hooks) {
     let packageRules = [
       {
         package: 'the-test-package',
-        modules: {
-          'templates/components/form-builder.hbs': {
+        components: {
+          '<FormBuilder />': {
             yieldsSafeComponents: [true]
           }
         }

@@ -75,11 +75,12 @@ QUnit.module('stage2 build', function() {
         staticHelpers: true,
         packageRules: [{
           package: 'my-addon',
-          modules: {
-            './templates/components/hello-world.hbs': {
-              dynamicComponentSources: {
-                dynamicComponentName: { fromArgument: 'useDynamic' }
-              }
+          components: {
+            '{{hello-world}}': {
+              acceptsComponentArguments: [{
+                name: 'useDynamic',
+                becomes: 'dynamicComponentName',
+              }]
             }
           }
         }]

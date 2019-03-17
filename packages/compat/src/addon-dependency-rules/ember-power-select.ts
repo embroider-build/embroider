@@ -1,33 +1,51 @@
 import { PackageRules } from "..";
 
 let rules: PackageRules = {
-  package: 'ember-power-select',
+  package: "ember-power-select",
   modules: {
-    './components/power-select.js': {
+    "./components/power-select.js": {
       dependsOnComponents: [
-        '{{power-select/before-options}}',
-        '{{power-select/options}}',
-        '{{power-select/power-select-group}}',
-        '{{power-select/trigger}}',
-        '{{power-select/search-message}}',
-        '{{power-select/placeholder}}',
-      ]
+        "{{power-select/before-options}}",
+        "{{power-select/options}}",
+        "{{power-select/power-select-group}}",
+        "{{power-select/trigger}}",
+        "{{power-select/search-message}}",
+        "{{power-select/placeholder}}",
+      ],
     },
-    './components/power-select-multiple.js': {
-      dependsOnComponents: [
-        '{{power-select-multiple/trigger}}',
-      ]
+    "./components/power-select-multiple.js": {
+      dependsOnComponents: ["{{power-select-multiple/trigger}}"],
     },
-    './templates/components/power-select.hbs': {
-      dynamicComponentSources: {
-        triggerComponent: { fromArgument: 'triggerComponent' },
-        beforeOptionsComponent: { fromArgument: 'beforeOptionsComponent' },
-        searchMessageComponent: { fromArgument: 'searchMessageComponent' },
-        optionsComponent: { fromArgument: 'optionsComponent' },
-        afterOptionsComponent: { fromArgument: 'afterOptionsComponent' },
-      }
-    }
-  }
+  },
+  components: {
+    "{{power-select}}": {
+      layout: {
+        addonPath: "templates/components/power-select.hbs"
+      },
+      acceptsComponentArguments: [
+        'afterOptionsComponent',
+        'beforeOptionsComponent',
+        'optionsComponent',
+        'searchMessageComponent',
+        'triggerComponent',
+      ],
+    },
+    "{{power-select-multiple}}": {
+      layout: {
+        addonPath: "templates/components/power-select-multiple.hbs"
+      },
+      acceptsComponentArguments: [
+        'afterOptionsComponent',
+        'beforeOptionsComponent',
+        'groupComponent',
+        'optionsComponent',
+        'placeholderComponent',
+        'searchMessageComponent',
+        'selectedItemComponent',
+        'triggerComponent',
+      ],
+    },
+  },
 };
 
-export default [ rules ];
+export default [rules];

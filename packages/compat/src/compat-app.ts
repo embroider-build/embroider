@@ -11,7 +11,8 @@ import {
   AppBuilder,
   EmberENV,
   Package,
-  TemplateCompilerPlugins
+  TemplateCompilerPlugins,
+  Resolver
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -22,6 +23,7 @@ import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
+import CompatResolver from './resolver';
 
 interface TreeNames {
   appJS: Tree;
@@ -56,6 +58,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
     let adapter = new CompatAppAdapter(
+      root,
+      options,
       oldPackage,
       configTree,
       analyzer,
@@ -71,6 +75,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
 
 class CompatAppAdapter implements AppAdapter<TreeNames> {
   constructor(
+    private root: string,
+    private options: Required<Options>,
     private oldPackage: V1App,
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
@@ -174,8 +180,12 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
-  templateResolverPath(): string {
-    return '@embroider/compat/src/resolver';
+  templateResolver(): Resolver {
+    return new CompatResolver({
+      modulePrefix: this.modulePrefix(),
+      root: this.root,
+      options: this.options,
+    });
   }
 
   htmlbarsPlugins(): TemplateCompilerPlugins {

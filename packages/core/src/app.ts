@@ -75,7 +75,7 @@ export interface AppAdapter<TreeNames> {
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  templateResolverPath(): string;
+  templateResolver(): Resolver;
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -562,17 +562,10 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    // TODO move this construction into the adapter itself
-    let resolver: Resolver = new (require(this.adapter.templateResolverPath()).default)({
-      root: this.root,
-      modulePrefix: this.adapter.modulePrefix(),
-      options: this.options
-    });
-
     let source = new TemplateCompiler({
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
-      resolver,
+      resolver: this.adapter.templateResolver(),
       EmberENV: config,
     }).serialize(this.root);
 

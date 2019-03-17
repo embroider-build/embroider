@@ -81,7 +81,15 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              resolver.resolveElement(node.tag, env.moduleName);
+              let resolution = resolver.resolveElement(node.tag, env.moduleName);
+              if (resolution && resolution.type === 'component') {
+                for (let name of resolution.argumentsAreComponents) {
+                  let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
+                  if (attr) {
+                    handleComponentHelper(attr.value, resolver, env.moduleName, scopeStack);
+                  }
+                }
+              }
             }
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);
@@ -169,6 +177,14 @@ class ScopeStack {
 function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
   if (param.type === 'StringLiteral') {
     resolver.resolveComponentHelper(param.value, true, moduleName);
+  } else if (param.type === 'MustacheStatement') {
+    // we get here if an acceptsComponentArguments rule causes us to treat an
+    // `@arg={{...}}` as implicitly like a component helper.
+    handleComponentHelper(param.path, resolver, moduleName, scopeStack);
+  } else if (param.type === 'TextNode') {
+    // we get here if an acceptsComponentArguments rule causes us to treat an
+    // `@arg="..."` as implicitly like a component helper.
+    resolver.resolveComponentHelper(param.chars, true, moduleName);
   } else {
     if (!scopeStack.safeComponentInScope(param.original)) {
       resolver.resolveComponentHelper(param.original, false, moduleName);

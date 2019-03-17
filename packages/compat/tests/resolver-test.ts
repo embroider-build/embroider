@@ -587,8 +587,11 @@ QUnit.module('compat-resolver', function(hooks) {
         {{#form-builder as |x f| }}
           {{component f.other}}
         {{/form-builder}}
-      `);
+    `);
     });
+  });
+
+  QUnit.skip('respects yieldsSafeComponents rule on element', function() {
   });
 
   test('acceptsComponentArguments on mustache with valid literal', function(assert) {
@@ -639,4 +642,65 @@ QUnit.module('compat-resolver', function(hooks) {
       findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
     }, /Missing component fancy-title in templates\/application\.hbs/);
   });
+
+  test('acceptsComponentArguments on element with valid literal', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
+  test('acceptsComponentArguments on element with valid attribute', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `<FormBuilder @title="fancy-title" />`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
 });

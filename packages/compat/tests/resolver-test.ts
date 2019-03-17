@@ -7,6 +7,7 @@ import { tmpdir } from 'os';
 import { TemplateCompiler, expectWarning, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';
+import { PackageRules } from '../src';
 
 const { test } = QUnit;
 const compilerPath = emberTemplateCompilerPath();
@@ -636,6 +637,37 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  test('acceptsComponentArguments argument name may include optional @', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['@title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
+
   test('acceptsComponentArguments on mustache with component subexpression', function(assert) {
     let packageRules = [
       {
@@ -772,6 +804,63 @@ QUnit.module('compat-resolver', function(hooks) {
           path: './components/form-builder.hbs',
         }
       ]
+    );
+  });
+
+  QUnit.skip('acceptsComponentArguments interior usage of path generates no warning', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+
+    assert.deepEqual(
+      findDependencies('templates/components/form-builder.hbs', `{{component title}}`),
+      []
+    );
+  });
+
+  QUnit.skip('acceptsComponentArguments interior usage of this.path generates no warning', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: [{ name: 'title', becomes: 'this.title' }]
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+
+    assert.deepEqual(
+      findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`),
+      []
+    );
+  });
+
+  QUnit.skip('acceptsComponentArguments interior usage of @path generates no warning', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['@title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+
+    assert.deepEqual(
+      findDependencies('templates/components/form-builder.hbs', `{{component @title}}`),
+      []
     );
   });
 

@@ -149,10 +149,16 @@ export default class CompatResolver implements Resolver {
           components.set(precompiled.dependencies[0].runtimeName, {
             yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
             argumentsAreComponents: componentRules.acceptsComponentArguments ? componentRules.acceptsComponentArguments.map(entry => {
+              let name;
               if (typeof entry === 'string') {
-                return entry;
+                name = entry;
+              } else {
+               name = entry.name;
               }
-              return entry.name;
+              if (name.startsWith('@')) {
+                name = name.slice(1);
+              }
+              return name;
             }): [],
           });
         }

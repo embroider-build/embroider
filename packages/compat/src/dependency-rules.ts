@@ -155,8 +155,8 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
         } else {
           rootsPerRule.set(rule, [pkg.root]);
         }
+        break;
       }
-      break;
     }
   }
   let output = [];

@@ -16,7 +16,7 @@ import { sync as symlinkOrCopySync } from 'symlink-or-copy';
 import { join, dirname, extname } from 'path';
 import { isEqual, flatten } from 'lodash';
 
-const debug = makeDebug('embroider:core:import-parser');
+const debug = makeDebug('embroider:import-parser');
 
 export interface Import {
   path: string;

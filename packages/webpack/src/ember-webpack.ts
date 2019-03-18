@@ -22,7 +22,7 @@ import Placeholder from './html-placeholder';
 import makeDebug from 'debug';
 import { format } from 'util';
 
-const debug = makeDebug('embroider:webpack:debug');
+const debug = makeDebug('embroider:debug');
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
 // terser lazily so it's only loaded for production builds that use it. Don't

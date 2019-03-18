@@ -152,8 +152,10 @@ QUnit.module('stage2 build', function() {
     test('addon/hello-world.js', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js').transform(transpile);
       assertFile.matches(/import ["']\.\/synthetic-import-1/);
-      let pattern =`import ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
+      let pattern =`import a0 from ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
       assertFile.matches(new RegExp(pattern));
+      pattern = `window\.define\("my-app\/templates\/components\/second-choice"`;
+      assertFile.matches(new RegExp(/window\.define\(["']my-app\/templates\/components\/second-choice["']/));
     });
 
     test('app/hello-world.js', function(assert) {

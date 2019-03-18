@@ -201,7 +201,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   private activeRules() {
     return activePackageRules(
       this.options.packageRules.concat(defaultAddonPackageRules()),
-      [this.appPackage, ...this.activeAddonDescendants]
+      [this.appPackage, ...this.activeAddonDescendants.filter(p => p.meta['auto-upgraded'])]
     );
   }
 
@@ -215,7 +215,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     );
   }
 
-  // unlink `templateResolver`, this one brings its own simple TemplateCompiler
+  // unlike `templateResolver`, this one brings its own simple TemplateCompiler
   // along so it's capable of parsing component snippets in people's module
   // rules.
   @Memoize()

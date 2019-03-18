@@ -6,7 +6,11 @@ const unsupported = makeDebug('embroider:unsupported');
 const debug = makeDebug('embroider:debug');
 
 function realWarn(message: string, ...params: any[]) {
-  console.log('WARNING: ' + format(message, ...params));
+  if (hardFailMode > 0) {
+    throw new Error(`Unexpected warning in test suite: ${format(message, ...params)}`);
+  } else {
+    console.log('WARNING: ' + format(message, ...params));
+  }
 }
 
 let expectStack = [] as RegExp[];
@@ -23,22 +27,33 @@ function expectedWarn(message: string, ...params: any[]) {
   realWarn(message, ...params);
 }
 
-export function expectWarning(pattern: RegExp, fn: () => void) {
+export function warn(message: string, ...params: any[]) {
   if (expectStack.length === 0) {
-    warn = expectedWarn;
+    realWarn(message, params);
+  } else {
+    expectedWarn(message, params);
   }
+}
+
+// for use in our test suites
+let hardFailMode = 0;
+export function throwOnWarnings(hooks: any) {
+  hooks.beforeEach(() => {
+    hardFailMode++;
+  });
+  hooks.afterEach(() => {
+    hardFailMode--;
+  });
+}
+
+export function expectWarning(pattern: RegExp, fn: () => void) {
   expectStack.push(pattern);
   try {
     fn();
   } finally {
     expectStack.pop();
-    if (expectStack.length === 0) {
-      warn = realWarn;
-    }
   }
   return handled.has(pattern);
 }
 
-let warn = realWarn;
-
-export { todo, unsupported, warn, debug };
+export { todo, unsupported, debug };

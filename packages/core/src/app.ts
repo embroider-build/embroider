@@ -8,7 +8,6 @@ import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs
 import { join, dirname, relative } from 'path';
 import { todo, unsupported, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
-import flatMap from 'lodash/flatMap';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -18,10 +17,12 @@ import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
-import { TransformOptions } from '@babel/core';
+import { TransformOptions, PluginItem } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import { PortableTemplateCompiler } from './template-compiler';
+import TemplateCompiler from './template-compiler';
+import { Resolver } from './resolver';
+import { Options as AdjustImportsOptions }  from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -36,6 +37,9 @@ export type EmberENV = unknown;
       because they opt into new authoring standards.
 */
 export interface AppAdapter<TreeNames> {
+
+  // the set of addon packages that are active.
+  readonly activeAddonDescendants: Package[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -65,16 +69,12 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
-  // optional method to force extra packages to be treated as dependencies of
-  // the app.
-  extraDependencies?(): Package[];
-
   // The path to ember's template compiler source
   templateCompilerPath(): string;
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  templateResolverPath(): string;
+  templateResolver(): Resolver;
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -82,6 +82,10 @@ export interface AppAdapter<TreeNames> {
   // the app's preferred babel config. No need to worry about making it portable
   // yet, we will do that for you.
   babelConfig(): TransformOptions;
+
+  // lets you add imports to javascript modules. We need this to implement
+  // things like our addon compatibility rules for static components.
+  extraImports(): { absPath: string, target: string, runtimeName?: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -178,20 +182,6 @@ export class AppBuilder<TreeNames> {
     private options: Required<Options>
   ) {}
 
-  @Memoize()
-  private get activeAddonDescendants(): Package[] {
-    // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage;
-
-    let result = this.app.findDescendants(shouldInclude);
-    if (this.adapter.extraDependencies) {
-      let extras = this.adapter.extraDependencies().filter(shouldInclude);
-      let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
-      result = [...result, ...extras, ...extraDescendants];
-    }
-    return result;
-  }
-
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
       case "loader.js":
@@ -227,7 +217,7 @@ export class AppBuilder<TreeNames> {
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
     for (let addon of sortBy(
-      this.activeAddonDescendants,
+      this.adapter.activeAddonDescendants,
       this.scriptPriority.bind(this)
     )) {
       let implicitScripts = addon.meta[type];
@@ -242,10 +232,6 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get babelConfig() {
-    let rename = Object.assign(
-      {},
-      ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
-    );
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -265,14 +251,23 @@ export class AppBuilder<TreeNames> {
       stage: 3
     }]);
 
-    // this is our own plugin that patches up issues like non-explicit hbs
-    // extensions and packages importing their own names.
-    babel.plugins.push([require.resolve('./babel-plugin'), {
+    babel.plugins.push(this.adjustImportsPlugin());
+
+    return new PortableBabelConfig(babel, { basedir: this.root });
+  }
+
+  private adjustImportsPlugin(): PluginItem {
+    let rename = Object.assign(
+      {},
+      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
+    );
+      let adjustOptions: AdjustImportsOptions = {
       ownName: this.app.name,
       basedir: this.root,
-      rename
-    }]);
-    return new PortableBabelConfig(babel, { basedir: this.root });
+      rename,
+      extraImports: this.adapter.extraImports(),
+    };
+    return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
@@ -338,7 +333,7 @@ export class AppBuilder<TreeNames> {
 
   private updateAppJS(appJSPath: string): AppFiles {
     if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.activeAddonDescendants);
+      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.activeAddonDescendants);
     }
     this.appDiffer.update();
     return new AppFiles(this.appDiffer.files);
@@ -470,7 +465,7 @@ export class AppBuilder<TreeNames> {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.activeAddonDescendants) {
+    for (let pkg of this.adapter.activeAddonDescendants) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'])) {
           assets.push({
@@ -526,9 +521,9 @@ export class AppBuilder<TreeNames> {
   }
 
   private combineExternals() {
-    let allAddonNames = new Set(this.activeAddonDescendants.map(d => d.name));
+    let allAddonNames = new Set(this.adapter.activeAddonDescendants.map(d => d.name));
     let externals = new Set();
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       if (!addon.meta.externals) {
         continue;
       }
@@ -561,19 +556,12 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    let params = {
+    let source = new TemplateCompiler({
       plugins,
       compilerPath: this.adapter.templateCompilerPath(),
-      resolverPath: this.adapter.templateResolverPath(),
+      resolver: this.adapter.templateResolver(),
       EmberENV: config,
-      resolverParams: {
-        root: this.root,
-        modulePrefix: this.adapter.modulePrefix(),
-        options: this.options
-      }
-    };
-
-    let source = new PortableTemplateCompiler(params, { basedir: this.root }).serialize();
+    }).serialize(this.root);
 
     writeFileSync(
       join(this.root, "_template_compiler_.js"),
@@ -670,7 +658,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         for (let name of implicitModules) {

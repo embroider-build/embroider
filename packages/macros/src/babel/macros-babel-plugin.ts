@@ -8,10 +8,7 @@ import macroIf from './macro-if';
 import error from './error';
 import { bindState } from './visitor';
 
-// we're assuming parallelized babel, so this doesn't try to share with anybody
-// other than our own module scope. As an optimization we could optionally
-// accept an existing PackageCache in our plugin config.
-const packageCache = new PackageCache();
+const packageCache = PackageCache.shared('embroider-stage3');
 
 export default function main() {
   let visitor = {

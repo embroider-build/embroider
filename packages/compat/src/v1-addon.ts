@@ -270,7 +270,7 @@ export default class V1Addon implements V1Package {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
 
-    babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
+    babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin-adjust-imports'), {
       ownName: this.name
     } ]);
   }

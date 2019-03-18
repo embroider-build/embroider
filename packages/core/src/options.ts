@@ -24,6 +24,7 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
   let defaults = {
     staticHelpers: false,
     staticComponents: false,
+    packageRules: [],
   };
   if (options) {
     return Object.assign(defaults, options);

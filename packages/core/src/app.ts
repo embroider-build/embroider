@@ -85,7 +85,7 @@ export interface AppAdapter<TreeNames> {
 
   // lets you add imports to javascript modules. We need this to implement
   // things like our addon compatibility rules for static components.
-  extraImports(): { absPath: string, target: string }[];
+  extraImports(): { absPath: string, target: string, runtimeName?: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.

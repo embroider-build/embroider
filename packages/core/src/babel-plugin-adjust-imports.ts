@@ -1,7 +1,19 @@
 import packageName from './package-name';
 import { join, relative, dirname } from 'path';
 import { NodePath } from '@babel/traverse';
-import { Program, importDeclaration, stringLiteral } from '@babel/types';
+import {
+  blockStatement,
+  callExpression,
+  expressionStatement,
+  functionExpression,
+  identifier,
+  importDeclaration,
+  importDefaultSpecifier,
+  memberExpression,
+  Program,
+  returnStatement,
+  stringLiteral
+} from "@babel/types";
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -15,6 +27,7 @@ interface State {
     extraImports?: {
       absPath: string,
       target: string,
+      runtimeName?: string,
     }[]
   };
 }
@@ -58,11 +71,7 @@ export default function main({ types: t} : { types: any }){
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
           if (state.opts.extraImports) {
-            for (let { absPath, target } of state.opts.extraImports) {
-              if (absPath === path.hub.file.opts.filename) {
-                path.node.body.push(importDeclaration([], stringLiteral(target)));
-              }
-            }
+            addExtraImports(path, state.opts.extraImports);
           }
         },
         exit: function(_: any, state: State) {
@@ -117,3 +126,35 @@ export default function main({ types: t} : { types: any }){
 (main as any).baseDir = function() {
   return join(__dirname, '..');
 };
+
+function addExtraImports(path: NodePath<Program>, extraImports: Required<State["opts"]>["extraImports"]) {
+  let counter = 0;
+  for (let { absPath, target, runtimeName } of extraImports) {
+    if (absPath === path.hub.file.opts.filename) {
+      if (runtimeName) {
+        path.node.body.push(importDeclaration([importDefaultSpecifier(identifier(`a${counter}`))], stringLiteral(target)));
+        path.node.body.push(amdDefine(runtimeName, counter++));
+      } else {
+        path.node.body.push(importDeclaration([], stringLiteral(target)));
+      }
+    }
+  }
+}
+
+function amdDefine(runtimeName: string, importCounter: number) {
+  return expressionStatement(
+    callExpression(
+      memberExpression(identifier('window'), identifier('define')),
+      [
+        stringLiteral(runtimeName),
+        functionExpression(
+          null,
+          [],
+          blockStatement([
+            returnStatement(identifier(`a${importCounter}`))
+          ])
+        )
+      ]
+    )
+  );
+}

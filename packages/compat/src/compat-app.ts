@@ -237,7 +237,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   extraImports() {
-    let output: { absPath: string, target: string }[][] = [];
+    let output: { absPath: string, target: string, runtimeName?: string }[][] = [];
 
     for (let rule of this.activeRules()) {
       if (rule.addonModules) {

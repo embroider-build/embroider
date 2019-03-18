@@ -167,7 +167,7 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
 }
 
 export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
-  let output: { absPath: string, target: string }[] = [];
+  let output: { absPath: string, target: string, runtimeName?: string }[] = [];
   if (moduleRules.dependsOnModules) {
     for (let target of moduleRules.dependsOnModules) {
       output.push({ absPath, target });
@@ -176,8 +176,8 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
   if (moduleRules.dependsOnComponents) {
     for (let snippet of moduleRules.dependsOnComponents) {
       let found = resolver.resolveComponentSnippet(snippet, moduleRules);
-      for (let { absPath: target } of found.modules) {
-        output.push({ absPath, target });
+      for (let { absPath: target, runtimeName } of found.modules) {
+        output.push({ absPath, target, runtimeName  });
       }
     }
   }

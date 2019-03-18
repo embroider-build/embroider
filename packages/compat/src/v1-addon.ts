@@ -3,12 +3,13 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 import { join } from 'path';
-import { existsSync } from 'fs-extra';
+import { existsSync, pathExistsSync } from 'fs-extra';
+import resolvePackagePath from 'resolve-package-path';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
-import { todo, unsupported } from './messages';
+import { todo, unsupported } from '@embroider/core/src/messages';
 import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
 import { Tree } from "broccoli-plugin";
@@ -17,10 +18,15 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from "./rewrite-addon-test-support";
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, BasicPackage, AddonMeta } from "@embroider/core";
-import { AddonOptionsWithDefaults } from "./options";
+import { Package, PackageCache, AddonMeta, TemplateCompiler } from "@embroider/core";
+import Options from "./options";
 import walkSync from 'walk-sync';
 import AddToTree from "./add-to-tree";
+import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
+import resolve from "resolve";
+import { isEmbroiderMacrosPlugin } from "@embroider/macros";
+import { TransformOptions, PluginItem } from "@babel/core";
+import cloneDeep from "lodash/cloneDeep";
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -50,13 +56,44 @@ const dynamicTreeHooks = Object.freeze([
 
 const appPublicationDir = '_app_';
 
+let locatePreprocessRegistry: (addonInstance: any) => any;
+{
+  let preprocessRegistry: any;
+  locatePreprocessRegistry = function(addonInstance: any) {
+    if (!preprocessRegistry) {
+      let cliPath = dirname(resolvePackagePath('ember-cli', addonInstance._findHost().project.root));
+      preprocessRegistry = require(resolve.sync('ember-cli-preprocess-registry/preprocessors', { basedir: cliPath }));
+    }
+    return preprocessRegistry;
+  };
+}
+
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: AddonOptionsWithDefaults) {
+  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: Required<Options>) {
     this.updateBabelConfig();
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
+    }
+  }
+
+  @Memoize()
+  private get templateCompiler(): TemplateCompiler | undefined {
+    let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    if (htmlbars) {
+      let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
+      if (options.plugins && options.plugins.ast) {
+        // our macros don't run here in stage1
+        options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+        if (options.plugins.ast.length > 0) {
+          return new TemplateCompiler({
+            compilerPath: options.templateCompilerPath,
+            EmberENV: {},
+            plugins: options.plugins,
+          });
+        }
+      }
     }
   }
 
@@ -78,14 +115,18 @@ export default class V1Addon implements V1Package {
     // "Addon templates were detected, but there are no template compilers
     // registered".
     registry.remove('template', 'ember-cli-htmlbars');
-    if (registry.load('htmlbars-ast-plugin').length > 0) {
-      todo(`${this.name} has a custom AST transform that we need to apply`);
-    }
     registry.add('template', {
       name: 'embroider-addon-templates',
       ext: 'hbs',
-      toTree(tree: Tree): Tree {
-        return tree;
+      _addon: this,
+      toTree(this: { _addon: V1Addon }, tree: Tree): Tree {
+        if (this._addon.templateCompiler) {
+          return this._addon.templateCompiler.applyTransformsToTree(tree);
+        } else {
+          // when there are no custom AST transforms, we don't need to do
+          // anything at all.
+          return tree;
+        }
       }
     });
   }
@@ -122,6 +163,16 @@ export default class V1Addon implements V1Package {
   protected get options() {
     if (!this.addonInstance.options) {
       this.addonInstance.options = {};
+    } else {
+      // some addons (like ember-cli-inline-content) assign the *app's* options
+      // onto their own this.options. Which means they (accidentally or on
+      // purpose), always get the app's babel config, and it means when we try
+      // to modify the addon's babel config we're accidentally modifying the
+      // app's too.
+      //
+      // So here we do cloning to ensure that we can modify the babel config
+      // without altering anybody else.
+      this.addonInstance.options = cloneDeep(this.addonInstance.options);
     }
     return this.addonInstance.options;
   }
@@ -167,9 +218,15 @@ export default class V1Addon implements V1Package {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
-    return this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
+    tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry : this.addonInstance.registry
     });
+    if (this.addonInstance.registry.load('template').length > 0) {
+      tree = locatePreprocessRegistry(this.addonInstance).preprocessTemplates(tree, {
+        registry: this.addonInstance.registry
+      });
+    }
+    return tree;
   }
 
   @Memoize()
@@ -189,6 +246,7 @@ export default class V1Addon implements V1Package {
     if (!packageOptions.babel) {
       packageOptions.babel = {};
     }
+    let babelConfig = packageOptions.babel as TransformOptions;
 
     Object.assign(packageOptions['ember-cli-babel'], {
       compileModules: false,
@@ -202,10 +260,17 @@ export default class V1Addon implements V1Package {
       return;
     }
 
-    if (!packageOptions.babel.plugins) {
-      packageOptions.babel.plugins = [];
+    if (!babelConfig.plugins) {
+      babelConfig.plugins = [];
+    } else {
+      babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
     }
-    packageOptions.babel.plugins.push([require.resolve('@embroider/core/src/babel-plugin'), {
+
+    if (this.templateCompiler) {
+      babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
+    }
+
+    babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin-adjust-imports'), {
       ownName: this.name
     } ]);
   }
@@ -220,7 +285,7 @@ export default class V1Addon implements V1Package {
 
   // this is split out so that compatability shims can override it to add more
   // things to the package metadata.
-  protected get packageMeta() {
+  protected get packageMeta(): AddonMeta {
     let built = this.build();
     return mergeWithAppend(
       {},
@@ -261,13 +326,12 @@ export default class V1Addon implements V1Package {
 
   protected treeForAddon(): Tree|undefined {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
-      let tree = this.invokeOriginalTreeFor('addon');
+      let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
-        return new MultiFunnel(tree, {
+        return this.transpile(new MultiFunnel(tree, {
           srcDirs: [this.moduleName, `modules/${this.moduleName}`]
-        });
+        }));
       }
-      // todo: also invoke treeForAddonTemplates
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon', {
         exclude: ['styles/**']
@@ -303,7 +367,7 @@ export default class V1Addon implements V1Package {
       let addonParser = this.parseImports(addonTree);
       built.importParsers.push(addonParser);
       built.trees.push(addonTree);
-      if (this.addonOptions.forceIncludeAddonTrees) {
+      if (!this.addonOptions.staticAddonTrees) {
         built.dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }
@@ -321,23 +385,24 @@ export default class V1Addon implements V1Package {
   }
 
   private buildTreeForStyles(built: IntermediateBuild) {
+    let tree;
     if (this.customizes('treeForStyles')) {
-      todo(`${this.name} may have customized the app style tree`);
-    } else if (this.hasStockTree('styles')) {
-      // The typical way these get used is via css @import from the app's own
-      // CSS (or SCSS). There is no enforced namespacing but that is the
-      // common pattern as far as I can tell.
-      //
-      // TODO: detect people doing the right thing (namespacing with their own
-      // package name) and send them down the happy path. Their styles can
-      // just ship inside the package root and be importable at the same name
-      // as before. Detect people doing anything other than that and yell at
-      // them and set up a fallback.
-      built.trees.push(
-        this.transpile(this.stockTree('styles', {
+      // the user's tree returns their own styles with no "app/styles" wrapping
+      // around, which is actually what we want
+      tree = this.invokeOriginalTreeFor('styles');
+      if (tree) {
+        tree = new Funnel(tree, {
+          srcDir: 'app/styles',
           destDir: '_app_styles_'
-        }), { includeCSS: true })
-      );
+        });
+      }
+    } else if (this.hasStockTree('styles')) {
+      tree = this.stockTree('styles', {
+        destDir: '_app_styles_'
+      });
+    }
+    if (tree) {
+      built.trees.push(tree);
     }
   }
 
@@ -359,18 +424,36 @@ export default class V1Addon implements V1Package {
       let testSupportParser = this.parseImports(addonTestSupportTree);
       built.importParsers.push(testSupportParser);
       built.trees.push(addonTestSupportTree);
-      if (this.addonOptions.forceIncludeAddonTestSupportTrees) {
+      if (!this.addonOptions.staticAddonTestSupportTrees) {
         built.dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
       }
     }
   }
 
+  private maybeSetAppJS(built: IntermediateBuild, tree: Tree): Tree {
+    // unforunately Funnel doesn't create destDir if its input exists but is
+    // empty. And we want to only put the app-js key in package.json if
+    // there's really a directory for it to point to. So we need to monitor
+    // the output and use dynamicMeta.
+    let dirExists = false;
+    built.dynamicMeta.push(() => {
+      if (dirExists) {
+        return { 'app-js': appPublicationDir };
+      } else {
+        return {};
+      }
+    });
+    return new AddToTree(tree, (outputPath: string) => {
+      dirExists = pathExistsSync(join(outputPath, appPublicationDir));
+    });
+  }
+
   private buildTestSupport(built: IntermediateBuild) {
     let tree = this.treeForTestSupport();
     if (tree) {
+      tree = this.maybeSetAppJS(built, tree);
       built.importParsers.push(this.parseImports(tree));
       built.trees.push(tree);
-      built.staticMeta['app-js'] = appPublicationDir;
     }
   }
 
@@ -389,6 +472,7 @@ export default class V1Addon implements V1Package {
         destDir: appPublicationDir
       });
     }
+
     if (appTree) {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
@@ -399,9 +483,22 @@ export default class V1Addon implements V1Package {
       // these files have been merged into the app we can't tell what their
       // allowed dependencies are anymore and would get false positive
       // externals.
-      built.staticMeta['app-js'] = appPublicationDir;
+      appTree = this.maybeSetAppJS(built, appTree);
       built.importParsers.push(this.parseImports(appTree));
       built.trees.push(appTree);
+    }
+
+    if (
+      typeof this.addonInstance.isDevelopingAddon === 'function' &&
+      this.addonInstance.isDevelopingAddon() &&
+      this.addonInstance.hintingEnabled()
+    ) {
+      let hintTree = this.addonInstance.jshintAddonTree();
+      if (hintTree) {
+        hintTree = this.maybeSetAppJS(built, new Funnel(hintTree, { destDir: appPublicationDir }));
+        built.importParsers.push(this.parseImports(hintTree));
+        built.trees.push(hintTree);
+      }
     }
   }
 
@@ -490,10 +587,10 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, packageCache: PackageCache, options: AddonOptionsWithDefaults): V1Addon;
+  new(addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
 }
 
-class TweakedPackage extends BasicPackage {
+class TweakedPackage extends Package {
   constructor(realPackage: Package, private overridePackageJSON: any, packageCache: PackageCache) {
     super(realPackage.root, false, packageCache);
   }
@@ -507,4 +604,23 @@ class IntermediateBuild {
   importParsers: ImportParser[] = [];
   staticMeta: { [metaField: string]: any } = {};
   dynamicMeta: (() => Partial<AddonMeta>)[] = [];
+}
+
+function babelPluginAllowedInStage1(plugin: PluginItem) {
+  if (isEmbroiderMacrosPlugin(plugin)) {
+    // the point of @embroider/macros is that it's allowed to stay in v2
+    // addon publication format, so it doesn't need to run here in stage1.
+    // We always run it in stage3.
+    return false;
+  }
+
+  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
+    // Similarly, the inline precompile plugin must not run in stage1. We
+    // want all templates uncompiled. Instead, we will be adding our own
+    // plugin that only runs custom AST transforms inside inline
+    // templates.
+    return false;
+  }
+
+  return true;
 }

@@ -11,16 +11,28 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { todo } from './messages';
-import { synthesize } from './parallel-babel-shim';
-import { writeJSONSync, ensureDirSync, copySync } from 'fs-extra';
+import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
+import { writeJSONSync, ensureDirSync, copySync, readdirSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
+import DummyPackage from './dummy-package';
+import { TransformOptions } from '@babel/core';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros';
+import resolvePackagePath from 'resolve-package-path';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
+
 export default class V1App implements V1Package {
-  constructor(private app: any, private packageCache: PackageCache) {
+  static create(app: any, packageCache: PackageCache): V1App {
+    if (app.project.pkg.keywords && app.project.pkg.keywords.includes('ember-addon')) {
+      // we are a dummy app, which is unfortunately weird and special
+      return new V1DummyApp(app, packageCache);
+    } else {
+      return new V1App(app, packageCache);
+    }
+  }
+
+  protected constructor(protected app: any, private packageCache: PackageCache) {
   }
 
   // always the name from package.json. Not the one that apps may have weirdly
@@ -35,7 +47,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync(this.app.root)!);
+    return dirname(pkgUpSync(this.app.project.root)!);
   }
 
   @Memoize()
@@ -46,7 +58,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   private get emberCLILocation() {
-    return dirname(resolve.sync('ember-cli/package.json', { basedir: this.root }));
+    return dirname(resolvePackagePath('ember-cli', this.root));
   }
 
   private requireFromEmberCLI(specifier: string) {
@@ -101,7 +113,7 @@ export default class V1App implements V1Package {
   get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
 
-    let index: Tree = new Funnel(new WatchedDir(join(this.root, 'app')), {
+    let index: Tree = new Funnel(this.app.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
@@ -138,76 +150,23 @@ export default class V1App implements V1Package {
     });
   }
 
-  // babel lets you use relative paths, absolute paths, package names, and
-  // package name shorthands.
-  //
-  // my-plugin  -> my-plugin
-  // my-plugin  -> babel-plugin-my-plugin
-  // @me/thing  -> @me/thing
-  // @me/thing  -> @me/babel-plugin-thing
-  // ./here     -> /your/app/here
-  // /tmp/there -> /tmp/there
-  //
-  private resolveBabelPlugin(name: string, basedir: string) {
-    try {
-      return resolve.sync(name, { basedir });
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
-      }
-      if (name.startsWith('.') || name.startsWith('/')) {
-        throw err;
-      }
-      try {
-        let expanded;
-        if (name.startsWith('@')) {
-          let [space, pkg, ...rest] = name.split('/');
-          expanded = [space, `babel-plugin-${pkg}`, ...rest].join('/');
-        } else {
-          expanded = `babel-plugin-${name}`;
-        }
-        return resolve.sync(expanded, { basedir });
-      } catch (err2) {
-        if (err2.code !== 'MODULE_NOT_FOUND') {
-          throw err2;
-        }
-        throw new Error(`unable to resolve babel plugin ${name} from ${basedir}`);
-      }
-    }
-  }
-
-  babelConfig(finalRoot: string) {
-    let syntheticPlugins = new Map();
-
+  babelConfig(): TransformOptions {
     let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (!plugins) {
       plugins = [];
+    } else {
+      plugins = plugins.filter(p => {
+        // even if the app was using @embroider/macros, we drop it from the config
+        // here in favor of our globally-configured one.
+        return !isEmbroiderMacrosPlugin(p) &&
+          // similarly, if the app was already using
+          // ember-cli-htmlbars-inline-precompile, we remove it here because we
+          // have our own always-installed version of that (v2 addons are
+          // allowed to assume it will be present in the final app build, the
+          // app doesn't get to turn that off or configure it.).
+          !TemplateCompiler.isInlinePrecompilePlugin(p);
+      });
     }
-
-    plugins = plugins.map(plugin => {
-      // We want to resolve (not require) the app's configured plugins relative
-      // to the app. We want to keep everything serializable.
-
-      // bare string plugin name
-      if (typeof plugin === 'string') {
-        return this.resolveBabelPlugin(plugin, finalRoot);
-      }
-
-      // pair of [pluginName, pluginOptions]
-      if (typeof plugin[0] === 'string') {
-        return [this.resolveBabelPlugin(plugin[0], finalRoot), plugin[1]];
-      }
-
-      // broccoli-babel-transpiler's custom parallel API. Here we synthesize
-      // normal babel plugins that wrap their configuration.
-      if (plugin._parallelBabel) {
-        let name = `_synthetic_babel_plugin_${syntheticPlugins.size}_.js`;
-        syntheticPlugins.set(name, synthesize(plugin._parallelBabel));
-        return name;
-      }
-
-      todo(`Found a babel plugin that we couldn't deal with`);
-    }).filter(Boolean);
 
     // this is reproducing what ember-cli-babel does. It would be nicer to just
     // call it, but it require()s all the plugins up front, so not serializable.
@@ -221,17 +180,22 @@ export default class V1App implements V1Package {
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
 
-    let config = {
+    let config: TransformOptions = {
       babelrc: false,
       plugins,
       presets: [
-        [resolve.sync("babel-preset-env", { basedir: this.root }), {
+        [require.resolve("babel-preset-env"), {
           targets: babelInstance._getTargets(),
           modules: false
-        }]
-      ]
+        }],
+      ],
+      // this is here because broccoli-middleware can't render a codeFrame full
+      // of terminal codes. It would be nice to add something like
+      // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
+      // leave color enabled.
+      highlightCode: false
     };
-    return { config, syntheticPlugins };
+    return config;
   }
 
   private debugMacrosPlugin() {
@@ -289,19 +253,17 @@ export default class V1App implements V1Package {
   }
 
   private combinedVendor(addonTrees: Tree[]): Tree {
-    return mergeTrees(
-      [
-        ...addonTrees.map(tree => new Funnel(tree, {
-          allowEmpty: true,
-          srcDir: 'vendor',
-          destDir: 'vendor',
-        })),
-        new Funnel(this.vendorTree, {
-          destDir: 'vendor'
-        })
-      ],
-      { overwrite: true }
-    );
+    let trees = addonTrees.map(tree => new Funnel(tree, {
+      allowEmpty: true,
+      srcDir: 'vendor',
+      destDir: 'vendor',
+    }));
+    if (this.vendorTree) {
+      trees.push(new Funnel(this.vendorTree, {
+        destDir: 'vendor'
+      }));
+    }
+    return mergeTrees(trees, { overwrite: true });
   }
 
   private addNodeAssets(inputTree: Tree): Tree {
@@ -332,6 +294,54 @@ export default class V1App implements V1Package {
 
   synthesizeVendorPackage(addonTrees: Tree[]): Tree {
     return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
+  }
+
+  private combinedStyles(addonTrees: Tree[]): Tree {
+    let trees = addonTrees.map(tree => new Funnel(tree, {
+      allowEmpty: true,
+      srcDir: '_app_styles_',
+    }));
+    if (this.app.trees.styles) {
+      trees.push(this.app.trees.styles);
+    }
+    return mergeTrees(trees, { overwrite: true });
+  }
+
+  synthesizeStylesPackage(addonTrees: Tree[]): Tree {
+    let options = {
+      // we're deliberately not allowing this to be customized. It's an
+      // internal implementation detail, and respecting outputPaths here is
+      // unnecessary complexity. The corresponding code that adjusts the HTML
+      // <link> is in updateHTML in app.ts.
+     outputPaths: { app: `/assets/${this.name}.css` },
+     registry: this.app.registry,
+     minifyCSS: this.app.options.minifyCSS.options,
+   };
+
+   let styles = this.preprocessors.preprocessCss(
+     this.combinedStyles(addonTrees),
+     '.',
+     '/assets',
+     options
+   );
+
+   return new AddToTree(styles, outputPath => {
+    let addonMeta: AddonMeta = {
+      version: 2,
+      'public-assets': {
+      }
+    };
+    for (let file of readdirSync(join(outputPath, 'assets'))) {
+      addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+    }
+    let meta = {
+      name: '@embroider/synthesized-styles',
+      version: '0.0.0',
+      keywords: 'ember-addon',
+      'ember-addon': addonMeta
+    };
+    writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+   });
   }
 
   // this is taken nearly verbatim from ember-cli.
@@ -367,7 +377,11 @@ export default class V1App implements V1Package {
         // original files (this is an absolute path).
         return preresolved;
       }
-      // non node assets are local paths.
+      // non node assets are local paths. They need an explicit `/` or `.` at
+      // the start.
+      if (asset.startsWith('/') || asset.startsWith('.')) {
+        return asset;
+      }
       return './' + asset;
     });
   }
@@ -390,6 +404,11 @@ export default class V1App implements V1Package {
   get htmlbarsPlugins(): TemplateCompilerPlugins {
     let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     let options = addon.htmlbarsOptions();
+    if (options.plugins.ast) {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+    }
     return options.plugins;
   }
 
@@ -401,10 +420,12 @@ export default class V1App implements V1Package {
     }));
   }
 
-  private get testsTree(): Tree {
-    return this.preprocessJS(new Funnel(this.app.trees.tests, {
-      destDir: 'tests'
-    }));
+  private get testsTree(): Tree | undefined {
+    if (this.app.trees.tests) {
+      return this.preprocessJS(new Funnel(this.app.trees.tests, {
+        destDir: 'tests'
+      }));
+    }
   }
 
   get vendorTree(): Tree {
@@ -416,25 +437,6 @@ export default class V1App implements V1Package {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  private get styleTree(): Tree {
-    let options = {
-       // we're deliberately not allowing this to be customized. It's an
-       // internal implementation detail, and respecting outputPaths here is
-       // unnecessary complexity. The corresponding code that adjusts the HTML
-       // <link> is in updateHTML in app.ts.
-      outputPaths: { app: `/assets/${this.name}.css` },
-      registry: this.app.registry,
-      minifyCSS: this.app.options.minifyCSS.options,
-    };
-
-    return this.preprocessors.preprocessCss(
-      this.app.trees.styles,
-      `.`,
-      '/assets',
-      options
-    );
-  }
-
   get publicTree(): Tree {
     return this.app.trees.public;
   }
@@ -443,17 +445,26 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.app.getLintTests();
-    let analyzer = new DependencyAnalyzer([
+    let importParsers = [
       new ImportParser(appTree),
-      new ImportParser(testsTree),
       new ImportParser(lintTree),
-    ], this.packageCache.getApp(this.root));
+    ];
+    if (testsTree) {
+      importParsers.push(new ImportParser(testsTree));
+    }
+    let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(
       this.config,
       this.storeConfigInMeta,
       this.name
     );
-    let trees = [appTree, this.styleTree, config, testsTree, lintTree];
+    let trees: Tree[] = [];
+    trees.push(appTree);
+    trees.push(config);
+    if (testsTree) {
+      trees.push(testsTree);
+    }
+    trees.push(lintTree);
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer
@@ -486,6 +497,26 @@ export default class V1App implements V1Package {
 
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
+  }
+}
+
+class V1DummyApp extends V1App {
+  constructor(app: any, packageCache: PackageCache) {
+    super(app, packageCache);
+    let owningAddon = packageCache.getAddon(this.app.project.root);
+    let dummyPackage = new DummyPackage(this.root, owningAddon, packageCache);
+    packageCache.overridePackage(dummyPackage);
+    packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, owningAddon);
+  }
+
+  get name() : string {
+    // here we accept the ember-cli behavior
+    return this.app.name;
+  }
+
+  get root(): string {
+    // this is the Known Hack for finding the true root of the dummy app.
+    return join(this.app.project.configPath(), '..', '..');
   }
 }
 

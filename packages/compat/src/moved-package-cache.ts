@@ -6,7 +6,8 @@ import {
   realpath,
 } from 'fs-extra';
 import { Memoize } from "typescript-memoize";
-import { PackageCache, Package, getOrCreate, BasicPackage } from "@embroider/core";
+import { PackageCache, Package, getOrCreate } from "@embroider/core";
+import { MacrosConfig } from '@embroider/macros';
 
 export class MovablePackageCache extends PackageCache {
   moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
@@ -41,19 +42,22 @@ export class MovedPackageCache extends PackageCache {
 
     // so we can now determine where the app will go inside the workspace
     this.appDestDir = this.localPath(origApp.root);
+    MacrosConfig.shared().packageMoved(origApp.root, this.appDestDir);
 
     for (let originalPkg of movedSet.packages) {
       // Update our rootCache so we don't need to rediscover moved packages
       let movedPkg;
       if (originalPkg === origApp) {
-        // this replaces the origApp package with one that will use moved
-        // dependencies (origApp has already cached the pre-moved dependencies)
-        movedPkg = new BasicPackage(origApp.root, true, this);
+        // this wraps the original app package with one that will use moved
+        // dependencies. The app itself hasn't moved yet, which is why a proxy
+        // is needed at this level.
+        movedPkg = packageProxy(origApp, (pkg: Package) => this.moved.get(pkg) || pkg);
         this.app = movedPkg;
         rootCache.set(movedPkg.root, movedPkg);
       } else {
         movedPkg = this.movedPackage(originalPkg);
         this.moved.set(originalPkg, movedPkg);
+        MacrosConfig.shared().packageMoved(originalPkg.root, movedPkg.root);
       }
 
       // Update our resolutionCache so we still know as much about the moved
@@ -75,7 +79,7 @@ export class MovedPackageCache extends PackageCache {
 
   private movedPackage(originalPkg: Package): Package {
     let newRoot = this.localPath(originalPkg.root);
-    return getOrCreate(this.rootCache, newRoot, () => new BasicPackage(newRoot, false, this));
+    return getOrCreate(this.rootCache, newRoot, () => new Package(newRoot, false, this));
   }
 
   private localPath(filename: string) {
@@ -228,4 +232,19 @@ class MovedSet {
       return shorter.slice(0, i);
     }, pathSegments(this.app.root)).length;
   }
+}
+
+function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) {
+  let p: Package = new Proxy(pkg, {
+    get(pkg: Package, prop: string | number | symbol) {
+      if (prop === 'dependencies') {
+        return pkg.dependencies.map(getMovedPackage);
+      }
+      if (prop === 'findDescendants') {
+        return pkg.findDescendants.bind(p);
+      }
+      return (pkg as any)[prop];
+    }
+  });
+  return p;
 }

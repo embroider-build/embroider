@@ -34,7 +34,7 @@ export default class ImportParser extends Plugin {
   private modules: Import[] | null = [];
   private paths: Map<string, Import[]> = new Map();
 
-  constructor(inputTree: Tree) {
+  constructor(inputTree: Tree, private extensions = ['.js', '.hbs']) {
     super([inputTree], {
       annotation: 'embroider:core:import-parser',
       persistentOutput: true
@@ -67,7 +67,7 @@ export default class ImportParser extends Plugin {
 
       switch (operation) {
       case 'unlink':
-        if (extname(relativePath) === '.js') {
+        if (this.extensions.includes(extname(relativePath))) {
           this.removeImports(relativePath);
         }
         unlinkSync(outputPath);
@@ -82,8 +82,8 @@ export default class ImportParser extends Plugin {
       case 'change':
         {
           let absoluteInputPath  = join(this.inputPaths[0], relativePath);
-          if (extname(relativePath) === '.js') {
-            this.updateImports(relativePath, readFileSync(absoluteInputPath, 'utf8'));
+          if (this.extensions.includes(extname(relativePath))) {
+            this.updateImports(relativePath, absoluteInputPath);
           }
           copy(absoluteInputPath, outputPath);
         }
@@ -109,7 +109,8 @@ export default class ImportParser extends Plugin {
     }
   }
 
-  updateImports(relativePath: string, source: string) {
+  updateImports(relativePath: string, absoluteInputPath: string) {
+    let source = readFileSync(absoluteInputPath, 'utf8');
     debug(`updating imports for ${relativePath}, ${source.length}`);
     let newImports = this.parseImports(relativePath, source);
     if (!isEqual(this.paths.get(relativePath), newImports)) {
@@ -119,6 +120,12 @@ export default class ImportParser extends Plugin {
   }
 
   private parseImports(relativePath: string, source: string) : Import[] {
+    if (extname(relativePath) === '.hbs') {
+      // there are no hbs templates yet that have imports. When ember introduces
+      // them, this will need to parse them and discover the imports.
+      return [];
+    }
+
     let ast;
     try {
       ast = parse(source, this.parserOptions);
@@ -126,6 +133,8 @@ export default class ImportParser extends Plugin {
       if (err.name !== 'SyntaxError') {
         throw err;
       }
+      // This is OK. The file is still going to get sent through the rest of the
+      // normal babel processing, which will generate a nice error for it.
       debug('Ignoring an unparseable file');
     }
     let imports : Import[] = [];

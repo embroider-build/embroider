@@ -1,22 +1,31 @@
-import BasicPackage from "./basic-package";
 import Package from './package';
 import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
-import resolve from 'resolve';
-import { join, dirname } from 'path';
+import resolvePackagePath from 'resolve-package-path';
+import { dirname } from 'path';
 import { sync as pkgUpSync }  from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
     return getOrCreate(cache, packageName, () => {
-      let root = dirname(resolve.sync(join(packageName, 'package.json'), { basedir: this.basedir(fromPackage) }));
+      let root = dirname(resolvePackagePath(packageName, this.basedir(fromPackage)));
       return this.getAddon(root);
     });
   }
 
   getApp(packageRoot: string) {
     return this.getPackage(packageRoot, false);
+  }
+
+  overridePackage(pkg: Package) {
+    this.rootCache.set(pkg.root, pkg);
+  }
+
+  overrideResolution(packageName: string, fromPackage: Package, answer: Package) {
+    this.rootCache.set(answer.root, answer);
+    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
+    cache.set(packageName, answer);
   }
 
   protected rootCache: Map<string, Package> = new Map();
@@ -29,7 +38,7 @@ export default class PackageCache {
   private getPackage(packageRoot: string, isAddon: boolean): Package {
     let root = realpathSync(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
-      return new BasicPackage(root, !isAddon, this);
+      return new Package(root, !isAddon, this);
     });
     return p;
   }
@@ -61,4 +70,21 @@ export default class PackageCache {
     }
   }
 
+  // register to be shared as the per-process package cache with the given name
+  shareAs(identifier: string) {
+    shared.set(identifier, this);
+  }
+
+  static shared(identifier: string) {
+    let p = shared.get(identifier);
+    if (p) {
+      return p;
+    }
+    p =  new PackageCache();
+    shared.set(identifier,p);
+    return p;
+  }
+
 }
+
+const shared: Map<string, PackageCache> = new Map();

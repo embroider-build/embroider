@@ -7,20 +7,72 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Core tests",
+      "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
-      "cwd": "${workspaceFolder}/packages/core",
+      "cwd": "${workspaceFolder}",
       "args": [
-        "tests"
+        "packages/compat/tests",
+        "packages/core/tests",
+        "packages/macros/tests",
+        //"--filter", "acceptsComponentArguments on mustache with component subexpression"
       ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Dedupe",
-      "program": "${workspaceFolder}/packages/dedupe/src/cli.js",
-      "cwd": "${workspaceFolder}/../travis-web",
-      "args": ["plan"]
-    }
+      "name": "Build macro-tests app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-tests",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Serve macro-tests app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-tests",
+      "args": [
+        "s"
+      ],
+      "env": {
+        //"CLASSIC": "true",
+        "JOBS": "1",
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build macro-sample-addon",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/macro-sample-addon",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1",
+        //"CLASSIC": "true",
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build static-app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/static-app",
+      "args": [
+        "build"
+      ],
+      "env": {
+        "JOBS": "1",
+        //"CLASSIC": "true",
+      },
+      "outputCapture": "std"
+    },
   ]
 }

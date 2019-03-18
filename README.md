@@ -2,6 +2,8 @@ This is unstable, incomplete, work-in-progress software. You have been warned.
 
 # Embroider: an experimental build system for EmberJS apps
 
+<a href="https://travis-ci.com/embroider-build/embroider"><img src="https://travis-ci.com/embroider-build/embroider.svg?branch=master" alt="Build Status"></a>
+
 This repo implements a new three-stage build system for Ember apps.
 
 1. The first stage achieves backward compatibility by building each classic Ember Addon package into a new **v2 package format**. This makes each package much more static and analyzable. The eventual goal is to do less and less work in this stage, as addons publish to NPM natively in v2 format.
@@ -55,4 +57,4 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 
 # Tests
 
-There aren't any yet. Initial development has been done entirely against real apps, because even characterizing all the current behaviors we need to be compatible with is a big piece of the work.
+`yarn test` depends on bash, so you will have a bad time on non-UNIX. Sorry not sorry. It runs multiple test suites via GNU Parallel. You can also run each of the individual suites directly.

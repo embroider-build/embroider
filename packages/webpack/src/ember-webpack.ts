@@ -94,6 +94,13 @@ class HTMLEntrypoint {
             placeholder.insertScriptTag(src);
           }
         }
+      } else {
+        // no match means keep the original HTML content for this placeholder.
+        // (If we really wanted it empty instead, there would be matchingBundles
+        // and it would be an empty list.)
+        for (let placeholder of placeholders) {
+          placeholder.reset();
+        }
       }
     }
     return this.dom.serialize();
@@ -105,13 +112,13 @@ interface AppInfo {
   otherAssets: string[];
   externals: string[];
   templateCompiler: Function;
-  babelConfig: any;
+  babel: any;
 }
 
 // AppInfos are equal if they result in the same webpack config.
 function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   return isEqual(left.externals, right.externals) &&
-    isEqual(left.babelConfig, right.babelConfig) &&
+    isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
     left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules));
 }
@@ -164,18 +171,18 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     let externals = meta.externals || [];
-    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler']));
+    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
     let babelConfigFile = meta['babel-config'];
-    let babelConfig;
+    let babel;
     if (babelConfigFile) {
-      babelConfig = require(join(this.pathToVanillaApp, babelConfigFile));
+      babel = require(join(this.pathToVanillaApp, babelConfigFile));
     }
-    return { entrypoints, otherAssets, externals, templateCompiler, babelConfig };
+    return { entrypoints, otherAssets, externals, templateCompiler, babel };
   }
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, externals, templateCompiler, babelConfig }: AppInfo) {
+  private configureWebpack({ entrypoints, externals, templateCompiler, babel }: AppInfo) {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -209,10 +216,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              process.env.JOBS === '1' ? null : 'thread-loader',
+              (process.env.JOBS === '1' || !babel.isParallelSafe)? null : 'thread-loader',
               {
-                loader: 'babel-loader',
-                options: Object.assign({}, babelConfig)
+                loader: 'babel-loader', // todo use babel.version to ensure the correct loader
+                options: Object.assign({}, babel.config)
               }
             ].filter(Boolean)
           },
@@ -302,10 +309,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     if (srcURL.default.existsIn(inCode)) {
       fileRelativeSourceMapURL = srcURL.default.getFrom(inCode)!;
       appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
-      terserOpts.sourceMap = {
-        content: readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL)),
-        url: fileRelativeSourceMapURL
-      };
+      let content;
+      try {
+        content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
+      } catch(err) {
+        // the script refers to a sourcemap that doesn't exist, so we just leave
+        // the map out.
+      }
+      if (content) {
+        terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
+      }
     }
     let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
     writeFileSync(join(this.outputPath, script), outCode);
@@ -352,7 +365,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
                 this.consoleWrite(`warning: in ${entrypoint.filename} <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`);
-                bundles.set(script, [script]);
               } else {
                 throw err;
               }
@@ -414,13 +426,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           return;
         }
         if (stats.hasErrors()) {
-          let templateError = stats.compilation.errors.find(e => e.error && e.error.type === 'Template Compiler Error');
-          if (templateError) {
-            reject(templateError.error);
-          } else {
-            this.consoleWrite(stats.toString());
-            reject(new Error('webpack returned errors to @embroider/webpack'));
-          }
+          reject(this.findBestError(stats.compilation.errors));
           return;
         }
         if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
@@ -443,6 +449,31 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
       }
     ];
+  }
+
+  private findBestError(errors: any[]) {
+    for (let error of errors) {
+      let file;
+      while (error) {
+        if (error.module && error.module.rawRequest) {
+          file = relative(this.pathToVanillaApp, error.module.userRequest);
+        }
+        if (error.codeFrame || error.loc) {
+          // this looks like a good error. Let's also make sure any location info
+          // is copied onto the root of the error because that's where broccoli
+          // looks for it.
+          if (!error.file) {
+            error.file = file || (error.loc ? error.loc.file : null) || (error.location ? error.location.file : null);
+          }
+          if (error.line == null) {
+            error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
+          }
+          return error;
+        }
+        error = error.error;
+      }
+    }
+    return errors[0];
   }
 
 };

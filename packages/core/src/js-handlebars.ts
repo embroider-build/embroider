@@ -4,8 +4,8 @@ import jsStringEscape from 'js-string-escape';
 
 registerHelper('js-string-escape', jsStringEscape);
 
-registerHelper('json-stringify', function(input: any) {
-  return JSON.stringify(input);
+registerHelper('json-stringify', function(input: any, indent?: number) {
+  return JSON.stringify(input, null, indent);
 });
 
 export { compile };

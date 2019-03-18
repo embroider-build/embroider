@@ -455,8 +455,13 @@ These are features that are only supported in apps, not addons:
   A conventional app will have an `"assets"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
 
 - synchronous dynamic imports are allowed in the app’s Javascript. See next subsection.
-- `"template-compiler"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s default export is a function `(moduleName: string, templateContents: string) => string` that converts templates into JS modules.
-- `"babel-config"`: in Ember package metadata, the relative path to a module that exports *serializable* babel options. These are the app’s preferred settings, and final stage packagers should use these as input when they configure their own babel support.
+- `"template-compiler"`: in **Ember package metadata**, the relative path to a module that is capable of compiling all the templates. The module’s exports :
+  - `compile: (moduleName: string, templateContents: string) => string` that converts templates into JS modules.
+  - `isParallelSafe: boolean`: true if this compiler can be used in other node processes
+- `"babel-config"`: in Ember package metadata, the relative path to a module that exports a value with three properties:
+  - `config`: the app’s preferred babel settings
+  - `isParallelSafe: boolean`: true if the `babel` settings can be used in a new node process.
+  - `version`: the version of babel the app's settings were written for.
 - Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with its exposed `"babel-config"`. This is an optimization — we *could* logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
 
 **Apps can use synchronous dynamic “imports”**
@@ -591,6 +596,15 @@ Status: intent to deprecate
 ```
 
 A list of paths to folders that should be merged with the app's own namespace. This is a backward-compatibility feature, avoiding using it.
+
+## auto-upgraded
+
+```
+Allowed in: addons
+Status: internal use only
+```
+
+Boolean. Marks a package as having been compiled on the fly from v1 to v2. It's probably not a good idea to ever publish a package to NPM with this set.
 
 ## babel-config
 

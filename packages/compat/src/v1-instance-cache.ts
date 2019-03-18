@@ -7,15 +7,16 @@ import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
-import { AddonOptionsWithDefaults, defaultOptions } from './options';
+import Options from './options';
+import isEqual from 'lodash/isEqual';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object, options?: AddonOptionsWithDefaults): V1InstanceCache {
+  static forApp(emberApp: object, options: Required<Options>): V1InstanceCache {
     let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
-    if (options && instance.options !== options) {
-      throw new Error(`attempted double set of AddonOptions`);
+    if (options && !isEqual(instance.options, options)) {
+      throw new Error(`attempted double set of app Options`);
     }
     return instance;
   }
@@ -28,8 +29,8 @@ export default class V1InstanceCache {
   app: V1App;
   packageCache = new MovablePackageCache();
 
-  private constructor(oldApp: any, private options: AddonOptionsWithDefaults = defaultOptions()) {
-    this.app = new V1App(oldApp, this.packageCache);
+  private constructor(oldApp: any, private options: Required<Options>) {
+    this.app = V1App.create(oldApp, this.packageCache);
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants

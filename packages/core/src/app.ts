@@ -2,19 +2,27 @@ import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package from './package';
-import sortBy from 'lodash/sortBy';
 import resolve from 'resolve';
 import { Memoize } from "typescript-memoize";
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
-import { todo, unsupported, debug } from './messages';
+import { todo, unsupported, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
+import sortBy from 'lodash/sortBy';
+import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
 import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
-import flatMap from 'lodash/flatMap';
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
+import Options from './options';
+import { MacrosConfig } from '@embroider/macros';
+import { TransformOptions, PluginItem } from '@babel/core';
+import PortableBabelConfig from './portable-babel-config';
+import { TemplateCompilerPlugins } from '.';
+import TemplateCompiler from './template-compiler';
+import { Resolver } from './resolver';
+import { Options as AdjustImportsOptions }  from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -24,11 +32,14 @@ export type EmberENV = unknown;
 
     - CompatAppAdapter in `@embroider/compat` implements this interface for
       building based of a legacy ember-cli EmberApp instance
-    - We will want to make a different class that implmenets this interface for
+    - We will want to make a different class that implements this interface for
       building apps that don't need an EmberApp instance at all (presumably
       because they opt into new authoring standards.
 */
 export interface AppAdapter<TreeNames> {
+
+  // the set of addon packages that are active.
+  readonly activeAddonDescendants: Package[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -58,24 +69,23 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
-  // optional method to force extra packages to be treated as dependencies of
-  // the app.
-  extraDependencies?(): Package[];
+  // The path to ember's template compiler source
+  templateCompilerPath(): string;
 
-  // this is actual Javascript for a module that provides template compilation.
-  // See how CompatAppAdapter does it for an example.
-  templateCompilerSource(config: EmberENV): string;
+  // Path to a build-time Resolver module to be used during template
+  // compilation.
+  templateResolver(): Resolver;
 
-  // this lets us figure out the babel config used by the app. You receive
-  // "finalRoot" which is where the app will be when we run babel against it,
-  // and you must make sure that the configuration will resolve correctly from
-  // that path.
-  //
-  // - `config` is the actual babel configuration object.
-  // - `syntheticPlugins` is a map from plugin names to Javascript source code
-  //    for babel plugins. This can make it possible to serialize babel
-  //    configs that would otherwise not be serializable.
-  babelConfig(finalRoot: string): { config: { plugins: (string | [string,any])[]}, syntheticPlugins: Map<string, string> };
+  // The template preprocessor plugins that are configured in the app.
+  htmlbarsPlugins(): TemplateCompilerPlugins;
+
+  // the app's preferred babel config. No need to worry about making it portable
+  // yet, we will do that for you.
+  babelConfig(): TransformOptions;
+
+  // lets you add imports to javascript modules. We need this to implement
+  // things like our addon compatibility rules for static components.
+  extraImports(): { absPath: string, target: string, runtimeName?: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -127,6 +137,40 @@ class ConcatenatedAsset {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
+class AppFiles {
+  readonly tests: ReadonlyArray<string>;
+  readonly components: ReadonlyArray<string>;
+  readonly helpers: ReadonlyArray<string>;
+  readonly otherAppFiles: ReadonlyArray<string>;
+
+  constructor(relativePaths: Set<string>) {
+    let tests: string[] = [];
+    let components: string[] = [];
+    let helpers: string[] = [];
+    let otherAppFiles: string[] = [];
+    for (let relativePath of relativePaths) {
+      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
+        tests.push(relativePath);
+        continue;
+      }
+      if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
+        if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components/')) {
+          components.push(relativePath);
+        } else if (relativePath.startsWith('helpers/')) {
+          helpers.push(relativePath);
+        } else {
+          otherAppFiles.push(relativePath);
+        }
+        continue;
+      }
+    }
+    this.tests = tests;
+    this.components = components;
+    this.helpers = helpers;
+    this.otherAppFiles = otherAppFiles;
+  }
+}
+
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
@@ -134,22 +178,9 @@ export class AppBuilder<TreeNames> {
   constructor(
     private root: string,
     private app: Package,
-    private adapter: AppAdapter<TreeNames>
+    private adapter: AppAdapter<TreeNames>,
+    private options: Required<Options>
   ) {}
-
-  @Memoize()
-  private get activeAddonDescendants(): Package[] {
-    // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage;
-
-    let result = this.app.findDescendants(shouldInclude);
-    if (this.adapter.extraDependencies) {
-      let extras = this.adapter.extraDependencies().filter(shouldInclude);
-      let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
-      result = [...result, ...extras, ...extraDescendants];
-    }
-    return result;
-  }
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
@@ -186,7 +217,7 @@ export class AppBuilder<TreeNames> {
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
     for (let addon of sortBy(
-      this.activeAddonDescendants,
+      this.adapter.activeAddonDescendants,
       this.scriptPriority.bind(this)
     )) {
       let implicitScripts = addon.meta[type];
@@ -201,32 +232,63 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get babelConfig() {
-    let rename = Object.assign(
-      {},
-      ...this.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
-    );
-    let babel = this.adapter.babelConfig(this.root);
+    let babel = this.adapter.babelConfig();
 
-    // this is our own plugin that patches up issues like non-explicit hbs
-    // extensions and packages importing their own names.
-    babel.config.plugins.push([require.resolve('./babel-plugin'), {
-      ownName: this.app.name,
-      basedir: this.root,
-      rename
+    if (!babel.plugins) {
+      babel.plugins = [];
+    }
+
+    // this is @embroider/macros configured for full stage3 resolution
+    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+
+    // this is our built-in support for the inline hbs macro
+    babel.plugins.push([join(__dirname, 'babel-plugin-inline-hbs.js'), {
+      templateCompiler: {
+        _parallelBabel: {
+          requireFile: join(this.root, '_template_compiler_.js')
+        }
+      },
+      stage: 3
     }]);
-    return babel;
+
+    babel.plugins.push(this.adjustImportsPlugin());
+
+    return new PortableBabelConfig(babel, { basedir: this.root });
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private adjustImportsPlugin(): PluginItem {
+    let rename = Object.assign(
+      {},
+      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
+    );
+      let adjustOptions: AdjustImportsOptions = {
+      ownName: this.app.name,
+      basedir: this.root,
+      rename,
+      extraImports: this.adapter.extraImports(),
+    };
+    return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
+  }
+
+  private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
     let appJS = prepared.get(`assets/${this.app.name}.js`);
     if (!appJS) {
       appJS = this.javascriptEntrypoint(this.app.name, appFiles);
       prepared.set(appJS.relativePath, appJS);
     }
+    return appJS;
+  }
 
+  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     let html = asset.html;
 
-    html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
+    // our tests entrypoint already includes a correct module dependency on the
+    // app, so we only insert the app when we're not inserting tests
+    if (!asset.fileAsset.includeTests) {
+      let appJS = this.appJSAsset(appFiles, prepared);
+      html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
+    }
+
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     let implicitScripts = this.impliedAssets("implicit-scripts", emberENV);
@@ -246,7 +308,7 @@ export class AppBuilder<TreeNames> {
     if (asset.fileAsset.includeTests) {
       let testJS = prepared.get(`assets/test.js`);
       if (!testJS) {
-        testJS = this.testJSEntrypoint(appFiles);
+        testJS = this.testJSEntrypoint(appFiles, prepared);
         prepared.set(testJS.relativePath, testJS);
       }
       html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
@@ -269,15 +331,15 @@ export class AppBuilder<TreeNames> {
 
   private appDiffer: AppDiffer | undefined;
 
-  private updateAppJS(appJSPath: string): Set<string> {
+  private updateAppJS(appJSPath: string): AppFiles {
     if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.activeAddonDescendants);
+      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.activeAddonDescendants);
     }
     this.appDiffer.update();
-    return this.appDiffer.files;
+    return new AppFiles(this.appDiffer.files);
   }
 
-  private prepareAsset(asset: Asset, appFiles: Set<string>, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -295,7 +357,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: Set<string>, emberENV: EmberENV): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared, emberENV);
@@ -367,7 +429,7 @@ export class AppBuilder<TreeNames> {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: Set<string>, emberENV: EmberENV) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV) {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -403,7 +465,7 @@ export class AppBuilder<TreeNames> {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.activeAddonDescendants) {
+    for (let pkg of this.adapter.activeAddonDescendants) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'])) {
           assets.push({
@@ -459,9 +521,9 @@ export class AppBuilder<TreeNames> {
   }
 
   private combineExternals() {
-    let allAddonNames = new Set(this.activeAddonDescendants.map(d => d.name));
+    let allAddonNames = new Set(this.adapter.activeAddonDescendants.map(d => d.name));
     let externals = new Set();
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       if (!addon.meta.externals) {
         continue;
       }
@@ -484,48 +546,59 @@ export class AppBuilder<TreeNames> {
     return [...externals.values()];
   }
 
-  // we could just use ember-source/dist/ember-template-compiler directly, but
-  // apparently ember-cli adds some extra steps on top (like stripping BOM), so
-  // we follow along and do those too.
   private addTemplateCompiler(config: EmberENV) {
+
+    let plugins = this.adapter.htmlbarsPlugins();
+    if (!plugins.ast) {
+      plugins.ast = [];
+    }
+    for (let macroPlugin of MacrosConfig.shared().astPlugins()) {
+      plugins.ast.push(macroPlugin);
+    }
+
+    let source = new TemplateCompiler({
+      plugins,
+      compilerPath: this.adapter.templateCompilerPath(),
+      resolver: this.adapter.templateResolver(),
+      EmberENV: config,
+    }).serialize(this.root);
+
     writeFileSync(
       join(this.root, "_template_compiler_.js"),
-      this.adapter.templateCompilerSource(config),
+      source,
       "utf8"
     );
   }
 
   private addBabelConfig() {
-    let { config, syntheticPlugins } = this.babelConfig;
-
-    for (let [name, source] of syntheticPlugins) {
-      let fullName = join(this.root, name);
-      writeFileSync(fullName, source, 'utf8');
-      let index = config.plugins.indexOf(name);
-      config.plugins[index] = fullName;
+    if (!this.babelConfig.isParallelSafe) {
+      warn('Your build is slower because some babel plugins are non-serializable');
     }
-
     writeFileSync(
       join(this.root, "_babel_config_.js"),
-      `
-    module.exports = ${JSON.stringify(config, null, 2)};
-    `,
+      this.babelConfig.serialize(),
       "utf8"
     );
   }
 
-  private javascriptEntrypoint(name: string, appFiles: Set<string>): InternalAsset {
+  private javascriptEntrypoint(name: string, appFiles: AppFiles): InternalAsset {
     let modulePrefix = this.adapter.modulePrefix();
-    // for the app tree, we take everything
-    let lazyModules = [...appFiles].map(relativePath => {
-      if (!relativePath.startsWith('tests/') && (relativePath.endsWith('.js') || relativePath.endsWith('.hbs'))) {
-        let noJS = relativePath.replace(/\.js$/, "");
-        let noHBS = noJS.replace(/\.hbs$/, "");
-        return {
-          runtime: `${modulePrefix}/${noHBS}`,
-          buildtime: `../${noJS}`,
-        };
-      }
+
+    let requiredAppFiles = [appFiles.otherAppFiles];
+    if (!this.options.staticComponents) {
+      requiredAppFiles.push(appFiles.components);
+    }
+    if(!this.options.staticHelpers) {
+      requiredAppFiles.push(appFiles.helpers);
+    }
+
+    let lazyModules = flatten(requiredAppFiles).map(relativePath => {
+      let noJS = relativePath.replace(/\.js$/, "");
+      let noHBS = noJS.replace(/\.hbs$/, "");
+      return {
+        runtime: `${modulePrefix}/${noHBS}`,
+        buildtime: `../${noJS}`,
+      };
     }).filter(Boolean) as { runtime: string, buildtime: string }[];
 
     // for the src tree, we can limit ourselves to only known resolvable
@@ -553,12 +626,18 @@ export class AppBuilder<TreeNames> {
     };
   }
 
-  private testJSEntrypoint(appFiles: Set<string>): InternalAsset {
-    let testModules = [...appFiles].map(relativePath => {
-      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
-        return `../${relativePath}`;
-      }
+  private testJSEntrypoint(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
+    const myName = 'assets/test.js';
+    let testModules = appFiles.tests.map(relativePath => {
+      return `../${relativePath}`;
     }).filter(Boolean) as string[];
+
+    // tests necessarily also include the app. This is where we account for
+    // that. The classic solution was to always include the app's separate
+    // script tag in the tests HTML, but that isn't as easy for final stage
+    // packagers to understand. It's better to express it here as a direct
+    // module dependency.
+    testModules.unshift('./' + relative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
 
     let lazyModules: { runtime: string, buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -574,12 +653,12 @@ export class AppBuilder<TreeNames> {
     return {
       kind: 'in-memory',
       source,
-      relativePath: 'assets/test.js'
+      relativePath: myName
     };
   }
 
   private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
-    for (let addon of this.activeAddonDescendants) {
+    for (let addon of this.adapter.activeAddonDescendants) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         for (let name of implicitModules) {

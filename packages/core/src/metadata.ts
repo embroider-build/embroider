@@ -27,4 +27,5 @@ export interface AddonMeta {
   "implicit-test-modules"?: string[];
   "renamed-modules"?: { [fromName: string]: string };
   "app-js"?: filename;
+  "auto-upgraded"?: true;
 }

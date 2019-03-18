@@ -1,0 +1,7 @@
+{{! this uses a component from ember-paper }}
+{{#paper-button raised=true primary=true}}Primary{{/paper-button}}
+
+{{! then this lists all the components loaded into our app.}}
+{{#each (loaded-components) as |name|}}
+  <div data-component-name={{name}}>{{name}}</div>
+{{/each}}

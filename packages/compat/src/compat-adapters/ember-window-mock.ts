@@ -1,5 +1,5 @@
 import V1Addon from "../v1-addon";
-import { todo } from "../messages";
+import { todo } from "@embroider/core/src/messages";
 
 export default class extends V1Addon {
   /*

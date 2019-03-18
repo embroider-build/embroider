@@ -1,0 +1,20 @@
+---
+language: node_js
+node_js:
+  - "10"
+
+sudo: false
+
+dist: trusty
+
+cache:
+  yarn: true
+
+install:
+  - yarn install
+  - yarn compile
+
+script:
+  - yarn lint
+  - yarn test
+

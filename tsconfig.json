@@ -1,5 +1,5 @@
 {
-  "include": ["./packages/*/src/**/*.ts", "./packages/*/tests/**/*.ts"],
+  "include": ["./packages/*/src/**/*.ts", "./packages/*/tests/**/*.ts", "./test-packages/support/**/*.ts"],
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",
@@ -16,6 +16,9 @@
   "exclude": [
     "node_modules",
     "packages/*/tmp",
-    "packages/*/dist"
+    "packages/*/dist",
+    "test-packages/*/tmp",
+    "test-packages/*/dist",
+    "tmp",
   ]
 }

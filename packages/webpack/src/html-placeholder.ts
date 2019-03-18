@@ -4,7 +4,7 @@ export default class Placeholder {
 
   // remove the target Element from the DOM, and track where it was so we can
   // update that location later.
-  constructor(target: HTMLElement) {
+  constructor(private target: HTMLElement) {
     if (!target.ownerDocument || !target.parentElement) {
       throw new Error('can only construct a placeholder for an element that is in DOM');
     }
@@ -19,6 +19,11 @@ export default class Placeholder {
 
     // Type cast is justified because we know we already inserted the node.
     this.end = endNode as InDOMNode;
+  }
+
+  reset() {
+    this.clear();
+    this.insert(this.target);
   }
 
   clear() {

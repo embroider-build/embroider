@@ -1,6 +1,6 @@
 import 'qunit';
 import MultiTreeDiff from '../src/multi-tree-diff';
-import { Entry, Operation } from 'fs-tree-diff';
+import { Entry, Patch } from 'fs-tree-diff';
 import { join } from 'path';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -187,9 +187,11 @@ class MockTree {
 }
 
 function dirty(entry: Entry) {
-  entry.mtime += 1000;
+  if (entry.mtime) {
+    entry.mtime = (+entry.mtime) + 1000;
+  }
 }
 
-function fileOps(operations: Operation[]) {
+function fileOps(operations: Patch) {
   return operations.map(o => [o[0], o[1]]);
 }

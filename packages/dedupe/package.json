@@ -1,6 +1,6 @@
 {
   "name": "@embroider/dedupe",
-  "version": "0.0.4",
+  "version": "0.0.11",
   "description": "Ember Addon deduplicator tool",
   "main": "src/index.js",
   "author": "Edward Faulkner",
@@ -20,7 +20,7 @@
     "typescript": "^3.1.6"
   },
   "dependencies": {
-    "@embroider/core": "0.0.4",
+    "@embroider/core": "0.0.11",
     "assert-never": "^1.1.0",
     "fs-extra": "^7.0.1",
     "semver": "^5.6.0",

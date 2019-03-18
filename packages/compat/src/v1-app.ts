@@ -421,10 +421,16 @@ export default class V1App implements V1Package {
   }
 
   private get testsTree(): Tree | undefined {
-    if (this.app.trees.tests) {
+    if (this.shouldBuildTests && this.app.trees.tests) {
       return this.preprocessJS(new Funnel(this.app.trees.tests, {
         destDir: 'tests'
       }));
+    }
+  }
+
+  private get lintTree(): Tree | undefined {
+    if (this.shouldBuildTests) {
+      return this.app.getLintTests();
     }
   }
 
@@ -444,13 +450,15 @@ export default class V1App implements V1Package {
   processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
-    let lintTree = this.app.getLintTests();
+    let lintTree = this.lintTree;
     let importParsers = [
       new ImportParser(appTree),
-      new ImportParser(lintTree),
     ];
     if (testsTree) {
       importParsers.push(new ImportParser(testsTree));
+    }
+    if (lintTree) {
+      importParsers.push(new ImportParser(lintTree));
     }
     let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(
@@ -464,7 +472,9 @@ export default class V1App implements V1Package {
     if (testsTree) {
       trees.push(testsTree);
     }
-    trees.push(lintTree);
+    if (lintTree) {
+      trees.push(lintTree);
+    }
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
       analyzer

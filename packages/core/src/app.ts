@@ -411,6 +411,10 @@ export class AppBuilder<TreeNames> {
       mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
       baseDir: this.root,
     });
+    if (process.env.EMBROIDER_CONCAT_STATS) {
+      let MeasureConcat = (await import('./measure-concat')).default;
+      concat = new MeasureConcat(asset.relativePath, concat, this.root);
+    }
     for (let source of asset.sources) {
       switch (source.kind) {
         case 'on-disk':

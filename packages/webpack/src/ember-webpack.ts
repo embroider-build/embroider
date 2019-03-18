@@ -309,10 +309,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     if (srcURL.default.existsIn(inCode)) {
       fileRelativeSourceMapURL = srcURL.default.getFrom(inCode)!;
       appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
-      terserOpts.sourceMap = {
-        content: readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL)),
-        url: fileRelativeSourceMapURL
-      };
+      let content;
+      try {
+        content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
+      } catch(err) {
+        // the script refers to a sourcemap that doesn't exist, so we just leave
+        // the map out.
+      }
+      if (content) {
+        terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
+      }
     }
     let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
     writeFileSync(join(this.outputPath, script), outCode);

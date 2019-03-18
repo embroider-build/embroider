@@ -44,6 +44,14 @@ export function makeResolverTransform(resolver: Resolver) {
             if (resolution.type === 'component' && node.program.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
               scopeStack.yieldingComponents(resolution.yieldsComponents);
             }
+            if (resolution.type === 'component') {
+              for (let name of resolution.argumentsAreComponents) {
+                let pair = node.hash.pairs.find((pair: any) => pair.key === name);
+                if (pair) {
+                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, env.moduleName, scopeStack);
+                }
+              }
+            }
           }
         },
         SubExpression(node: any) {

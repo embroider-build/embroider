@@ -704,6 +704,36 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  test('acceptsComponentArguments on mustache block with valid literal', function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title']
+          }
+        }
+      }
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-title.hbs');
+
+    assert.deepEqual(
+      findDependencies('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`),
+      [
+        {
+          runtimeName: 'the-app/templates/components/fancy-title',
+          path: './components/fancy-title.hbs',
+        },
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        }
+      ]
+    );
+  });
+
   test('acceptsComponentArguments argument name may include optional @', function(assert) {
     let packageRules = [
       {

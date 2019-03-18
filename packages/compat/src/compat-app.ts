@@ -201,7 +201,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   private activeRules() {
     return activePackageRules(
       this.options.packageRules.concat(defaultAddonPackageRules()),
-      this.activeAddonDescendants
+      [this.appPackage, ...this.activeAddonDescendants]
     );
   }
 

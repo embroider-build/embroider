@@ -1,5 +1,6 @@
 import { Package } from "@embroider/core";
 import { satisfies } from "semver";
+import CompatResolver from "./resolver";
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -13,9 +14,15 @@ export interface PackageRules {
     [key: string]: ComponentRules;
   };
 
-  modules?: {
+  addonModules?: {
     // `filename` is relative to your package root, and it assumes v2 package
-    // format. Like "./templates/components/foo.hbs".
+    // format. Like "templates/components/foo.hbs".
+    [filename: string]: ModuleRules;
+  };
+
+  appModules?: {
+    // `filename` is relative to the app's root, and it assumes v2 package
+    // format. Like "templates/components/foo.hbs".
     [filename: string]: ModuleRules;
   };
 }
@@ -155,6 +162,24 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
   let output = [];
   for (let [rule, roots] of rootsPerRule) {
     output.push(Object.assign({ roots }, rule ));
+  }
+  return output;
+}
+
+export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
+  let output: { absPath: string, target: string }[] = [];
+  if (moduleRules.dependsOnModules) {
+    for (let target of moduleRules.dependsOnModules) {
+      output.push({ absPath, target });
+    }
+  }
+  if (moduleRules.dependsOnComponents) {
+    for (let snippet of moduleRules.dependsOnComponents) {
+      let found = resolver.resolveComponentSnippet(snippet, moduleRules);
+      for (let { absPath: target } of found.modules) {
+        output.push({ absPath, target });
+      }
+    }
   }
   return output;
 }

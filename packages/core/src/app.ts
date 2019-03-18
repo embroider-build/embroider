@@ -17,11 +17,12 @@ import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
-import { TransformOptions } from '@babel/core';
+import { TransformOptions, PluginItem } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
+import { Options as AdjustImportsOptions }  from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -81,6 +82,10 @@ export interface AppAdapter<TreeNames> {
   // the app's preferred babel config. No need to worry about making it portable
   // yet, we will do that for you.
   babelConfig(): TransformOptions;
+
+  // lets you add imports to javascript modules. We need this to implement
+  // things like our addon compatibility rules for static components.
+  extraImports(): { absPath: string, target: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -227,10 +232,6 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get babelConfig() {
-    let rename = Object.assign(
-      {},
-      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
-    );
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -250,14 +251,23 @@ export class AppBuilder<TreeNames> {
       stage: 3
     }]);
 
-    // this is our own plugin that patches up issues like non-explicit hbs
-    // extensions and packages importing their own names.
-    babel.plugins.push([require.resolve('./babel-plugin-adjust-imports'), {
+    babel.plugins.push(this.adjustImportsPlugin());
+
+    return new PortableBabelConfig(babel, { basedir: this.root });
+  }
+
+  private adjustImportsPlugin(): PluginItem {
+    let rename = Object.assign(
+      {},
+      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
+    );
+      let adjustOptions: AdjustImportsOptions = {
       ownName: this.app.name,
       basedir: this.root,
-      rename
-    }]);
-    return new PortableBabelConfig(babel, { basedir: this.root });
+      rename,
+      extraImports: this.adapter.extraImports(),
+    };
+    return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {

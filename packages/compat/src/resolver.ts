@@ -1,5 +1,5 @@
 import { Resolver, warn, TemplateCompiler } from "@embroider/core";
-import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule, ActivePackageRules } from './dependency-rules';
+import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule, ActivePackageRules, ModuleRules } from './dependency-rules';
 import Options from './options';
 import { join, relative, dirname } from "path";
 import { pathExistsSync } from "fs-extra";
@@ -141,10 +141,10 @@ export default class CompatResolver implements Resolver {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
           if (componentRules.safeToIgnore) {
-            ignoredComponents.push(this.standardDasherize(snippet, this.templateCompiler));
+            ignoredComponents.push(this.standardDasherize(snippet));
             continue;
           }
-          let resolvedDep = this.resolveComponentSnippet(snippet, rule, this.templateCompiler);
+          let resolvedDep = this.resolveComponentSnippet(snippet, rule).modules[0];
           let processedRules = preprocessComponentRule(componentRules);
 
           // we always register our rules on the component's own first resolved
@@ -170,17 +170,23 @@ export default class CompatResolver implements Resolver {
     return { components, ignoredComponents };
   }
 
-  private resolveComponentSnippet(snippet: string, rule: PackageRules, templateCompiler: TemplateCompiler): ResolvedDep {
-    let name = this.standardDasherize(snippet, templateCompiler);
+  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules): ResolutionResult & { type: "component" } {
+    if(!this.templateCompiler) {
+      throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
+    }
+    let name = this.standardDasherize(snippet);
     let found = this.tryComponent(name, 'rule-snippet.hbs', false);
     if (found && found.type === 'component') {
-      return found.modules[0];
+      return found;
     }
-    throw new Error(`unable to locate component ${snippet} referred to in packageRule ${JSON.stringify(rule, null, 2)}`);
+    throw new Error(`unable to locate component ${snippet} referred to in rule ${JSON.stringify(rule, null, 2)}`);
   }
 
-  private standardDasherize(snippet: string, templateCompiler: TemplateCompiler): string {
-    let ast: any = templateCompiler.parse('snippet.hbs', snippet);
+  private standardDasherize(snippet: string): string {
+    if(!this.templateCompiler) {
+      throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
+    }
+    let ast: any = this.templateCompiler.parse('snippet.hbs', snippet);
     if (ast.type === 'Program' && ast.body.length > 0) {
       let first = ast.body[0];
       if (first.type === 'MustacheStatement' && first.path.type === 'PathExpression') {

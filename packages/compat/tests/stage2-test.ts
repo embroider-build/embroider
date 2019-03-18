@@ -12,6 +12,7 @@ import { installFileAssertions, BoundFileAssert } from './file-assertions';
 import { join } from 'path';
 import { TemplateCompiler, throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
+import { TransformOptions, transform } from '@babel/core';
 
 QUnit.module('stage2 build', function() {
   QUnit.module('static with rules', function(origHooks) {
@@ -87,6 +88,17 @@ QUnit.module('stage2 build', function() {
                 addonPath: 'templates/components/hello-world.hbs'
               }
             }
+          },
+          addonModules: {
+            'components/hello-world.js': {
+              dependsOnModules: [ './synthetic-import-1' ],
+              dependsOnComponents: ['{{second-choice}}'],
+            }
+          },
+          appModules: {
+            'components/hello-world.js': {
+              dependsOnModules: [ './synthetic-import-2' ]
+            }
           }
         }]
       };
@@ -98,6 +110,9 @@ QUnit.module('stage2 build', function() {
         if (fileAssert.path.endsWith('.hbs')) {
           let templateCompiler = require(join(fileAssert.basePath, '_template_compiler_')) as TemplateCompiler;
           return templateCompiler.compile(fileAssert.fullPath, contents);
+        } else if (fileAssert.path.endsWith('.js')) {
+          let babelConfig = require(join(fileAssert.basePath, '_babel_config_')).config as TransformOptions;
+          return transform(contents, Object.assign({ filename: fileAssert.fullPath}, babelConfig))!.code!;
         } else {
           return contents;
         }
@@ -132,6 +147,18 @@ QUnit.module('stage2 build', function() {
       // this is a pretty trivial test, but it's needed to force the
       // transpilation to happen because transform() is lazy.
       assertFile.matches(/dynamicComponentName/);
+    });
+
+    test('addon/hello-world.js', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/components/hello-world.js').transform(transpile);
+      assertFile.matches(/import ["']\.\/synthetic-import-1/);
+      let pattern =`import ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
+      assertFile.matches(new RegExp(pattern));
+    });
+
+    test('app/hello-world.js', function(assert) {
+      let assertFile = assert.file('./components/hello-world.js').transform(transpile);
+      assertFile.matches(/import ["']\.\/synthetic-import-2/);
     });
 
   });

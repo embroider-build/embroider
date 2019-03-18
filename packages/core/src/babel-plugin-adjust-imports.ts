@@ -1,5 +1,7 @@
 import packageName from './package-name';
 import { join, relative, dirname } from 'path';
+import { NodePath } from '@babel/traverse';
+import { Program, importDeclaration, stringLiteral } from '@babel/types';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -9,9 +11,15 @@ interface State {
     basedir?: string;
     rename?: {
       [fromName: string]: string;
-    }
+    },
+    extraImports?: {
+      absPath: string,
+      target: string,
+    }[]
   };
 }
+
+export type Options = State["opts"];
 
 function adjustSpecifier(specifier: string, sourceFileName: string, opts: State["opts"]) {
   let name = packageName(specifier);
@@ -46,9 +54,16 @@ export default function main({ types: t} : { types: any }){
   return {
     visitor: {
       Program: {
-        enter: function(_: any, state: State) {
+        enter: function(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
+          if (state.opts.extraImports) {
+            for (let { absPath, target } of state.opts.extraImports) {
+              if (absPath === path.hub.file.opts.filename) {
+                path.node.body.push(importDeclaration([], stringLiteral(target)));
+              }
+            }
+          }
         },
         exit: function(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());

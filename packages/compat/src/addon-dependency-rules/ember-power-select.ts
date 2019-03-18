@@ -2,7 +2,7 @@ import { PackageRules } from "..";
 
 let rules: PackageRules = {
   package: "ember-power-select",
-  modules: {
+  addonModules: {
     "./components/power-select.js": {
       dependsOnComponents: [
         "{{power-select/before-options}}",

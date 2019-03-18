@@ -2,8 +2,8 @@ import { PackageRules } from "..";
 
 let rules: PackageRules = {
   package: 'ember-basic-dropdown',
-  modules: {
-    './components/basic-dropdown.js': {
+  addonModules: {
+    'components/basic-dropdown.js': {
       dependsOnComponents: [
         '{{basic-dropdown/trigger}}',
         '{{basic-dropdown/content}',

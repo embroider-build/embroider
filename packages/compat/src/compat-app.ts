@@ -12,7 +12,8 @@ import {
   EmberENV,
   Package,
   TemplateCompilerPlugins,
-  Resolver
+  Resolver,
+  TemplateCompiler
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -24,9 +25,11 @@ import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import CompatResolver from './resolver';
-import { activePackageRules, PackageRules } from './dependency-rules';
+import { activePackageRules, PackageRules, expandModuleRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
+import flatten from 'lodash/flatten';
+import { sync as resolveSync } from 'resolve';
 
 interface TreeNames {
   appJS: Tree;
@@ -202,6 +205,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     );
   }
 
+  @Memoize()
   templateResolver(): Resolver {
     return new CompatResolver(
       this.root,
@@ -209,6 +213,49 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       this.options,
       this.activeRules(),
     );
+  }
+
+  // unlink `templateResolver`, this one brings its own simple TemplateCompiler
+  // along so it's capable of parsing component snippets in people's module
+  // rules.
+  @Memoize()
+  private internalTemplateResolver(): CompatResolver {
+    let resolver = new CompatResolver(
+      this.root,
+      this.modulePrefix(),
+      this.options,
+      this.activeRules(),
+    );
+    // It's ok that this isn't a fully configured template compiler. We're only
+    // using it to parse component snippets out of rules.
+    resolver.astTransformer(new TemplateCompiler({
+      compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
+      EmberENV: {},
+      plugins: {},
+    }));
+    return resolver;
+  }
+
+  extraImports() {
+    let output: { absPath: string, target: string }[][] = [];
+
+    for (let rule of this.activeRules()) {
+      if (rule.addonModules) {
+        for(let [filename, moduleRules] of Object.entries(rule.addonModules)) {
+          for (let root of rule.roots) {
+            let absPath = join(root, filename);
+            output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
+          }
+        }
+      }
+      if (rule.appModules) {
+        for(let [filename, moduleRules] of Object.entries(rule.appModules)) {
+          let absPath = join(this.root, filename);
+          output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
+        }
+      }
+    }
+    return flatten(output);
   }
 
   htmlbarsPlugins(): TemplateCompilerPlugins {

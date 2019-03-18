@@ -139,10 +139,6 @@ export default class V1Addon implements V1Package {
     return this.addonInstance.pkg;
   }
 
-  get rewrittenPackageJSON() {
-    return this.makeV2Trees().packageJSONRewriter.lastPackageJSON;
-  }
-
   @Memoize()
   get root(): string {
     // addonInstance.root gets modified by a customized "main" or
@@ -275,10 +271,6 @@ export default class V1Addon implements V1Package {
     } ]);
   }
 
-  protected get v2Trees() {
-    return this.makeV2Trees().trees;
-  }
-
   get v2Tree() {
     return mergeTrees(this.v2Trees);
   }
@@ -295,7 +287,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private makeV2Trees() {
+  protected get v2Trees() {
     let { trees, importParsers } = this.build();
 
     // Compat Adapters are allowed to override the packageJSON getter. So we
@@ -306,7 +298,7 @@ export default class V1Addon implements V1Package {
     let analyzer = new DependencyAnalyzer(importParsers, pkg );
     let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
     trees.push(packageJSONRewriter);
-    return { trees, packageJSONRewriter };
+    return trees;
   }
 
   protected invokeOriginalTreeFor(name: string, { neuterPreprocessors } = { neuterPreprocessors: false }) {

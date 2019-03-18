@@ -6,7 +6,7 @@ let rules: PackageRules = {
     'components/basic-dropdown.js': {
       dependsOnComponents: [
         '{{basic-dropdown/trigger}}',
-        '{{basic-dropdown/content}',
+        '{{basic-dropdown/content}}',
       ]
     },
   },

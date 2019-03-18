@@ -141,7 +141,7 @@ export default class CompatResolver implements Resolver {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
           if (componentRules.safeToIgnore) {
-            ignoredComponents.push(this.standardDasherize(snippet));
+            ignoredComponents.push(this.standardDasherize(snippet, rule));
             continue;
           }
           let resolvedDep = this.resolveComponentSnippet(snippet, rule).modules[0];
@@ -174,7 +174,7 @@ export default class CompatResolver implements Resolver {
     if(!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
-    let name = this.standardDasherize(snippet);
+    let name = this.standardDasherize(snippet, rule);
     let found = this.tryComponent(name, 'rule-snippet.hbs', false);
     if (found && found.type === 'component') {
       return found;
@@ -182,11 +182,16 @@ export default class CompatResolver implements Resolver {
     throw new Error(`unable to locate component ${snippet} referred to in rule ${JSON.stringify(rule, null, 2)}`);
   }
 
-  private standardDasherize(snippet: string): string {
+  private standardDasherize(snippet: string, rule: PackageRules | ModuleRules): string {
     if(!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
-    let ast: any = this.templateCompiler.parse('snippet.hbs', snippet);
+    let ast: any;
+    try {
+      ast = this.templateCompiler.parse('snippet.hbs', snippet);
+    } catch (err) {
+      throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);
+    }
     if (ast.type === 'Program' && ast.body.length > 0) {
       let first = ast.body[0];
       if (first.type === 'MustacheStatement' && first.path.type === 'PathExpression') {

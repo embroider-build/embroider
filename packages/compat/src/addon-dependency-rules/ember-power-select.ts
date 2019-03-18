@@ -45,6 +45,32 @@ let rules: PackageRules = {
         'triggerComponent',
       ],
     },
+    "{{power-select/trigger}}": {
+      layout: {
+        addonPath: "templates/components/power-select/trigger.hbs"
+      },
+      acceptsComponentArguments: [
+        'selectedItemComponent',
+        'placeholderComponent',
+      ]
+    },
+    "{{power-select/options}}": {
+      layout: {
+        addonPath: "templates/components/power-select/options.hbs"
+      },
+      acceptsComponentArguments: [
+        'groupComponent',
+        'optionsComponent',
+      ]
+    },
+    "{{power-select-multiple/trigger}}": {
+      layout: {
+        addonPath: "templates/components/power-select-multiple/trigger.hbs"
+      },
+      acceptsComponentArguments: [
+        'selectedItemComponent',
+      ]
+    }
   },
 };
 

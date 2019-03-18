@@ -20,6 +20,23 @@ module.exports = function(defaults) {
     staticAddonTestSupportTrees: true,
     staticAddonTrees: true,
     staticComponents: true,
-    staticHelpers: true
+    staticHelpers: true,
+    packageRules: [
+      {
+        package: 'static-app',
+        appModules: {
+          'components/fancy-box.js': {
+            dependsOnComponents: ['{{default-title}}']
+          }
+        },
+        components: {
+          '{{fancy-box}}': {
+            acceptsComponentArguments: [
+              { name: 'titleComponent', becomes: 'this.titleComponentWithDefault' }
+            ]
+          }
+        }
+      }
+    ]
   });
 };

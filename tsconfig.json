@@ -19,6 +19,6 @@
     "packages/*/dist",
     "test-packages/*/tmp",
     "test-packages/*/dist",
-    "tmp",
+    "tmp"
   ]
 }

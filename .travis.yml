@@ -16,5 +16,6 @@ install:
 
 script:
   - yarn lint
+  - yarn node-test
   - yarn test
 

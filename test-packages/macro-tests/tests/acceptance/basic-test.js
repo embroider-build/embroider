@@ -16,4 +16,18 @@ module('Acceptance | smoke tests', function(hooks) {
     assert.equal(currentURL(), '/');
     assert.equal(this.element.querySelector('[data-test-count]').textContent.trim(), '42');
   });
+
+  test('Addon classic component renders', async function(assert) {
+    await visit('/');
+    assert.equal(currentURL(), '/');
+
+    assert.dom('[data-test-classic-component]').isVisible({count: 1});
+  });
+
+  test('Addon pod component renders', async function(assert) {
+    await visit('/');
+    assert.equal(currentURL(), '/');
+
+    assert.dom('[data-test-pod-component]').isVisible({count: 1});
+  });
 });

@@ -24,7 +24,6 @@
     "@types/qunit": "^2.5.3",
     "@types/resolve": "^0.0.8",
     "qunit": "^2.8.0",
-    "tslint": "^5.11.0",
     "typescript": "~3.2.0"
   },
   "dependencies": {

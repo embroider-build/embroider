@@ -69,6 +69,9 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
+  // The public URL at which your app will be served.
+  rootURL(): string;
+
   // The path to ember's template compiler source
   templateCompilerPath(): string;
 
@@ -511,8 +514,9 @@ export class AppBuilder<TreeNames> {
       version: 2,
       externals,
       assets: assetPaths,
-      ["template-compiler"]: "_template_compiler_.js",
-      ["babel-config"]: "_babel_config_.js",
+      "template-compiler": "_template_compiler_.js",
+      "babel-config": "_babel_config_.js",
+      "root-url": this.adapter.rootURL(),
     };
 
     let pkg = cloneDeep(this.app.packageJSON);

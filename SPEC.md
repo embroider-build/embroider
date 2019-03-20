@@ -754,6 +754,15 @@ And then in an app that depends on `ember-lodash`, our Babel plugin will rewrite
 
 This is a backward compatibility feature and you should stop doing this. Exposing a module under some other package's name is Not Nice.
 
+## root-url
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+The public URL at which the root of the app will be served. Defaults to '/' when not provided.
+
 ## template-compiler
 
 ```

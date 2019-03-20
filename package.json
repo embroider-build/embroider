@@ -7,12 +7,14 @@
   ],
   "scripts": {
     "compile": "tsc",
-    "lint": "tslint --project .",
+    "lint": "eslint . --ext=js,ts --cache && tslint --project .",
     "clean": "git clean -x -f",
     "node-test": "qunit packages/*/tests",
     "test": "jest"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "^1.5.0",
+    "eslint": "^5.15.3",
     "execa": "^1.0.0",
     "jest": "^24.5.0",
     "tslint": "^5.11.0"

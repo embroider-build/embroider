@@ -8,7 +8,7 @@ declare module 'ember-cli-htmlbars' {
     name?: string;
     plugins?: {
       [type: string]: unknown[]
-    }
+    };
   }
 
   export default class HTMLBarsTransform extends Plugin {
@@ -17,6 +17,5 @@ declare module 'ember-cli-htmlbars' {
     protected cacheKeyProcessString(contents: string, relativePath: string): string;
     protected targetExtension: string | null;
   }
-
 
 }

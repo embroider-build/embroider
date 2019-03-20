@@ -11,7 +11,6 @@ declare module 'broccoli-plugin' {
     needsCache?: boolean;
   }
 
-
   export default abstract class Plugin implements Tree {
     constructor(inputTrees: Tree[], options: Options)
     inputPaths: string[];

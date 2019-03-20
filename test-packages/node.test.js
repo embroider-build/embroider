@@ -7,11 +7,7 @@ const TESTS = [
 for (let [testName, command, options] of TESTS) {
   test(testName, async () => {
     jest.setTimeout(60000);
-
-    try {
-      await execa('yarn', [command], options);
-    } catch (error) {
-      throw error;
-    }
+    await execa('yarn', [command], options);
   });
 }
+

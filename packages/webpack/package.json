@@ -17,7 +17,7 @@
     "@types/node": "^10.5.2",
     "@types/webpack": "^4.4.17",
     "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "typescript": "~3.2.0"
   },
   "dependencies": {
     "babel-core": "^6.26.3",

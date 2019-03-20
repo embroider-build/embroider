@@ -471,7 +471,7 @@ export class AppBuilder<TreeNames> {
     let assets: Asset[] = [];
     for (let pkg of this.adapter.activeAddonDescendants) {
       if (pkg.meta['public-assets']) {
-        for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'])) {
+        for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
           assets.push({
             kind: 'on-disk',
             sourcePath: join(pkg.root, filename),

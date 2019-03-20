@@ -1,13 +1,18 @@
 const execa = require('execa');
 
-const TESTS = [
-  ['macro-addon', 'test', { cwd: `${__dirname}/macro-sample-addon` }],
-  ['macro-addon-classic', 'test', { cwd: `${__dirname}/macro-sample-addon`, env: { CLASSIC: 'true' } }],
-];
+test('macro-addon', async () => {
+  jest.setTimeout(60000);
 
-for (let [testName, command, options] of TESTS) {
-  test(testName, async () => {
-    jest.setTimeout(60000);
-    await execa('yarn', [command], options);
+  await execa('yarn', ['test'], {
+    cwd: `${__dirname}/macro-sample-addon`,
   });
-}
+});
+
+test('macro-addon-classic', async () => {
+  jest.setTimeout(60000);
+
+  await execa('yarn', ['test'], {
+    cwd: `${__dirname}/macro-sample-addon`,
+    env: { CLASSIC: 'true' },
+  });
+});

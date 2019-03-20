@@ -10,5 +10,6 @@ module.exports = {
   },
   plugins: ['@typescript-eslint'],
   rules: {
+    '@typescript-eslint/indent': ['error', 2],
   },
 };

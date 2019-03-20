@@ -66,20 +66,20 @@ export default class ImportParser extends Plugin {
       let outputPath = join(this.outputPath, relativePath);
 
       switch (operation) {
-      case 'unlink':
-        if (this.extensions.includes(extname(relativePath))) {
-          this.removeImports(relativePath);
-        }
-        unlinkSync(outputPath);
-        break;
-      case 'rmdir' :
-        rmdirSync(outputPath);
-        break;
-      case 'mkdir' :
-        mkdirSync(outputPath);
-        break;
-      case 'create':
-      case 'change':
+        case 'unlink':
+          if (this.extensions.includes(extname(relativePath))) {
+            this.removeImports(relativePath);
+          }
+          unlinkSync(outputPath);
+          break;
+        case 'rmdir' :
+          rmdirSync(outputPath);
+          break;
+        case 'mkdir' :
+          mkdirSync(outputPath);
+          break;
+        case 'create':
+        case 'change':
         {
           let absoluteInputPath  = join(this.inputPaths[0], relativePath);
           if (this.extensions.includes(extname(relativePath))) {

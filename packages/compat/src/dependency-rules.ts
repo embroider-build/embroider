@@ -33,7 +33,7 @@ export interface ActivePackageRules extends PackageRules {
 }
 
 export interface ComponentRules {
- // This declares that our component yields other components that are safe to
+  // This declares that our component yields other components that are safe to
   // invoke with the {{component}} helper.
   //
   // The array corresponds to your yielded positional arguments. Any value that

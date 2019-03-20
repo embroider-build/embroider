@@ -10,5 +10,5 @@ export default class AddToTree extends Funnel {
   async build() {
     await super.build();
     await this.hook(this.outputPath);
-   }
+  }
 }

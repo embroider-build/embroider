@@ -264,7 +264,7 @@ export class AppBuilder<TreeNames> {
       {},
       ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
     );
-      let adjustOptions: AdjustImportsOptions = {
+    let adjustOptions: AdjustImportsOptions = {
       ownName: this.app.name,
       basedir: this.root,
       rename,

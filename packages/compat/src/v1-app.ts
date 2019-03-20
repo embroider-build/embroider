@@ -313,35 +313,35 @@ export default class V1App implements V1Package {
       // internal implementation detail, and respecting outputPaths here is
       // unnecessary complexity. The corresponding code that adjusts the HTML
       // <link> is in updateHTML in app.ts.
-     outputPaths: { app: `/assets/${this.name}.css` },
-     registry: this.app.registry,
-     minifyCSS: this.app.options.minifyCSS.options,
-   };
+      outputPaths: { app: `/assets/${this.name}.css` },
+      registry: this.app.registry,
+      minifyCSS: this.app.options.minifyCSS.options,
+    };
 
-   let styles = this.preprocessors.preprocessCss(
-     this.combinedStyles(addonTrees),
-     '.',
-     '/assets',
-     options
-   );
+    let styles = this.preprocessors.preprocessCss(
+      this.combinedStyles(addonTrees),
+      '.',
+      '/assets',
+      options
+    );
 
-   return new AddToTree(styles, outputPath => {
-    let addonMeta: AddonMeta = {
-      version: 2,
-      'public-assets': {
+    return new AddToTree(styles, outputPath => {
+      let addonMeta: AddonMeta = {
+        version: 2,
+        'public-assets': {
+        }
+      };
+      for (let file of readdirSync(join(outputPath, 'assets'))) {
+        addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
       }
-    };
-    for (let file of readdirSync(join(outputPath, 'assets'))) {
-      addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
-    }
-    let meta = {
-      name: '@embroider/synthesized-styles',
-      version: '0.0.0',
-      keywords: 'ember-addon',
-      'ember-addon': addonMeta
-    };
-    writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
-   });
+      let meta = {
+        name: '@embroider/synthesized-styles',
+        version: '0.0.0',
+        keywords: 'ember-addon',
+        'ember-addon': addonMeta
+      };
+      writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+    });
   }
 
   // this is taken nearly verbatim from ember-cli.

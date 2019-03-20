@@ -1,11 +1,19 @@
 {
-    "private": true,
-    "workspaces": ["packages/*", "test-packages/*", "types/babel-core"],
-    "scripts": {
-      "compile": "tsc",
-      "lint": "tslint --project .",
-      "clean": "git clean -x -f",
-      "node-test": "qunit packages/*/tests",
-      "test": "./scripts/test.sh"
-    }
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "test-packages/*",
+    "types/babel-core"
+  ],
+  "scripts": {
+    "compile": "tsc",
+    "lint": "tslint --project .",
+    "clean": "git clean -x -f",
+    "node-test": "qunit packages/*/tests",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "execa": "^1.0.0",
+    "jest": "^24.5.0"
   }
+}

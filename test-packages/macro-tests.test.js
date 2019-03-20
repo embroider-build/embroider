@@ -1,18 +1,18 @@
 const execa = require('execa');
 
-const TESTS = [
-  ['macro-classic', 'test', { cwd: `${__dirname}/macro-tests`, env: { CLASSIC: 'true' } }],
-  ['macro', 'test', { cwd: `${__dirname}/macro-tests` }],
-];
+test('macro', async () => {
+  jest.setTimeout(60000);
 
-for (let [testName, command, options] of TESTS) {
-  test(testName, async () => {
-    jest.setTimeout(60000);
-
-    try {
-      await execa('yarn', [command], options);
-    } catch (error) {
-      throw error;
-    }
+  await execa('yarn', ['test'], {
+    cwd: `${__dirname}/macro-tests`,
   });
-}
+});
+
+test('macro-classic', async () => {
+  jest.setTimeout(60000);
+
+  await execa('yarn', ['test'], {
+    cwd: `${__dirname}/macro-tests`,
+    env: { CLASSIC: 'true' },
+  });
+});

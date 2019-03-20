@@ -1,17 +1,11 @@
 const execa = require('execa');
 
-const TESTS = [
-  ['node', 'node-test', { cwd: `${__dirname}/..`, env: { JOBS: '1' } }],
-];
+test('node', async () => {
+  jest.setTimeout(60000);
 
-for (let [testName, command, options] of TESTS) {
-  test(testName, async () => {
-    jest.setTimeout(60000);
-
-    try {
-      await execa('yarn', [command], options);
-    } catch (error) {
-      throw error;
-    }
+  await execa('yarn', ['node-test'], {
+    cwd: `${__dirname}/..`,
+    env: { JOBS: '1' },
   });
-}
+});
+

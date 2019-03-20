@@ -9,6 +9,7 @@ export interface AppMeta {
   externals?: string[];
   "template-compiler": filename;
   "babel-config": filename;
+  "root-url": string;
 }
 
 // This describes the ember-specific parts of package.json of a v2-formatted

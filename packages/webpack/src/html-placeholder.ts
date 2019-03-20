@@ -36,12 +36,33 @@ export default class Placeholder {
     this.end.parentElement.insertBefore(node, this.end);
   }
 
+  insertURL(url: string) {
+    switch (this.target.tagName) {
+      case 'SCRIPT':
+        return this.insertScriptTag(url);
+      case 'LINK':
+        if ((this.target as HTMLLinkElement).rel === 'stylesheet') {
+          return this.insertStyleLink(url);
+        }
+      default:
+        throw new Error(`don't know how to insertURL into this ${this.target}`);
+    }
+  }
+
   insertScriptTag(src: string, opts?: { type?: string }) {
     let newTag = this.end.ownerDocument.createElement('script');
     newTag.src = src;
     if (opts && opts.type) {
       newTag.type = opts.type;
     }
+    this.insert(newTag);
+    this.insertNewline();
+  }
+
+  insertStyleLink(href: string) {
+    let newTag = this.end.ownerDocument.createElement('link');
+    newTag.href = href;
+    newTag.rel = 'stylesheet';
     this.insert(newTag);
     this.insertNewline();
   }

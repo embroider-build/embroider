@@ -41,10 +41,19 @@ class HTMLEntrypoint {
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
-    for (let styleTag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
-      let href = (styleTag as HTMLLinkElement).href;
+    for (let tag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
+      let styleTag = tag as HTMLLinkElement;
+      let href = styleTag.href;
       if (!isAbsoluteURL(href)) {
-        this.styles.push(this.relativeToApp(href));
+        let url = this.relativeToApp(href);
+        this.styles.push(url);
+        let placeholder = new Placeholder(styleTag);
+        let list = this.placeholders.get(url);
+        if (list) {
+          list.push(placeholder);
+        } else {
+          this.placeholders.set(url, [placeholder]);
+        }
       }
     }
 
@@ -84,14 +93,14 @@ class HTMLEntrypoint {
     return handledScriptTags;
   }
 
-  render(bundles: Map<string, string[]>): string {
+  render(bundles: Map<string, string[]>, rootURL: string): string {
     for (let [src, placeholders] of this.placeholders) {
       let matchingBundles = bundles.get(src);
       if (matchingBundles) {
         for (let placeholder of placeholders) {
           for (let matchingBundle of matchingBundles) {
-            let src = relative(this.dir, matchingBundle);
-            placeholder.insertScriptTag(src);
+            let src = rootURL + matchingBundle;
+            placeholder.insertURL(src);
           }
         }
       } else {
@@ -113,6 +122,7 @@ interface AppInfo {
   externals: string[];
   templateCompiler: Function;
   babel: any;
+  rootURL: string;
 }
 
 // AppInfos are equal if they result in the same webpack config.
@@ -172,12 +182,13 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     let externals = meta.externals || [];
     let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
+    let rootURL = meta['root-url'];
     let babelConfigFile = meta['babel-config'];
     let babel;
     if (babelConfigFile) {
       babel = require(join(this.pathToVanillaApp, babelConfigFile));
     }
-    return { entrypoints, otherAssets, externals, templateCompiler, babel };
+    return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };
   }
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
@@ -346,7 +357,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
   }
 
-  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
+  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets, rootURL }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
@@ -381,7 +392,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     for (let entrypoint of entrypoints) {
       ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(bundles), 'utf8');
+      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(bundles, rootURL), 'utf8');
       written.add(entrypoint.filename);
     }
 

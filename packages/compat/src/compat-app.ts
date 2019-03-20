@@ -193,6 +193,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().modulePrefix;
   }
 
+  rootURL(): string {
+    return this.configTree.readConfig().rootURL;
+  }
+
   templateCompilerPath(): string {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }

@@ -16,6 +16,7 @@ module.exports = {
     'no-new-wrappers': 'error',
     'no-var': 'error',
 
+    '@typescript-eslint/class-name-casing': 'error',
     '@typescript-eslint/no-angle-bracket-type-assertion': 'error',
     '@typescript-eslint/no-inferrable-types': 'error',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

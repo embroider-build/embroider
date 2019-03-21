@@ -201,6 +201,7 @@ class AppFiles {
   private identifyRoute(relativePath: string): { name: string, files: RouteFiles } | undefined {
     let [prefix, ...rest] = relativePath.split('/');
     if (['controllers', 'templates', 'routes'].includes(prefix)) {
+      // NEXT: don't join here, instead we need to build a tree shaped structure
       let name = rest.join('/').replace(/\.\w{1,3}$/, '');
       let type = prefix.slice(0, -1);
       return {

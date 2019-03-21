@@ -52,3 +52,8 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 # Contributing
 
 see [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+
+# License
+
+This project is licensed under the [MIT License](LICENSE).

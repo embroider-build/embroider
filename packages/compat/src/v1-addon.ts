@@ -285,7 +285,7 @@ export default class V1Addon implements V1Package {
     return mergeTrees(this.v2Trees);
   }
 
-  // this is split out so that compatability shims can override it to add more
+  // this is split out so that compatibility shims can override it to add more
   // things to the package metadata.
   protected get packageMeta(): AddonMeta {
     let built = this.build();

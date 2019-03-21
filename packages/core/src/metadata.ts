@@ -7,9 +7,9 @@ export interface AppMeta {
   version: 2;
   assets: filename[];
   externals?: string[];
-  "template-compiler": filename;
-  "babel-config": filename;
-  "root-url": string;
+  'template-compiler': filename;
+  'babel-config': filename;
+  'root-url': string;
 }
 
 // This describes the ember-specific parts of package.json of a v2-formatted
@@ -20,13 +20,13 @@ export interface AddonMeta {
   'public-assets'?: {
     [filename: string]: appRelativeURL;
   };
-  "implicit-scripts"?: filename[];
-  "implicit-test-scripts"?: filename[];
-  "implicit-styles"?: filename[];
-  "implicit-test-styles"?: filename[];
-  "implicit-modules"?: string[];
-  "implicit-test-modules"?: string[];
-  "renamed-modules"?: { [fromName: string]: string };
-  "app-js"?: filename;
-  "auto-upgraded"?: true;
+  'implicit-scripts'?: filename[];
+  'implicit-test-scripts'?: filename[];
+  'implicit-styles'?: filename[];
+  'implicit-test-styles'?: filename[];
+  'implicit-modules'?: string[];
+  'implicit-test-modules'?: string[];
+  'renamed-modules'?: { [fromName: string]: string };
+  'app-js'?: filename;
+  'auto-upgraded'?: true;
 }

@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { readFileSync } from "fs";
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import get from 'lodash/get';
 import { AddonMeta } from './metadata';
@@ -8,14 +8,12 @@ import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
 
 export default class Package {
-  private dependencyKeys: ("dependencies" | "devDependencies" | "peerDependencies")[];
+  private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
-  constructor(
-    readonly root: string,
-    mayUseDevDeps: boolean,
-    protected packageCache: PackageCache
-  ) {
-    this.dependencyKeys = mayUseDevDeps ? ['dependencies', 'devDependencies', 'peerDependencies'] : ['dependencies', 'peerDependencies'];
+  constructor(readonly root: string, mayUseDevDeps: boolean, protected packageCache: PackageCache) {
+    this.dependencyKeys = mayUseDevDeps
+      ? ['dependencies', 'devDependencies', 'peerDependencies']
+      : ['dependencies', 'peerDependencies'];
   }
 
   get name(): string {
@@ -33,12 +31,12 @@ export default class Package {
 
   get meta(): AddonMeta {
     if (!this.isV2) {
-      throw new Error("Not a v2-formatted Ember package");
+      throw new Error('Not a v2-formatted Ember package');
     }
-    return this.packageJSON["ember-addon"] as AddonMeta;
+    return this.packageJSON['ember-addon'] as AddonMeta;
   }
 
-  get isEmberPackage() : boolean {
+  get isEmberPackage(): boolean {
     let keywords = this.packageJSON.keywords;
     return keywords && (keywords as string[]).includes('ember-addon');
   }
@@ -54,10 +52,12 @@ export default class Package {
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
     let pkgs = new Set();
-    let queue : Package[] = [this];
+    let queue: Package[] = [this];
     while (true) {
       let pkg = queue.shift();
-      if (!pkg) { break; }
+      if (!pkg) {
+        break;
+      }
       if (!pkgs.has(pkg)) {
         pkgs.add(pkg);
         let nextLevel;
@@ -87,5 +87,5 @@ export default class Package {
 }
 
 export interface PackageConstructor {
-  new(root: string, mayUseDevDeps: boolean, packageCache: PackageCache): Package;
+  new (root: string, mayUseDevDeps: boolean, packageCache: PackageCache): Package;
 }

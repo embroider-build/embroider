@@ -1,6 +1,6 @@
-import { join } from "path";
-import { PluginItem } from "@babel/core";
-import { PackageCache } from "@embroider/core";
+import { join } from 'path';
+import { PluginItem } from '@babel/core';
+import { PackageCache } from '@embroider/core';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 
 const packageCache = new PackageCache();
@@ -11,7 +11,7 @@ export type Merger = (configs: unknown[]) => unknown;
 // mysteries of being compatible with unwritten future versions of this library.
 class GlobalSharedState {
   configs: Map<string, unknown[]> = new Map();
-  mergers: Map<string, { merger: Merger, fromPath: string }> = new Map();
+  mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
 }
 
 // this is a module-scoped cache. If multiple callers ask _this copy_ of
@@ -24,19 +24,19 @@ let localSharedState: MacrosConfig | undefined;
 export default class MacrosConfig {
   static shared(): MacrosConfig {
     if (!localSharedState) {
-      let g = global as any as { __embroider_macros_global__: GlobalSharedState | undefined };
+      let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
       if (!g.__embroider_macros_global__) {
         g.__embroider_macros_global__ = new GlobalSharedState();
       }
       localSharedState = new MacrosConfig();
       localSharedState.configs = g.__embroider_macros_global__.configs;
-      localSharedState.mergers = g.__embroider_macros_global__ .mergers;
+      localSharedState.mergers = g.__embroider_macros_global__.mergers;
     }
     return localSharedState;
   }
 
   private configs: Map<string, unknown[]> = new Map();
-  private mergers: Map<string, { merger: Merger, fromPath: string }> = new Map();
+  private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to
@@ -75,7 +75,11 @@ export default class MacrosConfig {
     let targetPackage = this.resolvePackage(fromPath, undefined);
     let other = this.mergers.get(targetPackage.root);
     if (other) {
-      throw new Error(`conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${other.fromPath} and ${fromPath}.`);
+      throw new Error(
+        `conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${
+          other.fromPath
+        } and ${fromPath}.`
+      );
     }
     this.mergers.set(targetPackage.root, { merger, fromPath });
   }
@@ -109,16 +113,21 @@ export default class MacrosConfig {
   // it's not appropriate inside embroider.
   babelPluginConfig(owningPackageRoot?: string): PluginItem {
     let self = this;
-    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), {
-      // this is deliberately lazy because we want to allow everyone to finish
-      // setting config before we generate the userConfigs
-      get userConfigs() { return self.userConfigs; },
-      owningPackageRoot,
+    return [
+      join(__dirname, 'babel', 'macros-babel-plugin.js'),
+      {
+        // this is deliberately lazy because we want to allow everyone to finish
+        // setting config before we generate the userConfigs
+        get userConfigs() {
+          return self.userConfigs;
+        },
+        owningPackageRoot,
 
-      // This is used as a signature so we can detect ourself among the plugins
-      // emitted from v1 addons.
-      embroiderMacrosConfigMarker: true,
-    }];
+        // This is used as a signature so we can detect ourself among the plugins
+        // emitted from v1 addons.
+        embroiderMacrosConfigMarker: true,
+      },
+    ];
   }
 
   astPlugins(owningPackageRoot?: string): Function[] {

@@ -55,23 +55,21 @@ function stage3Tests(transform: (code: string) => string) {
 }
 
 QUnit.module('inline-hbs', function() {
-  QUnit.module('stage1', function () {
+  QUnit.module('stage1', function() {
     allBabelVersions({
       babelConfig() {
         let templateCompiler = new TemplateCompiler({
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
-            ast: [sampleTransform]
+            ast: [sampleTransform],
           },
         });
         return {
-          plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 }]
-          ]
+          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 }]],
         };
       },
-      createTests: stage1Tests
+      createTests: stage1Tests,
     });
   });
 
@@ -82,16 +80,14 @@ QUnit.module('inline-hbs', function() {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
-            ast: []
+            ast: [],
           },
         });
         return {
-          plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]
-          ]
+          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]],
         };
       },
-      createTests: stage3Tests
+      createTests: stage3Tests,
     });
   });
 
@@ -102,24 +98,25 @@ QUnit.module('inline-hbs', function() {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
-            ast: []
+            ast: [],
           },
         });
         return {
-          plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]
-          ],
+          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]],
           presets: [
-            [require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'), {
-              modules: false,
-              targets: {
-                ie: '11.0.0'
-              }
-            }]
-          ]
+            [
+              require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),
+              {
+                modules: false,
+                targets: {
+                  ie: '11.0.0',
+                },
+              },
+            ],
+          ],
         };
       },
-      createTests: stage3Tests
+      createTests: stage3Tests,
     });
   });
 });

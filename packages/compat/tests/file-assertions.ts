@@ -11,8 +11,8 @@ export interface FileAssert extends Assert {
   file(path: string): BoundFileAssert;
 }
 
-type ContentsResult = { result: true, data: string } | { result: false, actual: any, expected: any, message: string };
-type JSONResult = { result: true, data: any } | { result: false, actual: any, expected: any, message: string };
+type ContentsResult = { result: true; data: string } | { result: false; actual: any; expected: any; message: string };
+type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
 
 export class BoundFileAssert {
   constructor(readonly path: string, private assert: FileAssert) {}
@@ -35,14 +35,14 @@ export class BoundFileAssert {
     try {
       return {
         result: true,
-        data: readFileSync(this.fullPath, 'utf8')
+        data: readFileSync(this.fullPath, 'utf8'),
       };
     } catch (err) {
       return {
         result: false,
         actual: 'file missing',
         expected: 'file present',
-        message: `${this.path} should exist`
+        message: `${this.path} should exist`,
       };
     }
   }
@@ -52,7 +52,7 @@ export class BoundFileAssert {
       result: pathExistsSync(this.fullPath),
       actual: 'file missing',
       expected: 'file present',
-      message: message || `${this.path} should exist`
+      message: message || `${this.path} should exist`,
     });
   }
 
@@ -73,7 +73,7 @@ export class BoundFileAssert {
         result,
         actual: this.contents.data,
         expected: pattern.toString(),
-        message: message || `${this.path} contents unexpected`
+        message: message || `${this.path} contents unexpected`,
       });
     }
   }
@@ -85,26 +85,31 @@ export class BoundFileAssert {
     this.doMatch(pattern, message, true);
   }
   json(propertyPath?: string): JSONAssert {
-    return new JSONAssert(this.assert, this.path, () => {
-      if (!this.contents.result) {
-        return this.contents;
-      }
-      let parsed;
-      try {
-        parsed = JSON.parse(this.contents.data);
-      } catch (err) {
+    return new JSONAssert(
+      this.assert,
+      this.path,
+      () => {
+        if (!this.contents.result) {
+          return this.contents;
+        }
+        let parsed;
+        try {
+          parsed = JSON.parse(this.contents.data);
+        } catch (err) {
+          return {
+            result: false,
+            actual: this.contents.data,
+            expected: 'valid json file',
+            message: `${this.path} had invalid json`,
+          };
+        }
         return {
-          result: false,
-          actual: this.contents.data,
-          expected: 'valid json file',
-          message: `${this.path} had invalid json`
+          result: true,
+          data: parsed,
         };
-      }
-      return {
-        result: true,
-        data: parsed
-      };
-    }, propertyPath);
+      },
+      propertyPath
+    );
   }
   transform(fn: (contents: string, file: BoundFileAssert) => string) {
     return new TransformedFileAssert(this.path, this.assert, fn);
@@ -112,7 +117,11 @@ export class BoundFileAssert {
 }
 
 export class TransformedFileAssert extends BoundFileAssert {
-  constructor(path: string, assert: FileAssert, private transformer: (contents: string, file: BoundFileAssert) => string) {
+  constructor(
+    path: string,
+    assert: FileAssert,
+    private transformer: (contents: string, file: BoundFileAssert) => string
+  ) {
     super(path, assert);
   }
   @Memoize()
@@ -124,17 +133,16 @@ export class TransformedFileAssert extends BoundFileAssert {
     try {
       return {
         result: true,
-        data: this.transformer(raw.data, this)
+        data: this.transformer(raw.data, this),
       };
     } catch (err) {
       return {
         result: false,
         actual: err,
         expected: 'transformer to run',
-        message: err.message
+        message: err.message,
       };
     }
-
   }
 }
 
@@ -175,7 +183,7 @@ export class JSONAssert {
       result: Array.isArray(this.contents.data) && this.contents.data.includes(expected),
       actual: this.contents.data,
       expected,
-      message: message || `expected value missing from array`
+      message: message || `expected value missing from array`,
     });
   }
 
@@ -228,7 +236,7 @@ function makeBoundFile(this: FileAssert, path: string) {
 
 export function installFileAssertions(hooks: NestedHooks) {
   let basePath: { current: string | undefined } = {
-    current: undefined
+    current: undefined,
   };
 
   function installAssertions(plainAssert: Assert) {
@@ -240,7 +248,7 @@ export function installFileAssertions(hooks: NestedHooks) {
         },
         set(value) {
           basePath.current = value;
-        }
+        },
       });
     }
     assert.file = makeBoundFile;

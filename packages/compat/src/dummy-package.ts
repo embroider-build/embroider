@@ -1,6 +1,6 @@
-import { Package, PackageCache } from "@embroider/core";
-import { Memoize } from "typescript-memoize";
-import cloneDeep  from "lodash/cloneDeep";
+import { Package, PackageCache } from '@embroider/core';
+import { Memoize } from 'typescript-memoize';
+import cloneDeep from 'lodash/cloneDeep';
 
 export default class DummyPackage extends Package {
   constructor(root: string, private owningAddon: Package, packageCache: PackageCache) {

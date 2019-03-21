@@ -9,7 +9,7 @@ type GetMeta = () => AddonMeta;
 export default class RewritePackageJSON extends Plugin {
   constructor(inputTree: Tree, private analyzer: DependencyAnalyzer, private getMeta: GetMeta) {
     super([inputTree, analyzer], {
-      annotation: 'embroider:core:rewrite-package-json'
+      annotation: 'embroider:core:rewrite-package-json',
     });
   }
 

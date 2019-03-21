@@ -28,13 +28,13 @@ class MockCLI {
 
 export function emberApp(dir: string, userOpts: any = {}): any {
   let cli = new MockCLI();
-  let project = new Project(dir, readJSONSync(join(dir, 'package.json',)), cli.ui, cli);
+  let project = new Project(dir, readJSONSync(join(dir, 'package.json')), cli.ui, cli);
   return new EmberApp({ project }, userOpts);
 }
 
 export function runDefault(code: string): any {
   let cjsCode = transform7(code, {
-    plugins: ['@babel/plugin-transform-modules-commonjs']
+    plugins: ['@babel/plugin-transform-modules-commonjs'],
   })!.code!;
   let exports = {};
   eval(cjsCode);
@@ -44,15 +44,14 @@ export function runDefault(code: string): any {
 export function allBabelVersions(params: {
   babelConfig(major: 6): Options6;
   babelConfig(major: 7): Options7;
-  createTests(transform: (code: string) => string): void
+  createTests(transform: (code: string) => string): void;
 }) {
-
   QUnit.module('babel6', function() {
     let options6: Options6 = params.babelConfig(6);
     if (!options6.filename) {
       options6.filename = 'sample.js';
     }
-    params.createTests(function(code: string){
+    params.createTests(function(code: string) {
       return transform6(code, options6).code!;
     });
   });

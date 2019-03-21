@@ -3,7 +3,7 @@ import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package from './package';
 import resolve from 'resolve';
-import { Memoize } from "typescript-memoize";
+import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported, debug, warn } from './messages';
@@ -22,7 +22,7 @@ import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
-import { Options as AdjustImportsOptions }  from './babel-plugin-adjust-imports';
+import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -37,7 +37,6 @@ export type EmberENV = unknown;
       because they opt into new authoring standards.
 */
 export interface AppAdapter<TreeNames> {
-
   // the set of addon packages that are active.
   readonly activeAddonDescendants: Package[];
 
@@ -88,7 +87,7 @@ export interface AppAdapter<TreeNames> {
 
   // lets you add imports to javascript modules. We need this to implement
   // things like our addon compatibility rules for static components.
-  extraImports(): { absPath: string, target: string, runtimeName?: string }[];
+  extraImports(): { absPath: string; target: string; runtimeName?: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -132,7 +131,7 @@ class BuiltEmberAsset {
 
 class ConcatenatedAsset {
   kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]){}
+  constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]) {}
   get sourcemapPath() {
     return this.relativePath.replace(/\.js$/, '') + '.map';
   }
@@ -152,7 +151,7 @@ class AppFiles {
     let helpers: string[] = [];
     let otherAppFiles: string[] = [];
     for (let relativePath of relativePaths) {
-      if (relativePath.startsWith("tests/") && relativePath.endsWith('-test.js')) {
+      if (relativePath.startsWith('tests/') && relativePath.endsWith('-test.js')) {
         tests.push(relativePath);
         continue;
       }
@@ -187,9 +186,9 @@ export class AppBuilder<TreeNames> {
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
-      case "loader.js":
+      case 'loader.js':
         return 0;
-      case "ember-source":
+      case 'ember-source':
         return 10;
       default:
         return 1000;
@@ -197,16 +196,18 @@ export class AppBuilder<TreeNames> {
   }
 
   private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
-    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map((sourcePath: string): OnDiskAsset => {
-      let stats = statSync(sourcePath);
-      return {
-        kind: 'on-disk',
-        relativePath: relative(this.root, sourcePath),
-        sourcePath,
-        mtime: stats.mtimeMs,
-        size: stats.size,
-      };
-    });
+    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map(
+      (sourcePath: string): OnDiskAsset => {
+        let stats = statSync(sourcePath);
+        return {
+          kind: 'on-disk',
+          relativePath: relative(this.root, sourcePath),
+          sourcePath,
+          mtime: stats.mtimeMs,
+          size: stats.size,
+        };
+      }
+    );
     if (type === 'implicit-scripts') {
       result.unshift({
         kind: 'in-memory',
@@ -219,10 +220,7 @@ export class AppBuilder<TreeNames> {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
-    for (let addon of sortBy(
-      this.adapter.activeAddonDescendants,
-      this.scriptPriority.bind(this)
-    )) {
+    for (let addon of sortBy(this.adapter.activeAddonDescendants, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
@@ -245,14 +243,17 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
 
     // this is our built-in support for the inline hbs macro
-    babel.plugins.push([join(__dirname, 'babel-plugin-inline-hbs.js'), {
-      templateCompiler: {
-        _parallelBabel: {
-          requireFile: join(this.root, '_template_compiler_.js')
-        }
+    babel.plugins.push([
+      join(__dirname, 'babel-plugin-inline-hbs.js'),
+      {
+        templateCompiler: {
+          _parallelBabel: {
+            requireFile: join(this.root, '_template_compiler_.js'),
+          },
+        },
+        stage: 3,
       },
-      stage: 3
-    }]);
+    ]);
 
     babel.plugins.push(this.adjustImportsPlugin());
 
@@ -260,10 +261,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private adjustImportsPlugin(): PluginItem {
-    let rename = Object.assign(
-      {},
-      ...this.adapter.activeAddonDescendants.map(dep => dep.meta["renamed-modules"])
-    );
+    let rename = Object.assign({}, ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules']));
     let adjustOptions: AdjustImportsOptions = {
       ownName: this.app.name,
       basedir: this.root,
@@ -282,7 +280,12 @@ export class AppBuilder<TreeNames> {
     return appJS;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private insertEmberApp(
+    asset: ParsedEmberAsset,
+    appFiles: AppFiles,
+    prepared: Map<string, InternalAsset>,
+    emberENV: EmberENV
+  ) {
     let html = asset.html;
 
     // our tests entrypoint already includes a correct module dependency on the
@@ -294,14 +297,14 @@ export class AppBuilder<TreeNames> {
 
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
-    let implicitScripts = this.impliedAssets("implicit-scripts", emberENV);
+    let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
     if (implicitScripts.length > 0) {
       let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts);
       prepared.set(vendorJS.relativePath, vendorJS);
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
 
-    let implicitStyles = this.impliedAssets("implicit-styles");
+    let implicitStyles = this.impliedAssets('implicit-styles');
     if (implicitStyles.length > 0) {
       let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles);
       prepared.set(vendorCSS.relativePath, vendorCSS);
@@ -316,14 +319,14 @@ export class AppBuilder<TreeNames> {
       }
       html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
-      let implicitTestScripts = this.impliedAssets("implicit-test-scripts");
+      let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
       if (implicitTestScripts.length > 0) {
         let testSupportJS = new ConcatenatedAsset('assets/test-support.js', implicitTestScripts);
         prepared.set(testSupportJS.relativePath, testSupportJS);
         html.insertScriptTag(html.implicitTestScripts, testSupportJS.relativePath);
       }
 
-      let implicitTestStyles = this.impliedAssets("implicit-test-styles");
+      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
       if (implicitTestStyles.length > 0) {
         let testSupportCSS = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles);
         prepared.set(testSupportCSS.relativePath, testSupportCSS);
@@ -372,7 +375,7 @@ export class AppBuilder<TreeNames> {
     if (!prior) {
       return false;
     }
-    switch(asset.kind) {
+    switch (asset.kind) {
       case 'on-disk':
         return prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime;
       case 'in-memory':
@@ -380,12 +383,14 @@ export class AppBuilder<TreeNames> {
       case 'built-ember':
         return prior.kind === 'built-ember' && prior.source === asset.source;
       case 'concatenated-asset':
-        return prior.kind === 'concatenated-asset' &&
+        return (
+          prior.kind === 'concatenated-asset' &&
           prior.sources.length === asset.sources.length &&
           prior.sources.every((priorFile, index) => {
             let newFile = asset.sources[index];
             return this.assetIsValid(newFile, priorFile);
-          });
+          })
+        );
     }
     assertNever(asset);
   }
@@ -399,13 +404,13 @@ export class AppBuilder<TreeNames> {
   private updateInMemoryAsset(asset: InMemoryAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, "utf8");
+    writeFileSync(destination, asset.source, 'utf8');
   }
 
   private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, "utf8");
+    writeFileSync(destination, asset.source, 'utf8');
   }
 
   private async updateConcatenatedAsset(asset: ConcatenatedAsset) {
@@ -480,7 +485,7 @@ export class AppBuilder<TreeNames> {
             sourcePath: join(pkg.root, filename),
             relativePath: appRelativeURL,
             mtime: 0,
-            size: 0
+            size: 0,
           });
         }
       }
@@ -514,18 +519,14 @@ export class AppBuilder<TreeNames> {
       version: 2,
       externals,
       assets: assetPaths,
-      "template-compiler": "_template_compiler_.js",
-      "babel-config": "_babel_config_.js",
-      "root-url": this.adapter.rootURL(),
+      'template-compiler': '_template_compiler_.js',
+      'babel-config': '_babel_config_.js',
+      'root-url': this.adapter.rootURL(),
     };
 
     let pkg = cloneDeep(this.app.packageJSON);
-    pkg["ember-addon"] = Object.assign({}, pkg["ember-addon"], meta);
-    writeFileSync(
-      join(this.root, "package.json"),
-      JSON.stringify(pkg, null, 2),
-      "utf8"
-    );
+    pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
+    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 
   private combineExternals() {
@@ -555,7 +556,6 @@ export class AppBuilder<TreeNames> {
   }
 
   private addTemplateCompiler(config: EmberENV) {
-
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -571,22 +571,14 @@ export class AppBuilder<TreeNames> {
       EmberENV: config,
     }).serialize(this.root);
 
-    writeFileSync(
-      join(this.root, "_template_compiler_.js"),
-      source,
-      "utf8"
-    );
+    writeFileSync(join(this.root, '_template_compiler_.js'), source, 'utf8');
   }
 
   private addBabelConfig() {
     if (!this.babelConfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
-    writeFileSync(
-      join(this.root, "_babel_config_.js"),
-      this.babelConfig.serialize(),
-      "utf8"
-    );
+    writeFileSync(join(this.root, '_babel_config_.js'), this.babelConfig.serialize(), 'utf8');
   }
 
   private javascriptEntrypoint(name: string, appFiles: AppFiles): InternalAsset {
@@ -596,22 +588,24 @@ export class AppBuilder<TreeNames> {
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
-    if(!this.options.staticHelpers) {
+    if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
 
-    let lazyModules = flatten(requiredAppFiles).map(relativePath => {
-      let noJS = relativePath.replace(/\.js$/, "");
-      let noHBS = noJS.replace(/\.hbs$/, "");
-      return {
-        runtime: `${modulePrefix}/${noHBS}`,
-        buildtime: `../${noJS}`,
-      };
-    }).filter(Boolean) as { runtime: string, buildtime: string }[];
+    let lazyModules = flatten(requiredAppFiles)
+      .map(relativePath => {
+        let noJS = relativePath.replace(/\.js$/, '');
+        let noHBS = noJS.replace(/\.hbs$/, '');
+        return {
+          runtime: `${modulePrefix}/${noHBS}`,
+          buildtime: `../${noJS}`,
+        };
+      })
+      .filter(Boolean) as { runtime: string; buildtime: string }[];
 
     // for the src tree, we can limit ourselves to only known resolvable
     // collections
-    todo("app src tree");
+    todo('app src tree');
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
@@ -636,9 +630,11 @@ export class AppBuilder<TreeNames> {
 
   private testJSEntrypoint(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
     const myName = 'assets/test.js';
-    let testModules = appFiles.tests.map(relativePath => {
-      return `../${relativePath}`;
-    }).filter(Boolean) as string[];
+    let testModules = appFiles.tests
+      .map(relativePath => {
+        return `../${relativePath}`;
+      })
+      .filter(Boolean) as string[];
 
     // tests necessarily also include the app. This is where we account for
     // that. The classic solution was to always include the app's separate
@@ -647,7 +643,7 @@ export class AppBuilder<TreeNames> {
     // module dependency.
     testModules.unshift('./' + relative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
 
-    let lazyModules: { runtime: string, buildtime: string }[] = [];
+    let lazyModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
     this.gatherImplicitModules('implicit-test-modules', lazyModules);
@@ -655,27 +651,27 @@ export class AppBuilder<TreeNames> {
     let source = entryTemplate({
       lazyModules,
       eagerModules: testModules,
-      testSuffix: true
+      testSuffix: true,
     });
 
     return {
       kind: 'in-memory',
       source,
-      relativePath: myName
+      relativePath: myName,
     };
   }
 
-  private gatherImplicitModules(section: "implicit-modules" | "implicit-test-modules", lazyModules: { runtime: string, buildtime: string }[]) {
+  private gatherImplicitModules(
+    section: 'implicit-modules' | 'implicit-test-modules',
+    lazyModules: { runtime: string; buildtime: string }[]
+  ) {
     for (let addon of this.adapter.activeAddonDescendants) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
             runtime: join(addon.name, name),
-            buildtime: relative(
-              join(this.root, "assets"),
-              join(addon.root, name)
-            ),
+            buildtime: relative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }
       }
@@ -752,7 +748,7 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
     return a === b;
   }
   if (a instanceof Buffer && b instanceof Buffer) {
-    return Buffer.compare(a,b) === 0;
+    return Buffer.compare(a, b) === 0;
   }
   return false;
 }

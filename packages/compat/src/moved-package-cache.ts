@@ -1,12 +1,7 @@
 import { join, dirname, resolve } from 'path';
-import {
-  ensureSymlinkSync,
-  readdir,
-  readlink,
-  realpath,
-} from 'fs-extra';
-import { Memoize } from "typescript-memoize";
-import { PackageCache, Package, getOrCreate } from "@embroider/core";
+import { ensureSymlinkSync, readdir, readlink, realpath } from 'fs-extra';
+import { Memoize } from 'typescript-memoize';
+import { PackageCache, Package, getOrCreate } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros';
 
 export class MovablePackageCache extends PackageCache {
@@ -29,8 +24,8 @@ export class MovedPackageCache extends PackageCache {
   readonly moved: Map<Package, Package> = new Map();
 
   constructor(
-    rootCache: PackageCache["rootCache"],
-    resolutionCache: PackageCache["resolutionCache"],
+    rootCache: PackageCache['rootCache'],
+    resolutionCache: PackageCache['resolutionCache'],
     private destDir: string,
     movedSet: MovedSet,
     origApp: Package
@@ -90,18 +85,20 @@ export class MovedPackageCache extends PackageCache {
   // given path, going up a maximum of `depth` levels.
   async updatePreexistingResolvableSymlinks(): Promise<void> {
     let roots = this.originalRoots();
-    await Promise.all([...this.candidateDirs()].map(async path => {
-      let links = await symlinksInDir(path);
-      for (let { source, target } of links) {
-        let realTarget = await realpath(resolve(dirname(source), target));
-        let pkg = roots.get(realTarget);
-        if (pkg) {
-          // we found a symlink that points at a package that was copied.
-          // Replicate it in the new structure pointing at the new package.
-          ensureSymlinkSync(pkg.root, this.localPath(source));
+    await Promise.all(
+      [...this.candidateDirs()].map(async path => {
+        let links = await symlinksInDir(path);
+        for (let { source, target } of links) {
+          let realTarget = await realpath(resolve(dirname(source), target));
+          let pkg = roots.get(realTarget);
+          if (pkg) {
+            // we found a symlink that points at a package that was copied.
+            // Replicate it in the new structure pointing at the new package.
+            ensureSymlinkSync(pkg.root, this.localPath(source));
+          }
         }
-      }
-    }));
+      })
+    );
   }
 
   // places that might have symlinks we need to mimic
@@ -110,7 +107,7 @@ export class MovedPackageCache extends PackageCache {
     for (let pkg of this.moved.keys()) {
       let segments = pathSegments(pkg.root);
       for (let i = segments.length - 1; i >= this.commonSegmentCount; i--) {
-        if (segments[i-1] !== 'node_modules') {
+        if (segments[i - 1] !== 'node_modules') {
           let candidate = '/' + join(...segments.slice(0, i), 'node_modules');
           if (candidates.has(candidate)) {
             break;
@@ -131,7 +128,7 @@ export class MovedPackageCache extends PackageCache {
   }
 }
 
-async function symlinksInDir(path: string): Promise<{ source: string, target: string }[]> {
+async function symlinksInDir(path: string): Promise<{ source: string; target: string }[]> {
   let names;
   try {
     names = await readdir(path);
@@ -141,18 +138,20 @@ async function symlinksInDir(path: string): Promise<{ source: string, target: st
     }
     return [];
   }
-  let results = await Promise.all(names.map(async name => {
-    let source = join(path, name);
-    try {
-      let target = await readlink(source);
-      return { source, target };
-    } catch (err) {
-      if (err.code !== 'EINVAL') {
-        throw err;
+  let results = await Promise.all(
+    names.map(async name => {
+      let source = join(path, name);
+      try {
+        let target = await readlink(source);
+        return { source, target };
+      } catch (err) {
+        if (err.code !== 'EINVAL') {
+          throw err;
+        }
       }
-    }
-  }));
-  return results.filter(Boolean) as { source: string, target: string }[];
+    })
+  );
+  return results.filter(Boolean) as { source: string; target: string }[];
 }
 
 function pathSegments(filename: string) {
@@ -244,7 +243,7 @@ function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) 
         return pkg.findDescendants.bind(p);
       }
       return (pkg as any)[prop];
-    }
+    },
   });
   return p;
 }

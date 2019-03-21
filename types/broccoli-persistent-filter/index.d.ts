@@ -1,5 +1,5 @@
 declare module 'broccoli-persistent-filter' {
-  import Plugin, { Tree } from "broccoli-plugin";
+  import Plugin, { Tree } from 'broccoli-plugin';
 
   interface Options {
     persist: boolean;
@@ -9,7 +9,7 @@ declare module 'broccoli-persistent-filter' {
   }
 
   export default abstract class Filter implements Plugin {
-    constructor(inputTree: Tree, options: Options)
+    constructor(inputTree: Tree, options: Options);
     inputPaths: string[];
     outputPath: string;
     cachePath: string;

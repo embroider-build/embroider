@@ -15,12 +15,12 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
         return {
           filename: join(__dirname, 'sample.js'),
           presets: [],
-          plugins: [config.babelPluginConfig()]
+          plugins: [config.babelPluginConfig()],
         };
       },
       createTests(transform: (code: string) => string) {
         createTests(transform, config);
-      }
+      },
     });
   });
 
@@ -31,19 +31,22 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
         return {
           filename: join(__dirname, 'sample.js'),
           presets: [
-            [require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'), {
-              modules: false,
-              targets: {
-                ie: '11.0.0'
-              }
-            }]
+            [
+              require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),
+              {
+                modules: false,
+                targets: {
+                  ie: '11.0.0',
+                },
+              },
+            ],
           ],
-          plugins: [config.babelPluginConfig()]
+          plugins: [config.babelPluginConfig()],
         };
       },
       createTests(transform: (code: string) => string) {
         createTests(transform, config);
-      }
+      },
     });
   });
 }

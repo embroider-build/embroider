@@ -1,5 +1,4 @@
 declare module 'babel-core' {
-
   // BEGIN our custom extensions, so we can use these private-ish APIs
   export class Pipeline {}
   export class File {
@@ -20,11 +19,11 @@ declare module 'babel-core' {
   export type Node = t.Node;
   export import template = require('babel-template');
   export const version: string;
-  import traverse, { Visitor, NodePath } from "babel-traverse";
+  import traverse, { Visitor, NodePath } from 'babel-traverse';
   export { traverse, Visitor };
-  import { BabylonOptions } from "babylon";
+  import { BabylonOptions } from 'babylon';
   export { BabylonOptions };
-  import { GeneratorOptions } from "babel-generator";
+  import { GeneratorOptions } from 'babel-generator';
   export { GeneratorOptions };
 
   // A babel plugin is a simple function which must return an object matching
@@ -44,7 +43,11 @@ declare module 'babel-core' {
   export function transform(code: string, opts?: TransformOptions): BabelFileResult;
 
   /** Asynchronously transforms the entire contents of a file. */
-  export function transformFile(filename: string, opts: TransformOptions, callback: (err: any, result: BabelFileResult) => void): void;
+  export function transformFile(
+    filename: string,
+    opts: TransformOptions,
+    callback: (err: any, result: BabelFileResult) => void
+  ): void;
 
   /** Synchronous version of `babel.transformFile`. Returns the transformed contents of the `filename`. */
   export function transformFileSync(filename: string, opts?: TransformOptions): BabelFileResult;
@@ -71,17 +74,17 @@ declare module 'babel-core' {
     comments?: boolean;
 
     /**
-       * Do not include superfluous whitespace characters and line terminators. When set to `"auto"`, `compact` is set to
-       * `true` on input sizes of >100KB.
-       */
-    compact?: boolean | "auto";
+     * Do not include superfluous whitespace characters and line terminators. When set to `"auto"`, `compact` is set to
+     * `true` on input sizes of >100KB.
+     */
+    compact?: boolean | 'auto';
 
     /**
-       * This is an object of keys that represent different environments. For example, you may have:
-       * `{ env: { production: { / * specific options * / } } }`
-       * which will use those options when the enviroment variable `BABEL_ENV` is set to `"production"`.
-       * If `BABEL_ENV` isn't set then `NODE_ENV` will be used, if it's not set then it defaults to `"development"`.
-       */
+     * This is an object of keys that represent different environments. For example, you may have:
+     * `{ env: { production: { / * specific options * / } } }`
+     * which will use those options when the enviroment variable `BABEL_ENV` is set to `"production"`.
+     * If `BABEL_ENV` isn't set then `NODE_ENV` will be used, if it's not set then it defaults to `"development"`.
+     */
     env?: object;
 
     /** A path to an .babelrc file to extend. */
@@ -97,9 +100,9 @@ declare module 'babel-core' {
     generatorOpts?: GeneratorOptions;
 
     /**
-       * Specify a custom callback to generate a module id with. Called as `getModuleId(moduleName)`.
-       * If falsy value is returned then the generated module id is used.
-       */
+     * Specify a custom callback to generate a module id with. Called as `getModuleId(moduleName)`.
+     * If falsy value is returned then the generated module id is used.
+     */
     getModuleId?(moduleName: string): string;
 
     /** Enable/disable ANSI syntax highlighting of code frames. Default: `true`. */
@@ -118,18 +121,18 @@ declare module 'babel-core' {
     moduleId?: string;
 
     /**
-       * If truthy, insert an explicit id for modules. By default, all modules are anonymous.
-       * (Not available for `common` modules).
-       */
+     * If truthy, insert an explicit id for modules. By default, all modules are anonymous.
+     * (Not available for `common` modules).
+     */
     moduleIds?: boolean;
 
     /** Optional prefix for the AMD module formatter that will be prepend to the filename on module definitions. */
     moduleRoot?: string;
 
     /**
-       * A glob, regex, or mixed array of both, matching paths to only compile. Can also be an array of arrays containing
-       * paths to explicitly match. When attempting to compile a non-matching file it's returned verbatim.
-       */
+     * A glob, regex, or mixed array of both, matching paths to only compile. Can also be an array of arrays containing
+     * paths to explicitly match. When attempting to compile a non-matching file it's returned verbatim.
+     */
     only?: string | RegExp | Array<string | RegExp>;
 
     /** Babylon parser options. */
@@ -148,20 +151,20 @@ declare module 'babel-core' {
     resolveModuleSource?(source: string, filename: string): string;
 
     /**
-       * An optional callback that controls whether a comment should be output or not. Called as
-       * `shouldPrintComment(commentContents)`. **NOTE**: This overrides the `comments` option when used.
-       */
+     * An optional callback that controls whether a comment should be output or not. Called as
+     * `shouldPrintComment(commentContents)`. **NOTE**: This overrides the `comments` option when used.
+     */
     shouldPrintComment?(comment: string): boolean;
 
     /** Set `sources[0]` on returned source map. */
     sourceFileName?: string;
 
     /**
-       * If truthy, adds a `map` property to returned output. If set to `"inline"`, a comment with a `sourceMappingURL`
-       * directive is added to the bottom of the returned code. If set to `"both"` then a map property is returned as well
-       * as a source map comment appended.
-       */
-    sourceMaps?: boolean | "inline" | "both";
+     * If truthy, adds a `map` property to returned output. If set to `"inline"`, a comment with a `sourceMappingURL`
+     * directive is added to the bottom of the returned code. If set to `"both"` then a map property is returned as well
+     * as a source map comment appended.
+     */
+    sourceMaps?: boolean | 'inline' | 'both';
 
     /** Set `file` on returned source map. */
     sourceMapTarget?: string;
@@ -170,20 +173,24 @@ declare module 'babel-core' {
     sourceRoot?: string;
 
     /** Indicate the mode the code should be parsed in. Can be either “script” or “module”. Default: "module" */
-    sourceType?: "script" | "module";
+    sourceType?: 'script' | 'module';
 
     /**
-       * An optional callback that can be used to wrap visitor methods.
-       * NOTE: This is useful for things like introspection, and not really needed for implementing anything.
-       */
-    wrapPluginVisitorMethod?(pluginAlias: string, visitorType: 'enter' | 'exit', callback: (path: NodePath, state: any) => void): (path: NodePath, state: any) => void ;
+     * An optional callback that can be used to wrap visitor methods.
+     * NOTE: This is useful for things like introspection, and not really needed for implementing anything.
+     */
+    wrapPluginVisitorMethod?(
+      pluginAlias: string,
+      visitorType: 'enter' | 'exit',
+      callback: (path: NodePath, state: any) => void
+    ): (path: NodePath, state: any) => void;
   }
 
   export interface BabelFileModulesMetadata {
     imports: object[];
     exports: {
-      exported: object[],
-      specifiers: object[]
+      exported: object[];
+      specifiers: object[];
     };
   }
 

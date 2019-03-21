@@ -6,7 +6,7 @@ import { mergeWithUniq } from './merges';
 export default class SmooshPackageJSON extends Plugin {
   constructor(inputTrees: Tree[]) {
     super(inputTrees, {
-      annotation: 'embroider:core:smoosh-package-json'
+      annotation: 'embroider:core:smoosh-package-json',
     });
   }
 

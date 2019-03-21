@@ -1,13 +1,6 @@
 import Plugin, { Tree } from 'broccoli-plugin';
-import walkSync from  'walk-sync';
-import {
-  unlinkSync,
-  rmdirSync,
-  mkdirSync,
-  readFileSync,
-  existsSync,
-  mkdirpSync
-} from 'fs-extra';
+import walkSync from 'walk-sync';
+import { unlinkSync, rmdirSync, mkdirSync, readFileSync, existsSync, mkdirpSync } from 'fs-extra';
 import FSTree from 'fs-tree-diff';
 import makeDebug from 'debug';
 import { Pipeline, File } from 'babel-core';
@@ -37,15 +30,15 @@ export default class ImportParser extends Plugin {
   constructor(inputTree: Tree, private extensions = ['.js', '.hbs']) {
     super([inputTree], {
       annotation: 'embroider:core:import-parser',
-      persistentOutput: true
+      persistentOutput: true,
     });
     this.parserOptions = this.buildParserOptions();
   }
 
-  get imports() : Import[] {
+  get imports(): Import[] {
     if (!this.modules) {
       this.modules = flatten([...this.paths.values()]);
-      debug("imports %s", new PrintableImports(this.modules));
+      debug('imports %s', new PrintableImports(this.modules));
     }
     return this.modules;
   }
@@ -72,16 +65,15 @@ export default class ImportParser extends Plugin {
           }
           unlinkSync(outputPath);
           break;
-        case 'rmdir' :
+        case 'rmdir':
           rmdirSync(outputPath);
           break;
-        case 'mkdir' :
+        case 'mkdir':
           mkdirSync(outputPath);
           break;
         case 'create':
-        case 'change':
-        {
-          let absoluteInputPath  = join(this.inputPaths[0], relativePath);
+        case 'change': {
+          let absoluteInputPath = join(this.inputPaths[0], relativePath);
           if (this.extensions.includes(extname(relativePath))) {
             this.updateImports(relativePath, absoluteInputPath);
           }
@@ -92,9 +84,9 @@ export default class ImportParser extends Plugin {
   }
 
   private getPatchset() {
-    let input = walkSync.entries(this.inputPaths[0], { globs: [ '**/*' ] });
-    let previous  = this.previousTree;
-    let next = this.previousTree = FSTree.fromEntries(input);
+    let input = walkSync.entries(this.inputPaths[0], { globs: ['**/*'] });
+    let previous = this.previousTree;
+    let next = (this.previousTree = FSTree.fromEntries(input));
     return previous.calculatePatch(next);
   }
 
@@ -102,7 +94,7 @@ export default class ImportParser extends Plugin {
     debug(`removing imports for ${relativePath}`);
     let imports = this.paths.get(relativePath);
     if (imports) {
-      if (imports.length > 0){
+      if (imports.length > 0) {
         this.modules = null; // invalidates cache
       }
       this.paths.delete(relativePath);
@@ -119,7 +111,7 @@ export default class ImportParser extends Plugin {
     }
   }
 
-  private parseImports(relativePath: string, source: string) : Import[] {
+  private parseImports(relativePath: string, source: string): Import[] {
     if (extname(relativePath) === '.hbs') {
       // there are no hbs templates yet that have imports. When ember introduces
       // them, this will need to parse them and discover the imports.
@@ -129,7 +121,7 @@ export default class ImportParser extends Plugin {
     let ast;
     try {
       ast = parse(source, this.parserOptions);
-    } catch(err){
+    } catch (err) {
       if (err.name !== 'SyntaxError') {
         throw err;
       }
@@ -137,8 +129,8 @@ export default class ImportParser extends Plugin {
       // normal babel processing, which will generate a nice error for it.
       debug('Ignoring an unparseable file');
     }
-    let imports : Import[] = [];
-    if (!ast){
+    let imports: Import[] = [];
+    if (!ast) {
       return imports;
     }
 
@@ -156,18 +148,18 @@ export default class ImportParser extends Plugin {
 
     // No need to recurse here, because we only deal with top-level static import declarations
     for (let node of ast.program.body) {
-      let specifier : string | undefined;
-      if (node.type === 'ImportDeclaration'){
+      let specifier: string | undefined;
+      if (node.type === 'ImportDeclaration') {
         specifier = node.source.value;
       }
-      if (node.type === 'ExportNamedDeclaration' && node.source){
+      if (node.type === 'ExportNamedDeclaration' && node.source) {
         specifier = node.source.value;
       }
       if (specifier) {
         imports.push({
           isDynamic: false,
           specifier,
-          path: relativePath
+          path: relativePath,
         });
       }
     }
@@ -194,10 +186,10 @@ function copy(sourcePath: string, destPath: string) {
 }
 
 const skipKeys: { [key: string]: boolean } = {
-  'loc': true,
-  'type': true,
-  'start': true,
-  'end': true
+  loc: true,
+  type: true,
+  start: true,
+  end: true,
 };
 
 function forEachNode(node: any, visit: (node: any) => void) {

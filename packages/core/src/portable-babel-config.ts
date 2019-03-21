@@ -1,4 +1,4 @@
-import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
+import { PortablePluginConfig, ResolveOptions } from './portable-plugin-config';
 import { TransformOptions } from '@babel/core';
 
 export default class PortableBabelConfig extends PortablePluginConfig {
@@ -7,17 +7,14 @@ export default class PortableBabelConfig extends PortablePluginConfig {
   }
 
   protected makePortable(value: any, accessPath: string[] = []) {
-    if (
-      accessPath.length === 2 &&
-      (accessPath[0] === 'plugins' || accessPath[0] === 'presets')
-    ) {
+    if (accessPath.length === 2 && (accessPath[0] === 'plugins' || accessPath[0] === 'presets')) {
       if (typeof value === 'string') {
         return this.resolveBabelPlugin(value);
       }
       if (Array.isArray(value) && typeof value[0] === 'string') {
         let result = [this.resolveBabelPlugin(value[0])];
         if (value.length > 1) {
-          result.push(this.makePortable(value[1], accessPath.concat("1")));
+          result.push(this.makePortable(value[1], accessPath.concat('1')));
         }
         if (value.length > 2) {
           result.push(value[2]);

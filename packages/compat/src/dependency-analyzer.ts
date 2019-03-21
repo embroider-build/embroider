@@ -6,7 +6,7 @@ import { packageName as absolutePackageName, Package } from '@embroider/core';
 export default class DependencyAnalyzer extends Plugin {
   constructor(private importParsers: ImportParser[], private pkg: Package) {
     super(importParsers, {
-      annotation: '@embroider/core/dependency-analyzer'
+      annotation: '@embroider/core/dependency-analyzer',
     });
   }
 

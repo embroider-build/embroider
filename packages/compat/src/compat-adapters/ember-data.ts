@@ -1,8 +1,8 @@
-import V1Addon from "../v1-addon";
+import V1Addon from '../v1-addon';
 import { join } from 'path';
-import { Memoize } from "typescript-memoize";
+import { Memoize } from 'typescript-memoize';
 import cloneDeep from 'lodash/cloneDeep';
-import { AddonMeta } from "@embroider/core";
+import { AddonMeta } from '@embroider/core';
 
 export default class EmberData extends V1Addon {
   // ember-data customizes the addon tree, but we don't want to run that one

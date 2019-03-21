@@ -23,7 +23,7 @@ export function makeResolverTransform(resolver: Resolver) {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
             }
-          }
+          },
         },
         BlockStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -41,14 +41,25 @@ export function makeResolverTransform(resolver: Resolver) {
           let hasArgs = true;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
           if (resolution) {
-            if (resolution.type === 'component' && node.program.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
+            if (
+              resolution.type === 'component' &&
+              node.program.blockParams.length > 0 &&
+              resolution.yieldsComponents.length > 0
+            ) {
               scopeStack.yieldingComponents(resolution.yieldsComponents);
             }
             if (resolution.type === 'component') {
               for (let name of resolution.argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
-                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, env.moduleName, scopeStack);
+                  handleImpliedComponentHelper(
+                    node.path.original,
+                    name,
+                    pair.value,
+                    resolver,
+                    env.moduleName,
+                    scopeStack
+                  );
                 }
               }
             }
@@ -84,7 +95,14 @@ export function makeResolverTransform(resolver: Resolver) {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
               if (pair) {
-                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, env.moduleName, scopeStack);
+                handleImpliedComponentHelper(
+                  node.path.original,
+                  name,
+                  pair.value,
+                  resolver,
+                  env.moduleName,
+                  scopeStack
+                );
               }
             }
           }
@@ -113,16 +131,16 @@ export function makeResolverTransform(resolver: Resolver) {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
             }
-          }
-        }
-      }
+          },
+        },
+      },
     };
   };
 }
 
 type ScopeEntry =
-{ type: 'blockParams', blockParams: string[] } |
-{ type: 'safeComponentMarker', safeComponentMarker: Required<ComponentRules>["yieldsSafeComponents"] };
+  | { type: 'blockParams'; blockParams: string[] }
+  | { type: 'safeComponentMarker'; safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents'] };
 
 class ScopeStack {
   private stack: ScopeEntry[] = [];
@@ -145,8 +163,8 @@ class ScopeStack {
   // right before we enter a block, we might determine that some of the values
   // that will be yielded as marked (by a rule) as safe to be used with the
   // {{component}} helper.
-  yieldingComponents(safeComponentMarker: Required<ComponentRules>["yieldsSafeComponents"]) {
-    this.stack.unshift({ type: 'safeComponentMarker', safeComponentMarker});
+  yieldingComponents(safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents']) {
+    this.stack.unshift({ type: 'safeComponentMarker', safeComponentMarker });
   }
 
   inScope(name: string) {
@@ -168,7 +186,7 @@ class ScopeStack {
     }
     for (let i = 0; i < this.stack.length - 1; i++) {
       let here = this.stack[i];
-      let next = this.stack[i+1];
+      let next = this.stack[i + 1];
       if (here.type === 'blockParams' && next.type === 'safeComponentMarker') {
         let positionalIndex = here.blockParams.indexOf(parts[0]);
         if (positionalIndex === -1) {
@@ -188,7 +206,14 @@ class ScopeStack {
   }
 }
 
-function handleImpliedComponentHelper(componentName: string, argumentName: string, param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
+function handleImpliedComponentHelper(
+  componentName: string,
+  argumentName: string,
+  param: any,
+  resolver: Resolver,
+  moduleName: string,
+  scopeStack: ScopeStack
+) {
   if (handleComponentHelper(param, resolver, moduleName, scopeStack)) {
     return;
   }
@@ -198,7 +223,9 @@ function handleImpliedComponentHelper(componentName: string, argumentName: strin
     param.hash.pairs.length === 0 &&
     param.params.length === 0 &&
     handleComponentHelper(param.path, resolver, moduleName, scopeStack)
-  ) { return; }
+  ) {
+    return;
+  }
 
   if (
     param.type === 'MustacheStatement' &&

@@ -1,5 +1,4 @@
 declare module 'broccoli-plugin' {
-
   export interface Tree {
     __broccoliGetInfo__(): any;
   }
@@ -12,12 +11,11 @@ declare module 'broccoli-plugin' {
   }
 
   export default abstract class Plugin implements Tree {
-    constructor(inputTrees: Tree[], options: Options)
+    constructor(inputTrees: Tree[], options: Options);
     inputPaths: string[];
     outputPath: string;
     cachePath: string;
     __broccoliGetInfo__(): any;
     abstract build(): Promise<void> | void;
   }
-
 }

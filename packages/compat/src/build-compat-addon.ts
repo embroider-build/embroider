@@ -1,12 +1,12 @@
-import V1InstanceCache from "./v1-instance-cache";
+import V1InstanceCache from './v1-instance-cache';
 import { Package } from '@embroider/core';
-import SmooshPackageJSON from "./smoosh-package-json";
-import broccoliMergeTrees from "broccoli-merge-trees";
-import { Tree } from "broccoli-plugin";
-import OneShot from "./one-shot";
+import SmooshPackageJSON from './smoosh-package-json';
+import broccoliMergeTrees from 'broccoli-merge-trees';
+import { Tree } from 'broccoli-plugin';
+import OneShot from './one-shot';
 import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
-import EmptyPackageTree from "./empty-package-tree";
+import EmptyPackageTree from './empty-package-tree';
 
 export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
   let tree = buildCompatAddon(originalPackage, v1Cache);
@@ -51,6 +51,6 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): T
 
 function withoutNodeModules(root: string): Tree {
   return new Funnel(new UnwatchedDir(root), {
-    exclude: ['node_modules']
+    exclude: ['node_modules'],
   });
 }

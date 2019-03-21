@@ -39,24 +39,28 @@ import { AddonMeta, packageName } from '@embroider/core';
 
 type GetMeta = () => AddonMeta;
 
-export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree, getMeta: GetMeta } {
+export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
-  let goodParts = new Snitch(tree, {
-    allowedPaths: new RegExp(`^${ownName}/`),
-    foundBadPaths: (badPaths: string[]) => {
-      for (let badPath of badPaths) {
-        let name = packageName(badPath)!;
-        renamed[name] = `${ownName}/${name}`;
-      }
+  let goodParts = new Snitch(
+    tree,
+    {
+      allowedPaths: new RegExp(`^${ownName}/`),
+      foundBadPaths: (badPaths: string[]) => {
+        for (let badPath of badPaths) {
+          let name = packageName(badPath)!;
+          renamed[name] = `${ownName}/${name}`;
+        }
+      },
+    },
+    {
+      srcDir: ownName,
     }
-  }, {
-    srcDir: ownName
-  });
+  );
   let badParts = new Funnel(tree, {
-    exclude: [`${ownName}/**`]
+    exclude: [`${ownName}/**`],
   });
   return {
     tree: mergeTrees([goodParts, badParts]),
-    getMeta: () => ({ 'renamed-modules' : renamed, version: 2 })
+    getMeta: () => ({ 'renamed-modules': renamed, version: 2 }),
   };
 }

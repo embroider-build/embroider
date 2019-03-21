@@ -15,5 +15,4 @@ declare module 'broccoli-funnel' {
     build(): Promise<void>;
     protected srcDir: string;
   }
-
 }

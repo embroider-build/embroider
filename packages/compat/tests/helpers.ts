@@ -113,23 +113,23 @@ export class Project extends FixturifyProject {
 
   writeSync(root?: string) {
     super.writeSync(root);
-    let stack: { project: Project, root: string }[] = [{ project: this, root: root || this.root } ];
+    let stack: { project: Project; root: string }[] = [{ project: this, root: root || this.root }];
     while (stack.length > 0) {
       let { project, root } = stack.shift()!;
       for (let [name, target] of project.packageLinks) {
         ensureSymlinkSync(target, join(root, project.name, 'node_modules', name), 'dir');
       }
       for (let dep of project.dependencies()) {
-        stack.push({ project: dep as Project, root: join(root, project.name, 'node_modules')});
+        stack.push({ project: dep as Project, root: join(root, project.name, 'node_modules') });
       }
       for (let dep of project.devDependencies()) {
-        stack.push({ project: dep as Project, root: join(root, project.name, 'node_modules')});
+        stack.push({ project: dep as Project, root: join(root, project.name, 'node_modules') });
       }
     }
   }
 
-  toJSON(): Project["files"];
-  toJSON(key: string): Project["files"] | string;
+  toJSON(): Project['files'];
+  toJSON(key: string): Project['files'] | string;
   toJSON(key?: string) {
     let result = key ? super.toJSON(key) : super.toJSON();
     if (!key && this.packageLinks.size > 0) {
@@ -149,16 +149,16 @@ export function emberProject(emberAppOptions: any = {}, embroiderOptions: Option
   app.files = {
     'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
     config: {
-      'environment.js': environmentFile(name)
+      'environment.js': environmentFile(name),
     },
     app: {
       'index.html': indexFile(name),
       styles: {
-        'app.css': ''
+        'app.css': '',
       },
       'app.js': appJSFile(),
-      'resolver.js': `export { default } from 'ember-resolver';`
-    }
+      'resolver.js': `export { default } from 'ember-resolver';`,
+    },
   };
   app.linkPackage('ember-cli');
   app.linkPackage('loader.js');
@@ -172,16 +172,15 @@ export function emberProject(emberAppOptions: any = {}, embroiderOptions: Option
   return app;
 }
 
-export function addAddon(app: Project, name: string, indexContent = "") {
+export function addAddon(app: Project, name: string, indexContent = '') {
   let addon = app.addDependency(name);
   addon.files = {
     'index.js': addonIndexFile(indexContent),
     addon: {
       templates: {
-        components: {
-        }
-      }
-    }
+        components: {},
+      },
+    },
   };
   addon.linkPackage('ember-cli-htmlbars');
   addon.linkPackage('ember-cli-babel');

@@ -13,11 +13,9 @@ export default class MultiTreeDiff {
   private prevCombined: FSTree = new FSTree();
   private owners: WeakMap<Entry, number> = new WeakMap();
 
-  constructor(
-    private inTrees: InputTree[]
-  ) {}
+  constructor(private inTrees: InputTree[]) {}
 
-  update(): { ops: Operation[], sources: Sources } {
+  update(): { ops: Operation[]; sources: Sources } {
     let combinedEntries: Entry[] = [];
     let sources: Map<string, number> = new Map();
 
@@ -64,6 +62,6 @@ function compareByRelativePath(entryA: Entry, entryB: Entry) {
 
 function isEqual(owners: WeakMap<Entry, number>) {
   return function(a: Entry, b: Entry) {
-    return FSTree.defaultIsEqual(a,b) && owners.get(a) === owners.get(b);
+    return FSTree.defaultIsEqual(a, b) && owners.get(a) === owners.get(b);
   };
 }

@@ -1,7 +1,7 @@
-import { JSDOM } from "jsdom";
-import { readFileSync } from "fs";
-import { EmberAsset } from "./asset";
-import { relative, dirname } from "path";
+import { JSDOM } from 'jsdom';
+import { readFileSync } from 'fs';
+import { EmberAsset } from './asset';
+import { relative, dirname } from 'path';
 
 export interface EmberHTML {
   // each of the Nodes in here points at where we should insert the
@@ -61,19 +61,31 @@ export class PreparedEmberHTML {
   implicitTestStyles: NodeRange;
 
   constructor(private asset: EmberAsset) {
-    this.dom = new JSDOM(readFileSync(asset.sourcePath, "utf8"));
+    this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
     this.javascript = new NodeRange(html.javascript);
     this.styles = new NodeRange(html.styles);
     this.implicitScripts = new NodeRange(html.implicitScripts);
     this.implicitStyles = new NodeRange(html.implicitStyles);
     this.testJavascript = html.testJavascript ? new NodeRange(html.testJavascript) : immediatelyAfter(html.javascript);
-    this.implicitTestScripts = html.implicitTestScripts ? new NodeRange(html.implicitTestScripts) : immediatelyAfter(html.implicitScripts);
-    this.implicitTestStyles = html.implicitTestStyles ? new NodeRange(html.implicitTestStyles) : immediatelyAfter(html.implicitStyles);
+    this.implicitTestScripts = html.implicitTestScripts
+      ? new NodeRange(html.implicitTestScripts)
+      : immediatelyAfter(html.implicitScripts);
+    this.implicitTestStyles = html.implicitTestStyles
+      ? new NodeRange(html.implicitTestStyles)
+      : immediatelyAfter(html.implicitStyles);
   }
 
   private allRanges(): NodeRange[] {
-    return [this.javascript, this.styles, this.implicitScripts, this.implicitStyles, this.implicitTestScripts, this.implicitTestStyles, this.testJavascript];
+    return [
+      this.javascript,
+      this.styles,
+      this.implicitScripts,
+      this.implicitStyles,
+      this.implicitTestScripts,
+      this.implicitTestStyles,
+      this.testJavascript,
+    ];
   }
 
   clear() {
@@ -90,7 +102,7 @@ export class PreparedEmberHTML {
     if (opts && opts.type) {
       newTag.type = opts.type;
     }
-    location.insert(this.dom.window.document.createTextNode("\n"));
+    location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);
   }
 
@@ -100,7 +112,7 @@ export class PreparedEmberHTML {
     let newTag = this.dom.window.document.createElement('link');
     newTag.rel = 'stylesheet';
     newTag.href = relativeTo(this.asset.relativePath, relativeHref);
-    location.insert(this.dom.window.document.createTextNode("\n"));
+    location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);
   }
 }
@@ -110,8 +122,5 @@ function relativeTo(documentPath: string, otherPath: string) {
 }
 
 export function insertNewline(at: Node) {
-  at.parentElement!.insertBefore(
-    at.ownerDocument!.createTextNode("\n"),
-    at
-  );
+  at.parentElement!.insertBefore(at.ownerDocument!.createTextNode('\n'), at);
 }

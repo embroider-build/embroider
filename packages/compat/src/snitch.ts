@@ -15,11 +15,7 @@ export default class Snitch extends Funnel {
   private foundBadPaths: Function;
   private mustCheck = true;
 
-  constructor(
-    inputTree: Tree,
-    snitchOptions: { allowedPaths: RegExp, foundBadPaths: Function },
-    funnelOptions: any
-  ) {
+  constructor(inputTree: Tree, snitchOptions: { allowedPaths: RegExp; foundBadPaths: Function }, funnelOptions: any) {
     super(inputTree, funnelOptions);
     this.allowedPaths = snitchOptions.allowedPaths;
     this.foundBadPaths = snitchOptions.foundBadPaths;
@@ -28,12 +24,11 @@ export default class Snitch extends Funnel {
   build() {
     if (this.mustCheck) {
       let badPaths: string[] = [];
-      walkSync(this.inputPaths[0], { directories: false })
-        .map(filename => {
-          if (!this.allowedPaths.test(filename)) {
-            badPaths.push(filename);
-          }
-        });
+      walkSync(this.inputPaths[0], { directories: false }).map(filename => {
+        if (!this.allowedPaths.test(filename)) {
+          badPaths.push(filename);
+        }
+      });
       if (badPaths.length > 0) {
         this.foundBadPaths(badPaths);
       }

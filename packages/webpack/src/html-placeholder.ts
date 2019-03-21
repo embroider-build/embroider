@@ -68,10 +68,7 @@ export default class Placeholder {
   }
 
   insertNewline() {
-    this.end.parentElement.insertBefore(
-      this.end.ownerDocument.createTextNode("\n"),
-      this.end
-    );
+    this.end.parentElement.insertBefore(this.end.ownerDocument.createTextNode('\n'), this.end);
   }
 }
 

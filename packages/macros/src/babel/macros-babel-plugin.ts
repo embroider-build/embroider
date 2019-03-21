@@ -21,7 +21,7 @@ export default function main() {
         state.pendingTasks.forEach(task => task());
         pruneRemovedImports(state);
         pruneMacroImports(path);
-      }
+      },
     },
     CallExpression(path: NodePath<CallExpression>, state: State) {
       let callee = path.get('callee');
@@ -51,7 +51,7 @@ export default function main() {
       if (path.referencesImport('@embroider/macros', 'macroIf')) {
         throw error(path, `You can only use macroIf as a function call`);
       }
-    }
+    },
   };
   return { visitor };
 }

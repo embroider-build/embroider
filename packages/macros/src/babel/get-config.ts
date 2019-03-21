@@ -6,7 +6,12 @@ import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { assertArray } from './evaluate-json';
 
-export default function getConfig(path: NodePath<CallExpression>, state: State, packageCache: PackageCache, own: boolean) {
+export default function getConfig(
+  path: NodePath<CallExpression>,
+  state: State,
+  packageCache: PackageCache,
+  own: boolean
+) {
   let packageName: string | undefined;
   if (own) {
     if (path.node.arguments.length !== 0) {

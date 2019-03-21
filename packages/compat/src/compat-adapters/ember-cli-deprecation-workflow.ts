@@ -1,8 +1,8 @@
-import V1Addon from "../v1-addon";
+import V1Addon from '../v1-addon';
 import { join, dirname } from 'path';
 import { UnwatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
-import { Memoize } from "typescript-memoize";
+import { Memoize } from 'typescript-memoize';
 import Funnel from 'broccoli-funnel';
 
 export default class extends V1Addon {
@@ -15,9 +15,11 @@ export default class extends V1Addon {
     // its own app.import, and (2) even if you fix that,
     // ember-debug-handlers-polyfill itself has a bug that makes it not work as
     // a second-level addon.
-    let polyfillDir = dirname(resolve.sync('ember-debug-handlers-polyfill/package.json', { basedir: this.addonInstance.root }));
+    let polyfillDir = dirname(
+      resolve.sync('ember-debug-handlers-polyfill/package.json', { basedir: this.addonInstance.root })
+    );
     let tree = new Funnel(new UnwatchedDir(join(polyfillDir, 'vendor')), {
-      destDir: 'vendor'
+      destDir: 'vendor',
     });
     let trees = super.v2Trees;
     trees.push(tree);

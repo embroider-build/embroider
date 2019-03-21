@@ -1,6 +1,6 @@
-import Plugin, { Tree } from "broccoli-plugin";
+import Plugin, { Tree } from 'broccoli-plugin';
 import { join } from 'path';
-import { readFileSync, outputFileSync } from "fs-extra";
+import { readFileSync, outputFileSync } from 'fs-extra';
 import { EmberENV } from '@embroider/core';
 
 export interface ConfigContents {
@@ -30,7 +30,7 @@ export class WriteV1Config extends Plugin {
   private lastContents: string | undefined;
   constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private appName: string) {
     super([inputTree], {
-      persistentOutput: true
+      persistentOutput: true,
     });
   }
   build() {

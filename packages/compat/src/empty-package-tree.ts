@@ -1,6 +1,6 @@
-import Plugin from "broccoli-plugin";
-import { writeJSONSync } from "fs-extra";
-import { join } from "path";
+import Plugin from 'broccoli-plugin';
+import { writeJSONSync } from 'fs-extra';
+import { join } from 'path';
 
 export default class extends Plugin {
   private built = false;

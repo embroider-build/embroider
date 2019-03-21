@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { sync as pkgUpSync }  from 'pkg-up';
+import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname } from 'path';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
@@ -32,12 +32,11 @@ export default class V1App implements V1Package {
     }
   }
 
-  protected constructor(protected app: any, private packageCache: PackageCache) {
-  }
+  protected constructor(protected app: any, private packageCache: PackageCache) {}
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
-  get name() : string {
+  get name(): string {
     return this.app.project.pkg.name;
   }
 
@@ -82,7 +81,7 @@ export default class V1App implements V1Package {
   }
 
   private get configTree() {
-    return new (this.configLoader)(dirname(this.app.project.configPath()), {
+    return new this.configLoader(dirname(this.app.project.configPath()), {
       env: this.app.env,
       tests: this.app.tests || false,
       project: this.app.project,
@@ -105,7 +104,8 @@ export default class V1App implements V1Package {
   get htmlTree() {
     if (this.app.tests) {
       return mergeTrees([this.indexTree, this.app.testIndex()]);
-    } {
+    }
+    {
       return this.indexTree;
     }
   }
@@ -127,12 +127,9 @@ export default class V1App implements V1Package {
         annotation: 'src/ui/index.html',
       });
 
-      index = mergeTrees([
-        index,
-        srcIndex,
-      ], {
+      index = mergeTrees([index, srcIndex], {
         overwrite: true,
-        annotation: 'merge classic and MU index.html'
+        annotation: 'merge classic and MU index.html',
       });
     }
 
@@ -140,10 +137,10 @@ export default class V1App implements V1Package {
       addons: this.app.project.addons,
       autoRun: this.autoRun,
       storeConfigInMeta: this.storeConfigInMeta,
-      isModuleUnification: this.isModuleUnification
+      isModuleUnification: this.isModuleUnification,
     });
 
-    return new (this.configReplace)(index, this.configTree, {
+    return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
       files: [indexFilePath],
       patterns,
@@ -158,13 +155,15 @@ export default class V1App implements V1Package {
       plugins = plugins.filter(p => {
         // even if the app was using @embroider/macros, we drop it from the config
         // here in favor of our globally-configured one.
-        return !isEmbroiderMacrosPlugin(p) &&
+        return (
+          !isEmbroiderMacrosPlugin(p) &&
           // similarly, if the app was already using
           // ember-cli-htmlbars-inline-precompile, we remove it here because we
           // have our own always-installed version of that (v2 addons are
           // allowed to assume it will be present in the final app build, the
           // app doesn't get to turn that off or configure it.).
-          !TemplateCompiler.isInlinePrecompilePlugin(p);
+          !TemplateCompiler.isInlinePrecompilePlugin(p)
+        );
       });
     }
 
@@ -184,16 +183,19 @@ export default class V1App implements V1Package {
       babelrc: false,
       plugins,
       presets: [
-        [require.resolve("babel-preset-env"), {
-          targets: babelInstance._getTargets(),
-          modules: false
-        }],
+        [
+          require.resolve('babel-preset-env'),
+          {
+            targets: babelInstance._getTargets(),
+            modules: false,
+          },
+        ],
       ],
       // this is here because broccoli-middleware can't render a codeFrame full
       // of terminal codes. It would be nice to add something like
       // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
       // leave color enabled.
-      highlightCode: false
+      highlightCode: false,
     };
     return config;
   }
@@ -204,17 +206,17 @@ export default class V1App implements V1Package {
     let options = {
       envFlags: {
         source: '@glimmer/env',
-        flags: { DEBUG: !isProduction, CI: !!process.env.CI }
+        flags: { DEBUG: !isProduction, CI: !!process.env.CI },
       },
 
       externalizeHelpers: {
-        global: 'Ember'
+        global: 'Ember',
       },
 
       debugTools: {
         source: '@ember/debug',
-        assertPredicateIndex: 1
-      }
+        assertPredicateIndex: 1,
+      },
     };
     return [DebugMacros, options];
   }
@@ -227,7 +229,7 @@ export default class V1App implements V1Package {
     // are.
     let transformed = new Map();
     for (let transformConfig of this.app._customTransformsMap.values()) {
-      for (let filename of (transformConfig.files as string[])) {
+      for (let filename of transformConfig.files as string[]) {
         let preresolved = this.preresolvedNodeFile(filename);
         if (preresolved) {
           transformed.set(filename, preresolved);
@@ -253,22 +255,27 @@ export default class V1App implements V1Package {
   }
 
   private combinedVendor(addonTrees: Tree[]): Tree {
-    let trees = addonTrees.map(tree => new Funnel(tree, {
-      allowEmpty: true,
-      srcDir: 'vendor',
-      destDir: 'vendor',
-    }));
+    let trees = addonTrees.map(
+      tree =>
+        new Funnel(tree, {
+          allowEmpty: true,
+          srcDir: 'vendor',
+          destDir: 'vendor',
+        })
+    );
     if (this.vendorTree) {
-      trees.push(new Funnel(this.vendorTree, {
-        destDir: 'vendor'
-      }));
+      trees.push(
+        new Funnel(this.vendorTree, {
+          destDir: 'vendor',
+        })
+      );
     }
     return mergeTrees(trees, { overwrite: true });
   }
 
   private addNodeAssets(inputTree: Tree): Tree {
     let transformedNodeFiles = this.transformedNodeFiles();
-    return new AddToTree(inputTree, (outputPath) => {
+    return new AddToTree(inputTree, outputPath => {
       for (let [localDestPath, sourcePath] of transformedNodeFiles) {
         let destPath = join(outputPath, localDestPath);
         ensureDirSync(dirname(destPath));
@@ -277,8 +284,12 @@ export default class V1App implements V1Package {
 
       let addonMeta: AddonMeta = {
         version: 2,
-        'implicit-scripts': this.remapImplicitAssets(this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]),
-        'implicit-styles': this.remapImplicitAssets(this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css]),
+        'implicit-scripts': this.remapImplicitAssets(
+          this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]
+        ),
+        'implicit-styles': this.remapImplicitAssets(
+          this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css]
+        ),
         'implicit-test-scripts': this.remapImplicitAssets(this.app.legacyTestFilesToAppend),
         'implicit-test-styles': this.remapImplicitAssets(this.app.vendorTestStaticStyles),
       };
@@ -286,7 +297,7 @@ export default class V1App implements V1Package {
         name: '@embroider/synthesized-vendor',
         version: '0.0.0',
         keywords: 'ember-addon',
-        'ember-addon': addonMeta
+        'ember-addon': addonMeta,
       };
       writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
     });
@@ -297,10 +308,13 @@ export default class V1App implements V1Package {
   }
 
   private combinedStyles(addonTrees: Tree[]): Tree {
-    let trees = addonTrees.map(tree => new Funnel(tree, {
-      allowEmpty: true,
-      srcDir: '_app_styles_',
-    }));
+    let trees = addonTrees.map(
+      tree =>
+        new Funnel(tree, {
+          allowEmpty: true,
+          srcDir: '_app_styles_',
+        })
+    );
     if (this.app.trees.styles) {
       trees.push(this.app.trees.styles);
     }
@@ -318,18 +332,12 @@ export default class V1App implements V1Package {
       minifyCSS: this.app.options.minifyCSS.options,
     };
 
-    let styles = this.preprocessors.preprocessCss(
-      this.combinedStyles(addonTrees),
-      '.',
-      '/assets',
-      options
-    );
+    let styles = this.preprocessors.preprocessCss(this.combinedStyles(addonTrees), '.', '/assets', options);
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
         version: 2,
-        'public-assets': {
-        }
+        'public-assets': {},
       };
       for (let file of readdirSync(join(outputPath, 'assets'))) {
         addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
@@ -338,7 +346,7 @@ export default class V1App implements V1Package {
         name: '@embroider/synthesized-styles',
         version: '0.0.0',
         keywords: 'ember-addon',
-        'ember-addon': addonMeta
+        'ember-addon': addonMeta,
       };
       writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
     });
@@ -393,12 +401,10 @@ export default class V1App implements V1Package {
     // auto-import is supported natively so we don't need it here
     this.app.registry.remove('js', 'ember-auto-import-analyzer');
 
-    return this.preprocessors.preprocessJs(
-      tree, `/`, '/', {
-        annotation: 'v1-app-preprocess-js',
-        registry: this.app.registry
-      }
-    );
+    return this.preprocessors.preprocessJs(tree, `/`, '/', {
+      annotation: 'v1-app-preprocess-js',
+      registry: this.app.registry,
+    });
   }
 
   get htmlbarsPlugins(): TemplateCompilerPlugins {
@@ -415,16 +421,20 @@ export default class V1App implements V1Package {
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
   private get appTree(): Tree {
-    return this.preprocessJS(new Funnel(this.app.trees.app, {
-      exclude: ['styles/**', "*.html"],
-    }));
+    return this.preprocessJS(
+      new Funnel(this.app.trees.app, {
+        exclude: ['styles/**', '*.html'],
+      })
+    );
   }
 
   private get testsTree(): Tree | undefined {
     if (this.shouldBuildTests && this.app.trees.tests) {
-      return this.preprocessJS(new Funnel(this.app.trees.tests, {
-        destDir: 'tests'
-      }));
+      return this.preprocessJS(
+        new Funnel(this.app.trees.tests, {
+          destDir: 'tests',
+        })
+      );
     }
   }
 
@@ -447,13 +457,11 @@ export default class V1App implements V1Package {
     return this.app.trees.public;
   }
 
-  processAppJS() : { appJS: Tree, analyzer: DependencyAnalyzer } {
+  processAppJS(): { appJS: Tree; analyzer: DependencyAnalyzer } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let importParsers = [
-      new ImportParser(appTree),
-    ];
+    let importParsers = [new ImportParser(appTree)];
     if (testsTree) {
       importParsers.push(new ImportParser(testsTree));
     }
@@ -461,11 +469,7 @@ export default class V1App implements V1Package {
       importParsers.push(new ImportParser(lintTree));
     }
     let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
-    let config = new WriteV1Config(
-      this.config,
-      this.storeConfigInMeta,
-      this.name
-    );
+    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);
     let trees: Tree[] = [];
     trees.push(appTree);
     trees.push(config);
@@ -477,7 +481,7 @@ export default class V1App implements V1Package {
     }
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
-      analyzer
+      analyzer,
     };
   }
 
@@ -519,7 +523,7 @@ class V1DummyApp extends V1App {
     packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, owningAddon);
   }
 
-  get name() : string {
+  get name(): string {
     // here we accept the ember-cli behavior
     return this.app.name;
   }

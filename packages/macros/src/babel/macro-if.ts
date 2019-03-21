@@ -26,7 +26,7 @@ export default function macroIf(path: NodePath<CallExpression>, state: State, vi
   }
 
   state.removed.push(path.get('callee'));
-  let [kept, dropped] = predicate.value ? [consequent, alternate] : [ alternate, consequent];
+  let [kept, dropped] = predicate.value ? [consequent, alternate] : [alternate, consequent];
   if (kept) {
     let body = kept.get('body');
     if (body.type === 'BlockStatement') {

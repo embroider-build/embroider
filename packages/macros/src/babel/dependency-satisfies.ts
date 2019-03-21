@@ -12,10 +12,16 @@ export default function dependencySatisfies(path: NodePath<CallExpression>, stat
   }
   let [packageName, range] = path.node.arguments;
   if (packageName.type !== 'StringLiteral') {
-    throw error(assertArray(path.get('arguments'))[0], `the first argument to dependencySatisfies must be a string literal`);
+    throw error(
+      assertArray(path.get('arguments'))[0],
+      `the first argument to dependencySatisfies must be a string literal`
+    );
   }
   if (range.type !== 'StringLiteral') {
-    throw error(assertArray(path.get('arguments'))[1], `the second argument to dependencySatisfies must be a string literal`);
+    throw error(
+      assertArray(path.get('arguments'))[1],
+      `the second argument to dependencySatisfies must be a string literal`
+    );
   }
   let sourceFileName = sourceFile(path, state);
   try {

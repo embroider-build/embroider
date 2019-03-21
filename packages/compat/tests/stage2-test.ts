@@ -1,8 +1,4 @@
-import {
-  emberProject,
-  addAddon,
-  Project
-} from './helpers';
+import { emberProject, addAddon, Project } from './helpers';
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
@@ -16,7 +12,6 @@ import { TransformOptions, transform } from '@babel/core';
 
 QUnit.module('stage2 build', function() {
   QUnit.module('static with rules', function(origHooks) {
-
     let { hooks, test } = installFileAssertions(origHooks);
     let builder: Builder;
     let app: Project;
@@ -26,7 +21,7 @@ QUnit.module('stage2 build', function() {
 
     hooks.before(async function(assert) {
       app = emberProject();
-      (app.files.app as Project["files"]).templates = {
+      (app.files.app as Project['files']).templates = {
         'index.hbs': `
           <HelloWorld @useDynamic="first-choice" />
           <HelloWorld @useDynamic={{"second-choice"}} />
@@ -40,7 +35,7 @@ QUnit.module('stage2 build', function() {
           'first-choice.hbs': 'first',
           'second-choice.hbs': 'second',
           'third-choice.hbs': 'third',
-        }
+        },
       };
 
       let addon = addAddon(app, 'my-addon');
@@ -63,44 +58,48 @@ QUnit.module('stage2 build', function() {
             'hello-world.hbs': `
               {{component dynamicComponentName}}
             `,
-          }
-        }
+          },
+        },
       };
       addon.files.app = {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
-        }
+        },
       };
       app.writeSync();
       let legacyAppInstance = emberApp(app.baseDir, { tests: false });
       let options: Options = {
         staticComponents: true,
         staticHelpers: true,
-        packageRules: [{
-          package: 'my-addon',
-          components: {
-            '{{hello-world}}': {
-              acceptsComponentArguments: [{
-                name: 'useDynamic',
-                becomes: 'dynamicComponentName',
-              }],
-              layout: {
-                addonPath: 'templates/components/hello-world.hbs'
-              }
-            }
+        packageRules: [
+          {
+            package: 'my-addon',
+            components: {
+              '{{hello-world}}': {
+                acceptsComponentArguments: [
+                  {
+                    name: 'useDynamic',
+                    becomes: 'dynamicComponentName',
+                  },
+                ],
+                layout: {
+                  addonPath: 'templates/components/hello-world.hbs',
+                },
+              },
+            },
+            addonModules: {
+              'components/hello-world.js': {
+                dependsOnModules: ['./synthetic-import-1'],
+                dependsOnComponents: ['{{second-choice}}'],
+              },
+            },
+            appModules: {
+              'components/hello-world.js': {
+                dependsOnModules: ['./synthetic-import-2'],
+              },
+            },
           },
-          addonModules: {
-            'components/hello-world.js': {
-              dependsOnModules: [ './synthetic-import-1' ],
-              dependsOnComponents: ['{{second-choice}}'],
-            }
-          },
-          appModules: {
-            'components/hello-world.js': {
-              dependsOnModules: [ './synthetic-import-2' ]
-            }
-          }
-        }]
+        ],
       };
       let compatApp = new App(legacyAppInstance, new CompatAddons(legacyAppInstance, options), options);
       builder = new Builder(compatApp.tree);
@@ -112,7 +111,7 @@ QUnit.module('stage2 build', function() {
           return templateCompiler.compile(fileAssert.fullPath, contents);
         } else if (fileAssert.path.endsWith('.js')) {
           let babelConfig = require(join(fileAssert.basePath, '_babel_config_')).config as TransformOptions;
-          return transform(contents, Object.assign({ filename: fileAssert.fullPath}, babelConfig))!.code!;
+          return transform(contents, Object.assign({ filename: fileAssert.fullPath }, babelConfig))!.code!;
         } else {
           return contents;
         }
@@ -127,15 +126,24 @@ QUnit.module('stage2 build', function() {
     test('index.hbs', function(assert) {
       let assertFile = assert.file('templates/index.hbs').transform(transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
-      assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');
+      assertFile.matches(
+        /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
+        'static component helper dependency'
+      );
       assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
-      assertFile.matches(/import \w+ from ["'].\/components\/second-choice\.hbs["']/, 'rule-driven mustache string literal');
+      assertFile.matches(
+        /import \w+ from ["'].\/components\/second-choice\.hbs["']/,
+        'rule-driven mustache string literal'
+      );
     });
 
     test('curly.hbs', function(assert) {
       let assertFile = assert.file('templates/curly.hbs').transform(transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
-      assertFile.matches(/import \w+ from ["'].\/components\/third-choice\.hbs["']/, 'static component helper dependency');
+      assertFile.matches(
+        /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
+        'static component helper dependency'
+      );
       assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
     });
 
@@ -152,7 +160,7 @@ QUnit.module('stage2 build', function() {
     test('addon/hello-world.js', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js').transform(transpile);
       assertFile.matches(/import ["']\.\/synthetic-import-1/);
-      let pattern =`import a0 from ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
+      let pattern = `import a0 from ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
       assertFile.matches(new RegExp(pattern));
       pattern = `window\.define\("my-app\/templates\/components\/second-choice"`;
       assertFile.matches(new RegExp(/window\.define\(["']my-app\/templates\/components\/second-choice["']/));
@@ -162,7 +170,5 @@ QUnit.module('stage2 build', function() {
       let assertFile = assert.file('./components/hello-world.js').transform(transpile);
       assertFile.matches(/import ["']\.\/synthetic-import-2/);
     });
-
   });
-
 });

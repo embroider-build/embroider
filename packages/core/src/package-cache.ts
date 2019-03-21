@@ -3,7 +3,7 @@ import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname } from 'path';
-import { sync as pkgUpSync }  from 'pkg-up';
+import { sync as pkgUpSync } from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
@@ -53,7 +53,7 @@ export default class PackageCache {
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
     for (let length = segments.length - 1; length >= 0; length--) {
-      if (segments[length-1] === 'node_modules') {
+      if (segments[length - 1] === 'node_modules') {
         // once we hit a node_modules, we're leaving the package we were in, so
         // any higher caches don't apply to us
         break;
@@ -80,11 +80,10 @@ export default class PackageCache {
     if (p) {
       return p;
     }
-    p =  new PackageCache();
-    shared.set(identifier,p);
+    p = new PackageCache();
+    shared.set(identifier, p);
     return p;
   }
-
 }
 
 const shared: Map<string, PackageCache> = new Map();

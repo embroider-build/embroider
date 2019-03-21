@@ -25,8 +25,8 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
   constructor(
     private trees: NamedTrees,
     annotation: string,
-    private buildHook: (trees: OutputPaths<NamedTrees>) => Promise<void>,
-  ){
+    private buildHook: (trees: OutputPaths<NamedTrees>) => Promise<void>
+  ) {
     super(flatTrees(trees), {
       persistentOutput: true,
       needsCache: false,
@@ -41,24 +41,22 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
       if (entry.single) {
         result[entry.name] = this.inputPaths[inputPathCounter++];
       } else if (entry.multi) {
-        result[entry.name] = this.inputPaths.slice(inputPathCounter, inputPathCounter += entry.multi.length);
+        result[entry.name] = this.inputPaths.slice(inputPathCounter, (inputPathCounter += entry.multi.length));
       }
     }
-    return this.buildHook(result as unknown as OutputPaths<NamedTrees>);
+    return this.buildHook((result as unknown) as OutputPaths<NamedTrees>);
   }
 }
 
 export type OutputPaths<NamedTrees> = {
-  [P in keyof NamedTrees]: NamedTrees[P] extends Tree ? string :
-    NamedTrees[P] extends Tree[] ? string[]
-      : never;
+  [P in keyof NamedTrees]: NamedTrees[P] extends Tree ? string : NamedTrees[P] extends Tree[] ? string[] : never
 };
 
 function isTree(x: any): x is Tree {
   return x && typeof x.__broccoliGetInfo__ === 'function';
 }
 
-function * findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string, single?: Tree, multi?: Tree[] }> {
+function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string; single?: Tree; multi?: Tree[] }> {
   for (let [name, value] of Object.entries(trees)) {
     if (Array.isArray(value)) {
       yield { name, multi: value.filter(isTree) };

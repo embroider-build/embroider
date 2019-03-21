@@ -18,7 +18,11 @@ export default function literal(value: any, builders: any): any {
     return builders.sexpr('array', value.map(element => literal(element, builders)));
   }
   if (typeof value === 'object') {
-    return builders.sexpr('hash', undefined, builders.hash(Object.entries(value).map(([k,v]) => builders.pair(k,literal(v, builders)))));
+    return builders.sexpr(
+      'hash',
+      undefined,
+      builders.hash(Object.entries(value).map(([k, v]) => builders.pair(k, literal(v, builders))))
+    );
   }
 
   throw new Error(`don't know how to emit a literal form of value ${value}`);

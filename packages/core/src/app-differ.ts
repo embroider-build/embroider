@@ -1,8 +1,8 @@
-import Package from "./package";
-import MultiTreeDiff, { InputTree } from "./multi-tree-diff";
+import Package from './package';
+import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
 import { join } from 'path';
-import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync } from "fs-extra";
+import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync } from 'fs-extra';
 import { debug } from './messages';
 import assertNever from 'assert-never';
 
@@ -14,25 +14,28 @@ export default class AppDiffer {
 
   constructor(private outputPath: string, ownAppJSDir: string, activeAddonDescendants: Package[]) {
     let trees = activeAddonDescendants
-      .map((addon): InputTree | undefined => {
-        let dir = addon.meta['app-js'];
-        if (dir) {
-          let definitelyDir = join(addon.root, dir);
-          this.sourceDirs.push(definitelyDir);
-          return {
-            mayChange: addon.mayRebuild,
-            walk() {
-              return walkSync.entries(definitelyDir);
-            }
-          };
+      .map(
+        (addon): InputTree | undefined => {
+          let dir = addon.meta['app-js'];
+          if (dir) {
+            let definitelyDir = join(addon.root, dir);
+            this.sourceDirs.push(definitelyDir);
+            return {
+              mayChange: addon.mayRebuild,
+              walk() {
+                return walkSync.entries(definitelyDir);
+              },
+            };
+          }
         }
-      }).filter(Boolean) as InputTree[];
+      )
+      .filter(Boolean) as InputTree[];
 
     trees.push({
       mayChange: true,
       walk() {
         return walkSync.entries(ownAppJSDir);
-      }
+      },
     });
     this.sourceDirs.push(ownAppJSDir);
     this.differ = new MultiTreeDiff(trees);
@@ -56,7 +59,7 @@ export default class AppDiffer {
           break;
         case 'change':
           removeSync(outputPath);
-          // deliberate fallthrough
+        // deliberate fallthrough
         case 'create':
           copySync(join(this.sourceDirs[sources.get(relativePath)!], relativePath), outputPath, { dereference: true });
           this.files.add(relativePath);

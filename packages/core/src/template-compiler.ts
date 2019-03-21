@@ -1,6 +1,6 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
-import { PortablePluginConfig, ResolveOptions } from "./portable-plugin-config";
+import { PortablePluginConfig, ResolveOptions } from './portable-plugin-config';
 import { readFileSync } from 'fs';
 import { Tree } from 'broccoli-plugin';
 import Filter from 'broccoli-persistent-filter';
@@ -33,8 +33,8 @@ interface GlimmerSyntax {
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   registerPlugin(type: string, plugin: unknown): void;
-  precompile(templateContents: string, options: { contents: string, moduleName: string }): string;
-  _Ember: { FEATURES: any, ENV: any };
+  precompile(templateContents: string, options: { contents: string; moduleName: string }): string;
+  _Ember: { FEATURES: any; ENV: any };
   cacheKey: string;
 }
 
@@ -74,7 +74,9 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
         registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
         precompile: theExports.precompile,
         _Ember: theExports._Ember,
-        cacheKey: createHash('md5').update(source).digest('hex'),
+        cacheKey: createHash('md5')
+          .update(source)
+          .digest('hex'),
       };
     }
   }
@@ -96,11 +98,7 @@ class PortableTemplateCompiler extends PortablePluginConfig {
   const templateCompiler = new TemplateCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}}));
   templateCompiler.isParallelSafe = {{ isParallelSafe }};
   module.exports = templateCompiler;
-  `) as (params: {
-    portable: any,
-    here: string,
-    isParallelSafe: boolean,
-  }) => string;
+  `) as (params: { portable: any; here: string; isParallelSafe: boolean }) => string;
 
   constructor(config: SetupCompilerParams, resolveOptions: ResolveOptions) {
     super(config, resolveOptions);
@@ -114,7 +112,11 @@ class PortableTemplateCompiler extends PortablePluginConfig {
   }
 
   serialize() {
-    return PortableTemplateCompiler.template({ here: this.here, portable: this.portable, isParallelSafe: this.isParallelSafe });
+    return PortableTemplateCompiler.template({
+      here: this.here,
+      portable: this.portable,
+      isParallelSafe: this.isParallelSafe,
+    });
   }
 }
 
@@ -152,21 +154,23 @@ export default class TemplateCompiler {
       this.userPluginsCount++;
     }
     initializeEmberENV(syntax, this.params.EmberENV);
-    let cacheKey = createHash('md5').update(stringify({
-      // todo: get resolver reflected in cacheKey
-      syntax: syntax.cacheKey,
-    })).digest('hex');
+    let cacheKey = createHash('md5')
+      .update(
+        stringify({
+          // todo: get resolver reflected in cacheKey
+          syntax: syntax.cacheKey,
+        })
+      )
+      .digest('hex');
     return { syntax, cacheKey };
   }
 
   // Compiles to the wire format plus dependency list.
-  precompile(moduleName: string, contents: string): { compiled: string, dependencies: ResolvedDep[] } {
-    let compiled = this.syntax.precompile(
-      stripBom(contents), {
-        contents,
-        moduleName
-      }
-    );
+  precompile(moduleName: string, contents: string): { compiled: string; dependencies: ResolvedDep[] } {
+    let compiled = this.syntax.precompile(stripBom(contents), {
+      contents,
+      moduleName,
+    });
     let dependencies: ResolvedDep[];
     if (this.params.resolver) {
       dependencies = this.params.resolver.dependenciesOf(moduleName);
@@ -186,7 +190,7 @@ export default class TemplateCompiler {
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
-    return lines.join("\n");
+    return lines.join('\n');
   }
 
   // Applies all custom AST transforms and emits the results still as
@@ -247,7 +251,6 @@ export default class TemplateCompiler {
     }
     return false;
   }
-
 }
 
 class TemplateCompileTree extends Filter {
@@ -258,7 +261,7 @@ class TemplateCompileTree extends Filter {
       extensions: ['hbs', 'handlebars'],
       // in stage3 we are changing the file extensions from hbs to js. In
       // stage1, we are just keeping hbs.
-      targetExtension: stage === 3 ? 'js' : undefined
+      targetExtension: stage === 3 ? 'js' : undefined,
     });
   }
 
@@ -297,7 +300,9 @@ function registerPlugins(syntax: GlimmerSyntax, plugins: Plugins) {
 }
 
 function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {
-  if (!EmberENV) { return; }
+  if (!EmberENV) {
+    return;
+  }
 
   let props;
 
@@ -311,7 +316,9 @@ function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {
   if (EmberENV) {
     props = Object.keys(EmberENV);
     props.forEach(prop => {
-      if (prop === 'FEATURES') { return; }
+      if (prop === 'FEATURES') {
+        return;
+      }
       syntax._Ember.ENV[prop] = EmberENV[prop];
     });
   }

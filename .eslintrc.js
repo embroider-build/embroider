@@ -16,6 +16,7 @@ module.exports = {
     'no-var': 'error',
 
     '@typescript-eslint/no-angle-bracket-type-assertion': 'error',
+    '@typescript-eslint/no-inferrable-types': 'error',
 
     'prettier/prettier': 'error',
   },

@@ -1,7 +1,6 @@
 {
   "rules": {
     "label-position": true,
-    "no-debugger": true,
     "no-duplicate-variable": true,
     "no-inferrable-types": [true],
     "no-implicit-dependencies": true,

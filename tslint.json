@@ -1,16 +1,8 @@
 {
   "rules": {
-    "no-var-keyword": true,
     "label-position": true,
-    "no-angle-bracket-type-assertion": true,
-    "no-construct": true,
-    "no-debugger": true,
     "no-duplicate-variable": true,
-    "no-inferrable-types": [true],
     "no-implicit-dependencies": true,
-    "no-unused-expression": true,
-    "triple-equals": [true, "allow-null-check"],
-    "class-name": true,
     "no-require-imports": true
   }
 }

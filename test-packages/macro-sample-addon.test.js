@@ -7,4 +7,3 @@ test('macro-addon', async () => {
     cwd: `${__dirname}/macro-sample-addon`,
   });
 });
-

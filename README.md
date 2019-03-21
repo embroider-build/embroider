@@ -19,7 +19,7 @@ The main risks to be aware of if you choose to use Embroider in production are:
 
 ## V2 Package Spec
 
-See [SPEC.md](https://github.com/embroider-build/embroider/blob/master/SPEC.md) for a draft of the new addon publication format we are targeting. Addon authors **SHOULD NOT** publish packages to NPM that use this format (yet), because it's still subject to change. The spec will eventually become an RFC, and only once that is final is it a good idea to publish using the format.
+See [SPEC.md](SPEC.md) for a draft of the new addon publication format we are targeting. Addon authors **SHOULD NOT** publish packages to NPM that use this format (yet), because it's still subject to change. The spec will eventually become an RFC, and only once that is final is it a good idea to publish using the format.
 
 ## How to try it
 

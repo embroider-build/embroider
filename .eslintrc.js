@@ -11,6 +11,7 @@ module.exports = {
   plugins: ['prettier', '@typescript-eslint'],
   extends: ['prettier', 'prettier/@typescript-eslint'],
   rules: {
+    eqeqeq: ['error', 'smart'],
     'no-debugger': 'error',
     'no-new-wrappers': 'error',
     'no-var': 'error',

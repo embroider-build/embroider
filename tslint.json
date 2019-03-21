@@ -3,7 +3,6 @@
     "label-position": true,
     "no-duplicate-variable": true,
     "no-implicit-dependencies": true,
-    "no-unused-expression": true,
     "triple-equals": [true, "allow-null-check"],
     "class-name": true,
     "no-require-imports": true

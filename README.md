@@ -1,4 +1,5 @@
-# Embroider: a modern build system for EmberJS apps
+Embroider: a modern build system for EmberJS apps
+===============================================================================
 
 [![Build Status](https://travis-ci.org/embroider-build/embroider.svg?branch=master)](https://travis-ci.org/embroider-build/embroider)
 
@@ -24,7 +25,9 @@ This repo implements a new three-stage build system for Ember apps.
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
 
-## Status / Should I Use It?
+
+Status / Should I Use It?
+-------------------------------------------------------------------------------
 
 This is beta-quality software. Teams are encouraged to test their apps and
 addons using Embroider and report bugs. We need more real-world testing before
@@ -37,7 +40,9 @@ The main risks to be aware of if you choose to use Embroider in production are:
  - Embroider's own configuration options are subject to change, so you'll need
    to read the CHANGELOG.md when updating the Embroider packages.
 
-## V2 Package Spec
+
+V2 Package Spec
+-------------------------------------------------------------------------------
 
 See [SPEC.md](SPEC.md) for a draft of the new addon publication format we are
 targeting. Addon authors **SHOULD NOT** publish packages to NPM that use this
@@ -45,7 +50,9 @@ format (yet), because it's still subject to change. The spec will eventually
 become an RFC, and only once that is final is it a good idea to publish using
 the format.
 
-## How to try it
+
+How to try it
+-------------------------------------------------------------------------------
 
 1. Add dependencies:
 
@@ -74,11 +81,14 @@ the format.
 
 3. Use `ember serve`, `ember test`, and `ember build` as usual.
 
-## Contributing
+
+Contributing
+-------------------------------------------------------------------------------
 
 see [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 
-## License
+License
+-------------------------------------------------------------------------------
 
 This project is licensed under the [MIT License](LICENSE).

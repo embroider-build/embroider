@@ -11,6 +11,8 @@ module.exports = {
   plugins: ['prettier', '@typescript-eslint'],
   extends: ['prettier', 'prettier/@typescript-eslint'],
   rules: {
+    'no-var': 'error',
+
     'prettier/prettier': 'error',
   },
 };

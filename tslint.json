@@ -1,6 +1,5 @@
 {
   "rules": {
-    "no-var-keyword": true,
     "label-position": true,
     "no-angle-bracket-type-assertion": true,
     "no-construct": true,

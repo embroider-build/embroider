@@ -1,7 +1,6 @@
 {
   "rules": {
     "label-position": true,
-    "no-angle-bracket-type-assertion": true,
     "no-construct": true,
     "no-debugger": true,
     "no-duplicate-variable": true,

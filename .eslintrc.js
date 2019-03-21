@@ -13,6 +13,8 @@ module.exports = {
   rules: {
     'no-var': 'error',
 
+    '@typescript-eslint/no-angle-bracket-type-assertion': 'error',
+
     'prettier/prettier': 'error',
   },
 };

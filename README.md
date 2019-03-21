@@ -58,4 +58,6 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 
 # Tests
 
-`yarn test` depends on bash, so you will have a bad time on non-UNIX. Sorry not sorry. It runs multiple test suites via GNU Parallel. You can also run each of the individual suites directly.
+`yarn test` uses [Jest](https://jestjs.io/) to run multiple tests in parallel.
+Unfortunately, for now you will still have to run `yarn compile` before running
+the tests to compile the TypeScript code to JavaScript. 

@@ -25,9 +25,9 @@ See [SPEC.md](SPEC.md) for a draft of the new addon publication format we are ta
 
 1. Add dependencies:
 
-```
-yarn add --dev @embroider/core @embroider/compat @embroider/webpack
-```
+   ```
+   yarn add --dev @embroider/core @embroider/compat @embroider/webpack
+   ```
 
 2. Edit `ember-cli-build.js`:
 
@@ -37,15 +37,16 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
    +return require('@embroider/compat').compatBuild(app, Webpack);
    ```
 
-    Alternatively, if you are passing optional extra broccoli trees into `app.toTree()`, you can rewrite like:
+   Alternatively, if you are passing optional extra broccoli trees into
+   `app.toTree()`, you can rewrite like:
 
-    ```diff
+   ```diff
    -return app.toTree(extraTreeHere);
    +const Webpack = require('@embroider/webpack').Webpack;
    +return require('@embroider/compat').compatBuild(app, Webpack, {
    +  extraPublicTrees: [extraTreeHere]
    +});
-    ```
+   ```
 
 3. Use `ember serve`, `ember test`, and `ember build` as usual.
 

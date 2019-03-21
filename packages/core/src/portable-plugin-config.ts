@@ -169,6 +169,7 @@ function maybeBroccoli(object: any): BroccoliParallelPlaceholder | undefined {
 }
 
 function buildBroccoli(parallelApiInfo: BroccoliParallelPlaceholder) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   let requiredStuff = require(parallelApiInfo.requireFile);
 
   if (parallelApiInfo.useMethod) {
@@ -212,6 +213,7 @@ function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
 }
 
 function buildHTMLBars(parallelApiInfo: HTMLBarsParallelPlaceholder) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   let requiredStuff = require(parallelApiInfo.requireFile);
   if (typeof requiredStuff[parallelApiInfo.buildUsing] !== 'function') {
     throw new Error("'" + parallelApiInfo.buildUsing + "' is not a function in file " + parallelApiInfo.requireFile);

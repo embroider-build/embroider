@@ -1,7 +1,6 @@
 {
   "rules": {
     "no-duplicate-variable": true,
-    "no-implicit-dependencies": true,
-    "no-require-imports": true
+    "no-implicit-dependencies": true
   }
 }

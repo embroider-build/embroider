@@ -47,6 +47,7 @@ export default class V1InstanceCache {
     }
     let path = `${__dirname}/compat-adapters/${packageName}.js`;
     if (pathExistsSync(path)) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       return require(path).default;
     }
     return V1Addon;

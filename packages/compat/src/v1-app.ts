@@ -61,6 +61,7 @@ export default class V1App implements V1Package {
   }
 
   private requireFromEmberCLI(specifier: string) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(resolve.sync(specifier, { basedir: this.emberCLILocation }));
   }
 

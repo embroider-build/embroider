@@ -107,9 +107,11 @@ QUnit.module('stage2 build', function() {
       assert.basePath = (await compatApp.ready()).outputPath;
       transpile = (contents: string, fileAssert: BoundFileAssert) => {
         if (fileAssert.path.endsWith('.hbs')) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           let templateCompiler = require(join(fileAssert.basePath, '_template_compiler_')) as TemplateCompiler;
           return templateCompiler.compile(fileAssert.fullPath, contents);
         } else if (fileAssert.path.endsWith('.js')) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           let babelConfig = require(join(fileAssert.basePath, '_babel_config_')).config as TransformOptions;
           return transform(contents, Object.assign({ filename: fileAssert.fullPath }, babelConfig))!.code!;
         } else {

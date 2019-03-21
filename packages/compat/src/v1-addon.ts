@@ -62,6 +62,7 @@ let locatePreprocessRegistry: (addonInstance: any) => any;
   locatePreprocessRegistry = function(addonInstance: any) {
     if (!preprocessRegistry) {
       let cliPath = dirname(resolvePackagePath('ember-cli', addonInstance._findHost().project.root));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       preprocessRegistry = require(resolve.sync('ember-cli-preprocess-registry/preprocessors', { basedir: cliPath }));
     }
     return preprocessRegistry;
@@ -157,6 +158,7 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private get mainModule() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(this.addonInstance.constructor._meta_.modulePath);
   }
 
@@ -239,6 +241,7 @@ export default class V1Addon implements V1Package {
     let version;
 
     if (emberCLIBabelInstance) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       version = require(join(emberCLIBabelInstance.root, 'package')).version;
     }
 

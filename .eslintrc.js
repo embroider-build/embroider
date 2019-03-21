@@ -24,4 +24,12 @@ module.exports = {
 
     'prettier/prettier': 'error',
   },
+  overrides: [
+    {
+      files: ['packages/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-require-imports': 'error',
+      },
+    },
+  ],
 };

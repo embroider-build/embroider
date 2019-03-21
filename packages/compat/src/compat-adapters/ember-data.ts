@@ -15,6 +15,7 @@ export default class EmberData extends V1Addon {
   // ember-data needs its dynamically generated version module.
   @Memoize()
   get v2Trees() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     let version = require(join(this.root, 'lib/version'));
     let trees = super.v2Trees;
     trees.push(version());

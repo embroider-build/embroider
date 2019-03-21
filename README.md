@@ -49,15 +49,6 @@ yarn add --dev @embroider/core @embroider/compat @embroider/webpack
 
 3. Use `ember serve`, `ember test`, and `ember build` as usual.
 
-# Contributing / Developing
+# Contributing
 
-1. Clone this repo.
-2. Run `yarn compile` (or `yarn compile --watch`).
-3. In each of the `./packages/*` directories, run `yarn link`.
-4. In your app, `yarn link @embroider/core` and the other packages you need.
-
-# Tests
-
-`yarn test` uses [Jest](https://jestjs.io/) to run multiple tests in parallel.
-Unfortunately, for now you will still have to run `yarn compile` before running
-the tests to compile the TypeScript code to JavaScript. 
+see [`CONTRIBUTING.md`](CONTRIBUTING.md)

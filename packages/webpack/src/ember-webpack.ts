@@ -255,7 +255,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         path: join(this.outputPath, 'assets'),
         filename: `chunk.[chunkhash].js`,
         chunkFilename: `chunk.[chunkhash].js`,
-        publicPath: rootURL + 'assets/'
+        publicPath: rootURL + 'assets/',
       },
       optimization: {
         splitChunks: {

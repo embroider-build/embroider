@@ -163,7 +163,7 @@ class AppFiles {
         continue;
       }
 
-      if (relativePath.startsWith("tests/")) {
+      if (relativePath.startsWith('tests/')) {
         if (relativePath.endsWith('-test.js')) {
           tests.push(relativePath);
         }
@@ -198,7 +198,7 @@ class AppFiles {
     this.otherAppFiles = otherAppFiles;
   }
 
-  private identifyRoute(relativePath: string): { name: string, files: RouteFiles } | undefined {
+  private identifyRoute(relativePath: string): { name: string; files: RouteFiles } | undefined {
     let [prefix, ...rest] = relativePath.split('/');
     if (['controllers', 'templates', 'routes'].includes(prefix)) {
       // NEXT: don't join here, instead we need to build a tree shaped structure
@@ -206,7 +206,7 @@ class AppFiles {
       let type = prefix.slice(0, -1);
       return {
         name,
-        files: { [type]: relativePath }
+        files: { [type]: relativePath },
       };
     }
   }
@@ -314,7 +314,12 @@ export class AppBuilder<TreeNames> {
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private insertEmberApp(
+    asset: ParsedEmberAsset,
+    appFiles: AppFiles,
+    prepared: Map<string, InternalAsset>,
+    emberENV: EmberENV
+  ) {
     let html = asset.html;
 
     // our tests entrypoint already includes a correct module dependency on the
@@ -611,13 +616,16 @@ export class AppBuilder<TreeNames> {
   }
 
   private shouldSplitRoute(routeName: string) {
-    return !this.options.splitAtRoutes || this.options.splitAtRoutes.find(pattern => {
-      if (typeof pattern === 'string') {
-        return pattern === routeName;
-      } else {
-        return pattern.test(routeName);
-      }
-    });
+    return (
+      !this.options.splitAtRoutes ||
+      this.options.splitAtRoutes.find(pattern => {
+        if (typeof pattern === 'string') {
+          return pattern === routeName;
+        } else {
+          return pattern.test(routeName);
+        }
+      })
+    );
   }
 
   private splitRoute(routeName: string, files: RouteFiles) {
@@ -658,7 +666,7 @@ export class AppBuilder<TreeNames> {
       return cached;
     }
 
-    let lazyRoutes: { name: string, path: string }[] = [];
+    let lazyRoutes: { name: string; path: string }[] = [];
 
     let requiredAppFiles = [appFiles.otherAppFiles];
     if (!this.options.staticComponents) {
@@ -681,8 +689,7 @@ export class AppBuilder<TreeNames> {
 
     let relativePath = `assets/${this.app.name}.js`;
 
-    let amdModules = flatten(requiredAppFiles)
-      .map(file => this.importPaths(file, relativePath));
+    let amdModules = flatten(requiredAppFiles).map(file => this.importPaths(file, relativePath));
 
     // for the src tree, we can limit ourselves to only known resolvable
     // collections
@@ -698,7 +705,7 @@ export class AppBuilder<TreeNames> {
       autoRun: this.adapter.autoRun(),
       mainModule: relative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: this.adapter.mainModuleConfig(),
-      lazyRoutes
+      lazyRoutes,
     });
 
     let asset: InternalAsset = {
@@ -716,11 +723,11 @@ export class AppBuilder<TreeNames> {
   }
 
   private importPaths(appRelativePath: string, fromFile: string) {
-    let noJS = appRelativePath.replace(/\.js$/, "");
-    let noHBS = noJS.replace(/\.hbs$/, "");
+    let noJS = appRelativePath.replace(/\.js$/, '');
+    let noHBS = noJS.replace(/\.hbs$/, '');
     return {
       runtime: `${this.modulePrefix}/${noHBS}`,
-      buildtime: relative(dirname(fromFile), noJS)
+      buildtime: relative(dirname(fromFile), noJS),
     };
   }
 
@@ -728,7 +735,7 @@ export class AppBuilder<TreeNames> {
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: files.map(f => this.importPaths(f, relativePath))
+        files: files.map(f => this.importPaths(f, relativePath)),
       }),
       relativePath,
     };
@@ -750,7 +757,7 @@ export class AppBuilder<TreeNames> {
     // module dependency.
     testModules.unshift('./' + relative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
 
-    let amdModules: { runtime: string, buildtime: string }[] = [];
+    let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
     this.gatherImplicitModules('implicit-test-modules', amdModules);
@@ -862,14 +869,14 @@ let d = w.define;
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  needsEmbroiderHook?: boolean,
-  amdModules?: ({ runtime: string, buildtime: string })[],
-  eagerModules?: string[],
-  autoRun?: boolean,
-  mainModule?: string,
-  appConfig?: unknown,
-  testSuffix?: boolean,
-  lazyRoutes?: { name: string, path: string }[],
+  needsEmbroiderHook?: boolean;
+  amdModules?: ({ runtime: string; buildtime: string })[];
+  eagerModules?: string[];
+  autoRun?: boolean;
+  mainModule?: string;
+  appConfig?: unknown;
+  testSuffix?: boolean;
+  lazyRoutes?: { name: string; path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`
@@ -878,9 +885,7 @@ let d = window.define;
 import a{{index}} from "{{js-string-escape file.buildtime}}";
 d("{{js-string-escape file.runtime}}", function(){ return a{{index}}; });
 {{/each}}
-`) as (params: {
-  files: { runtime: string, buildtime: string }[]
-}) => string;
+`) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
 
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {

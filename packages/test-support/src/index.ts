@@ -19,7 +19,7 @@ class MockCLI {
     options = options || {};
 
     this.ui = options.ui || new MockUI();
-    this.root = join(__dirname, '..', '..');
+    this.root = join(__dirname, '..', '..', '..');
     this.npmPackage = options.npmPackage || 'ember-cli';
     this.instrumentation = options.instrumentation || new Instrumentation({});
     this.packageInfoCache = new PackageInfoCache(this.ui);
@@ -67,5 +67,5 @@ export function allBabelVersions(params: {
 }
 
 export function emberTemplateCompilerPath() {
-  return join(__dirname, 'vendor', 'ember-template-compiler.js');
+  return join(__dirname, '..', 'vendor', 'ember-template-compiler.js');
 }

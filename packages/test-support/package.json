@@ -1,6 +1,7 @@
 {
   "name": "@embroider/test-support",
   "version": "0.1.0",
+  "main": "src/index.js",
   "private": true,
   "dependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",

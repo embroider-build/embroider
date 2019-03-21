@@ -1,6 +1,5 @@
 /packages/**/*.js
 /packages/**/*.d.ts
-/test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 
 # unconventional js

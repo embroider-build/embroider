@@ -11,6 +11,7 @@ module.exports = {
   plugins: ['prettier', '@typescript-eslint'],
   extends: ['prettier', 'prettier/@typescript-eslint'],
   rules: {
+    'no-new-wrappers': 'error',
     'no-var': 'error',
 
     '@typescript-eslint/no-angle-bracket-type-assertion': 'error',

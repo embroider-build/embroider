@@ -1,7 +1,7 @@
 Embroider: a modern build system for EmberJS apps
 ===============================================================================
 
-[![Build Status](https://travis-ci.org/embroider-build/embroider.svg?branch=master)](https://travis-ci.org/embroider-build/embroider)
+[![Build Status](https://travis-ci.com/embroider-build/embroider.svg?branch=master)](https://travis-ci.com/embroider-build/embroider)
 
 This repo implements a new three-stage build system for Ember apps.
 

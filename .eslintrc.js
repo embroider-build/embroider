@@ -8,8 +8,12 @@ module.exports = {
     ecmaVersion: 2017,
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ['prettier', '@typescript-eslint'],
+  extends: [
+    'prettier',
+    'prettier/@typescript-eslint',
+  ],
   rules: {
-    '@typescript-eslint/indent': ['error', 2],
+    'prettier/prettier': 'error',
   },
 };

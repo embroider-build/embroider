@@ -16,8 +16,11 @@
     "@typescript-eslint/eslint-plugin": "^1.5.0",
     "@typescript-eslint/parser": "^1.5.0",
     "eslint": "^5.15.3",
+    "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-prettier": "^3.0.1",
     "execa": "^1.0.0",
     "jest": "^24.5.0",
+    "prettier": "1.16.4",
     "tslint": "^5.11.0"
   }
 }

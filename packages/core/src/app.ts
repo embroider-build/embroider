@@ -186,7 +186,9 @@ class AppFiles {
         } else {
           perRoute.set(route.name, route.files);
         }
+        continue;
       }
+
       otherAppFiles.push(relativePath);
     }
     this.tests = tests;

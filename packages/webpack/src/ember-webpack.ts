@@ -206,7 +206,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, externals, templateCompiler, babel }: AppInfo) {
+  private configureWebpack({ entrypoints, externals, templateCompiler, babel, rootURL }: AppInfo) {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -255,6 +255,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         path: join(this.outputPath, 'assets'),
         filename: `chunk.[chunkhash].js`,
         chunkFilename: `chunk.[chunkhash].js`,
+        publicPath: rootURL + 'assets/'
       },
       optimization: {
         splitChunks: {

@@ -1,6 +1,6 @@
-import Plugin, { Tree } from "broccoli-plugin";
+import Plugin, { Tree } from 'broccoli-plugin';
 import { Builder } from 'broccoli';
-import { copySync } from "fs-extra";
+import { copySync } from 'fs-extra';
 
 // Wraps a broccoli tree such that it (and everything it depends on) will only
 // build a single time.
@@ -11,7 +11,7 @@ export default class OneShot extends Plugin {
   constructor(originalTree: Tree) {
     // from broccoli's perspective, we don't depend on any input trees!
     super([], {
-      persistentOutput: true
+      persistentOutput: true,
     });
     this.builder = new Builder(originalTree);
   }

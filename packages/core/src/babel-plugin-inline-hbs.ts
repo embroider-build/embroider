@@ -7,11 +7,11 @@ import {
   ExpressionStatement,
   stringLiteral,
   File,
-} from "@babel/types";
-import { NodePath } from "@babel/traverse";
-import { join } from "path";
+} from '@babel/types';
+import { NodePath } from '@babel/traverse';
+import { join } from 'path';
 import TemplateCompiler from './template-compiler';
-import { identifier, callExpression, memberExpression } from "@babel/types";
+import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
 
 // These are the known names that people are using to import the `hbs` macro
@@ -34,7 +34,7 @@ interface State {
     code: string;
     opts: {
       filename: string;
-    }
+    };
   };
 }
 
@@ -46,7 +46,7 @@ export default function inlineHBSTransform() {
           if (state.opts.stage === 3) {
             pruneImports(path);
           }
-        }
+        },
       },
       TaggedTemplateExpression(path: NodePath<TaggedTemplateExpression>, state: State) {
         for (let modulePath of modulePaths) {
@@ -61,13 +61,13 @@ export default function inlineHBSTransform() {
             handleCalled(path, state);
           }
         }
-      }
-    }
+      },
+    },
   };
 }
 
 inlineHBSTransform._parallelBabel = {
-  requireFile: __filename
+  requireFile: __filename,
 };
 
 inlineHBSTransform.baseDir = function() {
@@ -76,7 +76,7 @@ inlineHBSTransform.baseDir = function() {
 
 function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
   if (path.node.quasi.expressions.length) {
-    throw path.buildCodeFrameError("placeholders inside a tagged template string are not supported");
+    throw path.buildCodeFrameError('placeholders inside a tagged template string are not supported');
   }
   let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
   if (state.opts.stage === 1) {
@@ -91,11 +91,11 @@ function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
 
 function handleCalled(path: NodePath<CallExpression>, state: State) {
   if (path.node.arguments.length !== 1) {
-    throw path.buildCodeFrameError("hbs accepts exactly one argument");
+    throw path.buildCodeFrameError('hbs accepts exactly one argument');
   }
   let arg = path.node.arguments[0];
   if (!isStringLiteral(arg)) {
-    throw path.buildCodeFrameError("hbs accepts only a string literal argument");
+    throw path.buildCodeFrameError('hbs accepts only a string literal argument');
   }
   let template = arg.value;
   if (state.opts.stage === 1) {

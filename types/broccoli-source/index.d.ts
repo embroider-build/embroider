@@ -10,5 +10,4 @@ declare module 'broccoli-source' {
     __broccoliGetInfo__(): any;
     constructor(inputDir: string);
   }
-
 }

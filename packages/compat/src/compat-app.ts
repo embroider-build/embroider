@@ -13,7 +13,7 @@ import {
   Package,
   TemplateCompilerPlugins,
   Resolver,
-  TemplateCompiler
+  TemplateCompiler,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -42,7 +42,7 @@ interface TreeNames {
 // This runs at broccoli-pipeline-construction time, whereas our actual
 // CompatAppAdapter instance only becomes available during tree-building
 // time.
-function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
+function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
 
   let { analyzer, appJS } = oldPackage.processAppJS();
@@ -72,7 +72,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options> ) {
       configTree,
       analyzer,
       packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
+      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
     return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
@@ -90,7 +90,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     private configTree: V1Config,
     private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
-    private synthStyles: Package,
+    private synthStyles: Package
   ) {}
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -102,17 +102,19 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
     // Everything in our traditional public tree is an on-disk asset
     if (treePaths.publicTree) {
-      walkSync.entries(treePaths.publicTree, {
-        directories: false,
-      }).forEach((entry) => {
-        assets.push({
-          kind: 'on-disk',
-          relativePath: entry.relativePath,
-          sourcePath: entry.fullPath,
-          mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
-          size: entry.size
+      walkSync
+        .entries(treePaths.publicTree, {
+          directories: false,
+        })
+        .forEach(entry => {
+          assets.push({
+            kind: 'on-disk',
+            relativePath: entry.relativePath,
+            sourcePath: entry.fullPath,
+            mtime: (entry.mtime as unknown) as number, // https://github.com/joliss/node-walk-sync/pull/38
+            size: entry.size,
+          });
         });
-      });
     }
 
     for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
@@ -134,7 +136,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return result;
   }
 
-  private * emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
+  private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
     let classicEntrypoints = [
       { entrypoint: 'index.html', includeTests: false },
       { entrypoint: 'tests/index.html', includeTests: true },
@@ -153,21 +155,29 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         mtime: stats.mtime.getTime(),
         size: stats.size,
         prepare: (dom: JSDOM) => {
-          let scripts = [...dom.window.document.querySelectorAll("script")];
-          let styles = [
-            ...dom.window.document.querySelectorAll('link[rel="stylesheet"]'),
-          ] as HTMLLinkElement[];
+          let scripts = [...dom.window.document.querySelectorAll('script')];
+          let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
 
           return {
             javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
             styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
-            implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts), 'vendor javascript', entrypoint),
-            implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles), 'vendor styles', entrypoint),
+            implicitScripts: definitelyReplace(
+              dom,
+              this.oldPackage.findVendorScript(scripts),
+              'vendor javascript',
+              entrypoint
+            ),
+            implicitStyles: definitelyReplace(
+              dom,
+              this.oldPackage.findVendorStyles(styles),
+              'vendor styles',
+              entrypoint
+            ),
             testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
             implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
             implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
           };
-        }
+        },
       };
       yield asset;
     }
@@ -178,7 +188,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   mainModule(): string {
-    return this.oldPackage.isModuleUnification ? "src/main" : "app";
+    return this.oldPackage.isModuleUnification ? 'src/main' : 'app';
   }
 
   mainModuleConfig(): unknown {
@@ -203,20 +213,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   private activeRules() {
-    return activePackageRules(
-      this.options.packageRules.concat(defaultAddonPackageRules()),
-      [this.appPackage, ...this.activeAddonDescendants.filter(p => p.meta['auto-upgraded'])]
-    );
+    return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
+      this.appPackage,
+      ...this.activeAddonDescendants.filter(p => p.meta['auto-upgraded']),
+    ]);
   }
 
   @Memoize()
   templateResolver(): Resolver {
-    return new CompatResolver(
-      this.root,
-      this.modulePrefix(),
-      this.options,
-      this.activeRules(),
-    );
+    return new CompatResolver(this.root, this.modulePrefix(), this.options, this.activeRules());
   }
 
   // unlike `templateResolver`, this one brings its own simple TemplateCompiler
@@ -224,28 +229,25 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   // rules.
   @Memoize()
   private internalTemplateResolver(): CompatResolver {
-    let resolver = new CompatResolver(
-      this.root,
-      this.modulePrefix(),
-      this.options,
-      this.activeRules(),
-    );
+    let resolver = new CompatResolver(this.root, this.modulePrefix(), this.options, this.activeRules());
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
-    resolver.astTransformer(new TemplateCompiler({
-      compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
-      EmberENV: {},
-      plugins: {},
-    }));
+    resolver.astTransformer(
+      new TemplateCompiler({
+        compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
+        EmberENV: {},
+        plugins: {},
+      })
+    );
     return resolver;
   }
 
   extraImports() {
-    let output: { absPath: string, target: string, runtimeName?: string }[][] = [];
+    let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
 
     for (let rule of this.activeRules()) {
       if (rule.addonModules) {
-        for(let [filename, moduleRules] of Object.entries(rule.addonModules)) {
+        for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
           for (let root of rule.roots) {
             let absPath = join(root, filename);
             output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
@@ -253,7 +255,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         }
       }
       if (rule.appModules) {
-        for(let [filename, moduleRules] of Object.entries(rule.appModules)) {
+        for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
           let absPath = join(this.root, filename);
           output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
         }
@@ -284,7 +286,7 @@ export default class CompatApp extends BuildStage<TreeNames> {
 
 function maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
   if (element) {
-    return definitelyReplace(dom, element, "", "");
+    return definitelyReplace(dom, element, '', '');
   }
 }
 
@@ -298,9 +300,12 @@ function definitelyReplace(dom: JSDOM, element: Element | undefined, description
 }
 
 function defaultAddonPackageRules(): PackageRules[] {
-  return readdirSync(join(__dirname, 'addon-dependency-rules')).map(filename => {
-    if (filename.endsWith('.js')) {
-      return require(join(__dirname, 'addon-dependency-rules', filename)).default;
-    }
-  }).filter(Boolean).reduce((a,b) => a.concat(b), []);
+  return readdirSync(join(__dirname, 'addon-dependency-rules'))
+    .map(filename => {
+      if (filename.endsWith('.js')) {
+        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
+      }
+    })
+    .filter(Boolean)
+    .reduce((a, b) => a.concat(b), []);
 }

@@ -5,8 +5,8 @@ export default interface State {
   pendingTasks: (() => void)[];
   opts: {
     userConfigs: {
-      [pkgRoot: string]: unknown
-    },
+      [pkgRoot: string]: unknown;
+    };
     // we set this when we're running inside classic ember-cli, because in that
     // case we don't have finer-grained info available about where the files
     // we're processing are globally located. When running in embroider, we

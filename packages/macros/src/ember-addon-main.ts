@@ -7,8 +7,7 @@ export = {
   included(this: any, parent: any) {
     this._super.included.apply(this, arguments);
     let parentOptions = (parent.options = parent.options || {});
-    let ownOptions = (parentOptions['@embroider/macros'] =
-      parentOptions['@embroider/macros'] || {});
+    let ownOptions = (parentOptions['@embroider/macros'] = parentOptions['@embroider/macros'] || {});
 
     // if parent is an addon it has root. If it's an app it has project.root.
     let source = parent.root || parent.project.root;
@@ -28,9 +27,8 @@ export = {
     babelPlugins.unshift(MacrosConfig.shared().babelPluginConfig(source));
   },
 
-  setupPreprocessorRegistry(type: "parent" | "self", registry: any) {
+  setupPreprocessorRegistry(type: 'parent' | 'self', registry: any) {
     if (type === 'parent') {
-
       // the htmlbars-ast-plugins are split into two parts because order is
       // important. Weirdly, they appear to run in the reverse order that you
       // register them here.
@@ -42,9 +40,9 @@ export = {
           plugin,
           baseDir() {
             return join(__dirname, '..');
-          }
+          },
         });
       });
     }
-  }
+  },
 };

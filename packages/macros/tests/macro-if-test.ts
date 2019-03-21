@@ -5,7 +5,7 @@ const { test } = QUnit;
 
 QUnit.module('macroIf', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
-    config.setConfig(__filename, 'qunit', { items: [ { approved: true, other: null, size: 2.3 } ]});
+    config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
 
     test('select consequent, drop alternate', function(assert) {
       let code = transform(`
@@ -143,7 +143,7 @@ QUnit.module('macroIf', function() {
           return macroIf(other, () => a, () => b);
         }
         `);
-      },/the first argument to macroIf must be statically known/);
+      }, /the first argument to macroIf must be statically known/);
     });
 
     test('leaves unrelated unused imports alone', function(assert) {

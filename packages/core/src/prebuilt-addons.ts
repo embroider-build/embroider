@@ -1,9 +1,9 @@
-import Stage from "./stage";
+import Stage from './stage';
 import { realpathSync } from 'fs-extra';
-import Package from "./package";
-import PackageCache from "./package-cache";
-import { UnwatchedDir } from "broccoli-source";
-import { Tree } from "broccoli-plugin";
+import Package from './package';
+import PackageCache from './package-cache';
+import { UnwatchedDir } from 'broccoli-source';
+import { Tree } from 'broccoli-plugin';
 
 export default class PrebuiltAddons implements Stage {
   private packageCache: PackageCache;
@@ -18,10 +18,10 @@ export default class PrebuiltAddons implements Stage {
     this.tree = new UnwatchedDir(this.inputPath);
   }
 
-  async ready(): Promise<{ packageCache: PackageCache, outputPath: string }> {
+  async ready(): Promise<{ packageCache: PackageCache; outputPath: string }> {
     return {
       packageCache: this.packageCache,
-      outputPath: this.appDestDir
+      outputPath: this.appDestDir,
     };
   }
 }

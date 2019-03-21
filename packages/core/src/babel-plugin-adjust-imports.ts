@@ -12,8 +12,8 @@ import {
   memberExpression,
   Program,
   returnStatement,
-  stringLiteral
-} from "@babel/types";
+  stringLiteral,
+} from '@babel/types';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -23,18 +23,18 @@ interface State {
     basedir?: string;
     rename?: {
       [fromName: string]: string;
-    },
+    };
     extraImports?: {
-      absPath: string,
-      target: string,
-      runtimeName?: string,
-    }[]
+      absPath: string;
+      target: string;
+      runtimeName?: string;
+    }[];
   };
 }
 
-export type Options = State["opts"];
+export type Options = State['opts'];
 
-function adjustSpecifier(specifier: string, sourceFileName: string, opts: State["opts"]) {
+function adjustSpecifier(specifier: string, sourceFileName: string, opts: State['opts']) {
   let name = packageName(specifier);
   if (name && name === opts.ownName) {
     let fullPath = specifier.replace(name, opts.basedir || '.');
@@ -63,7 +63,7 @@ function makeHBSExplicit(specifier: string, _: string) {
   return specifier;
 }
 
-export default function main({ types: t} : { types: any }){
+export default function main({ types: t }: { types: any }) {
   return {
     visitor: {
       Program: {
@@ -76,16 +76,18 @@ export default function main({ types: t} : { types: any }){
         },
         exit: function(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
-        }
+        },
       },
       ReferencedIdentifier(path: any, state: State) {
-        if (path.node.name === 'require' && !state.generatedRequires.has(path.node) && !path.scope.hasBinding('require')) {
+        if (
+          path.node.name === 'require' &&
+          !state.generatedRequires.has(path.node) &&
+          !path.scope.hasBinding('require')
+        ) {
           // any existing bare "require" should remain a *runtime* require, so
           // we rename it to window.require so that final stage packagers will
           // leave it alone.
-          path.replaceWith(
-            t.memberExpression(t.identifier('window'), path.node)
-          );
+          path.replaceWith(t.memberExpression(t.identifier('window'), path.node));
         }
         if (path.referencesImport('@embroider/core', 'require')) {
           // whereas our own explicit *build-time* require (used in the
@@ -104,9 +106,10 @@ export default function main({ types: t} : { types: any }){
         }
 
         // strip our own build-time-only require directive
-        if (source.value === '@embroider/core' &&
-            path.node.specifiers.length === 1 &&
-            path.node.specifiers[0].imported.name === 'require'
+        if (
+          source.value === '@embroider/core' &&
+          path.node.specifiers.length === 1 &&
+          path.node.specifiers[0].imported.name === 'require'
         ) {
           emberCLIVanillaJobs.push(() => path.remove());
           return;
@@ -116,10 +119,10 @@ export default function main({ types: t} : { types: any }){
         let specifier = adjustSpecifier(source.value, sourceFileName, opts);
         specifier = makeHBSExplicit(specifier, sourceFileName);
         if (specifier !== source.value) {
-          emberCLIVanillaJobs.push(() => source.value = specifier);
+          emberCLIVanillaJobs.push(() => (source.value = specifier));
         }
       },
-    }
+    },
   };
 }
 
@@ -127,12 +130,14 @@ export default function main({ types: t} : { types: any }){
   return join(__dirname, '..');
 };
 
-function addExtraImports(path: NodePath<Program>, extraImports: Required<State["opts"]>["extraImports"]) {
+function addExtraImports(path: NodePath<Program>, extraImports: Required<State['opts']>['extraImports']) {
   let counter = 0;
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
       if (runtimeName) {
-        path.node.body.push(importDeclaration([importDefaultSpecifier(identifier(`a${counter}`))], stringLiteral(target)));
+        path.node.body.push(
+          importDeclaration([importDefaultSpecifier(identifier(`a${counter}`))], stringLiteral(target))
+        );
         path.node.body.push(amdDefine(runtimeName, counter++));
       } else {
         path.node.body.push(importDeclaration([], stringLiteral(target)));
@@ -143,18 +148,9 @@ function addExtraImports(path: NodePath<Program>, extraImports: Required<State["
 
 function amdDefine(runtimeName: string, importCounter: number) {
   return expressionStatement(
-    callExpression(
-      memberExpression(identifier('window'), identifier('define')),
-      [
-        stringLiteral(runtimeName),
-        functionExpression(
-          null,
-          [],
-          blockStatement([
-            returnStatement(identifier(`a${importCounter}`))
-          ])
-        )
-      ]
-    )
+    callExpression(memberExpression(identifier('window'), identifier('define')), [
+      stringLiteral(runtimeName),
+      functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
+    ])
   );
 }

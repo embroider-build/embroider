@@ -1,4 +1,3 @@
-
 export function macroIfBlock(node: any) {
   if (node.params.length !== 1) {
     throw new Error(`macroIf (block form) requires one arguments, you passed ${node.params.length}`);
@@ -35,7 +34,6 @@ export function macroIfExpression(node: any, builders: any) {
   } else {
     return node.params[2] || builders.undefined();
   }
-
 }
 
 export function maybeAttrs(elementNode: any, node: any, builders: any) {
@@ -58,17 +56,16 @@ export function maybeAttrs(elementNode: any, node: any, builders: any) {
 
   if (result.value) {
     for (let bareAttr of bareAttrs) {
-      elementNode.attributes.push(builders.attr(bareAttr.original, builders.text("")));
+      elementNode.attributes.push(builders.attr(bareAttr.original, builders.text('')));
     }
 
     for (let attr of node.hash.pairs) {
       elementNode.attributes.push(builders.attr(attr.key, builders.mustache(attr.value)));
     }
   }
-
 }
 
-function evaluate(node: any): { confident: true, value: any } | { confident: false } {
+function evaluate(node: any): { confident: true; value: any } | { confident: false } {
   switch (node.type) {
     case 'StringLiteral':
     case 'NumberLiteral':

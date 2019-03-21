@@ -3,7 +3,7 @@ import { allBabelVersions, runDefault } from './helpers';
 const { test } = QUnit;
 
 QUnit.module(`dependencySatisfies`, function() {
-  allBabelVersions(function (transform: (code: string) => string) {
+  allBabelVersions(function(transform: (code: string) => string) {
     test('is satisfied', function(assert) {
       let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';

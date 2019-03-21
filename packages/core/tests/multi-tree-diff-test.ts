@@ -12,7 +12,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
 
-    let t = new MultiTreeDiff([a,b,c]);
+    let t = new MultiTreeDiff([a, b, c]);
     let { ops, sources } = t.update();
 
     assert.deepEqual(fileOps(ops), [
@@ -34,14 +34,10 @@ QUnit.module('tracked-merge-dirs', function() {
     let a = new MockTree(['alpha', 'tomster']);
     let c = new MockTree(['charlie', 'alpha']);
 
-    let t = new MultiTreeDiff([a,c]);
+    let t = new MultiTreeDiff([a, c]);
     let { ops, sources } = t.update();
 
-    assert.deepEqual(fileOps(ops), [
-      ['create', 'alpha'],
-      ['create', 'charlie'],
-      ['create', 'tomster'],
-    ]);
+    assert.deepEqual(fileOps(ops), [['create', 'alpha'], ['create', 'charlie'], ['create', 'tomster']]);
 
     assert.equal(sources.get('alpha'), 1);
     assert.equal(sources.get('charlie'), 1);
@@ -53,7 +49,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
 
-    let t = new MultiTreeDiff([a,b,c]);
+    let t = new MultiTreeDiff([a, b, c]);
     t.update();
     let { ops } = t.update();
     assert.deepEqual(fileOps(ops), []);
@@ -64,13 +60,11 @@ QUnit.module('tracked-merge-dirs', function() {
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
 
-    let t = new MultiTreeDiff([a,b,c]);
+    let t = new MultiTreeDiff([a, b, c]);
     t.update();
     dirty(a.entries[0]);
     let { ops, sources } = t.update();
-    assert.deepEqual(fileOps(ops), [
-      ['change', 'alpha']
-    ]);
+    assert.deepEqual(fileOps(ops), [['change', 'alpha']]);
     assert.equal(sources.get('alpha'), 0);
   });
 
@@ -78,7 +72,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let a = new MockTree(['alpha', 'tomster']);
     let c = new MockTree(['charlie', 'alpha']);
 
-    let t = new MultiTreeDiff([a,c]);
+    let t = new MultiTreeDiff([a, c]);
 
     let result = t.update();
     assert.equal(result.sources.get('alpha'), 1);
@@ -86,9 +80,7 @@ QUnit.module('tracked-merge-dirs', function() {
     c.entries.splice(0, 1);
 
     result = t.update();
-    assert.deepEqual(fileOps(result.ops), [
-      ['change', 'alpha'],
-    ]);
+    assert.deepEqual(fileOps(result.ops), [['change', 'alpha']]);
     assert.equal(result.sources.get('alpha'), 0);
   });
 
@@ -96,7 +88,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let a = new MockTree(['alpha', 'tomster']);
     let b = new MockTree(['charlie']);
 
-    let t = new MultiTreeDiff([a,b]);
+    let t = new MultiTreeDiff([a, b]);
 
     let result = t.update();
     assert.equal(result.sources.get('alpha'), 0);
@@ -106,13 +98,11 @@ QUnit.module('tracked-merge-dirs', function() {
       mode: 33188,
       size: 1000,
       mtime: Date.now(),
-      isDirectory: () => false
+      isDirectory: () => false,
     });
 
     result = t.update();
-    assert.deepEqual(fileOps(result.ops), [
-      ['change', 'alpha'],
-    ]);
+    assert.deepEqual(fileOps(result.ops), [['change', 'alpha']]);
     assert.equal(result.sources.get('alpha'), 1);
   });
 
@@ -120,7 +110,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let a = new MockTree(['alpha']);
     let b = new MockTree(['alpha']);
 
-    let t = new MultiTreeDiff([a,b]);
+    let t = new MultiTreeDiff([a, b]);
     t.update();
     dirty(a.entries[0]);
     let { ops } = t.update();
@@ -136,17 +126,16 @@ QUnit.module('tracked-merge-dirs', function() {
     let { ops } = t.update();
     assert.deepEqual(fileOps(ops), []);
   });
-
 });
 
 class MockTree {
   entries: Entry[];
 
-  constructor(structure: any){
+  constructor(structure: any) {
     this.entries = [...MockTree.walk([], structure)];
   }
 
-  static * walk(breadcrumbs: string[], structure: any): IterableIterator<Entry> {
+  static *walk(breadcrumbs: string[], structure: any): IterableIterator<Entry> {
     if (Array.isArray(structure)) {
       let expanded: any = {};
       for (let name of structure) {
@@ -164,16 +153,16 @@ class MockTree {
           mode: 33188,
           size: 1000,
           mtime: Date.now(),
-          isDirectory: () => true
+          isDirectory: () => true,
         };
-        yield * this.walk([...breadcrumbs, name], value);
+        yield* this.walk([...breadcrumbs, name], value);
       } else {
         yield {
           relativePath: join(...breadcrumbs, name),
           mode: 33188,
           size: 1000,
           mtime: Date.now(),
-          isDirectory: () => false
+          isDirectory: () => false,
         };
       }
     }
@@ -188,7 +177,7 @@ class MockTree {
 
 function dirty(entry: Entry) {
   if (entry.mtime) {
-    entry.mtime = (+entry.mtime) + 1000;
+    entry.mtime = +entry.mtime + 1000;
   }
 }
 

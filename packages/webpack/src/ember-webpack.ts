@@ -9,15 +9,24 @@
   getting script vs module context correct).
 */
 
-import { PackagerInstance, AppMeta, Packager, PackageCache } from "@embroider/core";
+import { PackagerInstance, AppMeta, Packager, PackageCache } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
-import { readFileSync, writeFileSync, copySync, realpathSync, ensureDirSync, Stats, statSync, readJsonSync } from 'fs-extra';
+import {
+  readFileSync,
+  writeFileSync,
+  copySync,
+  realpathSync,
+  ensureDirSync,
+  Stats,
+  statSync,
+  readJsonSync,
+} from 'fs-extra';
 import { join, dirname, relative, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
 import partition from 'lodash/partition';
-import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import Placeholder from './html-placeholder';
 import makeDebug from 'debug';
 import { format } from 'util';
@@ -37,7 +46,7 @@ class HTMLEntrypoint {
   scripts: string[] = [];
   styles: string[] = [];
 
-  constructor(private pathToVanillaApp: string, public filename: string){
+  constructor(private pathToVanillaApp: string, public filename: string) {
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
@@ -127,10 +136,12 @@ interface AppInfo {
 
 // AppInfos are equal if they result in the same webpack config.
 function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
-  return isEqual(left.externals, right.externals) &&
+  return (
+    isEqual(left.externals, right.externals) &&
     isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
-    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules));
+    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
+  );
 }
 
 interface Options {
@@ -142,7 +153,7 @@ interface Options {
 // just exporting our class directly, we export a const constructor of the
 // correct type.
 const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
-  static annotation = "@embroider/webpack";
+  static annotation = '@embroider/webpack';
 
   pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
@@ -210,9 +221,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       mode: this.mode,
       context: this.pathToVanillaApp,
       entry,
-      plugins: [
-        new MiniCssExtractPlugin()
-      ],
+      plugins: [new MiniCssExtractPlugin()],
       module: {
         rules: [
           {
@@ -220,25 +229,25 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             use: [
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
-                options: { templateCompiler }
-              }
-            ]
+                options: { templateCompiler },
+              },
+            ],
           },
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              (process.env.JOBS === '1' || !babel.isParallelSafe)? null : 'thread-loader',
+              process.env.JOBS === '1' || !babel.isParallelSafe ? null : 'thread-loader',
               {
                 loader: 'babel-loader', // todo use babel.version to ensure the correct loader
-                options: Object.assign({}, babel.config)
-              }
-            ].filter(Boolean)
+                options: Object.assign({}, babel.config),
+              },
+            ].filter(Boolean),
           },
           {
             test: isCSS,
-            use: this.makeCSSRule()
+            use: this.makeCSSRule(),
           },
-        ]
+        ],
       },
       output: {
         path: join(this.outputPath, 'assets'),
@@ -247,8 +256,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       },
       optimization: {
         splitChunks: {
-          chunks: 'all'
-        }
+          chunks: 'all',
+        },
       },
       externals: amdExternals,
       resolveLoader: {
@@ -259,9 +268,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           'thread-loader': require.resolve('thread-loader'),
           'babel-loader': require.resolve('babel-loader'),
           'css-loader': require.resolve('css-loader'),
-          'style-loader': require.resolve('style-loader')
-        }
-      }
+          'style-loader': require.resolve('style-loader'),
+        },
+      },
     };
   }
 
@@ -274,7 +283,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let owner = this.packageCache.ownerOfFile(filename);
 
     // Not owned by any NPM package? Weird, leave it alone.
-    if (!owner) { return false; }
+    if (!owner) {
+      return false;
+    }
 
     // Owned by our app, so use babel
     if (owner.root === this.pathToVanillaApp) {
@@ -285,8 +296,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     // lot of them won't appreciate running through our AMD plugin, for example.
     // If you want to transpile some of them, you should make a different rule
     // from your own extension to the webpack config.
-    return owner.packageJSON.keywords &&
-      owner.packageJSON.keywords.includes('ember-addon');
+    return owner.packageJSON.keywords && owner.packageJSON.keywords.includes('ember-addon');
   }
 
   private lastAppInfo: AppInfo | undefined;
@@ -300,7 +310,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     debug(`configuring webpack`);
     let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
     this.lastAppInfo = appInfo;
-    return this.lastWebpack = webpack(config);
+    return (this.lastWebpack = webpack(config));
   }
 
   private async writeScript(script: string, written: Set<string>) {
@@ -323,7 +333,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       let content;
       try {
         content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
-      } catch(err) {
+      } catch (err) {
         // the script refers to a sourcemap that doesn't exist, so we just leave
         // the map out.
       }
@@ -375,7 +385,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               bundles.set(script, [await this.writeScript(script, written)]);
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
-                this.consoleWrite(`warning: in ${entrypoint.filename} <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`);
+                this.consoleWrite(
+                  `warning: in ${
+                    entrypoint.filename
+                  } <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                );
               } else {
                 throw err;
               }
@@ -456,9 +470,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         options: {
           url: true,
           import: true,
-          modules: true
-        }
-      }
+          modules: true,
+        },
+      },
     ];
   }
 
@@ -486,7 +500,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
     return errors[0];
   }
-
 };
 
 function appendArrays(objValue: any, srcValue: any) {

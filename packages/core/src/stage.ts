@@ -1,5 +1,5 @@
-import { Tree } from "broccoli-plugin";
-import PackageCache from "./package-cache";
+import { Tree } from 'broccoli-plugin';
+import PackageCache from './package-cache';
 
 // A build Stage is _kinda_ like a Broccoli transform, and it interoperates with
 // Broccoli, but it takes a different approach to how stages combine.

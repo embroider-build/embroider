@@ -4,7 +4,7 @@ import resolve from 'resolve';
 import { resolve as pathResolve } from 'path';
 import { PluginItem } from '@babel/core';
 
-export function addPeerDependency(packageJSON: any, packageName: string, version='*') {
+export function addPeerDependency(packageJSON: any, packageName: string, version = '*') {
   let pkg = cloneDeep(packageJSON);
   if (!pkg.peerDependencies) {
     pkg.peerDependencies = {};
@@ -35,8 +35,8 @@ export function forceIncludeTestModule(meta: AddonMeta, localPath: string) {
 // Unfortunately needed because some popular addons have bogus unused reexports.
 //
 // Append the output of this function to the `plugins` array in a babel config.
-export function stripBadReexportsPlugin(opts: { filenamePattern?: RegExp, resolveBase?: string } = {}): PluginItem {
-  return [stripBadReexportsTransform, { filenamePattern: opts.filenamePattern, resolveBase: opts.resolveBase } ];
+export function stripBadReexportsPlugin(opts: { filenamePattern?: RegExp; resolveBase?: string } = {}): PluginItem {
+  return [stripBadReexportsTransform, { filenamePattern: opts.filenamePattern, resolveBase: opts.resolveBase }];
 }
 
 function stripBadReexportsTransform() {
@@ -50,12 +50,12 @@ function stripBadReexportsTransform() {
         ) {
           try {
             resolve.sync(path.node.source.value, { basedir: state.opts.resolveBase });
-          } catch(err) {
+          } catch (err) {
             path.remove();
           }
         }
-      }
-    }
+      },
+    },
   };
 }
 (stripBadReexportsTransform as any).baseDir = function() {

@@ -5,7 +5,7 @@ export default function hbsLoader(this: loader.LoaderContext, templateContent: s
   let { templateCompiler } = getOptions(this);
   try {
     return templateCompiler(this.resourcePath, templateContent);
-  } catch(error) {
+  } catch (error) {
     error.type = 'Template Compiler Error';
     error.file = this.resourcePath;
     throw error;

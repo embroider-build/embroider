@@ -31,7 +31,6 @@
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
     "fixturify-project": "^1.8.0",
     "qunit": "^2.8.0",
-    "tslint": "^5.11.0",
     "typescript": "~3.2.0"
   },
   "dependencies": {

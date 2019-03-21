@@ -1,8 +1,4 @@
-import {
-  emberProject,
-  addAddon,
-  Project
-} from './helpers';
+import { emberProject, addAddon, Project } from './helpers';
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
@@ -11,7 +7,6 @@ import { installFileAssertions } from './file-assertions';
 
 QUnit.module('stage1 build', function() {
   QUnit.module('max compatibility', function(origHooks) {
-
     let { hooks, test } = installFileAssertions(origHooks);
     let builder: Builder;
     let app: Project;
@@ -43,21 +38,21 @@ QUnit.module('stage1 build', function() {
               // call expression form:
               extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
             });
-          `
+          `,
         },
         templates: {
           components: {
             'hello-world.hbs': `
               <div class={{embroider-sample-transforms-target}}>hello world</div>
               <span>{{macroDependencySatisfies "ember-source" ">3"}}</span>
-            `
-          }
-        }
+            `,
+          },
+        },
       };
       addon.files.app = {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
-        }
+        },
       };
 
       // Our addon will use @embroider/sample-transforms as examples of custom
@@ -87,14 +82,15 @@ QUnit.module('stage1 build', function() {
       let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
       assertMeta.get('app-js').equals('_app_', 'should have app-js metadata');
       assertMeta.get('externals').includes('@ember/component', 'should detect external modules');
-      assertMeta.get('implicit-modules').includes(
-        './components/hello-world',
-        'staticAddonTrees is off so we should include the component implicitly'
-      );
-      assertMeta.get('implicit-modules').includes(
-        './templates/components/hello-world.hbs',
-        'staticAddonTrees is off so we should include the template implicitly'
-      );
+      assertMeta
+        .get('implicit-modules')
+        .includes('./components/hello-world', 'staticAddonTrees is off so we should include the component implicitly');
+      assertMeta
+        .get('implicit-modules')
+        .includes(
+          './templates/components/hello-world.hbs',
+          'staticAddonTrees is off so we should include the template implicitly'
+        );
       assertMeta.get('version').equals(2);
     });
 
@@ -104,14 +100,8 @@ QUnit.module('stage1 build', function() {
         `import layout from '../templates/components/hello-world.hbs'`,
         `template imports have explicit .hbs extension added`
       );
-      assertFile.matches(
-        `getOwnConfig()`,
-        `JS macros have not run yet`
-      );
-      assertFile.matches(
-        `embroider-sample-transforms-result`,
-        `custom babel plugins have run`
-      );
+      assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);
+      assertFile.matches(`embroider-sample-transforms-result`, `custom babel plugins have run`);
     });
 
     test('component template in addon tree', function(assert) {
@@ -142,5 +132,4 @@ QUnit.module('stage1 build', function() {
       );
     });
   });
-
 });

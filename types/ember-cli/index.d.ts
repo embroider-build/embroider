@@ -1,4 +1,3 @@
-
 declare module 'ember-cli/lib/broccoli/ember-app' {
   export default class EmberApp {
     constructor(...optLists: any[]);

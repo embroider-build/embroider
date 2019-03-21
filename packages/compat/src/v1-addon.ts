@@ -1,7 +1,7 @@
-import V1Package from "./v1-package";
+import V1Package from './v1-package';
 import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
-import { sync as pkgUpSync }  from 'pkg-up';
+import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import resolvePackagePath from 'resolve-package-path';
@@ -12,21 +12,21 @@ import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
 import MultiFunnel from './multi-funnel';
 import ImportParser from './import-parser';
-import { Tree } from "broccoli-plugin";
+import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
-import rewriteAddonTestSupport from "./rewrite-addon-test-support";
+import rewriteAddonTestSupport from './rewrite-addon-test-support';
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, AddonMeta, TemplateCompiler } from "@embroider/core";
-import Options from "./options";
+import { Package, PackageCache, AddonMeta, TemplateCompiler } from '@embroider/core';
+import Options from './options';
 import walkSync from 'walk-sync';
-import AddToTree from "./add-to-tree";
+import AddToTree from './add-to-tree';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
-import resolve from "resolve";
-import { isEmbroiderMacrosPlugin } from "@embroider/macros";
-import { TransformOptions, PluginItem } from "@babel/core";
-import cloneDeep from "lodash/cloneDeep";
+import resolve from 'resolve';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros';
+import { TransformOptions, PluginItem } from '@babel/core';
+import cloneDeep from 'lodash/cloneDeep';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -42,16 +42,16 @@ const stockTreeNames = Object.freeze([
 ]);
 
 const dynamicTreeHooks = Object.freeze([
-  "treeFor",
-  "treeForAddon",
-  "treeForAddonTemplates",
-  "treeForAddonTestSupport",
-  "treeForApp",
-  "treeForPublic",
-  "treeForStyles",
-  "treeForTemplates",
-  "treeForTestSupport",
-  "treeForVendor",
+  'treeFor',
+  'treeForAddon',
+  'treeForAddonTemplates',
+  'treeForAddonTestSupport',
+  'treeForApp',
+  'treeForPublic',
+  'treeForStyles',
+  'treeForTemplates',
+  'treeForTestSupport',
+  'treeForVendor',
 ]);
 
 const appPublicationDir = '_app_';
@@ -71,7 +71,11 @@ let locatePreprocessRegistry: (addonInstance: any) => any;
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, private packageCache: PackageCache, protected addonOptions: Required<Options>) {
+  constructor(
+    protected addonInstance: any,
+    private packageCache: PackageCache,
+    protected addonOptions: Required<Options>
+  ) {
     this.updateBabelConfig();
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
@@ -127,7 +131,7 @@ export default class V1Addon implements V1Package {
           // anything at all.
           return tree;
         }
-      }
+      },
     });
   }
 
@@ -182,14 +186,17 @@ export default class V1Addon implements V1Package {
     return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
   }
 
-  hasAnyTrees() : boolean {
+  hasAnyTrees(): boolean {
     return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.customizes(...dynamicTreeHooks);
   }
 
   protected stockTree(treeName: string, funnelOpts?: FunnelOptions) {
-    let opts = Object.assign({
-      srcDir: this.addonInstance.treePaths[treeName]
-    }, funnelOpts);
+    let opts = Object.assign(
+      {
+        srcDir: this.addonInstance.treePaths[treeName],
+      },
+      funnelOpts
+    );
     return new Funnel(this.rootTree, opts);
   }
 
@@ -210,16 +217,16 @@ export default class V1Addon implements V1Package {
   // every kind of tree through every kind of transpiler, and they could freely
   // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
   // ember-cli-sass will blow up if they don't find some files.
-  private transpile(tree: Tree, { includeCSS } = { includeCSS: false}) {
+  private transpile(tree: Tree, { includeCSS } = { includeCSS: false }) {
     if (includeCSS) {
       tree = this.addonInstance.compileStyles(tree);
     }
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
-      registry : this.addonInstance.registry
+      registry: this.addonInstance.registry,
     });
     if (this.addonInstance.registry.load('template').length > 0) {
       tree = locatePreprocessRegistry(this.addonInstance).preprocessTemplates(tree, {
-        registry: this.addonInstance.registry
+        registry: this.addonInstance.registry,
       });
     }
     return tree;
@@ -248,7 +255,7 @@ export default class V1Addon implements V1Package {
       compileModules: false,
       disablePresetEnv: true,
       disableDebugTooling: true,
-      disableEmberModulesAPIPolyfill: true
+      disableEmberModulesAPIPolyfill: true,
     });
 
     if (version && semver.satisfies(version, '^5')) {
@@ -266,9 +273,12 @@ export default class V1Addon implements V1Package {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
 
-    babelConfig.plugins.push([require.resolve('@embroider/core/src/babel-plugin-adjust-imports'), {
-      ownName: this.name
-    } ]);
+    babelConfig.plugins.push([
+      require.resolve('@embroider/core/src/babel-plugin-adjust-imports'),
+      {
+        ownName: this.name,
+      },
+    ]);
   }
 
   get v2Tree() {
@@ -279,11 +289,7 @@ export default class V1Addon implements V1Package {
   // things to the package metadata.
   protected get packageMeta(): AddonMeta {
     let built = this.build();
-    return mergeWithAppend(
-      {},
-      built.staticMeta,
-      ...built.dynamicMeta.map(d => d())
-    );
+    return mergeWithAppend({}, built.staticMeta, ...built.dynamicMeta.map(d => d()));
   }
 
   @Memoize()
@@ -295,7 +301,7 @@ export default class V1Addon implements V1Package {
     // DependencyAnalyzer will respect tweaks made by Compat Adapters.
     let pkg = new TweakedPackage(this.packageCache.getAddon(this.root), this.packageJSON, this.packageCache);
 
-    let analyzer = new DependencyAnalyzer(importParsers, pkg );
+    let analyzer = new DependencyAnalyzer(importParsers, pkg);
     let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
     trees.push(packageJSONRewriter);
     return trees;
@@ -306,7 +312,9 @@ export default class V1Addon implements V1Package {
     try {
       if (neuterPreprocessors) {
         original = this.addonInstance.preprocessJs;
-        this.addonInstance.preprocessJs = function(tree: Tree){ return tree; };
+        this.addonInstance.preprocessJs = function(tree: Tree) {
+          return tree;
+        };
       }
       return this.addonInstance._treeFor(name);
     } finally {
@@ -316,22 +324,26 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  protected treeForAddon(): Tree|undefined {
+  protected treeForAddon(): Tree | undefined {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
       let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
-        return this.transpile(new MultiFunnel(tree, {
-          srcDirs: [this.moduleName, `modules/${this.moduleName}`]
-        }));
+        return this.transpile(
+          new MultiFunnel(tree, {
+            srcDirs: [this.moduleName, `modules/${this.moduleName}`],
+          })
+        );
       }
     } else if (this.hasStockTree('addon')) {
-      return this.transpile(this.stockTree('addon', {
-        exclude: ['styles/**']
-      }));
+      return this.transpile(
+        this.stockTree('addon', {
+          exclude: ['styles/**'],
+        })
+      );
     }
   }
 
-  protected addonStylesTree(): Tree|undefined {
+  protected addonStylesTree(): Tree | undefined {
     if (this.customizes('treeForAddonStyles')) {
       todo(`${this.name} may have customized the addon style tree`);
     } else if (this.hasStockTree('addon-styles')) {
@@ -339,7 +351,7 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  protected treeForTestSupport(): Tree|undefined {
+  protected treeForTestSupport(): Tree | undefined {
     if (this.customizes('treeForTestSupport')) {
       todo(`${this.name} has customized the test support tree`);
     } else if (this.hasStockTree('test-support')) {
@@ -348,7 +360,7 @@ export default class V1Addon implements V1Package {
       // the consuming app, not our own package. That is some of what is lame
       // about app trees and why they will go away once everyone is all MU.
       return new Funnel(this.stockTree('test-support'), {
-        destDir: `${appPublicationDir}/tests`
+        destDir: `${appPublicationDir}/tests`,
       });
     }
   }
@@ -360,7 +372,9 @@ export default class V1Addon implements V1Package {
       built.importParsers.push(addonParser);
       built.trees.push(addonTree);
       if (!this.addonOptions.staticAddonTrees) {
-        built.dynamicMeta.push(() => ({ 'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
+        built.dynamicMeta.push(() => ({
+          'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`),
+        }));
       }
     }
   }
@@ -385,12 +399,12 @@ export default class V1Addon implements V1Package {
       if (tree) {
         tree = new Funnel(tree, {
           srcDir: 'app/styles',
-          destDir: '_app_styles_'
+          destDir: '_app_styles_',
         });
       }
     } else if (this.hasStockTree('styles')) {
       tree = this.stockTree('styles', {
-        destDir: '_app_styles_'
+        destDir: '_app_styles_',
       });
     }
     if (tree) {
@@ -408,16 +422,20 @@ export default class V1Addon implements V1Package {
       addonTestSupportTree = this.transpile(tree);
       built.dynamicMeta.push(getMeta);
     } else if (this.hasStockTree('addon-test-support')) {
-      addonTestSupportTree = this.transpile(this.stockTree('addon-test-support', {
-        destDir: 'test-support'
-      }));
+      addonTestSupportTree = this.transpile(
+        this.stockTree('addon-test-support', {
+          destDir: 'test-support',
+        })
+      );
     }
     if (addonTestSupportTree) {
       let testSupportParser = this.parseImports(addonTestSupportTree);
       built.importParsers.push(testSupportParser);
       built.trees.push(addonTestSupportTree);
       if (!this.addonOptions.staticAddonTestSupportTrees) {
-        built.dynamicMeta.push(() => ({ 'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`)}));
+        built.dynamicMeta.push(() => ({
+          'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`),
+        }));
       }
     }
   }
@@ -455,13 +473,13 @@ export default class V1Addon implements V1Package {
       let original = this.invokeOriginalTreeFor('app');
       if (original) {
         appTree = new Funnel(original, {
-          destDir: appPublicationDir
+          destDir: appPublicationDir,
         });
       }
     } else if (this.hasStockTree('app')) {
       appTree = this.stockTree('app', {
         exclude: ['styles/**'],
-        destDir: appPublicationDir
+        destDir: appPublicationDir,
       });
     }
 
@@ -499,19 +517,24 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForPublic')) {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
-        publicTree = new Snitch(this.invokeOriginalTreeFor('public'), {
-          // The normal behavior is to namespace your public files under your
-          // own name. But addons can flaunt that, and that goes beyond what
-          // the v2 format is allowed to do.
-          allowedPaths: new RegExp(`^${this.name}/`),
-          foundBadPaths: (badPaths: string[]) => `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`
-        }, {
-          destDir: 'public'
-        });
+        publicTree = new Snitch(
+          this.invokeOriginalTreeFor('public'),
+          {
+            // The normal behavior is to namespace your public files under your
+            // own name. But addons can flaunt that, and that goes beyond what
+            // the v2 format is allowed to do.
+            allowedPaths: new RegExp(`^${this.name}/`),
+            foundBadPaths: (badPaths: string[]) =>
+              `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`,
+          },
+          {
+            destDir: 'public',
+          }
+        );
       }
     } else if (this.hasStockTree('public')) {
       publicTree = this.stockTree('public', {
-        destDir: 'public'
+        destDir: 'public',
       });
     }
     if (publicTree) {
@@ -538,26 +561,26 @@ export default class V1Addon implements V1Package {
       if (tree) {
         built.trees.push(
           new Funnel(tree, {
-            destDir: 'vendor'
+            destDir: 'vendor',
           })
         );
       }
     } else if (this.hasStockTree('vendor')) {
       built.trees.push(
         this.stockTree('vendor', {
-          destDir: 'vendor'
+          destDir: 'vendor',
         })
       );
     }
   }
 
   @Memoize()
-  private build() : IntermediateBuild {
+  private build(): IntermediateBuild {
     let built = new IntermediateBuild();
 
-    if (this.moduleName !== this.name ) {
+    if (this.moduleName !== this.name) {
       built.staticMeta['renamed-modules'] = {
-        [this.moduleName]: this.name
+        [this.moduleName]: this.name,
       };
     }
 
@@ -579,7 +602,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new(addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
+  new (addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
 }
 
 class TweakedPackage extends Package {

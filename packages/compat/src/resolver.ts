@@ -1,25 +1,34 @@
-import { Resolver, warn, TemplateCompiler } from "@embroider/core";
-import { ComponentRules, PackageRules, PreprocessedComponentRule, preprocessComponentRule, ActivePackageRules, ModuleRules } from './dependency-rules';
+import { Resolver, warn, TemplateCompiler } from '@embroider/core';
+import {
+  ComponentRules,
+  PackageRules,
+  PreprocessedComponentRule,
+  preprocessComponentRule,
+  ActivePackageRules,
+  ModuleRules,
+} from './dependency-rules';
 import Options from './options';
-import { join, relative, dirname } from "path";
-import { pathExistsSync } from "fs-extra";
+import { join, relative, dirname } from 'path';
+import { pathExistsSync } from 'fs-extra';
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
-import { Memoize } from "typescript-memoize";
-import { ResolvedDep } from "@embroider/core/src/resolver";
+import { Memoize } from 'typescript-memoize';
+import { ResolvedDep } from '@embroider/core/src/resolver';
 
-type ResolutionResult = {
-  type: "component";
-  modules: ResolvedDep[];
-  yieldsComponents: Required<ComponentRules>["yieldsSafeComponents"];
-  argumentsAreComponents: string[];
-} | {
-  type: "helper";
-  modules: ResolvedDep[];
-};
+type ResolutionResult =
+  | {
+      type: 'component';
+      modules: ResolvedDep[];
+      yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
+      argumentsAreComponents: string[];
+    }
+  | {
+      type: 'helper';
+      modules: ResolvedDep[];
+    };
 
 interface ResolutionFail {
-  type: "error";
+  type: 'error';
   hardFail: boolean;
   message: string;
 }
@@ -65,7 +74,7 @@ const builtInHelpers = [
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<Required<Options>, "staticHelpers" | "staticComponents">;
+type ResolverOptions = Pick<Required<Options>, 'staticHelpers' | 'staticComponents'>;
 
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
@@ -75,22 +84,27 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
 }
 
 export function rehydrate(params: {
-  root: string,
-  modulePrefix: string,
-  options: ResolverOptions,
-  activePackageRules: ActivePackageRules[]
+  root: string;
+  modulePrefix: string;
+  options: ResolverOptions;
+  activePackageRules: ActivePackageRules[];
 }) {
   return new CompatResolver(params.root, params.modulePrefix, params.options, params.activePackageRules);
 }
 
 export default class CompatResolver implements Resolver {
   private options: ResolverOptions;
-  private dependencies:  Map<string, Resolution[]> = new Map();
+  private dependencies: Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
 
   _parallelBabel: any;
 
-  constructor(private root: string, private modulePrefix: string, options: ResolverOptions, private activePackageRules: ActivePackageRules[]) {
+  constructor(
+    private root: string,
+    private modulePrefix: string,
+    options: ResolverOptions,
+    private activePackageRules: ActivePackageRules[]
+  ) {
     this.options = extractOptions(options);
     this._parallelBabel = {
       requireFile: __filename,
@@ -100,7 +114,7 @@ export default class CompatResolver implements Resolver {
         modulePrefix: modulePrefix,
         options: this.options,
         activePackageRules: activePackageRules,
-      }
+      },
     };
   }
 
@@ -125,7 +139,9 @@ export default class CompatResolver implements Resolver {
   @Memoize()
   private get rules() {
     if (!this.templateCompiler) {
-      throw new Error(`Bug: Resolver needs to get linked into a TemplateCompiler before it can understand packageRules`);
+      throw new Error(
+        `Bug: Resolver needs to get linked into a TemplateCompiler before it can understand packageRules`
+      );
     }
 
     // keyed by their first resolved dependency's runtimeName.
@@ -161,7 +177,13 @@ export default class CompatResolver implements Resolver {
                 components.set(join(root, componentRules.layout.addonPath), processedRules);
               }
             } else {
-              throw new Error(`layout property in component rule must contain either appPath or addonPath: ${JSON.stringify(rule, null, 2)}`);
+              throw new Error(
+                `layout property in component rule must contain either appPath or addonPath: ${JSON.stringify(
+                  rule,
+                  null,
+                  2
+                )}`
+              );
             }
           }
         }
@@ -170,8 +192,8 @@ export default class CompatResolver implements Resolver {
     return { components, ignoredComponents };
   }
 
-  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules): ResolutionResult & { type: "component" } {
-    if(!this.templateCompiler) {
+  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules): ResolutionResult & { type: 'component' } {
+    if (!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
     let name = this.standardDasherize(snippet, rule);
@@ -183,7 +205,7 @@ export default class CompatResolver implements Resolver {
   }
 
   private standardDasherize(snippet: string, rule: PackageRules | ModuleRules): string {
-    if(!this.templateCompiler) {
+    if (!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
     let ast: any;
@@ -236,17 +258,19 @@ export default class CompatResolver implements Resolver {
     if (pathExistsSync(absPath)) {
       return {
         type: 'helper',
-        modules: [{
-          runtimeName: `${this.modulePrefix}/helpers/${path}`,
-          path: explicitRelative(from, absPath),
-          absPath,
-        }]
+        modules: [
+          {
+            runtimeName: `${this.modulePrefix}/helpers/${path}`,
+            path: explicitRelative(from, absPath),
+            absPath,
+          },
+        ],
       };
     }
     return null;
   }
 
-  private tryComponent(path: string, from: string, withRuleLookup=true): Resolution | null {
+  private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
     let componentModules = [
       // The order here is important! We always put our .hbs paths first here,
       // so that if we have an hbs file of our own, that will be the first
@@ -264,7 +288,7 @@ export default class CompatResolver implements Resolver {
       {
         runtimeName: `${this.modulePrefix}/templates/components/${path}`,
         absPath: join(this.root, 'templates', 'components', path) + '.js',
-      }
+      },
     ].filter(candidate => pathExistsSync(candidate.absPath));
 
     if (componentModules.length > 0) {
@@ -280,7 +304,7 @@ export default class CompatResolver implements Resolver {
           runtimeName: p.runtimeName,
         })),
         yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : []
+        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
       };
     }
 
@@ -298,11 +322,14 @@ export default class CompatResolver implements Resolver {
     if (builtInHelpers.includes(path)) {
       return null;
     }
-    return this.add({
-      type: 'error',
-      hardFail: true,
-      message: `Missing helper ${path} in ${from}`
-    }, from);
+    return this.add(
+      {
+        type: 'error',
+        hardFail: true,
+        message: `Missing helper ${path} in ${from}`,
+      },
+      from
+    );
   }
 
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null {
@@ -325,11 +352,14 @@ export default class CompatResolver implements Resolver {
       !builtInHelpers.includes(path) &&
       !this.isIgnoredComponent(path)
     ) {
-      return this.add({
-        type: 'error',
-        hardFail: true,
-        message: `Missing component or helper ${path} in ${from}`
-      }, from);
+      return this.add(
+        {
+          type: 'error',
+          hardFail: true,
+          message: `Missing component or helper ${path} in ${from}`,
+        },
+        from
+      );
     } else {
       return null;
     }
@@ -357,11 +387,14 @@ export default class CompatResolver implements Resolver {
       return null;
     }
 
-    return this.add({
-      type: 'error',
-      hardFail: true,
-      message: `Missing component ${tagName} in ${from}`
-    }, from);
+    return this.add(
+      {
+        type: 'error',
+        hardFail: true,
+        message: `Missing component ${tagName} in ${from}`,
+      },
+      from
+    );
   }
 
   resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null {
@@ -373,29 +406,41 @@ export default class CompatResolver implements Resolver {
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(path)) {
         return null;
       }
-      return this.add({
-        type: 'error',
-        hardFail: false,
-        message: `ignoring dynamic component ${path} in ${humanReadableFile(this.root, from)}`
-      }, from);
+      return this.add(
+        {
+          type: 'error',
+          hardFail: false,
+          message: `ignoring dynamic component ${path} in ${humanReadableFile(this.root, from)}`,
+        },
+        from
+      );
     }
     let found = this.tryComponent(path, from);
     if (found) {
       return this.add(found, from);
     }
-    return this.add({
-      type: 'error',
-      hardFail: true,
-      message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`
-    }, from);
+    return this.add(
+      {
+        type: 'error',
+        hardFail: true,
+        message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`,
+      },
+      from
+    );
   }
 
   unresolvableComponentArgument(componentName: string, argumentName: string, from: string) {
-    this.add({
-      type: 'error',
-      hardFail: false,
-      message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(this.root, from)} is treated as a component, but the value you're passing is dynamic`
-    }, from);
+    this.add(
+      {
+        type: 'error',
+        hardFail: false,
+        message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(
+          this.root,
+          from
+        )} is treated as a component, but the value you're passing is dynamic`,
+      },
+      from
+    );
   }
 }
 

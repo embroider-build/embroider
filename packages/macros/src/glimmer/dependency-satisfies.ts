@@ -11,7 +11,6 @@ export default function dependencySatisfies(
   baseDir: string | undefined,
   moduleName: string
 ) {
-
   if (node.params.length !== 2) {
     throw new Error(`macroDependencySatisfies requires two arguments, you passed ${node.params.length}`);
   }

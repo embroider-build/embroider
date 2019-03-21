@@ -1,8 +1,8 @@
-import WaitForTrees, { OutputPaths } from "./wait-for-trees";
-import PackageCache from "./package-cache";
-import Stage from "./stage";
-import { Tree } from "broccoli-plugin";
-import { Memoize } from "typescript-memoize";
+import WaitForTrees, { OutputPaths } from './wait-for-trees';
+import PackageCache from './package-cache';
+import Stage from './stage';
+import { Tree } from 'broccoli-plugin';
+import { Memoize } from 'typescript-memoize';
 
 // This is a utility class for defining new Stages. It aids in handling the
 // boilerplate required to split your functionality between the
@@ -16,12 +16,16 @@ export default class BuildStage<NamedTrees> implements Stage {
     private prevStage: Stage,
     private inTrees: NamedTrees,
     private annotation: string,
-    private instantiate: (root: string, appSrcDir: string, packageCache: PackageCache) => Promise<BuilderInstance<NamedTrees>>
+    private instantiate: (
+      root: string,
+      appSrcDir: string,
+      packageCache: PackageCache
+    ) => Promise<BuilderInstance<NamedTrees>>
   ) {}
 
   @Memoize()
   get tree(): Tree {
-    return new WaitForTrees(this.augment(this.inTrees), this.annotation, async (treePaths) => {
+    return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
       if (!this.active) {
         let { outputPath, packageCache } = await this.prevStage.ready();
         if (!packageCache) {
@@ -41,22 +45,22 @@ export default class BuildStage<NamedTrees> implements Stage {
     return this.prevStage.inputPath;
   }
 
-  async ready(): Promise<{ outputPath: string, packageCache: PackageCache }>{
+  async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
     await this.deferReady.promise;
     return {
       outputPath: this.outputPath!,
-      packageCache: this.packageCache!
+      packageCache: this.packageCache!,
     };
   }
 
   @Memoize()
   private get deferReady() {
     let resolve: Function;
-    let promise: Promise<void> = new Promise(r => resolve =r);
+    let promise: Promise<void> = new Promise(r => (resolve = r));
     return { resolve: resolve!, promise };
   }
 
-  private augment(inTrees: NamedTrees) : NamedTrees & ExtraTree {
+  private augment(inTrees: NamedTrees): NamedTrees & ExtraTree {
     return Object.assign({ __prevStageTree: this.prevStage.tree }, inTrees);
   }
 

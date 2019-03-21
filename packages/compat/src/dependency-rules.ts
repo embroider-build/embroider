@@ -1,6 +1,6 @@
-import { Package } from "@embroider/core";
-import { satisfies } from "semver";
-import CompatResolver from "./resolver";
+import { Package } from '@embroider/core';
+import { satisfies } from 'semver';
+import CompatResolver from './resolver';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -33,7 +33,7 @@ export interface ActivePackageRules extends PackageRules {
 }
 
 export interface ComponentRules {
- // This declares that our component yields other components that are safe to
+  // This declares that our component yields other components that are safe to
   // invoke with the {{component}} helper.
   //
   // The array corresponds to your yielded positional arguments. Any value that
@@ -48,7 +48,7 @@ export interface ComponentRules {
   //    If you do: {{yield (hash x=(component "x") y=(component "y")) }}
   //    Then say: yieldsSafeComponents: [{x: true, y: true}]
   //
-  yieldsSafeComponents?: (boolean | { [name: string]: boolean } )[];
+  yieldsSafeComponents?: (boolean | { [name: string]: boolean })[];
 
   // This declares that our component accepts arguments that will be invoked
   // with the {{component}} helper. This silences warnings in the places where
@@ -87,12 +87,14 @@ export interface ModuleRules {
 }
 
 // The bare "string" short form implies that `becomes` is the same as `name`.
-export type ArgumentMapping = string | {
-  // the name of the argument you accept
-  name: string;
-  // the name its consumed as in your template
-  becomes: string;
-};
+export type ArgumentMapping =
+  | string
+  | {
+      // the name of the argument you accept
+      name: string;
+      // the name its consumed as in your template
+      becomes: string;
+    };
 
 // A component snippet is a string containing valid HBS that is a single
 // component invocation. We use it to refer to compoanents in a way that doesn't
@@ -109,7 +111,7 @@ export type ArgumentMapping = string | {
 type ComponentSnippet = string;
 
 export interface PreprocessedComponentRule {
-  yieldsSafeComponents: Required<ComponentRules>["yieldsSafeComponents"];
+  yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
   argumentsAreComponents: string[];
   safeInteriorPaths: string[];
 }
@@ -161,13 +163,13 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
   }
   let output = [];
   for (let [rule, roots] of rootsPerRule) {
-    output.push(Object.assign({ roots }, rule ));
+    output.push(Object.assign({ roots }, rule));
   }
   return output;
 }
 
 export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
-  let output: { absPath: string, target: string, runtimeName?: string }[] = [];
+  let output: { absPath: string; target: string; runtimeName?: string }[] = [];
   if (moduleRules.dependsOnModules) {
     for (let target of moduleRules.dependsOnModules) {
       output.push({ absPath, target });
@@ -177,7 +179,7 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
     for (let snippet of moduleRules.dependsOnComponents) {
       let found = resolver.resolveComponentSnippet(snippet, moduleRules);
       for (let { absPath: target, runtimeName } of found.modules) {
-        output.push({ absPath, target, runtimeName  });
+        output.push({ absPath, target, runtimeName });
       }
     }
   }

@@ -12,24 +12,20 @@ module.exports = {
   config: PortablePluginConfig.load({{{json-stringify portable 2}}}),
   isParallelSafe: {{ isParallelSafe }},
 };
-`) as (params: {
-  portable: any,
-  here: string,
-  isParallelSafe: boolean,
-}) => string;
+`) as (params: { portable: any; here: string; isParallelSafe: boolean }) => string;
 
-export type ResolveOptions  = { basedir: string } | { resolve: (name: string) => any };
+export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
 interface GlobalPlaceholder {
   embroiderPlaceholder: true;
-  type: "global";
+  type: 'global';
   nonce: number;
   index: number;
 }
 
 interface BroccoliParallelPlaceholder {
   embroiderPlaceholder: true;
-  type: "broccoli-parallel";
+  type: 'broccoli-parallel';
   requireFile: string;
   useMethod: string | undefined;
   buildUsing: string | undefined;
@@ -38,7 +34,7 @@ interface BroccoliParallelPlaceholder {
 
 interface HTMLBarsParallelPlaceholder {
   embroiderPlaceholder: true;
-  type: "htmlbars-parallel";
+  type: 'htmlbars-parallel';
   requireFile: string;
   buildUsing: string;
   params: any;
@@ -93,8 +89,10 @@ export class PortablePluginConfig {
     switch (typeof value) {
       case 'string':
       case 'number':
-      case 'boolean': return value;
-      case 'object': return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
+      case 'boolean':
+        return value;
+      case 'object':
+        return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
     }
 
     return this.globalPlaceholder(value);
@@ -108,7 +106,7 @@ export class PortablePluginConfig {
       embroiderPlaceholder: true,
       type: 'global',
       nonce,
-      index
+      index,
     };
   }
 
@@ -140,10 +138,9 @@ export class PortablePluginConfig {
 }
 
 function setupGlobals() {
-  let G = global as any as { [protocol]: { globalValues: any[], nonce: number }  };
+  let G = (global as any) as { [protocol]: { globalValues: any[]; nonce: number } };
   if (!G[protocol]) {
     G[protocol] = { globalValues: [], nonce: Math.floor(Math.random() * Math.pow(2, 32)) };
-
   }
   return G[protocol];
 }
@@ -154,7 +151,8 @@ function maybeBroccoli(object: any): BroccoliParallelPlaceholder | undefined {
   const type = typeof object;
   const hasProperties = type === 'function' || (type === 'object' && object !== null);
 
-  if (hasProperties &&
+  if (
+    hasProperties &&
     object._parallelBabel !== null &&
     typeof object._parallelBabel === 'object' &&
     typeof object._parallelBabel.requireFile === 'string'
@@ -175,7 +173,9 @@ function buildBroccoli(parallelApiInfo: BroccoliParallelPlaceholder) {
 
   if (parallelApiInfo.useMethod) {
     if (requiredStuff[parallelApiInfo.useMethod] === undefined) {
-      throw new Error("method '" + parallelApiInfo.useMethod + "' does not exist in file " + parallelApiInfo.requireFile);
+      throw new Error(
+        "method '" + parallelApiInfo.useMethod + "' does not exist in file " + parallelApiInfo.requireFile
+      );
     }
     return requiredStuff[parallelApiInfo.useMethod];
   }
@@ -195,7 +195,8 @@ function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
   const type = typeof object;
   const hasProperties = type === 'function' || (type === 'object' && object !== null);
 
-  if (hasProperties &&
+  if (
+    hasProperties &&
     object.parallelBabel !== null &&
     typeof object.parallelBabel === 'object' &&
     typeof object.parallelBabel.requireFile === 'string'

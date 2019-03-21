@@ -1,26 +1,26 @@
-import { PackageRules } from "..";
+import { PackageRules } from '..';
 
 let rules: PackageRules = {
-  package: "ember-power-select",
+  package: 'ember-power-select',
   addonModules: {
-    "./components/power-select.js": {
+    './components/power-select.js': {
       dependsOnComponents: [
-        "{{power-select/before-options}}",
-        "{{power-select/options}}",
-        "{{power-select/power-select-group}}",
-        "{{power-select/trigger}}",
-        "{{power-select/search-message}}",
-        "{{power-select/placeholder}}",
+        '{{power-select/before-options}}',
+        '{{power-select/options}}',
+        '{{power-select/power-select-group}}',
+        '{{power-select/trigger}}',
+        '{{power-select/search-message}}',
+        '{{power-select/placeholder}}',
       ],
     },
-    "./components/power-select-multiple.js": {
-      dependsOnComponents: ["{{power-select-multiple/trigger}}"],
+    './components/power-select-multiple.js': {
+      dependsOnComponents: ['{{power-select-multiple/trigger}}'],
     },
   },
   components: {
-    "{{power-select}}": {
+    '{{power-select}}': {
       layout: {
-        addonPath: "templates/components/power-select.hbs"
+        addonPath: 'templates/components/power-select.hbs',
       },
       acceptsComponentArguments: [
         'afterOptionsComponent',
@@ -32,9 +32,9 @@ let rules: PackageRules = {
         'triggerComponent',
       ],
     },
-    "{{power-select-multiple}}": {
+    '{{power-select-multiple}}': {
       layout: {
-        addonPath: "templates/components/power-select-multiple.hbs"
+        addonPath: 'templates/components/power-select-multiple.hbs',
       },
       acceptsComponentArguments: [
         'afterOptionsComponent',
@@ -47,32 +47,24 @@ let rules: PackageRules = {
         'triggerComponent',
       ],
     },
-    "{{power-select/trigger}}": {
+    '{{power-select/trigger}}': {
       layout: {
-        addonPath: "templates/components/power-select/trigger.hbs"
+        addonPath: 'templates/components/power-select/trigger.hbs',
       },
-      acceptsComponentArguments: [
-        'selectedItemComponent',
-        'placeholderComponent',
-      ]
+      acceptsComponentArguments: ['selectedItemComponent', 'placeholderComponent'],
     },
-    "{{power-select/options}}": {
+    '{{power-select/options}}': {
       layout: {
-        addonPath: "templates/components/power-select/options.hbs"
+        addonPath: 'templates/components/power-select/options.hbs',
       },
-      acceptsComponentArguments: [
-        'groupComponent',
-        'optionsComponent',
-      ]
+      acceptsComponentArguments: ['groupComponent', 'optionsComponent'],
     },
-    "{{power-select-multiple/trigger}}": {
+    '{{power-select-multiple/trigger}}': {
       layout: {
-        addonPath: "templates/components/power-select-multiple/trigger.hbs"
+        addonPath: 'templates/components/power-select-multiple/trigger.hbs',
       },
-      acceptsComponentArguments: [
-        'selectedItemComponent',
-      ]
-    }
+      acceptsComponentArguments: ['selectedItemComponent'],
+    },
   },
 };
 

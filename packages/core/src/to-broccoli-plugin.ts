@@ -1,10 +1,10 @@
-import Plugin from "broccoli-plugin";
-import { Packager, PackagerInstance } from "./packager";
-import Stage from "./stage";
-import PackageCache from "./package-cache";
+import Plugin from 'broccoli-plugin';
+import { Packager, PackagerInstance } from './packager';
+import Stage from './stage';
+import PackageCache from './package-cache';
 
 interface BroccoliPackager<Options> {
-  new(stage: Stage, options?: Options): Plugin;
+  new (stage: Stage, options?: Options): Plugin;
 }
 
 export default function toBroccoliPlugin<Options>(packagerClass: Packager<Options>): BroccoliPackager<Options> {
@@ -14,7 +14,7 @@ export default function toBroccoliPlugin<Options>(packagerClass: Packager<Option
       super([stage.tree], {
         persistentOutput: true,
         needsCache: false,
-        annotation: packagerClass.annotation
+        annotation: packagerClass.annotation,
       });
     }
 
@@ -35,9 +35,9 @@ export default function toBroccoliPlugin<Options>(packagerClass: Packager<Option
         this.packager = new packagerClass(
           outputPath,
           this.outputPath,
-          (msg) => console.log(msg),
+          msg => console.log(msg),
           packageCache,
-          this.options,
+          this.options
         );
       }
       return this.packager.build();

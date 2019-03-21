@@ -14,6 +14,6 @@ export function bindState(visitor: Visitor, state: State): BoundVisitor {
   return {
     CallExpression(node: NodePath<CallExpression>) {
       return visitor.CallExpression(node, state);
-    }
+    },
   };
 }

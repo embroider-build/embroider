@@ -1,6 +1,6 @@
-import SourceMapConcat from "fast-sourcemap-concat";
-import { join } from "path";
-import { statSync } from "fs";
+import SourceMapConcat from 'fast-sourcemap-concat';
+import { join } from 'path';
+import { statSync } from 'fs';
 import filesize from 'filesize';
 
 export default class MeasureConcat {
@@ -16,7 +16,12 @@ export default class MeasureConcat {
   }
   async end() {
     console.log(`Concatenated ${this.name}:`);
-    console.log(Object.entries(this.stats).sort((a,b) => b[1] - a[1]).map(([name, bytes]) => `  ${name}: ${filesize(bytes)}`).join("\n"));
+    console.log(
+      Object.entries(this.stats)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, bytes]) => `  ${name}: ${filesize(bytes)}`)
+        .join('\n')
+    );
     return await this.concat.end();
   }
 }

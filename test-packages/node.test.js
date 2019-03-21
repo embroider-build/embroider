@@ -8,4 +8,3 @@ test('node', async () => {
     env: { JOBS: '1' },
   });
 });
-

@@ -18,7 +18,7 @@ function resolvableNames(...names: string[]) {
       let e = new Error(`stub resolver failure for ${name}`);
       (e as any).code = 'MODULE_NOT_FOUND';
       throw e;
-    }
+    },
   };
 }
 
@@ -38,88 +38,122 @@ function run(config: PortableBabelConfig): any {
 
 QUnit.module('portable-plugin-config', function() {
   test('absolute path', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['/path/to/some/plugin.js']
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['/path/to/some/plugin.js'],
+      },
+      resolvableNames()
+    );
     assert.deepEqual(runParallelSafe(config).plugins, ['/path/to/some/plugin.js']);
   });
 
   test('local path', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['./path/to/some/plugin.js']
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['./path/to/some/plugin.js'],
+      },
+      resolvableNames()
+    );
     assert.deepEqual(runParallelSafe(config).plugins, ['/notional-base-dir/path/to/some/plugin.js']);
   });
 
   test('package name', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['my-package']
-    }, resolvableNames('my-package'));
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['my-package'],
+      },
+      resolvableNames('my-package')
+    );
     assert.deepEqual(runParallelSafe(config).plugins, ['/notional-base-dir/node_modules/my-package/index.js']);
   });
 
   test('package name shorthand', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['my-package']
-    }, resolvableNames('babel-plugin-my-package'));
-    assert.deepEqual(runParallelSafe(config).plugins, ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js']);
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['my-package'],
+      },
+      resolvableNames('babel-plugin-my-package')
+    );
+    assert.deepEqual(runParallelSafe(config).plugins, [
+      '/notional-base-dir/node_modules/babel-plugin-my-package/index.js',
+    ]);
   });
 
   test('namespaced package name', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['@me/my-package']
-    }, resolvableNames('@me/my-package'));
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['@me/my-package'],
+      },
+      resolvableNames('@me/my-package')
+    );
     assert.deepEqual(runParallelSafe(config).plugins, ['/notional-base-dir/node_modules/@me/my-package/index.js']);
   });
 
   test('namespaced package name shorthand', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: ['@me/my-package']
-    }, resolvableNames('@me/babel-plugin-my-package'));
-    assert.deepEqual(runParallelSafe(config).plugins, ['/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js']);
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['@me/my-package'],
+      },
+      resolvableNames('@me/babel-plugin-my-package')
+    );
+    assert.deepEqual(runParallelSafe(config).plugins, [
+      '/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js',
+    ]);
   });
 
   test('resolves name with json-safe config', function(assert) {
-    let config = new PortableBabelConfig({
-      plugins: [['my-package', { theOptions: 'cool' }]]
-    }, resolvableNames('babel-plugin-my-package'));
+    let config = new PortableBabelConfig(
+      {
+        plugins: [['my-package', { theOptions: 'cool' }]],
+      },
+      resolvableNames('babel-plugin-my-package')
+    );
     assert.deepEqual(runParallelSafe(config).plugins, [
-      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', { theOptions: 'cool' }]
+      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', { theOptions: 'cool' }],
     ]);
   });
 
   test('resolves name with arbitrary config', function(assert) {
-    let options = { precompile() { return 'cool'; } };
-    let config = new PortableBabelConfig({
-      plugins: [['my-package', options]]
-    }, resolvableNames('babel-plugin-my-package'));
+    let options = {
+      precompile() {
+        return 'cool';
+      },
+    };
+    let config = new PortableBabelConfig(
+      {
+        plugins: [['my-package', options]],
+      },
+      resolvableNames('babel-plugin-my-package')
+    );
     assert.ok(!config.isParallelSafe);
     assert.deepEqual(run(config).plugins, [
-      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', options]
+      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', options],
     ]);
   });
 
   test('passes through bare function', function(assert) {
     let func = function() {};
-    let config = new PortableBabelConfig({
-      plugins: [func]
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: [func],
+      },
+      resolvableNames()
+    );
     assert.ok(!config.isParallelSafe);
-    assert.deepEqual(run(config).plugins, [
-      func
-    ]);
+    assert.deepEqual(run(config).plugins, [func]);
   });
 
   test('passes through function with args', function(assert) {
     let func = function() {};
     let args = { theArgs: 'here' };
-    let config = new PortableBabelConfig({
-      plugins: [[func, args]]
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: [[func, args]],
+      },
+      resolvableNames()
+    );
     assert.ok(!config.isParallelSafe);
-    assert.deepEqual(run(config).plugins, [
-      [func, args]
-    ]);
+    assert.deepEqual(run(config).plugins, [[func, args]]);
   });
 
   test('respects _parallelBabel api with buildUsing on PluginTarget', function(assert) {
@@ -127,12 +161,15 @@ QUnit.module('portable-plugin-config', function() {
       requireFile: __filename,
       buildUsing: 'exampleFunction',
       params: {
-        theParams: 'are here'
-      }
+        theParams: 'are here',
+      },
     };
-    let config = new PortableBabelConfig({
-      plugins: [exampleFunction]
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: [exampleFunction],
+      },
+      resolvableNames()
+    );
     assert.ok(config.isParallelSafe);
     let output = runParallelSafe(config);
     assert.equal(output.plugins[0], 'this is the example function with theParams=are here');
@@ -141,11 +178,14 @@ QUnit.module('portable-plugin-config', function() {
   test('respects _parallelBabel api with useMethod on PluginTarget', function(assert) {
     (exampleFunction as any)._parallelBabel = {
       requireFile: __filename,
-      useMethod: 'exampleFunction'
+      useMethod: 'exampleFunction',
     };
-    let config = new PortableBabelConfig({
-      plugins: [exampleFunction]
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: [exampleFunction],
+      },
+      resolvableNames()
+    );
     assert.ok(config.isParallelSafe);
     let output = runParallelSafe(config);
     assert.equal(output.plugins[0](), 'this is the example function with no params');
@@ -155,9 +195,12 @@ QUnit.module('portable-plugin-config', function() {
     (exampleFunction as any)._parallelBabel = {
       requireFile: __filename,
     };
-    let config = new PortableBabelConfig({
-      plugins: [exampleFunction]
-    }, resolvableNames());
+    let config = new PortableBabelConfig(
+      {
+        plugins: [exampleFunction],
+      },
+      resolvableNames()
+    );
     assert.ok(config.isParallelSafe);
     let output = runParallelSafe(config);
     assert.equal(output.plugins[0].exampleFunction(), 'this is the example function with no params');
@@ -168,16 +211,21 @@ QUnit.module('portable-plugin-config', function() {
     precompile._parallelBabel = {
       requireFile: __filename,
       buildUsing: 'exampleFunction',
-      params: { theParams: 'reconstituted precompile' }
+      params: { theParams: 'reconstituted precompile' },
     };
 
-    let config = new PortableBabelConfig({
-      plugins: [['my-plugin', { precompile }]]
-    }, resolvableNames('my-plugin'));
+    let config = new PortableBabelConfig(
+      {
+        plugins: [['my-plugin', { precompile }]],
+      },
+      resolvableNames('my-plugin')
+    );
     assert.ok(config.isParallelSafe);
     let output = runParallelSafe(config);
     assert.equal(output.plugins[0][0], '/notional-base-dir/node_modules/my-plugin/index.js');
-    assert.deepEqual(output.plugins[0][1], { precompile: 'this is the example function with theParams=reconstituted precompile' });
+    assert.deepEqual(output.plugins[0][1], {
+      precompile: 'this is the example function with theParams=reconstituted precompile',
+    });
   });
 });
 

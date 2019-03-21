@@ -1,18 +1,13 @@
-import { V1AddonConstructor } from "./v1-addon";
-import { Tree } from "broccoli-plugin";
-import {
-  Options as CoreOptions,
-  optionsWithDefaults as
-  coreWithDefaults
-} from '@embroider/core';
-import { PackageRules } from "./dependency-rules";
+import { V1AddonConstructor } from './v1-addon';
+import { Tree } from 'broccoli-plugin';
+import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from '@embroider/core';
+import { PackageRules } from './dependency-rules';
 
 // These options control how hard we will try to achieve compatibility with v1
 // addons. The defaults are conservative and try to maximize compatibility, at
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
 export default interface Options extends CoreOptions {
-
   // Controls whether your addon's "addon" trees should be resolved statically
   // at build time.
   //

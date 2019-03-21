@@ -24,7 +24,6 @@
     "@types/resolve": "^0.0.8",
     "@types/strip-bom": "^3.0.0",
     "qunit": "^2.8.0",
-    "tslint": "^5.11.0",
     "typescript": "~3.2.0"
   },
   "dependencies": {

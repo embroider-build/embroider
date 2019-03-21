@@ -1,7 +1,7 @@
 import { NodePath } from '@babel/traverse';
 import { BoundVisitor } from './visitor';
 
-function evaluateKey(path: NodePath, visitor: BoundVisitor): { confident: boolean, value: any } {
+function evaluateKey(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
   let first = evaluateJSON(path, visitor);
   if (first.confident) {
     return first;
@@ -12,7 +12,7 @@ function evaluateKey(path: NodePath, visitor: BoundVisitor): { confident: boolea
   return { confident: false, value: undefined };
 }
 
-export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean, value: any } {
+export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
   if (path.isMemberExpression()) {
     let property = evaluateKey(assertNotArray(path.get('property')), visitor);
     if (property.confident) {
@@ -40,9 +40,12 @@ export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { c
   }
 
   if (path.isObjectExpression()) {
-    let props = assertArray(path.get('properties')).map(p => [ evaluateJSON(assertNotArray(p.get('key')), visitor), evaluateJSON(assertNotArray(p.get('value')), visitor) ]);
+    let props = assertArray(path.get('properties')).map(p => [
+      evaluateJSON(assertNotArray(p.get('key')), visitor),
+      evaluateJSON(assertNotArray(p.get('value')), visitor),
+    ]);
     let result: any = {};
-    for (let [k,v] of props) {
+    for (let [k, v] of props) {
       if (!k.confident || !v.confident) {
         return { confident: false, value: undefined };
       }

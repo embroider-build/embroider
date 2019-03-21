@@ -1,11 +1,11 @@
-import { JSDOM } from "jsdom";
-import { EmberHTML } from "./ember-html";
+import { JSDOM } from 'jsdom';
+import { EmberHTML } from './ember-html';
 
 export interface ImplicitAssetPaths {
-  "implicit-scripts": string[];
-  "implicit-test-scripts": string[];
-  "implicit-styles": string[];
-  "implicit-test-styles": string[];
+  'implicit-scripts': string[];
+  'implicit-test-scripts': string[];
+  'implicit-styles': string[];
+  'implicit-test-styles': string[];
 }
 
 interface BaseAsset {
@@ -14,7 +14,7 @@ interface BaseAsset {
 }
 
 export interface OnDiskAsset extends BaseAsset {
-  kind: "on-disk";
+  kind: 'on-disk';
 
   // absolute path to where we will find it
   sourcePath: string;
@@ -23,7 +23,7 @@ export interface OnDiskAsset extends BaseAsset {
 }
 
 export interface InMemoryAsset extends BaseAsset {
-  kind: "in-memory";
+  kind: 'in-memory';
 
   // the actual bits
   source: string | Buffer;
@@ -31,7 +31,7 @@ export interface InMemoryAsset extends BaseAsset {
 
 // This represents an HTML entrypoint to the Ember app
 export interface EmberAsset extends BaseAsset {
-  kind: "ember";
+  kind: 'ember';
 
   // absolute path to where we will find the html file
   sourcePath: string;

@@ -1,4 +1,4 @@
-import TemplateCompiler from "./template-compiler";
+import TemplateCompiler from './template-compiler';
 
 export interface ResolvedDep {
   runtimeName: string;

@@ -13,7 +13,7 @@ interface MultiOptions extends Options {
 }
 
 export default class MultiFunnel extends Funnel {
-  private srcDirs!: MultiOptions["srcDirs"];
+  private srcDirs!: MultiOptions['srcDirs'];
   constructor(inputTree: Tree, options: MultiOptions) {
     super(inputTree, options);
   }

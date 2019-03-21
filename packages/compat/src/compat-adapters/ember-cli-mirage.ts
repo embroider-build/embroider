@@ -1,5 +1,5 @@
-import V1Addon from "../v1-addon";
-import Funnel from "broccoli-funnel";
+import V1Addon from '../v1-addon';
+import Funnel from 'broccoli-funnel';
 
 export default class extends V1Addon {
   get packageMeta() {
@@ -18,7 +18,7 @@ export default class extends V1Addon {
       return tree;
     }
     return new Funnel(tree, {
-      include: ['package.json']
+      include: ['package.json'],
     });
   }
 }

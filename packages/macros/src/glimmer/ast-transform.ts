@@ -2,15 +2,10 @@ import { MacrosConfig } from '..';
 import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
-import {
-  macroIfBlock,
-  macroIfExpression,
-  maybeAttrs,
-} from './macro-if';
+import { macroIfBlock, macroIfExpression, maybeAttrs } from './macro-if';
 
 export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
-  function embroiderFirstMacrosTransform(env: { syntax: { builders: any }, meta: { moduleName: string } }) {
-
+  function embroiderFirstMacrosTransform(env: { syntax: { builders: any }; meta: { moduleName: string } }) {
     let scopeStack: string[][] = [];
 
     return {
@@ -27,7 +22,7 @@ export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
             }
-          }
+          },
         },
         SubExpression(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -54,16 +49,22 @@ export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, env.meta.moduleName, true), env.syntax.builders));
+            return env.syntax.builders.mustache(
+              literal(getConfig(node, config, baseDir, env.meta.moduleName, true), env.syntax.builders)
+            );
           }
           if (node.path.original === 'macroGetConfig') {
-            return env.syntax.builders.mustache(literal(getConfig(node, config, baseDir, env.meta.moduleName, false), env.syntax.builders));
+            return env.syntax.builders.mustache(
+              literal(getConfig(node, config, baseDir, env.meta.moduleName, false), env.syntax.builders)
+            );
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return env.syntax.builders.mustache(literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders));
+            return env.syntax.builders.mustache(
+              literal(dependencySatisfies(node, config, baseDir, env.meta.moduleName), env.syntax.builders)
+            );
           }
-        }
-      }
+        },
+      },
     };
   }
   (embroiderFirstMacrosTransform as any).embroiderMacrosASTMarker = true;
@@ -72,7 +73,6 @@ export function makeFirstTransform(config: MacrosConfig, baseDir?: string) {
 
 export function makeSecondTransform() {
   function embroiderSecondMacrosTransform(env: { syntax: { builders: any } }) {
-
     let scopeStack: string[][] = [];
 
     return {
@@ -89,7 +89,7 @@ export function makeSecondTransform() {
             if (node.blockParams.length > 0) {
               scopeStack.pop();
             }
-          }
+          },
         },
         BlockStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -138,8 +138,8 @@ export function makeSecondTransform() {
           if (node.path.original === 'macroIf') {
             return env.syntax.builders.mustache(macroIfExpression(node, env.syntax.builders));
           }
-        }
-      }
+        },
+      },
     };
   }
   (embroiderSecondMacrosTransform as any).embroiderMacrosASTMarker = true;

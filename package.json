@@ -23,5 +23,11 @@
     "execa": "^1.0.0",
     "jest": "^24.5.0",
     "prettier": "1.16.4"
+  },
+  "jest": {
+    "projects": [
+      "<rootDir>/packages/*",
+      "<rootDir>/test-packages/"
+    ]
   }
 }

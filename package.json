@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "compile": "tsc",
-    "lint": "eslint . --ext=js,ts --cache && tslint --project .",
+    "lint": "eslint . --ext=js,ts --cache",
     "clean": "git clean -x -f",
     "node-test": "qunit packages/*/tests",
     "test": "jest"
@@ -21,7 +21,6 @@
     "eslint-plugin-prettier": "^3.0.1",
     "execa": "^1.0.0",
     "jest": "^24.5.0",
-    "prettier": "1.16.4",
-    "tslint": "^5.11.0"
+    "prettier": "1.16.4"
   }
 }

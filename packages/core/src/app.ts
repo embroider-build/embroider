@@ -143,13 +143,14 @@ interface RouteFiles {
   route?: string;
   template?: string;
   controller?: string;
+  children: Map<string, RouteFiles>;
 }
 
 class AppFiles {
   readonly tests: ReadonlyArray<string>;
   readonly components: ReadonlyArray<string>;
   readonly helpers: ReadonlyArray<string>;
-  readonly perRoute: ReadonlyMap<string, Readonly<RouteFiles>>;
+  private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
 
   constructor(relativePaths: Set<string>) {
@@ -157,7 +158,7 @@ class AppFiles {
     let components: string[] = [];
     let helpers: string[] = [];
     let otherAppFiles: string[] = [];
-    let perRoute: Map<string, RouteFiles> = new Map();
+    this.perRoute = { children: new Map() };
     for (let relativePath of relativePaths) {
       if (!relativePath.endsWith('.js') && !relativePath.endsWith('.hbs')) {
         continue;
@@ -178,14 +179,7 @@ class AppFiles {
         continue;
       }
 
-      let route = this.identifyRoute(relativePath);
-      if (route) {
-        let files = perRoute.get(route.name);
-        if (files) {
-          Object.assign(files, route.files);
-        } else {
-          perRoute.set(route.name, route.files);
-        }
+      if (this.handleRouteFile(relativePath)) {
         continue;
       }
 
@@ -194,21 +188,32 @@ class AppFiles {
     this.tests = tests;
     this.components = components;
     this.helpers = helpers;
-    this.perRoute = perRoute;
     this.otherAppFiles = otherAppFiles;
   }
 
-  private identifyRoute(relativePath: string): { name: string; files: RouteFiles } | undefined {
-    let [prefix, ...rest] = relativePath.split('/');
-    if (['controllers', 'templates', 'routes'].includes(prefix)) {
-      // NEXT: don't join here, instead we need to build a tree shaped structure
-      let name = rest.join('/').replace(/\.\w{1,3}$/, '');
-      let type = prefix.slice(0, -1);
-      return {
-        name,
-        files: { [type]: relativePath },
-      };
+  private handleRouteFile(relativePath: string): boolean {
+    let [prefix, ...rest] = relativePath.replace(/\.\w{1,3}$/, '').split('/');
+    if (!['controllers', 'templates', 'routes'].includes(prefix)) {
+      return false;
     }
+    let type = prefix.slice(0, -1) as 'controller' | 'template' | 'route';
+    let cursor = this.perRoute;
+    for (let part of rest) {
+      let child = cursor.children.get(part);
+      if (child) {
+        cursor = child;
+      } else {
+        let newEntry = { children: new Map() };
+        cursor.children.set(part, newEntry);
+        cursor = newEntry;
+      }
+    }
+    cursor[type] = relativePath;
+    return true;
+  }
+
+  get routeFiles(): Readonly<RouteFiles> {
+    return this.perRoute;
   }
 }
 
@@ -628,36 +633,70 @@ export class AppBuilder<TreeNames> {
     );
   }
 
-  private splitRoute(routeName: string, files: RouteFiles) {
-    let shouldSplit = this.shouldSplitRoute(routeName);
-    let lazy: string[] = [];
-    let eager: string[] = [];
+  private splitRoute(
+    routeName: string,
+    files: RouteFiles,
+    prepared: Map<string, InternalAsset>,
+    emitEagerFile: (routeName: string, filename: string) => void,
+    emitLazyRoute: (routeName: string, path: string) => void
+  ) {
+    let shouldSplit = routeName && this.shouldSplitRoute(routeName);
+    let lazyFiles: string[] = [];
 
     if (files.template) {
       if (shouldSplit) {
-        lazy.push(files.template);
+        lazyFiles.push(files.template);
       } else {
-        eager.push(files.template);
+        emitEagerFile(routeName, files.template);
       }
     }
 
     if (files.controller) {
       if (shouldSplit && this.options.splitRouteClasses) {
-        lazy.push(files.controller);
+        lazyFiles.push(files.controller);
       } else {
-        eager.push(files.controller);
+        emitEagerFile(routeName, files.controller);
       }
     }
 
     if (files.route) {
       if (shouldSplit && this.options.splitRouteClasses) {
-        lazy.push(files.route);
+        lazyFiles.push(files.route);
       } else {
-        eager.push(files.route);
+        emitEagerFile(routeName, files.route);
       }
     }
 
-    return { eager, lazy };
+    let ownEntrypoint = `assets/_route_/${encodeURIComponent(routeName)}.js`;
+
+    for (let [childName, childFiles] of files.children) {
+      this.splitRoute(
+        childName,
+        childFiles,
+        prepared,
+        (childRouteName: string, childEagerFile: string) => {
+          let fullChildName = `${routeName}.${childRouteName}`;
+          if (shouldSplit) {
+            // when splitting, our children's eager files go into our own
+            // entrypoint
+            lazyFiles.push(childEagerFile);
+            emitLazyRoute(fullChildName, ownEntrypoint);
+          } else {
+            emitEagerFile(fullChildName, childEagerFile);
+          }
+        },
+        (childRouteName: string, path: string) => {
+          emitLazyRoute(`${routeName}.${childRouteName}`, path);
+        }
+      );
+    }
+
+    if (lazyFiles.length > 0) {
+      if (!prepared.get(ownEntrypoint)) {
+        prepared.set(ownEntrypoint, this.routeEntrypoint(ownEntrypoint, lazyFiles));
+      }
+      emitLazyRoute(routeName, `./_route_/${encodeURIComponent(routeName)}`);
+    }
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
@@ -666,8 +705,6 @@ export class AppBuilder<TreeNames> {
       return cached;
     }
 
-    let lazyRoutes: { name: string; path: string }[] = [];
-
     let requiredAppFiles = [appFiles.otherAppFiles];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -675,17 +712,16 @@ export class AppBuilder<TreeNames> {
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
-    for (let [routeName, routeFiles] of appFiles.perRoute) {
-      let { eager, lazy } = this.splitRoute(routeName, routeFiles);
-      requiredAppFiles.push(eager);
-      if (lazy.length > 0) {
-        let assetName = `assets/_route_/${encodeURIComponent(routeName)}.js`;
-        if (!prepared.get(assetName)) {
-          prepared.set(assetName, this.routeEntrypoint(assetName, lazy));
-        }
-        lazyRoutes.push({ name: routeName, path: `./_route_/${encodeURIComponent(routeName)}` });
-      }
-    }
+
+    let eagerRouteFiles: string[] = [];
+    let lazyRoutes: { name: string; path: string }[] = [];
+    let emitEager = (_: string, filename: string) => {
+      eagerRouteFiles.push(filename);
+    };
+    let emitLazy = (name: string, path: string) => {
+      lazyRoutes.push({ name, path });
+    };
+    this.splitRoute('_ROOT_ROUTE_', appFiles.routeFiles, prepared, emitEager, emitLazy);
 
     let relativePath = `assets/${this.app.name}.js`;
 
@@ -880,10 +916,10 @@ let d = w.define;
 }) => string;
 
 const routeEntryTemplate = compile(`
+import { require as r } from '@embroider/core';
 let d = window.define;
-{{#each files as |file index|}}
-import a{{index}} from "{{js-string-escape file.buildtime}}";
-d("{{js-string-escape file.runtime}}", function(){ return a{{index}}; });
+{{#each files as |amdModule| ~}}
+d("{{js-string-escape amdModule.runtime}}", function(){ return r("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 `) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
 

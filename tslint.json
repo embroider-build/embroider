@@ -1,6 +1,5 @@
 {
   "rules": {
-    "no-duplicate-variable": true,
     "no-implicit-dependencies": true
   }
 }

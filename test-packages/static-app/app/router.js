@@ -10,9 +10,6 @@ Router.map(function() {
   this.route('helpers-example');
   this.route('components-example');
   this.route('static-component-rules-example');
-  this.route('split-me', function() {
-    this.route('child');
-  });
 });
 
 export default Router;

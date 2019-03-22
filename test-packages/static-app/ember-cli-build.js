@@ -4,10 +4,11 @@ const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 const { MacrosConfig } = require('@embroider/macros');
 
 module.exports = function(defaults) {
-  let app = new EmberApp(defaults, {});
+  let app = new EmberApp(defaults, {
+  });
 
   MacrosConfig.shared().setOwnConfig(__filename, {
-    isClassic: Boolean(process.env.CLASSIC),
+    isClassic: Boolean(process.env.CLASSIC)
   });
 
   if (process.env.CLASSIC) {
@@ -20,23 +21,22 @@ module.exports = function(defaults) {
     staticAddonTrees: true,
     staticComponents: true,
     staticHelpers: true,
-    splitRouteClasses: true,
-    splitAtRoutes: ['split-me'],
-
     packageRules: [
       {
         package: 'static-app',
         appModules: {
           'components/fancy-box.js': {
-            dependsOnComponents: ['{{default-title}}'],
-          },
+            dependsOnComponents: ['{{default-title}}']
+          }
         },
         components: {
           '{{fancy-box}}': {
-            acceptsComponentArguments: [{ name: 'titleComponent', becomes: 'this.titleComponentWithDefault' }],
-          },
-        },
-      },
-    ],
+            acceptsComponentArguments: [
+              { name: 'titleComponent', becomes: 'this.titleComponentWithDefault' }
+            ]
+          }
+        }
+      }
+    ]
   });
 };

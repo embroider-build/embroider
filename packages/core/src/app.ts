@@ -717,7 +717,7 @@ export class AppBuilder<TreeNames> {
 
     let relativePath = `assets/${this.app.name}.js`;
 
-    let lazyRoutes: { name: string; path: string }[] = [];
+    let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
       this.splitRoute(
         routeName,
@@ -733,9 +733,7 @@ export class AppBuilder<TreeNames> {
           if (!prepared.has(routeEntrypoint)) {
             prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
           }
-          for (let name of routeNames) {
-            lazyRoutes.push({ name, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
-          }
+          lazyRoutes.push({ names: routeNames, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
         }
       );
     }
@@ -892,7 +890,9 @@ let d = w.define;
   w._embroiderRoute_ = function(name) {
     switch (name) {
       {{#each lazyRoutes as |route|}}
-      case "{{js-string-escape route.name}}":
+      {{#each route.names as |name|}}
+      case "{{js-string-escape name}}":
+      {{/each}}
         return import("{{js-string-escape route.path}}");
       {{/each}}
       default:
@@ -927,7 +927,7 @@ let d = w.define;
   mainModule?: string;
   appConfig?: unknown;
   testSuffix?: boolean;
-  lazyRoutes?: { name: string; path: string }[];
+  lazyRoutes?: { names: string[]; path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`

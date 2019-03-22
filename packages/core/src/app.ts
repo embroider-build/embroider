@@ -245,7 +245,7 @@ export class AppBuilder<TreeNames> {
         let stats = statSync(sourcePath);
         return {
           kind: 'on-disk',
-          relativePath: relative(this.root, sourcePath),
+          relativePath: explicitRelative(this.root, sourcePath),
           sourcePath,
           mtime: stats.mtimeMs,
           size: stats.size,
@@ -465,7 +465,7 @@ export class AppBuilder<TreeNames> {
     for (let source of asset.sources) {
       switch (source.kind) {
         case 'on-disk':
-          concat.addFile(relative(this.root, source.sourcePath));
+          concat.addFile(explicitRelative(this.root, source.sourcePath));
           break;
         case 'in-memory':
           if (typeof source.source !== 'string') {
@@ -715,6 +715,8 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
+    let relativePath = `assets/${this.app.name}.js`;
+
     let lazyRoutes: { name: string; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
       this.splitRoute(
@@ -732,13 +734,11 @@ export class AppBuilder<TreeNames> {
             prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
           }
           for (let name of routeNames) {
-            lazyRoutes.push({ name, path: routeEntrypoint });
+            lazyRoutes.push({ name, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
           }
         }
       );
     }
-
-    let relativePath = `assets/${this.app.name}.js`;
 
     let amdModules = flatten(requiredAppFiles).map(file => this.importPaths(file, relativePath));
 
@@ -754,7 +754,7 @@ export class AppBuilder<TreeNames> {
       needsEmbroiderHook: true,
       amdModules,
       autoRun: this.adapter.autoRun(),
-      mainModule: relative(dirname(relativePath), this.adapter.mainModule()),
+      mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: this.adapter.mainModuleConfig(),
       lazyRoutes,
     });
@@ -778,7 +778,7 @@ export class AppBuilder<TreeNames> {
     let noHBS = noJS.replace(/\.hbs$/, '');
     return {
       runtime: `${this.modulePrefix}/${noHBS}`,
-      buildtime: relative(dirname(fromFile), noJS),
+      buildtime: explicitRelative(dirname(fromFile), noJS),
     };
   }
 
@@ -806,7 +806,7 @@ export class AppBuilder<TreeNames> {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    testModules.unshift('./' + relative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
+    testModules.unshift(explicitRelative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -836,7 +836,7 @@ export class AppBuilder<TreeNames> {
         for (let name of implicitModules) {
           lazyModules.push({
             runtime: join(addon.name, name),
-            buildtime: relative(join(this.root, 'assets'), join(addon.root, name)),
+            buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }
       }
@@ -946,4 +946,18 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
     return Buffer.compare(a, b) === 0;
   }
   return false;
+}
+
+// by "explicit", I mean that we want "./local/thing" instead of "local/thing"
+// because
+//     import "./local/thing"
+// has a different meaning than
+//     import "local/thing"
+//
+function explicitRelative(fromDir: string, toFile: string) {
+  let result = relative(fromDir, toFile);
+  if (!result.startsWith('/') && !result.startsWith('.')) {
+    result = './' + result;
+  }
+  return result;
 }

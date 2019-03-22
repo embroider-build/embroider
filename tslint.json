@@ -1,8 +1,0 @@
-{
-  "rules": {
-    "label-position": true,
-    "no-duplicate-variable": true,
-    "no-implicit-dependencies": true,
-    "no-require-imports": true
-  }
-}

@@ -303,6 +303,7 @@ function defaultAddonPackageRules(): PackageRules[] {
   return readdirSync(join(__dirname, 'addon-dependency-rules'))
     .map(filename => {
       if (filename.endsWith('.js')) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         return require(join(__dirname, 'addon-dependency-rules', filename)).default;
       }
     })

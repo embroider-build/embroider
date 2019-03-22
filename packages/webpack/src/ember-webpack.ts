@@ -192,11 +192,13 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     let externals = meta.externals || [];
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
     let rootURL = meta['root-url'];
     let babelConfigFile = meta['babel-config'];
     let babel;
     if (babelConfigFile) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       babel = require(join(this.pathToVanillaApp, babelConfigFile));
     }
     return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };

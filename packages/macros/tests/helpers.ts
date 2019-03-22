@@ -8,7 +8,7 @@ export { runDefault };
 export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
   let config: MacrosConfig;
 
-  QUnit.module('without presets', function() {
+  describe('without presets', function() {
     allBabel({
       babelConfig() {
         config = new MacrosConfig();
@@ -24,7 +24,7 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
     });
   });
 
-  QUnit.module('with presets', function() {
+  describe('with presets', function() {
     allBabel({
       babelConfig(major: number) {
         config = new MacrosConfig();

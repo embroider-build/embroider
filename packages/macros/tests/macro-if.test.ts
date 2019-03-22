@@ -1,50 +1,48 @@
-import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
 import { MacrosConfig } from '../src';
-const { test } = QUnit;
 
-QUnit.module('macroIf', function() {
+describe('macroIf', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
 
-    test('select consequent, drop alternate', function(assert) {
+    test('select consequent, drop alternate', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
         return macroIf(true, () => 'alpha', () => 'beta');
       }
       `);
-      assert.equal(runDefault(code), 'alpha');
-      assert.ok(!/beta/.test(code), 'beta should be dropped');
-      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
-      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/beta/);
+      expect(code).not.toMatch(/macroIf/);
+      expect(code).not.toMatch(/@embroider\/macros/);
     });
 
-    test('select consequent, drop alternate', function(assert) {
+    test('select consequent, drop alternate', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
         return macroIf(false, () => 'alpha', () => 'beta');
       }
       `);
-      assert.equal(runDefault(code), 'beta');
-      assert.ok(!/alpha/.test(code), 'alpha should be dropped');
-      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
-      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
+      expect(runDefault(code)).toBe('beta');
+      expect(code).not.toMatch(/alpha/);
+      expect(code).not.toMatch(/macroIf/);
+      expect(code).not.toMatch(/@embroider\/macros/);
     });
 
-    test('works with block forms', function(assert) {
+    test('works with block forms', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
         return macroIf(false, () => { return 'alpha'; }, () => { return 'beta'; });
       }
       `);
-      assert.equal(runDefault(code), 'beta');
-      assert.ok(!/alpha/.test(code), 'alpha should be dropped');
+      expect(runDefault(code)).toBe('beta');
+      expect(code).not.toMatch(/alpha/);
     });
 
-    test('block lifting', function(assert) {
+    test('block lifting', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
@@ -55,10 +53,10 @@ QUnit.module('macroIf', function() {
         return value;
       }
       `);
-      assert.equal(runDefault(code), 2);
+      expect(runDefault(code)).toBe(2);
     });
 
-    test('preserves this when using single-expression arrows', function(assert) {
+    test('preserves this when using single-expression arrows', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
 
@@ -75,10 +73,10 @@ QUnit.module('macroIf', function() {
         return new Example().method();
       }
       `);
-      assert.equal(runDefault(code), 'Quint');
+      expect(runDefault(code)).toBe('Quint');
     });
 
-    test('preserves this when using block arrows', function(assert) {
+    test('preserves this when using block arrows', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
 
@@ -95,32 +93,32 @@ QUnit.module('macroIf', function() {
         return new Example().method();
       }
       `);
-      assert.equal(runDefault(code), 'Quint');
+      expect(runDefault(code)).toBe('Quint');
     });
 
-    test('select consequent, no alternate', function(assert) {
+    test('select consequent, no alternate', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
         return macroIf(true, () => 'alpha');
       }
       `);
-      assert.equal(runDefault(code), 'alpha');
-      assert.ok(!/macroIf/.test(code), 'macroIf should be dropped');
-      assert.ok(!/@embroider\/macros/.test(code), '@embroider/macros should be dropped');
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/macroIf/);
+      expect(code).not.toMatch(/@embroider\/macros/);
     });
 
-    test('drop consequent, no alternate', function(assert) {
+    test('drop consequent, no alternate', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       export default function() {
         return macroIf(false, () => 'alpha');
       }
       `);
-      assert.equal(runDefault(code), undefined);
+      expect(runDefault(code)).toBe(undefined);
     });
 
-    test('drops imports that are only used in the unused branch', function(assert) {
+    test('drops imports that are only used in the unused branch', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       import a from 'module-a';
@@ -130,12 +128,12 @@ QUnit.module('macroIf', function() {
         return macroIf(true, () => a, () => b);
       }
       `);
-      assert.ok(/module-a/.test(code), 'have module-a');
-      assert.ok(!/module-b/.test(code), 'do not have module-b');
+      expect(code).toMatch(/module-a/);
+      expect(code).not.toMatch(/module-b/);
     });
 
-    test('non-static predicate refuses to build', function(assert) {
-      assert.throws(() => {
+    test('non-static predicate refuses to build', () => {
+      expect(() => {
         transform(`
         import { macroIf } from '@embroider/macros';
         import other from 'other';
@@ -143,10 +141,10 @@ QUnit.module('macroIf', function() {
           return macroIf(other, () => a, () => b);
         }
         `);
-      }, /the first argument to macroIf must be statically known/);
+      }).toThrow(/the first argument to macroIf must be statically known/);
     });
 
-    test('leaves unrelated unused imports alone', function(assert) {
+    test('leaves unrelated unused imports alone', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       import a from 'module-a';
@@ -156,10 +154,10 @@ QUnit.module('macroIf', function() {
         return macroIf(true, () => a, () => b);
       }
       `);
-      assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
+      expect(code).toMatch(/module-c/);
     });
 
-    test('leaves unrelated used imports alone', function(assert) {
+    test('leaves unrelated used imports alone', () => {
       let code = transform(`
       import { macroIf } from '@embroider/macros';
       import a from 'module-a';
@@ -170,21 +168,21 @@ QUnit.module('macroIf', function() {
         return macroIf(true, () => a, () => b);
       }
       `);
-      assert.ok(/module-c/.test(code), 'unrelated unused imports are left alone');
+      expect(code).toMatch(/module-c/);
     });
 
-    test('composes with other macros', function(assert) {
+    test('composes with other macros', () => {
       let code = transform(`
       import { macroIf, dependencySatisfies } from '@embroider/macros';
       export default function() {
         return macroIf(dependencySatisfies('qunit', '*'), () => 'alpha', () => 'beta');
       }
       `);
-      assert.equal(runDefault(code), 'alpha');
-      assert.ok(!/beta/.test(code), 'beta should be dropped');
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/beta/);
     });
 
-    test('can see booleans inside getConfig', function(assert) {
+    test('can see booleans inside getConfig', () => {
       let code = transform(`
       import { macroIf, getConfig } from '@embroider/macros';
       export default function() {
@@ -193,11 +191,11 @@ QUnit.module('macroIf', function() {
         return macroIf(getConfig('qunit').items[0]["approved"], () => 'alpha', () => 'beta');
       }
       `);
-      assert.equal(runDefault(code), 'alpha');
-      assert.ok(!/beta/.test(code), 'beta should be dropped');
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/beta/);
     });
 
-    test(`direct export of macroIf`, function(assert) {
+    test(`direct export of macroIf`, () => {
       let code = transform(`
       import { dependencySatisfies, macroIf } from '@embroider/macros';
 
@@ -215,7 +213,7 @@ QUnit.module('macroIf', function() {
         () => b,
       );
       `);
-      assert.equal(runDefault(code), 'b');
+      expect(runDefault(code)).toBe('b');
     });
   });
 });

@@ -14,6 +14,7 @@ module.exports = {
     eqeqeq: ['error', 'smart'],
     'no-debugger': 'error',
     'no-new-wrappers': 'error',
+    'no-unused-labels': 'error',
     'no-var': 'error',
 
     '@typescript-eslint/class-name-casing': 'error',

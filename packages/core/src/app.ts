@@ -226,7 +226,9 @@ export class AppBuilder<TreeNames> {
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>
-  ) {}
+  ) {
+    MacrosConfig.shared().setOwnConfig(__filename, { active: true });
+  }
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {

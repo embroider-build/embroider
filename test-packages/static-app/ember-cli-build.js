@@ -20,6 +20,9 @@ module.exports = function(defaults) {
     staticAddonTrees: true,
     staticComponents: true,
     staticHelpers: true,
+    splitRouteClasses: true,
+    splitAtRoutes: ['split-me'],
+
     packageRules: [
       {
         package: 'static-app',

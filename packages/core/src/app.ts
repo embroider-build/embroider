@@ -636,66 +636,68 @@ export class AppBuilder<TreeNames> {
   private splitRoute(
     routeName: string,
     files: RouteFiles,
-    prepared: Map<string, InternalAsset>,
-    emitEagerFile: (routeName: string, filename: string) => void,
-    emitLazyRoute: (routeName: string, path: string) => void
+    addToApp: (filename: string) => void,
+    addToParent: (routeName: string, filename: string) => void,
+    addLazyBundle: (routeNames: string[], files: string[]) => void
   ) {
     let shouldSplit = routeName && this.shouldSplitRoute(routeName);
-    let lazyFiles: string[] = [];
+    let ownFiles = [];
+    let ownNames = new Set();
 
     if (files.template) {
       if (shouldSplit) {
-        lazyFiles.push(files.template);
+        ownFiles.push(files.template);
+        ownNames.add(routeName);
       } else {
-        emitEagerFile(routeName, files.template);
+        addToParent(routeName, files.template);
       }
     }
 
     if (files.controller) {
-      if (shouldSplit && this.options.splitRouteClasses) {
-        lazyFiles.push(files.controller);
+      if (!this.options.splitRouteClasses) {
+        addToApp(files.controller);
+      } else if (shouldSplit) {
+        ownFiles.push(files.controller);
+        ownNames.add(routeName);
       } else {
-        emitEagerFile(routeName, files.controller);
+        addToParent(routeName, files.controller);
       }
     }
 
     if (files.route) {
-      if (shouldSplit && this.options.splitRouteClasses) {
-        lazyFiles.push(files.route);
+      if (!this.options.splitRouteClasses) {
+        addToApp(files.route);
+      } else if (shouldSplit) {
+        ownFiles.push(files.route);
+        ownNames.add(routeName);
       } else {
-        emitEagerFile(routeName, files.route);
+        addToParent(routeName, files.route);
       }
     }
 
-    let ownEntrypoint = `assets/_route_/${encodeURIComponent(routeName)}.js`;
-
     for (let [childName, childFiles] of files.children) {
       this.splitRoute(
-        childName,
+        `${routeName}.${childName}`,
         childFiles,
-        prepared,
-        (childRouteName: string, childEagerFile: string) => {
-          let fullChildName = `${routeName}.${childRouteName}`;
+        addToApp,
+
+        (childRouteName: string, childFile: string) => {
+          // this is our child calling "addToParent"
           if (shouldSplit) {
-            // when splitting, our children's eager files go into our own
-            // entrypoint
-            lazyFiles.push(childEagerFile);
-            emitLazyRoute(fullChildName, ownEntrypoint);
+            ownFiles.push(childFile);
+            ownNames.add(childRouteName);
           } else {
-            emitEagerFile(fullChildName, childEagerFile);
+            addToParent(childRouteName, childFile);
           }
         },
-        (childRouteName: string, path: string) => {
-          emitLazyRoute(`${routeName}.${childRouteName}`, path);
+        (routeNames: string[], files: string[]) => {
+          addLazyBundle(routeNames, files);
         }
       );
     }
 
-    if (lazyFiles.length > 0) {
-      if (!prepared.get(ownEntrypoint)) {
-        prepared.set(ownEntrypoint, this.routeEntrypoint(ownEntrypoint, lazyFiles));
-      }
-      emitLazyRoute(routeName, `./_route_/${encodeURIComponent(routeName)}`);
+    if (ownFiles.length > 0) {
+      addLazyBundle([...ownNames], ownFiles);
     }
   }
 
@@ -713,15 +715,28 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
-    let eagerRouteFiles: string[] = [];
     let lazyRoutes: { name: string; path: string }[] = [];
-    let emitEager = (_: string, filename: string) => {
-      eagerRouteFiles.push(filename);
-    };
-    let emitLazy = (name: string, path: string) => {
-      lazyRoutes.push({ name, path });
-    };
-    this.splitRoute('_ROOT_ROUTE_', appFiles.routeFiles, prepared, emitEager, emitLazy);
+    for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
+      this.splitRoute(
+        routeName,
+        routeFiles,
+        (appFile: string) => {
+          requiredAppFiles.push([appFile]);
+        },
+        (_: string, filename: string) => {
+          requiredAppFiles.push([filename]);
+        },
+        (routeNames: string[], files: string[]) => {
+          let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
+          if (!prepared.has(routeEntrypoint)) {
+            prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
+          }
+          for (let name of routeNames) {
+            lazyRoutes.push({ name, path: routeEntrypoint });
+          }
+        }
+      );
+    }
 
     let relativePath = `assets/${this.app.name}.js`;
 

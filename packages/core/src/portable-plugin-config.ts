@@ -90,6 +90,7 @@ export class PortablePluginConfig {
       case 'string':
       case 'number':
       case 'boolean':
+      case 'undefined':
         return value;
       case 'object':
         return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));

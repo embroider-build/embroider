@@ -227,6 +227,18 @@ QUnit.module('portable-plugin-config', function() {
       precompile: 'this is the example function with theParams=reconstituted precompile',
     });
   });
+
+  test('undefined is a serializable value', function(assert) {
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['./x', { value: undefined }],
+      },
+      resolvableNames()
+    );
+    assert.ok(config.isParallelSafe);
+    let output = runParallelSafe(config);
+    assert.equal(output.plugins[0][1].value, undefined, 'value should be undefined');
+  });
 });
 
 export function exampleFunction(params: any) {

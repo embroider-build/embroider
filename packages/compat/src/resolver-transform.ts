@@ -4,7 +4,7 @@ import { ComponentRules } from './dependency-rules';
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
-  return function resolverTransform(env: { moduleName: string }) {
+  function resolverTransform(env: { moduleName: string }) {
     resolver.enter(env.moduleName);
 
     let scopeStack = new ScopeStack();
@@ -136,6 +136,12 @@ export function makeResolverTransform(resolver: Resolver) {
       },
     };
   };
+  resolverTransform.parallelBabel = {
+    requireFile: __filename,
+    buildUsing: 'makeResolverTransform',
+    params: Resolver,
+  };
+  return resolverTransform;
 }
 
 type ScopeEntry =

@@ -209,9 +209,9 @@ function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
     return {
       embroiderPlaceholder: true,
       type: 'htmlbars-parallel',
-      requireFile: object._parallelBabel.requireFile,
-      buildUsing: String(object._parallelBabel.buildUsing),
-      params: object._parallelBabel.params,
+      requireFile: object.parallelBabel.requireFile,
+      buildUsing: String(object.parallelBabel.buildUsing),
+      params: object.parallelBabel.params,
     };
   }
 }

@@ -105,7 +105,7 @@ These are analogous to the Javascript macros, although here (because we don't im
    ```
 
 
- - `macroGetConfig`: similar to `macroGetOwnConfig`, but takes the name of another package and gets that package's config. We will locate the other package following node_modules rules from your package. Additional extra arguments are treated as property looked keys just like in the previous examples.
+ - `macroGetConfig`: similar to `macroGetOwnConfig`, but takes the name of another package and gets that package's config. We will locate the other package following node_modules rules from your package. Additional extra arguments are treated as property keys just like in the previous examples.
 
    ```hbs
    <SomeComponent @config={{macroGetConfig "liquid-fire"}} />
@@ -119,7 +119,7 @@ These are analogous to the Javascript macros, although here (because we don't im
    <SomeComponent @canAnimate={{true}} />
    ```
 
- - `macroIf`: Like Ember's own `if`, this can be used in both block form and expresion form. The bock form looks like:
+ - `macroIf`: Like Ember's own `if`, this can be used in both block form and expresion form. The block form looks like:
 
    ```hbs
    {{#macroIf (macroGetOwnConfig "shouldUseThing") }}

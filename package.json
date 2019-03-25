@@ -9,10 +9,11 @@
     "compile": "tsc",
     "lint": "eslint . --ext=js,ts --cache",
     "clean": "git clean -x -f",
-    "node-test": "qunit packages/*/tests",
+    "node-test": "qunit packages/*/tests --require ./test-packages/support/qunit-jest-shim.js",
     "test": "jest"
   },
   "devDependencies": {
+    "@types/jest": "^24.0.11",
     "@typescript-eslint/eslint-plugin": "^1.5.0",
     "@typescript-eslint/parser": "^1.5.0",
     "eslint": "^5.15.3",
@@ -22,5 +23,11 @@
     "execa": "^1.0.0",
     "jest": "^24.5.0",
     "prettier": "1.16.4"
+  },
+  "jest": {
+    "projects": [
+      "<rootDir>/packages/*",
+      "<rootDir>/test-packages/"
+    ]
   }
 }

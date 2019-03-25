@@ -6,6 +6,7 @@ import MockUI from 'console-ui/mock';
 import Instrumentation from 'ember-cli/lib/models/instrumentation';
 import PackageInfoCache from 'ember-cli/lib/models/package-info-cache';
 import 'qunit';
+import 'jest';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
 
@@ -46,7 +47,9 @@ export function allBabelVersions(params: {
   babelConfig(major: 7): Options7;
   createTests(transform: (code: string) => string): void;
 }) {
-  QUnit.module('babel6', function() {
+  let _describe = typeof QUnit !== 'undefined' ? (QUnit.module as any) : describe;
+
+  _describe('babel6', function() {
     let options6: Options6 = params.babelConfig(6);
     if (!options6.filename) {
       options6.filename = 'sample.js';
@@ -55,7 +58,8 @@ export function allBabelVersions(params: {
       return transform6(code, options6).code!;
     });
   });
-  QUnit.module('babel7', function() {
+
+  _describe('babel7', function() {
     let options7: Options7 = params.babelConfig(7);
     if (!options7.filename) {
       options7.filename = 'sample.js';

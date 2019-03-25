@@ -301,7 +301,7 @@ class TemplateCompileTree extends Filter {
 }
 
 function matchesSourceFile(filename: string) {
-  return /babel-plugin-htmlbars-inline-precompile\/(index|lib\/require-from-worker)\.js$/.test(filename);
+  return /htmlbars-inline-precompile\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
 }
 
 function hasProperties(item: any) {

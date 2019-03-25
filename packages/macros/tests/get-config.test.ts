@@ -1,61 +1,59 @@
-import 'qunit';
 import { allBabelVersions, runDefault } from './helpers';
 import { MacrosConfig } from '..';
-const { test } = QUnit;
 
-QUnit.module(`getConfig`, function() {
+describe(`getConfig`, function() {
   allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { beverage: 'coffee' });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
 
-    test(`returns correct value for own package's config`, function(assert) {
+    test(`returns correct value for own package's config`, () => {
       let code = transform(`
       import { getOwnConfig } from '@embroider/macros';
       export default function() {
         return getOwnConfig();
       }
       `);
-      assert.deepEqual(runDefault(code), { beverage: 'coffee' });
+      expect(runDefault(code)).toEqual({ beverage: 'coffee' });
     });
 
-    test(`returns correct value for another package's config`, function(assert) {
+    test(`returns correct value for another package's config`, () => {
       let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {
         return getConfig('@babel/core');
       }
       `);
-      assert.deepEqual(runDefault(code), [1, 2, 3]);
+      expect(runDefault(code)).toEqual([1, 2, 3]);
     });
 
-    test(`returns undefined when there's no config but the package exists`, function(assert) {
+    test(`returns undefined when there's no config but the package exists`, () => {
       let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {
         return getConfig('qunit');
       }
       `);
-      assert.equal(runDefault(code), undefined);
+      expect(runDefault(code)).toBe(undefined);
     });
 
-    test(`returns undefined when there's no such package`, function(assert) {
+    test(`returns undefined when there's no such package`, () => {
       let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {
         return getConfig('not-a-thing');
       }
       `);
-      assert.equal(runDefault(code), undefined);
+      expect(runDefault(code)).toBe(undefined);
     });
 
-    test('import gets removed', function(assert) {
+    test('import gets removed', () => {
       let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
         return dependencySatisfies('not-a-real-dep', '1');
       }
       `);
-      assert.ok(!/dependencySatisfies/.test(code), `dependencySatisfies should not be in the output: ${code}`);
+      expect(code).not.toMatch(/dependencySatisfies/);
     });
   });
 });

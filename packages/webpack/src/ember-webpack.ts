@@ -130,7 +130,11 @@ interface AppInfo {
   otherAssets: string[];
   externals: string[];
   templateCompiler: Function;
-  babel: any;
+  babel: {
+    filename: string,
+    majorVersion: 6 | 7,
+    isParallelSafe: boolean,
+  };
   rootURL: string;
 }
 
@@ -193,14 +197,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     let externals = meta.externals || [];
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
+    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'].filename)).compile;
     let rootURL = meta['root-url'];
-    let babelConfigFile = meta['babel-config'];
-    let babel;
-    if (babelConfigFile) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      babel = require(join(this.pathToVanillaApp, babelConfigFile));
-    }
+    let babel = meta['babel'];
     return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };
   }
 
@@ -241,7 +240,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               process.env.JOBS === '1' || !babel.isParallelSafe ? null : 'thread-loader',
               {
                 loader: 'babel-loader', // todo use babel.version to ensure the correct loader
-                options: Object.assign({}, babel.config),
+                options: require(join(this.pathToVanillaApp, babel.filename)),
               },
             ].filter(Boolean),
           },

@@ -497,8 +497,9 @@ export class AppBuilder<TreeNames> {
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     let templateCompiler = this.templateCompiler(emberENV);
+    let babelConfig = this.babelConfig(templateCompiler);
     this.addTemplateCompiler(templateCompiler);
-    this.addBabelConfig(templateCompiler);
+    this.addBabelConfig(babelConfig);
 
     let externals = this.combineExternals();
 
@@ -516,8 +517,15 @@ export class AppBuilder<TreeNames> {
       version: 2,
       externals,
       assets: assetPaths,
-      'template-compiler': '_template_compiler_.js',
-      'babel-config': '_babel_config_.js',
+      'template-compiler': {
+        filename: '_template_compiler_.js',
+        isParallelSafe: templateCompiler.isParallelSafe,
+      },
+      'babel': {
+        filename: '_babel_config_.js',
+        isParallelSafe: babelConfig.isParallelSafe,
+        majorVersion: 6, // TODO
+      },
       'root-url': this.adapter.rootURL(),
     };
 
@@ -573,8 +581,7 @@ export class AppBuilder<TreeNames> {
     writeFileSync(join(this.root, '_template_compiler_.js'), templateCompiler.serialize(), 'utf8');
   }
 
-  private addBabelConfig(templateCompiler: TemplateCompiler) {
-    let babelConfig = this.babelConfig(templateCompiler);
+  private addBabelConfig(babelConfig: PortableBabelConfig) {
     if (!babelConfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }

@@ -8,11 +8,8 @@ const { globalValues, nonce } = setupGlobals();
 
 const template = compile(`
 const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
-module.exports = {
-  config: PortablePluginConfig.load({{{json-stringify portable 2}}}),
-  isParallelSafe: {{ isParallelSafe }},
-};
-`) as (params: { portable: any; here: string; isParallelSafe: boolean }) => string;
+module.exports = PortablePluginConfig.load({{{json-stringify portable 2}}});
+`) as (params: { portable: any; here: string; }) => string;
 
 export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
@@ -68,7 +65,7 @@ export class PortablePluginConfig {
   }
 
   serialize(): string {
-    return template({ portable: this.portable, here: this.here, isParallelSafe: this.isParallelSafe });
+    return template({ portable: this.portable, here: this.here });
   }
 
   protected makePortable(value: any, accessPath: string[] = []): any {

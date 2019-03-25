@@ -33,7 +33,7 @@ function runParallelSafe(config: PortableBabelConfig): any {
 function run(config: PortableBabelConfig): any {
   let module = { exports: {} } as any;
   eval(config.serialize());
-  return module.exports.config;
+  return module.exports;
 }
 
 QUnit.module('portable-plugin-config', function() {

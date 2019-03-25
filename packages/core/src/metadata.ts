@@ -7,8 +7,15 @@ export interface AppMeta {
   version: 2;
   assets: filename[];
   externals?: string[];
-  'template-compiler': filename;
-  'babel-config': filename;
+  'template-compiler': {
+    filename: string,
+    isParallelSafe: boolean,
+  };
+  'babel': {
+    filename: string,
+    isParallelSafe: boolean,
+    majorVersion: 6 | 7,
+  }
   'root-url': string;
 }
 

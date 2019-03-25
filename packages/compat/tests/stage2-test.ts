@@ -112,7 +112,7 @@ QUnit.module('stage2 build', function() {
           return templateCompiler.compile(fileAssert.fullPath, contents);
         } else if (fileAssert.path.endsWith('.js')) {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          let babelConfig = require(join(fileAssert.basePath, '_babel_config_')).config as TransformOptions;
+          let babelConfig = require(join(fileAssert.basePath, '_babel_config_')) as TransformOptions;
           return transform(contents, Object.assign({ filename: fileAssert.fullPath }, babelConfig))!.code!;
         } else {
           return contents;

@@ -226,16 +226,16 @@ describe('portable-plugin-config', () => {
     });
   });
 
-  test('undefined is a serializable value', function(assert) {
+  test('undefined is a serializable value', function() {
     let config = new PortableBabelConfig(
       {
         plugins: ['./x', { value: undefined }],
       },
       resolvableNames()
     );
-    assert.ok(config.isParallelSafe);
+    expect(config.isParallelSafe).toBeTruthy();
     let output = runParallelSafe(config);
-    assert.equal(output.plugins[0][1].value, undefined, 'value should be undefined');
+    expect(output.plugins[0][1].value).toBeUndefined();
   });
 });
 

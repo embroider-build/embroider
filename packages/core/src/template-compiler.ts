@@ -1,6 +1,6 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
-import { PortablePluginConfig, ResolveOptions } from './portable-plugin-config';
+import { PortablePluginConfig } from './portable-plugin-config';
 import { readFileSync } from 'fs';
 import { Tree } from 'broccoli-plugin';
 import Filter from 'broccoli-persistent-filter';
@@ -90,39 +90,33 @@ interface SetupCompilerParams {
   plugins: Plugins;
 }
 
+export function rehydrate(portable: SetupCompilerParams) {
+  return new TemplateCompiler(PortableTemplateCompiler.load(portable));
+}
+
 class PortableTemplateCompiler extends PortablePluginConfig {
   private static template = compile(`
   "use strict";
-  const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
-  const TemplateCompiler = require('@embroider/core/src/template-compiler').default;
-  const templateCompiler = new TemplateCompiler(PortablePluginConfig.load({{{json-stringify portable 2}}}));
-  templateCompiler.isParallelSafe = {{ isParallelSafe }};
-  module.exports = templateCompiler;
-  `) as (params: { portable: any; here: string; isParallelSafe: boolean }) => string;
+  const { rehydrate } = require('{{{js-string-escape here}}}');
+  module.exports = rehydrate({{{json-stringify portable 2 }}});
+  `) as (params: { portable: any; here: string }) => string;
 
-  constructor(config: SetupCompilerParams, resolveOptions: ResolveOptions) {
-    super(config, resolveOptions);
-  }
+  protected here = __filename;
 
-  protected makePortable(value: any, accessPath: string[] = []) {
-    if (accessPath.length === 1 && accessPath[0] === 'compilerPath') {
-      return this.resolve(value);
-    }
-    return super.makePortable(value, accessPath);
+  constructor(config: SetupCompilerParams) {
+    super(config);
   }
 
   serialize() {
     return PortableTemplateCompiler.template({
       here: this.here,
       portable: this.portable,
-      isParallelSafe: this.isParallelSafe,
     });
   }
 }
 
 export default class TemplateCompiler {
   private userPluginsCount = 0;
-  isParallelSafe = false;
 
   // The signature of this function may feel a little weird, but that's because
   // it's designed to be easy to invoke via our portable plugin config in a new
@@ -133,8 +127,34 @@ export default class TemplateCompiler {
     this.compile = this.compile.bind(this);
   }
 
-  serialize(basedir: string) {
-    return new PortableTemplateCompiler(this.params, { basedir }).serialize();
+  @Memoize()
+  private get portableConfig() {
+    return new PortableTemplateCompiler(this.params);
+  }
+
+  get isParallelSafe(): boolean {
+    return this.portableConfig.isParallelSafe;
+  }
+
+  // this supports the case where we are included as part of a larger config
+  // that's getting serialized. Specifically, we are passed as an argument into
+  // babel-plugin-inline-hbs, so when the whole babel config is being serialized
+  // this gets detected by PortablePluginConfig so we can represent ourself.
+  get _parallelBabel() {
+    if (this.portableConfig.isParallelSafe) {
+      return {
+        requireFile: __filename,
+        buildUsing: rehydrate,
+        params: this.portableConfig.portable,
+      }
+    }
+  }
+
+  // this supports the case where we want to create a standalone executable
+  // Javascript file that will re-create an equivalent TemplateCompiler
+  // instance.
+  serialize(): string {
+    return this.portableConfig.serialize();
   }
 
   private get syntax(): GlimmerSyntax {

@@ -52,12 +52,16 @@ export class PortablePluginConfig {
   readonly portable: any;
   readonly isParallelSafe: boolean;
 
-  constructor(private config: any, resolveOptions: ResolveOptions) {
-    if ('resolve' in resolveOptions) {
-      this.resolve = resolveOptions.resolve;
+  constructor(private config: any, resolveOptions?: ResolveOptions) {
+    if (resolveOptions) {
+      if ('resolve' in resolveOptions) {
+        this.resolve = resolveOptions.resolve;
+      } else {
+        this.basedir = resolveOptions.basedir;
+        this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
+      }
     } else {
-      this.basedir = resolveOptions.basedir;
-      this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
+      this.resolve = (_: string) => { throw new Error(`No file resolving is configured for this PortablePluginConfig`) };
     }
     this.portable = this.makePortable(this.config);
     this.isParallelSafe = this.parallelSafeFlag;
@@ -93,7 +97,9 @@ export class PortablePluginConfig {
       case 'undefined':
         return value;
       case 'object':
-        return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
+        if (Object.getPrototypeOf(value) === Object.prototype) {
+          return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
+        }
     }
 
     return this.globalPlaceholder(value);

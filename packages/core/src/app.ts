@@ -232,7 +232,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private get babelConfig() {
+  private babelConfig(templateCompiler: TemplateCompiler) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -246,11 +246,7 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push([
       join(__dirname, 'babel-plugin-inline-hbs.js'),
       {
-        templateCompiler: {
-          _parallelBabel: {
-            requireFile: join(this.root, '_template_compiler_.js'),
-          },
-        },
+        templateCompiler,
         stage: 3,
       },
     ]);
@@ -500,8 +496,9 @@ export class AppBuilder<TreeNames> {
     let assets = this.gatherAssets(inputPaths);
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
-    this.addTemplateCompiler(emberENV);
-    this.addBabelConfig();
+    let templateCompiler = this.templateCompiler(emberENV);
+    this.addTemplateCompiler(templateCompiler);
+    this.addBabelConfig(templateCompiler);
 
     let externals = this.combineExternals();
 
@@ -555,7 +552,7 @@ export class AppBuilder<TreeNames> {
     return [...externals.values()];
   }
 
-  private addTemplateCompiler(config: EmberENV) {
+  private templateCompiler(config: EmberENV) {
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -564,21 +561,24 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    let source = new TemplateCompiler({
+    return new TemplateCompiler({
       plugins,
-      compilerPath: this.adapter.templateCompilerPath(),
+      compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
-    }).serialize(this.root);
-
-    writeFileSync(join(this.root, '_template_compiler_.js'), source, 'utf8');
+    });
   }
 
-  private addBabelConfig() {
-    if (!this.babelConfig.isParallelSafe) {
+  private addTemplateCompiler(templateCompiler: TemplateCompiler) {
+    writeFileSync(join(this.root, '_template_compiler_.js'), templateCompiler.serialize(), 'utf8');
+  }
+
+  private addBabelConfig(templateCompiler: TemplateCompiler) {
+    let babelConfig = this.babelConfig(templateCompiler);
+    if (!babelConfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
-    writeFileSync(join(this.root, '_babel_config_.js'), this.babelConfig.serialize(), 'utf8');
+    writeFileSync(join(this.root, '_babel_config_.js'), babelConfig.serialize(), 'utf8');
   }
 
   private javascriptEntrypoint(name: string, appFiles: AppFiles): InternalAsset {

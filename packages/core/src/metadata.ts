@@ -8,14 +8,14 @@ export interface AppMeta {
   assets: filename[];
   externals?: string[];
   'template-compiler': {
-    filename: string,
-    isParallelSafe: boolean,
+    filename: string;
+    isParallelSafe: boolean;
   };
-  'babel': {
-    filename: string,
-    isParallelSafe: boolean,
-    majorVersion: 6 | 7,
-  }
+  babel: {
+    filename: string;
+    isParallelSafe: boolean;
+    majorVersion: 6 | 7;
+  };
   'root-url': string;
 }
 

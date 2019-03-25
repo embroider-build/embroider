@@ -521,7 +521,7 @@ export class AppBuilder<TreeNames> {
         filename: '_template_compiler_.js',
         isParallelSafe: templateCompiler.isParallelSafe,
       },
-      'babel': {
+      babel: {
         filename: '_babel_config_.js',
         isParallelSafe: babelConfig.isParallelSafe,
         majorVersion: 6, // TODO

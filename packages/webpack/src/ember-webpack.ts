@@ -131,9 +131,9 @@ interface AppInfo {
   externals: string[];
   templateCompiler: Function;
   babel: {
-    filename: string,
-    majorVersion: 6 | 7,
-    isParallelSafe: boolean,
+    filename: string;
+    majorVersion: 6 | 7;
+    isParallelSafe: boolean;
   };
   rootURL: string;
 }
@@ -240,6 +240,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               process.env.JOBS === '1' || !babel.isParallelSafe ? null : 'thread-loader',
               {
                 loader: 'babel-loader', // todo use babel.version to ensure the correct loader
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 options: require(join(this.pathToVanillaApp, babel.filename)),
               },
             ].filter(Boolean),

@@ -9,7 +9,7 @@ const { globalValues, nonce } = setupGlobals();
 const template = compile(`
 const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
 module.exports = PortablePluginConfig.load({{{json-stringify portable 2}}});
-`) as (params: { portable: any; here: string; }) => string;
+`) as (params: { portable: any; here: string }) => string;
 
 export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
@@ -58,7 +58,9 @@ export class PortablePluginConfig {
         this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
       }
     } else {
-      this.resolve = (_: string) => { throw new Error(`No file resolving is configured for this PortablePluginConfig`) };
+      this.resolve = (_: string) => {
+        throw new Error(`No file resolving is configured for this PortablePluginConfig`);
+      };
     }
     this.portable = this.makePortable(this.config);
     this.isParallelSafe = this.parallelSafeFlag;

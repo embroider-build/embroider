@@ -3,7 +3,7 @@ import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
 import { macroIfBlock, macroIfExpression, maybeAttrs } from './macro-if';
 
-export function makeFirstTransform(opts: {userConfigs: {[packageRoot: string]: unknown }, baseDir?: string}) {
+export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
   function embroiderFirstMacrosTransform(env: { syntax: { builders: any }; meta: { moduleName: string } }) {
     let scopeStack: string[][] = [];
 
@@ -31,10 +31,16 @@ export function makeFirstTransform(opts: {userConfigs: {[packageRoot: string]: u
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return literal(getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, true), env.syntax.builders);
+            return literal(
+              getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, true),
+              env.syntax.builders
+            );
           }
           if (node.path.original === 'macroGetConfig') {
-            return literal(getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, false), env.syntax.builders);
+            return literal(
+              getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, false),
+              env.syntax.builders
+            );
           }
           if (node.path.original === 'macroDependencySatisfies') {
             return literal(dependencySatisfies(node, opts.baseDir, env.meta.moduleName), env.syntax.builders);
@@ -75,7 +81,7 @@ export function makeFirstTransform(opts: {userConfigs: {[packageRoot: string]: u
         userConfigs: opts.userConfigs,
         baseDir: opts.baseDir,
       };
-    }
+    },
   };
   return embroiderFirstMacrosTransform;
 }

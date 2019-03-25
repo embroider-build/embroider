@@ -146,7 +146,7 @@ export default class TemplateCompiler {
         requireFile: __filename,
         buildUsing: rehydrate,
         params: this.portableConfig.portable,
-      }
+      };
     }
   }
 

@@ -135,7 +135,7 @@ export function makeResolverTransform(resolver: Resolver) {
         },
       },
     };
-  };
+  }
   resolverTransform.parallelBabel = {
     requireFile: __filename,
     buildUsing: 'makeResolverTransform',

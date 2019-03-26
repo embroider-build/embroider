@@ -176,8 +176,11 @@ export default class TemplateCompiler {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
     this.userPluginsCount += registerPlugins(syntax, this.params.plugins);
     if (this.params.resolver) {
-      syntax.registerPlugin('ast', this.params.resolver.astTransformer(this));
-      this.userPluginsCount++;
+      let transform = this.params.resolver.astTransformer(this);
+      if (transform) {
+        syntax.registerPlugin('ast', transform);
+        this.userPluginsCount++;
+      }
     }
     initializeEmberENV(syntax, this.params.EmberENV);
     let cacheKey = createHash('md5')

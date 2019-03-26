@@ -129,7 +129,10 @@ interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
   externals: string[];
-  templateCompiler: Function;
+  templateCompiler: {
+    filename: string;
+    isParallelSafe: boolean;
+  };
   babel: {
     filename: string;
     majorVersion: 6 | 7;
@@ -196,8 +199,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     let externals = meta.externals || [];
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'].filename)).compile;
+    let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];
     return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };
@@ -228,11 +230,14 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: /\.hbs$/,
             use: [
+              process.env.JOBS === '1' || !templateCompiler.isParallelSafe ? null : 'thread-loader',
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
-                options: { templateCompiler },
+                options: {
+                  templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
+                },
               },
-            ],
+            ].filter(Boolean),
           },
           {
             test: this.shouldTranspileFile.bind(this),

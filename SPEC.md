@@ -606,7 +606,7 @@ Status: internal use only
 
 Boolean. Marks a package as having been compiled on the fly from v1 to v2. It's probably not a good idea to ever publish a package to NPM with this set.
 
-## babel-config
+## babel.filename
 
 ```
 Allowed in: apps
@@ -616,6 +616,26 @@ Status: encouraged
 Path to a Javascript file that exports a babel config.
 
 Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
+
+## babel.isParallelSafe
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Boolean that indicates whether it's safe to load our babel config in a new node process.
+
+
+## babel.majorVersion
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Which babel major version is our babel config expecting to run inside.
+
 
 ## build
 
@@ -763,16 +783,26 @@ Status: encouraged
 
 The public URL at which the root of the app will be served. Defaults to '/' when not provided.
 
-## template-compiler
+## template-compiler.filename
 
 ```
 Allowed in: apps
 Status: encouraged
 ```
 
-Path to a Javascript file that provides the preconfigured HBS template compiler.
+Path to a Javascript file that provides the preconfigured HBS template compiler. Stage3 packagers should grab the `compile` function off the default export and just use that.
 
 Note that this is for use in apps, which means in _compiled_ apps that are being handed off for final stage packaging. Mostly this is relevant only to authors of final stage packagers.
+
+## template-compiler.isParalleSafe
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Boolean. Indicates whether this template compiler is safe to use in a new node process.
+
 
 ## version
 

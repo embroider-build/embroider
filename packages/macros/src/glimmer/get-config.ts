@@ -1,8 +1,10 @@
-import { MacrosConfig } from '..';
+import { PackageCache } from '@embroider/core';
+
+let packageCache = PackageCache.shared('embroider-stage3');
 
 export default function getConfig(
   node: any,
-  config: MacrosConfig,
+  userConfigs: { [packageRoot: string]: unknown },
   // when we're running in traditional ember-cli, baseDir is configured and we
   // do all lookups relative to that (single) package. But when we're running in
   // embroider stage3 we process all packages simultaneously, so baseDir is left
@@ -17,14 +19,20 @@ export default function getConfig(
     throw new Error(`all arguments to ${own ? 'macroGetOwnConfig' : 'macroGetConfig'} must be string literals`);
   }
 
+  let us = packageCache.ownerOfFile(baseDir || moduleName);
+  if (!us) {
+    return undefined;
+  }
+
   if (own) {
-    targetConfig = config.getOwnConfig(baseDir || moduleName);
+    targetConfig = userConfigs[us.root];
   } else {
     let packageName = params.shift();
     if (!packageName) {
       throw new Error(`macroGetConfig requires at least one argument`);
     }
-    targetConfig = config.getConfig(baseDir || moduleName, packageName.value);
+    let targetPkg = packageCache.resolve(packageName.value, us);
+    targetConfig = userConfigs[targetPkg.root];
   }
   while (typeof targetConfig === 'object' && targetConfig && params.length > 0) {
     let key = params.shift();

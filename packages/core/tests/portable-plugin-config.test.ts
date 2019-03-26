@@ -31,7 +31,7 @@ function runParallelSafe(config: PortableBabelConfig): any {
 function run(config: PortableBabelConfig): any {
   let module = { exports: {} } as any;
   eval(config.serialize());
-  return module.exports.config;
+  return module.exports;
 }
 
 describe('portable-plugin-config', () => {
@@ -224,6 +224,18 @@ describe('portable-plugin-config', () => {
     expect(output.plugins[0][1]).toEqual({
       precompile: 'this is the example function with theParams=reconstituted precompile',
     });
+  });
+
+  test('undefined is a serializable value', function() {
+    let config = new PortableBabelConfig(
+      {
+        plugins: ['./x', { value: undefined }],
+      },
+      resolvableNames()
+    );
+    expect(config.isParallelSafe).toBeTruthy();
+    let output = runParallelSafe(config);
+    expect(output.plugins[0][1].value).toBeUndefined();
   });
 });
 

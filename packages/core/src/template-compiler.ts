@@ -90,7 +90,7 @@ interface SetupCompilerParams {
   plugins: Plugins;
 }
 
-export function rehydrate(portable: SetupCompilerParams) {
+export function rehydrate(portable: unknown) {
   return new TemplateCompiler(PortableTemplateCompiler.load(portable));
 }
 
@@ -144,7 +144,7 @@ export default class TemplateCompiler {
     if (this.portableConfig.isParallelSafe) {
       return {
         requireFile: __filename,
-        buildUsing: rehydrate,
+        buildUsing: 'rehydrate',
         params: this.portableConfig.portable,
       };
     }
@@ -155,6 +155,12 @@ export default class TemplateCompiler {
   // instance.
   serialize(): string {
     return this.portableConfig.serialize();
+  }
+
+  // This allows us to survive even naive stringification in places like
+  // thread-loader and babel-loader.
+  toJSON() {
+    return this.portableConfig.portable;
   }
 
   private get syntax(): GlimmerSyntax {

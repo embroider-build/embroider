@@ -1,9 +1,10 @@
-import Stage from './stage';
-import { realpathSync } from 'fs-extra';
-import Package from './package';
-import PackageCache from './package-cache';
+import { Stage, Package, PackageCache } from '@embroider/core';
+import { realpathSync, readJSONSync } from 'fs-extra';
 import { UnwatchedDir } from 'broccoli-source';
 import { Tree } from 'broccoli-plugin';
+import { join } from 'path';
+import Options, { optionsWithDefaults } from './options';
+import V1InstanceCache from './v1-instance-cache';
 
 export default class PrebuiltAddons implements Stage {
   private packageCache: PackageCache;
@@ -11,9 +12,12 @@ export default class PrebuiltAddons implements Stage {
   readonly inputPath: string;
   readonly tree: Tree;
 
-  constructor(appSrcDir: string, appDestDir: string) {
-    this.inputPath = realpathSync(appSrcDir);
-    this.appDestDir = realpathSync(appDestDir);
+  constructor(legacyEmberAppInstance: object, maybeOptions: Options | undefined, workspaceDir: string) {
+    let options = optionsWithDefaults(maybeOptions);
+    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
+    this.inputPath = realpathSync(v1Cache.app.root);
+    let { appDestDir } = readJSONSync(join(workspaceDir, '.embroider-reuse.json'));
+    this.appDestDir = realpathSync(join(workspaceDir, appDestDir));
     this.packageCache = new RehomedPackageCache(this.inputPath, this.appDestDir);
     this.tree = new UnwatchedDir(this.inputPath);
   }

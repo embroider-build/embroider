@@ -1,6 +1,14 @@
 import { Tree } from 'broccoli-plugin';
-import { join } from 'path';
-import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, mkdtempSync, copySync } from 'fs-extra';
+import { join, relative } from 'path';
+import {
+  emptyDirSync,
+  ensureSymlinkSync,
+  ensureDirSync,
+  realpathSync,
+  mkdtempSync,
+  copySync,
+  writeJSONSync,
+} from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { tmpdir } from 'os';
@@ -39,6 +47,9 @@ export default class CompatAddons implements Stage {
 
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
     await this.deferReady.promise;
+    writeJSONSync(join(this.destDir, '.embroider-reuse.json'), {
+      appDestDir: relative(this.destDir, this.packageCache.appDestDir),
+    });
     return {
       outputPath: this.packageCache.appDestDir,
       packageCache: this.packageCache,

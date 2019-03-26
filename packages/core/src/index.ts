@@ -7,7 +7,6 @@ export { default as TemplateCompiler, Plugins as TemplateCompilerPlugins } from 
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';
-export { default as PrebuiltAddons } from './prebuilt-addons';
 export { default as PackageCache } from './package-cache';
 export { default as packageName } from './package-name';
 export { default as WaitForTrees, OutputPaths } from './wait-for-trees';

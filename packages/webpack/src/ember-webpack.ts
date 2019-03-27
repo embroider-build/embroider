@@ -30,6 +30,8 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import Placeholder from './html-placeholder';
 import makeDebug from 'debug';
 import { format } from 'util';
+import { tmpdir } from 'os';
+import { warmup as threadLoaderWarmup } from 'thread-loader';
 
 const debug = makeDebug('embroider:debug');
 
@@ -175,6 +177,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options && options.webpackConfig;
+    warmUp();
   }
 
   async build(): Promise<void> {
@@ -230,7 +233,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: /\.hbs$/,
             use: [
-              process.env.JOBS === '1' || !templateCompiler.isParallelSafe ? null : 'thread-loader',
+              maybeThreadLoader(templateCompiler.isParallelSafe),
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
                 options: {
@@ -242,11 +245,13 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              process.env.JOBS === '1' || !babel.isParallelSafe ? null : 'thread-loader',
+              maybeThreadLoader(babel.isParallelSafe),
               {
                 loader: 'babel-loader', // todo use babel.version to ensure the correct loader
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
-                options: require(join(this.pathToVanillaApp, babel.filename)),
+                options: Object.assign({}, require(join(this.pathToVanillaApp, babel.filename)), {
+                  cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+                }),
               },
             ].filter(Boolean),
           },
@@ -508,6 +513,29 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return errors[0];
   }
 };
+
+const threadLoaderOptions = {
+  // poolTimeout shuts down idle workers. The problem is, for
+  // interactive rebuilds that means your startup cost for the
+  // next rebuild is at least 600ms worse. So we insist on
+  // keeping workers alive always.
+  poolTimeout: Infinity,
+};
+
+function warmUp() {
+  threadLoaderWarmup(threadLoaderOptions, [join(__dirname, './webpack-hbs-loader'), require.resolve('babel-loader')]);
+}
+
+function maybeThreadLoader(isParallelSafe: boolean) {
+  if (process.env.JOBS === '1' || !isParallelSafe) {
+    return null;
+  }
+
+  return {
+    loader: 'thread-loader',
+    options: threadLoaderOptions,
+  };
+}
 
 function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {

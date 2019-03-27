@@ -77,6 +77,16 @@ export default class V1App implements V1Package {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
   }
 
+  @Memoize()
+  get addonTreeCache(): { getItem(key: string): Tree | null; setItem(key: string, value: Tree): void } {
+    return this.requireFromEmberCLI('./lib/models/addon')._treeCache;
+  }
+
+  @Memoize()
+  get preprocessRegistry() {
+    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
+  }
+
   get shouldBuildTests(): boolean {
     return this.app.tests || false;
   }

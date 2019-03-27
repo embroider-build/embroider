@@ -4,7 +4,6 @@ import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
 import { existsSync, pathExistsSync } from 'fs-extra';
-import resolvePackagePath from 'resolve-package-path';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -18,15 +17,15 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from './rewrite-addon-test-support';
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, AddonMeta, TemplateCompiler } from '@embroider/core';
+import { Package, PackageCache, AddonMeta, TemplateCompiler, debug } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import AddToTree from './add-to-tree';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
-import resolve from 'resolve';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import cloneDeep from 'lodash/cloneDeep';
+import V1App from './v1-app';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -56,26 +55,14 @@ const dynamicTreeHooks = Object.freeze([
 
 const appPublicationDir = '_app_';
 
-let locatePreprocessRegistry: (addonInstance: any) => any;
-{
-  let preprocessRegistry: any;
-  locatePreprocessRegistry = function(addonInstance: any) {
-    if (!preprocessRegistry) {
-      let cliPath = dirname(resolvePackagePath('ember-cli', addonInstance._findHost().project.root));
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      preprocessRegistry = require(resolve.sync('ember-cli-preprocess-registry/preprocessors', { basedir: cliPath }));
-    }
-    return preprocessRegistry;
-  };
-}
-
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
   constructor(
     protected addonInstance: any,
     private packageCache: PackageCache,
-    protected addonOptions: Required<Options>
+    protected addonOptions: Required<Options>,
+    private app: V1App
   ) {
     this.updateBabelConfig();
     if (addonInstance.registry) {
@@ -192,14 +179,49 @@ export default class V1Addon implements V1Package {
     return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.customizes(...dynamicTreeHooks);
   }
 
-  protected stockTree(treeName: string, funnelOpts?: FunnelOptions) {
-    let opts = Object.assign(
-      {
-        srcDir: this.addonInstance.treePaths[treeName],
-      },
-      funnelOpts
-    );
-    return new Funnel(this.rootTree, opts);
+  // we keep all these here to ensure that we always apply the same options to
+  // the same tree, so that our cache doesn't need to worry about varying
+  // options.
+  private stockTreeFunnelOptions(treeName: string): FunnelOptions | undefined {
+    switch (treeName) {
+      case 'addon':
+        return {
+          exclude: ['styles/**'],
+        };
+      case 'styles':
+        return {
+          destDir: '_app_styles_',
+        };
+      case 'addon-test-support':
+        return {
+          destDir: 'test-support',
+        };
+      case 'app':
+        return {
+          exclude: ['styles/**'],
+          destDir: appPublicationDir,
+        };
+      case 'public':
+        return {
+          destDir: 'public',
+        };
+      case 'vendor':
+        return {
+          destDir: 'vendor',
+        };
+    }
+  }
+
+  protected stockTree(treeName: string) {
+    return this.throughTreeCache(treeName, 'stock', () => {
+      let opts = Object.assign(
+        {
+          srcDir: this.addonInstance.treePaths[treeName],
+        },
+        this.stockTreeFunnelOptions(treeName)
+      );
+      return new Funnel(this.rootTree, opts);
+    })!;
   }
 
   @Memoize()
@@ -227,7 +249,7 @@ export default class V1Addon implements V1Package {
       registry: this.addonInstance.registry,
     });
     if (this.addonInstance.registry.load('template').length > 0) {
-      tree = locatePreprocessRegistry(this.addonInstance).preprocessTemplates(tree, {
+      tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
         registry: this.addonInstance.registry,
       });
     }
@@ -310,21 +332,55 @@ export default class V1Addon implements V1Package {
     return trees;
   }
 
-  protected invokeOriginalTreeFor(name: string, { neuterPreprocessors } = { neuterPreprocessors: false }) {
-    let original;
-    try {
-      if (neuterPreprocessors) {
-        original = this.addonInstance.preprocessJs;
-        this.addonInstance.preprocessJs = function(tree: Tree) {
-          return tree;
-        };
-      }
-      return this.addonInstance._treeFor(name);
-    } finally {
-      if (neuterPreprocessors) {
-        this.addonInstance.preprocessJs = original;
+  protected throughTreeCache(name: string, category: string, fn: () => Tree | undefined): Tree | undefined {
+    let cacheKey;
+    if (typeof this.addonInstance.cacheKeyForTree === 'function') {
+      cacheKey = this.addonInstance.cacheKeyForTree(name);
+      if (cacheKey) {
+        // why do we add a category? Because we don't actually want to share the
+        // cache with any usage that is inside the traditional addon.js, because
+        // it is caching trees that recurse. Our trees are different. They don't
+        // recurse.
+        //
+        // Similarly, our `invokeOriginalTreeFor` and `stockTree` are different.
+        // `stockTree` is optimized for how we want to consume it, which we can
+        // only do if there's no customized treeFor* implementation.
+        cacheKey = cacheKey + category;
+        let cachedTree = this.app.addonTreeCache.getItem(cacheKey);
+        if (cachedTree) {
+          debug('cache hit %s %s %s', this.name, name, category);
+          return cachedTree;
+        }
       }
     }
+    debug('cache miss %s %s %s', this.name, name, category);
+    let tree = fn();
+    if (tree && cacheKey) {
+      this.app.addonTreeCache.setItem(cacheKey, tree);
+    }
+    return tree;
+  }
+
+  protected invokeOriginalTreeFor(
+    name: string,
+    { neuterPreprocessors } = { neuterPreprocessors: false }
+  ): Tree | undefined {
+    return this.throughTreeCache(name, 'original', () => {
+      let original;
+      try {
+        if (neuterPreprocessors) {
+          original = this.addonInstance.preprocessJs;
+          this.addonInstance.preprocessJs = function(tree: Tree) {
+            return tree;
+          };
+        }
+        return this.addonInstance._treeFor(name);
+      } finally {
+        if (neuterPreprocessors) {
+          this.addonInstance.preprocessJs = original;
+        }
+      }
+    });
   }
 
   protected treeForAddon(): Tree | undefined {
@@ -338,11 +394,7 @@ export default class V1Addon implements V1Package {
         );
       }
     } else if (this.hasStockTree('addon')) {
-      return this.transpile(
-        this.stockTree('addon', {
-          exclude: ['styles/**'],
-        })
-      );
+      return this.transpile(this.stockTree('addon'));
     }
   }
 
@@ -406,9 +458,7 @@ export default class V1Addon implements V1Package {
         });
       }
     } else if (this.hasStockTree('styles')) {
-      tree = this.stockTree('styles', {
-        destDir: '_app_styles_',
-      });
+      tree = this.stockTree('styles');
     }
     if (tree) {
       built.trees.push(tree);
@@ -418,18 +468,14 @@ export default class V1Addon implements V1Package {
   private buildAddonTestSupport(built: IntermediateBuild) {
     let addonTestSupportTree;
     if (this.customizes('treeForAddonTestSupport')) {
-      let { tree, getMeta } = rewriteAddonTestSupport(
-        this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true }),
-        this.name
-      );
-      addonTestSupportTree = this.transpile(tree);
-      built.dynamicMeta.push(getMeta);
+      let original = this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true });
+      if (original) {
+        let { tree, getMeta } = rewriteAddonTestSupport(original, this.name);
+        addonTestSupportTree = this.transpile(tree);
+        built.dynamicMeta.push(getMeta);
+      }
     } else if (this.hasStockTree('addon-test-support')) {
-      addonTestSupportTree = this.transpile(
-        this.stockTree('addon-test-support', {
-          destDir: 'test-support',
-        })
-      );
+      addonTestSupportTree = this.transpile(this.stockTree('addon-test-support'));
     }
     if (addonTestSupportTree) {
       let testSupportParser = this.parseImports(addonTestSupportTree);
@@ -480,10 +526,7 @@ export default class V1Addon implements V1Package {
         });
       }
     } else if (this.hasStockTree('app')) {
-      appTree = this.stockTree('app', {
-        exclude: ['styles/**'],
-        destDir: appPublicationDir,
-      });
+      appTree = this.stockTree('app');
     }
 
     if (appTree) {
@@ -521,7 +564,7 @@ export default class V1Addon implements V1Package {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
         publicTree = new Snitch(
-          this.invokeOriginalTreeFor('public'),
+          original,
           {
             // The normal behavior is to namespace your public files under your
             // own name. But addons can flaunt that, and that goes beyond what
@@ -536,9 +579,7 @@ export default class V1Addon implements V1Package {
         );
       }
     } else if (this.hasStockTree('public')) {
-      publicTree = this.stockTree('public', {
-        destDir: 'public',
-      });
+      publicTree = this.stockTree('public');
     }
     if (publicTree) {
       let publicAssets: { [filename: string]: string } = {};
@@ -569,11 +610,7 @@ export default class V1Addon implements V1Package {
         );
       }
     } else if (this.hasStockTree('vendor')) {
-      built.trees.push(
-        this.stockTree('vendor', {
-          destDir: 'vendor',
-        })
-      );
+      built.trees.push(this.stockTree('vendor'));
     }
   }
 
@@ -605,7 +642,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, packageCache: PackageCache, options: Required<Options>): V1Addon;
+  new (addonInstance: any, packageCache: PackageCache, options: Required<Options>, app: V1App): V1Addon;
 }
 
 class TweakedPackage extends Package {

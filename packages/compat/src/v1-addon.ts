@@ -337,16 +337,8 @@ export default class V1Addon implements V1Package {
     if (typeof this.addonInstance.cacheKeyForTree === 'function') {
       cacheKey = this.addonInstance.cacheKeyForTree(name);
       if (cacheKey) {
-        // why do we add a category? Because we don't actually want to share the
-        // cache with any usage that is inside the traditional addon.js, because
-        // it is caching trees that recurse. Our trees are different. They don't
-        // recurse.
-        //
-        // Similarly, our `invokeOriginalTreeFor` and `stockTree` are different.
-        // `stockTree` is optimized for how we want to consume it, which we can
-        // only do if there's no customized treeFor* implementation.
         cacheKey = cacheKey + category;
-        let cachedTree = this.app.addonTreeCache.getItem(cacheKey);
+        let cachedTree = this.app.addonTreeCache.get(cacheKey);
         if (cachedTree) {
           debug('cache hit %s %s %s', this.name, name, category);
           return cachedTree;
@@ -356,7 +348,7 @@ export default class V1Addon implements V1Package {
     debug('cache miss %s %s %s', this.name, name, category);
     let tree = fn();
     if (tree && cacheKey) {
-      this.app.addonTreeCache.setItem(cacheKey, tree);
+      this.app.addonTreeCache.set(cacheKey, tree);
     }
     return tree;
   }

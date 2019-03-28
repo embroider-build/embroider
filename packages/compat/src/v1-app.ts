@@ -78,8 +78,8 @@ export default class V1App implements V1Package {
   }
 
   @Memoize()
-  get addonTreeCache(): { getItem(key: string): Tree | null; setItem(key: string, value: Tree): void } {
-    return this.requireFromEmberCLI('./lib/models/addon')._treeCache;
+  get addonTreeCache(): Map<string, Tree> {
+    return new Map();
   }
 
   @Memoize()

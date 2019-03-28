@@ -18,6 +18,7 @@ import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
+import ExtendedPackage from './extended-package';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -32,7 +33,21 @@ export default class V1App implements V1Package {
     }
   }
 
-  protected constructor(protected app: any, private packageCache: PackageCache) {}
+  protected constructor(protected app: any, protected packageCache: PackageCache) {
+    this.extendPackage();
+  }
+
+  protected extendPackage() {
+    let meta = this.app.project.pkg['ember-addon'];
+    if (meta && meta.paths) {
+      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
+      this.packageCache.overridePackage(extendedPackage);
+      for (let addon of inRepoAddons) {
+        this.packageCache.overrideResolution(this.app.project.pkg.name, addon.name, addon);
+      }
+    }
+  }
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
@@ -81,7 +96,10 @@ export default class V1App implements V1Package {
   // node_modules rules. In-repo addons are one example. Another example is the
   // way an addon's dummy app implicitly depends on the addon (see V1DummyApp).
   nonResolvableDependencies(): Package[] {
-    // TODO: emit in-repo addon here
+    let meta = this.app.project.pkg['ember-addon'];
+    if (meta && meta.paths) {
+      return meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+    }
     return [];
   }
 
@@ -537,15 +555,13 @@ export default class V1App implements V1Package {
 }
 
 class V1DummyApp extends V1App {
-  private owningAddon: Package;
+  private owningAddon!: Package;
 
-  constructor(app: any, packageCache: PackageCache) {
-    super(app, packageCache);
-    let owningAddon = packageCache.getAddon(this.app.project.root);
-    let dummyPackage = new DummyPackage(this.root, owningAddon, packageCache);
-    packageCache.overridePackage(dummyPackage);
-    packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, owningAddon);
-    this.owningAddon = owningAddon;
+  extendPackage() {
+    this.owningAddon = this.packageCache.getAddon(this.app.project.root);
+    let dummyPackage = new DummyPackage(this.root, this.owningAddon, this.packageCache);
+    this.packageCache.overridePackage(dummyPackage);
+    this.packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, this.owningAddon);
   }
 
   get name(): string {

@@ -62,6 +62,29 @@ QUnit.module('stage1 build', function() {
       addon.linkPackage('ember-cli-htmlbars-inline-precompile');
       addon.linkPackage('@embroider/macros');
 
+      // our app will include an in-repo addon
+      app.pkg['ember-addon'] = {
+        paths: ['lib/in-repo-addon'],
+      };
+      app.files.lib = {
+        'in-repo-addon': {
+          'package.json': JSON.stringify(
+            {
+              name: 'in-repo-addon',
+              keywords: ['ember-addon'],
+            },
+            null,
+            2
+          ),
+          'index.js': `module.exports = { name: 'in-repo-addon' };`,
+          addon: {
+            helpers: {
+              'helper-from-in-repo-addon.js': '',
+            },
+          },
+        },
+      };
+
       app.writeSync();
       let compat = new CompatAddons(emberApp(app.baseDir));
       builder = new Builder(compat.tree);
@@ -131,6 +154,11 @@ QUnit.module('stage1 build', function() {
         /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
         'template macros have not run'
       );
+    });
+
+    test('in-repo-addon is available', function(assert) {
+      assert.expect(0);
+      resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: assert.basePath });
     });
   });
 

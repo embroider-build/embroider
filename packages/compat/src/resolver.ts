@@ -228,7 +228,9 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
     this.templateCompiler = templateCompiler;
-    return makeResolverTransform(this);
+    if (this.options.staticComponents || this.options.staticHelpers) {
+      return makeResolverTransform(this);
+    }
   }
 
   dependenciesOf(moduleName: string): ResolvedDep[] {

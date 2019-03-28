@@ -1,6 +1,6 @@
 import { Tree } from 'broccoli-plugin';
-import { join } from 'path';
-import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, mkdtempSync, copySync } from 'fs-extra';
+import { join, relative } from 'path';
+import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { tmpdir } from 'os';
@@ -9,6 +9,7 @@ import { Memoize } from 'typescript-memoize';
 import buildCompatAddon from './build-compat-addon';
 import Options, { optionsWithDefaults } from './options';
 import V1App from './v1-app';
+import { createHash } from 'crypto';
 
 export default class CompatAddons implements Stage {
   private didBuild = false;
@@ -19,13 +20,18 @@ export default class CompatAddons implements Stage {
 
   constructor(legacyEmberAppInstance: object, maybeOptions?: Options) {
     let options = optionsWithDefaults(maybeOptions);
+    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     if (options && options.workspaceDir) {
       ensureDirSync(options.workspaceDir);
       this.destDir = realpathSync(options.workspaceDir);
     } else {
-      this.destDir = realpathSync(mkdtempSync(join(tmpdir(), 'embroider-')));
+      // we want this to be stable across builds, because it becomes part of the
+      // path to all of the files that the stage3 packager sees, and we want to
+      // benefit from on-disk caching in stage3 packagers.
+      let dir = this.stableWorkspaceDir(v1Cache.app);
+      ensureDirSync(dir);
+      this.destDir = realpathSync(dir);
     }
-    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
     let { synthVendor, synthStyles } = this.getSyntheticPackages(v1Cache.app, movedAddons);
@@ -39,6 +45,9 @@ export default class CompatAddons implements Stage {
 
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
     await this.deferReady.promise;
+    writeJSONSync(join(this.destDir, '.embroider-reuse.json'), {
+      appDestDir: relative(this.destDir, this.packageCache.appDestDir),
+    });
     return {
       outputPath: this.packageCache.appDestDir,
       packageCache: this.packageCache,
@@ -124,5 +133,11 @@ export default class CompatAddons implements Stage {
         ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));
       }
     }
+  }
+
+  private stableWorkspaceDir(app: V1App) {
+    let hash = createHash('md5');
+    hash.update(app.root);
+    return join(tmpdir(), 'embroider', hash.digest('hex').slice(0, 6));
   }
 }

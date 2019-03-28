@@ -1,61 +1,58 @@
-import 'qunit';
 import { allBabelVersions, emberTemplateCompilerPath } from '@embroider/test-support';
 import { join } from 'path';
 import TemplateCompiler from '../src/template-compiler';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 
-const { test } = QUnit;
-
 function stage1Tests(transform: (code: string) => string) {
-  test('template literal form', function(assert) {
+  test('template literal form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
         return hbs${'`'}<div class={{embroider-sample-transforms-target}}></div>${'`'};
       }
       `);
-    assert.ok(/import hbs from 'htmlbars-inline-precompile'/.test(code), 'still has hbs import');
-    assert.ok(/return hbs`<div/.test(code), 'still in hbs format');
-    assert.ok(/embroider-sample-transforms-result/.test(code), 'transform ran');
+    expect(code).toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return hbs`<div/);
+    expect(code).toMatch(/embroider-sample-transforms-result/);
   });
-  test('call form', function(assert) {
+  test('call form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
         return hbs("<div class={{embroider-sample-transforms-target}}></div>");
       }
       `);
-    assert.ok(/import hbs from 'htmlbars-inline-precompile'/.test(code), 'still has hbs import');
-    assert.ok(/return hbs\("<div/.test(code), 'still in hbs format');
-    assert.ok(/embroider-sample-transforms-result/.test(code), 'transform ran');
+    expect(code).toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return hbs\("<div/);
+    expect(code).toMatch(/embroider-sample-transforms-result/);
   });
 }
 
 function stage3Tests(transform: (code: string) => string) {
-  test('tagged template literal form', function(assert) {
+  test('tagged template literal form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
         return hbs${'`'}<div class={{embroider-sample-transforms-target}}></div>${'`'};
       }
       `);
-    assert.ok(!/import hbs from 'htmlbars-inline-precompile'/.test(code), 'hbs import stripped');
-    assert.ok(/return Ember.HTMLBars.template\({/.test(code), 'no longer in hbs format');
+    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
   });
-  test('call form', function(assert) {
+  test('call form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
         return hbs("<div class={{embroider-sample-transforms-target}}></div>");
       }
       `);
-    assert.ok(!/import hbs from 'htmlbars-inline-precompile'/.test(code), 'hbs import stripped');
-    assert.ok(/return Ember.HTMLBars.template\({/.test(code), 'no longer in hbs format');
+    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
   });
 }
 
-QUnit.module('inline-hbs', function() {
-  QUnit.module('stage1', function() {
+describe('inline-hbs', () => {
+  describe('stage1', () => {
     allBabelVersions({
       babelConfig() {
         let templateCompiler = new TemplateCompiler({
@@ -73,7 +70,7 @@ QUnit.module('inline-hbs', function() {
     });
   });
 
-  QUnit.module('stage3 no presets', function() {
+  describe('stage3 no presets', () => {
     allBabelVersions({
       babelConfig() {
         let templateCompiler = new TemplateCompiler({
@@ -91,7 +88,7 @@ QUnit.module('inline-hbs', function() {
     });
   });
 
-  QUnit.module('stage3 with presets', function() {
+  describe('stage3 with presets', () => {
     allBabelVersions({
       babelConfig(major: number) {
         let templateCompiler = new TemplateCompiler({

@@ -55,7 +55,7 @@ export default class V1InstanceCache {
 
   private addAddon(addonInstance: any) {
     let Klass = this.adapterClass(addonInstance.pkg.name);
-    let v1Addon = new Klass(addonInstance, this.packageCache, this.options);
+    let v1Addon = new Klass(addonInstance, this.packageCache, this.options, this.app);
     let pkgs = this.addons.get(v1Addon.root);
     if (!pkgs) {
       this.addons.set(v1Addon.root, (pkgs = []));

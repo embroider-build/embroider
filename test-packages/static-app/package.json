@@ -15,15 +15,15 @@
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
     "start": "ember serve",
-    "test": "ember test"
+    "test": "ember test --test-port=0"
   },
   "devDependencies": {
     "@ember/jquery": "^0.5.2",
     "@ember/optional-features": "^0.6.3",
-    "@embroider/compat": "0.1.0",
-    "@embroider/core": "0.1.0",
-    "@embroider/macros": "0.1.0",
-    "@embroider/webpack": "0.1.0",
+    "@embroider/compat": "0.2.0",
+    "@embroider/core": "0.2.0",
+    "@embroider/macros": "0.2.0",
+    "@embroider/webpack": "0.2.0",
     "broccoli-asset-rev": "^2.7.0",
     "ember-ajax": "^3.1.0",
     "ember-cli": "~3.7.1",

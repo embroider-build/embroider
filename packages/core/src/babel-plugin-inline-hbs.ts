@@ -10,7 +10,7 @@ import {
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import { join } from 'path';
-import TemplateCompiler from './template-compiler';
+import TemplateCompiler, { rehydrate } from './template-compiler';
 import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
 
@@ -21,7 +21,9 @@ const modulePaths = ['htmlbars-inline-precompile', 'ember-cli-htmlbars-inline-pr
 
 interface State {
   opts: {
-    templateCompiler: TemplateCompiler;
+    // it can be unknown if somebody json-stringified our babel config on us, in
+    // which case we'll need to rehydrate it ourself
+    templateCompiler: TemplateCompiler | unknown;
 
     // the stages here correspond to the two places in the overall Embroider
     // architecture that this transform applies. In stage1 HBS stays as HBS, but
@@ -80,10 +82,10 @@ function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
   }
   let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
   if (state.opts.stage === 1) {
-    let compiled = state.opts.templateCompiler.applyTransforms(state.file.opts.filename, template);
+    let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
     path.get('quasi').replaceWith(templateLiteral([templateElement({ raw: compiled, cooked: compiled })], []));
   } else {
-    let { compiled } = state.opts.templateCompiler.precompile(state.file.opts.filename, template);
+    let { compiled } = compiler(state.opts).precompile(state.file.opts.filename, template);
     let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
     path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
   }
@@ -99,10 +101,10 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
   }
   let template = arg.value;
   if (state.opts.stage === 1) {
-    let compiled = state.opts.templateCompiler.applyTransforms(state.file.opts.filename, template);
+    let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
     path.get('arguments')[0].replaceWith(stringLiteral(compiled));
   } else {
-    let { compiled } = state.opts.templateCompiler.precompile(state.file.opts.filename, template);
+    let { compiled } = compiler(state.opts).precompile(state.file.opts.filename, template);
     let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
     path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
   }
@@ -127,4 +129,11 @@ function jsonLiteral(value: unknown | undefined) {
   let statement = ast.program.body[0] as ExpressionStatement;
   let expression = statement.expression as CallExpression;
   return expression.arguments[0];
+}
+
+function compiler(opts: State['opts']): TemplateCompiler {
+  if (typeof (opts.templateCompiler as any).precompile !== 'function') {
+    opts.templateCompiler = rehydrate(opts.templateCompiler);
+  }
+  return opts.templateCompiler as TemplateCompiler;
 }

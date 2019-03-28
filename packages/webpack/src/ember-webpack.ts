@@ -30,6 +30,8 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import Placeholder from './html-placeholder';
 import makeDebug from 'debug';
 import { format } from 'util';
+import { tmpdir } from 'os';
+import { warmup as threadLoaderWarmup } from 'thread-loader';
 
 const debug = makeDebug('embroider:debug');
 
@@ -129,8 +131,15 @@ interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
   externals: string[];
-  templateCompiler: Function;
-  babel: any;
+  templateCompiler: {
+    filename: string;
+    isParallelSafe: boolean;
+  };
+  babel: {
+    filename: string;
+    majorVersion: 6 | 7;
+    isParallelSafe: boolean;
+  };
   rootURL: string;
 }
 
@@ -168,6 +177,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options && options.webpackConfig;
+    warmUp();
   }
 
   async build(): Promise<void> {
@@ -192,15 +202,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     let externals = meta.externals || [];
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let templateCompiler = require(join(this.pathToVanillaApp, meta['template-compiler'])).compile;
+    let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
-    let babelConfigFile = meta['babel-config'];
-    let babel;
-    if (babelConfigFile) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      babel = require(join(this.pathToVanillaApp, babelConfigFile));
-    }
+    let babel = meta['babel'];
     return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };
   }
 
@@ -229,19 +233,25 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: /\.hbs$/,
             use: [
+              maybeThreadLoader(templateCompiler.isParallelSafe),
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
-                options: { templateCompiler },
+                options: {
+                  templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
+                },
               },
-            ],
+            ].filter(Boolean),
           },
           {
             test: this.shouldTranspileFile.bind(this),
             use: [
-              process.env.JOBS === '1' || !babel.isParallelSafe ? null : 'thread-loader',
+              maybeThreadLoader(babel.isParallelSafe),
               {
                 loader: 'babel-loader', // todo use babel.version to ensure the correct loader
-                options: Object.assign({}, babel.config),
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                options: Object.assign({}, require(join(this.pathToVanillaApp, babel.filename)), {
+                  cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+                }),
               },
             ].filter(Boolean),
           },
@@ -504,6 +514,29 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return errors[0];
   }
 };
+
+const threadLoaderOptions = {
+  // poolTimeout shuts down idle workers. The problem is, for
+  // interactive rebuilds that means your startup cost for the
+  // next rebuild is at least 600ms worse. So we insist on
+  // keeping workers alive always.
+  poolTimeout: Infinity,
+};
+
+function warmUp() {
+  threadLoaderWarmup(threadLoaderOptions, [join(__dirname, './webpack-hbs-loader'), require.resolve('babel-loader')]);
+}
+
+function maybeThreadLoader(isParallelSafe: boolean) {
+  if (process.env.JOBS === '1' || !isParallelSafe) {
+    return null;
+  }
+
+  return {
+    loader: 'thread-loader',
+    options: threadLoaderOptions,
+  };
+}
 
 function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {

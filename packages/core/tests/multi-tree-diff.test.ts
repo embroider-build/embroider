@@ -1,13 +1,10 @@
-import 'qunit';
 import MultiTreeDiff from '../src/multi-tree-diff';
 import { Entry, Patch } from 'fs-tree-diff';
 import { join } from 'path';
 import cloneDeep from 'lodash/cloneDeep';
 
-const { test } = QUnit;
-
-QUnit.module('tracked-merge-dirs', function() {
-  test('it combines files from all inDirs', function(assert) {
+describe('tracked-merge-dirs', () => {
+  test('it combines files from all inDirs', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
@@ -15,7 +12,7 @@ QUnit.module('tracked-merge-dirs', function() {
     let t = new MultiTreeDiff([a, b, c]);
     let { ops, sources } = t.update();
 
-    assert.deepEqual(fileOps(ops), [
+    expect(fileOps(ops)).toEqual([
       ['create', 'alpha'],
       ['mkdir', 'beta'],
       ['create', 'beta/x'],
@@ -23,28 +20,28 @@ QUnit.module('tracked-merge-dirs', function() {
       ['create', 'tomster'],
     ]);
 
-    assert.equal(sources.get('alpha'), 0);
-    assert.equal(sources.get('beta'), 1);
-    assert.equal(sources.get('beta/x'), 1);
-    assert.equal(sources.get('charlie'), 2);
-    assert.equal(sources.get('tomster'), 0);
+    expect(sources.get('alpha')).toBe(0);
+    expect(sources.get('beta')).toBe(1);
+    expect(sources.get('beta/x')).toBe(1);
+    expect(sources.get('charlie')).toBe(2);
+    expect(sources.get('tomster')).toBe(0);
   });
 
-  test('it prioritizes files from later dirs', function(assert) {
+  test('it prioritizes files from later dirs', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let c = new MockTree(['charlie', 'alpha']);
 
     let t = new MultiTreeDiff([a, c]);
     let { ops, sources } = t.update();
 
-    assert.deepEqual(fileOps(ops), [['create', 'alpha'], ['create', 'charlie'], ['create', 'tomster']]);
+    expect(fileOps(ops)).toEqual([['create', 'alpha'], ['create', 'charlie'], ['create', 'tomster']]);
 
-    assert.equal(sources.get('alpha'), 1);
-    assert.equal(sources.get('charlie'), 1);
-    assert.equal(sources.get('tomster'), 0);
+    expect(sources.get('alpha')).toBe(1);
+    expect(sources.get('charlie')).toBe(1);
+    expect(sources.get('tomster')).toBe(0);
   });
 
-  test('it emits nothing when stable', function(assert) {
+  test('it emits nothing when stable', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
@@ -52,10 +49,10 @@ QUnit.module('tracked-merge-dirs', function() {
     let t = new MultiTreeDiff([a, b, c]);
     t.update();
     let { ops } = t.update();
-    assert.deepEqual(fileOps(ops), []);
+    expect(fileOps(ops)).toEqual([]);
   });
 
-  test('it emits a changed file', function(assert) {
+  test('it emits a changed file', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let b = new MockTree({ beta: ['x'] });
     let c = new MockTree(['charlie']);
@@ -64,34 +61,34 @@ QUnit.module('tracked-merge-dirs', function() {
     t.update();
     dirty(a.entries[0]);
     let { ops, sources } = t.update();
-    assert.deepEqual(fileOps(ops), [['change', 'alpha']]);
-    assert.equal(sources.get('alpha'), 0);
+    expect(fileOps(ops)).toEqual([['change', 'alpha']]);
+    expect(sources.get('alpha')).toBe(0);
   });
 
-  test('it falls back to earlier source at deletion', function(assert) {
+  test('it falls back to earlier source at deletion', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let c = new MockTree(['charlie', 'alpha']);
 
     let t = new MultiTreeDiff([a, c]);
 
     let result = t.update();
-    assert.equal(result.sources.get('alpha'), 1);
+    expect(result.sources.get('alpha')).toBe(1);
 
     c.entries.splice(0, 1);
 
     result = t.update();
-    assert.deepEqual(fileOps(result.ops), [['change', 'alpha']]);
-    assert.equal(result.sources.get('alpha'), 0);
+    expect(fileOps(result.ops)).toEqual([['change', 'alpha']]);
+    expect(result.sources.get('alpha')).toBe(0);
   });
 
-  test('it switches to later source at creation', function(assert) {
+  test('it switches to later source at creation', () => {
     let a = new MockTree(['alpha', 'tomster']);
     let b = new MockTree(['charlie']);
 
     let t = new MultiTreeDiff([a, b]);
 
     let result = t.update();
-    assert.equal(result.sources.get('alpha'), 0);
+    expect(result.sources.get('alpha')).toBe(0);
 
     b.entries.push({
       relativePath: 'alpha',
@@ -102,11 +99,11 @@ QUnit.module('tracked-merge-dirs', function() {
     });
 
     result = t.update();
-    assert.deepEqual(fileOps(result.ops), [['change', 'alpha']]);
-    assert.equal(result.sources.get('alpha'), 1);
+    expect(fileOps(result.ops)).toEqual([['change', 'alpha']]);
+    expect(result.sources.get('alpha')).toBe(1);
   });
 
-  test('it hides changes in occluded files', function(assert) {
+  test('it hides changes in occluded files', () => {
     let a = new MockTree(['alpha']);
     let b = new MockTree(['alpha']);
 
@@ -114,17 +111,17 @@ QUnit.module('tracked-merge-dirs', function() {
     t.update();
     dirty(a.entries[0]);
     let { ops } = t.update();
-    assert.deepEqual(fileOps(ops), []);
+    expect(fileOps(ops)).toEqual([]);
   });
 
-  test('it respects mayChange', function(assert) {
+  test('it respects mayChange', () => {
     let a = new MockTree(['alpha', 'tomster']);
     a.mayChange = false;
     let t = new MultiTreeDiff([a]);
     t.update();
     dirty(a.entries[0]);
     let { ops } = t.update();
-    assert.deepEqual(fileOps(ops), []);
+    expect(fileOps(ops)).toEqual([]);
   });
 });
 

@@ -134,7 +134,18 @@ export default class MacrosConfig {
   }
 
   astPlugins(owningPackageRoot?: string): Function[] {
-    return [makeFirstTransform(this, owningPackageRoot), makeSecondTransform()].reverse();
+    let self = this;
+    return [
+      makeFirstTransform({
+        // this is deliberately lazy because we want to allow everyone to finish
+        // setting config before we generate the userConfigs
+        get userConfigs() {
+          return self.userConfigs;
+        },
+        baseDir: owningPackageRoot,
+      }),
+      makeSecondTransform(),
+    ].reverse();
   }
 
   private mergerFor(pkgRoot: string) {

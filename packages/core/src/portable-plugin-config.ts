@@ -8,11 +8,8 @@ const { globalValues, nonce } = setupGlobals();
 
 const template = compile(`
 const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
-module.exports = {
-  config: PortablePluginConfig.load({{{json-stringify portable 2}}}),
-  isParallelSafe: {{ isParallelSafe }},
-};
-`) as (params: { portable: any; here: string; isParallelSafe: boolean }) => string;
+module.exports = PortablePluginConfig.load({{{json-stringify portable 2}}});
+`) as (params: { portable: any; here: string }) => string;
 
 export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
@@ -52,19 +49,25 @@ export class PortablePluginConfig {
   readonly portable: any;
   readonly isParallelSafe: boolean;
 
-  constructor(private config: any, resolveOptions: ResolveOptions) {
-    if ('resolve' in resolveOptions) {
-      this.resolve = resolveOptions.resolve;
+  constructor(private config: any, resolveOptions?: ResolveOptions) {
+    if (resolveOptions) {
+      if ('resolve' in resolveOptions) {
+        this.resolve = resolveOptions.resolve;
+      } else {
+        this.basedir = resolveOptions.basedir;
+        this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
+      }
     } else {
-      this.basedir = resolveOptions.basedir;
-      this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
+      this.resolve = (_: string) => {
+        throw new Error(`No file resolving is configured for this PortablePluginConfig`);
+      };
     }
     this.portable = this.makePortable(this.config);
     this.isParallelSafe = this.parallelSafeFlag;
   }
 
   serialize(): string {
-    return template({ portable: this.portable, here: this.here, isParallelSafe: this.isParallelSafe });
+    return template({ portable: this.portable, here: this.here });
   }
 
   protected makePortable(value: any, accessPath: string[] = []): any {
@@ -90,9 +93,12 @@ export class PortablePluginConfig {
       case 'string':
       case 'number':
       case 'boolean':
+      case 'undefined':
         return value;
       case 'object':
-        return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
+        if (Object.getPrototypeOf(value) === Object.prototype) {
+          return mapValues(value, (propertyValue, key) => this.makePortable(propertyValue, accessPath.concat(key)));
+        }
     }
 
     return this.globalPlaceholder(value);
@@ -205,9 +211,9 @@ function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
     return {
       embroiderPlaceholder: true,
       type: 'htmlbars-parallel',
-      requireFile: object._parallelBabel.requireFile,
-      buildUsing: String(object._parallelBabel.buildUsing),
-      params: object._parallelBabel.params,
+      requireFile: object.parallelBabel.requireFile,
+      buildUsing: String(object.parallelBabel.buildUsing),
+      params: object.parallelBabel.params,
     };
   }
 }

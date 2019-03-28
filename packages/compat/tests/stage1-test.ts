@@ -1,9 +1,10 @@
-import { emberProject, addAddon, Project } from './helpers';
+import { emberProject, addAddon, Project, addonProject } from './helpers';
 import 'qunit';
-import { emberApp } from '@embroider/test-support';
+import { emberApp, emberAddon } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
 import { Builder } from 'broccoli';
 import { installFileAssertions } from './file-assertions';
+import resolve from 'resolve';
 
 QUnit.module('stage1 build', function() {
   QUnit.module('max compatibility', function(origHooks) {
@@ -130,6 +131,36 @@ QUnit.module('stage1 build', function() {
         /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
         'template macros have not run'
       );
+    });
+  });
+
+  QUnit.module('addon dummy app', function(origHooks) {
+    let { hooks, test } = installFileAssertions(origHooks);
+    let builder: Builder;
+    let app: Project;
+
+    hooks.before(async function(assert) {
+      app = addonProject();
+      (app.files.addon as Project['files']).components = {
+        'hello-world.js': '',
+      };
+
+      app.writeSync();
+      let compat = new CompatAddons(emberAddon(app.baseDir));
+      builder = new Builder(compat.tree);
+      let builderPromise = builder.build();
+      assert.basePath = (await compat.ready()).outputPath;
+      await builderPromise;
+    });
+
+    hooks.after(async function() {
+      await app.dispose();
+      await builder.cleanup();
+    });
+
+    test('dummy app can resolve own addon', function(assert) {
+      assert.expect(0);
+      resolve.sync('my-addon/components/hello-world.js', { basedir: assert.basePath });
     });
   });
 });

@@ -82,7 +82,7 @@ export class MovedPackageCache extends PackageCache {
   }
 
   // hunt for symlinks that may be needed to do node_modules resolution from the
-  // given path, going up a maximum of `depth` levels.
+  // given path.
   async updatePreexistingResolvableSymlinks(): Promise<void> {
     let roots = this.originalRoots();
     await Promise.all(

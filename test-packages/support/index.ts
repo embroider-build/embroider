@@ -1,5 +1,7 @@
 import Project from 'ember-cli/lib/models/project';
 import EmberApp from 'ember-cli/lib/broccoli/ember-app';
+import EmberAddon from 'ember-cli/lib/broccoli/ember-addon';
+
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import MockUI from 'console-ui/mock';
@@ -31,6 +33,12 @@ export function emberApp(dir: string, userOpts: any = {}): any {
   let cli = new MockCLI();
   let project = new Project(dir, readJSONSync(join(dir, 'package.json')), cli.ui, cli);
   return new EmberApp({ project }, userOpts);
+}
+
+export function emberAddon(dir: string, userOpts: any = {}): any {
+  let cli = new MockCLI();
+  let project = new Project(dir, readJSONSync(join(dir, 'package.json')), cli.ui, cli);
+  return new EmberAddon({ project }, userOpts);
 }
 
 export function runDefault(code: string): any {

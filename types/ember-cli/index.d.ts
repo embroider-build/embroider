@@ -4,6 +4,12 @@ declare module 'ember-cli/lib/broccoli/ember-app' {
   }
 }
 
+declare module 'ember-cli/lib/broccoli/ember-addon' {
+  export default class EmberAddon {
+    constructor(...optLists: any[]);
+  }
+}
+
 declare module 'ember-cli/lib/models/project' {
   export default class Project {
     constructor(root: string, pkg: any, ui: any, cli: any);

@@ -17,6 +17,19 @@ module.exports = function(defaults) {
 `;
 }
 
+function addonBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
+  return `
+const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+module.exports = function(defaults) {
+  let app = new EmberAddon(defaults, ${JSON.stringify(emberAppOptions, null, 2)});
+  if (process.env.CLASSIC) {
+    return app.toTree();
+  }
+const Webpack = require('@embroider/webpack').Webpack;
+return require('@embroider/compat').compatBuild(app, Webpack, ${JSON.stringify(embroiderOptions)});
+};`;
+}
+
 function addonIndexFile(content: string) {
   return `
 module.exports = {
@@ -46,6 +59,12 @@ module.exports = function(environment) {
   return ENV;
 };
 `;
+}
+
+function addonEnvironmentFile() {
+  return `module.exports = function(/* environment, appConfig */) {
+    return { };
+  };`;
 }
 
 function indexFile(appName: string) {
@@ -99,6 +118,12 @@ export default App;
 
 export class Project extends FixturifyProject {
   private packageLinks: Map<string, string> = new Map();
+  private devPackageLinks: Set<string> = new Set();
+
+  linkDevPackage(name: string, target?: string) {
+    this.devPackageLinks.add(name);
+    this.linkPackage(name, target);
+  }
 
   linkPackage(name: string, target?: string) {
     if (!target) {
@@ -135,7 +160,11 @@ export class Project extends FixturifyProject {
     if (!key && this.packageLinks.size > 0) {
       let pkg = JSON.parse((result as any)[this.name]['package.json']);
       for (let [name] of this.packageLinks) {
-        pkg.dependencies[name] = '*';
+        if (this.devPackageLinks.has(name)) {
+          pkg.devDependencies[name] = '*';
+        } else {
+          pkg.dependencies[name] = '*';
+        }
       }
       (result as any)[this.name]['package.json'] = JSON.stringify(pkg, null, 2);
     }
@@ -169,6 +198,49 @@ export function emberProject(emberAppOptions: any = {}, embroiderOptions: Option
   app.linkPackage('@embroider/compat');
   app.linkPackage('@embroider/core');
   app.linkPackage('@embroider/webpack');
+  return app;
+}
+
+export function addonProject(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
+  let name = 'my-addon';
+  let app = new Project(name);
+  app.files = {
+    'index.js': `module.exports = { name: "${name}" };`,
+    'ember-cli-build.js': addonBuildFile(emberAppOptions, embroiderOptions),
+    config: {
+      'environment.js': addonEnvironmentFile(),
+    },
+    app: {},
+    addon: {},
+    tests: {
+      dummy: {
+        app: {
+          'app.js': appJSFile(),
+          'index.html': indexFile('dummy'),
+          styles: {
+            'app.css': '',
+          },
+        },
+        config: {
+          'environment.js': environmentFile('dummy'),
+        },
+      },
+    },
+  };
+  app.linkDevPackage('ember-cli');
+  app.linkDevPackage('loader.js');
+  app.linkPackage('ember-cli-htmlbars');
+  app.linkPackage('ember-cli-babel');
+  app.linkDevPackage('ember-source');
+  app.linkDevPackage('ember-resolver');
+  app.linkDevPackage('@embroider/compat');
+  app.linkDevPackage('@embroider/core');
+  app.linkDevPackage('@embroider/webpack');
+
+  app.pkg.keywords = ['ember-addon'];
+  app.pkg['ember-addon'] = {
+    configPath: 'tests/dummy/config',
+  };
   return app;
 }
 

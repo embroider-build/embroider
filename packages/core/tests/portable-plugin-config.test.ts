@@ -1,4 +1,6 @@
 import PortableBabelConfig from '../src/portable-babel-config';
+import { protocol } from '../src/portable-plugin-config';
+
 import { join } from 'path';
 
 function resolvableNames(...names: string[]) {
@@ -24,7 +26,7 @@ function runParallelSafe(config: PortableBabelConfig): any {
   if (!config.isParallelSafe) {
     throw new Error(`not parallel safe`);
   }
-  delete (global as any).__embroider_normalize_plugin_values__;
+  delete (global as any)[protocol];
   return run(config);
 }
 

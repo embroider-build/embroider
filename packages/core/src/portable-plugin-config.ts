@@ -3,7 +3,7 @@ import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
 
-const protocol = '__embroider_portable_plugin_values__';
+export const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
 
 const template = compile(`

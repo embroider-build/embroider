@@ -1,31 +1,27 @@
-@embroider/router
-==============================================================================
+# @embroider/router
 
-[Short description of the addon.]
+A tiny extension to the stock Ember Router that detects the presence
+of lazy route bundles and loads them when needed.
 
+## Compatibility
 
-Compatibility
-------------------------------------------------------------------------------
+To get code-splitting, your app must build with Embroider. It's safe to use
+this router in apps that aren't building with Embroider, but it won't do
+anything.
 
-* Ember.js v2.18 or above
-* Ember CLI v2.13 or above
-
-
-Installation
-------------------------------------------------------------------------------
+## Installation
 
 ```
 ember install @embroider/router
 ```
 
+In your `router.js` file, import our router instead of the stock one:
 
-Usage
-------------------------------------------------------------------------------
+```diff
+-import EmberRouter from '@ember/routing/router';
++import EmberRouter from '@embroider/router';
+```
 
-[Longer description of how to use the addon in apps.]
-
-
-License
-------------------------------------------------------------------------------
+## License
 
 This project is licensed under the [MIT License](LICENSE.md).

@@ -19,8 +19,10 @@ export default interface Options {
   // Enabling this is a prerequisite for route splitting.
   staticComponents?: boolean;
 
-  // Any route names that match these patterns will be split out of the main
-  // bundle and loaded on demand.
+  // Enables per-route code splitting. Any route names that match these patterns
+  // will be split out of the initial app payload. If you use this, you must
+  // also add @embroider/router to your app. See [@embroider/router's
+  // README](https://github.com/embroider-build/embroider/blob/master/packages/router/README.md)
   splitAtRoutes?: (RegExp | string)[];
 }
 

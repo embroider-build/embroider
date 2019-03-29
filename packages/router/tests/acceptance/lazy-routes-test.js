@@ -59,20 +59,11 @@ module('Acceptance | lazy routes', function(hooks) {
   });
 
   test('can enter a lazy route', async function(assert) {
-    // TODO: next we'll make this route loading automatic
-    /* global _embroiderRoute_ */
-    if (!ENV.isClassic) {
-      await _embroiderRoute_('split-me');
-    }
     await visit('/split-me');
     assert.ok(document.querySelector('[data-test-split-me-index]'), 'split-me/index rendered');
   });
 
   test('can enter a child of a lazy route', async function(assert) {
-    /* global _embroiderRoute_ */
-    if (!ENV.isClassic) {
-      await _embroiderRoute_('split-me.child');
-    }
     await visit('/split-me/child');
     assert.ok(document.querySelector('[data-test-used-in-child]'), 'split-me/child rendered');
   });

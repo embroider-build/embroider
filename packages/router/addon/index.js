@@ -1,67 +1,64 @@
-import EmberRouter from '@ember/routing/router';
-import { getOwner } from '@ember/application';
-
 /*
-  This code is adapted from ember-engines/addon/-private/router-ext.js. Some of
-  the comments on compatibility are taken verbtaim from there.
+  This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
-
-// This needed because we need to infer the setup of the router.js Prior to
-// https://github.com/emberjs/ember.js/pull/16974 we used to call
-// `_getHandlerFunction` to get the closed over function to resolve a name to a
-// handler. PR#16974 removed this private method.
+import EmberRouter from '@ember/routing/router';
 let newSetup = true;
 
+function lazyBundle(routeName) {
+  if (!window._embroiderRouteBundles_) {
+    return false;
+  }
+  return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+}
+
 export default EmberRouter.extend({
-  // Handle the case where somebody tries to load query params for a route that
-  // we've never entered or loaded yet.
+  // This is necessary in order to prevent the premature loading of lazy routes
+  // when we are merely trying to render a link-to that points at them.
+  // Unfortunately the stock query parameter behavior pulls on routes just to
+  // check what their previous QP values were.
   _getQPMeta(handlerInfo) {
-    let routeName = handlerInfo.name;
-    let isWithinEngine = this._engineInfoByRoute[routeName];
-    let hasBeenLoaded = this._seenHandlers[routeName];
-    if (isWithinEngine && !hasBeenLoaded) {
+    let bundle = lazyBundle(handlerInfo.name);
+    if (bundle && !bundle.loaded) {
       return undefined;
     }
     return this._super(...arguments);
   },
 
+  // On older versions of Ember, this is a framework method that we're
+  // overriding to provide our own handlerResolver.
   _getHandlerFunction() {
     newSetup = false;
     return this._handlerResolver();
   },
 
+  // On newer versions of Ember, this is the framework method that we're
+  // overriding to provide our own handlerResolver.
   setupRouter() {
     let isSetup = this._super(...arguments);
     if (newSetup) {
-      // This method used to be called `getHandler` and it is going to be called `getRoute`.
+      // Different versions of routerMicrolib use the names `getRoute` vs
+      // `getHandler`.
       if (this._routerMicrolib.getRoute !== undefined) {
-        this._routerMicrolib.getRoute = this._handlerResolver();
+        this._routerMicrolib.getRoute = this._handlerResolver(this._routerMicrolib.getRoute.bind(this._routerMicrolib));
       } else if (this._routerMicrolib.getHandler !== undefined) {
-        this._routerMicrolib.getHandler = this._handlerResolver();
+        this._routerMicrolib.getHandler = this._handlerResolver(
+          this._routerMicrolib.getHandler.bind(this._routerMicrolib)
+        );
       }
     }
     return isSetup;
   },
 
-  _handlerResolver() {
-    let seen = this._seenHandlers;
-    let owner = getOwner(this);
+  _handlerResolver(original) {
     return name => {
-      let engineInfo = this._engineInfoByRoute[name];
-      if (engineInfo) {
-        let engineInstance = this._getEngineInstance(engineInfo);
-        if (engineInstance) {
-          return this._getHandlerForEngine(seen, name, engineInfo.localFullName, engineInstance);
-        } else {
-          return this._loadEngineInstance(engineInfo).then(instance => {
-            return this._getHandlerForEngine(seen, name, engineInfo.localFullName, instance);
-          });
-        }
+      let bundle = lazyBundle(name);
+      if (!bundle || bundle.loaded) {
+        return original(name);
       }
-
-      // If we don't cross into an Engine, then the routeName and localRouteName
-      // are the same.
-      return this._internalGetHandler(seen, name, name, owner);
+      return bundle.load().then(() => {
+        bundle.loaded = true;
+        return original(name);
+      });
     };
   },
 });

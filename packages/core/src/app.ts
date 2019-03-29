@@ -896,18 +896,16 @@ let d = w.define;
 {{/each}}
 
 {{#if lazyRoutes}}
-  w._embroiderRoute_ = function(name) {
-    switch (name) {
-      {{#each lazyRoutes as |route|}}
-      {{#each route.names as |name|}}
-      case "{{js-string-escape name}}":
-      {{/each}}
+  w._embroiderRouteBundles_ = [
+    {{#each lazyRoutes as |route|}}
+    {
+      names: {{{json-stringify route.names}}},
+      load: function() {
         return import("{{js-string-escape route.path}}");
-      {{/each}}
-      default:
-        throw new Error("no such dynamic route " + name);
-    }
-  }
+      }
+    },
+    {{/each}}
+  ]
 {{/if}}
 
 {{#if autoRun ~}}

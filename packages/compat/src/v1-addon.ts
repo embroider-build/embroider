@@ -3,7 +3,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync } from 'fs-extra';
+import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import DependencyAnalyzer from './dependency-analyzer';
@@ -439,11 +439,16 @@ export default class V1Addon implements V1Package {
   private buildAddonStyles(built: IntermediateBuild) {
     let addonStylesTree = this.addonStylesTree();
     if (addonStylesTree) {
-      built.trees.push(addonStylesTree);
-      if (!built.staticMeta['implicit-styles']) {
-        built.staticMeta['implicit-styles'] = [];
-      }
-      built.staticMeta['implicit-styles'].push(`./${this.name}.css`);
+      let discoveredFiles: string[] = [];
+      let tree = new AddToTree(addonStylesTree, outputPath => {
+        discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
+      });
+      built.trees.push(tree);
+      built.dynamicMeta.push(() => {
+        return {
+          'implicit-styles': discoveredFiles.map(f => `./${f}`),
+        };
+      });
     }
   }
 

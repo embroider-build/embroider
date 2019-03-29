@@ -645,7 +645,6 @@ export class AppBuilder<TreeNames> {
   private splitRoute(
     routeName: string,
     files: RouteFiles,
-    addToApp: (filename: string) => void,
     addToParent: (routeName: string, filename: string) => void,
     addLazyBundle: (routeNames: string[], files: string[]) => void
   ) {
@@ -663,9 +662,7 @@ export class AppBuilder<TreeNames> {
     }
 
     if (files.controller) {
-      if (!this.options.splitRouteClasses) {
-        addToApp(files.controller);
-      } else if (shouldSplit) {
+      if (shouldSplit) {
         ownFiles.push(files.controller);
         ownNames.add(routeName);
       } else {
@@ -674,9 +671,7 @@ export class AppBuilder<TreeNames> {
     }
 
     if (files.route) {
-      if (!this.options.splitRouteClasses) {
-        addToApp(files.route);
-      } else if (shouldSplit) {
+      if (shouldSplit) {
         ownFiles.push(files.route);
         ownNames.add(routeName);
       } else {
@@ -688,7 +683,6 @@ export class AppBuilder<TreeNames> {
       this.splitRoute(
         `${routeName}.${childName}`,
         childFiles,
-        addToApp,
 
         (childRouteName: string, childFile: string) => {
           // this is our child calling "addToParent"
@@ -731,9 +725,6 @@ export class AppBuilder<TreeNames> {
       this.splitRoute(
         routeName,
         routeFiles,
-        (appFile: string) => {
-          requiredAppFiles.push([appFile]);
-        },
         (_: string, filename: string) => {
           requiredAppFiles.push([filename]);
         },

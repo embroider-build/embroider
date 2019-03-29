@@ -1,5 +1,5 @@
 import { join, dirname, resolve } from 'path';
-import { ensureSymlinkSync, readdir, readlink, realpath } from 'fs-extra';
+import { ensureSymlinkSync, readdir, readlink, realpath, lstat } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros';
@@ -87,7 +87,7 @@ export class MovedPackageCache extends PackageCache {
     let roots = this.originalRoots();
     await Promise.all(
       [...this.candidateDirs()].map(async path => {
-        let links = await symlinksInDir(path);
+        let links = await symlinksInNodeModules(path);
         for (let { source, target } of links) {
           let realTarget = await realpath(resolve(dirname(source), target));
           let pkg = roots.get(realTarget);
@@ -128,30 +128,43 @@ export class MovedPackageCache extends PackageCache {
   }
 }
 
-async function symlinksInDir(path: string): Promise<{ source: string; target: string }[]> {
-  let names;
+async function maybeReaddir(path: string) {
   try {
-    names = await readdir(path);
+    return await readdir(path);
   } catch (err) {
     if (err.code !== 'ENOTDIR' && err.code !== 'ENOENT') {
       throw err;
     }
     return [];
   }
-  let results = await Promise.all(
+}
+
+async function symlinksInNodeModules(path: string): Promise<{ source: string; target: string }[]> {
+  let results: { source: string; target: string }[] = [];
+  let names = await maybeReaddir(path);
+  await Promise.all(
     names.map(async name => {
       let source = join(path, name);
-      try {
+      let stats = await lstat(source);
+      if (stats.isSymbolicLink()) {
         let target = await readlink(source);
-        return { source, target };
-      } catch (err) {
-        if (err.code !== 'EINVAL') {
-          throw err;
-        }
+        results.push({ source, target });
+      } else if (stats.isDirectory() && name.startsWith('@')) {
+        let innerNames = await maybeReaddir(source);
+        await Promise.all(
+          innerNames.map(async innerName => {
+            let innerSource = join(source, innerName);
+            let innerStats = await lstat(innerSource);
+            if (innerStats.isSymbolicLink()) {
+              let target = await readlink(innerSource);
+              results.push({ source: innerSource, target });
+            }
+          })
+        );
       }
     })
   );
-  return results.filter(Boolean) as { source: string; target: string }[];
+  return results;
 }
 
 function pathSegments(filename: string) {

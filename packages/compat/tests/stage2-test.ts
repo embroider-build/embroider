@@ -53,6 +53,7 @@ QUnit.module('stage2 build', function() {
             });
           `,
         },
+        'synthetic-import-1.js': '',
         templates: {
           components: {
             'hello-world.hbs': `
@@ -89,13 +90,13 @@ QUnit.module('stage2 build', function() {
             },
             addonModules: {
               'components/hello-world.js': {
-                dependsOnModules: ['./synthetic-import-1'],
+                dependsOnModules: ['../synthetic-import-1'],
                 dependsOnComponents: ['{{second-choice}}'],
               },
             },
             appModules: {
               'components/hello-world.js': {
-                dependsOnModules: ['./synthetic-import-2'],
+                dependsOnModules: ['my-addon/synthetic-import-1'],
               },
             },
           },
@@ -161,16 +162,16 @@ QUnit.module('stage2 build', function() {
 
     test('addon/hello-world.js', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js').transform(transpile);
-      assertFile.matches(/import ["']\.\/synthetic-import-1/);
-      let pattern = `import a0 from ["']${assert.basePath}\/templates\/components\/second-choice\.hbs["']`;
-      assertFile.matches(new RegExp(pattern));
-      pattern = `window\.define\("my-app\/templates\/components\/second-choice"`;
-      assertFile.matches(new RegExp(/window\.define\(["']my-app\/templates\/components\/second-choice["']/));
+      assertFile.matches(/import a. from ["']\.\.\/synthetic-import-1/);
+      assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
+      assertFile.matches(/import a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
+      assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
     });
 
     test('app/hello-world.js', function(assert) {
       let assertFile = assert.file('./components/hello-world.js').transform(transpile);
-      assertFile.matches(/import ["']\.\/synthetic-import-2/);
+      assertFile.matches(/import a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
+      assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
     });
   });
 });

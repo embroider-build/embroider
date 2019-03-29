@@ -1,6 +1,6 @@
 import { Package } from '@embroider/core';
 import { satisfies } from 'semver';
-import CompatResolver from './resolver';
+import CompatResolver, { explicitRelative } from './resolver';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -169,17 +169,25 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
 }
 
 export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
-  let output: { absPath: string; target: string; runtimeName?: string }[] = [];
+  let output: { absPath: string; target: string; runtimeName: string }[] = [];
   if (moduleRules.dependsOnModules) {
-    for (let target of moduleRules.dependsOnModules) {
-      output.push({ absPath, target });
+    for (let path of moduleRules.dependsOnModules) {
+      let found = resolver.resolveImport(path, absPath);
+      if (!found) {
+        throw new Error(`can't locate ${path} referred to in module rules:${JSON.stringify(moduleRules, null, 2)}`);
+      }
+      output.push({
+        absPath,
+        target: explicitRelative(absPath, found.absPath),
+        runtimeName: found.runtimeName,
+      });
     }
   }
   if (moduleRules.dependsOnComponents) {
     for (let snippet of moduleRules.dependsOnComponents) {
       let found = resolver.resolveComponentSnippet(snippet, moduleRules);
       for (let { absPath: target, runtimeName } of found.modules) {
-        output.push({ absPath, target, runtimeName });
+        output.push({ absPath, target: explicitRelative(absPath, target), runtimeName });
       }
     }
   }

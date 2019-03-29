@@ -1,4 +1,4 @@
-import { Resolver, warn, TemplateCompiler } from '@embroider/core';
+import { Resolver, warn, TemplateCompiler, PackageCache } from '@embroider/core';
 import {
   ComponentRules,
   PackageRules,
@@ -14,6 +14,7 @@ import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
 import { Memoize } from 'typescript-memoize';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import resolve from 'resolve';
 
 type ResolutionResult =
   | {
@@ -255,6 +256,23 @@ export default class CompatResolver implements Resolver {
     return [...flatDeps.values()];
   }
 
+  resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
+    let absPath;
+    try {
+      absPath = resolve.sync(path, { basedir: dirname(from) });
+    } catch (err) {
+      return;
+    }
+    let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
+    if (pkg) {
+      let runtimeName = join(pkg.name, relative(pkg.root, absPath)).replace(/\.js$/, '');
+      return { runtimeName, absPath };
+    } else if (absPath.startsWith(this.root)) {
+      let runtimeName = join(this.modulePrefix, relative(this.root, absPath)).replace(/\.js$/, '');
+      return { runtimeName, absPath };
+    }
+  }
+
   private tryHelper(path: string, from: string): Resolution | null {
     let absPath = join(this.root, 'helpers', path) + '.js';
     if (pathExistsSync(absPath)) {
@@ -452,7 +470,7 @@ export default class CompatResolver implements Resolver {
 // has a different meaning than
 //     import "local/thing"
 //
-function explicitRelative(fromFile: string, toFile: string) {
+export function explicitRelative(fromFile: string, toFile: string) {
   let result = relative(dirname(fromFile), toFile);
   if (!result.startsWith('/') && !result.startsWith('.')) {
     result = './' + result;

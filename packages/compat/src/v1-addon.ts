@@ -24,7 +24,6 @@ import AddToTree from './add-to-tree';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
-import cloneDeep from 'lodash/cloneDeep';
 import V1App from './v1-app';
 
 const stockTreeNames = Object.freeze([
@@ -159,9 +158,20 @@ export default class V1Addon implements V1Package {
       // to modify the addon's babel config we're accidentally modifying the
       // app's too.
       //
-      // So here we do cloning to ensure that we can modify the babel config
-      // without altering anybody else.
-      this.addonInstance.options = cloneDeep(this.addonInstance.options);
+      // So here we do copying to ensure that we can modify the babel config
+      // without altering anybody else. We're not doing cloneDeep because that
+      // pulls on our lazy MacrosConfig if it appears in any babel configs here,
+      // whereas we want to leave it unevaluated until babel actually uses it.
+      let options = (this.addonInstance.options = Object.assign({}, this.addonInstance.options));
+      if (options.babel) {
+        options.babel = Object.assign({}, options.babel);
+        if (options.babel.plugins) {
+          options.babel.plugins = options.babel.plugins.slice();
+        }
+      }
+      if (options['ember-cli-babel']) {
+        options['ember-cli-babel'] = Object.assign({}, options['ember-cli-babel']);
+      }
     }
     return this.addonInstance.options;
   }

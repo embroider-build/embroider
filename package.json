@@ -9,7 +9,7 @@
     "compile": "tsc",
     "lint": "eslint . --ext=js,ts --cache",
     "clean": "git clean -x -f",
-    "node-test": "qunit packages/*/tests --require ./test-packages/support/qunit-jest-shim.js",
+    "node-test": "qunit packages/compat/tests packages/core/tests packages/macros/tests packages/webpack/tests --require ./test-packages/support/qunit-jest-shim.js",
     "test": "jest"
   },
   "devDependencies": {

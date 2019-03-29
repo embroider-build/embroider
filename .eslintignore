@@ -1,5 +1,11 @@
-/packages/**/*.js
-/packages/**/*.d.ts
+/packages/core/**/*.js
+/packages/core/**/*.d.ts
+/packages/compat/**/*.js
+/packages/compat/**/*.d.ts
+/packages/macros/**/*.js
+/packages/macros/**/*.d.ts
+/packages/webpack/**/*.js
+/packages/webpack/**/*.d.ts
 /test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 
@@ -8,6 +14,8 @@
 /vendor/
 
 # compiled output
+/packages/*/dist/
+/packages/*/tmp/
 /test-packages/*/dist/
 /test-packages/*/tmp/
 

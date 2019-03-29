@@ -98,6 +98,9 @@ export default class MacrosConfig {
         }
         userConfigs[pkgRoot] = combined;
       }
+      for (let [oldPath, newPath] of this.moves) {
+        userConfigs[newPath] = userConfigs[oldPath];
+      }
       this.cachedUserConfigs = userConfigs;
     }
     return this.cachedUserConfigs;
@@ -156,11 +159,13 @@ export default class MacrosConfig {
   // this exists because @embroider/compat rewrites and moves v1 addons, and
   // their macro configs need to follow them to their new homes.
   packageMoved(oldPath: string, newPath: string) {
-    let config = this.userConfigs[oldPath];
-    if (config) {
-      this.userConfigs[newPath] = config;
+    if (this.cachedUserConfigs) {
+      throw new Error(`attempted to call packageMoved after we have already emitted our config`);
     }
+    this.moves.set(oldPath, newPath);
   }
+
+  private moves: Map<string, string> = new Map();
 
   getConfig(fromPath: string, packageName: string) {
     return this.userConfigs[this.resolvePackage(fromPath, packageName).root];

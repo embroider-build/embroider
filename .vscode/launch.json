@@ -10,7 +10,12 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
       "cwd": "${workspaceFolder}",
-      "args": ["packages/compat/tests", "packages/core/tests", "packages/macros/tests", "--filter", "addon dummy app"]
+      "args": [
+        "packages/compat/tests",
+        "packages/core/tests",
+        "packages/macros/tests"
+        //"--filter", "acceptsComponentArguments on mustache with component subexpression"
+      ]
     },
     {
       "type": "node",
@@ -54,6 +59,19 @@
       "name": "Build static-app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/static-app",
+      "args": ["build"],
+      "env": {
+        "JOBS": "1"
+        //"CLASSIC": "true",
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build router dummy app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/packages/router",
       "args": ["build"],
       "env": {
         "JOBS": "1"

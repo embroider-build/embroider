@@ -11,13 +11,14 @@ import DependencyAnalyzer from './dependency-analyzer';
 import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
-import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, readdirSync } from 'fs-extra';
+import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
+import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
+import ExtendedPackage from './extended-package';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -32,7 +33,21 @@ export default class V1App implements V1Package {
     }
   }
 
-  protected constructor(protected app: any, private packageCache: PackageCache) {}
+  protected constructor(protected app: any, protected packageCache: PackageCache) {
+    this.extendPackage();
+  }
+
+  protected extendPackage() {
+    let meta = this.app.project.pkg['ember-addon'];
+    if (meta && meta.paths) {
+      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
+      this.packageCache.overridePackage(extendedPackage);
+      for (let addon of inRepoAddons) {
+        this.packageCache.overrideResolution(this.app.project.pkg.name, addon.name, addon);
+      }
+    }
+  }
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
@@ -75,6 +90,17 @@ export default class V1App implements V1Package {
 
   private get appUtils() {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
+  }
+
+  // these are packages that we depend on that aren't resolvable via normal
+  // node_modules rules. In-repo addons are one example. Another example is the
+  // way an addon's dummy app implicitly depends on the addon (see V1DummyApp).
+  nonResolvableDependencies(): Package[] {
+    let meta = this.app.project.pkg['ember-addon'];
+    if (meta && meta.paths) {
+      return meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+    }
+    return [];
   }
 
   @Memoize()
@@ -350,8 +376,11 @@ export default class V1App implements V1Package {
         version: 2,
         'public-assets': {},
       };
-      for (let file of readdirSync(join(outputPath, 'assets'))) {
-        addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+      let assetPath = join(outputPath, 'assets');
+      if (pathExistsSync(assetPath)) {
+        for (let file of readdirSync(assetPath)) {
+          addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+        }
       }
       let meta = {
         name: '@embroider/synthesized-styles',
@@ -526,12 +555,13 @@ export default class V1App implements V1Package {
 }
 
 class V1DummyApp extends V1App {
-  constructor(app: any, packageCache: PackageCache) {
-    super(app, packageCache);
-    let owningAddon = packageCache.getAddon(this.app.project.root);
-    let dummyPackage = new DummyPackage(this.root, owningAddon, packageCache);
-    packageCache.overridePackage(dummyPackage);
-    packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, owningAddon);
+  private owningAddon!: Package;
+
+  extendPackage() {
+    this.owningAddon = this.packageCache.getAddon(this.app.project.root);
+    let dummyPackage = new DummyPackage(this.root, this.owningAddon, this.packageCache);
+    this.packageCache.overridePackage(dummyPackage);
+    this.packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, this.owningAddon);
   }
 
   get name(): string {
@@ -542,6 +572,12 @@ class V1DummyApp extends V1App {
   get root(): string {
     // this is the Known Hack for finding the true root of the dummy app.
     return join(this.app.project.configPath(), '..', '..');
+  }
+
+  nonResolvableDependencies() {
+    let deps = super.nonResolvableDependencies();
+    deps.push(this.owningAddon);
+    return deps;
   }
 }
 

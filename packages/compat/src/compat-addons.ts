@@ -1,5 +1,5 @@
 import { Tree } from 'broccoli-plugin';
-import { join, relative } from 'path';
+import { join, relative, dirname } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -15,6 +15,7 @@ export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
+  private nonResolvableDeps: Package[];
   readonly inputPath: string;
   readonly tree: Tree;
 
@@ -35,6 +36,7 @@ export default class CompatAddons implements Stage {
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
     let { synthVendor, synthStyles } = this.getSyntheticPackages(v1Cache.app, movedAddons);
+    this.nonResolvableDeps = v1Cache.app.nonResolvableDependencies();
     this.tree = new WaitForTrees(
       { movedAddons, synthVendor, synthStyles },
       '@embroider/compat/addons',
@@ -91,8 +93,21 @@ export default class CompatAddons implements Stage {
     copySync(synthStyles, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-styles'), {
       dereference: true,
     });
+    this.handleNonResolvableDeps();
     this.didBuild = true;
     this.deferReady.resolve();
+  }
+
+  private handleNonResolvableDeps() {
+    for (let dep of this.nonResolvableDeps) {
+      let moved = this.packageCache.moved.get(dep);
+      if (moved) {
+        dep = moved;
+      }
+      let target = join(this.appDestDir, 'node_modules', dep.name);
+      ensureDirSync(dirname(target));
+      ensureSymlinkSync(dep.root, target, 'dir');
+    }
   }
 
   private getSyntheticPackages(v1App: V1App, movedAddons: Tree[]): { synthVendor: Tree; synthStyles: Tree } {

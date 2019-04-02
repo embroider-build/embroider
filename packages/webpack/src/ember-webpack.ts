@@ -305,10 +305,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       return true;
     }
 
-    // Lastly, use babel on ember addons, but not other arbitrary libraries. A
-    // lot of them won't appreciate running through our AMD plugin, for example.
-    // If you want to transpile some of them, you should make a different rule
-    // from your own extension to the webpack config.
+    // Lastly, use babel on ember addons, but not other arbitrary libraries.
+    // This is more conservative and closer to today's ember-cli behavior,
+    // although eventually we are likely to want an option to transpile
+    // everything.
     return owner.packageJSON.keywords && owner.packageJSON.keywords.includes('ember-addon');
   }
 

@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## v0.3.1
+
+- BUGFIX: addons with CSS preprocessors would result in missing implicit-styles dependency errors
+
 ## v0.3.0
 
 - route-based code splitting

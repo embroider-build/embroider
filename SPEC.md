@@ -10,7 +10,7 @@ The benefits to users for this RFC are:
 
 - faster builds and faster NPM installs
 - “zero-config import from NPM — both static and dynamic” as a first-class feature all apps and addons can rely on.
-- immediate tree-shaking of app- and addon-provided modules that are consumed directly via ECMA imports (for example, any ember-animated transition you don’t use in your app won’t get included in the build), with a smooth improvement path for steadily increasing the level of static analysis as other efforts like Module Unification become widespread.
+- immediate tree-shaking of app- and addon-provided modules that are consumed directly via ECMA imports (for example, any ember-animated transition you don’t use in your app won’t get included in the build), with a smooth improvement path for steadily increasing the level of static analysis as other efforts like templates imports land.
 - a more approachable build system that enables more people to contribute and better integration with other JS toolchains.
 
 # Key Ideas
@@ -68,16 +68,16 @@ and no `version` key (or version key less than 2) in **Ember package metadata**.
 
 ## Package Public API Overview
 
-The structure we are about to describe _is a publication format_. Not necessarily an authoring format. By separating the two, we make it much easier to evolve the authoring formats without breaking ecosystem-wide compatibility. The publication format is deliberately more explicit and less dynamic that what we would want for an authoring format.
+The structure we are about to describe _is a publication format_. Not necessarily an authoring format. By separating the two, we make it easier to evolve the authoring formats without breaking ecosystem-wide compatibility. The publication format is deliberately more explicit and less dynamic that what we would want for an authoring format.
 
 First, here’s the list of things a v2 package can provide. More detail on each of these will follow:
 
 - **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.js/`)
-- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.js`). This stops being needed under Module Unification, but v2 package format is not tied to MU — you can adopt either first.
+- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.js`). This likely stops being needed when use with a template imports feature, but v2 package format is not dependent on that.
 - **CSS:** available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
-- **Assets**: any files that are neither JS nor CSS that should be available in the final built application directory (typical examples are images and fonts).
+- **Assets**: any files that should be available in the final built application directory (typical examples are images and fonts).
 - **Middleware**: express middleware that will mount automatically during development, unchanged from v1.
-- **P\*\***reprocessors\*\*: for producing JS, CSS, or HBS.
+- **Preprocessors**: for producing JS, CSS, or HBS.
 - **Commands**: commands that can be invoked from the command line. Unchanged from v1.
 - **Blueprints**: blueprints for generating new files from the command line. Unchanged from v1.
 - **ContentFor**: the ability to insert snippets into key places, like the document header.
@@ -99,9 +99,9 @@ Notice that a package’s **allowed dependencies** do not include the package it
 
 Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
 
-Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension (a v1-to-v2 compiler can adjust these specifiers automatically).
+Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension.
 
-Modules in **Own Javascript** are allowed to use `hbs` tagged template strings as provided by `ember-cli-htmlbars-inline-precompile`, and we promise to compile the templates at app build time (whether we upgrade `ember-cli-htmlbars-inline-precompile` to support this case or ship an alternative package is TBD).
+Modules in **Own Javascript** are allowed to use `hbs` tagged template strings as provided by `ember-cli-htmlbars-inline-precompile`, and we promise to compile the templates at app build time.
 
 You’re allowed to `import` from both other v2 Ember packages and non-Ember packages. The only difference is that v2 Ember packages necessarily agree to provide ES modules with ES latest features, and so we will always apply the application’s browser-specific Babel transpilation to them. Non-Ember packages can be authored in lots of ways, and we will use best-effort to consume them, including conversion of ESM or CJS to whatever format we’re using in the browser (currently AMD), but we won’t apply the app’s Babel transpilation to them, because it’s usually just unnecessary expense — the most common way to ship NPM packages outside of well-known build systems like ember-cli is to transpile before publication.
 
@@ -113,7 +113,7 @@ To provide **App Javascript**, a package includes the `app-js` key in **Ember pa
 
     "ember-addon": {
       "version": 2,
-      "app-js": "/app"
+      "app-js": "./app"
     }
 
 Like the **Own Javascript**, templates are in place in hbs format with any AST transforms already applied. Javascript is in ES modules, using only ES latest features. ECMA static and dynamic imports from any **allowed dependency** are supported.
@@ -128,10 +128,11 @@ If any of the **Own Javascript** or **App Javascript** modules depend on the pre
 
     import '../css/some-component.css';
 
-This is interpreted as a build-time directive that ensures that any build that includes the JS file also includes the CSS file.
+This is interpreted as a build-time directive that ensures that before the Javascript module is evaluated, the CSS file's contents will be present in the DOM.
 
-Q: Does this interfere with the ability to do CSS-in-JS style for people who like that?
-A: No, because that would be a preprocessing step before publication. It’s a choice of authoring format, just like TypeScript or SCSS.
+> Q: Does this interfere with the ability to do CSS-in-JS style for people who like that?
+
+> A: No, because that would be a preprocessing step before publication. It’s a choice of authoring format, just like TypeScript or SCSS.
 
 It is also possible for other packages (including the consuming application) to depend on a CSS file in any of its **allowed dependencies**, from either Javascript or CSS. From Javascript it looks like:
 
@@ -148,12 +149,14 @@ What about SCSS _et al_? You’re still free to use them as your authoring forma
 
 ## Assets
 
-To provide **Assets**, a package includes the `assets` key in **Ember package metadata**. It should point at a directory. All the files in that directory will be available in final build output. They will automatically be namespaced into a directory named after the package. So:
+To provide **Assets**, a package includes the `public-assets` key in **Ember package metadata**. It's a mapping from local paths to app-relative URLs that should be available in the final app.
 
     "name": "my-addon",
     "ember-addon": {
       "version": 2,
-      "assets": "/public"
+      "public-assets": {
+        "./public/image.png": "/my-addon/image.png"
+      }
     }
 
 with:

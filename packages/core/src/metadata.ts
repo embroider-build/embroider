@@ -4,36 +4,36 @@ type appRelativeURL = string;
 // This describes the ember-specific parts of package.json of an app after the
 // stage 2 build (the app that we hand off to a packager).
 export interface AppMeta {
-  version: 2;
   assets: filename[];
-  externals?: string[];
-  'template-compiler': {
-    filename: string;
-    isParallelSafe: boolean;
-  };
   babel: {
     filename: string;
     isParallelSafe: boolean;
     majorVersion: 6 | 7;
   };
+  externals?: string[];
   'root-url': string;
+  'template-compiler': {
+    filename: string;
+    isParallelSafe: boolean;
+  };
+  version: 2;
 }
 
 // This describes the ember-specific parts of package.json of a v2-formatted
 // addon.
 export interface AddonMeta {
-  version: 2;
+  'auto-upgraded'?: true;
+  'app-js'?: filename;
   externals?: string[];
+  'implicit-modules'?: string[];
+  'implicit-scripts'?: filename[];
+  'implicit-styles'?: filename[];
+  'implicit-test-modules'?: string[];
+  'implicit-test-scripts'?: filename[];
+  'implicit-test-styles'?: filename[];
   'public-assets'?: {
     [filename: string]: appRelativeURL;
   };
-  'implicit-scripts'?: filename[];
-  'implicit-test-scripts'?: filename[];
-  'implicit-styles'?: filename[];
-  'implicit-test-styles'?: filename[];
-  'implicit-modules'?: string[];
-  'implicit-test-modules'?: string[];
   'renamed-modules'?: { [fromName: string]: string };
-  'app-js'?: filename;
-  'auto-upgraded'?: true;
+  version: 2;
 }

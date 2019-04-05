@@ -92,3 +92,8 @@ License
 -------------------------------------------------------------------------------
 
 This project is licensed under the [MIT License](LICENSE).
+
+Acknowledgements
+--------------------------------------------------------------------------------
+
+Thanks to [Cardstack](https://github.com/cardstack) for sponsoring Embroider's development.

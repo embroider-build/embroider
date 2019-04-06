@@ -268,6 +268,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.oldPackage.htmlbarsPlugins;
   }
 
+  babelMajorVersion() {
+    return this.oldPackage.babelMajorVersion();
+  }
+
   babelConfig() {
     return this.oldPackage.babelConfig();
   }

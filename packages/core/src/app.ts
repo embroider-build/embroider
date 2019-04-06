@@ -85,6 +85,9 @@ export interface AppAdapter<TreeNames> {
   // yet, we will do that for you.
   babelConfig(): TransformOptions;
 
+  // the babel version that works with your babelConfig.
+  babelMajorVersion(): 6 | 7;
+
   // lets you add imports to javascript modules. We need this to implement
   // things like our addon compatibility rules for static components.
   extraImports(): { absPath: string; target: string; runtimeName?: string }[];
@@ -565,7 +568,7 @@ export class AppBuilder<TreeNames> {
       babel: {
         filename: '_babel_config_.js',
         isParallelSafe: babelConfig.isParallelSafe,
-        majorVersion: 6, // TODO
+        majorVersion: this.adapter.babelMajorVersion(),
       },
       'root-url': this.adapter.rootURL(),
     };

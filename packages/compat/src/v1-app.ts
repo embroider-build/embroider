@@ -239,7 +239,7 @@ export default class V1App implements V1Package {
   }
 
   @Memoize()
-  private babelMajorVersion(): 6 | 7 {
+  babelMajorVersion(): 6 | 7 {
     let babelAddon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-babel');
     if (babelAddon) {
       let major = Number(babelAddon.pkg.version.split('.')[0]);
@@ -256,17 +256,21 @@ export default class V1App implements V1Package {
   private debugMacrosPlugin() {
     let DebugMacros = require.resolve('babel-plugin-debug-macros');
     let isProduction = process.env.EMBER_ENV === 'production';
+    let isDebug = !isProduction;
     let options = {
-      envFlags: {
-        source: '@glimmer/env',
-        flags: { DEBUG: !isProduction, CI: !!process.env.CI },
-      },
+      flags: [
+        {
+          source: '@glimmer/env',
+          flags: { DEBUG: isDebug, CI: !!process.env.CI },
+        },
+      ],
 
       externalizeHelpers: {
         global: 'Ember',
       },
 
       debugTools: {
+        isDebug,
         source: '@ember/debug',
         assertPredicateIndex: 1,
       },

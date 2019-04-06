@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "babel-core": "^6.26.3",
     "babel-loader": "7"
   }
 }

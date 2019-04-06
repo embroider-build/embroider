@@ -222,7 +222,7 @@ export default class V1App implements V1Package {
       plugins,
       presets: [
         [
-          require.resolve('babel-preset-env'),
+          this.babelMajorVersion() === 6 ? require.resolve('babel-preset-env') : require.resolve('@babel/preset-env'),
           {
             targets: babelInstance._getTargets(),
             modules: false,

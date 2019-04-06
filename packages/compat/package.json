@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.4.3",
     "@babel/traverse": "^7.2.4",
     "@babel/types": "^7.3.2",
     "@embroider/macros": "0.3.1",

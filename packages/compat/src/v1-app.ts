@@ -184,6 +184,7 @@ export default class V1App implements V1Package {
     });
   }
 
+  @Memoize()
   babelConfig(): TransformOptions {
     let plugins = get(this.app.options, 'babel.plugins') as any[];
     if (!plugins) {
@@ -221,7 +222,7 @@ export default class V1App implements V1Package {
       plugins,
       presets: [
         [
-          require.resolve('babel-preset-env'),
+          this.babelMajorVersion() === 6 ? require.resolve('babel-preset-env') : require.resolve('@babel/preset-env'),
           {
             targets: babelInstance._getTargets(),
             modules: false,
@@ -237,20 +238,39 @@ export default class V1App implements V1Package {
     return config;
   }
 
+  @Memoize()
+  babelMajorVersion(): 6 | 7 {
+    let babelAddon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-babel');
+    if (babelAddon) {
+      let major = Number(babelAddon.pkg.version.split('.')[0]);
+      if (major !== 6 && major !== 7) {
+        throw new Error(`@embroider/compat only supports v1 addons that use babel 6 or 7`);
+      }
+      return major;
+    }
+    // if we didn't have our own babel plugin at all, it's safe to parse our
+    // code with 7.
+    return 7;
+  }
+
   private debugMacrosPlugin() {
     let DebugMacros = require.resolve('babel-plugin-debug-macros');
     let isProduction = process.env.EMBER_ENV === 'production';
+    let isDebug = !isProduction;
     let options = {
-      envFlags: {
-        source: '@glimmer/env',
-        flags: { DEBUG: !isProduction, CI: !!process.env.CI },
-      },
+      flags: [
+        {
+          source: '@glimmer/env',
+          flags: { DEBUG: isDebug, CI: !!process.env.CI },
+        },
+      ],
 
       externalizeHelpers: {
         global: 'Ember',
       },
 
       debugTools: {
+        isDebug,
         source: '@ember/debug',
         assertPredicateIndex: 1,
       },
@@ -501,12 +521,12 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let importParsers = [new ImportParser(appTree)];
+    let importParsers = [new ImportParser(appTree, this.babelMajorVersion(), this.babelConfig())];
     if (testsTree) {
-      importParsers.push(new ImportParser(testsTree));
+      importParsers.push(new ImportParser(testsTree, this.babelMajorVersion(), this.babelConfig()));
     }
     if (lintTree) {
-      importParsers.push(new ImportParser(lintTree));
+      importParsers.push(new ImportParser(lintTree, this.babelMajorVersion(), this.babelConfig()));
     }
     let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);

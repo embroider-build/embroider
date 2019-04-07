@@ -247,7 +247,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             use: [
               maybeThreadLoader(babel.isParallelSafe),
               {
-                loader: 'babel-loader', // todo use babel.version to ensure the correct loader
+                loader: babel.majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 options: Object.assign({}, require(join(this.pathToVanillaApp, babel.filename)), {
                   cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
@@ -279,7 +279,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
           'thread-loader': require.resolve('thread-loader'),
-          'babel-loader': require.resolve('babel-loader'),
+          'babel-loader-8': require.resolve('babel-loader'),
+          'babel-loader-7': require.resolve('@embroider/babel-loader-7'),
           'css-loader': require.resolve('css-loader'),
           'style-loader': require.resolve('style-loader'),
         },
@@ -524,7 +525,11 @@ const threadLoaderOptions = {
 };
 
 function warmUp() {
-  threadLoaderWarmup(threadLoaderOptions, [join(__dirname, './webpack-hbs-loader'), require.resolve('babel-loader')]);
+  threadLoaderWarmup(threadLoaderOptions, [
+    join(__dirname, './webpack-hbs-loader'),
+    require.resolve('babel-loader'),
+    require.resolve('@embroider/babel-loader-7'),
+  ]);
 }
 
 function maybeThreadLoader(isParallelSafe: boolean) {

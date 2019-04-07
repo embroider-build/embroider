@@ -3,11 +3,13 @@ import walkSync from 'walk-sync';
 import { unlinkSync, rmdirSync, mkdirSync, readFileSync, existsSync, mkdirpSync } from 'fs-extra';
 import FSTree from 'fs-tree-diff';
 import makeDebug from 'debug';
-import { Pipeline, File } from 'babel-core';
-import { parse } from 'babylon';
 import { sync as symlinkOrCopySync } from 'symlink-or-copy';
 import { join, dirname, extname } from 'path';
 import { isEqual, flatten } from 'lodash';
+import { TransformOptions } from '@babel/core';
+import { File } from '@babel/types';
+import assertNever from 'assert-never';
+import { Memoize } from 'typescript-memoize';
 
 const debug = makeDebug('embroider:import-parser');
 
@@ -23,16 +25,34 @@ export interface Import {
 */
 export default class ImportParser extends Plugin {
   private previousTree = new FSTree();
-  private parserOptions: any;
   private modules: Import[] | null = [];
   private paths: Map<string, Import[]> = new Map();
+  private parse: ((contents: string) => File) | undefined;
 
-  constructor(inputTree: Tree, private extensions = ['.js', '.hbs']) {
+  constructor(
+    inputTree: Tree,
+    private babelMajorVersion: 6 | 7,
+    private babelConfig: TransformOptions,
+    private extensions = ['.js', '.hbs']
+  ) {
     super([inputTree], {
       annotation: 'embroider:core:import-parser',
       persistentOutput: true,
     });
-    this.parserOptions = this.buildParserOptions();
+  }
+
+  @Memoize()
+  private async setupParser() {
+    switch (this.babelMajorVersion) {
+      case 6:
+        this.parse = await babel6Parser(this.babelConfig);
+        break;
+      case 7:
+        this.parse = await babel7Parser(this.babelConfig);
+        break;
+      default:
+        throw assertNever(this.babelMajorVersion);
+    }
   }
 
   get imports(): Import[] {
@@ -47,14 +67,8 @@ export default class ImportParser extends Plugin {
     return [...this.paths.keys()];
   }
 
-  private buildParserOptions() {
-    let babelOptions = {};
-    let p = new Pipeline();
-    let f = new File(babelOptions, p);
-    return f.parserOpts;
-  }
-
-  build() {
+  async build() {
+    await this.setupParser();
     this.getPatchset().forEach(([operation, relativePath]) => {
       let outputPath = join(this.outputPath, relativePath);
 
@@ -120,7 +134,8 @@ export default class ImportParser extends Plugin {
 
     let ast;
     try {
-      ast = parse(source, this.parserOptions);
+      // the "!" is safe because we called setupParser at the start of build()
+      ast = this.parse!(source);
     } catch (err) {
       if (err.name !== 'SyntaxError') {
         throw err;
@@ -210,4 +225,32 @@ class PrintableImports {
   toString() {
     return JSON.stringify(this.imports, null, 2);
   }
+}
+
+async function babel6Parser(babelOptions: unknown): Promise<(source: string) => File> {
+  let core = import('babel-core');
+  let babylon = import('babylon');
+
+  // missing upstream types (or we are using private API, because babel 6 didn't
+  // have a good way to construct a parser directly from the general babel
+  // options)
+  const { Pipeline, File } = (await core) as any;
+  const { parse } = await babylon;
+
+  let p = new Pipeline();
+  let f = new File(babelOptions, p);
+  let options = f.parserOpts;
+
+  return function(source) {
+    return (parse(source, options) as unknown) as File;
+  };
+}
+
+async function babel7Parser(babelOptions: TransformOptions): Promise<(source: string) => File> {
+  let core = import('@babel/core');
+
+  const { parseSync } = await core;
+  return function(source: string) {
+    return parseSync(source, babelOptions) as File;
+  };
 }

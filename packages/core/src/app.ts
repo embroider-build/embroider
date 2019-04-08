@@ -291,7 +291,13 @@ export class AppBuilder<TreeNames> {
 
     // Our stage3 code is always allowed to use dynamic import. We may emit it
     // ourself when splitting routes.
-    babel.plugins.push(require.resolve('babel-plugin-syntax-dynamic-import'));
+    babel.plugins.push(
+      require.resolve(
+        this.adapter.babelMajorVersion() === 6
+          ? 'babel-plugin-syntax-dynamic-import'
+          : '@babel/plugin-syntax-dynamic-import'
+      )
+    );
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(MacrosConfig.shared().babelPluginConfig());

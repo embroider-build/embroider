@@ -7,12 +7,20 @@ import {
   ExpressionStatement,
   stringLiteral,
   File,
+  Program,
+  functionExpression,
+  blockStatement,
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import { join } from 'path';
 import TemplateCompiler, { rehydrate } from './template-compiler';
 import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
+import { ResolvedDep } from './resolver';
+import { importDeclaration } from '@babel/types';
+import { importDefaultSpecifier } from '@babel/types';
+import { expressionStatement } from '@babel/types';
+import { returnStatement } from '@babel/types';
 
 // These are the known names that people are using to import the `hbs` macro
 // from. In theory the original plugin lets people customize these names, but
@@ -38,15 +46,26 @@ interface State {
       filename: string;
     };
   };
+  dependencies: Map<string, ResolvedDep>;
 }
 
 export default function inlineHBSTransform() {
   return {
     visitor: {
       Program: {
-        exit(path: NodePath, state: State) {
+        enter(_: NodePath, state: State) {
+          state.dependencies = new Map();
+        },
+        exit(path: NodePath<Program>, state: State) {
           if (state.opts.stage === 3) {
             pruneImports(path);
+          }
+          let counter = 0;
+          for (let dep of state.dependencies.values()) {
+            path.node.body.unshift(amdDefine(dep.runtimeName, counter));
+            path.node.body.unshift(
+              importDeclaration([importDefaultSpecifier(identifier(`a${counter++}`))], stringLiteral(dep.path))
+            );
           }
         },
       },
@@ -85,7 +104,10 @@ function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
     let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
     path.get('quasi').replaceWith(templateLiteral([templateElement({ raw: compiled, cooked: compiled })], []));
   } else {
-    let { compiled } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    let { compiled, dependencies } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    for (let dep of dependencies) {
+      state.dependencies.set(dep.runtimeName, dep);
+    }
     let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
     path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
   }
@@ -104,7 +126,10 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
     let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
     path.get('arguments')[0].replaceWith(stringLiteral(compiled));
   } else {
-    let { compiled } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    let { compiled, dependencies } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    for (let dep of dependencies) {
+      state.dependencies.set(dep.runtimeName, dep);
+    }
     let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
     path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
   }
@@ -136,4 +161,13 @@ function compiler(opts: State['opts']): TemplateCompiler {
     opts.templateCompiler = rehydrate(opts.templateCompiler);
   }
   return opts.templateCompiler as TemplateCompiler;
+}
+
+function amdDefine(runtimeName: string, importCounter: number) {
+  return expressionStatement(
+    callExpression(memberExpression(identifier('window'), identifier('define')), [
+      stringLiteral(runtimeName),
+      functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
+    ])
+  );
 }

@@ -7,6 +7,7 @@ import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, unsupported, debug, warn } from './messages';
+import absolutePackageName from './package-name';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -586,7 +587,8 @@ export class AppBuilder<TreeNames> {
         continue;
       }
       for (let name of addon.meta.externals) {
-        if (allAddonNames.has(name)) {
+        let pkgName = absolutePackageName(name);
+        if (pkgName && allAddonNames.has(pkgName)) {
           unsupported(`${addon.name} imports ${name} but does not directly depend on it.`);
         } else {
           externals.add(name);
@@ -595,7 +597,8 @@ export class AppBuilder<TreeNames> {
     }
 
     for (let name of this.adapter.externals()) {
-      if (allAddonNames.has(name)) {
+      let pkgName = absolutePackageName(name);
+      if (pkgName && allAddonNames.has(pkgName)) {
         unsupported(`your app imports ${name} but does not directly depend on it.`);
       } else {
         externals.add(name);

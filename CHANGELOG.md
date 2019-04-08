@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## v0.3.3
+
+- BUGFIX: lock our webpack version to workaround an upstream bug
+
 ## v0.3.2
 
 - BUGFIX: support static component & helper resolution inside inline hbs

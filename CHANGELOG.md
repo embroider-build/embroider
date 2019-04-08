@@ -1,5 +1,13 @@
 # Embroider Changelog
 
+## v0.3.2
+
+- BUGFIX: support static component & helper resolution inside inline hbs
+- BUGFIX: better compatibility with addons that depend on other addons implicitly
+- BUGFIX: move extraImports to very start of the module they're inside
+- BUGFIX: always use correct babel config and major version when parsing for imports
+- BUGFIX: always use correct babel major verison in stage3
+
 ## v0.3.1
 
 - BUGFIX: addons with CSS preprocessors would result in missing implicit-styles dependency errors

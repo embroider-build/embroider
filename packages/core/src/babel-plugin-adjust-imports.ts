@@ -135,12 +135,12 @@ function addExtraImports(path: NodePath<Program>, extraImports: Required<State['
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
       if (runtimeName) {
-        path.node.body.push(
-          importDeclaration([importDefaultSpecifier(identifier(`a${counter}`))], stringLiteral(target))
+        path.node.body.unshift(amdDefine(runtimeName, counter));
+        path.node.body.unshift(
+          importDeclaration([importDefaultSpecifier(identifier(`a${counter++}`))], stringLiteral(target))
         );
-        path.node.body.push(amdDefine(runtimeName, counter++));
       } else {
-        path.node.body.push(importDeclaration([], stringLiteral(target)));
+        path.node.body.unshift(importDeclaration([], stringLiteral(target)));
       }
     }
   }

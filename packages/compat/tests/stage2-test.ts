@@ -38,6 +38,15 @@ QUnit.module('stage2 build', function() {
         },
       };
 
+      (app.files.app as Project['files']).components = {
+        'uses-inline-template.js': `
+        import hbs from "htmlbars-inline-precompile";
+        export default Component.extend({
+          layout: hbs${'`'}{{first-choice}}${'`'}
+        })
+        `,
+      };
+
       let addon = addAddon(app, 'my-addon');
       addon.files.addon = {
         components: {
@@ -172,6 +181,12 @@ QUnit.module('stage2 build', function() {
       let assertFile = assert.file('./components/hello-world.js').transform(transpile);
       assertFile.matches(/import a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
+    });
+
+    test('uses-inline-template.js', function(assert) {
+      let assertFile = assert.file('./components/uses-inline-template.js').transform(transpile);
+      assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
+      assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
     });
   });
 });

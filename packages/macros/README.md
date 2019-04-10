@@ -29,7 +29,7 @@ This package works in both Embroider builds and normal ember-cli builds, so that
 
  - `getConfig(packageName)`: like `getOwnConfig`, but will retrieve the configuration that was sent to another package. We will resolve which one based on node_modules resolution rules from your package.
 
- - `dependencySatisfies(packagename, semverRange)`: a macro that compiles to a boolean literal. It will be true if the given package can be resolved (via normal node_modules resolution rules) and meets the stated semver requirement.
+ - `dependencySatisfies(packagename, semverRange)`: a macro that compiles to a boolean literal. It will be true if the given package can be resolved (via normal node_modules resolution rules) and meets the stated semver requirement. The package version will be `semver.coerce()`'d first, such that nonstandard versions like "3.9.0-beta.0" will appropriately satisfy constraints like "> 3.8".
 
     Assuming you have `ember-source` 3.9.0 available, this code:
 

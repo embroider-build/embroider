@@ -1,4 +1,4 @@
-import { satisfies } from 'semver';
+import { satisfies, coerce } from 'semver';
 import { PackageCache } from '@embroider/core';
 
 let packageCache = PackageCache.shared('embroider-stage3');
@@ -36,8 +36,14 @@ export default function dependencySatisfies(
   }
 
   if (pkg) {
-    return satisfies(pkg.version, range);
-  } else {
-    return false;
+    // we coerce here because we want versions like '3.9.0-beta.0' to satisfy
+    // constraints like '> 3.8'. The coerce method is pretty aggressive, but
+    // honestly if people areputting things into their package.json version that
+    // are going to coerce weirdly, that's on them.
+    let version = coerce(pkg.version);
+    if (version != null) {
+      return satisfies(version, range);
+    }
   }
+  return false;
 }

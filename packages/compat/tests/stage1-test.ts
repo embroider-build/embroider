@@ -40,6 +40,14 @@ QUnit.module('stage1 build', function() {
               extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
             });
           `,
+          'has-relative-template.js': `
+            import Component from '@ember/component';
+            import layout from './t';
+            export default Component.extend({
+              layout
+            });
+          `,
+          't.hbs': ``,
         },
         templates: {
           components: {
@@ -154,6 +162,11 @@ QUnit.module('stage1 build', function() {
         /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
         'template macros have not run'
       );
+    });
+
+    test.skip('component with relative import of arbitrarily placed template', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/components/has-relative-template.js');
+      assertFile.matches(`import layout from './t.hbs'`, 'arbitrary relative template gets hbs extension');
     });
 
     test('in-repo-addon is available', function(assert) {

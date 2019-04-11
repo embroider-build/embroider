@@ -273,14 +273,8 @@ export default class V1Addon implements V1Package {
     return this.addonInstance.name;
   }
 
-  // In an ideal world, there would be no options to this. We would just run
-  // every kind of tree through every kind of transpiler, and they could freely
-  // mix JS, CSS, and HBS. Unfortunately, some existing transpiler plugins like
-  // ember-cli-sass will blow up if they don't find some files.
-  private transpile(tree: Tree, { includeCSS } = { includeCSS: false }) {
-    if (includeCSS) {
-      tree = this.addonInstance.compileStyles(tree);
-    }
+  // applies preprocessors to JS and HBS
+  private transpile(tree: Tree) {
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
@@ -430,7 +424,7 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForAddonStyles')) {
       todo(`${this.name} may have customized the addon style tree`);
     } else if (this.hasStockTree('addon-styles')) {
-      return this.transpile(this.stockTree('addon-styles'), { includeCSS: true });
+      return this.addonInstance.compileStyles(this.stockTree('addon-styles'));
     }
   }
 

@@ -20,7 +20,7 @@ import { mergeWithAppend } from './merges';
 import { Package, PackageCache, AddonMeta, TemplateCompiler, debug } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
-import AddToTree from './add-to-tree';
+import ObserveTree from './observe-tree';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
@@ -461,7 +461,7 @@ export default class V1Addon implements V1Package {
     let addonStylesTree = this.addonStylesTree();
     if (addonStylesTree) {
       let discoveredFiles: string[] = [];
-      let tree = new AddToTree(addonStylesTree, outputPath => {
+      let tree = new ObserveTree(addonStylesTree, outputPath => {
         discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
       });
       built.trees.push(tree);
@@ -530,7 +530,7 @@ export default class V1Addon implements V1Package {
         return {};
       }
     });
-    return new AddToTree(tree, (outputPath: string) => {
+    return new ObserveTree(tree, (outputPath: string) => {
       dirExists = pathExistsSync(join(outputPath, appPublicationDir));
     });
   }
@@ -611,7 +611,7 @@ export default class V1Addon implements V1Package {
     }
     if (publicTree) {
       let publicAssets: { [filename: string]: string } = {};
-      publicTree = new AddToTree(publicTree, (outputPath: string) => {
+      publicTree = new ObserveTree(publicTree, (outputPath: string) => {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {

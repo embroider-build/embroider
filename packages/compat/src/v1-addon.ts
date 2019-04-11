@@ -294,8 +294,7 @@ export default class V1Addon implements V1Package {
     let version;
 
     if (emberCLIBabelInstance) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      version = require(join(emberCLIBabelInstance.root, 'package')).version;
+      version = emberCLIBabelInstance.pkg.version;
     }
 
     if (!packageOptions['ember-cli-babel']) {

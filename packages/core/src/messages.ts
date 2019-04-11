@@ -5,7 +5,7 @@ const todo = makeDebug('embroider:todo');
 const unsupported = makeDebug('embroider:unsupported');
 const debug = makeDebug('embroider:debug');
 
-function realWarn(message: string, ...params: any[]) {
+function realWarn(message: string, params: any[]) {
   if (hardFailMode > 0) {
     throw new Error(`Unexpected warning in test suite: ${format(message, ...params)}`);
   } else {
@@ -16,7 +16,7 @@ function realWarn(message: string, ...params: any[]) {
 let expectStack = [] as RegExp[];
 let handled: WeakSet<RegExp> = new WeakSet();
 
-function expectedWarn(message: string, ...params: any[]) {
+function expectedWarn(message: string, params: any[]) {
   let formattedMessage = format(message, ...params);
   for (let pattern of expectStack) {
     if (pattern.test(formattedMessage)) {
@@ -24,7 +24,7 @@ function expectedWarn(message: string, ...params: any[]) {
       return;
     }
   }
-  realWarn(message, ...params);
+  realWarn(message, params);
 }
 
 export function warn(message: string, ...params: any[]) {

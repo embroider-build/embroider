@@ -313,7 +313,7 @@ export default class V1Addon implements V1Package {
       disableEmberModulesAPIPolyfill: true,
     });
 
-    if (version && semver.satisfies(version, '^5')) {
+    if (version && semver.satisfies(semver.coerce(version) || version, '^5')) {
       unsupported(`${this.name} is using babel 5. Not installing our custom plugin.`);
       return;
     }

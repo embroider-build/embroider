@@ -25,6 +25,7 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
+import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -328,11 +329,12 @@ export default class V1Addon implements V1Package {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
 
+    let adjustImportsOptions: AdjustImportsOptions = {
+      ownName: this.name,
+    };
     babelConfig.plugins.push([
       require.resolve('@embroider/core/src/babel-plugin-adjust-imports'),
-      {
-        ownName: this.name,
-      },
+      adjustImportsOptions,
     ]);
   }
 

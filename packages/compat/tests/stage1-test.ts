@@ -62,6 +62,11 @@ QUnit.module('stage1 build', function() {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
         },
+        templates: {
+          components: {
+            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
+          },
+        },
       };
 
       // Our addon will use @embroider/sample-transforms as examples of custom
@@ -106,8 +111,14 @@ QUnit.module('stage1 build', function() {
       await builder.cleanup();
     });
 
-    test('component in app tree', function(assert) {
-      assert.file('node_modules/my-addon/_app_/components/hello-world.js').exists();
+    test('component in app tree retains own-name import', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/_app_/components/hello-world.js');
+      assertFile.matches(/export \{ default \} from ['"']my-addon\/components\/hello-world['"]/);
+    });
+
+    test('component in app tree gets explicit hbs import', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/_app_/templates/components/direct-template-reexport.js');
+      assertFile.matches(/export \{ default \} from ['"]my-addon\/templates\/components\/hello-world.hbs['"]/);
     });
 
     test('addon metadata', function(assert) {
@@ -129,7 +140,7 @@ QUnit.module('stage1 build', function() {
     test('component in addon tree', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js');
       assertFile.matches(
-        `import layout from '../templates/components/hello-world.hbs'`,
+        /import layout from ['"']\.\.\/templates\/components\/hello-world\.hbs['"]/,
         `template imports have explicit .hbs extension added`
       );
       assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);

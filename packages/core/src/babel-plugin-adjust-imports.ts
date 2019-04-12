@@ -14,13 +14,13 @@ import {
   returnStatement,
   stringLiteral,
 } from '@babel/types';
+import PackageCache from './package-cache';
+import Package from './package';
 
 interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
   opts: {
-    ownName?: string;
-    basedir?: string;
     rename?: {
       [fromName: string]: string;
     };
@@ -34,20 +34,38 @@ interface State {
 
 export type Options = State['opts'];
 
-function adjustSpecifier(specifier: string, sourceFileName: string, opts: State['opts']) {
+function adjustSpecifier(
+  specifier: string,
+  sourceFileName: string,
+  opts: State['opts'],
+  getOwningPackage: () => Package | null
+) {
   let name = packageName(specifier);
-  if (name && name === opts.ownName) {
-    let fullPath = specifier.replace(name, opts.basedir || '.');
+  if (!name) {
+    return specifier;
+  }
+
+  if (opts.rename && opts.rename[name]) {
+    return specifier.replace(name, opts.rename[name]);
+  }
+
+  let pkg = getOwningPackage();
+  if (!pkg) {
+    return specifier;
+  }
+
+  if (pkg.meta['auto-upgraded'] && pkg.name === name) {
+    // we found a self-import, make it relative. Only auto-upgraded packages get
+    // this help, v2 packages are natively supposed to use explicit hbs
+    // extensions, and we want to push them all to do that correctly.
+    let fullPath = specifier.replace(name, pkg.root);
     let relativePath = relative(dirname(sourceFileName), fullPath);
     if (relativePath[0] !== '.') {
       relativePath = `./${relativePath}`;
     }
     return relativePath;
-  } else if (name && opts.rename && opts.rename[name]) {
-    return specifier.replace(name, opts.rename[name]);
-  } else {
-    return specifier;
   }
+  return specifier;
 }
 
 function makeHBSExplicit(specifier: string, _: string) {
@@ -116,7 +134,17 @@ export default function main({ types: t }: { types: any }) {
         }
 
         let sourceFileName = path.hub.file.opts.filename;
-        let specifier = adjustSpecifier(source.value, sourceFileName, opts);
+
+        // we use `null` to mean we already tried finding it and couldn't, vs
+        // `undefined` for we didn't cache anything yet.
+        let owningPackage: Package | undefined | null = undefined;
+        let getOwningPackage = () => {
+          if (owningPackage === undefined) {
+            owningPackage = PackageCache.shared('embroider-stage3').ownerOfFile(sourceFileName) || null;
+          }
+          return owningPackage;
+        };
+        let specifier = adjustSpecifier(source.value, sourceFileName, opts, getOwningPackage);
         specifier = makeHBSExplicit(specifier, sourceFileName);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));

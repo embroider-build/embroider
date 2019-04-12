@@ -211,6 +211,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
+  strictV2Format() {
+    return false;
+  }
+
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [

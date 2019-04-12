@@ -101,6 +101,13 @@ export interface AppAdapter<TreeNames> {
   // resolvable at build time. This is how we figure out the "externals" for the
   // app itself as defined in SPEC.md.
   externals(): string[];
+
+  // when true, the app's own code is understood to already follow v2 standards.
+  // For example, all imports of templates have an explicit `hbs` extension, and
+  // all imports of your own package use relative imports instead of you rown
+  // name. When false, your code is treated more leniently and you get the
+  // auto-upgraded behaviors that v1 addons also get.
+  strictV2Format(): boolean;
 }
 
 class ParsedEmberAsset {
@@ -319,8 +326,6 @@ export class AppBuilder<TreeNames> {
   private adjustImportsPlugin(): PluginItem {
     let rename = Object.assign({}, ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules']));
     let adjustOptions: AdjustImportsOptions = {
-      ownName: this.app.name,
-      basedir: this.root,
       rename,
       extraImports: this.adapter.extraImports(),
     };
@@ -579,6 +584,10 @@ export class AppBuilder<TreeNames> {
       },
       'root-url': this.adapter.rootURL(),
     };
+
+    if (!this.adapter.strictV2Format()) {
+      meta['auto-upgraded'] = true;
+    }
 
     let pkg = cloneDeep(this.app.packageJSON);
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);

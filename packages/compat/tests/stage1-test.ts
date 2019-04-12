@@ -40,14 +40,6 @@ QUnit.module('stage1 build', function() {
               extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
             });
           `,
-          'has-relative-template.js': `
-            import Component from '@ember/component';
-            import layout from './t';
-            export default Component.extend({
-              layout
-            });
-          `,
-          't.hbs': ``,
         },
         templates: {
           components: {
@@ -61,11 +53,6 @@ QUnit.module('stage1 build', function() {
       addon.files.app = {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
-        },
-        templates: {
-          components: {
-            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
-          },
         },
       };
 
@@ -111,14 +98,8 @@ QUnit.module('stage1 build', function() {
       await builder.cleanup();
     });
 
-    test('component in app tree retains own-name import', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/_app_/components/hello-world.js');
-      assertFile.matches(/export \{ default \} from ['"']my-addon\/components\/hello-world['"]/);
-    });
-
-    test('component in app tree gets explicit hbs import', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/_app_/templates/components/direct-template-reexport.js');
-      assertFile.matches(/export \{ default \} from ['"]my-addon\/templates\/components\/hello-world.hbs['"]/);
+    test('component in app tree', function(assert) {
+      assert.file('node_modules/my-addon/_app_/components/hello-world.js').exists();
     });
 
     test('addon metadata', function(assert) {
@@ -139,10 +120,6 @@ QUnit.module('stage1 build', function() {
 
     test('component in addon tree', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js');
-      assertFile.matches(
-        /import layout from ['"']\.\.\/templates\/components\/hello-world\.hbs['"]/,
-        `template imports have explicit .hbs extension added`
-      );
       assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);
       assertFile.matches(`embroider-sample-transforms-result`, `custom babel plugins have run`);
     });
@@ -173,11 +150,6 @@ QUnit.module('stage1 build', function() {
         /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
         'template macros have not run'
       );
-    });
-
-    test.skip('component with relative import of arbitrarily placed template', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/components/has-relative-template.js');
-      assertFile.matches(`import layout from './t.hbs'`, 'arbitrary relative template gets hbs extension');
     });
 
     test('in-repo-addon is available', function(assert) {

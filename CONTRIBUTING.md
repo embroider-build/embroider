@@ -3,13 +3,13 @@
 ## Run the test suite
 
 1. Clone this repo.
-2. Run `yarn compile` (or `yarn compile --watch`).
-3. Run `yarn lint` and `yarn test`.
+2. Run `yarn install`.
+3. Run `yarn compile` (or `yarn compile --watch`).
+4. Run `yarn lint` and `yarn test`.
 
 `yarn test` uses [Jest](https://jestjs.io/) to run multiple tests in parallel.
 Unfortunately, for now you will still have to run `yarn compile` before running
-the tests to compile the TypeScript code to JavaScript. 
-
+the tests to compile the TypeScript code to JavaScript.
 
 ## Use a local version of embroider to compile your projects
 

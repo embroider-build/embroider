@@ -1,5 +1,5 @@
 import packageName from './package-name';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import {
   blockStatement,
@@ -16,6 +16,7 @@ import {
 } from '@babel/types';
 import PackageCache from './package-cache';
 import Package from './package';
+import { pathExistsSync } from 'fs-extra';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -34,11 +35,13 @@ interface State {
 
 export type Options = State['opts'];
 
+type GetOwningPackage = () => Package | null;
+
 function adjustSpecifier(
   specifier: string,
   sourceFileName: string,
   opts: State['opts'],
-  getOwningPackage: () => Package | null
+  getOwningPackage: GetOwningPackage
 ) {
   let name = packageName(specifier);
   if (!name) {
@@ -68,16 +71,31 @@ function adjustSpecifier(
   return specifier;
 }
 
-function makeHBSExplicit(specifier: string, _: string) {
-  // this is gross, but unforunately we can't get enough information to locate
-  // the original file on disk in order to go check whether it's really
-  // referring to a template. To fix this, we would need to modify
-  // broccoli-babel-transpiler, but a typical app has many many copies of that
-  // library at various different verisons (a symptom of the very problem
-  // embroider exists to solve).
-  if (/\btemplates\b/.test(specifier) && !/\.hbs$/.test(specifier)) {
+function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPackage: GetOwningPackage) {
+  if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
+    // already has a well-known explicit extension, so nevermind
+    return specifier;
+  }
+
+  // I'm only fixing relative imports of templates for now. If it turns out we
+  // need to handle absolute ones too we can, but I think that's pretty rare and
+  // it probably adds appreciable cost to every single import statement (since
+  // we'd do full node_modules resolution just to find out if an HBS is waiting
+  // for us).
+  if (!specifier.startsWith('.')) {
+    return specifier;
+  }
+
+  let pkg = getOwningPackage();
+  if (!pkg || !pkg.meta['auto-upgraded']) {
+    return specifier;
+  }
+
+  let target = resolve(dirname(sourceFileName), specifier + '.hbs');
+  if (pathExistsSync(target)) {
     return specifier + '.hbs';
   }
+
   return specifier;
 }
 
@@ -133,7 +151,7 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let sourceFileName = path.hub.file.opts.filename;
+        let sourceFileName: string = path.hub.file.opts.filename;
 
         // we use `null` to mean we already tried finding it and couldn't, vs
         // `undefined` for we didn't cache anything yet.
@@ -145,7 +163,7 @@ export default function main({ types: t }: { types: any }) {
           return owningPackage;
         };
         let specifier = adjustSpecifier(source.value, sourceFileName, opts, getOwningPackage);
-        specifier = makeHBSExplicit(specifier, sourceFileName);
+        specifier = makeHBSExplicit(specifier, sourceFileName, getOwningPackage);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

@@ -201,9 +201,9 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
     });
 
-    test.skip('component with relative import of arbitrarily placed template', function(assert) {
+    test('component with relative import of arbitrarily placed template', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/has-relative-template.js').transform(transpile);
-      assertFile.matches(`import layout from './t.hbs'`, 'arbitrary relative template gets hbs extension');
+      assertFile.matches(/import layout from ["']\.\/t.hbs['"]/, 'arbitrary relative template gets hbs extension');
     });
   });
 });

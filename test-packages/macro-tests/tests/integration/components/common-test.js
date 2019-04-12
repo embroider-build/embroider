@@ -10,5 +10,4 @@ module('Integration | Macro | common', function(hooks) {
     await render(hbs`{{#with "hello" as |macroDependencySatisfies|}} {{macroDependencySatisfies}} {{/with}}`);
     assert.equal(this.element.textContent.trim(), 'hello');
   });
-
 });

@@ -14,26 +14,34 @@ module('Integration | Macro | dependencySatisfies', function(hooks) {
 
   test('macroDependencySatisfies in subexpression position', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, true);
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, true);
+      })
+    );
     await render(hbs`{{my-assertion (macroDependencySatisfies "ember-cli" "*") }}`);
   });
 
   test('macroDependencySatisfies emits false for missing package', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, false);
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, false);
+      })
+    );
     await render(hbs`{{my-assertion (macroDependencySatisfies "not-a-package" "*") }}`);
   });
 
   test('macroDependencySatisfies emits false for out-of-range package', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, false);
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, false);
+      })
+    );
     await render(hbs`{{my-assertion (macroDependencySatisfies "ember-cli" "0.0.1") }}`);
   });
-
 });

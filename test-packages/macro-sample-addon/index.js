@@ -5,8 +5,8 @@ module.exports = {
   options: {
     '@embroider/macros': {
       setOwnConfig: {
-        hello: 'world'
-      }
-    }
-  }
+        hello: 'world',
+      },
+    },
+  },
 };

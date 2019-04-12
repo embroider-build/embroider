@@ -18,8 +18,8 @@ module.exports = {
         plugin: require('./lib/glimmer-plugin'),
         baseDir() {
           return __dirname;
-        }
+        },
       });
     }
-  }
+  },
 };

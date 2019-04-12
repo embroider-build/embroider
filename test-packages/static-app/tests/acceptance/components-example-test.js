@@ -12,10 +12,10 @@ module('Acceptance | components-example', function(hooks) {
     let button = document.querySelector('.md-button');
     assert.ok(button, 'found paper-button');
     if (button) {
-      assert.equal(getComputedStyle(button)['background-color'], "rgb(63, 81, 181)", "paper-button has its CSS");
+      assert.equal(getComputedStyle(button)['background-color'], 'rgb(63, 81, 181)', 'paper-button has its CSS');
     }
 
-    let components = [...document.querySelectorAll("[data-component-name]")].map(elt => elt.dataset.componentName);
+    let components = [...document.querySelectorAll('[data-component-name]')].map(elt => elt.dataset.componentName);
     assert.ok(components.includes('paper-button'), 'expected to find paper-button');
 
     if (getOwnConfig().isClassic) {

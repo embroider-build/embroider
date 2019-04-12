@@ -9,9 +9,12 @@ module('Integration | Helper | reflect-config', function(hooks) {
 
   test('it accesses our config', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.deepEqual(value, { hello: 'world' });
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.deepEqual(value, { hello: 'world' });
+      })
+    );
     await render(hbs`{{my-assertion (reflect-config) }}`);
   });
 });

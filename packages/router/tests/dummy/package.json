@@ -1,4 +1,9 @@
 {
   "name": "dummy",
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "dependencies": {
+    "@embroider/router": "^0.3.3",
+    "ember-load-initializers": "^2.0.0",
+    "ember-resolver": "^5.1.3"
+  }
 }

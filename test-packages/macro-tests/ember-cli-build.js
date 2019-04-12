@@ -9,21 +9,19 @@ module.exports = function(defaults) {
         mode: 'amazing',
         count: 42,
         inner: {
-          items: [
-            { name: 'Arthur', awesome: true }
-          ],
-          description: null
-        }
+          items: [{ name: 'Arthur', awesome: true }],
+          description: null,
+        },
       },
       setConfig: {
         'ember-source': {
-          color: 'orange'
+          color: 'orange',
         },
         'macro-sample-addon': {
-          configFromMacrosTests: 'exists'
-        }
-      }
-    }
+          configFromMacrosTests: 'exists',
+        },
+      },
+    },
   });
 
   if (process.env.CLASSIC) {

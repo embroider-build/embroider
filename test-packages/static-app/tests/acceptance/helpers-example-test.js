@@ -10,12 +10,12 @@ module('Acceptance | helpers-example', function(hooks) {
     await visit('/helpers-example');
 
     assert.deepEqual(
-      [...document.querySelectorAll("[data-word]")].map(elt => elt.dataset.word),
+      [...document.querySelectorAll('[data-word]')].map(elt => elt.dataset.word),
       ['beta', 'alpha'],
       'array and reverse worked'
     );
 
-    let helpers = [...document.querySelectorAll("[data-helper-name]")].map(elt => elt.dataset.helperName);
+    let helpers = [...document.querySelectorAll('[data-helper-name]')].map(elt => elt.dataset.helperName);
     assert.ok(helpers.includes('reverse'), 'expected to find reverse');
 
     if (getOwnConfig().isClassic) {

@@ -25,7 +25,6 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
-import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -64,12 +63,12 @@ export default class V1Addon implements V1Package {
     protected addonOptions: Required<Options>,
     private app: V1App
   ) {
-    this.updateBabelConfig();
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
     }
   }
 
+  // this is only defined when there are custom AST transforms that need it
   @Memoize()
   private get templateCompiler(): TemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
@@ -90,10 +89,6 @@ export default class V1Addon implements V1Package {
   }
 
   private updateRegistry(registry: any) {
-    // note that we don't remove ember-cli-babel here, instead we have pared
-    // down its config so that it will only run nonstandard plugins, leaving all
-    // other normal ESlatest features in place.
-
     // auto-import gets disabled because we support it natively
     registry.remove('js', 'ember-auto-import-analyzer');
 
@@ -121,6 +116,48 @@ export default class V1Addon implements V1Package {
         }
       },
     });
+
+    if (this.needsCustomBabel()) {
+      // there is customized babel behavior needed, so we will leave
+      // ember-cli-babel in place, but modify its config so it doesn't do the
+      // things we don't want to do in stage1.
+      this.updateBabelConfig();
+    } else {
+      // no custom babel behavior, so we don't run the ember-cli-babel
+      // preprocessor at all. We still need to register a no-op preprocessor to
+      // prevent ember-cli from emitting a deprecation warning.
+      registry.remove('js', 'ember-cli-babel');
+      registry.add('js', {
+        name: 'embroider-babel-noop',
+        ext: 'js',
+        toTree(tree: Tree) {
+          return tree;
+        },
+      });
+    }
+  }
+
+  // we need to run custom inline hbs preprocessing if there are custom hbs
+  // plugins and there are inline hbs templates
+  private needsInlineHBS(): boolean {
+    return (
+      Boolean(this.templateCompiler) &&
+      Boolean(this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile'))
+    );
+  }
+
+  private needsCustomBabel() {
+    let babelConfig = this.options.babel as TransformOptions | undefined;
+    if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
+      // this addon has custom babel plugins, so we need to run them here in
+      // stage1
+      return true;
+    }
+
+    // even if there are no custom babel plugins, if we need to do any
+    // preprocessing of inline handlebars templates we still need to run the
+    // custom babel.
+    return this.needsInlineHBS();
   }
 
   get name(): string {
@@ -327,14 +364,6 @@ export default class V1Addon implements V1Package {
     if (this.templateCompiler) {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
-
-    let adjustImportsOptions: AdjustImportsOptions = {
-      ownName: this.name,
-    };
-    babelConfig.plugins.push([
-      require.resolve('@embroider/core/src/babel-plugin-adjust-imports'),
-      adjustImportsOptions,
-    ]);
   }
 
   get v2Tree() {

@@ -556,7 +556,7 @@ A list of paths to folders that should be merged with the app's own namespace. T
 ## auto-upgraded
 
 ```
-Allowed in: addons
+Allowed in: apps and addons
 Status: internal use only
 ```
 

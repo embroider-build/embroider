@@ -481,7 +481,7 @@ Addons can immediately begin relying on direct import from NPM by using ember-au
 
 Our runtime AMD-based loader does not mesh well with ES module and node_modules resolution semantics. One big difference is that Named AMD `define` is allowed to create a module with whatever name you want, completely disconnected from which NPM package is actually doing the defining. Examples:
 
-- `@ember/component` really comes from `ember-cli-shims/vendor/ember-cli-shims/app-shims`, which uses globals to find the real code in `ember-source`.
+- `@ember/component` really gets transpiled into usage of the `Ember` global, which comes from `ember-source`.
 - `moment` typically comes from `ember-cli-moment-shim`, which has its own `dependency` on `moment` and dynamically incorporates the right files into the build.
 - `qunit` typically comes from a shim in `@ember/test-helpers/vendor/shims/qunit`, which in turn uses globals to find code that gets dynamically incorporated via `ember-qunit`.
 

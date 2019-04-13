@@ -3,6 +3,9 @@ import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
 import { Tree } from 'broccoli-plugin';
 import { AddonMeta, packageName } from '@embroider/core';
+import AddToTree from './add-to-tree';
+import { pathExistsSync, moveSync } from 'fs-extra';
+import { join } from 'path';
 
 /*
   The traditional addon-test-support tree allows you to emit modules under any
@@ -41,8 +44,16 @@ type GetMeta = () => AddonMeta;
 
 export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
+
+  let movedIndex = new AddToTree(tree, outputPath => {
+    let target = join(outputPath, `${ownName}.js`);
+    if (pathExistsSync(target)) {
+      moveSync(target, join(outputPath, ownName, 'index.js'));
+    }
+  });
+
   let goodParts = new Snitch(
-    tree,
+    movedIndex,
     {
       allowedPaths: new RegExp(`^${ownName}/`),
       foundBadPaths: (badPaths: string[]) => {

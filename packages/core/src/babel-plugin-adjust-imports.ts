@@ -37,6 +37,8 @@ export type Options = State['opts'];
 
 type GetOwningPackage = () => Package | null;
 
+const packageCache = PackageCache.shared('embroider-stage3');
+
 function adjustSpecifier(
   specifier: string,
   sourceFileName: string,
@@ -77,21 +79,25 @@ function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPac
     return specifier;
   }
 
-  // I'm only fixing relative imports of templates for now. If it turns out we
-  // need to handle absolute ones too we can, but I think that's pretty rare and
-  // it probably adds appreciable cost to every single import statement (since
-  // we'd do full node_modules resolution just to find out if an HBS is waiting
-  // for us).
-  if (!specifier.startsWith('.')) {
-    return specifier;
-  }
-
   let pkg = getOwningPackage();
   if (!pkg || !pkg.meta['auto-upgraded']) {
     return specifier;
   }
 
-  let target = resolve(dirname(sourceFileName), specifier + '.hbs');
+  if (pkg.meta.externals && pkg.meta.externals.includes(specifier)) {
+    return specifier;
+  }
+
+  let target;
+  let name = packageName(specifier);
+
+  if (name) {
+    let base = packageCache.resolve(name, pkg).root;
+    target = resolve(base, specifier.replace(name, '.') + '.hbs');
+  } else {
+    target = resolve(dirname(sourceFileName), specifier + '.hbs');
+  }
+
   if (pathExistsSync(target)) {
     return specifier + '.hbs';
   }
@@ -158,7 +164,7 @@ export default function main({ types: t }: { types: any }) {
         let owningPackage: Package | undefined | null = undefined;
         let getOwningPackage = () => {
           if (owningPackage === undefined) {
-            owningPackage = PackageCache.shared('embroider-stage3').ownerOfFile(sourceFileName) || null;
+            owningPackage = packageCache.ownerOfFile(sourceFileName) || null;
           }
           return owningPackage;
         };

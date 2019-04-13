@@ -83,6 +83,11 @@ QUnit.module('stage2 build', function() {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
         },
+        templates: {
+          components: {
+            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
+          },
+        },
       };
       app.writeSync();
       let legacyAppInstance = emberApp(app.baseDir, { tests: false });
@@ -192,6 +197,14 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(
         /export \{ default \} from ['"]my-addon\/components\/hello-world['"]/,
         'retains absolute package name import'
+      );
+    });
+
+    test('app/templates/components/direct-template-reexport.js', function(assert) {
+      let assertFile = assert.file('./templates/components/direct-template-reexport.js').transform(transpile);
+      assertFile.matches(
+        /export \{ default \} from ['"]my-addon\/templates\/components\/hello-world.hbs['"]/,
+        'rewrites absolute imports of templates to explicit hbs'
       );
     });
 

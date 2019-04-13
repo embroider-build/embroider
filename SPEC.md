@@ -483,7 +483,7 @@ Our runtime AMD-based loader does not mesh well with ES module and node_modules 
 
 - `@ember/component` really gets transpiled into usage of the `Ember` global, which comes from `ember-source`.
 - `moment` typically comes from `ember-cli-moment-shim`, which has its own `dependency` on `moment` and dynamically incorporates the right files into the build.
-- `qunit` typically comes from a shim in `@ember/test-helpers/vendor/shims/qunit`, which in turn uses globals to find code that gets dynamically incorporated via `ember-qunit`.
+- `qunit` typically comes from `ember-qunit`.
 
 This makes it basically impossible to statically discover all the modules at build time. It would be nice to completely jettison the whole named AMD loader, but in practice it is public API that is widely used. This design _does not_ propose any breaking changes to it.
 

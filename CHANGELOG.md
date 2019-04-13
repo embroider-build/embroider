@@ -1,5 +1,13 @@
 # Embroider Changelog
 
+## v0.3.4
+
+ - BUGFIX: we now correctly handle all known imports of hbs files, including
+   "pods-like" addons that kepts their templates in nonstandard places.
+ - BUGFIX: warning printer output was incorrect
+ - BUGFIX: the dependencySatisfies macros now behave as expected when a
+   prerelease version is present
+
 ## v0.3.3
 
 - BUGFIX: lock our webpack version to workaround an upstream bug

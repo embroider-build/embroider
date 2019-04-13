@@ -61,6 +61,14 @@ QUnit.module('stage2 build', function() {
               layout
             });
           `,
+          'has-relative-template.js': `
+            import Component from '@ember/component';
+            import layout from './t';
+            export default Component.extend({
+              layout
+            });
+          `,
+          't.hbs': ``,
         },
         'synthetic-import-1.js': '',
         templates: {
@@ -74,6 +82,11 @@ QUnit.module('stage2 build', function() {
       addon.files.app = {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
+        },
+        templates: {
+          components: {
+            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
+          },
         },
       };
       app.writeSync();
@@ -181,12 +194,29 @@ QUnit.module('stage2 build', function() {
       let assertFile = assert.file('./components/hello-world.js').transform(transpile);
       assertFile.matches(/import a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
+      assertFile.matches(
+        /export \{ default \} from ['"]my-addon\/components\/hello-world['"]/,
+        'retains absolute package name import'
+      );
+    });
+
+    test('app/templates/components/direct-template-reexport.js', function(assert) {
+      let assertFile = assert.file('./templates/components/direct-template-reexport.js').transform(transpile);
+      assertFile.matches(
+        /export \{ default \} from ['"]my-addon\/templates\/components\/hello-world.hbs['"]/,
+        'rewrites absolute imports of templates to explicit hbs'
+      );
     });
 
     test('uses-inline-template.js', function(assert) {
       let assertFile = assert.file('./components/uses-inline-template.js').transform(transpile);
       assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
+    });
+
+    test('component with relative import of arbitrarily placed template', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/components/has-relative-template.js').transform(transpile);
+      assertFile.matches(/import layout from ["']\.\/t.hbs['"]/, 'arbitrary relative template gets hbs extension');
     });
   });
 });

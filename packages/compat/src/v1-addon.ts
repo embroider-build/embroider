@@ -20,7 +20,7 @@ import { mergeWithAppend } from './merges';
 import { Package, PackageCache, AddonMeta, TemplateCompiler, debug } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
-import AddToTree from './add-to-tree';
+import ObserveTree from './observe-tree';
 import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
@@ -63,12 +63,12 @@ export default class V1Addon implements V1Package {
     protected addonOptions: Required<Options>,
     private app: V1App
   ) {
-    this.updateBabelConfig();
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
     }
   }
 
+  // this is only defined when there are custom AST transforms that need it
   @Memoize()
   private get templateCompiler(): TemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
@@ -89,10 +89,6 @@ export default class V1Addon implements V1Package {
   }
 
   private updateRegistry(registry: any) {
-    // note that we don't remove ember-cli-babel here, instead we have pared
-    // down its config so that it will only run nonstandard plugins, leaving all
-    // other normal ESlatest features in place.
-
     // auto-import gets disabled because we support it natively
     registry.remove('js', 'ember-auto-import-analyzer');
 
@@ -120,6 +116,48 @@ export default class V1Addon implements V1Package {
         }
       },
     });
+
+    if (this.needsCustomBabel()) {
+      // there is customized babel behavior needed, so we will leave
+      // ember-cli-babel in place, but modify its config so it doesn't do the
+      // things we don't want to do in stage1.
+      this.updateBabelConfig();
+    } else {
+      // no custom babel behavior, so we don't run the ember-cli-babel
+      // preprocessor at all. We still need to register a no-op preprocessor to
+      // prevent ember-cli from emitting a deprecation warning.
+      registry.remove('js', 'ember-cli-babel');
+      registry.add('js', {
+        name: 'embroider-babel-noop',
+        ext: 'js',
+        toTree(tree: Tree) {
+          return tree;
+        },
+      });
+    }
+  }
+
+  // we need to run custom inline hbs preprocessing if there are custom hbs
+  // plugins and there are inline hbs templates
+  private needsInlineHBS(): boolean {
+    return (
+      Boolean(this.templateCompiler) &&
+      Boolean(this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile'))
+    );
+  }
+
+  private needsCustomBabel() {
+    let babelConfig = this.options.babel as TransformOptions | undefined;
+    if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
+      // this addon has custom babel plugins, so we need to run them here in
+      // stage1
+      return true;
+    }
+
+    // even if there are no custom babel plugins, if we need to do any
+    // preprocessing of inline handlebars templates we still need to run the
+    // custom babel.
+    return this.needsInlineHBS();
   }
 
   get name(): string {
@@ -293,8 +331,7 @@ export default class V1Addon implements V1Package {
     let version;
 
     if (emberCLIBabelInstance) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      version = require(join(emberCLIBabelInstance.root, 'package')).version;
+      version = emberCLIBabelInstance.pkg.version;
     }
 
     if (!packageOptions['ember-cli-babel']) {
@@ -313,7 +350,7 @@ export default class V1Addon implements V1Package {
       disableEmberModulesAPIPolyfill: true,
     });
 
-    if (version && semver.satisfies(version, '^5')) {
+    if (version && semver.satisfies(semver.coerce(version) || version, '^5')) {
       unsupported(`${this.name} is using babel 5. Not installing our custom plugin.`);
       return;
     }
@@ -327,13 +364,6 @@ export default class V1Addon implements V1Package {
     if (this.templateCompiler) {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
-
-    babelConfig.plugins.push([
-      require.resolve('@embroider/core/src/babel-plugin-adjust-imports'),
-      {
-        ownName: this.name,
-      },
-    ]);
   }
 
   get v2Tree() {
@@ -460,7 +490,7 @@ export default class V1Addon implements V1Package {
     let addonStylesTree = this.addonStylesTree();
     if (addonStylesTree) {
       let discoveredFiles: string[] = [];
-      let tree = new AddToTree(addonStylesTree, outputPath => {
+      let tree = new ObserveTree(addonStylesTree, outputPath => {
         discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
       });
       built.trees.push(tree);
@@ -529,7 +559,7 @@ export default class V1Addon implements V1Package {
         return {};
       }
     });
-    return new AddToTree(tree, (outputPath: string) => {
+    return new ObserveTree(tree, (outputPath: string) => {
       dirExists = pathExistsSync(join(outputPath, appPublicationDir));
     });
   }
@@ -610,7 +640,7 @@ export default class V1Addon implements V1Package {
     }
     if (publicTree) {
       let publicAssets: { [filename: string]: string } = {};
-      publicTree = new AddToTree(publicTree, (outputPath: string) => {
+      publicTree = new ObserveTree(publicTree, (outputPath: string) => {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {

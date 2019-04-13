@@ -1,5 +1,5 @@
 import packageName from './package-name';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import {
   blockStatement,
@@ -14,13 +14,14 @@ import {
   returnStatement,
   stringLiteral,
 } from '@babel/types';
+import PackageCache from './package-cache';
+import Package from './package';
+import { pathExistsSync } from 'fs-extra';
 
 interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
   opts: {
-    ownName?: string;
-    basedir?: string;
     rename?: {
       [fromName: string]: string;
     };
@@ -34,32 +35,73 @@ interface State {
 
 export type Options = State['opts'];
 
-function adjustSpecifier(specifier: string, sourceFileName: string, opts: State['opts']) {
+type GetOwningPackage = () => Package | null;
+
+const packageCache = PackageCache.shared('embroider-stage3');
+
+function adjustSpecifier(
+  specifier: string,
+  sourceFileName: string,
+  opts: State['opts'],
+  getOwningPackage: GetOwningPackage
+) {
   let name = packageName(specifier);
-  if (name && name === opts.ownName) {
-    let fullPath = specifier.replace(name, opts.basedir || '.');
+  if (!name) {
+    return specifier;
+  }
+
+  if (opts.rename && opts.rename[name]) {
+    return specifier.replace(name, opts.rename[name]);
+  }
+
+  let pkg = getOwningPackage();
+  if (!pkg) {
+    return specifier;
+  }
+
+  if (pkg.meta['auto-upgraded'] && pkg.name === name) {
+    // we found a self-import, make it relative. Only auto-upgraded packages get
+    // this help, v2 packages are natively supposed to use explicit hbs
+    // extensions, and we want to push them all to do that correctly.
+    let fullPath = specifier.replace(name, pkg.root);
     let relativePath = relative(dirname(sourceFileName), fullPath);
     if (relativePath[0] !== '.') {
       relativePath = `./${relativePath}`;
     }
     return relativePath;
-  } else if (name && opts.rename && opts.rename[name]) {
-    return specifier.replace(name, opts.rename[name]);
-  } else {
-    return specifier;
   }
+  return specifier;
 }
 
-function makeHBSExplicit(specifier: string, _: string) {
-  // this is gross, but unforunately we can't get enough information to locate
-  // the original file on disk in order to go check whether it's really
-  // referring to a template. To fix this, we would need to modify
-  // broccoli-babel-transpiler, but a typical app has many many copies of that
-  // library at various different verisons (a symptom of the very problem
-  // embroider exists to solve).
-  if (/\btemplates\b/.test(specifier) && !/\.hbs$/.test(specifier)) {
+function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPackage: GetOwningPackage) {
+  if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
+    // already has a well-known explicit extension, so nevermind
+    return specifier;
+  }
+
+  let pkg = getOwningPackage();
+  if (!pkg || !pkg.meta['auto-upgraded']) {
+    return specifier;
+  }
+
+  if (pkg.meta.externals && pkg.meta.externals.includes(specifier)) {
+    return specifier;
+  }
+
+  let target;
+  let name = packageName(specifier);
+
+  if (name) {
+    let base = packageCache.resolve(name, pkg).root;
+    target = resolve(base, specifier.replace(name, '.') + '.hbs');
+  } else {
+    target = resolve(dirname(sourceFileName), specifier + '.hbs');
+  }
+
+  if (pathExistsSync(target)) {
     return specifier + '.hbs';
   }
+
   return specifier;
 }
 
@@ -115,9 +157,19 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let sourceFileName = path.hub.file.opts.filename;
-        let specifier = adjustSpecifier(source.value, sourceFileName, opts);
-        specifier = makeHBSExplicit(specifier, sourceFileName);
+        let sourceFileName: string = path.hub.file.opts.filename;
+
+        // we use `null` to mean we already tried finding it and couldn't, vs
+        // `undefined` for we didn't cache anything yet.
+        let owningPackage: Package | undefined | null = undefined;
+        let getOwningPackage = () => {
+          if (owningPackage === undefined) {
+            owningPackage = packageCache.ownerOfFile(sourceFileName) || null;
+          }
+          return owningPackage;
+        };
+        let specifier = adjustSpecifier(source.value, sourceFileName, opts, getOwningPackage);
+        specifier = makeHBSExplicit(specifier, sourceFileName, getOwningPackage);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

@@ -120,10 +120,6 @@ QUnit.module('stage1 build', function() {
 
     test('component in addon tree', function(assert) {
       let assertFile = assert.file('node_modules/my-addon/components/hello-world.js');
-      assertFile.matches(
-        `import layout from '../templates/components/hello-world.hbs'`,
-        `template imports have explicit .hbs extension added`
-      );
       assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);
       assertFile.matches(`embroider-sample-transforms-result`, `custom babel plugins have run`);
     });

@@ -7,11 +7,23 @@ import { sync as pkgUpSync } from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
-    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
-    return getOrCreate(cache, packageName, () => {
-      let root = dirname(resolvePackagePath(packageName, this.basedir(fromPackage)));
-      return this.getAddon(root);
+    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map() as Map<string, Package | null>);
+    let result = getOrCreate(cache, packageName, () => {
+      // the type cast is needed because resolvePackagePath itself is erroneously typed as `any`.
+      let packagePath = resolvePackagePath(packageName, this.basedir(fromPackage)) as string | null;
+      if (!packagePath) {
+        // this gets our null into the cache so we don't keep trying to resolve
+        // a thing that is not found
+        return null;
+      }
+      return this.getAddon(dirname(packagePath));
     });
+    if (!result) {
+      let e = new Error(`unable to resolve package ${packageName} from ${fromPackage.root}`);
+      (e as any).code = 'MODULE_NOT_FOUND';
+      throw e;
+    }
+    return result;
   }
 
   getApp(packageRoot: string) {
@@ -29,7 +41,7 @@ export default class PackageCache {
   }
 
   protected rootCache: Map<string, Package> = new Map();
-  protected resolutionCache: Map<Package, Map<string, Package>> = new Map();
+  protected resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
 
   protected basedir(pkg: Package): string {
     return pkg.root;

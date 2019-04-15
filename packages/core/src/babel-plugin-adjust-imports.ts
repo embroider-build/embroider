@@ -17,6 +17,7 @@ import {
 import PackageCache from './package-cache';
 import Package from './package';
 import { pathExistsSync } from 'fs-extra';
+import { Memoize } from 'typescript-memoize';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -35,16 +36,9 @@ interface State {
 
 export type Options = State['opts'];
 
-type GetOwningPackage = () => Package | null;
-
 const packageCache = PackageCache.shared('embroider-stage3');
 
-function adjustSpecifier(
-  specifier: string,
-  sourceFileName: string,
-  opts: State['opts'],
-  getOwningPackage: GetOwningPackage
-) {
+function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
   let name = packageName(specifier);
   if (!name) {
     return specifier;
@@ -54,7 +48,7 @@ function adjustSpecifier(
     return specifier.replace(name, opts.rename[name]);
   }
 
-  let pkg = getOwningPackage();
+  let pkg = sourceFile.owningPackage();
   if (!pkg) {
     return specifier;
   }
@@ -64,7 +58,7 @@ function adjustSpecifier(
     // this help, v2 packages are natively supposed to use explicit hbs
     // extensions, and we want to push them all to do that correctly.
     let fullPath = specifier.replace(name, pkg.root);
-    let relativePath = relative(dirname(sourceFileName), fullPath);
+    let relativePath = relative(dirname(sourceFile.name), fullPath);
     if (relativePath[0] !== '.') {
       relativePath = `./${relativePath}`;
     }
@@ -73,13 +67,13 @@ function adjustSpecifier(
   return specifier;
 }
 
-function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPackage: GetOwningPackage) {
+function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
     // already has a well-known explicit extension, so nevermind
     return specifier;
   }
 
-  let pkg = getOwningPackage();
+  let pkg = sourceFile.owningPackage();
   if (!pkg || !pkg.meta['auto-upgraded']) {
     return specifier;
   }
@@ -95,7 +89,7 @@ function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPac
     let base = packageCache.resolve(name, pkg).root;
     target = resolve(base, specifier.replace(name, '.') + '.hbs');
   } else {
-    target = resolve(dirname(sourceFileName), specifier + '.hbs');
+    target = resolve(dirname(sourceFile.name), specifier + '.hbs');
   }
 
   if (pathExistsSync(target)) {
@@ -157,19 +151,10 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let sourceFileName: string = path.hub.file.opts.filename;
+        let file = new AdjustFile(path.hub.file.opts.filename);
 
-        // we use `null` to mean we already tried finding it and couldn't, vs
-        // `undefined` for we didn't cache anything yet.
-        let owningPackage: Package | undefined | null = undefined;
-        let getOwningPackage = () => {
-          if (owningPackage === undefined) {
-            owningPackage = packageCache.ownerOfFile(sourceFileName) || null;
-          }
-          return owningPackage;
-        };
-        let specifier = adjustSpecifier(source.value, sourceFileName, opts, getOwningPackage);
-        specifier = makeHBSExplicit(specifier, sourceFileName, getOwningPackage);
+        let specifier = adjustSpecifier(source.value, file, opts);
+        specifier = makeHBSExplicit(specifier, file);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }
@@ -205,4 +190,13 @@ function amdDefine(runtimeName: string, importCounter: number) {
       functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
     ])
   );
+}
+
+class AdjustFile {
+  constructor(public name: string) {}
+
+  @Memoize()
+  owningPackage(): Package | undefined {
+    return packageCache.ownerOfFile(this.name);
+  }
 }

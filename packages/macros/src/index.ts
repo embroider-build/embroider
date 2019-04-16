@@ -20,6 +20,10 @@ export function getOwnConfig<T>(): T {
   throw new Oops();
 }
 
+export function failBuild(message: string): void {
+  throw new Oops(message);
+}
+
 class Oops extends Error {
   params: any[];
   constructor(...params: any[]) {

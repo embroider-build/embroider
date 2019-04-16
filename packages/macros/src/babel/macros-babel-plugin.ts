@@ -6,6 +6,7 @@ import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroIf from './macro-if';
 import error from './error';
+import failBuild from './fail-build';
 import { bindState } from './visitor';
 
 const packageCache = PackageCache.shared('embroider-stage3');
@@ -37,6 +38,9 @@ export default function main() {
       if (callee.referencesImport('@embroider/macros', 'macroIf')) {
         macroIf(path, state, bindState(visitor, state));
       }
+      if (callee.referencesImport('@embroider/macros', 'failBuild')) {
+        failBuild(path, bindState(visitor, state));
+      }
     },
     ReferencedIdentifier(path: NodePath) {
       if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
@@ -50,6 +54,9 @@ export default function main() {
       }
       if (path.referencesImport('@embroider/macros', 'macroIf')) {
         throw error(path, `You can only use macroIf as a function call`);
+      }
+      if (path.referencesImport('@embroider/macros', 'failBuild')) {
+        throw error(path, `You can only use failBuild as a function call`);
       }
     },
   };

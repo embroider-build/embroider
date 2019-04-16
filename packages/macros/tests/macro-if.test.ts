@@ -182,6 +182,24 @@ describe('macroIf', function() {
       expect(code).not.toMatch(/beta/);
     });
 
+    test('composes with self', () => {
+      let code = transform(`
+      import { macroIf, dependencySatisfies } from '@embroider/macros';
+      export default function() {
+        return macroIf(dependencySatisfies('qunit', '*'), () => {
+          return macroIf(
+            dependencySatisfies('not-a-real-dep', '*'),
+            () => 'gamma',
+            () => 'alpha'
+          );
+        }, () => 'beta');
+      }
+      `);
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/beta/);
+      expect(code).not.toMatch(/gamma/);
+    });
+
     test('can see booleans inside getConfig', () => {
       let code = transform(`
       import { macroIf, getConfig } from '@embroider/macros';

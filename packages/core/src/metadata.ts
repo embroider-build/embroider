@@ -4,6 +4,8 @@ type appRelativeURL = string;
 // This describes the ember-specific parts of package.json of an app after the
 // stage 2 build (the app that we hand off to a packager).
 export interface AppMeta {
+  type: 'app';
+
   'auto-upgraded'?: true;
   assets: filename[];
   babel: {
@@ -22,6 +24,8 @@ export interface AppMeta {
 // This describes the ember-specific parts of package.json of a v2-formatted
 // addon.
 export interface AddonMeta {
+  type: 'addon';
+
   'auto-upgraded'?: true;
   'app-js'?: filename;
   externals?: string[];

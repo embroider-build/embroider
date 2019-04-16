@@ -17,7 +17,7 @@ export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache
 }
 
 function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
-  if (originalPackage.isV2) {
+  if (originalPackage.isV2Addon()) {
     // this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and
     // therefore moved, so to continue depending on it the native one needs to

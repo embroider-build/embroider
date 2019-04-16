@@ -14,6 +14,7 @@ import {
   TemplateCompilerPlugins,
   Resolver,
   TemplateCompiler,
+  AddonPackage,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -67,8 +68,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       options,
       oldPackage,
       configTree,
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
     return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
@@ -120,13 +121,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  get activeAddonDescendants(): Package[] {
+  get activeAddonDescendants(): AddonPackage[] {
     // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage;
+    let shouldInclude = (dep: Package) => dep.isEmberPackage();
 
-    let result = this.appPackage.findDescendants(shouldInclude);
-    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude);
-    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
+    let result = this.appPackage.findDescendants(shouldInclude) as AddonPackage[];
+    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude) as AddonPackage[];
+    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
     return result;
   }

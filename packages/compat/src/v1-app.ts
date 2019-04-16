@@ -38,7 +38,7 @@ export default class V1App implements V1Package {
   protected extendPackage() {
     let meta = this.app.project.pkg['ember-addon'];
     if (meta && meta.paths) {
-      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
       let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
       this.packageCache.overridePackage(extendedPackage);
       for (let addon of inRepoAddons) {
@@ -96,7 +96,7 @@ export default class V1App implements V1Package {
   nonResolvableDependencies(): Package[] {
     let meta = this.app.project.pkg['ember-addon'];
     if (meta && meta.paths) {
-      return meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      return meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
     }
     return [];
   }
@@ -338,6 +338,7 @@ export default class V1App implements V1Package {
       }
 
       let addonMeta: AddonMeta = {
+        type: 'addon',
         version: 2,
         'implicit-scripts': this.remapImplicitAssets(
           this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]
@@ -391,6 +392,7 @@ export default class V1App implements V1Package {
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
+        type: 'addon',
         version: 2,
         'public-assets': {},
       };
@@ -567,7 +569,7 @@ class V1DummyApp extends V1App {
   private owningAddon!: Package;
 
   extendPackage() {
-    this.owningAddon = this.packageCache.getAddon(this.app.project.root);
+    this.owningAddon = this.packageCache.get(this.app.project.root);
     let dummyPackage = new DummyPackage(this.root, this.owningAddon, this.packageCache);
     this.packageCache.overridePackage(dummyPackage);
     this.packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, this.owningAddon);

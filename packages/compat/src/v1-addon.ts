@@ -335,7 +335,7 @@ export default class V1Addon implements V1Package {
 
   // this is split out so that compatibility shims can override it to add more
   // things to the package metadata.
-  protected get packageMeta(): AddonMeta {
+  protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
     return mergeWithAppend({}, built.staticMeta, ...built.dynamicMeta.map(d => d()));
   }

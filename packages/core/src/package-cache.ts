@@ -16,7 +16,7 @@ export default class PackageCache {
         // a thing that is not found
         return null;
       }
-      return this.getAddon(dirname(packagePath));
+      return this.get(dirname(packagePath));
     });
     if (!result) {
       let e = new Error(`unable to resolve package ${packageName} from ${fromPackage.root}`);
@@ -27,7 +27,11 @@ export default class PackageCache {
   }
 
   getApp(packageRoot: string) {
-    return this.getPackage(packageRoot, false);
+    let root = realpathSync(packageRoot);
+    let p = getOrCreate(this.rootCache, root, () => {
+      return new Package(root, this, true);
+    });
+    return p;
   }
 
   overridePackage(pkg: Package) {
@@ -47,16 +51,12 @@ export default class PackageCache {
     return pkg.root;
   }
 
-  private getPackage(packageRoot: string, isAddon: boolean): Package {
+  get(packageRoot: string) {
     let root = realpathSync(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
-      return new Package(root, !isAddon, this);
+      return new Package(root, this);
     });
     return p;
-  }
-
-  getAddon(packageRoot: string) {
-    return this.getPackage(packageRoot, true);
   }
 
   ownerOfFile(filename: string): Package | undefined {
@@ -78,7 +78,7 @@ export default class PackageCache {
 
     let packageJSONPath = pkgUpSync(filename);
     if (packageJSONPath) {
-      return this.getAddon(dirname(packageJSONPath));
+      return this.get(dirname(packageJSONPath));
     }
   }
 

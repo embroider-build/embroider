@@ -25,7 +25,7 @@ export default class EmberData extends V1Addon {
   // this is enough to make sure we drop the debug code in prod. This only
   // matters when the app is running with staticAddonTrees=false, otherwise this
   // kind of optimization is automatic.
-  get packageMeta(): AddonMeta {
+  get packageMeta(): Partial<AddonMeta> {
     let meta = super.packageMeta;
     if (isProductionEnv() && !isInstrumentedBuild()) {
       meta = cloneDeep(meta);

@@ -15,11 +15,10 @@ import {
   stringLiteral,
 } from '@babel/types';
 import PackageCache from './package-cache';
-import Package from './package';
+import Package, { V2Package } from './package';
 import { pathExistsSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
-import { warn } from './messages';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -52,7 +51,7 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
   }
 
   let pkg = sourceFile.owningPackage();
-  if (!pkg) {
+  if (!pkg || !pkg.isV2Ember()) {
     return specifier;
   }
 
@@ -70,8 +69,8 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
   return specifier;
 }
 
-function isExternal(packageName: string, fromPkg: Package): boolean {
-  if (fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName)) {
+function isExternal(packageName: string, fromPkg: V2Package): boolean {
+  if (fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName)) {
     return true;
   }
 
@@ -83,7 +82,7 @@ function isExternal(packageName: string, fromPkg: Package): boolean {
 
   try {
     let dep = packageCache.resolve(packageName, fromPkg);
-    if (!dep.isEmberPackage && !fromPkg.hasDependency('ember-auto-import')) {
+    if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
       return true;
     }
   } catch (err) {
@@ -92,9 +91,7 @@ function isExternal(packageName: string, fromPkg: Package): boolean {
     }
     return true;
   }
-  if (!fromPkg.hasDependency(packageName)) {
-    warn(`%s is importing from %s but does not list it in package.json dependencies`, fromPkg.name, packageName);
-  }
+
   return false;
 }
 
@@ -129,7 +126,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   }
 
   let pkg = sourceFile.owningPackage();
-  if (!pkg || !pkg.isEmberPackage) {
+  if (!pkg || !pkg.isV2Ember()) {
     return specifier;
   }
 
@@ -144,6 +141,11 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     );
     return relative(dirname(sourceFile.name), target.slice(0, -3));
   } else {
+    if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
+      throw new Error(
+        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+      );
+    }
     return specifier;
   }
 }
@@ -161,7 +163,7 @@ function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   }
 
   let pkg = sourceFile.owningPackage();
-  if (!pkg || !pkg.meta['auto-upgraded']) {
+  if (!pkg || !pkg.isV2Ember() || !pkg.meta['auto-upgraded']) {
     // only auto-upgraded packages get this adjustment, native v2 packages are
     // supposed to already say '.hbs' explicitly whenever they import a
     // template.

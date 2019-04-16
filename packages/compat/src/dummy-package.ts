@@ -4,7 +4,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 export default class DummyPackage extends Package {
   constructor(root: string, private owningAddon: Package, packageCache: PackageCache) {
-    super(root, true, packageCache);
+    super(root, packageCache, true);
   }
 
   @Memoize()
@@ -24,7 +24,7 @@ export default class DummyPackage extends Package {
     // we can't use this.owningAddon.dependencies because that won't include
     // devDeps. We need to construct a new temporary package with the
     // mayUseDevDeps flag to true.
-    let upstream = new Package(this.owningAddon.root, true, this.packageCache).dependencies.slice();
+    let upstream = new Package(this.owningAddon.root, this.packageCache, true).dependencies.slice();
     // the dummy app has a dependency on the owning addon
     upstream.unshift(this.owningAddon);
     return upstream;

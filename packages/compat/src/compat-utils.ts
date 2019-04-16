@@ -13,7 +13,7 @@ export function addPeerDependency(packageJSON: any, packageName: string, version
   return pkg;
 }
 
-export function forceIncludeModule(meta: AddonMeta, localPath: string) {
+export function forceIncludeModule(meta: Partial<AddonMeta>, localPath: string) {
   meta = cloneDeep(meta);
   if (!meta.hasOwnProperty('implicit-modules')) {
     meta['implicit-modules'] = [];

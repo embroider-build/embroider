@@ -114,7 +114,7 @@ export default class CompatAddons implements Stage {
     let index = 0;
     let upgradedAddonTrees = [];
     for (let [oldPkg] of this.packageCache.moved.entries()) {
-      if (!oldPkg.isV2) {
+      if (!oldPkg.isV2Ember()) {
         upgradedAddonTrees.push(movedAddons[index]);
       }
       index++;

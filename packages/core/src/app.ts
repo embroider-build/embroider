@@ -1,7 +1,7 @@
 import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
-import Package from './package';
+import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
@@ -38,7 +38,7 @@ export type EmberENV = unknown;
 */
 export interface AppAdapter<TreeNames> {
   // the set of addon packages that are active.
-  readonly activeAddonDescendants: Package[];
+  readonly activeAddonDescendants: V2AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -563,6 +563,7 @@ export class AppBuilder<TreeNames> {
     }
 
     let meta: AppMeta = {
+      type: 'app',
       version: 2,
       assets: assetPaths,
       'template-compiler': {

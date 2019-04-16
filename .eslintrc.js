@@ -1,4 +1,5 @@
 'use strict';
+const path = require('path');
 
 module.exports = {
   root: true,
@@ -22,11 +23,18 @@ module.exports = {
       'error',
       {
         devDependencies: [
-          '.eslintrc.js',
-          '**/ember-cli-build.js',
-          '**/config/ember-try.js',
+          //'.eslintrc.js',
+          'packages/*/ember-cli-build.js',
+          'packages/*/config/ember-try.js',
           'packages/*/tests/**/*.[jt]s',
+          'test-packages/**/*.[jt]s',
+          'types/**/*.ts',
+          //'types',
+          //'index.d.ts',
+          //'types/ember-cli-htmlbars/index.d.ts',
+          //'**/*.d.ts',
         ],
+        //packageDir: [path.join(__dirname, 'package.json'), path.join(__dirname, 'packages/core/package.json')],
       },
     ],
 
@@ -44,24 +52,15 @@ module.exports = {
         '@typescript-eslint/no-require-imports': 'error',
       },
     },
-    {
-      files: ['test-packages/**/*.[jt]s'],
-      rules: {
-        'import/no-extraneous-dependencies': 'off',
-      },
-    },
-    {
-      files: ['types/**/*.ts'],
-      rules: {
-        'import/no-extraneous-dependencies': 'off',
-      },
-    },
     // node files
     {
       files: [
         '**/.eslintrc.js',
         '**/.template-lintrc.js',
-        '**/ember-cli-build.js',
+
+        'packages/*/ember-cli-build.js',
+        'ember-cli-build.js',
+
         '**/index.js',
         '**/testem.js',
         '**/blueprints/*/index.js',
@@ -72,7 +71,8 @@ module.exports = {
         'packages/*/addon/**',
         'packages/*/addon-test-support/**',
         'packages/*/app/**',
-        '**/tests/dummy/app/**',
+        'packages/*/tests/dummy/app/**',
+        'test-packages/**/*.[jt]s',
       ],
       parserOptions: {
         sourceType: 'script',

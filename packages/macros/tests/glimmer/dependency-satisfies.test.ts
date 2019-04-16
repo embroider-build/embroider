@@ -2,17 +2,22 @@ import { templateTests } from './helpers';
 
 describe('dependency satisfies', () => {
   templateTests(transform => {
-    test('is satisfied', () => {
+    test('in content position', () => {
       let result = transform(`{{macroDependencySatisfies 'qunit' '^2.8.0'}}`);
       expect(result).toEqual('{{true}}');
     });
 
-    test('is not satisfied', () => {
+    test('in subexpression position', () => {
+      let result = transform(`<Foo @a={{macroDependencySatisfies 'qunit' '^2.8.0'}} />`);
+      expect(result).toMatch(/@a=\{\{true\}\}/);
+    });
+
+    test('emits false for out-of-range package', () => {
       let result = transform(`{{macroDependencySatisfies 'qunit' '^10.0.0'}}`);
       expect(result).toEqual('{{false}}');
     });
 
-    test('is not present', () => {
+    test('emits false for missing package', () => {
       let result = transform(`{{macroDependencySatisfies 'not-a-real-dep' '^10.0.0'}}`);
       expect(result).toEqual('{{false}}');
     });

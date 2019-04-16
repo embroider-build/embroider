@@ -1,14 +1,13 @@
 import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import DependencyAnalyzer from './dependency-analyzer';
 import { AddonMeta } from '@embroider/core';
 
 type GetMeta = () => AddonMeta;
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree: Tree, private analyzer: DependencyAnalyzer, private getMeta: GetMeta) {
-    super([inputTree, analyzer], {
+  constructor(inputTree: Tree, private getMeta: GetMeta) {
+    super([inputTree], {
       annotation: 'embroider:core:rewrite-package-json',
     });
   }
@@ -29,7 +28,6 @@ export default class RewritePackageJSON extends Plugin {
     }
     let meta = pkg['ember-addon'] as AddonMeta;
     meta.version = 2;
-    meta.externals = this.analyzer.externals;
     meta['auto-upgraded'] = true;
     Object.assign(meta, this.getMeta());
     this.cachedLast = pkg;

@@ -6,18 +6,16 @@ import { join } from 'path';
 import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
-import DependencyAnalyzer from './dependency-analyzer';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
 import MultiFunnel from './multi-funnel';
-import ImportParser from './import-parser';
 import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTestSupport from './rewrite-addon-test-support';
 import { mergeWithAppend } from './merges';
-import { Package, PackageCache, AddonMeta, TemplateCompiler, debug } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -57,12 +55,7 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(
-    protected addonInstance: any,
-    private packageCache: PackageCache,
-    protected addonOptions: Required<Options>,
-    private app: V1App
-  ) {
+  constructor(protected addonInstance: any, protected addonOptions: Required<Options>, private app: V1App) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
     }
@@ -174,36 +167,6 @@ export default class V1Addon implements V1Package {
     // "ember-addon.main" in package.json. We want the real package root here
     // (the place where package.json lives).
     return dirname(pkgUpSync(this.addonInstance.root)!);
-  }
-
-  @Memoize()
-  private findBabel(): { major: 6 | 7; config: TransformOptions } {
-    let babelAddon = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-babel');
-    if (!babelAddon) {
-      // if we didn't have our own babel plugin at all, it's safe to parse our
-      // code with 7.
-      return { major: 7, config: {} };
-    }
-    let major = Number(babelAddon.pkg.version.split('.')[0]);
-    if (major !== 6 && major !== 7) {
-      throw new Error(`@embroider/compat only supports v1 addons that use babel 6 or 7`);
-    }
-
-    // this may look like an extremely narrow subset of the babel config, but
-    // ember-cli-babel does a similarly narrow thing. The only other things that
-    // an addon could successfully pass through ember-cli-babel are things we
-    // don't want.
-    let config = {
-      plugins: this.options.babel.plugins,
-      presets: this.options.babel.presets,
-    };
-
-    return { major, config };
-  }
-
-  private parseImports(tree: Tree) {
-    let { major, config } = this.findBabel();
-    return new ImportParser(tree, major, config);
   }
 
   @Memoize()
@@ -379,15 +342,8 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   protected get v2Trees() {
-    let { trees, importParsers } = this.build();
-
-    // Compat Adapters are allowed to override the packageJSON getter. So we
-    // must create a Package that respects that version of packageJSON, so the
-    // DependencyAnalyzer will respect tweaks made by Compat Adapters.
-    let pkg = new TweakedPackage(this.packageCache.getAddon(this.root), this.packageJSON, this.packageCache);
-
-    let analyzer = new DependencyAnalyzer(importParsers, pkg);
-    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, analyzer, () => this.packageMeta);
+    let { trees } = this.build();
+    let packageJSONRewriter = new RewritePackageJSON(this.rootTree, () => this.packageMeta);
     trees.push(packageJSONRewriter);
     return trees;
   }
@@ -475,12 +431,14 @@ export default class V1Addon implements V1Package {
   private buildTreeForAddon(built: IntermediateBuild) {
     let addonTree = this.treeForAddon();
     if (addonTree) {
-      let addonParser = this.parseImports(addonTree);
-      built.importParsers.push(addonParser);
+      let filenames: string[] = [];
+      addonTree = new ObserveTree(addonTree, outputDir => {
+        filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+      });
       built.trees.push(addonTree);
       if (!this.addonOptions.staticAddonTrees) {
         built.dynamicMeta.push(() => ({
-          'implicit-modules': addonParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`),
+          'implicit-modules': filenames,
         }));
       }
     }
@@ -535,12 +493,14 @@ export default class V1Addon implements V1Package {
       addonTestSupportTree = this.transpile(this.stockTree('addon-test-support'));
     }
     if (addonTestSupportTree) {
-      let testSupportParser = this.parseImports(addonTestSupportTree);
-      built.importParsers.push(testSupportParser);
+      let filenames: string[] = [];
+      addonTestSupportTree = new ObserveTree(addonTestSupportTree, outputPath => {
+        filenames = walkSync(outputPath, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+      });
       built.trees.push(addonTestSupportTree);
       if (!this.addonOptions.staticAddonTestSupportTrees) {
         built.dynamicMeta.push(() => ({
-          'implicit-test-modules': testSupportParser.filenames.map(f => `./${f.replace(/.js$/i, '')}`),
+          'implicit-test-modules': filenames,
         }));
       }
     }
@@ -568,7 +528,6 @@ export default class V1Addon implements V1Package {
     let tree = this.treeForTestSupport();
     if (tree) {
       tree = this.maybeSetAppJS(built, tree);
-      built.importParsers.push(this.parseImports(tree));
       built.trees.push(tree);
     }
   }
@@ -597,7 +556,6 @@ export default class V1Addon implements V1Package {
       // allowed dependencies are anymore and would get false positive
       // externals.
       appTree = this.maybeSetAppJS(built, appTree);
-      built.importParsers.push(this.parseImports(appTree));
       built.trees.push(appTree);
     }
 
@@ -609,7 +567,6 @@ export default class V1Addon implements V1Package {
       let hintTree = this.addonInstance.jshintAddonTree();
       if (hintTree) {
         hintTree = this.maybeSetAppJS(built, new Funnel(hintTree, { destDir: appPublicationDir }));
-        built.importParsers.push(this.parseImports(hintTree));
         built.trees.push(hintTree);
       }
     }
@@ -699,21 +656,11 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, packageCache: PackageCache, options: Required<Options>, app: V1App): V1Addon;
-}
-
-class TweakedPackage extends Package {
-  constructor(realPackage: Package, private overridePackageJSON: any, packageCache: PackageCache) {
-    super(realPackage.root, false, packageCache);
-  }
-  get packageJSON() {
-    return this.overridePackageJSON;
-  }
+  new (addonInstance: any, options: Required<Options>, app: V1App): V1Addon;
 }
 
 class IntermediateBuild {
   trees: Tree[] = [];
-  importParsers: ImportParser[] = [];
   staticMeta: { [metaField: string]: any } = {};
   dynamicMeta: (() => Partial<AddonMeta>)[] = [];
 }

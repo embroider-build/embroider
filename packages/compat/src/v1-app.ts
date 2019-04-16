@@ -7,8 +7,6 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
-import DependencyAnalyzer from './dependency-analyzer';
-import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
@@ -517,18 +515,10 @@ export default class V1App implements V1Package {
     return this.app.trees.public;
   }
 
-  processAppJS(): { appJS: Tree; analyzer: DependencyAnalyzer } {
+  processAppJS(): { appJS: Tree } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let importParsers = [new ImportParser(appTree, this.babelMajorVersion(), this.babelConfig())];
-    if (testsTree) {
-      importParsers.push(new ImportParser(testsTree, this.babelMajorVersion(), this.babelConfig()));
-    }
-    if (lintTree) {
-      importParsers.push(new ImportParser(lintTree, this.babelMajorVersion(), this.babelConfig()));
-    }
-    let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);
     let trees: Tree[] = [];
     trees.push(appTree);
@@ -541,7 +531,6 @@ export default class V1App implements V1Package {
     }
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
-      analyzer,
     };
   }
 

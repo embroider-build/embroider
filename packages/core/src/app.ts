@@ -741,7 +741,6 @@ export class AppBuilder<TreeNames> {
     this.gatherImplicitModules('implicit-modules', amdModules);
 
     let source = entryTemplate({
-      needsEmbroiderHook: true,
       amdModules,
       autoRun: this.adapter.autoRun(),
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
@@ -839,37 +838,6 @@ import { require as r } from '@embroider/core';
 let w = window;
 let d = w.define;
 
-{{#if needsEmbroiderHook}}
-  {{!-
-    This function is the entrypoint that final stage packagers should
-    use to lookup externals at runtime.
-  -}}
-  w._embroider_ = function(specifier) {
-    let m;
-    if (specifier === 'require') {
-      m = w.require;
-    } else {
-      m = w.require(specifier);
-    }
-    {{!-
-      There are plenty of hand-written AMD defines floating around
-      that lack this, and they will break when other build systems
-      encounter them.
-
-      As far as I can tell, Ember's loader was already treating this
-      case as a module, so in theory we aren't breaking anything by
-      marking it as such when other packagers come looking.
-
-      todo: get review on this part.
-    -}}
-    if (m.default && !m.__esModule) {
-      m.__esModule = true;
-    }
-    return m;
-  };
-{{/if}}
-
-
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return r("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
@@ -910,7 +878,6 @@ let d = w.define;
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  needsEmbroiderHook?: boolean;
   amdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;

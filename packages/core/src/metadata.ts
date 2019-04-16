@@ -11,7 +11,6 @@ export interface AppMeta {
     isParallelSafe: boolean;
     majorVersion: 6 | 7;
   };
-  externals?: string[];
   'root-url': string;
   'template-compiler': {
     filename: string;

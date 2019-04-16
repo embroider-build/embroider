@@ -1,4 +1,4 @@
-import packageName from './package-name';
+import getPackageName from './package-name';
 import { join, relative, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import {
@@ -15,56 +15,52 @@ import {
   stringLiteral,
 } from '@babel/types';
 import PackageCache from './package-cache';
-import Package from './package';
-import { pathExistsSync } from 'fs-extra';
+import Package, { V2Package } from './package';
+import { pathExistsSync, writeFileSync, ensureDirSync } from 'fs-extra';
+import { Memoize } from 'typescript-memoize';
+import { compile } from './js-handlebars';
 
 interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
   opts: {
-    rename?: {
+    rename: {
       [fromName: string]: string;
     };
-    extraImports?: {
+    extraImports: {
       absPath: string;
       target: string;
       runtimeName?: string;
     }[];
+    externalsDir: string;
   };
 }
 
 export type Options = State['opts'];
 
-type GetOwningPackage = () => Package | null;
-
 const packageCache = PackageCache.shared('embroider-stage3');
 
-function adjustSpecifier(
-  specifier: string,
-  sourceFileName: string,
-  opts: State['opts'],
-  getOwningPackage: GetOwningPackage
-) {
-  let name = packageName(specifier);
-  if (!name) {
+function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
+  let packageName = getPackageName(specifier);
+  if (!packageName) {
     return specifier;
   }
 
-  if (opts.rename && opts.rename[name]) {
-    return specifier.replace(name, opts.rename[name]);
+  if (opts.rename[packageName]) {
+    return specifier.replace(packageName, opts.rename[packageName]);
   }
 
-  let pkg = getOwningPackage();
-  if (!pkg) {
+  let pkg = sourceFile.owningPackage();
+  if (!pkg || !pkg.isV2Ember()) {
     return specifier;
   }
 
-  if (pkg.meta['auto-upgraded'] && pkg.name === name) {
+  if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
     // we found a self-import, make it relative. Only auto-upgraded packages get
     // this help, v2 packages are natively supposed to use explicit hbs
     // extensions, and we want to push them all to do that correctly.
-    let fullPath = specifier.replace(name, pkg.root);
-    let relativePath = relative(dirname(sourceFileName), fullPath);
+    let fullPath = specifier.replace(packageName, pkg.root);
+    let relativePath = relative(dirname(sourceFile.name), fullPath);
     if (relativePath[0] !== '.') {
       relativePath = `./${relativePath}`;
     }
@@ -73,29 +69,115 @@ function adjustSpecifier(
   return specifier;
 }
 
-function makeHBSExplicit(specifier: string, sourceFileName: string, getOwningPackage: GetOwningPackage) {
+function isExternal(packageName: string, fromPkg: V2Package): boolean {
+  if (fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName)) {
+    return true;
+  }
+
+  // we're being strict, packages authored in v2 need to list their own
+  // externals, we won't resolve for them.
+  if (!fromPkg.meta['auto-upgraded']) {
+    return false;
+  }
+
+  try {
+    let dep = packageCache.resolve(packageName, fromPkg);
+    if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
+      return true;
+    }
+  } catch (err) {
+    if (err.code !== 'MODULE_NOT_FOUND') {
+      throw err;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+const externalTemplate = compile(`
+{{#if (eq runtimeName "require")}}
+const m = window.require;
+{{else}}
+const m = window.require("{{{js-string-escape runtimeName}}}");
+{{/if}}
+{{!-
+  There are plenty of hand-written AMD defines floating around
+  that lack this, and they will break when other build systems
+  encounter them.
+
+  As far as I can tell, Ember's loader was already treating this
+  case as a module, so in theory we aren't breaking anything by
+  marking it as such when other packagers come looking.
+
+  todo: get review on this part.
+-}}
+if (m.default && !m.__esModule) {
+  m.__esModule = true;
+}
+module.exports = m;
+`) as (params: { runtimeName: string }) => string;
+
+function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+  let packageName = getPackageName(specifier);
+  if (!packageName) {
+    // must have been relative, we only care about absolute imports here
+    return specifier;
+  }
+
+  let pkg = sourceFile.owningPackage();
+  if (!pkg || !pkg.isV2Ember()) {
+    return specifier;
+  }
+
+  if (isExternal(packageName, pkg)) {
+    let target = join(opts.externalsDir, specifier + '.js');
+    ensureDirSync(dirname(target));
+    writeFileSync(
+      target,
+      externalTemplate({
+        runtimeName: specifier,
+      })
+    );
+    return relative(dirname(sourceFile.name), target.slice(0, -3));
+  } else {
+    if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
+      throw new Error(
+        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+      );
+    }
+    return specifier;
+  }
+}
+
+function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
     // already has a well-known explicit extension, so nevermind
     return specifier;
   }
 
-  let pkg = getOwningPackage();
-  if (!pkg || !pkg.meta['auto-upgraded']) {
+  // our own externals by definition aren't things we can find on disk, so no
+  // point trying
+  if (specifier.startsWith('@embroider/externals/')) {
     return specifier;
   }
 
-  if (pkg.meta.externals && pkg.meta.externals.includes(specifier)) {
+  let pkg = sourceFile.owningPackage();
+  if (!pkg || !pkg.isV2Ember() || !pkg.meta['auto-upgraded']) {
+    // only auto-upgraded packages get this adjustment, native v2 packages are
+    // supposed to already say '.hbs' explicitly whenever they import a
+    // template.
     return specifier;
   }
 
   let target;
-  let name = packageName(specifier);
+  let packageName = getPackageName(specifier);
 
-  if (name) {
-    let base = packageCache.resolve(name, pkg).root;
-    target = resolve(base, specifier.replace(name, '.') + '.hbs');
+  if (packageName) {
+    let base = packageCache.resolve(packageName, pkg).root;
+    target = resolve(base, specifier.replace(packageName, '.') + '.hbs');
   } else {
-    target = resolve(dirname(sourceFileName), specifier + '.hbs');
+    target = resolve(dirname(sourceFile.name), specifier + '.hbs');
   }
 
   if (pathExistsSync(target)) {
@@ -112,9 +194,7 @@ export default function main({ types: t }: { types: any }) {
         enter: function(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
-          if (state.opts.extraImports) {
-            addExtraImports(path, state.opts.extraImports);
-          }
+          addExtraImports(path, state.opts.extraImports);
         },
         exit: function(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
@@ -157,19 +237,11 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let sourceFileName: string = path.hub.file.opts.filename;
+        let file = new AdjustFile(path.hub.file.opts.filename);
 
-        // we use `null` to mean we already tried finding it and couldn't, vs
-        // `undefined` for we didn't cache anything yet.
-        let owningPackage: Package | undefined | null = undefined;
-        let getOwningPackage = () => {
-          if (owningPackage === undefined) {
-            owningPackage = packageCache.ownerOfFile(sourceFileName) || null;
-          }
-          return owningPackage;
-        };
-        let specifier = adjustSpecifier(source.value, sourceFileName, opts, getOwningPackage);
-        specifier = makeHBSExplicit(specifier, sourceFileName, getOwningPackage);
+        let specifier = adjustSpecifier(source.value, file, opts);
+        specifier = handleExternal(specifier, file, opts);
+        specifier = makeHBSExplicit(specifier, file);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }
@@ -205,4 +277,13 @@ function amdDefine(runtimeName: string, importCounter: number) {
       functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
     ])
   );
+}
+
+class AdjustFile {
+  constructor(public name: string) {}
+
+  @Memoize()
+  owningPackage(): Package | undefined {
+    return packageCache.ownerOfFile(this.name);
+  }
 }

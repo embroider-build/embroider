@@ -1,4 +1,4 @@
-import Package from './package';
+import { V2AddonPackage } from './package';
 import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
 import { join } from 'path';
@@ -12,7 +12,7 @@ export default class AppDiffer {
 
   readonly files: Set<string> = new Set();
 
-  constructor(private outputPath: string, ownAppJSDir: string, activeAddonDescendants: Package[]) {
+  constructor(private outputPath: string, ownAppJSDir: string, activeAddonDescendants: V2AddonPackage[]) {
     let trees = activeAddonDescendants
       .map(
         (addon): InputTree | undefined => {

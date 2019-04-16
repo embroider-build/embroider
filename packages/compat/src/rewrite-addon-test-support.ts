@@ -40,7 +40,7 @@ import { join } from 'path';
   import { test } from 'ember-qunit/qunit';
 */
 
-type GetMeta = () => AddonMeta;
+type GetMeta = () => Partial<AddonMeta>;
 
 export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
@@ -72,6 +72,6 @@ export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { 
   });
   return {
     tree: mergeTrees([goodParts, badParts]),
-    getMeta: () => ({ 'renamed-modules': renamed, version: 2 }),
+    getMeta: () => ({ 'renamed-modules': renamed }),
   };
 }

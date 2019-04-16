@@ -14,13 +14,13 @@ import {
   TemplateCompilerPlugins,
   Resolver,
   TemplateCompiler,
+  AddonPackage,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
-import DependencyAnalyzer from './dependency-analyzer';
 import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
@@ -33,7 +33,6 @@ import { sync as resolveSync } from 'resolve';
 
 interface TreeNames {
   appJS: Tree;
-  analyzer: Tree;
   htmlTree: Tree;
   publicTree: Tree;
   configTree: Tree;
@@ -45,7 +44,7 @@ interface TreeNames {
 function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
 
-  let { analyzer, appJS } = oldPackage.processAppJS();
+  let { appJS } = oldPackage.processAppJS();
   let htmlTree = oldPackage.htmlTree;
   let publicTree = oldPackage.publicTree;
   let configTree = oldPackage.config;
@@ -56,7 +55,6 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
 
   let inTrees = {
     appJS,
-    analyzer,
     htmlTree,
     publicTree,
     configTree,
@@ -70,9 +68,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       options,
       oldPackage,
       configTree,
-      analyzer,
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.getAddon(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
     return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
@@ -88,7 +85,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     private options: Required<Options>,
     private oldPackage: V1App,
     private configTree: V1Config,
-    private analyzer: DependencyAnalyzer,
     private synthVendor: Package,
     private synthStyles: Package
   ) {}
@@ -125,13 +121,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  get activeAddonDescendants(): Package[] {
+  get activeAddonDescendants(): AddonPackage[] {
     // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage;
+    let shouldInclude = (dep: Package) => dep.isEmberPackage();
 
-    let result = this.appPackage.findDescendants(shouldInclude);
-    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude);
-    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude));
+    let result = this.appPackage.findDescendants(shouldInclude) as AddonPackage[];
+    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude) as AddonPackage[];
+    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
     return result;
   }
@@ -278,10 +274,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   babelConfig() {
     return this.oldPackage.babelConfig();
-  }
-
-  externals(): string[] {
-    return this.analyzer.externals;
   }
 }
 

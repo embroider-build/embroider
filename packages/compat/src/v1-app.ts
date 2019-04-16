@@ -7,8 +7,6 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
-import DependencyAnalyzer from './dependency-analyzer';
-import ImportParser from './import-parser';
 import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
@@ -40,7 +38,7 @@ export default class V1App implements V1Package {
   protected extendPackage() {
     let meta = this.app.project.pkg['ember-addon'];
     if (meta && meta.paths) {
-      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
       let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
       this.packageCache.overridePackage(extendedPackage);
       for (let addon of inRepoAddons) {
@@ -98,7 +96,7 @@ export default class V1App implements V1Package {
   nonResolvableDependencies(): Package[] {
     let meta = this.app.project.pkg['ember-addon'];
     if (meta && meta.paths) {
-      return meta.paths.map((path: string) => this.packageCache.getAddon(join(this.root, path)));
+      return meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
     }
     return [];
   }
@@ -340,6 +338,7 @@ export default class V1App implements V1Package {
       }
 
       let addonMeta: AddonMeta = {
+        type: 'addon',
         version: 2,
         'implicit-scripts': this.remapImplicitAssets(
           this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]
@@ -393,6 +392,7 @@ export default class V1App implements V1Package {
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
+        type: 'addon',
         version: 2,
         'public-assets': {},
       };
@@ -517,18 +517,10 @@ export default class V1App implements V1Package {
     return this.app.trees.public;
   }
 
-  processAppJS(): { appJS: Tree; analyzer: DependencyAnalyzer } {
+  processAppJS(): { appJS: Tree } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let importParsers = [new ImportParser(appTree, this.babelMajorVersion(), this.babelConfig())];
-    if (testsTree) {
-      importParsers.push(new ImportParser(testsTree, this.babelMajorVersion(), this.babelConfig()));
-    }
-    if (lintTree) {
-      importParsers.push(new ImportParser(lintTree, this.babelMajorVersion(), this.babelConfig()));
-    }
-    let analyzer = new DependencyAnalyzer(importParsers, this.packageCache.getApp(this.root));
     let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);
     let trees: Tree[] = [];
     trees.push(appTree);
@@ -541,7 +533,6 @@ export default class V1App implements V1Package {
     }
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
-      analyzer,
     };
   }
 
@@ -578,7 +569,7 @@ class V1DummyApp extends V1App {
   private owningAddon!: Package;
 
   extendPackage() {
-    this.owningAddon = this.packageCache.getAddon(this.app.project.root);
+    this.owningAddon = this.packageCache.get(this.app.project.root);
     let dummyPackage = new DummyPackage(this.root, this.owningAddon, this.packageCache);
     this.packageCache.overridePackage(dummyPackage);
     this.packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, this.owningAddon);

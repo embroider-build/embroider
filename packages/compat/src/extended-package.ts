@@ -5,7 +5,7 @@ import cloneDeep from 'lodash/cloneDeep';
 export default class ExtendedPackage extends Package {
   private originalPackage: Package;
   constructor(root: string, private extraDevDeps: Package[], packageCache: PackageCache) {
-    super(root, true, packageCache);
+    super(root, packageCache, true);
     this.originalPackage = packageCache.getApp(root);
   }
 

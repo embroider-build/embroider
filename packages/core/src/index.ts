@@ -1,7 +1,7 @@
 export { Packager, PackagerInstance } from './packager';
 export { Resolver } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
-export { default as Package } from './package';
+export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';
 export { default as Stage } from './stage';
 export { default as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';

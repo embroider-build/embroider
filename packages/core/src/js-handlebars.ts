@@ -8,4 +8,8 @@ registerHelper('json-stringify', function(input: any, indent?: number) {
   return JSON.stringify(input, null, indent);
 });
 
+registerHelper('eq', function(a: any, b: any) {
+  return a === b;
+});
+
 export { compile };

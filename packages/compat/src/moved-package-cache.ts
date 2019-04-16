@@ -74,7 +74,7 @@ export class MovedPackageCache extends PackageCache {
 
   private movedPackage(originalPkg: Package): Package {
     let newRoot = this.localPath(originalPkg.root);
-    return getOrCreate(this.rootCache, newRoot, () => new Package(newRoot, false, this));
+    return getOrCreate(this.rootCache, newRoot, () => new Package(newRoot, this, false));
   }
 
   private localPath(filename: string) {
@@ -188,7 +188,7 @@ class MovedSet {
     }
 
     // non-ember packages don't need to move
-    if (pkg !== this.app && !pkg.isEmberPackage) {
+    if (pkg !== this.app && !pkg.isEmberPackage()) {
       this.mustMove.set(pkg, false);
       return false;
     }
@@ -196,7 +196,7 @@ class MovedSet {
     // The app always moves (because we need a place to mash all the
     // addon-provided "app-js" trees), and you must move if you are not native
     // v2
-    let mustMove = pkg === this.app || !pkg.isV2;
+    let mustMove = pkg === this.app || !pkg.isV2Ember();
     for (let dep of pkg.dependencies) {
       // or if any of your deps need to move
       mustMove = this.check(dep) || mustMove;

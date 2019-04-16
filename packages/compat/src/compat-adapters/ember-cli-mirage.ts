@@ -1,14 +1,16 @@
 import V1Addon from '../v1-addon';
 import Funnel from 'broccoli-funnel';
+import { AddonMeta } from '@embroider/core';
 
 export default class extends V1Addon {
-  get packageMeta() {
+  get packageMeta(): Partial<AddonMeta> {
     if (this.addonInstance._shouldIncludeFiles()) {
       return super.packageMeta;
     }
     return {
-      version: 2 as 2,
-      'auto-upgraded': true as true,
+      type: 'addon',
+      version: 2,
+      'auto-upgraded': true,
     };
   }
 

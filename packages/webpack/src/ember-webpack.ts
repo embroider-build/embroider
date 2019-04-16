@@ -130,7 +130,6 @@ class HTMLEntrypoint {
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
-  externals: string[];
   templateCompiler: {
     filename: string;
     isParallelSafe: boolean;
@@ -146,7 +145,6 @@ interface AppInfo {
 // AppInfos are equal if they result in the same webpack config.
 function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   return (
-    isEqual(left.externals, right.externals) &&
     isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
     left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
@@ -201,27 +199,21 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       }
     }
 
-    let externals = meta.externals || [];
     let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];
-    return { entrypoints, otherAssets, externals, templateCompiler, babel, rootURL };
+    return { entrypoints, otherAssets, templateCompiler, babel, rootURL };
   }
 
   private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, externals, templateCompiler, babel, rootURL }: AppInfo) {
+  private configureWebpack({ entrypoints, templateCompiler, babel, rootURL }: AppInfo) {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
         entry[moduleName] = './' + moduleName;
       }
     }
-
-    let amdExternals: { [name: string]: string } = {};
-    externals.forEach(external => {
-      amdExternals[external] = `_embroider_("${external}")`;
-    });
 
     return {
       mode: this.mode,
@@ -272,7 +264,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           chunks: 'all',
         },
       },
-      externals: amdExternals,
       resolveLoader: {
         alias: {
           // these loaders are our dependencies, not the app's dependencies. I'm

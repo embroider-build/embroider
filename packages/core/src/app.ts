@@ -1,13 +1,12 @@
 import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
-import Package from './package';
+import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
-import { todo, unsupported, debug, warn } from './messages';
-import absolutePackageName from './package-name';
+import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -39,7 +38,7 @@ export type EmberENV = unknown;
 */
 export interface AppAdapter<TreeNames> {
   // the set of addon packages that are active.
-  readonly activeAddonDescendants: Package[];
+  readonly activeAddonDescendants: V2AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -96,11 +95,6 @@ export interface AppAdapter<TreeNames> {
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
   emberENV(): EmberENV;
-
-  // the list of module specifiers that are used in the app that are not
-  // resolvable at build time. This is how we figure out the "externals" for the
-  // app itself as defined in SPEC.md.
-  externals(): string[];
 
   // when true, the app's own code is understood to already follow v2 standards.
   // For example, all imports of templates have an explicit `hbs` extension, and
@@ -328,6 +322,7 @@ export class AppBuilder<TreeNames> {
     let adjustOptions: AdjustImportsOptions = {
       rename,
       extraImports: this.adapter.extraImports(),
+      externalsDir: join(this.root, 'node_modules', '@embroider/externals'),
     };
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }
@@ -557,8 +552,6 @@ export class AppBuilder<TreeNames> {
     this.addTemplateCompiler(templateCompiler);
     this.addBabelConfig(babelConfig);
 
-    let externals = this.combineExternals();
-
     let assetPaths = assets.map(asset => asset.relativePath);
     for (let asset of finalAssets) {
       // our concatenated assets all have map files that ride along. Here we're
@@ -570,8 +563,8 @@ export class AppBuilder<TreeNames> {
     }
 
     let meta: AppMeta = {
+      type: 'app',
       version: 2,
-      externals,
       assets: assetPaths,
       'template-compiler': {
         filename: '_template_compiler_.js',
@@ -590,36 +583,15 @@ export class AppBuilder<TreeNames> {
     }
 
     let pkg = cloneDeep(this.app.packageJSON);
+    if (pkg.keywords) {
+      if (!pkg.keywords.includes('ember-addon')) {
+        pkg.keywords.push('ember-addon');
+      }
+    } else {
+      pkg.keywords = ['ember-addon'];
+    }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
-  }
-
-  private combineExternals() {
-    let allAddonNames = new Set(this.adapter.activeAddonDescendants.map(d => d.name));
-    let externals = new Set();
-    for (let addon of this.adapter.activeAddonDescendants) {
-      if (!addon.meta.externals) {
-        continue;
-      }
-      for (let name of addon.meta.externals) {
-        let pkgName = absolutePackageName(name);
-        if (pkgName && allAddonNames.has(pkgName)) {
-          unsupported(`${addon.name} imports ${name} but does not directly depend on it.`);
-        } else {
-          externals.add(name);
-        }
-      }
-    }
-
-    for (let name of this.adapter.externals()) {
-      let pkgName = absolutePackageName(name);
-      if (pkgName && allAddonNames.has(pkgName)) {
-        unsupported(`your app imports ${name} but does not directly depend on it.`);
-      } else {
-        externals.add(name);
-      }
-    }
-    return [...externals.values()];
   }
 
   private templateCompiler(config: EmberENV) {
@@ -770,7 +742,6 @@ export class AppBuilder<TreeNames> {
     this.gatherImplicitModules('implicit-modules', amdModules);
 
     let source = entryTemplate({
-      needsEmbroiderHook: true,
       amdModules,
       autoRun: this.adapter.autoRun(),
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
@@ -868,37 +839,6 @@ import { require as r } from '@embroider/core';
 let w = window;
 let d = w.define;
 
-{{#if needsEmbroiderHook}}
-  {{!-
-    This function is the entrypoint that final stage packagers should
-    use to lookup externals at runtime.
-  -}}
-  w._embroider_ = function(specifier) {
-    let m;
-    if (specifier === 'require') {
-      m = w.require;
-    } else {
-      m = w.require(specifier);
-    }
-    {{!-
-      There are plenty of hand-written AMD defines floating around
-      that lack this, and they will break when other build systems
-      encounter them.
-
-      As far as I can tell, Ember's loader was already treating this
-      case as a module, so in theory we aren't breaking anything by
-      marking it as such when other packagers come looking.
-
-      todo: get review on this part.
-    -}}
-    if (m.default && !m.__esModule) {
-      m.__esModule = true;
-    }
-    return m;
-  };
-{{/if}}
-
-
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return r("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
@@ -939,7 +879,6 @@ let d = w.define;
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  needsEmbroiderHook?: boolean;
   amdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;

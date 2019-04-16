@@ -59,7 +59,6 @@
     "resolve": "^1.8.1",
     "resolve-package-path": "^1.2.2",
     "semver": "^5.5.0",
-    "symlink-or-copy": "^1.2.0",
     "typescript-memoize": "^1.0.0-alpha.3",
     "walk-sync": "^1.1.3"
   },

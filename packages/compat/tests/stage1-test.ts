@@ -105,7 +105,6 @@ QUnit.module('stage1 build', function() {
     test('addon metadata', function(assert) {
       let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
       assertMeta.get('app-js').equals('_app_', 'should have app-js metadata');
-      assertMeta.get('externals').includes('@ember/component', 'should detect external modules');
       assertMeta
         .get('implicit-modules')
         .includes('./components/hello-world', 'staticAddonTrees is off so we should include the component implicitly');

@@ -1,14 +1,13 @@
 import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import DependencyAnalyzer from './dependency-analyzer';
 import { AddonMeta } from '@embroider/core';
 
-type GetMeta = () => AddonMeta;
+type GetMeta = () => Partial<AddonMeta>;
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree: Tree, private analyzer: DependencyAnalyzer, private getMeta: GetMeta) {
-    super([inputTree, analyzer], {
+  constructor(inputTree: Tree, private getMeta: GetMeta) {
+    super([inputTree], {
       annotation: 'embroider:core:rewrite-package-json',
     });
   }
@@ -24,15 +23,18 @@ export default class RewritePackageJSON extends Plugin {
 
   build() {
     let pkg = JSON.parse(readFileSync(join(this.inputPaths[0], 'package.json'), 'utf8'));
-    if (!pkg['ember-addon']) {
-      pkg['ember-addon'] = {};
-    }
-    let meta = pkg['ember-addon'] as AddonMeta;
-    meta.version = 2;
-    meta.externals = this.analyzer.externals;
-    meta['auto-upgraded'] = true;
-    Object.assign(meta, this.getMeta());
+    let meta: AddonMeta = Object.assign(
+      {},
+      pkg.meta,
+      {
+        version: 2,
+        'auto-upgraded': true,
+        type: 'addon',
+      } as AddonMeta,
+      this.getMeta()
+    );
     this.cachedLast = pkg;
+    pkg['ember-addon'] = meta;
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 }

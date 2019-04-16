@@ -11,7 +11,7 @@
   "private": false,
   "scripts": {
     "prepare": "tsc",
-    "test": "qunit tests"
+    "test": "jest"
   },
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",

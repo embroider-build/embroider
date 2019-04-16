@@ -13,7 +13,7 @@ import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import Snitch from './snitch';
-import rewriteAddonTestSupport from './rewrite-addon-test-support';
+import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import { AddonMeta, TemplateCompiler, debug } from '@embroider/core';
 import Options from './options';
@@ -391,15 +391,24 @@ export default class V1Addon implements V1Package {
     });
   }
 
-  protected treeForAddon(): Tree | undefined {
+  protected treeForAddon(built: IntermediateBuild): Tree | undefined {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
       let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
-        return this.transpile(
-          new MultiFunnel(tree, {
-            srcDirs: [this.moduleName, `modules/${this.moduleName}`],
-          })
-        );
+        // there is a weirder, older behavior where addons wrapped their addon
+        // tree output in a `modules` folder. This strips that level off if it
+        // exists.
+        tree = new MultiFunnel(tree, {
+          srcDirs: [`modules`],
+        });
+
+        // this captures addons that are trying to escape their own package's
+        // namespace
+        let result = rewriteAddonTree(tree, this.name);
+        tree = result.tree;
+        built.dynamicMeta.push(result.getMeta);
+
+        return this.transpile(tree);
       }
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon'));
@@ -429,18 +438,18 @@ export default class V1Addon implements V1Package {
   }
 
   private buildTreeForAddon(built: IntermediateBuild) {
-    let addonTree = this.treeForAddon();
-    if (addonTree) {
-      let filenames: string[] = [];
-      addonTree = new ObserveTree(addonTree, outputDir => {
-        filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
-      });
-      built.trees.push(addonTree);
+    let tree = this.treeForAddon(built);
+    if (tree) {
       if (!this.addonOptions.staticAddonTrees) {
+        let filenames: string[] = [];
+        tree = new ObserveTree(tree, outputDir => {
+          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+        });
         built.dynamicMeta.push(() => ({
           'implicit-modules': filenames,
         }));
       }
+      built.trees.push(tree);
     }
   }
 
@@ -485,7 +494,7 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForAddonTestSupport')) {
       let original = this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true });
       if (original) {
-        let { tree, getMeta } = rewriteAddonTestSupport(original, this.name);
+        let { tree, getMeta } = rewriteAddonTree(original, this.name);
         addonTestSupportTree = this.transpile(tree);
         built.dynamicMeta.push(getMeta);
       }
@@ -493,16 +502,16 @@ export default class V1Addon implements V1Package {
       addonTestSupportTree = this.transpile(this.stockTree('addon-test-support'));
     }
     if (addonTestSupportTree) {
-      let filenames: string[] = [];
-      addonTestSupportTree = new ObserveTree(addonTestSupportTree, outputPath => {
-        filenames = walkSync(outputPath, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
-      });
-      built.trees.push(addonTestSupportTree);
       if (!this.addonOptions.staticAddonTestSupportTrees) {
+        let filenames: string[] = [];
+        addonTestSupportTree = new ObserveTree(addonTestSupportTree, outputPath => {
+          filenames = walkSync(outputPath, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+        });
         built.dynamicMeta.push(() => ({
           'implicit-test-modules': filenames,
         }));
       }
+      built.trees.push(addonTestSupportTree);
     }
   }
 

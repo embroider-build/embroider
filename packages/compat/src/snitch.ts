@@ -1,4 +1,4 @@
-import Funnel from 'broccoli-funnel';
+import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import walkSync from 'walk-sync';
 import { Tree } from 'broccoli-plugin';
 
@@ -15,7 +15,11 @@ export default class Snitch extends Funnel {
   private foundBadPaths: Function;
   private mustCheck = true;
 
-  constructor(inputTree: Tree, snitchOptions: { allowedPaths: RegExp; foundBadPaths: Function }, funnelOptions: any) {
+  constructor(
+    inputTree: Tree,
+    snitchOptions: { allowedPaths: RegExp; foundBadPaths: Function },
+    funnelOptions: FunnelOptions
+  ) {
     super(inputTree, funnelOptions);
     this.allowedPaths = snitchOptions.allowedPaths;
     this.foundBadPaths = snitchOptions.foundBadPaths;
@@ -25,6 +29,9 @@ export default class Snitch extends Funnel {
     if (this.mustCheck) {
       let badPaths: string[] = [];
       walkSync(this.inputPaths[0], { directories: false }).map(filename => {
+        if (filename === '.gitkeep') {
+          return;
+        }
         if (!this.allowedPaths.test(filename)) {
           badPaths.push(filename);
         }

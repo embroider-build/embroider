@@ -8,8 +8,8 @@ import { pathExistsSync, moveSync } from 'fs-extra';
 import { join } from 'path';
 
 /*
-  The traditional addon-test-support tree allows you to emit modules under any
-  package you feel like. Which we are NOT COOL WITH.
+  The traditional addon and addon-test-support trees allows you to emit modules
+  under any package you feel like. Which we are NOT COOL WITH.
 
   This transform re-captures anything you try to put into other people's
   packages, puts them back into your own, and tracks what renaming is required
@@ -42,7 +42,7 @@ import { join } from 'path';
 
 type GetMeta = () => Partial<AddonMeta>;
 
-export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
+export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
 
   let movedIndex = new AddToTree(tree, outputPath => {
@@ -59,12 +59,16 @@ export default function rewriteAddonTestSupport(tree: Tree, ownName: string): { 
       foundBadPaths: (badPaths: string[]) => {
         for (let badPath of badPaths) {
           let name = packageName(badPath)!;
+          if (!name) {
+            throw new Error(`WAT ${badPath}`);
+          }
           renamed[name] = `${ownName}/${name}`;
         }
       },
     },
     {
       srcDir: ownName,
+      allowEmpty: true,
     }
   );
   let badParts = new Funnel(tree, {

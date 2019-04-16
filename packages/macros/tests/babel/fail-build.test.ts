@@ -1,5 +1,5 @@
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '..';
+import { MacrosConfig } from '../..';
 
 describe(`fail build macro`, function() {
   allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {

@@ -1,4 +1,4 @@
-import { MacrosConfig } from '..';
+import { MacrosConfig } from '../..';
 import { join } from 'path';
 import { allBabelVersions as allBabel, runDefault } from '@embroider/test-support';
 import 'qunit';

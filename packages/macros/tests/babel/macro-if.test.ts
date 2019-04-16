@@ -1,5 +1,5 @@
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '../src';
+import { MacrosConfig } from '../..';
 
 describe('macroIf', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {

@@ -54,6 +54,7 @@ QUnit.module('stage2 build', function() {
             import Component from '@ember/component';
             import layout from '../templates/components/hello-world';
             import computed from '@ember/object/computed';
+            import somethingExternal from 'not-a-resolvable-package';
             export default Component.extend({
               dynamicComponentName: computed('useDynamic', function() {
                 return this.useDynamic || 'default-dynamic';
@@ -188,6 +189,10 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
       assertFile.matches(/import a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
       assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
+      assertFile.matches(
+        /import somethingExternal from ["']\.\.\/\.\.\/@embroider\/externals\/not-a-resolvable-package["']/,
+        'externals are handled correctly'
+      );
     });
 
     test('app/hello-world.js', function(assert) {

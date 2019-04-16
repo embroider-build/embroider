@@ -3,7 +3,6 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import get from 'lodash/get';
 import { AddonMeta } from './metadata';
-import { Tree } from 'broccoli-plugin';
 import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
 
@@ -38,17 +37,13 @@ export default class Package {
 
   get isEmberPackage(): boolean {
     let keywords = this.packageJSON.keywords;
-    return keywords && (keywords as string[]).includes('ember-addon');
+    return Boolean(keywords && (keywords as string[]).includes('ember-addon'));
   }
 
   get isV2(): boolean {
     let version = get(this.packageJSON, 'ember-addon.version');
     return version === 2;
   }
-
-  // if this package is being dynamically generated, this is the broccoli tree
-  // representing the whole package.
-  tree: Tree | undefined;
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
     let pkgs = new Set();
@@ -83,6 +78,17 @@ export default class Package {
   get dependencies(): Package[] {
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
     return names.map(name => this.packageCache.resolve(name, this));
+  }
+
+  hasDependency(name: string): boolean {
+    for (let section of this.dependencyKeys) {
+      if (this.packageJSON[section]) {
+        if (this.packageJSON[section][name]) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
 

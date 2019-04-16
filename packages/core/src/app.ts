@@ -328,6 +328,7 @@ export class AppBuilder<TreeNames> {
     let adjustOptions: AdjustImportsOptions = {
       rename,
       extraImports: this.adapter.extraImports(),
+      externalsDir: join(this.root, 'node_modules', '@embroider/externals'),
     };
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }
@@ -590,6 +591,13 @@ export class AppBuilder<TreeNames> {
     }
 
     let pkg = cloneDeep(this.app.packageJSON);
+    if (pkg.keywords) {
+      if (!pkg.keywords.includes('ember-addon')) {
+        pkg.keywords.push('ember-addon');
+      }
+    } else {
+      pkg.keywords = ['ember-addon'];
+    }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }

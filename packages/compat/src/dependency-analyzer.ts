@@ -59,6 +59,6 @@ export default class DependencyAnalyzer extends Plugin {
       // this is not something we know how to resolve, so we defer it to runtime
       externals.push(imp.specifier);
     }
-    return externals;
+    return []; //externals;
   }
 }

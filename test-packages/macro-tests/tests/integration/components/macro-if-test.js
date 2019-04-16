@@ -115,4 +115,15 @@ module('Integration | Macro | macroIf', function(hooks) {
     );
     await render(hbs`{{my-assertion (macroIf (macroDependencySatisfies 'ember-source' '10.x') 'red' 'blue') }}`);
   });
+
+  test('macroIf composes with self', async function(assert) {
+    assert.expect(1);
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'red');
+      })
+    );
+    await render(hbs`{{my-assertion (macroIf true (macroIf false 'green' 'red') 'blue') }}`);
+  });
 });

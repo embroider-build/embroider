@@ -2,6 +2,7 @@ import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
 import { macroIfBlock, macroIfExpression, maybeAttrs } from './macro-if';
+import { failBuild } from './fail-build';
 
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
   function embroiderFirstMacrosTransform(env: { syntax: { builders: any }; meta: { moduleName: string } }) {
@@ -127,6 +128,9 @@ export function makeSecondTransform() {
           if (node.path.original === 'macroIf') {
             return macroIfExpression(node, env.syntax.builders);
           }
+          if (node.path.original === 'macroFailBuild') {
+            failBuild(node);
+          }
         },
         ElementNode(node: any) {
           node.modifiers = node.modifiers.filter((modifier: any) => {
@@ -152,6 +156,9 @@ export function makeSecondTransform() {
           }
           if (node.path.original === 'macroIf') {
             return env.syntax.builders.mustache(macroIfExpression(node, env.syntax.builders));
+          }
+          if (node.path.original === 'macroFailBuild') {
+            failBuild(node);
           }
         },
       },

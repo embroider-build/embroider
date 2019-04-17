@@ -5,7 +5,7 @@ describe(`macroFailBuild`, function() {
   templateTests(function(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { failureMessage: 'I said so' });
 
-    test.skip('it can fail the build', () => {
+    test('it can fail the build, content position', () => {
       expect(() => {
         transform(`
           {{macroFailBuild "This is a deliberate build failure"}};
@@ -13,10 +13,18 @@ describe(`macroFailBuild`, function() {
       }).toThrow(/This is a deliberate build failure/);
     });
 
-    test.skip('the failure message can incorporate other macro output', () => {
+    test('it can fail the build, subexpression position', () => {
       expect(() => {
         transform(`
-          {{macroFailBuild "failing because %s" (getOwnConfig "failureMessage") }};
+          {{thing (macroFailBuild "This is a deliberate build failure") }};
+        `);
+      }).toThrow(/This is a deliberate build failure/);
+    });
+
+    test('the failure message can incorporate other macro output', () => {
+      expect(() => {
+        transform(`
+          {{macroFailBuild "failing because %s" (macroGetOwnConfig "failureMessage") }};
         `);
       }).toThrow(/failing because I said so/);
     });

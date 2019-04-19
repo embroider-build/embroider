@@ -1,5 +1,5 @@
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '../src';
+import { MacrosConfig } from '../..';
 
 describe('macroIf', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
@@ -180,6 +180,24 @@ describe('macroIf', function() {
       `);
       expect(runDefault(code)).toBe('alpha');
       expect(code).not.toMatch(/beta/);
+    });
+
+    test('composes with self', () => {
+      let code = transform(`
+      import { macroIf, dependencySatisfies } from '@embroider/macros';
+      export default function() {
+        return macroIf(dependencySatisfies('qunit', '*'), () => {
+          return macroIf(
+            dependencySatisfies('not-a-real-dep', '*'),
+            () => 'gamma',
+            () => 'alpha'
+          );
+        }, () => 'beta');
+      }
+      `);
+      expect(runDefault(code)).toBe('alpha');
+      expect(code).not.toMatch(/beta/);
+      expect(code).not.toMatch(/gamma/);
     });
 
     test('can see booleans inside getConfig', () => {

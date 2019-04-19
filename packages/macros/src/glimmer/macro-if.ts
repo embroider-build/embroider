@@ -65,7 +65,7 @@ export function maybeAttrs(elementNode: any, node: any, builders: any) {
   }
 }
 
-function evaluate(node: any): { confident: true; value: any } | { confident: false } {
+export function evaluate(node: any): { confident: true; value: any } | { confident: false } {
   switch (node.type) {
     case 'StringLiteral':
     case 'NumberLiteral':

@@ -194,7 +194,7 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
     desired properties to a global hash named `EmberENV` (or `ENV` for
     backwards compatibility with earlier versions of Ember). The `EmberENV`
     hash must be created before loading Ember.
-  
+
     @class EmberENV
     @type Object
     @public
@@ -385,40 +385,40 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
 
   /**
     Strongly hint runtimes to intern the provided string.
-  
+
     When do I need to use this function?
-  
+
     For the most part, never. Pre-mature optimization is bad, and often the
     runtime does exactly what you need it to, and more often the trade-off isn't
     worth it.
-  
+
     Why?
-  
+
     Runtimes store strings in at least 2 different representations:
     Ropes and Symbols (interned strings). The Rope provides a memory efficient
     data-structure for strings created from concatenation or some other string
     manipulation like splitting.
-  
+
     Unfortunately checking equality of different ropes can be quite costly as
     runtimes must resort to clever string comparison algorithms. These
     algorithms typically cost in proportion to the length of the string.
     Luckily, this is where the Symbols (interned strings) shine. As Symbols are
     unique by their string content, equality checks can be done by pointer
     comparison.
-  
+
     How do I know if my string is a rope or symbol?
-  
+
     Typically (warning general sweeping statement, but truthy in runtimes at
     present) static strings created as part of the JS source are interned.
     Strings often used for comparisons can be interned at runtime if some
     criteria are met.  One of these criteria can be the size of the entire rope.
     For example, in chrome 38 a rope longer then 12 characters will not
     intern, nor will segments of that rope.
-  
+
     Some numbers: http://jsperf.com/eval-vs-keys/8
-  
+
     Known Trick™
-  
+
     @private
     @return {String} interned version of the provided string
   */
@@ -436,12 +436,12 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
   /**
     Returns whether Type(value) is Object.
-  
+
     Useful for checking whether a value is a valid WeakMap key.
-  
+
     Refs: https://tc39.github.io/ecma262/#sec-typeof-operator-runtime-semantics-evaluation
           https://tc39.github.io/ecma262/#sec-weakmap.prototype.set
-  
+
     @private
     @function isObject
   */
@@ -457,7 +457,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
    Previously we used `Ember.$.uuid`, however `$.uuid` has been removed from
    jQuery master. We'll just bootstrap our own uuid now.
-  
+
    @private
    @return {Number} the uuid
    */
@@ -468,7 +468,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
    Generates a universally unique identifier. This method
    is used internally by Ember for assisting with
    the generation of GUID's and other unique identifiers.
-  
+
    @public
    @return {Number} [description]
    */
@@ -494,10 +494,10 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     A unique key used to assign guids and other private metadata to objects.
     If you inspect an object in your browser debugger you will often see these.
     They can be safely ignored.
-  
+
     On browsers that support it, these properties are added with enumeration
     disabled so they won't show up when you iterate over your properties.
-  
+
     @private
     @property GUID_KEY
     @for Ember
@@ -510,7 +510,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     Generates a new guid, optionally saving the guid to the object that you
     pass in. You will rarely need to use this method. Instead you should
     call `guidFor(obj)`, which return an existing guid if available.
-  
+
     @private
     @method generateGuid
     @static
@@ -518,7 +518,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     @param {Object} [obj] Object the guid will be used for. If passed in, the guid will
       be saved on the object and reused whenever you pass the same object
       again.
-  
+
       If no object is passed, just generate a new guid.
     @param {String} [prefix] Prefix to place in front of the guid. Useful when you want to
       separate the guid into separate namespaces.
@@ -540,9 +540,9 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     Returns a unique id for the object. If the object does not yet have a guid,
     one will be assigned to it. You can call this on any object,
     `EmberObject`-based or not.
-  
+
     You can also use this method on DOM Element objects.
-  
+
     @public
     @static
     @method guidFor
@@ -678,7 +678,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     Wraps the passed function so that `this._super` will point to the superFunc
     when the function is invoked. This is the primitive we use to implement
     calls to super.
-  
+
     @private
     @method wrap
     @for Ember
@@ -740,10 +740,10 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
     Convenience method to inspect an object. This method will attempt to
     convert the object into a useful string description.
-  
+
     It is a pretty simple implementation. If you want something more robust,
     use something like JSDump: https://github.com/NV/jsDump
-  
+
     @method inspect
     @static
     @param {Object} obj The object you want to inspect.
@@ -874,15 +874,15 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
   /**
     Checks to see if the `methodName` exists on the `obj`.
-  
+
     ```javascript
     let foo = { bar: function() { return 'bar'; }, baz: null };
-  
+
     Ember.canInvoke(foo, 'bar'); // true
     Ember.canInvoke(foo, 'baz'); // false
     Ember.canInvoke(foo, 'bat'); // false
     ```
-  
+
     @method canInvoke
     @for Ember
     @param {Object} obj The object to check for the method
@@ -902,17 +902,17 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
     Checks to see if the `methodName` exists on the `obj`,
     and if it does, invokes it with the arguments passed.
-  
+
     ```javascript
     import { tryInvoke } from '@ember/utils';
-  
+
     let d = new Date('03/15/2013');
-  
+
     tryInvoke(d, 'getTime');              // 1363320000000
     tryInvoke(d, 'setFullYear', [2014]);  // 1394856000000
     tryInvoke(d, 'noSuchMethod', [2014]); // undefined
     ```
-  
+
     @method tryInvoke
     @for @ember/utils
     @static
@@ -1067,10 +1067,10 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /*
    This package will be eagerly parsed and should have no dependencies on external
    packages.
-  
+
    It is intended to be used to share utility methods that will be needed
    by every Ember application (and is **not** a dumping ground of useful utilities).
-  
+
    Utility methods that are needed in < 80% of cases should be placed
    elsewhere (so they can be lazily evaluated / parsed).
   */
@@ -1089,10 +1089,10 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   /**
     Set `EmberENV.FEATURES` in your application's `config/environment.js` file
     to enable canary features in your application.
-  
+
     See the [feature flag guide](https://guides.emberjs.com/release/configuring-ember/feature-flags/)
     for more details.
-  
+
     @module @ember/canary-features
     @public
   */
@@ -1113,7 +1113,7 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   /**
     The hash of enabled Canary features. Add to this, any canary features
     before creating your application.
-  
+
     @class FEATURES
     @static
     @since 1.1.0
@@ -1125,12 +1125,12 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   /**
     Determine whether the specified `feature` is enabled. Used by Ember's
     build tools to exclude experimental features from beta/stable builds.
-  
+
     You can define the following configuration options:
-  
+
     * `EmberENV.ENABLE_OPTIONAL_FEATURES` - enable any features that have not been explicitly
       enabled/disabled.
-  
+
     @method isEnabled
     @param {String} feature The feature to check
     @return {Boolean}
@@ -1511,10 +1511,10 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     Deprecations are invoked by calls to [@ember/application/deprecations/deprecate](https://emberjs.com/api/ember/release/classes/@ember%2Fapplication%2Fdeprecations/methods/deprecate?anchor=deprecate).
     The following example demonstrates its usage by registering a handler that throws an error if the
     message contains the word "should", otherwise defers to the default handler.
-  
+
     ```javascript
     import { registerDeprecationHandler } from '@ember/debug';
-  
+
     registerDeprecationHandler((message, options, next) => {
       if (message.indexOf('should') !== -1) {
         throw new Error(`Deprecation message with should: ${message}`);
@@ -1524,9 +1524,9 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
       }
     });
     ```
-  
+
     The handler function takes the following arguments:
-  
+
     <ul>
       <li> <code>message</code> - The message received from the deprecation call.</li>
       <li> <code>options</code> - An object passed in with the deprecation call containing additional information including:</li>
@@ -1536,7 +1536,7 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
         </ul>
       <li> <code>next</code> - A function that calls into the previously registered handler.</li>
     </ul>
-  
+
     @public
     @static
     @method registerDeprecationHandler
@@ -1861,7 +1861,7 @@ enifed("@ember/error/index", ["exports"], function (_exports) {
 
   /**
     The JavaScript Error object used by Ember.assert.
-  
+
     @class Error
     @namespace Ember
     @extends Error
@@ -1909,17 +1909,17 @@ enifed("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
 
   /**
     Copy properties from a source object to a target object. Source arguments remain unchanged.
-  
+
     ```javascript
     import { assign } from '@ember/polyfills';
-  
+
     var a = { first: 'Yehuda' };
     var b = { last: 'Katz' };
     var c = { company: 'Other Company' };
     var d = { company: 'Tilde Inc.' };
     assign(a, b, c, d); // a === { first: 'Yehuda', last: 'Katz', company: 'Tilde Inc.' };
     ```
-  
+
     @method assign
     @for @ember/polyfills
     @param {Object} target The object to assign into
@@ -1966,16 +1966,16 @@ enifed("@ember/polyfills/lib/merge", ["exports", "@ember/debug"], function (_exp
 
   /**
     Merge the contents of two objects together into the first object.
-  
+
     ```javascript
     import { merge } from '@ember/polyfills';
-  
+
     merge({ first: 'Tom' }, { last: 'Dale' }); // { first: 'Tom', last: 'Dale' }
     var a = { first: 'Yehuda' };
     var b = { last: 'Katz' };
     merge(a, b); // a == { first: 'Yehuda', last: 'Katz' }, b == { last: 'Katz' }
     ```
-  
+
     @method merge
     @static
     @for @ember/polyfills
@@ -5042,10 +5042,6 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
       case 'SubExpression':
       case 'ElementModifierStatement':
       case 'BlockStatement':
-        if (isLiteral(ast.path)) {
-          return String(ast.path.value);
-        }
-
         path = build(ast.path);
         break;
 
@@ -6274,21 +6270,21 @@ enifed("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports"
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-  
+
     ```handlebars
    <button {{action 'foo'}}>
    <button onblur={{action 'foo'}}>
    <button onblur={{action (action 'foo') 'bar'}}>
     ```
-  
+
     with
-  
+
     ```handlebars
    <button {{action this 'foo'}}>
    <button onblur={{action this 'foo'}}>
    <button onblur={{action this (action this 'foo') 'bar'}}>
     ```
-  
+
     @private
     @class TransformActionSyntax
   */
@@ -6361,20 +6357,20 @@ enifed("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["export
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-  
+
     ```handlebars
    {{attrs.foo.bar}}
     ```
-  
+
     to
-  
+
     ```handlebars
    {{@foo.bar}}
     ```
-  
+
     as well as `{{#if attrs.foo}}`, `{{deeply (nested attrs.foobar.baz)}}`,
     `{{this.attrs.foo}}` etc
-  
+
     @private
     @class TransformAttrsToProps
   */
@@ -6439,117 +6435,117 @@ enifed("ember-template-compiler/lib/plugins/transform-component-invocation", ["e
     Transforms unambigious invocations of closure components to be wrapped with
     the component helper. Once these syntaxes are fully supported by Glimmer VM
     natively, this transform can be removed.
-  
+
     ```handlebars
     {{!-- this.foo is not a legal helper/component name --}}
     {{this.foo "with" some="args"}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{component this.foo "with" some="args"}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{!-- this.foo is not a legal helper/component name --}}
     {{#this.foo}}...{{/this.foo}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{#component this.foo}}...{{/component}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{!-- foo.bar is not a legal helper/component name --}}
     {{foo.bar "with" some="args"}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{component foo.bar "with" some="args"}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{!-- foo.bar is not a legal helper/component name --}}
     {{#foo.bar}}...{{/foo.bar}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{#component foo.bar}}...{{/component}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{!-- @foo is not a legal helper/component name --}}
     {{@foo "with" some="args"}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{component @foo "with" some="args"}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{!-- @foo is not a legal helper/component name --}}
     {{#@foo}}...{{/@foo}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{#component @foo}}...{{/component}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{#let ... as |foo|}}
       {{!-- foo is a local variable --}}
       {{foo "with" some="args"}}
     {{/let}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{#let ... as |foo|}}
       {{component foo "with" some="args"}}
     {{/let}}
     ```
-  
+
     and
-  
+
     ```handlebars
     {{#let ... as |foo|}}
       {{!-- foo is a local variable --}}
       {{#foo}}...{{/foo}}
     {{/let}}
     ```
-  
+
     with
-  
+
     ```handlebars
     {{#let ... as |foo|}}
       {{#component foo}}...{{/component}}
     {{/let}}
     ```
-  
+
     @private
     @class TransFormComponentInvocation
   */
@@ -6681,17 +6677,17 @@ enifed("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["expo
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-  
+
     ```handlebars
    {{#each-in iterableThing as |key value|}}
     ```
-  
+
     with
-  
+
     ```handlebars
    {{#each (-each-in iterableThing) as |value key|}}
     ```
-  
+
     @private
     @class TransformHasBlockSyntax
   */
@@ -6738,17 +6734,17 @@ enifed("ember-template-compiler/lib/plugins/transform-has-block-syntax", ["expor
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-  
+
     ```handlebars
    {{hasBlock}}
     ```
-  
+
     with
-  
+
     ```handlebars
    {{has-block}}
     ```
-  
+
     @private
     @class TransformHasBlockSyntax
   */
@@ -6800,36 +6796,36 @@ enifed("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "
     https://github.com/glimmerjs/glimmer-vm/pull/619) so in glimmer-vm the
     correct keyword to use is `in-element`, however Ember is still working through
     its form of `in-element` (see https://github.com/emberjs/rfcs/pull/287).
-  
+
     There are enough usages of the pre-existing private API (`{{-in-element`) in
     the wild that we need to transform `{{-in-element` into `{{in-element` during
     template transpilation, but since RFC#287 is not landed and enabled by default we _also_ need
     to prevent folks from starting to use `{{in-element` "for realz".
-  
+
     Tranforms:
-  
+
     ```handlebars
     {{#-in-element someElement}}
       {{modal-display text=text}}
     {{/-in-element}}
     ```
-  
+
     into:
-  
+
     ```handlebars
     {{#in-element someElement}}
       {{modal-display text=text}}
     {{/in-element}}
     ```
-  
+
     And issues a build time assertion for:
-  
+
     ```handlebars
     {{#in-element someElement}}
       {{modal-display text=text}}
     {{/in-element}}
     ```
-  
+
     @private
     @class TransformHasBlockSyntax
   */
@@ -6936,21 +6932,21 @@ enifed("ember-template-compiler/lib/plugins/transform-input-type-syntax", ["expo
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-  
+
     ```handlebars
    {{input type=boundType}}
     ```
-  
+
     with
-  
+
     ```handlebars
    {{input (-input-type boundType) type=boundType}}
     ```
-  
+
     Note that the type parameters is not removed as the -input-type helpers
     is only used to select the component class. The component still needs
     the type parameter to function.
-  
+
     @private
     @class TransformInputTypeSyntax
   */
@@ -7242,10 +7238,10 @@ enifed("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-templa
   /**
     Find templates stored in the head tag as script tags and make them available
     to `Ember.CoreView` in the global `Ember.TEMPLATES` object.
-  
+
     Script tags with `text/x-handlebars` will be compiled
     with Ember's template compiler and are suitable for use as a view's template.
-  
+
     @private
     @method bootstrap
     @for Ember.HTMLBars
@@ -7431,9 +7427,9 @@ enifed("ember-template-compiler/lib/system/compile", ["exports", "require", "emb
   let template;
   /**
     Uses HTMLBars `compile` function to process a string into a compiled template.
-  
+
     This is not present in production builds.
-  
+
     @private
     @method compile
     @param {String} templateString This is the string to be compiled by HTMLBars.
@@ -7526,9 +7522,9 @@ enifed("ember-template-compiler/lib/system/precompile", ["exports", "@glimmer/co
   /**
     Uses HTMLBars `compile` function to process a string into a compiled template string.
     The returned string must be passed through `Ember.HTMLBars.template`.
-  
+
     This is not present in production builds.
-  
+
     @private
     @method precompile
     @param {String} templateString This is the string to be compiled by HTMLBars.

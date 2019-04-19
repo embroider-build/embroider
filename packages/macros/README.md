@@ -74,6 +74,18 @@ This package works in both Embroider builds and normal ember-cli builds, so that
     export default OldComponent;
     ```
 
+- `failBuild(message, ...params)`: cause a compile-time build failure. Generally only useful if you put it inside a `macroIf`. All the arguments must be statically analyzable, and they get passed to Node's standard `utils.format()`.
+
+  ```js
+  import { macroIf, failBuild, dependencySatisfies } from '@embroider/macros';
+  macroIf(
+    dependencySatisfies('ember-source', '>=3.8.0'),
+    () => true,
+    () => failBuild("You need to have ember-source >= 3.8.0")
+  );
+  ```
+
+
 ## Template macros
 
 These are analogous to the Javascript macros, although here (because we don't import them) they are all prefixed with "macro".
@@ -150,6 +162,17 @@ These are analogous to the Javascript macros, although here (because we don't im
    {{! or this ⬇️ }}
    <div>
    ```
+
+ - `macroFailBuild`: cause a compile-time build failure. Generally only useful if you put it inside a `macroIf`. All the arguments must be statically analyzable, and they get passed to Node's standard `utils.format()`.
+
+    ```hbs
+    {{#macroIf (dependencySatisfies "important-thing" ">= 1.0")}}
+      <UseThing />
+    {{else}}
+      {{macroFailBuild "You need to have import-thing >= 1.0"}}
+    {{/macroIf}}
+    ```
+
 
 ## Setting Configuration: from an Ember app
 

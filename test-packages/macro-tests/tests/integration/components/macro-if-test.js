@@ -24,9 +24,12 @@ module('Integration | Macro | macroIf', function(hooks) {
 
   test('macroIf in subexpression position when true', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, 'red');
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'red');
+      })
+    );
     await render(hbs`{{my-assertion (macroIf true 'red' 'blue') }}`);
   });
 
@@ -38,17 +41,23 @@ module('Integration | Macro | macroIf', function(hooks) {
 
   test('macroIf in subexpression position when false', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, 'blue');
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'blue');
+      })
+    );
     await render(hbs`{{my-assertion (macroIf false 'red' 'blue') }}`);
   });
 
   test('macroIf in subexpression position when false with no alternate', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, undefined);
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, undefined);
+      })
+    );
     await render(hbs`{{my-assertion (macroIf false 'red') }}`);
   });
 
@@ -77,26 +86,44 @@ module('Integration | Macro | macroIf', function(hooks) {
     assert.expect(1);
     this.doThing = function() {
       assert.ok(true, 'it ran');
-    }
-    await render(hbs`<div data-test-target {{action doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`);
+    };
+    await render(
+      hbs`<div data-test-target {{action doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
+    );
     let target = this.element.querySelector('[data-test-target]');
     await click(target);
   });
 
   test('macroIf composes with other macros, true case', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, 'red');
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'red');
+      })
+    );
     await render(hbs`{{my-assertion (macroIf (macroDependencySatisfies 'ember-source' '3.x') 'red' 'blue') }}`);
   });
 
   test('macroIf composes with other macros, false case', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
-      assert.strictEqual(value, 'blue');
-    }));
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'blue');
+      })
+    );
     await render(hbs`{{my-assertion (macroIf (macroDependencySatisfies 'ember-source' '10.x') 'red' 'blue') }}`);
   });
 
+  test('macroIf composes with self', async function(assert) {
+    assert.expect(1);
+    this.owner.register(
+      'helper:my-assertion',
+      helper(function([value]) {
+        assert.strictEqual(value, 'red');
+      })
+    );
+    await render(hbs`{{my-assertion (macroIf true (macroIf false 'green' 'red') 'blue') }}`);
+  });
 });

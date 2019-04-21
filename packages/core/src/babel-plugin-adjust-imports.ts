@@ -139,7 +139,11 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
         runtimeName: specifier,
       })
     );
-    return relative(dirname(sourceFile.name), target.slice(0, -3));
+    let relativePath = relative(dirname(sourceFile.name), target.slice(0, -3));
+    if (relativePath[0] !== '.') {
+      relativePath = `./${relativePath}`;
+    }
+    return relativePath;
   } else {
     if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
       throw new Error(

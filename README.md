@@ -1,5 +1,4 @@
-Embroider: a modern build system for EmberJS apps
-===============================================================================
+# Embroider: a modern build system for EmberJS apps
 
 [![Build Status](https://travis-ci.com/embroider-build/embroider.svg?branch=master)](https://travis-ci.com/embroider-build/embroider)
 
@@ -25,9 +24,7 @@ This repo implements a new three-stage build system for Ember apps.
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
 
-
-Status / Should I Use It?
--------------------------------------------------------------------------------
+## Status / Should I Use It?
 
 This is beta-quality software. Teams are encouraged to test their apps and
 addons using Embroider and report bugs. We need more real-world testing before
@@ -36,13 +33,11 @@ pipeline.
 
 The main risks to be aware of if you choose to use Embroider in production are:
 
- - you're likely to discover some Ember addons don't work or break your build
- - Embroider's own configuration options are subject to change, so you'll need
-   to read the CHANGELOG.md when updating the Embroider packages.
+- you're likely to discover some Ember addons don't work or break your build
+- Embroider's own configuration options are subject to change, so you'll need
+  to read the CHANGELOG.md when updating the Embroider packages.
 
-
-V2 Package Spec
--------------------------------------------------------------------------------
+## V2 Package Spec
 
 See [SPEC.md](SPEC.md) for a draft of the new addon publication format we are
 targeting. Addon authors **SHOULD NOT** publish packages to NPM that use this
@@ -50,9 +45,7 @@ format (yet), because it's still subject to change. The spec will eventually
 become an RFC, and only once that is final is it a good idea to publish using
 the format.
 
-
-How to try it
--------------------------------------------------------------------------------
+## How to try it
 
 1. Add dependencies:
 
@@ -81,19 +74,34 @@ How to try it
 
 3. Use `ember serve`, `ember test`, and `ember build` as usual.
 
+## Options
 
-Contributing
--------------------------------------------------------------------------------
+You can pass options into Embroider by passing them into the `compatBuild` function like:
+
+```js
+return require('@embroider/compat').compatBuild(app, Webpack, {
+  // options go here
+});
+```
+
+The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts).
+
+The recommended steps when introducing Embroider into an existing app are:
+
+1. First make it work with no options. This is the mode that supports maximum backward compatibility.
+2. Enable `staticAddonTestSupportTrees` and `staticAddonTrees` and test your application. This is usually safe, because most code in these trees gets consumed via `import` statements that we can analyze. But you might find exceptional cases where some code is doing a more dynamic thing.
+3. Enable `staticHelpers` and test. This is usually safe because addons get invoke declarative in templates and we can see all invocations.
+4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component inovcation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
+5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
+
+## Contributing
 
 see [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
-
-License
--------------------------------------------------------------------------------
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 
-Acknowledgements
---------------------------------------------------------------------------------
+## Acknowledgements
 
 Thanks to [Cardstack](https://github.com/cardstack) for sponsoring Embroider's development.

@@ -178,29 +178,32 @@ export default class V1Addon implements V1Package {
   protected get options() {
     if (!this.addonInstance.options) {
       this.addonInstance.options = {};
-    } else {
-      // some addons (like ember-cli-inline-content) assign the *app's* options
-      // onto their own this.options. Which means they (accidentally or on
-      // purpose), always get the app's babel config, and it means when we try
-      // to modify the addon's babel config we're accidentally modifying the
-      // app's too.
-      //
-      // So here we do copying to ensure that we can modify the babel config
-      // without altering anybody else. We're not doing cloneDeep because that
-      // pulls on our lazy MacrosConfig if it appears in any babel configs here,
-      // whereas we want to leave it unevaluated until babel actually uses it.
-      let options = (this.addonInstance.options = Object.assign({}, this.addonInstance.options));
-      if (options.babel) {
-        options.babel = Object.assign({}, options.babel);
-        if (options.babel.plugins) {
-          options.babel.plugins = options.babel.plugins.slice();
-        }
-      }
-      if (options['ember-cli-babel']) {
-        options['ember-cli-babel'] = Object.assign({}, options['ember-cli-babel']);
+      return this.addonInstance.options;
+    }
+    // some addons (like ember-cli-inline-content) assign the *app's* options
+    // onto their own this.options. Which means they (accidentally or on
+    // purpose), always get the app's babel config, and it means when we try
+    // to modify the addon's babel config we're accidentally modifying the
+    // app's too.
+    //
+    // So here we do copying to ensure that we can modify the babel config
+    // without altering anybody else. We're not doing cloneDeep because that
+    // pulls on our lazy MacrosConfig if it appears in any babel configs here,
+    // whereas we want to leave it unevaluated until babel actually uses it.
+    let addonOptions =
+      typeof this.addonInstance.options == 'function' ? this.addonInstance.options() : this.addonInstance.options;
+    let options = Object.assign({}, addonOptions);
+    if (options.babel) {
+      options.babel = Object.assign({}, options.babel);
+      if (options.babel.plugins) {
+        options.babel.plugins = options.babel.plugins.slice();
       }
     }
-    return this.addonInstance.options;
+    if (options['ember-cli-babel']) {
+      options['ember-cli-babel'] = Object.assign({}, options['ember-cli-babel']);
+    }
+
+    return addonOptions;
   }
 
   protected customizes(...treeNames: string[]) {

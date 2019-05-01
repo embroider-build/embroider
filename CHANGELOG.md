@@ -1,12 +1,20 @@
 # Embroider Changelog
 
+## master
+
+- BUGFIX: fixed a bug in the new externals system that was introduced in v0.3.4.
+- ENHANCEMENT: added `failBuild` macro for providing late build-time errors from addons.
+- BUGFIX: handle addons that fail to call super in `treeForAddon` and emit files into nonstandard namespaces.
+- BUGFIX: support addons that emit a single JS file, rather than a directory, in their test-support tree.
+- DOCS: some updates to SPEC.md
+
 ## v0.3.4
 
- - BUGFIX: we now correctly handle all known imports of hbs files, including
-   "pods-like" addons that kepts their templates in nonstandard places.
- - BUGFIX: warning printer output was incorrect
- - BUGFIX: the dependencySatisfies macros now behave as expected when a
-   prerelease version is present
+- BUGFIX: we now correctly handle all known imports of hbs files, including
+  "pods-like" addons that kepts their templates in nonstandard places.
+- BUGFIX: warning printer output was incorrect
+- BUGFIX: the dependencySatisfies macros now behave as expected when a
+  prerelease version is present
 
 ## v0.3.3
 

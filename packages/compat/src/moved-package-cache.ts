@@ -197,6 +197,16 @@ class MovedSet {
     // addon-provided "app-js" trees), and you must move if you are not native
     // v2
     let mustMove = pkg === this.app || !pkg.isV2Ember();
+
+    // this is a partial answer. After we check our children, our own `mustMove`
+    // may change from false to true. But it's OK that our children see false in
+    // that case, because they don't need to move on our behalf.
+    //
+    // We need to already be in the `this.mustMove` cache at this moment in
+    // order to avoid infinite recursion if any of our children end up depending
+    // back on us.
+    this.mustMove.set(pkg, mustMove);
+
     for (let dep of pkg.dependencies) {
       // or if any of your deps need to move
       mustMove = this.check(dep) || mustMove;

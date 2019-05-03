@@ -1,9 +1,16 @@
 import { join, dirname, resolve } from 'path';
-import { ensureSymlinkSync, readdir, readlink, realpath, lstat } from 'fs-extra';
+import { ensureSymlinkSync, readdirSync, readlinkSync, realpathSync, lstatSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros';
 
+function assertNoTildeExpansion(source: string, target: string) {
+  if (target.includes('~')) {
+    throw new Error(
+      `The symbolic link: ${source}'s target: ${target} contained a bash expansion '~' which is not supported.`
+    );
+  }
+}
 export class MovablePackageCache extends PackageCache {
   moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
     // start with the plain old app package
@@ -85,20 +92,18 @@ export class MovedPackageCache extends PackageCache {
   // given path.
   async updatePreexistingResolvableSymlinks(): Promise<void> {
     let roots = this.originalRoots();
-    await Promise.all(
-      [...this.candidateDirs()].map(async path => {
-        let links = await symlinksInNodeModules(path);
-        for (let { source, target } of links) {
-          let realTarget = await realpath(resolve(dirname(source), target));
-          let pkg = roots.get(realTarget);
-          if (pkg) {
-            // we found a symlink that points at a package that was copied.
-            // Replicate it in the new structure pointing at the new package.
-            ensureSymlinkSync(pkg.root, this.localPath(source));
-          }
+    [...this.candidateDirs()].map(path => {
+      let links = symlinksInNodeModules(path);
+      for (let { source, target } of links) {
+        let realTarget = realpathSync(resolve(dirname(source), target));
+        let pkg = roots.get(realTarget);
+        if (pkg) {
+          // we found a symlink that points at a package that was copied.
+          // Replicate it in the new structure pointing at the new package.
+          ensureSymlinkSync(pkg.root, this.localPath(source));
         }
-      })
-    );
+      }
+    });
   }
 
   // places that might have symlinks we need to mimic
@@ -128,9 +133,9 @@ export class MovedPackageCache extends PackageCache {
   }
 }
 
-async function maybeReaddir(path: string) {
+function maybeReaddirSync(path: string) {
   try {
-    return await readdir(path);
+    return readdirSync(path);
   } catch (err) {
     if (err.code !== 'ENOTDIR' && err.code !== 'ENOENT') {
       throw err;
@@ -139,31 +144,29 @@ async function maybeReaddir(path: string) {
   }
 }
 
-async function symlinksInNodeModules(path: string): Promise<{ source: string; target: string }[]> {
+function symlinksInNodeModules(path: string): { source: string; target: string }[] {
   let results: { source: string; target: string }[] = [];
-  let names = await maybeReaddir(path);
-  await Promise.all(
-    names.map(async name => {
-      let source = join(path, name);
-      let stats = await lstat(source);
-      if (stats.isSymbolicLink()) {
-        let target = await readlink(source);
-        results.push({ source, target });
-      } else if (stats.isDirectory() && name.startsWith('@')) {
-        let innerNames = await maybeReaddir(source);
-        await Promise.all(
-          innerNames.map(async innerName => {
-            let innerSource = join(source, innerName);
-            let innerStats = await lstat(innerSource);
-            if (innerStats.isSymbolicLink()) {
-              let target = await readlink(innerSource);
-              results.push({ source: innerSource, target });
-            }
-          })
-        );
-      }
-    })
-  );
+  let names = maybeReaddirSync(path);
+  names.map(name => {
+    let source = join(path, name);
+    let stats = lstatSync(source);
+    if (stats.isSymbolicLink()) {
+      let target = readlinkSync(source);
+      assertNoTildeExpansion(source, target);
+      results.push({ source, target });
+    } else if (stats.isDirectory() && name.startsWith('@')) {
+      let innerNames = maybeReaddirSync(source);
+      innerNames.map(innerName => {
+        let innerSource = join(source, innerName);
+        let innerStats = lstatSync(innerSource);
+        if (innerStats.isSymbolicLink()) {
+          let target = readlinkSync(innerSource);
+          assertNoTildeExpansion(innerSource, target);
+          results.push({ source: innerSource, target });
+        }
+      });
+    }
+  });
   return results;
 }
 

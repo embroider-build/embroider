@@ -1,12 +1,15 @@
 # Embroider Changelog
 
-## master
+## v0.3.5
 
 - BUGFIX: fixed a bug in the new externals system that was introduced in v0.3.4.
 - ENHANCEMENT: added `failBuild` macro for providing late build-time errors from addons.
 - BUGFIX: handle addons that fail to call super in `treeForAddon` and emit files into nonstandard namespaces.
 - BUGFIX: support addons that emit a single JS file, rather than a directory, in their test-support tree.
 - DOCS: some updates to SPEC.md
+- BUGFIX: fixed an infinite recursion bug when addons have a cycle
+- BUGFIX: added a clear warning when symlinks contain nonsense, by @stefanpenner.
+- BUGFIX: support addons that make `this.options` a function rather than a POJO, by @patocallaghan.
 
 ## v0.3.4
 

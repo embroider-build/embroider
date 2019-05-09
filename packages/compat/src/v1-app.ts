@@ -536,32 +536,42 @@ export default class V1App implements V1Package {
     };
   }
 
+  private withoutRootURL(src: string) {
+    let rootURL = this.config.readConfig().rootURL;
+    if (src.startsWith(rootURL)) {
+      src = '/' + src.slice(rootURL.length);
+    }
+    return src;
+  }
+
   findAppScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => script.src === this.app.options.outputPaths.app.js);
+    return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.app.js);
   }
 
   findAppStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(style => style.href === this.app.options.outputPaths.app.css.app);
+    return styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.app.css.app);
   }
 
   findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => script.src === this.app.options.outputPaths.vendor.js);
+    return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.vendor.js);
   }
 
   findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(style => style.href === this.app.options.outputPaths.vendor.css);
+    return styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.vendor.css);
   }
 
   findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(style => style.href === this.app.options.outputPaths.testSupport.css);
+    return styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.testSupport.css);
   }
 
   findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => script.src === this.app.options.outputPaths.testSupport.js.testSupport);
+    return scripts.find(
+      script => this.withoutRootURL(script.src) === this.app.options.outputPaths.testSupport.js.testSupport
+    );
   }
 
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => script.src === this.app.options.outputPaths.tests.js);
+    return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.tests.js);
   }
 }
 

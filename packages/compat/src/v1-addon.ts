@@ -3,12 +3,11 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
+import { existsSync, pathExistsSync, readdirSync, moveSync, removeSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
-import MultiFunnel from './multi-funnel';
 import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
@@ -23,6 +22,7 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
+import AddToTree from './add-to-tree';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -401,8 +401,13 @@ export default class V1Addon implements V1Package {
         // there is a weirder, older behavior where addons wrapped their addon
         // tree output in a `modules` folder. This strips that level off if it
         // exists.
-        tree = new MultiFunnel(tree, {
-          srcDirs: [`modules`],
+        tree = new AddToTree(tree, dir => {
+          if (pathExistsSync(join(dir, 'modules'))) {
+            for (let name of readdirSync(join(dir, 'modules'))) {
+              moveSync(join(dir, 'modules', name), join(dir, name));
+            }
+            removeSync(join(dir, 'modules'));
+          }
         });
 
         // this captures addons that are trying to escape their own package's

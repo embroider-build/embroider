@@ -190,7 +190,7 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
       assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
       assertFile.matches(
-        /import somethingExternal from ["']\.\.\/\.\.\/@embroider\/externals\/not-a-resolvable-package["']/,
+        /import somethingExternal from ["'].*\/embroider\/externals\/not-a-resolvable-package["']/,
         'externals are handled correctly'
       );
     });

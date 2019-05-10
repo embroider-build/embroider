@@ -242,6 +242,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
                 loader: babel.majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 options: Object.assign({}, require(join(this.pathToVanillaApp, babel.filename)), {
+                  // all stage3 packagers should keep persistent caches under
+                  // `join(tmpdir(), 'embroider')`. An important reason is that
+                  // they should have exactly the same lifetime as some of
+                  // embroider's own caches.
                   cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
                 }),
               },

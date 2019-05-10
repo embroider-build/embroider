@@ -23,6 +23,7 @@ import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
+import { tmpdir } from 'os';
 
 export type EmberENV = unknown;
 
@@ -322,7 +323,11 @@ export class AppBuilder<TreeNames> {
     let adjustOptions: AdjustImportsOptions = {
       rename,
       extraImports: this.adapter.extraImports(),
-      externalsDir: join(this.root, 'node_modules', '@embroider/externals'),
+
+      // it's important that this is a persistent location, because we fill it
+      // up as a side-effect of babel transpilation, and babel is subject to
+      // persistent caching.
+      externalsDir: join(tmpdir(), 'embroider', 'externals'),
     };
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }

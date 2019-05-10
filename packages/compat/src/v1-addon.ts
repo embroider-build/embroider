@@ -8,7 +8,6 @@ import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
-import MultiFunnel from './multi-funnel';
 import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
@@ -23,6 +22,7 @@ import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
+import modulesCompat from './modules-compat';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -398,12 +398,7 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
       let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
-        // there is a weirder, older behavior where addons wrapped their addon
-        // tree output in a `modules` folder. This strips that level off if it
-        // exists.
-        tree = new MultiFunnel(tree, {
-          srcDirs: [`modules`],
-        });
+        tree = modulesCompat(tree);
 
         // this captures addons that are trying to escape their own package's
         // namespace

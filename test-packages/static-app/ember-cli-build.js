@@ -4,11 +4,10 @@ const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 const { MacrosConfig } = require('@embroider/macros');
 
 module.exports = function(defaults) {
-  let app = new EmberApp(defaults, {
-  });
+  let app = new EmberApp(defaults, {});
 
   MacrosConfig.shared().setOwnConfig(__filename, {
-    isClassic: Boolean(process.env.CLASSIC)
+    isClassic: Boolean(process.env.CLASSIC),
   });
 
   if (process.env.CLASSIC) {
@@ -17,6 +16,7 @@ module.exports = function(defaults) {
 
   const Webpack = require('@embroider/webpack').Webpack;
   return require('@embroider/compat').compatBuild(app, Webpack, {
+    workspaceDir: process.env.WORKSPACE_DIR,
     staticAddonTestSupportTrees: true,
     staticAddonTrees: true,
     staticComponents: true,
@@ -26,17 +26,15 @@ module.exports = function(defaults) {
         package: 'static-app',
         appModules: {
           'components/fancy-box.js': {
-            dependsOnComponents: ['{{default-title}}']
-          }
+            dependsOnComponents: ['{{default-title}}'],
+          },
         },
         components: {
           '{{fancy-box}}': {
-            acceptsComponentArguments: [
-              { name: 'titleComponent', becomes: 'this.titleComponentWithDefault' }
-            ]
-          }
-        }
-      }
-    ]
+            acceptsComponentArguments: [{ name: 'titleComponent', becomes: 'this.titleComponentWithDefault' }],
+          },
+        },
+      },
+    ],
   });
 };

@@ -17,8 +17,10 @@
     "node_modules",
     "packages/*/tmp",
     "packages/*/dist",
+    "packages/*/node_modules",
     "test-packages/*/tmp",
     "test-packages/*/dist",
+    "test-packages/*/node_modules",
     "tmp"
   ]
 }

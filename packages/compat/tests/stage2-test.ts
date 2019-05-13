@@ -210,4 +210,62 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import layout from ["']\.\/t.hbs['"]/, 'arbitrary relative template gets hbs extension');
     });
   });
+
+  QUnit.module('customized tree hooks', function(origHooks) {
+    let { hooks, test } = installFileAssertions(origHooks);
+    let build: BuildResult;
+    throwOnWarnings(hooks);
+
+    hooks.before(async function(assert) {
+      let app = Project.emberNew();
+
+      let addon = app.addAddon(
+        'my-addon',
+        `
+        treeForAddon(tree) {
+          // doesn't call super, so we're emitting the raw contents of the addon
+          // directory
+          return tree;
+        }
+      `
+      );
+      addon.files.addon = {
+        'my-addon': {
+          'index.js': `
+            // the index
+          `,
+          'other-module.js': `
+            // other module
+          `,
+        },
+        'single-file-lib.js': '// single file lib',
+        'multi-file-lib': {
+          'index.js': '// multi file lib',
+        },
+      };
+      build = await BuildResult.build(app, {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: { tests: false },
+      });
+      assert.basePath = build.outputPath;
+    });
+
+    hooks.after(async function() {
+      await build.cleanup();
+    });
+
+    test('emits own addon tree output', function(assert) {
+      let assertFile = assert.file('./node_modules/my-addon/index.js');
+      assertFile.matches(/the index/, 'our own addon tree output is in the right place');
+    });
+
+    test('captures a multi-file module that tried to escape our namespace', function(assert) {
+      let assertFile = assert.file('./node_modules/my-addon/multi-file-lib/index.js');
+      assertFile.matches(/multi file lib/, 'content of multi-file-lib is captured');
+
+      let pkgJSON = assert.file('./node_modules/my-addon/package.json').json();
+      pkgJSON.get('ember-addon.renamed-modules.multi-file-lib').equals('my-addon/multi-file-lib');
+    });
+  });
 });

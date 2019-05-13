@@ -1,4 +1,4 @@
-import { emberProject, Project } from './helpers';
+import { Project } from './helpers';
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
@@ -20,7 +20,7 @@ QUnit.module('stage2 build', function() {
     throwOnWarnings(hooks);
 
     hooks.before(async function(assert) {
-      app = emberProject();
+      app = Project.emberNew();
       (app.files.app as Project['files']).templates = {
         'index.hbs': `
           <HelloWorld @useDynamic="first-choice" />

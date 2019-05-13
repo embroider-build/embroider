@@ -1,4 +1,4 @@
-import { emberProject, addAddon, Project } from './helpers';
+import { emberProject, Project } from './helpers';
 import 'qunit';
 import { emberApp } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
@@ -47,7 +47,7 @@ QUnit.module('stage2 build', function() {
         `,
       };
 
-      let addon = addAddon(app, 'my-addon');
+      let addon = app.addAddon('my-addon');
       addon.files.addon = {
         components: {
           'hello-world.js': `

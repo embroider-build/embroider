@@ -153,6 +153,24 @@ export class Project extends FixturifyProject {
     }
   }
 
+  addAddon(name: string, indexContent = '') {
+    let addon = this.addDependency(name);
+    addon.files = {
+      'index.js': addonIndexFile(indexContent),
+      addon: {
+        templates: {
+          components: {},
+        },
+      },
+    };
+    addon.linkPackage('ember-cli-htmlbars');
+    addon.linkPackage('ember-cli-babel');
+
+    addon.pkg.keywords = ['ember-addon'];
+    addon.pkg['ember-addon'] = {};
+    return addon;
+  }
+
   toJSON(): Project['files'];
   toJSON(key: string): Project['files'] | string;
   toJSON(key?: string) {
@@ -242,22 +260,4 @@ export function addonProject(emberAppOptions: any = {}, embroiderOptions: Option
     configPath: 'tests/dummy/config',
   };
   return app;
-}
-
-export function addAddon(app: Project, name: string, indexContent = '') {
-  let addon = app.addDependency(name);
-  addon.files = {
-    'index.js': addonIndexFile(indexContent),
-    addon: {
-      templates: {
-        components: {},
-      },
-    },
-  };
-  addon.linkPackage('ember-cli-htmlbars');
-  addon.linkPackage('ember-cli-babel');
-
-  addon.pkg.keywords = ['ember-addon'];
-  addon.pkg['ember-addon'] = {};
-  return addon;
 }

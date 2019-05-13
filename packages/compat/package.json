@@ -43,7 +43,6 @@
     "babel-plugin-debug-macros": "^0.3.0",
     "babel-plugin-ember-modules-api-polyfill": "git+https://github.com/ember-cli/babel-plugin-ember-modules-api-polyfill#d0c7772bc9f995f83641a4292afd5e05e7e9bbba",
     "babylon": "^6.18.0",
-    "broccoli": "^2.2.0",
     "broccoli-funnel": "^2.0.1",
     "broccoli-merge-trees": "^3.0.0",
     "broccoli-plugin": "^1.3.0",

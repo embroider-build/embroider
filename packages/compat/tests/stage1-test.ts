@@ -1,19 +1,16 @@
 import 'qunit';
-import { emberApp, emberAddon, Project } from '@embroider/test-support';
-import CompatAddons from '../src/compat-addons';
-import { Builder } from 'broccoli';
-import { installFileAssertions } from './file-assertions';
+import { Project, BuildResult } from '@embroider/test-support';
+import { installFileAssertions } from '@embroider/test-support/file-assertions';
 import resolve from 'resolve';
 
 QUnit.module('stage1 build', function() {
   QUnit.module('max compatibility', function(origHooks) {
     let { hooks, test } = installFileAssertions(origHooks);
-    let builder: Builder;
-    let app: Project;
+    let build: BuildResult;
 
     hooks.before(async function(assert) {
       // A simple ember app with no tests
-      app = Project.emberNew();
+      let app = Project.emberNew();
 
       // We create an addon
       let addon = app.addAddon('my-addon');
@@ -84,17 +81,12 @@ QUnit.module('stage1 build', function() {
         },
       };
 
-      app.writeSync();
-      let compat = new CompatAddons(emberApp(app.baseDir));
-      builder = new Builder(compat.tree);
-      let builderPromise = builder.build();
-      assert.basePath = (await compat.ready()).outputPath;
-      await builderPromise;
+      build = await BuildResult.build(app, { stage: 1 });
+      assert.basePath = build.outputPath;
     });
 
     hooks.after(async function() {
-      await app.dispose();
-      await builder.cleanup();
+      await build.cleanup();
     });
 
     test('component in app tree', function(assert) {
@@ -158,26 +150,20 @@ QUnit.module('stage1 build', function() {
 
   QUnit.module('addon dummy app', function(origHooks) {
     let { hooks, test } = installFileAssertions(origHooks);
-    let builder: Builder;
-    let app: Project;
+    let build: BuildResult;
 
     hooks.before(async function(assert) {
-      app = Project.addonNew();
+      let app = Project.addonNew();
       (app.files.addon as Project['files']).components = {
         'hello-world.js': '',
       };
 
-      app.writeSync();
-      let compat = new CompatAddons(emberAddon(app.baseDir));
-      builder = new Builder(compat.tree);
-      let builderPromise = builder.build();
-      assert.basePath = (await compat.ready()).outputPath;
-      await builderPromise;
+      build = await BuildResult.build(app, { stage: 1, type: 'addon' });
+      assert.basePath = build.outputPath;
     });
 
     hooks.after(async function() {
-      await app.dispose();
-      await builder.cleanup();
+      await build.cleanup();
     });
 
     test('dummy app can resolve own addon', function(assert) {

@@ -1,6 +1,5 @@
 import 'qunit';
-import { Project, BuildResult } from '@embroider/test-support';
-import { installFileAssertions } from '@embroider/test-support/file-assertions';
+import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
 
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';

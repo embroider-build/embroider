@@ -47,3 +47,4 @@ export function emberTemplateCompilerPath() {
 
 export { Project } from './project';
 export { default as BuildResult } from './build';
+export { installFileAssertions } from './file-assertions';

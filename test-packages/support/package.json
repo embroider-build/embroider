@@ -10,6 +10,7 @@
     "babel-core": "^6.26.3",
     "console-ui": "^3.0.0",
     "ember-cli": "~3.7.1",
+    "fixturify-project": "^1.8.0",
     "fs-extra": "^7.0.0",
     "qunit": "^2.8.0"
   }

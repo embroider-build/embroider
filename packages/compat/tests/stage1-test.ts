@@ -1,6 +1,5 @@
-import { Project } from './helpers';
 import 'qunit';
-import { emberApp, emberAddon } from '@embroider/test-support';
+import { emberApp, emberAddon, Project } from '@embroider/test-support';
 import CompatAddons from '../src/compat-addons';
 import { Builder } from 'broccoli';
 import { installFileAssertions } from './file-assertions';

@@ -81,3 +81,5 @@ export function allBabelVersions(params: {
 export function emberTemplateCompilerPath() {
   return join(__dirname, 'vendor', 'ember-template-compiler.js');
 }
+
+export { Project } from './project';

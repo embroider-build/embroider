@@ -1,7 +1,7 @@
 import FixturifyProject from 'fixturify-project';
 import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
-import Options from '../src/options';
+import Options from '../../packages/core/src/options';
 
 function cliBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
   return `

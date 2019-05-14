@@ -267,5 +267,13 @@ QUnit.module('stage2 build', function() {
       let pkgJSON = assert.file('./node_modules/my-addon/package.json').json();
       pkgJSON.get('ember-addon.renamed-modules.multi-file-lib').equals('my-addon/multi-file-lib');
     });
+
+    test('captures a single-file module that tried to escape our namespace', function(assert) {
+      let assertFile = assert.file('./node_modules/my-addon/single-file-lib/index.js');
+      assertFile.matches(/single file lib/, 'content of single-file-lib is captured');
+
+      let pkgJSON = assert.file('./node_modules/my-addon/package.json').json();
+      pkgJSON.get('ember-addon.renamed-modules.single-file-lib').equals('my-addon/single-file-lib');
+    });
   });
 });

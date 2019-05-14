@@ -38,6 +38,7 @@ export default class MacrosConfig {
   static reset() {
     this.shared().configs.clear();
     this.shared().mergers.clear();
+    localSharedState = undefined;
   }
 
   private configs: Map<string, unknown[]> = new Map();

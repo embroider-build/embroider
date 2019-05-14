@@ -10,12 +10,7 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
       "cwd": "${workspaceFolder}",
-      "args": [
-        "packages/compat/tests",
-        "packages/core/tests",
-        "packages/macros/tests"
-        //"--filter", "acceptsComponentArguments on mustache with component subexpression"
-      ]
+      "args": ["packages/compat/tests", "packages/core/tests", "packages/macros/tests", "--filter", "stage1 build"]
     },
     {
       "type": "node",
@@ -23,7 +18,7 @@
       "name": "Run jest tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["-i"]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/dependency-satisfies.test.js"]
     },
     {
       "type": "node",

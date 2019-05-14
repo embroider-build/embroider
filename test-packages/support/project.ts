@@ -1,7 +1,7 @@
 import FixturifyProject from 'fixturify-project';
 import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
-import Options from '../src/options';
+import Options from '../../packages/core/src/options';
 
 function cliBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
   return `
@@ -117,6 +117,78 @@ export default App;
 }
 
 export class Project extends FixturifyProject {
+  static emberNew(emberAppOptions?: any, embroiderOptions?: Options): Project {
+    let name = 'my-app';
+    let app = new Project(name);
+    app.files = {
+      'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
+      config: {
+        'environment.js': environmentFile(name),
+      },
+      app: {
+        'index.html': indexFile(name),
+        styles: {
+          'app.css': '',
+        },
+        'app.js': appJSFile(),
+        'resolver.js': `export { default } from 'ember-resolver';`,
+      },
+    };
+    app.linkPackage('ember-cli');
+    app.linkPackage('loader.js');
+    app.linkPackage('ember-cli-htmlbars');
+    app.linkPackage('ember-cli-babel');
+    app.linkPackage('ember-source');
+    app.linkPackage('ember-resolver');
+    app.linkPackage('@embroider/compat');
+    app.linkPackage('@embroider/core');
+    app.linkPackage('@embroider/webpack');
+    return app;
+  }
+
+  static addonNew(emberAppOptions?: any, embroiderOptions?: Options): Project {
+    let name = 'my-addon';
+    let app = new Project(name);
+    app.files = {
+      'index.js': `module.exports = { name: "${name}" };`,
+      'ember-cli-build.js': addonBuildFile(emberAppOptions, embroiderOptions),
+      config: {
+        'environment.js': addonEnvironmentFile(),
+      },
+      app: {},
+      addon: {},
+      tests: {
+        dummy: {
+          app: {
+            'app.js': appJSFile(),
+            'index.html': indexFile('dummy'),
+            styles: {
+              'app.css': '',
+            },
+          },
+          config: {
+            'environment.js': environmentFile('dummy'),
+          },
+        },
+      },
+    };
+    app.linkDevPackage('ember-cli');
+    app.linkDevPackage('loader.js');
+    app.linkPackage('ember-cli-htmlbars');
+    app.linkPackage('ember-cli-babel');
+    app.linkDevPackage('ember-source');
+    app.linkDevPackage('ember-resolver');
+    app.linkDevPackage('@embroider/compat');
+    app.linkDevPackage('@embroider/core');
+    app.linkDevPackage('@embroider/webpack');
+
+    app.pkg.keywords = ['ember-addon'];
+    app.pkg['ember-addon'] = {
+      configPath: 'tests/dummy/config',
+    };
+    return app;
+  }
+
   private packageLinks: Map<string, string> = new Map();
   private devPackageLinks: Set<string> = new Set();
 
@@ -153,6 +225,24 @@ export class Project extends FixturifyProject {
     }
   }
 
+  addAddon(name: string, indexContent = '') {
+    let addon = this.addDependency(name);
+    addon.files = {
+      'index.js': addonIndexFile(indexContent),
+      addon: {
+        templates: {
+          components: {},
+        },
+      },
+    };
+    addon.linkPackage('ember-cli-htmlbars');
+    addon.linkPackage('ember-cli-babel');
+
+    addon.pkg.keywords = ['ember-addon'];
+    addon.pkg['ember-addon'] = {};
+    return addon;
+  }
+
   toJSON(): Project['files'];
   toJSON(key: string): Project['files'] | string;
   toJSON(key?: string) {
@@ -170,94 +260,4 @@ export class Project extends FixturifyProject {
     }
     return result;
   }
-}
-
-export function emberProject(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
-  let name = 'my-app';
-  let app = new Project(name);
-  app.files = {
-    'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
-    config: {
-      'environment.js': environmentFile(name),
-    },
-    app: {
-      'index.html': indexFile(name),
-      styles: {
-        'app.css': '',
-      },
-      'app.js': appJSFile(),
-      'resolver.js': `export { default } from 'ember-resolver';`,
-    },
-  };
-  app.linkPackage('ember-cli');
-  app.linkPackage('loader.js');
-  app.linkPackage('ember-cli-htmlbars');
-  app.linkPackage('ember-cli-babel');
-  app.linkPackage('ember-source');
-  app.linkPackage('ember-resolver');
-  app.linkPackage('@embroider/compat');
-  app.linkPackage('@embroider/core');
-  app.linkPackage('@embroider/webpack');
-  return app;
-}
-
-export function addonProject(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
-  let name = 'my-addon';
-  let app = new Project(name);
-  app.files = {
-    'index.js': `module.exports = { name: "${name}" };`,
-    'ember-cli-build.js': addonBuildFile(emberAppOptions, embroiderOptions),
-    config: {
-      'environment.js': addonEnvironmentFile(),
-    },
-    app: {},
-    addon: {},
-    tests: {
-      dummy: {
-        app: {
-          'app.js': appJSFile(),
-          'index.html': indexFile('dummy'),
-          styles: {
-            'app.css': '',
-          },
-        },
-        config: {
-          'environment.js': environmentFile('dummy'),
-        },
-      },
-    },
-  };
-  app.linkDevPackage('ember-cli');
-  app.linkDevPackage('loader.js');
-  app.linkPackage('ember-cli-htmlbars');
-  app.linkPackage('ember-cli-babel');
-  app.linkDevPackage('ember-source');
-  app.linkDevPackage('ember-resolver');
-  app.linkDevPackage('@embroider/compat');
-  app.linkDevPackage('@embroider/core');
-  app.linkDevPackage('@embroider/webpack');
-
-  app.pkg.keywords = ['ember-addon'];
-  app.pkg['ember-addon'] = {
-    configPath: 'tests/dummy/config',
-  };
-  return app;
-}
-
-export function addAddon(app: Project, name: string, indexContent = '') {
-  let addon = app.addDependency(name);
-  addon.files = {
-    'index.js': addonIndexFile(indexContent),
-    addon: {
-      templates: {
-        components: {},
-      },
-    },
-  };
-  addon.linkPackage('ember-cli-htmlbars');
-  addon.linkPackage('ember-cli-babel');
-
-  addon.pkg.keywords = ['ember-addon'];
-  addon.pkg['ember-addon'] = {};
-  return addon;
 }

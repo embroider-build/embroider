@@ -29,7 +29,6 @@
     "@types/semver": "^5.5.0",
     "@types/strip-bom": "^3.0.0",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
-    "fixturify-project": "^1.8.0",
     "qunit": "^2.8.0",
     "typescript": "~3.2.0"
   },

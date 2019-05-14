@@ -4,8 +4,8 @@ import Snitch from './snitch';
 import { Tree } from 'broccoli-plugin';
 import { AddonMeta, packageName } from '@embroider/core';
 import AddToTree from './add-to-tree';
-import { pathExistsSync, moveSync } from 'fs-extra';
-import { join } from 'path';
+import { moveSync, readdirSync, statSync } from 'fs-extra';
+import { join, basename } from 'path';
 
 /*
   The traditional addon and addon-test-support trees allows you to emit modules
@@ -46,9 +46,15 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
   let renamed: { [name: string]: string } = {};
 
   let movedIndex = new AddToTree(tree, outputPath => {
-    let target = join(outputPath, `${ownName}.js`);
-    if (pathExistsSync(target)) {
-      moveSync(target, join(outputPath, ownName, 'index.js'));
+    for (let file of readdirSync(outputPath)) {
+      if (!file.endsWith('.js')) {
+        continue;
+      }
+      const filePath = join(outputPath, file);
+      if (!statSync(filePath).isFile()) {
+        continue;
+      }
+      moveSync(filePath, join(outputPath, basename(file, '.js'), 'index.js'));
     }
   });
 

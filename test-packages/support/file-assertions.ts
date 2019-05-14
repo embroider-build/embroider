@@ -4,8 +4,6 @@ import { join } from 'path';
 import get from 'lodash/get';
 import { Memoize } from 'typescript-memoize';
 
-const { test, skip } = QUnit;
-
 export interface FileAssert extends Assert {
   basePath: string;
   file(path: string): BoundFileAssert;
@@ -212,7 +210,7 @@ export interface FileHooks {
 }
 
 function fileTest(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
-  test(name, function(plainAssert: Assert) {
+  QUnit.test(name, function(plainAssert: Assert) {
     return definition(plainAssert as FileAssert);
   });
 }
@@ -225,7 +223,7 @@ interface FileTest {
 fileTest.skip = fileSkip;
 
 function fileSkip(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
-  skip(name, function(plainAssert: Assert) {
+  QUnit.skip(name, function(plainAssert: Assert) {
     return definition(plainAssert as FileAssert);
   });
 }

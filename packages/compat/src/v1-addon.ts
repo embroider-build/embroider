@@ -640,7 +640,7 @@ export default class V1Addon implements V1Package {
     let built = new IntermediateBuild();
 
     if (this.moduleName !== this.name) {
-      built.staticMeta['renamed-modules'] = {
+      built.staticMeta['renamed-packages'] = {
         [this.moduleName]: this.name,
       };
     }

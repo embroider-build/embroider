@@ -319,7 +319,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private adjustImportsPlugin(): PluginItem {
-    let rename = Object.assign({}, ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules']));
+    let rename = Object.assign({}, ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-packages']));
     let adjustOptions: AdjustImportsOptions = {
       rename,
       extraImports: this.adapter.extraImports(),

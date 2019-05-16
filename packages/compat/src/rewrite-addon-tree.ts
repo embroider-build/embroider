@@ -82,6 +82,6 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
   });
   return {
     tree: mergeTrees([goodParts, badParts]),
-    getMeta: () => ({ 'renamed-modules': renamed }),
+    getMeta: () => ({ 'renamed-packages': renamed }),
   };
 }

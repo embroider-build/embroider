@@ -38,6 +38,6 @@ export interface AddonMeta {
   'public-assets'?: {
     [filename: string]: appRelativeURL;
   };
-  'renamed-modules'?: { [fromName: string]: string };
+  'renamed-packages'?: { [fromName: string]: string };
   version: 2;
 }

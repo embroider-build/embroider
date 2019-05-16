@@ -265,7 +265,7 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/multi file lib/, 'content of multi-file-lib is captured');
 
       let pkgJSON = assert.file('./node_modules/my-addon/package.json').json();
-      pkgJSON.get('ember-addon.renamed-modules.multi-file-lib').equals('my-addon/multi-file-lib');
+      pkgJSON.get('ember-addon.renamed-packages.multi-file-lib').equals('my-addon/multi-file-lib');
     });
   });
 });

@@ -711,10 +711,36 @@ Status: intent to deprecate
 
 An object that maps old module names to new module names. Any Ember package that consumes this package will rewrite its own imports to follow these renames.
 
-For example, `ember-lodash` renames itself to `lodash`. When we compile it into a v2 package, we generate:
+For example, `ember-qunit` emits a module that is importable as `qunit`, which we capture and rename:
 
 ```
 "renamed-modules": {
+  "qunit/index.js": "ember-qunit/qunit/index.js"
+}
+```
+
+And then in an app that imports `qunit`, our Babel plugin will rewrite:
+
+```diff
+-import QUnit from 'qunit';
++import QUnit from 'ember-qunit/qunit';
+```
+
+This is a backward compatibility feature and you should stop doing this. Exposing a module under some other package's name is Not Nice.
+
+## renamed-packages
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+An object that maps old package names to new package names. Any Ember package that consumes this package will rewrite its own imports to follow these renames.
+
+For example, `ember-lodash` renames itself to `lodash`. When we compile it into a v2 package, we generate:
+
+```
+"renamed-packages": {
   "lodash": "ember-lodash"
 }
 ```

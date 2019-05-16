@@ -21,10 +21,14 @@ QUnit.module('renaming tests', function(origHooks) {
         `,
       'import-own-thing.js': `
         import ownThing from "emits-multiple-packages/own-thing";
-    `,
+      `,
       'import-somebody-elses.js': `
         import environment from "somebody-elses-package/environment";
-    `,
+      `,
+      'import-somebody-elses-original.js': `
+        import topLevel from "somebody-elses-package";
+        import deeper from "somebody-elses-package/deeper";
+      `,
     };
 
     let addon = app.addAddon(
@@ -92,5 +96,10 @@ QUnit.module('renaming tests', function(origHooks) {
     assert
       .file('node_modules/emits-multiple-packages/somebody-elses-package/environment.js')
       .matches(/somebody elses environment/);
+  });
+  test('rewriting one modules does not capture entire package namespace', function(assert) {
+    let assertFile = assert.file('components/import-somebody-elses-original.js').transform(build.transpile);
+    assertFile.matches(/import topLevel from ["']somebody-elses-package["']/);
+    assertFile.matches(/import deeper from ["']somebody-elses-package\/deeper["']/);
   });
 });

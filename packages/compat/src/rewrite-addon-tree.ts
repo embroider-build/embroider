@@ -45,7 +45,7 @@ type GetMeta = () => Partial<AddonMeta>;
 export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
 
-  let movedIndex = new AddToTree(tree, outputPath => {
+  tree = new AddToTree(tree, outputPath => {
     for (let file of readdirSync(outputPath)) {
       if (!file.endsWith('.js')) {
         continue;
@@ -59,7 +59,7 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
   });
 
   let goodParts = new Snitch(
-    movedIndex,
+    tree,
     {
       allowedPaths: new RegExp(`^${ownName}/`),
       foundBadPaths: (badPaths: string[]) => {

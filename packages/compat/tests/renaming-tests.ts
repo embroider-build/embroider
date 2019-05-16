@@ -38,6 +38,9 @@ QUnit.module('renaming tests', function(origHooks) {
         import topLevel from "somebody-elses-package";
         import deeper from "somebody-elses-package/deeper";
       `,
+      'import-single-file-package.js': `
+        import whatever from 'single-file-package';
+      `,
     };
     app.addAddon('somebody-elses-package');
 
@@ -72,6 +75,7 @@ QUnit.module('renaming tests', function(origHooks) {
           'index.js': '// somebody elses utils',
         },
       },
+      'single-file-package.js': '// single file package',
     };
 
     build = await BuildResult.build(app, {
@@ -137,5 +141,10 @@ QUnit.module('renaming tests', function(origHooks) {
     let assertFile = assert.file('components/import-somebody-elses-original.js').transform(build.transpile);
     assertFile.matches(/import topLevel from ["']somebody-elses-package["']/);
     assertFile.matches(/import deeper from ["']somebody-elses-package\/deeper["']/);
+  });
+  test('single file package gets captured and renamed', function(assert) {
+    let assertFile = assert.file('components/import-single-file-package.js').transform(build.transpile);
+    assertFile.matches(/import whatever from ["']emits-multiple-packages\/single-file-package\/index.js['"]/);
+    assert.file('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(/single file package/);
   });
 });

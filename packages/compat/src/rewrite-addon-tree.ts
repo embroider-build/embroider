@@ -2,7 +2,7 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
 import { Tree } from 'broccoli-plugin';
-import { AddonMeta, packageName } from '@embroider/core';
+import { AddonMeta } from '@embroider/core';
 import AddToTree from './add-to-tree';
 import { moveSync, readdirSync, statSync } from 'fs-extra';
 import { join, basename } from 'path';
@@ -64,11 +64,7 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
       allowedPaths: new RegExp(`^${ownName}/`),
       foundBadPaths: (badPaths: string[]) => {
         for (let badPath of badPaths) {
-          let name = packageName(badPath)!;
-          if (!name) {
-            throw new Error(`WAT ${badPath}`);
-          }
-          renamed[name] = `${ownName}/${name}`;
+          renamed[badPath] = `${ownName}/${badPath}`;
         }
       },
     },
@@ -82,6 +78,6 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
   });
   return {
     tree: mergeTrees([goodParts, badParts]),
-    getMeta: () => ({ 'renamed-packages': renamed }),
+    getMeta: () => ({ 'renamed-modules': renamed }),
   };
 }

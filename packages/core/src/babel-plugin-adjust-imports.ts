@@ -49,10 +49,6 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
     return specifier;
   }
 
-  if (opts.renamePackages[packageName]) {
-    return specifier.replace(packageName, opts.renamePackages[packageName]);
-  }
-
   for (let [candidate, replacement] of Object.entries(opts.renameModules)) {
     if (candidate === specifier) {
       return replacement;
@@ -63,6 +59,10 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
     if (candidate === specifier + '.js') {
       return replacement;
     }
+  }
+
+  if (opts.renamePackages[packageName]) {
+    return specifier.replace(packageName, opts.renamePackages[packageName]);
   }
 
   let pkg = sourceFile.owningPackage();

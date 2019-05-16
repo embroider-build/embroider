@@ -24,7 +24,10 @@ interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
   opts: {
-    rename: {
+    renamePackages: {
+      [fromName: string]: string;
+    };
+    renameModules: {
       [fromName: string]: string;
     };
     extraImports: {
@@ -46,8 +49,20 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
     return specifier;
   }
 
-  if (opts.rename[packageName]) {
-    return specifier.replace(packageName, opts.rename[packageName]);
+  for (let [candidate, replacement] of Object.entries(opts.renameModules)) {
+    if (candidate === specifier) {
+      return replacement;
+    }
+    if (candidate === specifier + '/index.js') {
+      return replacement;
+    }
+    if (candidate === specifier + '.js') {
+      return replacement;
+    }
+  }
+
+  if (opts.renamePackages[packageName]) {
+    return specifier.replace(packageName, opts.renamePackages[packageName]);
   }
 
   let pkg = sourceFile.owningPackage();

@@ -138,7 +138,7 @@ class BuiltEmberAsset {
 
 class ConcatenatedAsset {
   kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]) { }
+  constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]) {}
   get sourcemapPath() {
     return this.relativePath.replace(/\.js$/, '') + '.map';
   }
@@ -609,6 +609,7 @@ export class AppBuilder<TreeNames> {
 
     // if package exists in the root, merge properties in pkg
     if (existsSync(pkgPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const existingPkg = require(pkgPath);
       merge(pkg, existingPkg);
     }

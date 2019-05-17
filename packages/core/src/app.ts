@@ -4,10 +4,11 @@ import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, existsSync } from 'fs-extra';
 import { join, dirname, relative } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
+import merge from 'lodash/merge';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -604,7 +605,15 @@ export class AppBuilder<TreeNames> {
       pkg.keywords = ['ember-addon'];
     }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
-    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+    const pkgPath = join(this.root, 'package.json');
+
+    // if package exists in the root, merge properties in pkg
+    if (existsSync(pkgPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const existingPkg = require(pkgPath);
+      merge(pkg, existingPkg);
+    }
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
   }
 
   private templateCompiler(config: EmberENV) {

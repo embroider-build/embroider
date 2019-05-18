@@ -1,5 +1,5 @@
 import getPackageName from './package-name';
-import { join, relative, dirname, resolve } from 'path';
+import { join, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import {
   blockStatement,
@@ -19,6 +19,7 @@ import Package, { V2Package } from './package';
 import { pathExistsSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
+import { explicitRelative } from './paths';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -75,11 +76,7 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
     // this help, v2 packages are natively supposed to use explicit hbs
     // extensions, and we want to push them all to do that correctly.
     let fullPath = specifier.replace(packageName, pkg.root);
-    let relativePath = relative(dirname(sourceFile.name), fullPath);
-    if (relativePath[0] !== '.') {
-      relativePath = `./${relativePath}`;
-    }
-    return relativePath;
+    return explicitRelative(dirname(sourceFile.name), fullPath);
   }
   return specifier;
 }
@@ -154,11 +151,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
         runtimeName: specifier,
       })
     );
-    let relativePath = relative(dirname(sourceFile.name), target.slice(0, -3));
-    if (relativePath[0] !== '.') {
-      relativePath = `./${relativePath}`;
-    }
-    return relativePath;
+    return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
   } else {
     if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
       throw new Error(

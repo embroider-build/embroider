@@ -1,4 +1,4 @@
-import { Resolver, warn, TemplateCompiler, PackageCache } from '@embroider/core';
+import { Resolver, warn, TemplateCompiler, PackageCache, explicitRelative } from '@embroider/core';
 import {
   ComponentRules,
   PackageRules,
@@ -281,7 +281,7 @@ export default class CompatResolver implements Resolver {
         modules: [
           {
             runtimeName: `${this.modulePrefix}/helpers/${path}`,
-            path: explicitRelative(from, absPath),
+            path: explicitRelative(dirname(from), absPath),
             absPath,
           },
         ],
@@ -319,7 +319,7 @@ export default class CompatResolver implements Resolver {
       return {
         type: 'component',
         modules: componentModules.map(p => ({
-          path: explicitRelative(from, p.absPath),
+          path: explicitRelative(dirname(from), p.absPath),
           absPath: p.absPath,
           runtimeName: p.runtimeName,
         })),
@@ -462,20 +462,6 @@ export default class CompatResolver implements Resolver {
       from
     );
   }
-}
-
-// by "explicit", I mean that we want "./local/thing" instead of "local/thing"
-// because
-//     import "./local/thing"
-// has a different meaning than
-//     import "local/thing"
-//
-export function explicitRelative(fromFile: string, toFile: string) {
-  let result = relative(dirname(fromFile), toFile);
-  if (!result.startsWith('/') && !result.startsWith('.')) {
-    result = './' + result;
-  }
-  return result;
 }
 
 function humanReadableFile(root: string, file: string) {

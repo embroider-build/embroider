@@ -1,6 +1,7 @@
-import { Package } from '@embroider/core';
+import { Package, explicitRelative } from '@embroider/core';
 import { satisfies } from 'semver';
-import CompatResolver, { explicitRelative } from './resolver';
+import CompatResolver from './resolver';
+import { dirname } from 'path';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -178,7 +179,7 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
       }
       output.push({
         absPath,
-        target: explicitRelative(absPath, found.absPath),
+        target: explicitRelative(dirname(absPath), found.absPath),
         runtimeName: found.runtimeName,
       });
     }
@@ -187,7 +188,7 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
     for (let snippet of moduleRules.dependsOnComponents) {
       let found = resolver.resolveComponentSnippet(snippet, moduleRules);
       for (let { absPath: target, runtimeName } of found.modules) {
-        output.push({ absPath, target: explicitRelative(absPath, target), runtimeName });
+        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
       }
     }
   }

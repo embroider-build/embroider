@@ -5,7 +5,7 @@ import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, existsSync } from 'fs-extra';
-import { join, dirname, relative } from 'path';
+import { join, dirname } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
@@ -25,6 +25,7 @@ import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
+import { explicitRelative } from './paths';
 
 export type EmberENV = unknown;
 
@@ -926,18 +927,4 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
     return Buffer.compare(a, b) === 0;
   }
   return false;
-}
-
-// by "explicit", I mean that we want "./local/thing" instead of "local/thing"
-// because
-//     import "./local/thing"
-// has a different meaning than
-//     import "local/thing"
-//
-function explicitRelative(fromDir: string, toFile: string) {
-  let result = relative(fromDir, toFile);
-  if (!result.startsWith('/') && !result.startsWith('.')) {
-    result = './' + result;
-  }
-  return result;
 }

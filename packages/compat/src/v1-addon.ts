@@ -441,7 +441,7 @@ export default class V1Addon implements V1Package {
       if (!this.addonOptions.staticAddonTrees) {
         let filenames: string[] = [];
         tree = new ObserveTree(tree, outputDir => {
-          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/\.js$/i, '')}`);
         });
         built.dynamicMeta.push(() => ({
           'implicit-modules': filenames,

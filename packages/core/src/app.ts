@@ -848,7 +848,7 @@ export class AppBuilder<TreeNames> {
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
-            runtime: join(addon.name, name),
+            runtime: join(addon.name, name).replace(/\.hbs$/i, ''),
             buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }

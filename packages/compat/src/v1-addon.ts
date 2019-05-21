@@ -402,7 +402,7 @@ export default class V1Addon implements V1Package {
 
         // this captures addons that are trying to escape their own package's
         // namespace
-        let result = rewriteAddonTree(tree, this.name);
+        let result = rewriteAddonTree(tree, this.moduleName);
         tree = result.tree;
         built.dynamicMeta.push(result.getMeta);
 

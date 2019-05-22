@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/embroider-build/embroider.svg?branch=master)](https://travis-ci.com/embroider-build/embroider)
 
-This repo implements a new three-stage build system for Ember apps.
+This repo implements a new three-stage build system for Ember apps:
 
 1. The first stage achieves backward compatibility by building each classic
    Ember Addon package into a new **v2 package format**. This makes each package
@@ -23,6 +23,8 @@ This repo implements a new three-stage build system for Ember apps.
    these tools! But because a stable, standards-compliant API between stage 2
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
+   
+You can read more about the motivation and key ideas in the [intro to the SPEC](SPEC.md).
 
 ## Status / Should I Use It?
 

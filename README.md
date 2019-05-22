@@ -94,6 +94,9 @@ The recommended steps when introducing Embroider into an existing app are:
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component inovcation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
 
+## Analyzing Bundles
+see [`ANALYZING.md`](ANALYZING.md)
+
 ## Contributing
 
 see [`CONTRIBUTING.md`](CONTRIBUTING.md)

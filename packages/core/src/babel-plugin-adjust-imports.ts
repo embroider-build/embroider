@@ -37,6 +37,9 @@ interface State {
       runtimeName?: string;
     }[];
     externalsDir: string;
+    activeAddons: {
+      [packageName: string]: string;
+    };
   };
 }
 
@@ -81,30 +84,23 @@ function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State[
   return specifier;
 }
 
-function isExternal(packageName: string, fromPkg: V2Package): boolean {
-  if (fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName)) {
-    return true;
-  }
+function isExplicitlyExternal(packageName: string, fromPkg: V2Package): boolean {
+  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName));
+}
 
-  // we're being strict, packages authored in v2 need to list their own
-  // externals, we won't resolve for them.
-  if (!fromPkg.meta['auto-upgraded']) {
-    return false;
-  }
-
+function isResolvable(packageName: string, fromPkg: V2Package): boolean {
   try {
     let dep = packageCache.resolve(packageName, fromPkg);
     if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
-      return true;
+      return false;
     }
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;
     }
-    return true;
+    return false;
   }
-
-  return false;
+  return true;
 }
 
 const externalTemplate = compile(`
@@ -142,17 +138,11 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return specifier;
   }
 
-  if (isExternal(packageName, pkg)) {
-    let target = join(opts.externalsDir, specifier + '.js');
-    ensureDirSync(dirname(target));
-    writeFileSync(
-      target,
-      externalTemplate({
-        runtimeName: specifier,
-      })
-    );
-    return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
-  } else {
+  if (isExplicitlyExternal(packageName, pkg)) {
+    return makeExternal(specifier, sourceFile, opts);
+  }
+
+  if (isResolvable(packageName, pkg)) {
     if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
       throw new Error(
         `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
@@ -160,6 +150,30 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     }
     return specifier;
   }
+
+  // we're being strict, packages authored in v2 need to list their own
+  // externals, we won't resolve for them.
+  if (!pkg.meta['auto-upgraded']) {
+    return specifier;
+  }
+
+  if (opts.activeAddons[packageName]) {
+    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+  } else {
+    return makeExternal(specifier, sourceFile, opts);
+  }
+}
+
+function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+  let target = join(opts.externalsDir, specifier + '.js');
+  ensureDirSync(dirname(target));
+  writeFileSync(
+    target,
+    externalTemplate({
+      runtimeName: specifier,
+    })
+  );
+  return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
 function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {

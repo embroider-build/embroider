@@ -329,7 +329,13 @@ export class AppBuilder<TreeNames> {
       {},
       ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules'])
     );
+    let activeAddons: AdjustImportsOptions['activeAddons'] = {};
+    for (let addon of this.adapter.activeAddonDescendants) {
+      activeAddons[addon.name] = addon.root;
+    }
+
     let adjustOptions: AdjustImportsOptions = {
+      activeAddons,
       renameModules,
       renamePackages,
       extraImports: this.adapter.extraImports(),

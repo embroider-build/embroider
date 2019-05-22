@@ -39,6 +39,10 @@ QUnit.module('stage2 build', function() {
         `,
       };
 
+      (app.files.app as Project['files'])['use-deep-addon.js'] = `
+      import thing from 'deep-addon';
+      `;
+
       let addon = app.addAddon('my-addon');
       addon.files.addon = {
         components: {
@@ -81,6 +85,11 @@ QUnit.module('stage2 build', function() {
             'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
           },
         },
+      };
+
+      let deepAddon = addon.addAddon('deep-addon');
+      deepAddon.files.addon = {
+        'index.js': '// deep-addon index',
       };
 
       let options: Options = {
@@ -208,6 +217,11 @@ QUnit.module('stage2 build', function() {
         .file('node_modules/my-addon/components/has-relative-template.js')
         .transform(build.transpile);
       assertFile.matches(/import layout from ["']\.\/t.hbs['"]/, 'arbitrary relative template gets hbs extension');
+    });
+
+    test('app can import a deep addon', function(assert) {
+      let assertFile = assert.file('use-deep-addon.js').transform(build.transpile);
+      assertFile.matches(/import thing from ["']\.\/node_modules\/my-addon\/node_modules\/deep-addon['"]/);
     });
   });
 });

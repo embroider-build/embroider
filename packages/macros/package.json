@@ -13,6 +13,9 @@
     "prepare": "tsc",
     "test": "jest"
   },
+  "files": [
+    "src"
+  ],
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",
     "@embroider/test-support": "0.3.5",

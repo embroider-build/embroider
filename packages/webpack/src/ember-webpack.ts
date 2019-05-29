@@ -219,6 +219,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       mode: this.mode,
       context: this.pathToVanillaApp,
       entry,
+      performance: {
+        hints: false,
+      },
       plugins: [new MiniCssExtractPlugin()],
       module: {
         rules: [

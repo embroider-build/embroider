@@ -8,8 +8,10 @@ import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { compile } from './js-handlebars';
 import { join } from 'path';
-import { PluginItem } from '@babel/core';
+import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
+import { NodePath } from '@babel/traverse';
+import { VariableDeclarator } from '@babel/types';
 
 export interface Plugins {
   ast?: unknown[];
@@ -43,44 +45,61 @@ interface GlimmerSyntax {
 // the app itself is using, and its copy is bundled away inside
 // ember-template-compiler.js.
 function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
-  let orig = Object.create;
-  let grabbed: any[] = [];
   let source = readFileSync(templateCompilerPath, 'utf8');
-  let theExports: any;
+  let replacedVar = false;
 
-  (Object as any).create = function(proto: any, propertiesObject: any) {
-    let result = orig.call(this, proto, propertiesObject);
-    grabbed.push(result);
-    return result;
+  // here we are stripping off the first `var Ember;`. That one small change
+  // lets us crack open the file and get access to its internal loader, because
+  // we can give it our own predefined `Ember` variable instead, which it will
+  // use and put `Ember.__loader` onto.
+  source = transform(source, {
+    plugins: [
+      function() {
+        return {
+          visitor: {
+            VariableDeclarator(path: NodePath<VariableDeclarator>) {
+              let id = path.node.id;
+              if (id.type === 'Identifier' && id.name === 'Ember' && !replacedVar) {
+                replacedVar = true;
+                path.remove();
+              }
+            },
+          },
+        };
+      },
+    ],
+  })!.code!;
+
+  if (!replacedVar) {
+    throw new Error(
+      `didn't find expected source in ${templateCompilerPath}. Maybe we don't support your ember-source version?`
+    );
+  }
+
+  // evades the require cache, which we need because the template compiler
+  // shares internal module scoped state.
+  let theExports = new Function(`
+  let module = { exports: {} };
+  let Ember = {};
+  ${source};
+  module.exports.Ember = Ember;
+  return module.exports
+  `)();
+
+  let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
+  let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
+
+  return {
+    print: syntax.print,
+    preprocess: syntax.preprocess,
+    defaultOptions: compilerOptions.default,
+    registerPlugin: compilerOptions.registerPlugin,
+    precompile: theExports.precompile,
+    _Ember: theExports._Ember,
+    cacheKey: createHash('md5')
+      .update(source)
+      .digest('hex'),
   };
-  try {
-    // evades the require cache, which we need because the template compiler
-    // shares internal module scoped state.
-    theExports = new Function(`
-    let module = { exports: {} };
-    ${source};
-    return module.exports
-    `)();
-  } finally {
-    Object.create = orig;
-  }
-  for (let obj of grabbed) {
-    if (obj['@glimmer/syntax'] && obj['@glimmer/syntax'].print) {
-      // we found the loaded modules
-      return {
-        print: obj['@glimmer/syntax'].print,
-        preprocess: obj['@glimmer/syntax'].preprocess,
-        defaultOptions: obj['ember-template-compiler/lib/system/compile-options'].default,
-        registerPlugin: obj['ember-template-compiler/lib/system/compile-options'].registerPlugin,
-        precompile: theExports.precompile,
-        _Ember: theExports._Ember,
-        cacheKey: createHash('md5')
-          .update(source)
-          .digest('hex'),
-      };
-    }
-  }
-  throw new Error(`unable to find @glimmer/syntax methods in ${templateCompilerPath}`);
 }
 
 interface SetupCompilerParams {

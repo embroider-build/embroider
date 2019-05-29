@@ -205,9 +205,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return { entrypoints, otherAssets, templateCompiler, babel, rootURL };
   }
 
-  private mode = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
+  private mode: 'production' | 'development' = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, templateCompiler, babel, rootURL }: AppInfo) {
+  private configureWebpack({ entrypoints, templateCompiler, babel, rootURL }: AppInfo): Configuration {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -224,7 +224,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         rules: [
           {
             test: /\.hbs$/,
-            use: [
+            use: nonNullArray([
               maybeThreadLoader(templateCompiler.isParallelSafe),
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
@@ -232,11 +232,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
                   templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
                 },
               },
-            ].filter(Boolean),
+            ]),
           },
           {
             test: this.shouldTranspileFile.bind(this),
-            use: [
+            use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe),
               {
                 loader: babel.majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
@@ -249,7 +249,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
                   cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
                 }),
               },
-            ].filter(Boolean),
+            ]),
           },
           {
             test: isCSS,
@@ -558,6 +558,12 @@ function isJS(filename: string) {
 
 interface StatSummary {
   entrypoints: Map<string, string[]>;
+}
+
+// typescript doesn't understand that regular use of array.filter(Boolean) does
+// this.
+function nonNullArray<T>(array: T[]): NonNullable<T>[] {
+  return array.filter(Boolean) as NonNullable<T>[];
 }
 
 export { Webpack };

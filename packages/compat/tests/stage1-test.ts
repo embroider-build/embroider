@@ -80,6 +80,24 @@ QUnit.module('stage1 build', function() {
         },
       };
 
+      // an addon that manually extends the Addon base class
+      let hasCustomBase = app.addAddon('has-custom-base');
+      hasCustomBase.files['index.js'] = `
+      const { join } = require('path');
+      const Addon = require('ember-cli/lib/models/addon');
+      module.exports = Addon.extend({
+        name: 'has-custom-base',
+        treeForAddon() {
+          return join(__dirname, 'weird-addon-path');
+        }
+      });
+      `;
+      hasCustomBase.files['weird-addon-path'] = {
+        'has-custom-base': {
+          'file.js': '// weird-addon-path/file.js',
+        },
+      };
+
       build = await BuildResult.build(app, { stage: 1 });
       assert.basePath = build.outputPath;
     });
@@ -144,6 +162,11 @@ QUnit.module('stage1 build', function() {
     test('in-repo-addon is available', function(assert) {
       assert.expect(0);
       resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: assert.basePath });
+    });
+
+    test('custom tree hooks are detected in addons that manually extend from Addon', function(assert) {
+      let assertFile = assert.file('node_modules/has-custom-base/file.js');
+      assertFile.matches(/weird-addon-path\/file\.js/);
     });
   });
 

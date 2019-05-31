@@ -172,7 +172,13 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private get mainModule() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(this.addonInstance.constructor._meta_.modulePath);
+    const mod = require(this.addonInstance.constructor._meta_.modulePath);
+
+    if (typeof mod === 'function') {
+      return mod.prototype;
+    } else {
+      return mod;
+    }
   }
 
   protected get options() {

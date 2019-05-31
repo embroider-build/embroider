@@ -408,7 +408,7 @@ export default class V1Addon implements V1Package {
 
         // this captures addons that are trying to escape their own package's
         // namespace
-        let result = rewriteAddonTree(tree, this.name);
+        let result = rewriteAddonTree(tree, this.moduleName);
         tree = result.tree;
         built.dynamicMeta.push(result.getMeta);
 
@@ -447,7 +447,7 @@ export default class V1Addon implements V1Package {
       if (!this.addonOptions.staticAddonTrees) {
         let filenames: string[] = [];
         tree = new ObserveTree(tree, outputDir => {
-          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
+          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/\.js$/i, '')}`);
         });
         built.dynamicMeta.push(() => ({
           'implicit-modules': filenames,

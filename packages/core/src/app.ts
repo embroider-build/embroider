@@ -329,7 +329,13 @@ export class AppBuilder<TreeNames> {
       {},
       ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules'])
     );
+    let activeAddons: AdjustImportsOptions['activeAddons'] = {};
+    for (let addon of this.adapter.activeAddonDescendants) {
+      activeAddons[addon.name] = addon.root;
+    }
+
     let adjustOptions: AdjustImportsOptions = {
+      activeAddons,
       renameModules,
       renamePackages,
       extraImports: this.adapter.extraImports(),
@@ -848,7 +854,7 @@ export class AppBuilder<TreeNames> {
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
-            runtime: join(addon.name, name),
+            runtime: join(addon.name, name).replace(/\.hbs$/i, ''),
             buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }

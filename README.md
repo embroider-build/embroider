@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/embroider-build/embroider.svg?branch=master)](https://travis-ci.com/embroider-build/embroider)
 
-This repo implements a new three-stage build system for Ember apps.
+This repo implements a new three-stage build system for Ember apps:
 
 1. The first stage achieves backward compatibility by building each classic
    Ember Addon package into a new **v2 package format**. This makes each package
@@ -23,6 +23,8 @@ This repo implements a new three-stage build system for Ember apps.
    these tools! But because a stable, standards-compliant API between stage 2
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
+   
+You can read more about the motivation and key ideas in the [intro to the SPEC](SPEC.md).
 
 ## Status / Should I Use It?
 
@@ -93,6 +95,9 @@ The recommended steps when introducing Embroider into an existing app are:
 3. Enable `staticHelpers` and test. This is usually safe because addons get invoke declarative in templates and we can see all invocations.
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component inovcation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
+
+## Analyzing Bundles
+see [`ANALYZING.md`](ANALYZING.md)
 
 ## Contributing
 

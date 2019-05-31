@@ -9,6 +9,9 @@
   "scripts": {
     "prepare": "tsc"
   },
+  "files": [
+    "src"
+  ],
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
     "@types/loader-utils": "^1.1.3",

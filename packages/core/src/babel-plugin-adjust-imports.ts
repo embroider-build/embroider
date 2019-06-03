@@ -40,6 +40,9 @@ interface State {
     activeAddons: {
       [packageName: string]: string;
     };
+    relocatedFiles: {
+      [relativePath: string]: string;
+    };
   };
 }
 
@@ -263,7 +266,7 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let file = new AdjustFile(path.hub.file.opts.filename);
+        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
 
         let specifier = adjustSpecifier(source.value, file, opts);
         specifier = handleExternal(specifier, file, opts);
@@ -306,10 +309,14 @@ function amdDefine(runtimeName: string, importCounter: number) {
 }
 
 class AdjustFile {
-  constructor(public name: string) {}
+  private originalFile: string;
+
+  constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
+    this.originalFile = relocatedFiles[name] || name;
+  }
 
   @Memoize()
   owningPackage(): Package | undefined {
-    return packageCache.ownerOfFile(this.name);
+    return packageCache.ownerOfFile(this.originalFile);
   }
 }

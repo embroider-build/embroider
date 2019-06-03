@@ -234,6 +234,7 @@ export class Project extends FixturifyProject {
           components: {},
         },
       },
+      app: {},
     };
     addon.linkPackage('ember-cli-htmlbars');
     addon.linkPackage('ember-cli-babel');

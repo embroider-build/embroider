@@ -193,15 +193,15 @@ QUnit.module('stage2 build', function() {
       assertFile.matches(/import a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
       assertFile.matches(
-        /export \{ default \} from ['"]my-addon\/components\/hello-world['"]/,
-        'retains absolute package name import'
+        /export \{ default \} from ['"]\.\.\/node_modules\/my-addon\/components\/hello-world['"]/,
+        'remapped to precise copy of my-addon'
       );
     });
 
     test('app/templates/components/direct-template-reexport.js', function(assert) {
       let assertFile = assert.file('./templates/components/direct-template-reexport.js').transform(build.transpile);
       assertFile.matches(
-        /export \{ default \} from ['"]my-addon\/templates\/components\/hello-world.hbs['"]/,
+        /export \{ default \} from ['"]\.\.\/\.\.\/node_modules\/my-addon\/templates\/components\/hello-world.hbs['"]/,
         'rewrites absolute imports of templates to explicit hbs'
       );
     });

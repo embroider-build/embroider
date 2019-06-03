@@ -78,6 +78,18 @@ QUnit.module('renaming tests', function(origHooks) {
       'single-file-package.js': '// single file package',
     };
 
+    let firstAddonWithAppTreeImport = app.addAddon('has-app-tree-import');
+    (firstAddonWithAppTreeImport.files.app as Project['files'])[
+      'first.js'
+    ] = `export { default } from 'has-app-tree-import';`;
+    (firstAddonWithAppTreeImport.files.addon as Project['files'])['index.js'] = `export default "first-copy";`;
+
+    let secondAddonWithAppTreeImport = app.addAddon('intermediate').addAddon('has-app-tree-import');
+    (secondAddonWithAppTreeImport.files.app as Project['files'])[
+      'second.js'
+    ] = `export { default } from 'has-app-tree-import';`;
+    (secondAddonWithAppTreeImport.files.addon as Project['files'])['index.js'] = `export default "second-copy";`;
+
     build = await BuildResult.build(app, {
       stage: 2,
       type: 'app',
@@ -146,5 +158,14 @@ QUnit.module('renaming tests', function(origHooks) {
     let assertFile = assert.file('components/import-single-file-package.js').transform(build.transpile);
     assertFile.matches(/import whatever from ["']emits-multiple-packages\/single-file-package\/index.js['"]/);
     assert.file('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(/single file package/);
+  });
+  test('files copied into app from addons resolve their own original packages', function(assert) {
+    let assertFile = assert.file('first.js').transform(build.transpile);
+    assertFile.matches(/export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import['"]/);
+
+    assertFile = assert.file('second.js').transform(build.transpile);
+    assertFile.matches(
+      /export \{ default \} from ['"]\.\/node_modules\/intermediate\/node_modules\/has-app-tree-import['"]/
+    );
   });
 });

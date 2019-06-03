@@ -160,14 +160,15 @@ class AppFiles {
   readonly helpers: ReadonlyArray<string>;
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
+  readonly relocatedFiles: Map<string, string>;
 
-  constructor(relativePaths: Set<string>) {
+  constructor(relativePaths: Map<string, string | null>) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
-    for (let relativePath of relativePaths) {
+    for (let relativePath of relativePaths.keys()) {
       if (!relativePath.endsWith('.js') && !relativePath.endsWith('.hbs')) {
         continue;
       }
@@ -197,6 +198,14 @@ class AppFiles {
     this.components = components;
     this.helpers = helpers;
     this.otherAppFiles = otherAppFiles;
+
+    let relocatedFiles: Map<string, string> = new Map();
+    for (let [relativePath, owningPath] of relativePaths) {
+      if (owningPath) {
+        relocatedFiles.set(relativePath, owningPath);
+      }
+    }
+    this.relocatedFiles = relocatedFiles;
   }
 
   private handleRouteFile(relativePath: string): boolean {
@@ -286,7 +295,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompiler: TemplateCompiler) {
+  private babelConfig(templateCompiler: TemplateCompiler, appFiles: AppFiles) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -315,23 +324,30 @@ export class AppBuilder<TreeNames> {
       },
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin());
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
 
-  private adjustImportsPlugin(): PluginItem {
+  private adjustImportsPlugin(appFiles: AppFiles): PluginItem {
     let renamePackages = Object.assign(
       {},
       ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-packages'])
     );
+
     let renameModules = Object.assign(
       {},
       ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules'])
     );
+
     let activeAddons: AdjustImportsOptions['activeAddons'] = {};
     for (let addon of this.adapter.activeAddonDescendants) {
       activeAddons[addon.name] = addon.root;
+    }
+
+    let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
+    for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
+      relocatedFiles[join(this.root, relativePath)] = originalPath;
     }
 
     let adjustOptions: AdjustImportsOptions = {
@@ -339,6 +355,7 @@ export class AppBuilder<TreeNames> {
       renameModules,
       renamePackages,
       extraImports: this.adapter.extraImports(),
+      relocatedFiles,
 
       // it's important that this is a persistent location, because we fill it
       // up as a side-effect of babel transpilation, and babel is subject to
@@ -569,7 +586,7 @@ export class AppBuilder<TreeNames> {
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     let templateCompiler = this.templateCompiler(emberENV);
-    let babelConfig = this.babelConfig(templateCompiler);
+    let babelConfig = this.babelConfig(templateCompiler, appFiles);
     this.addTemplateCompiler(templateCompiler);
     this.addBabelConfig(babelConfig);
 

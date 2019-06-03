@@ -10,9 +10,15 @@ export default class AppDiffer {
   private differ: MultiTreeDiff;
   private sourceDirs: string[] = [];
 
-  readonly files: Set<string> = new Set();
+  // maps from each filename in the app to the original directory from whence it
+  // came, if it came from an addon. The mapping allows us to preserve
+  // resolution semantics so that each of the app files can still resolve
+  // relative to where it was authored.
+  //
+  // files authored within the app map to null
+  readonly files: Map<string, string | null> = new Map();
 
-  constructor(private outputPath: string, ownAppJSDir: string, activeAddonDescendants: V2AddonPackage[]) {
+  constructor(private outputPath: string, private ownAppJSDir: string, activeAddonDescendants: V2AddonPackage[]) {
     let trees = activeAddonDescendants
       .map(
         (addon): InputTree | undefined => {
@@ -61,8 +67,10 @@ export default class AppDiffer {
           removeSync(outputPath);
         // deliberate fallthrough
         case 'create':
-          copySync(join(this.sourceDirs[sources.get(relativePath)!], relativePath), outputPath, { dereference: true });
-          this.files.add(relativePath);
+          let sourceDir = this.sourceDirs[sources.get(relativePath)!];
+          let sourceFile = join(sourceDir, relativePath);
+          copySync(sourceFile, outputPath, { dereference: true });
+          this.files.set(relativePath, sourceDir === this.ownAppJSDir ? null : sourceFile);
           break;
         default:
           assertNever(operation);

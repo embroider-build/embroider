@@ -960,4 +960,112 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ]);
   });
+
+  test('respects yieldsArguments rule for positional block param', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-navbar.hbs');
+
+    assert.deepEqual(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+        <FormBuilder @navbar={{component "fancy-navbar"}} as |bar|>
+          {{component bar}}
+        </FormBuilder>
+        `
+      ),
+      [
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+        {
+          path: './fancy-navbar.hbs',
+          runtimeName: 'the-app/templates/components/fancy-navbar',
+        },
+      ]
+    );
+  });
+
+  test('respects yieldsArguments rule for hash block param', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: [{ bar: 'navbar' }],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-navbar.hbs');
+
+    assert.deepEqual(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+        <FormBuilder @navbar={{component "fancy-navbar"}} as |f|>
+          {{component f.bar}}
+        </FormBuilder>
+        `
+      ),
+      [
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+        {
+          path: './fancy-navbar.hbs',
+          runtimeName: 'the-app/templates/components/fancy-navbar',
+        },
+      ]
+    );
+  });
+
+  test('yieldsArguments causes warning to propagate up lexically', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    assertWarning(/ignoring dynamic component this\.unknown/, () => {
+      assert.deepEqual(
+        findDependencies(
+          'templates/components/x.hbs',
+          `
+          <FormBuilder @navbar={{this.unknown}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+        ),
+        [
+          {
+            path: './form-builder.hbs',
+            runtimeName: 'the-app/templates/components/form-builder',
+          },
+        ]
+      );
+    });
+  });
 });

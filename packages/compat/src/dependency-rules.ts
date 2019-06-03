@@ -51,6 +51,24 @@ export interface ComponentRules {
   //
   yieldsSafeComponents?: (boolean | { [name: string]: boolean })[];
 
+  // This declares that our component yields some of its arguments unchanged.
+  //
+  // The array corresponds to your yielded positional arguments. Each value can
+  // be:
+  //   false, meaning this yielded value is not one of our arguments
+  //   a string, meaning this yielded value is our argument with that name
+  //   or a POJO, whose individual properties are string naming which arguments
+  //     from whence they came.
+  //
+  // Examples:
+  //
+  //    If you do: {{yield @foo}}
+  //    Then say: yieldsArguments: ['foo']
+  //
+  //    If you do: {{yield (hash x=@foo) }}
+  //    Then say: yieldsArguments: [{ x: 'foo' }]
+  yieldsArguments?: (string | { [name: string]: string })[];
+
   // This declares that our component accepts arguments that will be invoked
   // with the {{component}} helper. This silences warnings in the places where
   // we consume them, while introducing warnings in the places where people are

@@ -209,7 +209,7 @@ export default class V1Addon implements V1Package {
       options['ember-cli-babel'] = Object.assign({}, options['ember-cli-babel']);
     }
 
-    return addonOptions;
+    return options;
   }
 
   protected customizes(...treeNames: string[]) {

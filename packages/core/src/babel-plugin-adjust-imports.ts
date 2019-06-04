@@ -179,6 +179,19 @@ function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options):
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
+function handleRelocation(specifier: string, sourceFile: AdjustFile) {
+  let packageName = getPackageName(specifier);
+  if (!packageName) {
+    return specifier;
+  }
+  let pkg = sourceFile.owningPackage();
+  if (!pkg || !pkg.isV2Ember()) {
+    return specifier;
+  }
+  let targetPkg = packageCache.resolve(packageName, pkg);
+  return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, targetPkg.root));
+}
+
 function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
     // already has a well-known explicit extension, so nevermind
@@ -270,6 +283,9 @@ export default function main({ types: t }: { types: any }) {
 
         let specifier = adjustSpecifier(source.value, file, opts);
         specifier = handleExternal(specifier, file, opts);
+        if (file.isRelocated) {
+          specifier = handleRelocation(specifier, file);
+        }
         specifier = makeHBSExplicit(specifier, file);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
@@ -313,6 +329,10 @@ class AdjustFile {
 
   constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
     this.originalFile = relocatedFiles[name] || name;
+  }
+
+  get isRelocated() {
+    return this.originalFile !== this.name;
   }
 
   @Memoize()

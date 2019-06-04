@@ -1,5 +1,4 @@
-import { default as Resolver } from './resolver';
-import { ComponentRules } from './dependency-rules';
+import { default as Resolver, ComponentResolution } from './resolver';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
@@ -15,14 +14,10 @@ export function makeResolverTransform(resolver: Resolver) {
       visitor: {
         Program: {
           enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
+            scopeStack.push(node.blockParams);
           },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
+          exit() {
+            scopeStack.pop();
           },
         },
         BlockStatement(node: any) {
@@ -39,17 +34,10 @@ export function makeResolverTransform(resolver: Resolver) {
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
-          if (resolution) {
-            if (
-              resolution.type === 'component' &&
-              node.program.blockParams.length > 0 &&
-              resolution.yieldsComponents.length > 0
-            ) {
-              scopeStack.yieldingComponents(resolution.yieldsComponents);
-            }
-            if (resolution.type === 'component') {
-              for (let name of resolution.argumentsAreComponents) {
+          const resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          if (resolution && resolution.type === 'component') {
+            scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+              for (let name of argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
                   handleImpliedComponentHelper(
@@ -62,7 +50,7 @@ export function makeResolverTransform(resolver: Resolver) {
                   );
                 }
               }
-            }
+            });
           }
         },
         SubExpression(node: any) {
@@ -110,27 +98,22 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              let resolution = resolver.resolveElement(node.tag, env.moduleName);
+              const resolution = resolver.resolveElement(node.tag, env.moduleName);
               if (resolution && resolution.type === 'component') {
-                if (node.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
-                  scopeStack.yieldingComponents(resolution.yieldsComponents);
-                }
-                for (let name of resolution.argumentsAreComponents) {
-                  let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
-                  if (attr) {
-                    handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
+                scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                  for (let name of argumentsAreComponents) {
+                    let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
+                    if (attr) {
+                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
+                    }
                   }
-                }
+                });
               }
             }
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
+            scopeStack.push(node.blockParams);
           },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
+          exit() {
+            scopeStack.pop();
           },
         },
       },
@@ -144,9 +127,14 @@ export function makeResolverTransform(resolver: Resolver) {
   return resolverTransform;
 }
 
-type ScopeEntry =
-  | { type: 'blockParams'; blockParams: string[] }
-  | { type: 'safeComponentMarker'; safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents'] };
+interface ComponentBlockMarker {
+  type: 'componentBlockMarker';
+  resolution: ComponentResolution;
+  argumentsAreComponents: string[];
+  exit: (marker: ComponentBlockMarker) => void;
+}
+
+type ScopeEntry = { type: 'blockParams'; blockParams: string[] } | ComponentBlockMarker;
 
 class ScopeStack {
   private stack: ScopeEntry[] = [];
@@ -161,7 +149,9 @@ class ScopeStack {
   // by a safe component marker, we also clear that.
   pop() {
     this.stack.shift();
-    if (this.stack.length > 0 && this.stack[0]!.type === 'safeComponentMarker') {
+    let next = this.stack[0];
+    if (next && next.type === 'componentBlockMarker') {
+      next.exit(next);
       this.stack.shift();
     }
   }
@@ -169,8 +159,13 @@ class ScopeStack {
   // right before we enter a block, we might determine that some of the values
   // that will be yielded as marked (by a rule) as safe to be used with the
   // {{component}} helper.
-  yieldingComponents(safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents']) {
-    this.stack.unshift({ type: 'safeComponentMarker', safeComponentMarker });
+  enteringComponentBlock(resolution: ComponentResolution, exit: ComponentBlockMarker['exit']) {
+    this.stack.unshift({
+      type: 'componentBlockMarker',
+      resolution,
+      argumentsAreComponents: resolution.argumentsAreComponents.slice(),
+      exit,
+    });
   }
 
   inScope(name: string) {
@@ -193,19 +188,39 @@ class ScopeStack {
     for (let i = 0; i < this.stack.length - 1; i++) {
       let here = this.stack[i];
       let next = this.stack[i + 1];
-      if (here.type === 'blockParams' && next.type === 'safeComponentMarker') {
+      if (here.type === 'blockParams' && next.type === 'componentBlockMarker') {
         let positionalIndex = here.blockParams.indexOf(parts[0]);
         if (positionalIndex === -1) {
           continue;
         }
+
         if (parts.length === 1) {
-          return next.safeComponentMarker[positionalIndex] === true;
+          if (next.resolution.yieldsComponents[positionalIndex] === true) {
+            return true;
+          }
+          let sourceArg = next.resolution.yieldsArguments[positionalIndex];
+          if (typeof sourceArg === 'string') {
+            next.argumentsAreComponents.push(sourceArg);
+            return true;
+          }
         } else {
-          let entry = next.safeComponentMarker[positionalIndex];
+          let entry = next.resolution.yieldsComponents[positionalIndex];
           if (entry && typeof entry === 'object') {
             return entry[parts[1]] === true;
           }
+
+          let argsEntry = next.resolution.yieldsArguments[positionalIndex];
+          if (argsEntry && typeof argsEntry === 'object') {
+            let sourceArg = argsEntry[parts[1]];
+            if (typeof sourceArg === 'string') {
+              next.argumentsAreComponents.push(sourceArg);
+              return true;
+            }
+          }
         }
+        // we found the source of the name, but there were no rules to cover it.
+        // Don't keep searching higher, those are different names.
+        return false;
       }
     }
     return false;

@@ -82,7 +82,13 @@ QUnit.module('renaming tests', function(origHooks) {
     (firstAddonWithAppTreeImport.files.app as Project['files'])[
       'first.js'
     ] = `export { default } from 'has-app-tree-import';`;
+    (firstAddonWithAppTreeImport.files.app as Project['files'])[
+      'imports-dep.js'
+    ] = `export { default } from 'inner-dep';`;
     (firstAddonWithAppTreeImport.files.addon as Project['files'])['index.js'] = `export default "first-copy";`;
+
+    let innerDep = firstAddonWithAppTreeImport.addAddon('inner-dep');
+    (innerDep.files.addon as Project['files'])['index.js'] = `export default "inner-dep";`;
 
     let secondAddonWithAppTreeImport = app.addAddon('intermediate').addAddon('has-app-tree-import');
     (secondAddonWithAppTreeImport.files.app as Project['files'])[
@@ -166,6 +172,12 @@ QUnit.module('renaming tests', function(origHooks) {
     assertFile = assert.file('second.js').transform(build.transpile);
     assertFile.matches(
       /export \{ default \} from ['"]\.\/node_modules\/intermediate\/node_modules\/has-app-tree-import['"]/
+    );
+  });
+  test(`files copied into app from addons resolve the addon's deps`, function(assert) {
+    let assertFile = assert.file('imports-dep.js').transform(build.transpile);
+    assertFile.matches(
+      /export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import\/node_modules\/inner-dep['"]/
     );
   });
 });

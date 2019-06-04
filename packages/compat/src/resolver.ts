@@ -16,20 +16,22 @@ import { Memoize } from 'typescript-memoize';
 import { ResolvedDep } from '@embroider/core/src/resolver';
 import resolve from 'resolve';
 
-type ResolutionResult =
-  | {
-      type: 'component';
-      modules: ResolvedDep[];
-      yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
-      yieldsArguments: Required<ComponentRules>['yieldsArguments'];
-      argumentsAreComponents: string[];
-    }
-  | {
-      type: 'helper';
-      modules: ResolvedDep[];
-    };
+export interface ComponentResolution {
+  type: 'component';
+  modules: ResolvedDep[];
+  yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
+  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  argumentsAreComponents: string[];
+}
 
-interface ResolutionFail {
+export interface HelperResolution {
+  type: 'helper';
+  modules: ResolvedDep[];
+}
+
+export type ResolutionResult = ComponentResolution | HelperResolution;
+
+export interface ResolutionFail {
   type: 'error';
   hardFail: boolean;
   message: string;

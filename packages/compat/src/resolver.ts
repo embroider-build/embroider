@@ -21,6 +21,7 @@ type ResolutionResult =
       type: 'component';
       modules: ResolvedDep[];
       yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
+      yieldsArguments: Required<ComponentRules>['yieldsArguments'];
       argumentsAreComponents: string[];
     }
   | {
@@ -324,6 +325,7 @@ export default class CompatResolver implements Resolver {
           runtimeName: p.runtimeName,
         })),
         yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+        yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
         argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
       };
     }

@@ -131,6 +131,7 @@ type ComponentSnippet = string;
 
 export interface PreprocessedComponentRule {
   yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
+  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
   safeInteriorPaths: string[];
 }
@@ -160,6 +161,7 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     argumentsAreComponents,
     safeInteriorPaths,
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+    yieldsArguments: componentRules.yieldsArguments || [],
   };
 }
 

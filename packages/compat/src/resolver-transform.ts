@@ -15,14 +15,10 @@ export function makeResolverTransform(resolver: Resolver) {
       visitor: {
         Program: {
           enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
+            scopeStack.push(node.blockParams);
           },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
+          exit() {
+            scopeStack.pop();
           },
         },
         BlockStatement(node: any) {
@@ -39,16 +35,9 @@ export function makeResolverTransform(resolver: Resolver) {
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
-          if (resolution) {
-            if (
-              resolution.type === 'component' &&
-              node.program.blockParams.length > 0 &&
-              resolution.yieldsComponents.length > 0
-            ) {
-              scopeStack.yieldingComponents(resolution.yieldsComponents);
-            }
-            if (resolution.type === 'component') {
+          const resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          if (resolution && resolution.type === 'component') {
+            scopeStack.yieldingComponents(resolution.yieldsComponents, () => {
               for (let name of resolution.argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
@@ -62,7 +51,7 @@ export function makeResolverTransform(resolver: Resolver) {
                   );
                 }
               }
-            }
+            });
           }
         },
         SubExpression(node: any) {
@@ -110,27 +99,22 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              let resolution = resolver.resolveElement(node.tag, env.moduleName);
+              const resolution = resolver.resolveElement(node.tag, env.moduleName);
               if (resolution && resolution.type === 'component') {
-                if (node.blockParams.length > 0 && resolution.yieldsComponents.length > 0) {
-                  scopeStack.yieldingComponents(resolution.yieldsComponents);
-                }
-                for (let name of resolution.argumentsAreComponents) {
-                  let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
-                  if (attr) {
-                    handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
+                scopeStack.yieldingComponents(resolution.yieldsComponents, () => {
+                  for (let name of resolution.argumentsAreComponents) {
+                    let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
+                    if (attr) {
+                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
+                    }
                   }
-                }
+                });
               }
             }
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
+            scopeStack.push(node.blockParams);
           },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
+          exit() {
+            scopeStack.pop();
           },
         },
       },
@@ -146,7 +130,11 @@ export function makeResolverTransform(resolver: Resolver) {
 
 type ScopeEntry =
   | { type: 'blockParams'; blockParams: string[] }
-  | { type: 'safeComponentMarker'; safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents'] };
+  | {
+      type: 'safeComponentMarker';
+      safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents'];
+      exit: () => void;
+    };
 
 class ScopeStack {
   private stack: ScopeEntry[] = [];
@@ -161,7 +149,9 @@ class ScopeStack {
   // by a safe component marker, we also clear that.
   pop() {
     this.stack.shift();
-    if (this.stack.length > 0 && this.stack[0]!.type === 'safeComponentMarker') {
+    let next = this.stack[0];
+    if (next && next.type === 'safeComponentMarker') {
+      next.exit();
       this.stack.shift();
     }
   }
@@ -169,8 +159,8 @@ class ScopeStack {
   // right before we enter a block, we might determine that some of the values
   // that will be yielded as marked (by a rule) as safe to be used with the
   // {{component}} helper.
-  yieldingComponents(safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents']) {
-    this.stack.unshift({ type: 'safeComponentMarker', safeComponentMarker });
+  yieldingComponents(safeComponentMarker: Required<ComponentRules>['yieldsSafeComponents'], exit: () => void) {
+    this.stack.unshift({ type: 'safeComponentMarker', safeComponentMarker, exit });
   }
 
   inScope(name: string) {

@@ -9,7 +9,7 @@ import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
 
-const { test } = QUnit;
+const { test, skip } = QUnit;
 const compilerPath = emberTemplateCompilerPath();
 
 QUnit.module('compat-resolver', function(hooks) {
@@ -803,6 +803,34 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  test(`element block params are not in scope for element's own attributes`, function(assert) {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title'],
+            yieldsSafeComponents: [true],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    assertWarning(/ignoring dynamic component title/, () => {
+      assert.deepEqual(
+        findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`),
+        [
+          {
+            runtimeName: 'the-app/templates/components/form-builder',
+            path: './components/form-builder.hbs',
+          },
+        ]
+      );
+    });
+  });
+
   test('acceptsComponentArguments on mustache with invalid literal', function(assert) {
     let packageRules = [
       {
@@ -961,7 +989,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('respects yieldsArguments rule for positional block param', function(assert) {
+  skip('respects yieldsArguments rule for positional block param, angle', function(assert) {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -998,7 +1026,44 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  test('respects yieldsArguments rule for hash block param', function(assert) {
+  skip('respects yieldsArguments rule for positional block param, curly', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/fancy-navbar.hbs');
+
+    assert.deepEqual(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+        {{#form-builder navbar=(component "fancy-navbar") as |bar|}}
+          {{component bar}}
+        {{/form-builder}}
+        `
+      ),
+      [
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+        {
+          path: './fancy-navbar.hbs',
+          runtimeName: 'the-app/templates/components/fancy-navbar',
+        },
+      ]
+    );
+  });
+
+  skip('respects yieldsArguments rule for hash block param', function(assert) {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1035,7 +1100,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  test('yieldsArguments causes warning to propagate up lexically', function(assert) {
+  skip('yieldsArguments causes warning to propagate up lexically, angle', function(assert) {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1057,6 +1122,40 @@ QUnit.module('compat-resolver', function(hooks) {
           <FormBuilder @navbar={{this.unknown}} as |bar|>
             {{component bar}}
           </FormBuilder>
+          `
+        ),
+        [
+          {
+            path: './form-builder.hbs',
+            runtimeName: 'the-app/templates/components/form-builder',
+          },
+        ]
+      );
+    });
+  });
+
+  skip('yieldsArguments causes warning to propagate up lexically, curl', function(assert) {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    assertWarning(/ignoring dynamic component this\.unknown/, () => {
+      assert.deepEqual(
+        findDependencies(
+          'templates/components/x.hbs',
+          `
+          {{#form-builder navbar=this.unknown as |bar|}}
+            {{component bar}}
+          {{/form-builder}}
           `
         ),
         [

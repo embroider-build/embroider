@@ -10,7 +10,15 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
       "cwd": "${workspaceFolder}",
-      "args": ["packages/compat/tests", "packages/core/tests", "packages/macros/tests", "--filter", "stage1 build"]
+      "args": [
+        "packages/compat/tests",
+        "packages/core/tests",
+        "packages/macros/tests",
+        "--require",
+        "./test-packages/support/qunit-jest-shim.js"
+        // "--filter",
+        // "stage1 build"
+      ]
     },
     {
       "type": "node",

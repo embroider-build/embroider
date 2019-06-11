@@ -215,6 +215,11 @@ export default class V1App implements V1Package {
       plugins.push([ModulesAPIPolyfill, { blacklist }]);
     }
 
+    // TODO: mega haxor
+    if (typeof babelInstance._addDecoratorPlugins === 'function') {
+      babelInstance._addDecoratorPlugins(plugins);
+    }
+
     let config: TransformOptions = {
       babelrc: false,
       plugins,

@@ -7,7 +7,6 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
-import get from 'lodash/get';
 import { V1Config, WriteV1Config } from './v1-config';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
@@ -184,55 +183,48 @@ export default class V1App implements V1Package {
 
   @Memoize()
   babelConfig(): TransformOptions {
-    let plugins = get(this.app.options, 'babel.plugins') as any[];
-    if (!plugins) {
-      plugins = [];
-    } else {
-      plugins = plugins.filter(p => {
-        // even if the app was using @embroider/macros, we drop it from the config
-        // here in favor of our globally-configured one.
-        return (
-          !isEmbroiderMacrosPlugin(p) &&
-          // similarly, if the app was already using
-          // ember-cli-htmlbars-inline-precompile, we remove it here because we
-          // have our own always-installed version of that (v2 addons are
-          // allowed to assume it will be present in the final app build, the
-          // app doesn't get to turn that off or configure it.).
-          !TemplateCompiler.isInlinePrecompilePlugin(p)
-        );
-      });
-    }
+    const babelAddon = (this.app.project as any).findAddonByName('ember-cli-babel');
+    const babelConfig = babelAddon.buildBabelOptions({
+      'ember-cli-babel': {
+        includeExternalHelpers: true,
+        compileModules: false,
+        disableDebugTooling: true,
+        disablePresetEnv: false,
+        disableEmberModulesAPIPolyfill: false,
+        disableDecoratorTransforms: false,
+      },
+    });
 
-    // this is reproducing what ember-cli-babel does. It would be nicer to just
-    // call it, but it require()s all the plugins up front, so not serializable.
-    // In its case, it's mostly doing it to set basedir so that broccoli caching
-    // will be happy, but that's irrelevant to us here.
+    let plugins = babelConfig.plugins as any[];
+    let presets = babelConfig.presets;
+
+    plugins = plugins.filter(p => {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      return (
+        !isEmbroiderMacrosPlugin(p) &&
+        // similarly, if the app was already using
+        // ember-cli-htmlbars-inline-precompile, we remove it here because we
+        // have our own always-installed version of that (v2 addons are
+        // allowed to assume it will be present in the final app build, the
+        // app doesn't get to turn that off or configure it.)
+        !TemplateCompiler.isInlinePrecompilePlugin(p)
+      );
+    });
+    // install debug macros
     plugins.push(this.debugMacrosPlugin());
-    let babelInstance = (this.app.project.addons as any[]).find(a => a.name === 'ember-cli-babel');
-    if (babelInstance._emberVersionRequiresModulesAPIPolyfill()) {
-      let ModulesAPIPolyfill = require.resolve('babel-plugin-ember-modules-api-polyfill');
-      let blacklist = babelInstance._getEmberModulesAPIBlacklist();
-      plugins.push([ModulesAPIPolyfill, { blacklist }]);
-    }
 
-    let config: TransformOptions = {
+    const config: TransformOptions = {
       babelrc: false,
       plugins,
-      presets: [
-        [
-          this.babelMajorVersion() === 6 ? require.resolve('babel-preset-env') : require.resolve('@babel/preset-env'),
-          {
-            targets: babelInstance._getTargets(),
-            modules: false,
-          },
-        ],
-      ],
+      presets,
       // this is here because broccoli-middleware can't render a codeFrame full
       // of terminal codes. It would be nice to add something like
       // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
       // leave color enabled.
       highlightCode: false,
     };
+
     return config;
   }
 

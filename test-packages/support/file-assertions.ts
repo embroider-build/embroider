@@ -215,6 +215,12 @@ function fileTest(name: string, definition: (assert: FileAssert) => void | Promi
   });
 }
 
+function fileOnly(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
+  QUnit.only(name, function(plainAssert: Assert) {
+    return definition(plainAssert as FileAssert);
+  });
+}
+
 interface FileTest {
   (name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
   skip(name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
@@ -258,5 +264,5 @@ export function installFileAssertions(hooks: NestedHooks) {
   hooks.before(installAssertions);
   hooks.beforeEach(installAssertions);
 
-  return { test: fileTest as FileTest, skip: fileSkip, hooks: hooks as FileHooks };
+  return { test: fileTest as FileTest, only: fileOnly, skip: fileSkip, hooks: hooks as FileHooks };
 }

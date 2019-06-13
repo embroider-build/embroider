@@ -223,6 +223,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         hints: false,
       },
       plugins: [new MiniCssExtractPlugin()],
+      node: false,
       module: {
         rules: [
           {

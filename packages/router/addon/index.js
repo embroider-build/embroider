@@ -2,6 +2,8 @@
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
 import EmberRouter from '@ember/routing/router';
+import { registerWaiter } from '@ember/test';
+
 let newSetup = true;
 
 function lazyBundle(routeName) {
@@ -12,6 +14,12 @@ function lazyBundle(routeName) {
 }
 
 export default EmberRouter.extend({
+  init(...args) {
+    this._super(...args);
+    this._inFlightLazyRoutes = 0;
+    registerWaiter(this._doneLoadingLazyRoutes.bind(this));
+  },
+
   // This is necessary in order to prevent the premature loading of lazy routes
   // when we are merely trying to render a link-to that points at them.
   // Unfortunately the stock query parameter behavior pulls on routes just to
@@ -55,10 +63,22 @@ export default EmberRouter.extend({
       if (!bundle || bundle.loaded) {
         return original(name);
       }
-      return bundle.load().then(() => {
-        bundle.loaded = true;
-        return original(name);
-      });
+      this._inFlightLazyRoutes++;
+      return bundle.load().then(
+        () => {
+          this._inFlightLazyRoutes--;
+          bundle.loaded = true;
+          return original(name);
+        },
+        err => {
+          this._inFlightLazyRoutes--;
+          throw err;
+        }
+      );
     };
+  },
+
+  _doneLoadingLazyRoutes() {
+    return this._inFlightLazyRoutes < 1;
   },
 });

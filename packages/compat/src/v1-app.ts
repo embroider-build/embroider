@@ -135,6 +135,16 @@ export default class V1App implements V1Package {
     return this.app.options.storeConfigInMeta;
   }
 
+  @Memoize()
+  private get configReplacePatterns() {
+    return this.appUtils.configReplacePatterns({
+      addons: this.app.project.addons,
+      autoRun: this.autoRun,
+      storeConfigInMeta: this.storeConfigInMeta,
+      isModuleUnification: this.isModuleUnification,
+    });
+  }
+
   get htmlTree() {
     if (this.app.tests) {
       return mergeTrees([this.indexTree, this.app.testIndex()]);
@@ -167,12 +177,7 @@ export default class V1App implements V1Package {
       });
     }
 
-    let patterns = this.appUtils.configReplacePatterns({
-      addons: this.app.project.addons,
-      autoRun: this.autoRun,
-      storeConfigInMeta: this.storeConfigInMeta,
-      isModuleUnification: this.isModuleUnification,
-    });
+    let patterns = this.configReplacePatterns;
 
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
@@ -513,10 +518,17 @@ export default class V1App implements V1Package {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.name);
+    let config = new WriteV1Config(this.config, this.storeConfigInMeta);
+    let patterns = this.configReplacePatterns;
+    let configReplaced = new this.configReplace(config, this.configTree, {
+      configPath: join('environments', `${this.app.env}.json`),
+      files: ['config/environment.js'],
+      patterns,
+    });
+
     let trees: Tree[] = [];
     trees.push(appTree);
-    trees.push(config);
+    trees.push(configReplaced);
     if (testsTree) {
       trees.push(testsTree);
     }

@@ -2,7 +2,8 @@
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
 import EmberRouter from '@ember/routing/router';
-import { registerWaiter } from '@ember/test';
+import { registerWaiter, unregisterWaiter } from '@ember/test';
+import { DEBUG } from '@glimmer/env';
 
 let newSetup = true;
 
@@ -13,11 +14,10 @@ function lazyBundle(routeName) {
   return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
 }
 
-export default EmberRouter.extend({
+let Router = EmberRouter.extend({
   init(...args) {
     this._super(...args);
     this._inFlightLazyRoutes = 0;
-    registerWaiter(this._doneLoadingLazyRoutes.bind(this));
   },
 
   // This is necessary in order to prevent the premature loading of lazy routes
@@ -77,8 +77,19 @@ export default EmberRouter.extend({
       );
     };
   },
-
-  _doneLoadingLazyRoutes() {
-    return this._inFlightLazyRoutes < 1;
-  },
 });
+
+if (DEBUG) {
+  Router.reopen({
+    init(...args) {
+      this._super(...args);
+      this._doneLoadingLazyRoutes = () => this._inFlightLazyRoutes < 1;
+      registerWaiter(this._doneLoadingLazyRoutes);
+    },
+    willDestroy() {
+      unregisterWaiter(this._doneLoadingLazyRoutes);
+    },
+  });
+}
+
+export default Router;

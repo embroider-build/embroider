@@ -67,7 +67,17 @@ export function isDefineExpression(t: any, path: any) {
   );
 }
 
-function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
+function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
+  specifier = handleRenaming(specifier, file, opts);
+  specifier = handleExternal(specifier, file, opts);
+  if (file.isRelocated) {
+    specifier = handleRelocation(specifier, file);
+  }
+  specifier = makeHBSExplicit(specifier, file);
+  return specifier;
+}
+
+function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
   let packageName = getPackageName(specifier);
   if (!packageName) {
     return specifier;
@@ -300,11 +310,7 @@ export default function main({ types: t }: { types: any }) {
           t.assertStringLiteral(source);
 
           let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
-          specifier = handleExternal(specifier, state.adjustFile, opts);
-          if (state.adjustFile.isRelocated) {
-            specifier = handleRelocation(specifier, state.adjustFile);
-          }
-          specifier = makeHBSExplicit(specifier, state.adjustFile);
+
           if (specifier !== source.value) {
             source.value = specifier;
           }
@@ -328,11 +334,6 @@ export default function main({ types: t }: { types: any }) {
         }
 
         let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
-        specifier = handleExternal(specifier, state.adjustFile, opts);
-        if (state.adjustFile.isRelocated) {
-          specifier = handleRelocation(specifier, state.adjustFile);
-        }
-        specifier = makeHBSExplicit(specifier, state.adjustFile);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

@@ -3,7 +3,7 @@ const { tmpdir } = require('os');
 const { join } = require('path');
 
 test('static-app-classic', async () => {
-  jest.setTimeout(60000);
+  jest.setTimeout(120000);
 
   await execa('ember', ['build'], {
     cwd: `${__dirname}/static-app`,

@@ -24,6 +24,7 @@ import { explicitRelative } from './paths';
 interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
+  adjustFile: AdjustFile;
   opts: {
     renamePackages: {
       [fromName: string]: string;
@@ -66,7 +67,17 @@ export function isDefineExpression(t: any, path: any) {
   );
 }
 
-function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
+function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
+  specifier = handleRenaming(specifier, file, opts);
+  specifier = handleExternal(specifier, file, opts);
+  if (file.isRelocated) {
+    specifier = handleRelocation(specifier, file);
+  }
+  specifier = makeHBSExplicit(specifier, file);
+  return specifier;
+}
+
+function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
   let packageName = getPackageName(specifier);
   if (!packageName) {
     return specifier;
@@ -252,6 +263,7 @@ export default function main({ types: t }: { types: any }) {
         enter(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
+          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
           addExtraImports(path, state.opts.extraImports);
         },
         exit(_: any, state: State) {
@@ -283,9 +295,17 @@ export default function main({ types: t }: { types: any }) {
         if (isDefineExpression(t, path) === false) {
           return;
         }
-        let { opts } = state;
 
-        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
+        let pkg = state.adjustFile.owningPackage();
+        if (pkg && pkg.isV2Ember() && !pkg.meta['auto-upgraded']) {
+          throw new Error(
+            `The file ${state.adjustFile.originalFile} in package ${
+              pkg.name
+            } tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
+          );
+        }
+
+        let { opts } = state;
 
         const dependencies = path.node.arguments[1];
 
@@ -299,12 +319,8 @@ export default function main({ types: t }: { types: any }) {
           }
           t.assertStringLiteral(source);
 
-          let specifier = adjustSpecifier(source.value, file, opts);
-          specifier = handleExternal(specifier, file, opts);
-          if (file.isRelocated) {
-            specifier = handleRelocation(specifier, file);
-          }
-          specifier = makeHBSExplicit(specifier, file);
+          let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+
           if (specifier !== source.value) {
             source.value = specifier;
           }
@@ -327,14 +343,7 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
-
-        let specifier = adjustSpecifier(source.value, file, opts);
-        specifier = handleExternal(specifier, file, opts);
-        if (file.isRelocated) {
-          specifier = handleRelocation(specifier, file);
-        }
-        specifier = makeHBSExplicit(specifier, file);
+        let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }
@@ -373,7 +382,7 @@ function amdDefine(runtimeName: string, importCounter: number) {
 }
 
 class AdjustFile {
-  private originalFile: string;
+  readonly originalFile: string;
 
   constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
     this.originalFile = relocatedFiles[name] || name;

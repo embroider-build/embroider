@@ -295,6 +295,16 @@ export default function main({ types: t }: { types: any }) {
         if (isDefineExpression(t, path) === false) {
           return;
         }
+
+        let pkg = state.adjustFile.owningPackage();
+        if (pkg && pkg.isV2Ember() && !pkg.meta['auto-upgraded']) {
+          throw new Error(
+            `The file ${state.adjustFile.originalFile} in package ${
+              pkg.name
+            } tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
+          );
+        }
+
         let { opts } = state;
 
         const dependencies = path.node.arguments[1];
@@ -372,7 +382,7 @@ function amdDefine(runtimeName: string, importCounter: number) {
 }
 
 class AdjustFile {
-  private originalFile: string;
+  readonly originalFile: string;
 
   constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
     this.originalFile = relocatedFiles[name] || name;

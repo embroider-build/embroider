@@ -40,15 +40,31 @@ interface State {
     activeAddons: {
       [packageName: string]: string;
     };
-    relocatedFiles: {
-      [relativePath: string]: string;
-    };
+    relocatedFiles: { [relativePath: string]: string };
   };
 }
 
 export type Options = State['opts'];
 
 const packageCache = PackageCache.shared('embroider-stage3');
+export function isDefineExpression(t: any, path: any) {
+  const { node } = path;
+  // should we allow nested defines, or stop at the top level?
+  if (!path.isCallExpression() || node.callee.name !== 'define') {
+    return false;
+  }
+
+  const args = node.arguments;
+
+  // only match define with 3 arguments define(name: string, deps: string[], cb: Function);
+  return (
+    Array.isArray(args) &&
+    args.length === 3 &&
+    t.isStringLiteral(args[0]) &&
+    t.isArrayExpression(args[1]) &&
+    t.isFunction(args[2])
+  );
+}
 
 function adjustSpecifier(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
   let packageName = getPackageName(specifier);
@@ -233,12 +249,12 @@ export default function main({ types: t }: { types: any }) {
   return {
     visitor: {
       Program: {
-        enter: function(path: NodePath<Program>, state: State) {
+        enter(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
           addExtraImports(path, state.opts.extraImports);
         },
-        exit: function(_: any, state: State) {
+        exit(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
         },
       },
@@ -260,6 +276,38 @@ export default function main({ types: t }: { types: any }) {
           let r = t.identifier('require');
           state.generatedRequires.add(r);
           path.replaceWith(r);
+        }
+      },
+      CallExpression(path: any, state: State) {
+        // Should/can we make this early exit when the first define was found?
+        if (isDefineExpression(t, path) === false) {
+          return;
+        }
+        let { opts } = state;
+
+        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
+
+        const dependencies = path.node.arguments[1];
+
+        const specifiers = dependencies.elements.slice();
+        specifiers.push(path.node.arguments[0]);
+
+        for (let source of specifiers) {
+          if (source.value === 'exports' || source.value === 'require') {
+            // skip "special" AMD dependencies
+            continue;
+          }
+          t.assertStringLiteral(source);
+
+          let specifier = adjustSpecifier(source.value, file, opts);
+          specifier = handleExternal(specifier, file, opts);
+          if (file.isRelocated) {
+            specifier = handleRelocation(specifier, file);
+          }
+          specifier = makeHBSExplicit(specifier, file);
+          if (specifier !== source.value) {
+            source.value = specifier;
+          }
         }
       },
       'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path: any, state: State) {

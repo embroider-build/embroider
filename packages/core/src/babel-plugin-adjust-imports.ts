@@ -24,6 +24,7 @@ import { explicitRelative } from './paths';
 interface State {
   emberCLIVanillaJobs: Function[];
   generatedRequires: Set<Node>;
+  adjustFile: AdjustFile;
   opts: {
     renamePackages: {
       [fromName: string]: string;
@@ -252,6 +253,7 @@ export default function main({ types: t }: { types: any }) {
         enter(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
           state.generatedRequires = new Set();
+          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
           addExtraImports(path, state.opts.extraImports);
         },
         exit(_: any, state: State) {
@@ -285,8 +287,6 @@ export default function main({ types: t }: { types: any }) {
         }
         let { opts } = state;
 
-        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
-
         const dependencies = path.node.arguments[1];
 
         const specifiers = dependencies.elements.slice();
@@ -299,12 +299,12 @@ export default function main({ types: t }: { types: any }) {
           }
           t.assertStringLiteral(source);
 
-          let specifier = adjustSpecifier(source.value, file, opts);
-          specifier = handleExternal(specifier, file, opts);
-          if (file.isRelocated) {
-            specifier = handleRelocation(specifier, file);
+          let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+          specifier = handleExternal(specifier, state.adjustFile, opts);
+          if (state.adjustFile.isRelocated) {
+            specifier = handleRelocation(specifier, state.adjustFile);
           }
-          specifier = makeHBSExplicit(specifier, file);
+          specifier = makeHBSExplicit(specifier, state.adjustFile);
           if (specifier !== source.value) {
             source.value = specifier;
           }
@@ -327,14 +327,12 @@ export default function main({ types: t }: { types: any }) {
           return;
         }
 
-        let file = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
-
-        let specifier = adjustSpecifier(source.value, file, opts);
-        specifier = handleExternal(specifier, file, opts);
-        if (file.isRelocated) {
-          specifier = handleRelocation(specifier, file);
+        let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+        specifier = handleExternal(specifier, state.adjustFile, opts);
+        if (state.adjustFile.isRelocated) {
+          specifier = handleRelocation(specifier, state.adjustFile);
         }
-        specifier = makeHBSExplicit(specifier, file);
+        specifier = makeHBSExplicit(specifier, state.adjustFile);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

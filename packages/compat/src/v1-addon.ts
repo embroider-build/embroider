@@ -412,7 +412,16 @@ export default class V1Addon implements V1Package {
         tree = result.tree;
         built.dynamicMeta.push(result.getMeta);
 
-        return this.transpile(tree);
+        tree = this.transpile(tree);
+
+        // Stock ember-cli would ignore files other than these types. And addons
+        // do emit other weird stuff (generally by accident). So we filter down
+        // to prevent collisions with other important things (like the
+        // package.json). Any other types should already have been preprocessed
+        // away by `this.transpile()` above.
+        return new Funnel(tree, {
+          include: ['**/*.js', '**/*.hbs', '**/*.css'],
+        });
       }
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon'));

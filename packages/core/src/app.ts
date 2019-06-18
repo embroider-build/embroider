@@ -881,16 +881,16 @@ export class AppBuilder<TreeNames> {
 }
 
 const entryTemplate = compile(`
-import { require as r } from '@embroider/core';
+import { importSync as i } from '@embroider/macros';
 let w = window;
 let d = w.define;
 
 {{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return r("{{js-string-escape amdModule.buildtime}}");});
+  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
 {{/each}}
 
 {{#each eagerModules as |eagerModule| ~}}
-  r("{{js-string-escape eagerModule}}");
+  i("{{js-string-escape eagerModule}}");
 {{/each}}
 
 {{#if lazyRoutes}}
@@ -907,7 +907,7 @@ let d = w.define;
 {{/if}}
 
 {{#if autoRun ~}}
-  r("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+  i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
 {{/if}}
 
 {{#if testSuffix ~}}
@@ -921,7 +921,7 @@ let d = w.define;
   }
 
   {{!- this is the traditional tests-suffix.js -}}
-  r('../tests/test-helper');
+  i('../tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
@@ -935,10 +935,10 @@ let d = w.define;
 }) => string;
 
 const routeEntryTemplate = compile(`
-import { require as r } from '@embroider/core';
+import { importSync as i } from '@embroider/macros';
 let d = window.define;
 {{#each files as |amdModule| ~}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return r("{{js-string-escape amdModule.buildtime}}");});
+d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
 {{/each}}
 `) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
 

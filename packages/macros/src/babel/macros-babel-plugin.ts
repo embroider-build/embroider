@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import { ImportDeclaration, CallExpression } from '@babel/types';
+import { ImportDeclaration, CallExpression, Identifier, memberExpression, identifier } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State from './state';
 import dependencySatisfies from './dependency-satisfies';
@@ -17,6 +17,7 @@ export default function main() {
       enter(_: NodePath, state: State) {
         state.removed = [];
         state.pendingTasks = [];
+        state.generatedRequires = new Set();
       },
       exit(path: NodePath, state: State) {
         state.pendingTasks.forEach(task => task());
@@ -41,8 +42,13 @@ export default function main() {
       if (callee.referencesImport('@embroider/macros', 'failBuild')) {
         failBuild(path, bindState(visitor, state));
       }
+      if (callee.referencesImport('@embroider/macros', 'importSync')) {
+        let r = identifier('require');
+        state.generatedRequires.add(r);
+        callee.replaceWith(r);
+      }
     },
-    ReferencedIdentifier(path: NodePath) {
+    ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
       if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
         throw error(path, `You can only use dependencySatisfies as a function call`);
       }
@@ -57,6 +63,33 @@ export default function main() {
       }
       if (path.referencesImport('@embroider/macros', 'failBuild')) {
         throw error(path, `You can only use failBuild as a function call`);
+      }
+      if (path.referencesImport('@embroider/macros', 'importSync')) {
+        throw error(path, `You can only use importSync as a function call`);
+      }
+
+      if (state.opts.owningPackageRoot) {
+        // there is only an owningPackageRoot when we are running inside a
+        // classic ember-cli build. In the embroider stage3 build, there is no
+        // owning package root because we're compiling *all* packages
+        // simultaneously.
+        //
+        // given that we're inside classic ember-cli, stop here without trying
+        // to require bare `require`. It's not needed, because both our
+        // `importSync` and any user-written bare `require` can both mean the
+        // same thing: runtime AMD `require`.
+        return;
+      }
+
+      if (
+        path.node.name === 'require' &&
+        !state.generatedRequires.has(path.node) &&
+        !path.scope.hasBinding('require')
+      ) {
+        // Our importSync macro has been compiled to `require`. But we want to
+        // distinguish that from any pre-existing, user-written `require`, which
+        // should retain its *runtime* meaning.
+        path.replaceWith(memberExpression(identifier('window'), path.node));
       }
     },
   };

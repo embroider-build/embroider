@@ -23,7 +23,6 @@ import { explicitRelative } from './paths';
 
 interface State {
   emberCLIVanillaJobs: Function[];
-  generatedRequires: Set<Node>;
   adjustFile: AdjustFile;
   opts: {
     renamePackages: {
@@ -262,33 +261,12 @@ export default function main({ types: t }: { types: any }) {
       Program: {
         enter(path: NodePath<Program>, state: State) {
           state.emberCLIVanillaJobs = [];
-          state.generatedRequires = new Set();
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
           addExtraImports(path, state.opts.extraImports);
         },
         exit(_: any, state: State) {
           state.emberCLIVanillaJobs.forEach(job => job());
         },
-      },
-      ReferencedIdentifier(path: any, state: State) {
-        if (
-          path.node.name === 'require' &&
-          !state.generatedRequires.has(path.node) &&
-          !path.scope.hasBinding('require')
-        ) {
-          // any existing bare "require" should remain a *runtime* require, so
-          // we rename it to window.require so that final stage packagers will
-          // leave it alone.
-          path.replaceWith(t.memberExpression(t.identifier('window'), path.node));
-        }
-        if (path.referencesImport('@embroider/core', 'require')) {
-          // whereas our own explicit *build-time* require (used in the
-          // generated entrypoints) gets rewritten to a plain require so that
-          // final stage packagers *will* see it.
-          let r = t.identifier('require');
-          state.generatedRequires.add(r);
-          path.replaceWith(r);
-        }
       },
       CallExpression(path: any, state: State) {
         // Should/can we make this early exit when the first define was found?
@@ -330,16 +308,6 @@ export default function main({ types: t }: { types: any }) {
         let { opts, emberCLIVanillaJobs } = state;
         const { source } = path.node;
         if (source === null) {
-          return;
-        }
-
-        // strip our own build-time-only require directive
-        if (
-          source.value === '@embroider/core' &&
-          path.node.specifiers.length === 1 &&
-          path.node.specifiers[0].imported.name === 'require'
-        ) {
-          emberCLIVanillaJobs.push(() => path.remove());
           return;
         }
 

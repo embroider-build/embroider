@@ -9,7 +9,7 @@
   getting script vs module context correct).
 */
 
-import { PackagerInstance, AppMeta, Packager, PackageCache } from '@embroider/core';
+import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import {
   readFileSync,
@@ -134,11 +134,7 @@ interface AppInfo {
     filename: string;
     isParallelSafe: boolean;
   };
-  babel: {
-    filename: string;
-    majorVersion: 6 | 7;
-    isParallelSafe: boolean;
-  };
+  babel: AppMeta['babel'];
   rootURL: string;
 }
 
@@ -170,7 +166,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     pathToVanillaApp: string,
     private outputPath: string,
     private consoleWrite: (msg: string) => void,
-    private packageCache: PackageCache,
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
@@ -239,7 +234,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             ]),
           },
           {
-            test: this.shouldTranspileFile.bind(this),
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe),
               {
@@ -285,31 +281,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         },
       },
     };
-  }
-
-  private shouldTranspileFile(filename: string) {
-    if (!isJS(filename)) {
-      // quick exit for non JS extensions
-      return false;
-    }
-
-    let owner = this.packageCache.ownerOfFile(filename);
-
-    // Not owned by any NPM package? Weird, leave it alone.
-    if (!owner) {
-      return false;
-    }
-
-    // Owned by our app, so use babel
-    if (owner.root === this.pathToVanillaApp) {
-      return true;
-    }
-
-    // Lastly, use babel on ember addons, but not other arbitrary libraries.
-    // This is more conservative and closer to today's ember-cli behavior,
-    // although eventually we are likely to want an option to transpile
-    // everything.
-    return owner.packageJSON.keywords && owner.packageJSON.keywords.includes('ember-addon');
   }
 
   private lastAppInfo: AppInfo | undefined;
@@ -554,10 +525,6 @@ function isAbsoluteURL(url: string) {
 
 function isCSS(filename: string) {
   return /\.css$/i.test(filename);
-}
-
-function isJS(filename: string) {
-  return /\.js$/i.test(filename);
 }
 
 interface StatSummary {

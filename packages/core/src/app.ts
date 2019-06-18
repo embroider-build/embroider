@@ -612,6 +612,7 @@ export class AppBuilder<TreeNames> {
         filename: '_babel_config_.js',
         isParallelSafe: babelConfig.isParallelSafe,
         majorVersion: this.adapter.babelMajorVersion(),
+        fileFilter: '_babel_filter_.js',
       },
       'root-url': this.adapter.rootURL(),
     };
@@ -666,6 +667,7 @@ export class AppBuilder<TreeNames> {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
     writeFileSync(join(this.root, '_babel_config_.js'), babelConfig.serialize(), 'utf8');
+    writeFileSync(join(this.root, '_babel_filter_.js'), babelFilterTemplate({ appRoot: this.root }), 'utf8');
   }
 
   private shouldSplitRoute(routeName: string) {
@@ -951,3 +953,8 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   }
   return false;
 }
+
+const babelFilterTemplate = compile(`
+const { babelFilter } = require('@embroider/core');
+module.exports = babelFilter("{{js-string-escape appRoot}}");
+`) as (params: { appRoot: string }) => string;

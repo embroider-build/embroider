@@ -1,6 +1,8 @@
 import PackageCache from './package-cache';
+import Options from './options';
+import semver from 'semver';
 
-export default function babelFilter(appRoot: string) {
+export default function babelFilter(skipBabel: Required<Options>['skipBabel']) {
   return function shouldTranspileFile(filename: string) {
     if (!isJS(filename)) {
       // quick exit for non JS extensions
@@ -8,23 +10,19 @@ export default function babelFilter(appRoot: string) {
     }
 
     let owner = PackageCache.shared('embroider-stage3').ownerOfFile(filename);
-
-    // Not owned by any NPM package? Weird, leave it alone.
-    if (!owner) {
-      return false;
+    if (owner) {
+      for (let { package: pkg, semverRange } of skipBabel) {
+        if (owner.name === pkg && (semverRange == null || semver.satisfies(owner.version, semverRange))) {
+          if (owner.isEmberPackage()) {
+            throw new Error(
+              `You can't use skipBabel to disable transpilation of Ember addons, it only works for non-Ember third-party packages`
+            );
+          }
+          return false;
+        }
+      }
     }
-
-    // Owned by our app, so use babel. Our own module gets copied into the root of
-    // the app before it runs, which is why __dirname works here.
-    if (owner.root === appRoot) {
-      return true;
-    }
-
-    // Lastly, use babel on ember addons, but not other arbitrary libraries.
-    // This is more conservative and closer to today's ember-cli behavior,
-    // although eventually we are likely to want an option to transpile
-    // everything.
-    return owner.packageJSON.keywords && owner.packageJSON.keywords.includes('ember-addon');
+    return true;
   };
 }
 

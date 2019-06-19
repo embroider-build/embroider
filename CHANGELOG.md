@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## v0.4.3
+
+- BUGFIX: nested files were missing from previous published packages
+
 ## v0.4.2
 
 - BUGFIX: changing so we only publish compiled artifacts. Making our own TS compile cleanly when consumed by arbitrary other TS packages is not simple.

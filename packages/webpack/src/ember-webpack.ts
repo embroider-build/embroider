@@ -105,9 +105,9 @@ class HTMLEntrypoint {
   }
 
   private handledStyles() {
-    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLScriptElement[];
+    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
     let [ignoredStyleTags, handledStyleTags] = partition(styleTags, styleTag => {
-      return !styleTag.href || scriptTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
+      return !styleTag.href || styleTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
     });
     for (let styleTag of ignoredStyleTags) {
       styleTag.removeAttribute('data-embroider-ignore');

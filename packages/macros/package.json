@@ -14,9 +14,9 @@
     "test": "jest"
   },
   "files": [
-    "src/*.js",
-    "src/*.d.ts",
-    "src/*.js.map"
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
   ],
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",

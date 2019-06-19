@@ -11,9 +11,9 @@
     "test": "qunit tests"
   },
   "files": [
-    "src/*.js",
-    "src/*.d.ts",
-    "src/*.js.map"
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
   ],
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",

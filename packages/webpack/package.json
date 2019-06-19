@@ -10,9 +10,9 @@
     "prepare": "tsc"
   },
   "files": [
-    "src/*.js",
-    "src/*.d.ts",
-    "src/*.js.map"
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
   ],
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",

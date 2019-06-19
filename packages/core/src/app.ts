@@ -347,7 +347,11 @@ export class AppBuilder<TreeNames> {
 
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
     for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-      relocatedFiles[join(this.root, relativePath)] = originalPath;
+      relocatedFiles[
+        join(this.root, relativePath)
+          .split(sep)
+          .join('/')
+      ] = originalPath;
     }
 
     let adjustOptions: AdjustImportsOptions = {

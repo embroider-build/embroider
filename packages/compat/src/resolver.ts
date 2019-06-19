@@ -262,7 +262,7 @@ export default class CompatResolver implements Resolver {
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
     let absPath;
     try {
-      absPath = resolve.sync(path, { basedir: dirname(from || this.root) });
+      absPath = resolve.sync(path, { basedir: dirname(from || __dirname) });
     } catch (err) {
       return;
     }

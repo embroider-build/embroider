@@ -215,16 +215,22 @@ export default class TemplateCompiler {
 
   // Compiles to the wire format plus dependency list.
   precompile(moduleName: string, contents: string): { compiled: string; dependencies: ResolvedDep[] } {
-    let compiled = this.syntax.precompile(stripBom(contents), {
-      contents,
-      moduleName,
-    });
     let dependencies: ResolvedDep[];
+    let runtimeName = '';
     if (this.params.resolver) {
+      let resolvedImport = this.params.resolver.resolveImport(moduleName, '');
+      if (resolvedImport) {
+        runtimeName = resolvedImport.runtimeName;
+      }
+      // @todo should we use runtime name as deps lookup key?
       dependencies = this.params.resolver.dependenciesOf(moduleName);
     } else {
       dependencies = [];
     }
+    let compiled = this.syntax.precompile(stripBom(contents), {
+      contents,
+      moduleName: runtimeName || moduleName,
+    });
     return { compiled, dependencies };
   }
 

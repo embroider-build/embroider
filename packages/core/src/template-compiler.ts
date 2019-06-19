@@ -221,9 +221,13 @@ export default class TemplateCompiler {
       let resolvedImport = this.params.resolver.resolveImport(moduleName, '');
       if (resolvedImport) {
         runtimeName = resolvedImport.runtimeName;
+        dependencies = [
+          ...this.params.resolver.dependenciesOf(moduleName),
+          ...this.params.resolver.dependenciesOf(runtimeName)
+        ].filter(Boolean)
+      } else {
+        dependencies = this.params.resolver.dependenciesOf(moduleName),
       }
-      // @todo should we use runtime name as deps lookup key?
-      dependencies = this.params.resolver.dependenciesOf(moduleName);
     } else {
       dependencies = [];
     }

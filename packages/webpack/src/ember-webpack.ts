@@ -21,7 +21,7 @@ import {
   statSync,
   readJsonSync,
 } from 'fs-extra';
-import { join, dirname, relative, resolve } from 'path';
+import { join, dirname, relative, resolve, sep } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -90,7 +90,9 @@ class HTMLEntrypoint {
   }
 
   private relativeToApp(relativeToHTML: string) {
-    return resolve('/', this.dir, relativeToHTML).slice(1);
+    const resolvedPath = resolve('/', this.dir, relativeToHTML);
+    const [, ...tail] = resolvedPath.split(sep);
+    return tail.join(sep);
   }
 
   private handledScripts() {

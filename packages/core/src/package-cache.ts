@@ -2,7 +2,7 @@ import Package from './package';
 import { realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
-import { dirname } from 'path';
+import { dirname, sep } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 
 export default class PackageCache {
@@ -60,7 +60,7 @@ export default class PackageCache {
   }
 
   ownerOfFile(filename: string): Package | undefined {
-    let segments = filename.split('/');
+    let segments = filename.split(sep);
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
@@ -70,7 +70,7 @@ export default class PackageCache {
         // any higher caches don't apply to us
         break;
       }
-      let candidate = segments.slice(0, length).join('/');
+      let candidate = segments.slice(0, length).join(sep);
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }

@@ -52,7 +52,7 @@ class HTMLEntrypoint {
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
-    for (let tag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
+    for (let tag of this.handledStyles()) {
       let styleTag = tag as HTMLLinkElement;
       let href = styleTag.href;
       if (!isAbsoluteURL(href)) {
@@ -102,6 +102,17 @@ class HTMLEntrypoint {
       scriptTag.removeAttribute('data-embroider-ignore');
     }
     return handledScriptTags;
+  }
+
+  private handledStyles() {
+    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLScriptElement[];
+    let [ignoredStyleTags, handledStyleTags] = partition(styleTags, scriptTag => {
+      return !scriptTag.src || scriptTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(scriptTag.src);
+    });
+    for (let styleTag of ignoredStyleTags) {
+      styleTag.removeAttribute('data-embroider-ignore');
+    }
+    return handledStyleTags;
   }
 
   render(bundles: Map<string, string[]>, rootURL: string): string {

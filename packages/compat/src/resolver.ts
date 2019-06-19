@@ -8,7 +8,7 @@ import {
   ModuleRules,
 } from './dependency-rules';
 import Options from './options';
-import { join, relative, dirname, sep, isAbsolute } from 'path';
+import { join, relative, dirname, sep } from 'path';
 import { pathExistsSync } from 'fs-extra';
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
@@ -262,7 +262,7 @@ export default class CompatResolver implements Resolver {
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
     let absPath;
     try {
-      absPath = isAbsolute(path) ? path : resolve.sync(path, { basedir: dirname(from) });
+      absPath = from === '' ? path : resolve.sync(path, { basedir: dirname(from) });
     } catch (err) {
       return;
     }

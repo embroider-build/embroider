@@ -13,6 +13,15 @@ import {
   Program,
   returnStatement,
   stringLiteral,
+  isStringLiteral,
+  isArrayExpression,
+  isFunction,
+  CallExpression,
+  StringLiteral,
+  ArrayExpression,
+  ExportNamedDeclaration,
+  ImportDeclaration,
+  ExportAllDeclaration,
 } from '@babel/types';
 import PackageCache from './package-cache';
 import Package, { V2Package } from './package';
@@ -47,22 +56,28 @@ interface State {
 export type Options = State['opts'];
 
 const packageCache = PackageCache.shared('embroider-stage3');
-export function isDefineExpression(t: any, path: any) {
-  const { node } = path;
+
+type DefineExpressionPath = NodePath<CallExpression> & {
+  node: CallExpression & {
+    arguments: [StringLiteral, ArrayExpression, Function];
+  };
+};
+
+export function isDefineExpression(path: NodePath<any>): path is DefineExpressionPath {
   // should we allow nested defines, or stop at the top level?
-  if (!path.isCallExpression() || node.callee.name !== 'define') {
+  if (!path.isCallExpression() || path.node.callee.type !== 'Identifier' || path.node.callee.name !== 'define') {
     return false;
   }
 
-  const args = node.arguments;
+  const args = path.node.arguments;
 
   // only match define with 3 arguments define(name: string, deps: string[], cb: Function);
   return (
     Array.isArray(args) &&
     args.length === 3 &&
-    t.isStringLiteral(args[0]) &&
-    t.isArrayExpression(args[1]) &&
-    t.isFunction(args[2])
+    isStringLiteral(args[0]) &&
+    isArrayExpression(args[1]) &&
+    isFunction(args[2])
   );
 }
 
@@ -255,7 +270,7 @@ function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   return specifier;
 }
 
-export default function main({ types: t }: { types: any }) {
+export default function main() {
   return {
     visitor: {
       Program: {
@@ -268,9 +283,9 @@ export default function main({ types: t }: { types: any }) {
           state.emberCLIVanillaJobs.forEach(job => job());
         },
       },
-      CallExpression(path: any, state: State) {
+      CallExpression(path: NodePath<CallExpression>, state: State) {
         // Should/can we make this early exit when the first define was found?
-        if (isDefineExpression(t, path) === false) {
+        if (!isDefineExpression(path)) {
           return;
         }
 
@@ -291,11 +306,18 @@ export default function main({ types: t }: { types: any }) {
         specifiers.push(path.node.arguments[0]);
 
         for (let source of specifiers) {
+          if (!source) {
+            continue;
+          }
+
+          if (source.type !== 'StringLiteral') {
+            throw path.buildCodeFrameError(`expected only string literal arguments`);
+          }
+
           if (source.value === 'exports' || source.value === 'require') {
             // skip "special" AMD dependencies
             continue;
           }
-          t.assertStringLiteral(source);
 
           let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
 
@@ -304,7 +326,10 @@ export default function main({ types: t }: { types: any }) {
           }
         }
       },
-      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(path: any, state: State) {
+      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(
+        path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>,
+        state: State
+      ) {
         let { opts, emberCLIVanillaJobs } = state;
         const { source } = path.node;
         if (source === null) {

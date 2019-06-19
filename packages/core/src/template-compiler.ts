@@ -223,10 +223,10 @@ export default class TemplateCompiler {
         runtimeName = resolvedImport.runtimeName;
         dependencies = [
           ...this.params.resolver.dependenciesOf(moduleName),
-          ...this.params.resolver.dependenciesOf(runtimeName)
-        ].filter(Boolean)
+          ...this.params.resolver.dependenciesOf(runtimeName),
+        ].filter(Boolean);
       } else {
-        dependencies = this.params.resolver.dependenciesOf(moduleName),
+        dependencies = this.params.resolver.dependenciesOf(moduleName);
       }
     } else {
       dependencies = [];

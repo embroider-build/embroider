@@ -1,7 +1,7 @@
 import PortableBabelConfig from '../src/portable-babel-config';
 import { protocol } from '../src/portable-plugin-config';
 
-import { join } from 'path';
+import { join, sep } from 'path';
 
 function resolvableNames(...names: string[]) {
   return {
@@ -54,7 +54,7 @@ describe('portable-plugin-config', () => {
       },
       resolvableNames()
     );
-    expect(runParallelSafe(config).plugins).toEqual(['/notional-base-dir/path/to/some/plugin.js']);
+    expect(runParallelSafe(config).plugins).toEqual(['/notional-base-dir/path/to/some/plugin.js'.split('/').join(sep)]);
   });
 
   test('package name', () => {
@@ -64,7 +64,9 @@ describe('portable-plugin-config', () => {
       },
       resolvableNames('my-package')
     );
-    expect(runParallelSafe(config).plugins).toEqual(['/notional-base-dir/node_modules/my-package/index.js']);
+    expect(runParallelSafe(config).plugins).toEqual([
+      '/notional-base-dir/node_modules/my-package/index.js'.split('/').join(sep),
+    ]);
   });
 
   test('package name shorthand', () => {
@@ -75,7 +77,7 @@ describe('portable-plugin-config', () => {
       resolvableNames('babel-plugin-my-package')
     );
     expect(runParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/babel-plugin-my-package/index.js',
+      '/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep),
     ]);
   });
 
@@ -86,7 +88,9 @@ describe('portable-plugin-config', () => {
       },
       resolvableNames('@me/my-package')
     );
-    expect(runParallelSafe(config).plugins).toEqual(['/notional-base-dir/node_modules/@me/my-package/index.js']);
+    expect(runParallelSafe(config).plugins).toEqual([
+      '/notional-base-dir/node_modules/@me/my-package/index.js'.split('/').join(sep),
+    ]);
   });
 
   test('namespaced package name shorthand', () => {
@@ -97,7 +101,7 @@ describe('portable-plugin-config', () => {
       resolvableNames('@me/babel-plugin-my-package')
     );
     expect(runParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js',
+      '/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js'.split('/').join(sep),
     ]);
   });
 
@@ -109,7 +113,7 @@ describe('portable-plugin-config', () => {
       resolvableNames('babel-plugin-my-package')
     );
     expect(runParallelSafe(config).plugins).toEqual([
-      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', { theOptions: 'cool' }],
+      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep), { theOptions: 'cool' }],
     ]);
   });
 
@@ -127,7 +131,7 @@ describe('portable-plugin-config', () => {
     );
     expect(config.isParallelSafe).toBeFalsy();
     expect(run(config).plugins).toEqual([
-      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js', options],
+      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep), options],
     ]);
   });
 
@@ -222,7 +226,7 @@ describe('portable-plugin-config', () => {
     );
     expect(config.isParallelSafe).toBeTruthy();
     let output = runParallelSafe(config);
-    expect(output.plugins[0][0]).toBe('/notional-base-dir/node_modules/my-plugin/index.js');
+    expect(output.plugins[0][0]).toBe('/notional-base-dir/node_modules/my-plugin/index.js'.split('/').join(sep));
     expect(output.plugins[0][1]).toEqual({
       precompile: 'this is the example function with theParams=reconstituted precompile',
     });

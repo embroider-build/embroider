@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'fs';
 import { EmberAsset } from './asset';
-import { relative, dirname } from 'path';
+import { relative, dirname, sep } from 'path';
 
 export interface EmberHTML {
   // each of the Nodes in here points at where we should insert the
@@ -118,7 +118,9 @@ export class PreparedEmberHTML {
 }
 
 function relativeTo(documentPath: string, otherPath: string) {
-  return relative(dirname(documentPath), otherPath);
+  return relative(dirname(documentPath), otherPath)
+    .split(sep)
+    .join('/');
 }
 
 export function insertNewline(at: Node) {

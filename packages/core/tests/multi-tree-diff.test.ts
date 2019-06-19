@@ -1,6 +1,6 @@
 import MultiTreeDiff from '../src/multi-tree-diff';
 import { Entry, Patch } from 'fs-tree-diff';
-import { join } from 'path';
+import { join, sep } from 'path';
 import cloneDeep from 'lodash/cloneDeep';
 
 describe('tracked-merge-dirs', () => {
@@ -15,14 +15,14 @@ describe('tracked-merge-dirs', () => {
     expect(fileOps(ops)).toEqual([
       ['create', 'alpha'],
       ['mkdir', 'beta'],
-      ['create', 'beta/x'],
+      ['create', 'beta/x'.split('/').join(sep)],
       ['create', 'charlie'],
       ['create', 'tomster'],
     ]);
 
     expect(sources.get('alpha')).toBe(0);
     expect(sources.get('beta')).toBe(1);
-    expect(sources.get('beta/x')).toBe(1);
+    expect(sources.get(`beta${sep}x`)).toBe(1);
     expect(sources.get('charlie')).toBe(2);
     expect(sources.get('tomster')).toBe(0);
   });

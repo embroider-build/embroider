@@ -25,6 +25,7 @@ import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
+import { sep } from 'path';
 import { explicitRelative } from './paths';
 
 export type EmberENV = unknown;
@@ -169,6 +170,7 @@ class AppFiles {
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
     for (let relativePath of relativePaths.keys()) {
+      relativePath = relativePath.split(sep).join('/');
       if (!relativePath.endsWith('.js') && !relativePath.endsWith('.hbs')) {
         continue;
       }

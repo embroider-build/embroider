@@ -8,7 +8,7 @@ import {
   ModuleRules,
 } from './dependency-rules';
 import Options from './options';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, sep } from 'path';
 import { pathExistsSync } from 'fs-extra';
 import { dasherize } from './string';
 import { makeResolverTransform } from './resolver-transform';
@@ -268,10 +268,16 @@ export default class CompatResolver implements Resolver {
     }
     let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
-      let runtimeName = join(pkg.name, relative(pkg.root, absPath)).replace(/\.js$/, '');
+      let runtimeName = join(pkg.name, relative(pkg.root, absPath))
+        .replace(/\.js$/, '')
+        .split(sep)
+        .join('/');
       return { runtimeName, absPath };
     } else if (absPath.startsWith(this.root)) {
-      let runtimeName = join(this.modulePrefix, relative(this.root, absPath)).replace(/\.js$/, '');
+      let runtimeName = join(this.modulePrefix, relative(this.root, absPath))
+        .replace(/\.js$/, '')
+        .split(sep)
+        .join('/');
       return { runtimeName, absPath };
     }
   }

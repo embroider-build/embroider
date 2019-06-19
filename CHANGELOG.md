@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## v0.4.2
+
+- BUGFIX: changing so we only publish compiled artifacts. Making our own TS compile cleanly when consumed by arbitrary other TS packages is not simple.
+
 ## v0.4.1
 
 - BUGFIX: typings for dependencies should also be dependencies, not devDependencies. This fixes consumption by other TS packages.

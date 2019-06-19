@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## v0.4.1
+
+- BUGFIX: typings for dependencies should also be dependencies, not devDependencies. This fixes consumption by other TS packages.
+
 ## v0.4.0
 
 - BUGFIX: windows path handling fixes by @lifeart

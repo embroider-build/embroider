@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A build system for EmberJS applications.",
   "main": "src/index.js",
   "author": "Edward Faulkner",
@@ -15,7 +15,7 @@
   ],
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",
-    "@embroider/test-support": "0.4.0",
+    "@embroider/test-support": "0.4.1",
     "@types/qunit": "^2.5.3",
     "qunit": "^2.8.0",
     "typescript": "~3.2.0"
@@ -26,7 +26,7 @@
     "@babel/traverse": "^7.3.4",
     "@babel/types": "^7.3.4",
     "@babel/parser": "^7.3.4",
-    "@embroider/macros": "0.4.0",
+    "@embroider/macros": "0.4.1",
     "@types/babel__core": "^7.0.4",
     "@types/debug": "^0.0.31",
     "@types/filesize": "^4.1.0",

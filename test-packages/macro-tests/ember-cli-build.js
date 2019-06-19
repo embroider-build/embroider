@@ -26,6 +26,19 @@ module.exports = function(defaults) {
     }
   });
 
+  app.import('vendor/apple.js', {
+    using: [
+      { transformation: 'amd', as: 'amd'}
+    ],
+    outputFile: 'apple.js'
+  })
+
+
+  app.import('vendor/four.js', { outputFile: 'ordered.js' });
+  app.import('vendor/two.js', { outputFile: 'ordered.js' });
+  app.import('vendor/three.js', { outputFile: 'ordered.js' });
+  app.import('vendor/one.js', { outputFile: 'ordered.js' });
+
   if (process.env.CLASSIC) {
     return app.toTree();
   }

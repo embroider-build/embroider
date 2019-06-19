@@ -56,6 +56,7 @@ export default class BuildResult {
   }
   private constructor(private project: Project, public outputPath: string, private builder: Builder) {
     this.transpile = this.transpile.bind(this);
+    this.shouldTranspile = this.shouldTranspile.bind(this);
   }
 
   async cleanup() {
@@ -75,6 +76,12 @@ export default class BuildResult {
     } else {
       return contents;
     }
+  }
+
+  shouldTranspile(fileAssert: BoundFileAssert) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    let shouldTranspile = require(join(fileAssert.basePath, '_babel_filter_'));
+    return shouldTranspile(fileAssert.fullPath) as boolean;
   }
 }
 

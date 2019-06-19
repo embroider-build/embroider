@@ -12,6 +12,7 @@ export interface AppMeta {
     filename: string;
     isParallelSafe: boolean;
     majorVersion: 6 | 7;
+    fileFilter: string;
   };
   'root-url': string;
   'template-compiler': {

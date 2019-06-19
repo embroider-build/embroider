@@ -11,12 +11,24 @@
     "test": "qunit tests"
   },
   "files": [
-    "src"
+    "src/*.js",
+    "src/*.d.ts",
+    "src/*.js.map"
   ],
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",
     "@embroider/test-support": "0.4.1",
+    "@types/babel__core": "^7.0.4",
+    "@types/debug": "^0.0.31",
+    "@types/filesize": "^4.1.0",
+    "@types/jsdom": "^12.2.0",
+    "@types/json-stable-stringify": "^1.0.32",
+    "@types/lodash": "^4.14.116",
+    "@types/node": "^10.5.2",
     "@types/qunit": "^2.5.3",
+    "@types/resolve": "^0.0.8",
+    "@types/semver": "^5.5.0",
+    "@types/strip-bom": "^3.0.0",
     "qunit": "^2.8.0",
     "typescript": "~3.2.0"
   },
@@ -27,16 +39,6 @@
     "@babel/types": "^7.3.4",
     "@babel/parser": "^7.3.4",
     "@embroider/macros": "0.4.1",
-    "@types/babel__core": "^7.0.4",
-    "@types/debug": "^0.0.31",
-    "@types/filesize": "^4.1.0",
-    "@types/jsdom": "^12.2.0",
-    "@types/json-stable-stringify": "^1.0.32",
-    "@types/lodash": "^4.14.116",
-    "@types/node": "^10.5.2",
-    "@types/resolve": "^0.0.8",
-    "@types/semver": "^5.5.0",
-    "@types/strip-bom": "^3.0.0",
     "assert-never": "^1.1.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "broccoli-persistent-filter": "^2.2.2",

@@ -106,8 +106,8 @@ class HTMLEntrypoint {
 
   private handledStyles() {
     let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLScriptElement[];
-    let [ignoredStyleTags, handledStyleTags] = partition(styleTags, scriptTag => {
-      return !scriptTag.src || scriptTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(scriptTag.src);
+    let [ignoredStyleTags, handledStyleTags] = partition(styleTags, styleTag => {
+      return !styleTag.href || scriptTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
     });
     for (let styleTag of ignoredStyleTags) {
       styleTag.removeAttribute('data-embroider-ignore');
@@ -422,7 +422,19 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
         for (let style of entrypoint.styles) {
           if (!bundles.has(style)) {
-            bundles.set(style, [await this.writeStyle(style, written)]);
+            try {
+              bundles.set(style, [await this.writeStyle(style, written)]);
+            } catch (err) {
+              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
+                this.consoleWrite(
+                  `warning: in ${
+                    entrypoint.filename
+                  }  <link rel="stylesheet" href="${style}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                );
+              } else {
+                throw err;
+              }
+            }
           }
         }
       });

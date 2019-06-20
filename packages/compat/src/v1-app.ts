@@ -188,7 +188,7 @@ export default class V1App implements V1Package {
       'ember-cli-babel': {
         includeExternalHelpers: true,
         compileModules: false,
-        disableDebugTooling: true,
+        disableDebugTooling: false,
         disablePresetEnv: false,
         disableEmberModulesAPIPolyfill: false,
         disableDecoratorTransforms: false,
@@ -211,8 +211,6 @@ export default class V1App implements V1Package {
         !TemplateCompiler.isInlinePrecompilePlugin(p)
       );
     });
-    // install debug macros
-    plugins.push(this.debugMacrosPlugin());
 
     const config: TransformOptions = {
       babelrc: false,
@@ -241,31 +239,6 @@ export default class V1App implements V1Package {
     // if we didn't have our own babel plugin at all, it's safe to parse our
     // code with 7.
     return 7;
-  }
-
-  private debugMacrosPlugin() {
-    let DebugMacros = require.resolve('babel-plugin-debug-macros');
-    let isProduction = process.env.EMBER_ENV === 'production';
-    let isDebug = !isProduction;
-    let options = {
-      flags: [
-        {
-          source: '@glimmer/env',
-          flags: { DEBUG: isDebug, CI: !!process.env.CI },
-        },
-      ],
-
-      externalizeHelpers: {
-        global: 'Ember',
-      },
-
-      debugTools: {
-        isDebug,
-        source: '@ember/debug',
-        assertPredicateIndex: 1,
-      },
-    };
-    return [DebugMacros, options];
   }
 
   @Memoize()

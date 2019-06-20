@@ -75,6 +75,8 @@ const builtInHelpers = [
   'yield',
 ];
 
+const builtInComponents = ['input', 'link-to', 'textarea'];
+
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
@@ -401,6 +403,10 @@ export default class CompatResolver implements Resolver {
     }
 
     let dName = dasherize(tagName);
+
+    if (builtInComponents.includes(dName)) {
+      return null;
+    }
 
     let found = this.tryComponent(dName, from);
     if (found) {

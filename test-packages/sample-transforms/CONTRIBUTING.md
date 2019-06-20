@@ -3,7 +3,7 @@
 ## Installation
 
 * `git clone <repository-url>`
-* `cd sample-transforms`
+* `cd @embroider/sample-transforms`
 * `yarn install`
 
 ## Linting

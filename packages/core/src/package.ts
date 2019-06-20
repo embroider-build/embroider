@@ -87,7 +87,8 @@ export default class Package {
   // by default, addons do not get rebuilt on the fly. This can be changed when
   // you are actively developing one.
   get mayRebuild(): boolean {
-    return false;
+    let broccoli_memoization = process.env['BROCCOLI_ENABLED_MEMOIZE'];
+    return broccoli_memoization === 'true';
   }
 
   @Memoize()

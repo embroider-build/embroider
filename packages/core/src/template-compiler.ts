@@ -7,7 +7,7 @@ import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { compile } from './js-handlebars';
-import { join } from 'path';
+import { join, sep } from 'path';
 import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import { NodePath } from '@babel/traverse';
@@ -25,6 +25,7 @@ interface PreprocessOptions {
   contents: string;
   moduleName: string;
   plugins?: Plugins;
+  filename?: string;
 }
 
 // This just reflects the API we're extracting from ember-template-compiler.js,
@@ -35,7 +36,7 @@ interface GlimmerSyntax {
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   registerPlugin(type: string, plugin: unknown): void;
-  precompile(templateContents: string, options: { contents: string; moduleName: string }): string;
+  precompile(templateContents: string, options: { contents: string; moduleName: string; filename: string }): string;
   _Ember: { FEATURES: any; ENV: any };
   cacheKey: string;
 }
@@ -215,16 +216,27 @@ export default class TemplateCompiler {
 
   // Compiles to the wire format plus dependency list.
   precompile(moduleName: string, contents: string): { compiled: string; dependencies: ResolvedDep[] } {
+    let dependencies: ResolvedDep[];
+    let runtimeName: string;
+
+    if (this.params.resolver) {
+      runtimeName = this.params.resolver.absPathToRuntimeName(moduleName) || moduleName;
+    } else {
+      runtimeName = moduleName;
+    }
+
     let compiled = this.syntax.precompile(stripBom(contents), {
       contents,
-      moduleName,
+      moduleName: runtimeName,
+      filename: moduleName,
     });
-    let dependencies: ResolvedDep[];
+
     if (this.params.resolver) {
       dependencies = this.params.resolver.dependenciesOf(moduleName);
     } else {
       dependencies = [];
     }
+
     return { compiled, dependencies };
   }
 
@@ -234,7 +246,7 @@ export default class TemplateCompiler {
     let lines = [];
     let counter = 0;
     for (let { runtimeName, path } of dependencies) {
-      lines.push(`import a${counter} from "${path}";`);
+      lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
     lines.push(`export default Ember.HTMLBars.template(${compiled});`);
@@ -256,6 +268,9 @@ export default class TemplateCompiler {
       // normalization that it does on the user-provided plugins.
       opts.plugins.ast = opts.plugins.ast.slice(0, this.userPluginsCount);
     }
+    opts.filename = this.params.resolver
+      ? this.params.resolver.absPathToRuntimeName(moduleName) || moduleName
+      : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
     return this.syntax.print(ast);
   }

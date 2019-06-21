@@ -3,9 +3,8 @@ import { default as Resolver, ComponentResolution } from './resolver';
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
-  function resolverTransform(env: { moduleName: string }) {
-    const moduleName = env.moduleName;
-    resolver.enter(moduleName);
+  function resolverTransform({ filename }: { filename: string }) {
+    resolver.enter(filename);
 
     let scopeStack = new ScopeStack();
 
@@ -29,19 +28,19 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          const resolution = resolver.resolveMustache(node.path.original, hasArgs, moduleName);
+          const resolution = resolver.resolveMustache(node.path.original, hasArgs, filename);
           if (resolution && resolution.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
               for (let name of argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
-                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, moduleName, scopeStack);
+                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, filename, scopeStack);
                 }
               }
             });
@@ -55,10 +54,10 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
-          resolver.resolveSubExpression(node.path.original, moduleName);
+          resolver.resolveSubExpression(node.path.original, filename);
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -68,16 +67,16 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, moduleName);
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename);
           if (resolution && resolution.type === 'component') {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
               if (pair) {
-                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, moduleName, scopeStack);
+                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, filename, scopeStack);
               }
             }
           }
@@ -85,13 +84,13 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              const resolution = resolver.resolveElement(node.tag, moduleName);
+              const resolution = resolver.resolveElement(node.tag, filename);
               if (resolution && resolution.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
                   for (let name of argumentsAreComponents) {
                     let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
                     if (attr) {
-                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, moduleName, scopeStack);
+                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, filename, scopeStack);
                     }
                   }
                 });

@@ -627,9 +627,11 @@ Allowed in: addons and apps
 Status: intent to deprecate
 ```
 
-List of module names that are used within the package but not statically build-time resolvable.
+List of module names that are used within the package but not statically build-time resolvable among the **allowed dependencies**.
 
-This is a backward-compatibility feature that allows us to more efficiently bridge the gap between build-time and run-time resolution.
+This is a backward-compatibility feature that allows us to more efficiently bridge the gap between build-time and run-time resolution. Externals are left unresolved until runtime, so a missing external is a runtime error, not a build-time error.
+
+We automatically detect externals for auto-upgraded v2 packages. Native (meaning not auto-upgraded) v2 packages must list their externals explicitly if they have any).
 
 ## implicit-modules
 

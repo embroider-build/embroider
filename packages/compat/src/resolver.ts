@@ -314,7 +314,7 @@ export default class CompatResolver implements Resolver {
       },
       {
         runtimeName: `${this.modulePrefix}/components/${path}/template`,
-        absPath: join(this.root, 'templates', 'components', path, 'template') + '.hbs',
+        absPath: join(this.root, 'components', path, 'template') + '.hbs',
       },
       {
         runtimeName: `${this.modulePrefix}/components/${path}/component`,

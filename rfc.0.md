@@ -9,6 +9,8 @@
 
 This RFC defines a new package format that is designed to make all Ember packages (which includes both Addons and Apps) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem.
 
+Most of this RFC is already implemented in [Embroider](https://github.com/embroider-build/embroider). Embroider can compile most existing packages to v2 packages. There is a [tracking issue](FIXME) for the remaining gaps between this RFC and the current implementation.
+
 ## Motivation
 
 One of the good things about Ember is that apps and addons have a powerful set of build-time capabilities that allow lots of shared code with zero-to-no manual integration steps for the typical user. We have been doing “zero config” since before it was a cool buzzword (it was just called “convention over configuration”). And we’ve been broadly successful at maintaining very wide backward- and forward-compatibility for a large body of highly-rated community-maintained addons.
@@ -97,35 +99,61 @@ The structure we are about to describe _is a publication format_. Not necessaril
 
 First, here’s the list of things a v2 package can provide. More detail on each of these will follow:
 
-- **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.js/`)
-- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.js`). Other RFCs are working to move Ember away from needing this feature, but we are not gated on any of those and fully support App Javascript.
+- **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.{js,hbs}/`)
+- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.{js,hbs}`). Other RFCs are working to move Ember away from needing this feature, but we are not gated on any of those and fully support App Javascript.
 - **CSS:** available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
 - **Assets**: any files that must be available in the final built application directory such that they have public URLs (typical examples are images and fonts).
 - **Build Hooks**: code that runs within Node at application build time. The v1 equivalent is an addon's `index.js` file.
 
 ## Own Javascript
 
-The public `main` (as defined in `package.json`) of a v2 package points to its **Own Javascript**. The code is formatted as ES modules using ES latest features. Templates are in place in hbs format, and any custom AST transforms have already been applied.
+The public `main` (as defined in `package.json`) of a v2 package points to its **Own Javascript**. The code is formatted as ES modules using ES latest features, meaning: stage 4 features only, unless otherwise explicitly mentioned elsewhere in this spec. (Addon authors can still use whatever custom syntax they want, but those babel plugins must run before publication to NPM.)
 
-(Remember, we’re describing the _publication_ format, not the _authoring_ format. Authors can still do what they do today, using preprocessors provided by other addons. But that will all run before publishing.)
+Templates are in hbs format. No custom AST transforms are supported. (Addon authors can still use whatever custom AST transforms they want, but those transforms must have already been applied before publication to NPM.)
+
+Unlike v1 addons, there is no `/app` or `/addon` directory that is magically removed from the runtime paths to the modules. All resolution follows the prevailing Node rules.
 
 The benefit of this design is that it makes our packages understandable by a broader set of tooling. Editors and build tools can follow `import` statements across packages and end up in the right place.
 
-In v1 packages, `main` usually points to a build-time configuration file. That file is moving and will be described in the **Addon Hooks** section below.
+In v1 packages, `main` usually points to a build-time configuration file. That file is moving and will be described in the **Build Hooks** section below.
 
-Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve any **allowed dependency**, causing it to be included in the build whenever the importing module is included. This replaces `app.import`.
+### Own Javascript: Imports
 
-Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how node module resolution works. This is different from how run-time AMD module resolution has historically worked in Ember Apps, so the build step that produces the v2 publication format will need to adjust import paths appropriately. For example, if `your-package/a.js` tries to import from `"your-package/b"`, that needs to get rewritten to “`./b`".
+Modules in **Own Javascript** are allowed to use ECMA static `import` to resolve any **allowed dependency**, causing it to be included in the build whenever the importing module is included. This replaces `app.import`. Resolution follows prevailing Node rules. (This usually means the node_modules algorithm, but it could also mean Yarn PnP. The difference shouldn't matter if you are correctly declaring all your **allowed dependencies**.)
 
-Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
+Notice that a package’s **allowed dependencies** do not include the package itself. This is consistent with how Node resolution works. To import files from within your own package you must use relative paths. This is different from how run-time AMD module resolution has historically worked in Ember Apps. (`@embroider/compat` implements automatic adjustment for this case when compiling from v1 to v2).
 
-Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension.
+Modules in **Own Javascript** are allowed to use dynamic `import()`, and the specifiers have the same meanings as in static import. However, we impose a restriction on what syntax is supported inside `import()`. The only supported syntax inside `import()` is:
 
-Modules in **Own Javascript** are allowed to use `hbs` tagged template strings as provided by `ember-cli-htmlbars-inline-precompile`, and we promise to compile the templates at app build time.
+- a string-literal
+- or a template string literal
+  - that begins with a static part
+  - where the static part is required to contain at least one `/`
+  - or at least two `/` when the path starts with `@`.
 
-You’re allowed to `import` from both other v2 Ember packages and non-Ember packages. The only difference is that v2 Ember packages necessarily agree to provide ES modules with ES latest features, and so we will always apply the application’s browser-specific Babel transpilation to them. Non-Ember packages can be authored in lots of ways, and we will use best-effort to consume them, including conversion of ESM or CJS to whatever format we’re using in the browser (currently AMD), but we won’t apply the app’s Babel transpilation to them, because it’s usually just unnecessary expense — the most common way to ship NPM packages outside of well-known build systems like ember-cli is to transpile before publication.
+This is designed to allow limited pattern matching of possible targets for your dynamic `import()`. The rules ensure that we can always tell which NPM package you are talking about (the `@` rule covers namespaced NPM packages, so you can't depend on `@ember/${whatever}` but you can depend on `@ember/translations/${lang}`). If your pattern matches zero files, we consider that a static build error.
 
-_A recent lesson from ember-auto-import is that we’re going to want to allow people to opt-in to babel transpilation of specific foreign packages, as the wider ecosystem’s norms evolve and more projects ship modern JS untranspiled. Unfortunately there is no simple correct universal answer here. Double transpilation is not safe in general, since choices get made about how to map between modules, AMD, UMD, etc._
+Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it on their Component class). But in v2 packages, import specifiers of templates are required to explicitly include the `.hbs` extension.
+
+### Own Javascript: Transpilation of imported modules
+
+Any module you import, whether from an Ember package or a non-Ember package, gets processed by the app's babel configuration by default. This ensures that the app's `config/targets.js` will always be respected and you won't accidentally break your older supported browsers by importing a dependency that uses newer ECMA features.
+
+There is an explicit per-package opt-out for cases where you're _sure_ that transpilation is not needed and not desirable. (See **Build Hooks** for details on the `skipBabel` option.)
+
+## Own Javascript: Supported module formats for non-Ember packages
+
+As already stated, V2 Ember packages must contain only ES modules. However, non-Ember packages in your **allowed dependencies** are allowed to contain ES modules _or_ CommonJS modules. This provides the best compatibility with general-purpose NPM utilities.
+
+### Own Javascript: Macros
+
+The V2 format deliberately eliminates many sources of app-build-time dynamism from addons. Instead, we provide an equivalently-powerful macro system and consider it an always-supported language extension (the macros are always available to every V2 package, ambiently, and we promise to give them their faithful build-time semantics).
+
+See **Macro System** for the full details.
+
+## Macro System
+
+- remember to include `hbs` here
 
 ## How we teach this
 

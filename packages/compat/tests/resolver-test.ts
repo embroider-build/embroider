@@ -506,6 +506,7 @@ QUnit.module('compat-resolver', function(hooks) {
         {{yield bar}}
         {{#with (hash submit=(action doit)) as |thing| }}
         {{/with}}
+        <LinkTo @route="index"/>
       `
       ),
       []

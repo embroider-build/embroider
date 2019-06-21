@@ -52,7 +52,7 @@ class HTMLEntrypoint {
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
-    for (let tag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
+    for (let tag of this.handledStyles()) {
       let styleTag = tag as HTMLLinkElement;
       let href = styleTag.href;
       if (!isAbsoluteURL(href)) {
@@ -104,6 +104,17 @@ class HTMLEntrypoint {
       scriptTag.removeAttribute('data-embroider-ignore');
     }
     return handledScriptTags;
+  }
+
+  private handledStyles() {
+    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
+    let [ignoredStyleTags, handledStyleTags] = partition(styleTags, styleTag => {
+      return !styleTag.href || styleTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
+    });
+    for (let styleTag of ignoredStyleTags) {
+      styleTag.removeAttribute('data-embroider-ignore');
+    }
+    return handledStyleTags;
   }
 
   render(bundles: Map<string, string[]>, rootURL: string): string {
@@ -384,7 +395,19 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
         for (let style of entrypoint.styles) {
           if (!bundles.has(style)) {
-            bundles.set(style, [await this.writeStyle(style, written)]);
+            try {
+              bundles.set(style, [await this.writeStyle(style, written)]);
+            } catch (err) {
+              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
+                this.consoleWrite(
+                  `warning: in ${
+                    entrypoint.filename
+                  }  <link rel="stylesheet" href="${style}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                );
+              } else {
+                throw err;
+              }
+            }
           }
         }
       });

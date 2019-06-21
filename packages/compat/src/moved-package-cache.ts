@@ -1,4 +1,4 @@
-import { join, dirname, resolve } from 'path';
+import { join, dirname, resolve, sep, isAbsolute } from 'path';
 import { ensureSymlinkSync, readdirSync, readlinkSync, realpathSync, lstatSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
@@ -171,8 +171,8 @@ function symlinksInNodeModules(path: string): { source: string; target: string }
 }
 
 function pathSegments(filename: string) {
-  let segments = filename.split('/');
-  if (segments[0] === '/') {
+  let segments = filename.split(sep);
+  if (isAbsolute(filename)) {
     segments.shift();
   }
   return segments;

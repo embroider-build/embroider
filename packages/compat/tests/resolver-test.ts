@@ -77,6 +77,44 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
+  test('podded, dasherized component, with blank modulePrefix, js only', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world/component.js');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../components/hello-world/component.js',
+        runtimeName: 'the-app/components/hello-world/component',
+      },
+    ]);
+  });
+
+  test('podded, dasherized component, with blank modulePrefix, hbs only', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world/template.hbs');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../components/hello-world/template.hbs',
+        runtimeName: 'the-app/components/hello-world/template',
+      },
+    ]);
+  });
+
+  test('podded, dasherized component, with blank modulePrefix, js and hbs', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/hello-world/component.js');
+    givenFile('components/hello-world/template.hbs');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../components/hello-world/component.js',
+        runtimeName: 'the-app/components/hello-world/component',
+      },
+      {
+        path: '../components/hello-world/template.hbs',
+        runtimeName: 'the-app/components/hello-world/template',
+      },
+    ]);
+  });
+
   test('bare dasherized component, hbs only', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('templates/components/hello-world.hbs');
@@ -506,6 +544,7 @@ QUnit.module('compat-resolver', function(hooks) {
         {{yield bar}}
         {{#with (hash submit=(action doit)) as |thing| }}
         {{/with}}
+        <LinkTo @route="index"/>
       `
       ),
       []

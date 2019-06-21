@@ -75,6 +75,8 @@ const builtInHelpers = [
   'yield',
 ];
 
+const builtInComponents = ['input', 'link-to', 'textarea'];
+
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
@@ -318,6 +320,14 @@ export default class CompatResolver implements Resolver {
         runtimeName: `${this.modulePrefix}/templates/components/${path}`,
         absPath: join(this.root, 'templates', 'components', path) + '.js',
       },
+      {
+        runtimeName: `${this.modulePrefix}/components/${path}/template`,
+        absPath: join(this.root, 'components', path, 'template') + '.hbs',
+      },
+      {
+        runtimeName: `${this.modulePrefix}/components/${path}/component`,
+        absPath: join(this.root, 'components', path, 'component') + '.js',
+      },
     ].filter(candidate => pathExistsSync(candidate.absPath));
 
     if (componentModules.length > 0) {
@@ -407,6 +417,10 @@ export default class CompatResolver implements Resolver {
     }
 
     let dName = dasherize(tagName);
+
+    if (builtInComponents.includes(dName)) {
+      return null;
+    }
 
     let found = this.tryComponent(dName, from);
     if (found) {

@@ -562,6 +562,15 @@ Status: internal use only
 
 Boolean. Marks a package as having been compiled on the fly from v1 to v2. It's probably not a good idea to ever publish a package to NPM with this set.
 
+## babel.fileFilter
+
+```
+Allowed in: apps
+Status: encouraged
+```
+
+Path to a Javascript file that exports a function for testing (absolute) file paths and returning true if that file should be transpiled by our babel config (as defined by `babel.filename`).
+
 ## babel.filename
 
 ```

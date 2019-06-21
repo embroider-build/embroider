@@ -24,6 +24,14 @@ export default interface Options {
   // also add @embroider/router to your app. See [@embroider/router's
   // README](https://github.com/embroider-build/embroider/blob/master/packages/router/README.md)
   splitAtRoutes?: (RegExp | string)[];
+
+  // By default, all modules that get imported into the app go through Babel, so
+  // that all code will conform with your Babel targets. This option allows you
+  // to turn Babel off for a particular package. You might need this to work
+  // around a transpiler bug or you might use this as a build-performance
+  // optimization if you've manually verified that a particular package doesn't
+  // need transpilation to be safe in your target browsers.
+  skipBabel?: { package: string; semverRange?: string }[];
 }
 
 export function optionsWithDefaults(options?: Options): Required<Options> {
@@ -34,6 +42,7 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
     splitAtRoutes: [],
     splitControllers: false,
     splitRouteClasses: false,
+    skipBabel: [],
   };
   if (options) {
     return Object.assign(defaults, options);

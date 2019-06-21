@@ -9,7 +9,7 @@
   getting script vs module context correct).
 */
 
-import { PackagerInstance, AppMeta, Packager, PackageCache } from '@embroider/core';
+import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import {
   readFileSync,
@@ -21,7 +21,7 @@ import {
   statSync,
   readJsonSync,
 } from 'fs-extra';
-import { join, dirname, relative, resolve } from 'path';
+import { join, dirname, relative, resolve, sep } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -52,7 +52,7 @@ class HTMLEntrypoint {
     this.dir = dirname(this.filename);
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
-    for (let tag of this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')) {
+    for (let tag of this.handledStyles()) {
       let styleTag = tag as HTMLLinkElement;
       let href = styleTag.href;
       if (!isAbsoluteURL(href)) {
@@ -90,7 +90,9 @@ class HTMLEntrypoint {
   }
 
   private relativeToApp(relativeToHTML: string) {
-    return resolve('/', this.dir, relativeToHTML).slice(1);
+    const resolvedPath = resolve('/', this.dir, relativeToHTML);
+    const [, ...tail] = resolvedPath.split(sep);
+    return tail.join(sep);
   }
 
   private handledScripts() {
@@ -102,6 +104,17 @@ class HTMLEntrypoint {
       scriptTag.removeAttribute('data-embroider-ignore');
     }
     return handledScriptTags;
+  }
+
+  private handledStyles() {
+    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
+    let [ignoredStyleTags, handledStyleTags] = partition(styleTags, styleTag => {
+      return !styleTag.href || styleTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
+    });
+    for (let styleTag of ignoredStyleTags) {
+      styleTag.removeAttribute('data-embroider-ignore');
+    }
+    return handledStyleTags;
   }
 
   render(bundles: Map<string, string[]>, rootURL: string): string {
@@ -134,11 +147,7 @@ interface AppInfo {
     filename: string;
     isParallelSafe: boolean;
   };
-  babel: {
-    filename: string;
-    majorVersion: 6 | 7;
-    isParallelSafe: boolean;
-  };
+  babel: AppMeta['babel'];
   rootURL: string;
 }
 
@@ -170,7 +179,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     pathToVanillaApp: string,
     private outputPath: string,
     private consoleWrite: (msg: string) => void,
-    private packageCache: PackageCache,
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
@@ -239,7 +247,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             ]),
           },
           {
-            test: this.shouldTranspileFile.bind(this),
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe),
               {
@@ -285,31 +294,6 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         },
       },
     };
-  }
-
-  private shouldTranspileFile(filename: string) {
-    if (!isJS(filename)) {
-      // quick exit for non JS extensions
-      return false;
-    }
-
-    let owner = this.packageCache.ownerOfFile(filename);
-
-    // Not owned by any NPM package? Weird, leave it alone.
-    if (!owner) {
-      return false;
-    }
-
-    // Owned by our app, so use babel
-    if (owner.root === this.pathToVanillaApp) {
-      return true;
-    }
-
-    // Lastly, use babel on ember addons, but not other arbitrary libraries.
-    // This is more conservative and closer to today's ember-cli behavior,
-    // although eventually we are likely to want an option to transpile
-    // everything.
-    return owner.packageJSON.keywords && owner.packageJSON.keywords.includes('ember-addon');
   }
 
   private lastAppInfo: AppInfo | undefined;
@@ -411,7 +395,19 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         }
         for (let style of entrypoint.styles) {
           if (!bundles.has(style)) {
-            bundles.set(style, [await this.writeStyle(style, written)]);
+            try {
+              bundles.set(style, [await this.writeStyle(style, written)]);
+            } catch (err) {
+              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
+                this.consoleWrite(
+                  `warning: in ${
+                    entrypoint.filename
+                  }  <link rel="stylesheet" href="${style}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                );
+              } else {
+                throw err;
+              }
+            }
           }
         }
       });
@@ -554,10 +550,6 @@ function isAbsoluteURL(url: string) {
 
 function isCSS(filename: string) {
   return /\.css$/i.test(filename);
-}
-
-function isJS(filename: string) {
-  return /\.js$/i.test(filename);
 }
 
 interface StatSummary {

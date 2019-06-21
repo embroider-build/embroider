@@ -1,9 +1,8 @@
 import 'qunit';
 import main, { isDefineExpression, Options as AdjustImportsOptions } from '../src/babel-plugin-adjust-imports';
-import Types from '@babel/types';
 import { transformSync } from '@babel/core';
 
-const { test, only } = QUnit;
+const { test } = QUnit;
 
 QUnit.module('babel-plugin-adjust-imports');
 
@@ -30,7 +29,7 @@ function getFirstCallExpresssionPath(source: string) {
 }
 
 function isDefineExpressionFromSource(source: string) {
-  return isDefineExpression(Types, getFirstCallExpresssionPath(source));
+  return isDefineExpression(getFirstCallExpresssionPath(source));
 }
 
 test('isDefineExpression works', function(assert) {
@@ -48,7 +47,7 @@ test('isDefineExpression works', function(assert) {
   assert.equal(isDefineExpressionFromSource(`define('apple'); import foo from 'foo'`), false);
 });
 
-only('main', function(assert) {
+test('main', function(assert) {
   const options: AdjustImportsOptions = {
     activeAddons: {},
     renameModules: { a: 'c' },

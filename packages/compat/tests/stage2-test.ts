@@ -92,9 +92,38 @@ QUnit.module('stage2 build', function() {
         'index.js': '// deep-addon index',
       };
 
+      app.addDependency('babel-filter-test1', '1.2.3').files = {
+        'index.js': '',
+      };
+
+      app.addDependency('babel-filter-test2', '4.5.6').files = {
+        'index.js': '',
+      };
+
+      app.addDependency('babel-filter-test3', '1.0.0').files = {
+        'index.js': '',
+      };
+
+      app.addDependency('babel-filter-test4', '1.0.0').files = {
+        'index.js': '',
+      };
+
       let options: Options = {
         staticComponents: true,
         staticHelpers: true,
+        skipBabel: [
+          {
+            package: 'babel-filter-test1',
+          },
+          {
+            package: 'babel-filter-test2',
+            semverRange: '^4.0.0',
+          },
+          {
+            package: 'babel-filter-test3',
+            semverRange: '^2.0.0',
+          },
+        ],
         packageRules: [
           {
             package: 'my-addon',
@@ -222,6 +251,26 @@ QUnit.module('stage2 build', function() {
     test('app can import a deep addon', function(assert) {
       let assertFile = assert.file('use-deep-addon.js').transform(build.transpile);
       assertFile.matches(/import thing from ["']\.\/node_modules\/my-addon\/node_modules\/deep-addon['"]/);
+    });
+
+    test('transpilation runs for ember addons', async function(assert) {
+      assert.ok(build.shouldTranspile(assert.file('node_modules/my-addon/components/has-relative-template.js')));
+    });
+
+    test('transpilation is skipped when package matches skipBabel', async function(assert) {
+      assert.ok(!build.shouldTranspile(assert.file('node_modules/babel-filter-test1/index.js')));
+    });
+
+    test('transpilation is skipped when package and version match skipBabel', async function(assert) {
+      assert.ok(!build.shouldTranspile(assert.file('node_modules/babel-filter-test2/index.js')));
+    });
+
+    test('transpilation runs when package version does not match skipBabel', async function(assert) {
+      assert.ok(build.shouldTranspile(assert.file('node_modules/babel-filter-test3/index.js')));
+    });
+
+    test('transpilation runs for non-ember package that is not explicitly skipped', async function(assert) {
+      assert.ok(build.shouldTranspile(assert.file('node_modules/babel-filter-test4/index.js')));
     });
   });
 });

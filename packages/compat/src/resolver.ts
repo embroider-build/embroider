@@ -314,6 +314,14 @@ export default class CompatResolver implements Resolver {
         runtimeName: `${this.modulePrefix}/templates/components/${path}`,
         absPath: join(this.root, 'templates', 'components', path) + '.js',
       },
+      {
+        runtimeName: `${this.modulePrefix}/components/${path}/template`,
+        absPath: join(this.root, 'components', path, 'template') + '.hbs',
+      },
+      {
+        runtimeName: `${this.modulePrefix}/components/${path}/component`,
+        absPath: join(this.root, 'components', path, 'component') + '.js',
+      },
     ].filter(candidate => pathExistsSync(candidate.absPath));
 
     if (componentModules.length > 0) {

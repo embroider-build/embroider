@@ -35,7 +35,7 @@ interface GlimmerSyntax {
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   registerPlugin(type: string, plugin: unknown): void;
-  precompile(templateContents: string, options: { contents: string; moduleName: string }): string;
+  precompile(templateContents: string, options: { contents: string; moduleName: string; filename: string }): string;
   _Ember: { FEATURES: any; ENV: any };
   cacheKey: string;
 }
@@ -216,25 +216,26 @@ export default class TemplateCompiler {
   // Compiles to the wire format plus dependency list.
   precompile(moduleName: string, contents: string): { compiled: string; dependencies: ResolvedDep[] } {
     let dependencies: ResolvedDep[];
-    let runtimeName = '';
+    let runtimeName: string;
+
     if (this.params.resolver) {
-      let resolvedImport = this.params.resolver.resolveImport(moduleName, '');
-      if (resolvedImport) {
-        runtimeName = resolvedImport.runtimeName;
-        dependencies = [
-          ...this.params.resolver.dependenciesOf(moduleName),
-          ...this.params.resolver.dependenciesOf(runtimeName),
-        ].filter(Boolean);
-      } else {
-        dependencies = this.params.resolver.dependenciesOf(moduleName);
-      }
+      runtimeName = this.params.resolver.absPathToRuntimeName(moduleName) || moduleName;
+    } else {
+      runtimeName = moduleName;
+    }
+
+    let compiled = this.syntax.precompile(stripBom(contents), {
+      contents,
+      moduleName: runtimeName,
+      filename: moduleName,
+    });
+
+    if (this.params.resolver) {
+      dependencies = this.params.resolver.dependenciesOf(moduleName);
     } else {
       dependencies = [];
     }
-    let compiled = this.syntax.precompile(stripBom(contents), {
-      contents,
-      moduleName: runtimeName || moduleName,
-    });
+
     return { compiled, dependencies };
   }
 

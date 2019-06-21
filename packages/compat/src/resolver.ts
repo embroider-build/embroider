@@ -264,23 +264,30 @@ export default class CompatResolver implements Resolver {
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
     let absPath;
     try {
-      absPath = resolve.sync(path, { basedir: dirname(from || __dirname) });
+      absPath = resolve.sync(path, { basedir: dirname(from) });
     } catch (err) {
       return;
     }
+    if (absPath) {
+      let runtimeName = this.absPathToRuntimeName(absPath);
+      if (runtimeName) {
+        return { runtimeName, absPath };
+      }
+    }
+  }
+
+  absPathToRuntimeName(absPath: string) {
     let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
-      let runtimeName = join(pkg.name, relative(pkg.root, absPath))
+      return join(pkg.name, relative(pkg.root, absPath))
         .replace(/\.js$/, '')
         .split(sep)
         .join('/');
-      return { runtimeName, absPath };
     } else if (absPath.startsWith(this.root)) {
-      let runtimeName = join(this.modulePrefix, relative(this.root, absPath))
+      return join(this.modulePrefix, relative(this.root, absPath))
         .replace(/\.js$/, '')
         .split(sep)
         .join('/');
-      return { runtimeName, absPath };
     }
   }
 

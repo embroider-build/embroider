@@ -9,5 +9,5 @@ export interface ResolvedDep {
 export interface Resolver {
   astTransformer(templateCompiler: TemplateCompiler): unknown;
   dependenciesOf(moduleName: string): ResolvedDep[];
-  resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined;
+  absPathToRuntimeName(absPath: string): string | undefined;
 }

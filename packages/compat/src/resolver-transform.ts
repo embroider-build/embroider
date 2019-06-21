@@ -4,7 +4,8 @@ import { default as Resolver, ComponentResolution } from './resolver';
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
   function resolverTransform(env: { moduleName: string }) {
-    resolver.enter(env.moduleName);
+    const moduleName = env.moduleName;
+    resolver.enter(moduleName);
 
     let scopeStack = new ScopeStack();
 
@@ -28,26 +29,19 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
             return;
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          const resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          const resolution = resolver.resolveMustache(node.path.original, hasArgs, moduleName);
           if (resolution && resolution.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
               for (let name of argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
-                  handleImpliedComponentHelper(
-                    node.path.original,
-                    name,
-                    pair.value,
-                    resolver,
-                    env.moduleName,
-                    scopeStack
-                  );
+                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, moduleName, scopeStack);
                 }
               }
             });
@@ -61,10 +55,10 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
             return;
           }
-          resolver.resolveSubExpression(node.path.original, env.moduleName);
+          resolver.resolveSubExpression(node.path.original, moduleName);
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -74,23 +68,16 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, env.moduleName, scopeStack);
+            handleComponentHelper(node.params[0], resolver, moduleName, scopeStack);
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, env.moduleName);
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, moduleName);
           if (resolution && resolution.type === 'component') {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
               if (pair) {
-                handleImpliedComponentHelper(
-                  node.path.original,
-                  name,
-                  pair.value,
-                  resolver,
-                  env.moduleName,
-                  scopeStack
-                );
+                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, moduleName, scopeStack);
               }
             }
           }
@@ -98,13 +85,13 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              const resolution = resolver.resolveElement(node.tag, env.moduleName);
+              const resolution = resolver.resolveElement(node.tag, moduleName);
               if (resolution && resolution.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
                   for (let name of argumentsAreComponents) {
                     let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
                     if (attr) {
-                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, env.moduleName, scopeStack);
+                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, moduleName, scopeStack);
                     }
                   }
                 });

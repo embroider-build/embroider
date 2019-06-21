@@ -7,7 +7,7 @@ import { failBuild } from './fail-build';
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
   function embroiderFirstMacrosTransform(env: { syntax: { builders: any }; meta: { moduleName: string } }) {
     let scopeStack: string[][] = [];
-
+    const moduleName = env.meta.moduleName;
     return {
       name: '@embroider/macros/first',
 
@@ -32,19 +32,13 @@ export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]:
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
-            return literal(
-              getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, true),
-              env.syntax.builders
-            );
+            return literal(getConfig(node, opts.userConfigs, opts.baseDir, moduleName, true), env.syntax.builders);
           }
           if (node.path.original === 'macroGetConfig') {
-            return literal(
-              getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, false),
-              env.syntax.builders
-            );
+            return literal(getConfig(node, opts.userConfigs, opts.baseDir, moduleName, false), env.syntax.builders);
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return literal(dependencySatisfies(node, opts.baseDir, env.meta.moduleName), env.syntax.builders);
+            return literal(dependencySatisfies(node, opts.baseDir, moduleName), env.syntax.builders);
           }
         },
         MustacheStatement(node: any) {
@@ -56,17 +50,17 @@ export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]:
           }
           if (node.path.original === 'macroGetOwnConfig') {
             return env.syntax.builders.mustache(
-              literal(getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, true), env.syntax.builders)
+              literal(getConfig(node, opts.userConfigs, opts.baseDir, moduleName, true), env.syntax.builders)
             );
           }
           if (node.path.original === 'macroGetConfig') {
             return env.syntax.builders.mustache(
-              literal(getConfig(node, opts.userConfigs, opts.baseDir, env.meta.moduleName, false), env.syntax.builders)
+              literal(getConfig(node, opts.userConfigs, opts.baseDir, moduleName, false), env.syntax.builders)
             );
           }
           if (node.path.original === 'macroDependencySatisfies') {
             return env.syntax.builders.mustache(
-              literal(dependencySatisfies(node, opts.baseDir, env.meta.moduleName), env.syntax.builders)
+              literal(dependencySatisfies(node, opts.baseDir, moduleName), env.syntax.builders)
             );
           }
         },

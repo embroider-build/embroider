@@ -5,9 +5,21 @@ import { macroIfBlock, macroIfExpression, maybeAttrs } from './macro-if';
 import { failBuild } from './fail-build';
 
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
-  function embroiderFirstMacrosTransform(env: { syntax: { builders: any }; meta: { moduleName: string } }) {
+  function embroiderFirstMacrosTransform(env: {
+    syntax: { builders: any };
+    meta: { moduleName: string };
+    filename: string;
+  }) {
+    if (!opts.baseDir && !env.filename) {
+      throw new Error(`bug in @embroider/macros. Running without baseDir but don't have filename.`);
+    }
+
     let scopeStack: string[][] = [];
-    const moduleName = env.meta.moduleName;
+
+    // baseDir is set when we run inside classic ember-cli. Otherwise we're in
+    // Embroider, where we can use absolute filenames.
+    const moduleName = opts.baseDir ? env.meta.moduleName : env.filename;
+
     return {
       name: '@embroider/macros/first',
 

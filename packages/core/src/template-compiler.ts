@@ -25,6 +25,7 @@ interface PreprocessOptions {
   contents: string;
   moduleName: string;
   plugins?: Plugins;
+  filename: string;
 }
 
 // This just reflects the API we're extracting from ember-template-compiler.js,
@@ -267,6 +268,9 @@ export default class TemplateCompiler {
       // normalization that it does on the user-provided plugins.
       opts.plugins.ast = opts.plugins.ast.slice(0, this.userPluginsCount);
     }
+    opts.filename = this.params.resolver
+      ? this.params.resolver.absPathToRuntimeName(moduleName) || moduleName
+      : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
     return this.syntax.print(ast);
   }

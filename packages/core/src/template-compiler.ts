@@ -25,7 +25,7 @@ interface PreprocessOptions {
   contents: string;
   moduleName: string;
   plugins?: Plugins;
-  filename: string;
+  filename?: string;
 }
 
 // This just reflects the API we're extracting from ember-template-compiler.js,

@@ -136,7 +136,7 @@ Modules in **Own Javascript** are allowed to use dynamic `import()`, and the spe
   - where the static part is required to contain at least one `/`
   - or at least two `/` when the path starts with `@`.
 
-This is designed to allow limited pattern matching of possible targets for your dynamic `import()`. The rules ensure that we can always tell which NPM package you are talking about (the `@` rule covers namespaced NPM packages, so you can't depend on `@ember/${whatever}` but you can depend on `@ember/translations/${lang}`). If your pattern matches zero files, we consider that a static build error. (For more background on the thought-process behind this feature, see [Embroider issue #198: Allow dynamic imports to accept more dynamic inputs](https://github.com/embroider-build/embroider/issues/198).
+This is designed to allow limited pattern matching of possible targets for your dynamic `import()`. The rules ensure that we can always tell which NPM package you are talking about (the `@` rule covers namespaced NPM packages, so you can't depend on `@ember/${whatever}` but you can depend on `@ember/translations/${lang}`). If your pattern matches zero files, we consider that a static build error. (For more background on the thought-process behind this feature, see [Embroider #198: Allow dynamic imports to accept more dynamic inputs](https://github.com/embroider-build/embroider/issues/198).
 
 Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it on their Component class). But in v2 packages, import specifiers of templates are required to explicitly include the `.hbs` extension.
 
@@ -644,6 +644,20 @@ Like the JS `failBuild` macro.
 {{/if}}
 ```
 
+### Macros: Overall Design
+
+All the macros are intended to be valid syntax. They shouldn't break parsing or linting.
+
+While we guarantee that branch elimination will run in production builds, we _don't_ guarantee that in development. The macros are designed so that in development they may have _runtime_ implementations. This is powerful because it lets us produce a single build that works in multiple contexts. For example:
+
+- it solves the longstanding problem that when you run your tests by visiting `localhost:4200/tests` the tests see the `development` environment, not the `test` environment. To get the test environment you can't use `ember serve`, you must use `ember test`. This has remained unfixed because it's expensive to do the whole build twice for the two environments.
+
+  We can solve this problem by producing a _single_ build containing _both_ environments, guarded by the macro system. The macros can evaluate at runtime, allowing each environment to get the right thing. In production builds, test-only or dev-only branches will still be eliminated.
+
+- it makes Fastboot builds simpler because we can guard the fastboot-only and browser-only code with the macro system. In development, we can run a single build that leaves both branches in and evaluates the macros at runtime.
+
+The macros package (`@ember/macros` as proposed, `@embroider/macros` as implemented) will work in both regular ember-cli and in Embroider. And it will work in both V1 and V2 packages.
+
 ## Optional Peer Dependencies
 
 We will support optional peer deps as defined in [Yarn's RFC](https://github.com/yarnpkg/rfcs/blob/master/accepted/0000-optional-peer-dependencies.md).
@@ -685,7 +699,7 @@ All these features can appear in v2 _addons_, and the _app_ ensures each one is 
 - actual Javascript `import` statements within the app's code that ensure `implicit-modules` and `implicit-test-modules` are accounted for
 - actual Javascript `import` statements and AMD `define` calls that handle automatic inclusion of resolvable types that cannot be statically ruled out.
 
-## App-only features
+## Features that only Apps may use
 
 There are also a few V2 package features only supported in apps. These are mostly of interest only to people working within ember-cli and/or embroider to implement new packaging tools. Each of these is a property in **Ember package metadata**:
 
@@ -709,42 +723,38 @@ There are also a few V2 package features only supported in apps. These are mostl
 
 Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with the config in `babel.filename`. This is an optimization — we _could_ logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
 
-## How we teach this
+## Compatibility Strategy
 
-> What names and terminology work best for these concepts and why? How is this
-> idea best presented? As a continuation of existing Ember patterns, or as a
-> wholly new one?
+The `@embroider/compat` package exists to compile V1 packages to V2. This allows `@embroider/core` to always assume V2 packages as input, so we don't need to wait until every addon is natively available in V2 before we start getting the benefits of Embroider. However, there is still an incentive to convert as many addons as possible to V2, because they build faster and they will be more stable (the v1-to-v2 compilation isn't flawless, we need heuristics and package-specific rules to deal with some dynamic addon behaviors).
 
-> Would the acceptance of this proposal mean the Ember guides must be
-> re-organized or altered? Does it change how Ember is taught to new users
-> at any level?
+It also needs to be possible for an addon published as V2 to work in existing apps on existing ember-cli versions. This is enabled by:
 
-> How should this feature be introduced and taught to existing Ember
-> users?
+- `ember-auto-import`, which serves as a high-fidelity polyfill for importing directly from NPM. V2 addons natively support importing from NPM, but they should depend on `ember-auto-import` so those imports will have the same meaning when used in classic ember-cli.
+- `@ember/macros`, which shall provide correct semantics regardless of whether the package using them is published as V1 or V2 and regardless of whether the build is being done by classic ember-cli or Embroider. Native V2 packages under Embroider can alway use macros, without an explicit dependency on `@ember/macros`, but they should include the dependency so that macros will work in classic ember-cli.
+- ember-cli already supports a `main` property in **Ember package metadata** and has supported it for many versions. This allows an addon to put its classic `index.js` file in a place other than the package's true `main`. This means that V2 addons can have their runtime `index.js` as `main`, and should point `ember-addon.main` to a `classic.js` file. The `classic.js` file should `require` and `export` a compatibility shim library that we will provide. The compatibility shim will have the classic methods like `treeForAddon`, `treeForPublic` that take the V2-formatted features and present them in a way that classic ember-cli will understand. Since V2 packages are much more static than V1 packages, this shim is expected to not be very complicated.
 
-## Drawbacks
+# How we Teach This
 
-> Why should we _not_ do this? Please consider the impact on teaching Ember,
-> on the integration of this feature with other existing and planned features,
-> on the impact of the API churn on existing apps, etc.
+This RFC should have no direct impact on what app authors need to learn. They keep using addons the same way they always have. Future RFCs that take Embroider mainstream _will_ have impact, but that can be discussed then.
 
-> There are tradeoffs to choosing any path, please attempt to identify them here.
+The impact on addon authors is more significant. This design is fully backward compatible, and the intention is that all existing addons continue to work (some with worse compatibility hacks than others in the v1-to-v2 compiler). But there will be a demand for addons published in v2 format, since it is expected to result in faster build times. My prediction is that people who are motivated to get their own app build times down will send a lot of PRs to the addons they’re using.
 
-## Alternatives
+In many cases, converting addons to v2 makes them simpler. For example, today many addons use custom broccoli code to wrap third-party libraries in a fastboot guard that prevents the libraries from trying to load in Node (where they presumably don’t work). In v2, they can drop all that custom build-time code in favor of a macro-guarded `importSync`.
 
-> What other designs have been considered? What is the impact of not doing this?
+This design does _not_ advocate loudly deprecating any v1 addon features. Doing that all at once would be unnecessarily disruptive. I would rather rely on the carrot of faster builds and Embroider stability than the stick of deprecation warnings. We can choose to deprecate v1 features in stages at a later time.
 
-> This section could also include prior art, that is, how other frameworks in the same domain have solved this problem.
+# Alternative Designs
 
-## Unresolved questions
+Embroider effectively supersedes both the [Packager RFC](https://github.com/ember-cli/rfcs/blob/master/active/0051-packaging.md) and the [Prebuilt Addons RFC](https://github.com/ember-cli/rfcs/pull/118). So both of those are alternatives to this one.
 
-> Optional, but suggested for first drafts. What parts of the design are still
-> TBD?
+Packager creates an escape hatch from the existing ember-cli build that is supposed to provide a foundation for many of the same features enabled by this design. The intention was correct, but in my opinion it tries to decompose the build along the wrong abstraction boundaries. It follows the existing pattern within ember-cli of decomposing the build by feature (all app javacript, all addon javascript, all templates, etc) rather than by package (everything from the app, everything from ember-data, everything from ember-power-select, etc), which puts it into direct conflict with the Prebuilt Addons RFC.
+
+The API that packager provides is also incomplete compared with this design. For example, to take the packager output and build it using Webpack, Rollup, or Parcel still requires a significant amount of custom code. Whereas taking a collection of v2 formatted Ember packages and building them with any of those tools requires very little custom code. TODO: link to hopefully more than one working example.
+
+The prebuilt addons RFC addresses build performance by doing the same kind of work-moving as this design. Addons can do much of their building up front, thus saving time when apps are building. But it only achieves a speedup when apps happen to be using the same build options that addons authors happened to publish. This design takes a different approach that preserves complete freedom for app authors to postprocess all addon Javascript, including dead-code-elimination based on the addon features their app is using. The prebuilt addons RFC also doesn’t attempt to specify the contents of the prebuilt trees — it just accepts the current implementation-defined contents. This is problematic because shared builds artifacts are long-lived, so it’s worth trying to align them with very general, spec-compliant semantics.
 
 # Supporting References
 
 - There is a [SPEC draft](https://github.com/embroider-build/embroider/blob/master/SPEC.md) in the Embroider repo that predates this one, but covers a broader scope. Where this document contradicts SPEC.md, this document takes precedence and SPEC.md needs to be updated. But SPEC.md covers a broader scope, including the disposition of the other build hooks that will be handled in future RFCs.
 
-- The definitive list of **Ember package metadata** fields is declared in [AppMeta and AddonMeta interfaces](https://github.com/embroider-build/embroider/blob/master/packages/core/src/metadata.ts).
-
--
+- The definitive list of **Ember package metadata** fields is declared in [AppMeta and AddonMeta interfaces](https://github.com/embroider-build/embroider/blob/master/packages/core/src/metadata.ts). Each one is documented in an [Appendix in SPEC.md](https://github.com/embroider-build/embroider/blob/master/SPEC.md#appendix-list-of-ember-package-metadata-fields).

@@ -3,11 +3,11 @@
 - RFC PR:
 - Tracking:
 
-# v2 Package Format (Embroider Compatibility)
+# v2 Addon Format (Embroider Compatibility)
 
 ## Summary
 
-This RFC defines a new package format that is designed to make all Ember packages (which includes both Addons and Apps) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem.
+This RFC defines a new package format that is designed to make Ember packages (meaning both apps and addons) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem.
 
 Most of this RFC is already implemented in [Embroider](https://github.com/embroider-build/embroider). Embroider can compile most existing packages to v2 packages. There is a [tracking issue](FIXME) for the remaining gaps between this RFC and the current implementation.
 
@@ -79,7 +79,7 @@ and no `version` key (or version key less than 2) in **Ember package metadata**.
 
 ## Scope of this RFC
 
-This is intended as the base level spec for v2 packages. **It does not attempt to cover everything a v1 package can do today**. For example, no provision is made in this RFC for:
+This RFC is intended as the base level spec for v2 Ember packages. **It does not attempt to cover everything a v1 package can do today**. For example, no provision is made in this RFC for:
 
 - providing dev middleware
 - providing commands and blueprints
@@ -89,9 +89,7 @@ This is intended as the base level spec for v2 packages. **It does not attempt t
 
 It is understood that all of these are legitimate things for Ember addons to do. Defining these capabilities within v2 packages will be done in followup RFCs. It is simply too much scope to cover in one RFC.
 
-Because we're hyper-focused on backward- and forward-compatibility, there is no harm in progressively converting some addons to v2 (which provides immediate benefits) while others need to stay as v1 until we offer the features they need.
-
-Splitting up into multiple RFCs also increases the likelihood that we can parallelize some of the effort.
+Because we're hyper-focused on backward- and forward-compatibility, there is no harm in progressively converting some addons to v2 (which provides immediate benefits in terms of build performance and reduced fragility under Embroider) while others need to stay as v1 until we offer the features they need.
 
 ## Package Public API Overview
 
@@ -581,10 +579,83 @@ There is one place where `{{#if}}` doesn't work: within "element space". If you 
 <div {{#if this.testing}} data-test-target={{@id}} {{/if}} />
 ```
 
-`macroMaybeAttrs` exists to conditionally compile away attributes and arguments out of element space.
+`macroMaybeAttrs` exists to conditionally compile away attributes and arguments out of element space:
 
-- macroMaybeAttrs
-- macroFailBuild
+```hbs
+<div {{macroMaybeAttrs (getConfig "ember-test-selectors" "enabled") data-test-target=@id }} />
+```
+
+It can be placed on both HTML elements and angle bracket component invocations.
+
+### Handlebars Macro: macroFailBiuld
+
+Like the JS `failBuild` macro.
+
+```hbs
+{{#if (macroCondition (dependencySatisfies "some-peer-dep" "^3.0.0")) }}
+  <UseTheThing />
+{{else}}
+  {{macroFailBuild "You tried to use <MyFancyComponent/> but it requires some-peer-dep ^3.0.0"}}
+{{/if}}
+```
+
+## Apps as V2 Packages
+
+This RFC is focused heavily on addons, because that is the area that is most critical to standardize. Publishing addons to NPM in V2 format has major benefits:
+
+- build performance: there is much less work to do at app build time, and many `dependencies` of addons can become `devDependencies` of addons, resulting in smaller `node_modules` and faster `npm install`.
+- tool integration: VSCode, Typescript, SCSS, etc will all understand your code better when the dependencies are in V2 format. Things like "jump-to-definition" will work.
+- Embroider stability: `@embroider/compat` needs to use heuristics and some addon-specific rules to compile V1 addons into V2. This is necessarily more fragile than having addons published natively in V2. The first step in stabilizing Embroider for mainstream adoption is standardizing on this new addon format.
+
+In contrast, apps are not published to NPM. So where would they use V2 publication format?
+
+During the build process for an app, it will first build from its authoring format _to the standard v2 package format_. At that point, the whole project is just a collection of standard v2 packages with well-defined semantics, and we can confidently treat that stage in the build pipeline as supported public API.
+
+The benefit of this approach is that we can separately evolve authoring formats and last-stage packaging tools, while keeping a stable interface between them. The stable interface is designed to leverage general-purpose ECMA-spec-compliant features wherever practical, which makes it a rich target. For more detail on Embroider's three-stage build pipeline see [the README](https://github.com/embroider-build/embroider/blob/f5181d0d7eab146fd0dfcafdff552ee4fc129f2a/README.md#embroider-a-modern-build-system-for-emberjs-apps).
+
+v2-formatted apps do differ in a few ways from v2-formatted addon, as described in the following sections.
+
+### Features that Apps May Not Use
+
+Several features in the v2 addon format are designed to be consumed _by the app_. These features aren’t appropriate in an app, because that is the end of the line — a v2-formatted app should be understandable by general-purpose Javascript tooling and have very little _implicit_ Ember-specific build semantics left.
+
+Features that apps may not use include:
+
+- the `implicit-*` keys in **Ember package metadata**.
+- the `app-js` key in **Ember package metadata**
+- the `build` key in **Ember package metadata**. We should consider updating the _authoring_ format so that apps can use a build file with the standard package hooks, because that makes a lot of sense. But it’s not appropriate in the v2 format (which is a _publication_ format), and this change can be a separate RFC, and it will be an easier RFC after landing this one.
+- automatic inclusion of resolvable types (components, services, etc) from the **Own Javascript** of all **Active Dependencies** and the app itself.
+- the `public-assets` key in **Ember package metadata**.
+
+All these features can appear in v2 _addons_, and the _app_ ensures each one is represented by standards-compliant Javascript within the app’s own code. To illustrate with some examples, the V2 format for an app (as already implemented in Embroider) includes:
+
+- `<script>` tag(s) in index.html and tests/index.html that ensure `implicit-scripts` and `implicit-test-scripts` of all active addons are alreay accounted for.
+- `<link rel="stylesheet">` tag(s) in index.html and tests/index.html that ensure `implicit-styles` and `implicit-test-styles` are accounted for.
+- actual Javascript `import` statements within the app's code that ensure `implicit-modules` and `implicit-test-modules` are accounted for
+- actual Javascript `import` statements and AMD `define` calls that handle automatic inclusion of resolvable types that cannot be statically ruled out.
+
+## App-only features
+
+There are also a few V2 package features only supported in apps. These are mostly of interest only to people working within ember-cli and/or embroider to implement new packaging tools. Each of these is a property in **Ember package metadata**:
+
+- `"assets"`: a list of relative paths to files. The intent of `"assets"` is that it declares that each file in the list must result in a valid URL in the final app.
+
+  The most important assets are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.) It is the job of the final stage packager to examine each asset HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
+
+  Note that packagers must respect the HTML semantics of `<script type="module">` vs `<script>` vs `<script async>`. For example: don’t go looking for `import` in `<script>`, it’s only correct in `<script type="module">`
+
+  File types other than HTML are allowed to appear in `"assets"`. The intent is the same (it means these files must end up in the final build such that they’re addressable by URLs). For example, a Javascript file in `"assets"` implies that you want that JS file to be addressable in the final app (and we will treat it as a script, not a module, because this is for foreign JS that isn’t going through the typical build system. If you actually want a separate JS file as output of your build, use `import()` instead). This is a catch-all that allows things like your `/public` folder full of arbitrary files to pass through the final stage packager.
+
+  A conventional app will have an `"assets"` list that include `index.html`, `tests/index.html`, and all the files that were copied from `/public`.
+
+- `template-compiler.filename`: the relative path to a module that is capable of compiling all the templates. The module exports :
+  - `compile: (moduleName: string, templateContents: string) => string` that converts templates into JS modules.
+- `template-compiler.isParallelSafe`: true if the template compiler can be used in other node processes
+- `babel.filename`: the relative path to a module that exports the app's babel config.
+- `babel.isParallelSafe`: true if the `babel` settings can be used in a new node process.
+- `babel.majorVersion`: the version of babel the app's settings were written for. Only 6 and 7 are supported at this time.
+
+Unlike addons, an app’s **Own Javascript** is not limited to only ES latest features. It’s allowed to use any features that work with the config in `babel.filename`. This is an optimization — we _could_ logically require apps to follow the same rule as addons and compile down to ES latest before handing off to a final packager. But the final packager is going to run babel anyway, so we allow apps to do all their transpilation in that final single pass.
 
 ## How we teach this
 

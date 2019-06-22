@@ -658,11 +658,27 @@ While we guarantee that branch elimination will run in production builds, we _do
 
 The macros package (`@ember/macros` as proposed, `@embroider/macros` as implemented) will work in both regular ember-cli and in Embroider. And it will work in both V1 and V2 packages.
 
-## Optional Peer Dependencies
+## Peer Dependencies
 
-We will support optional peer deps as defined in [Yarn's RFC](https://github.com/yarnpkg/rfcs/blob/master/accepted/0000-optional-peer-dependencies.md).
+V2 packages can only resolve their **allowed dependencies**. This is fundamental rule that we can't break if we want the broadest compatibility with NPM and future compatibility with other strict systems such as [Yarn PnP](https://github.com/yarnpkg/rfcs/pull/101). Node often allows you to resolve things that are not **allowed dependencies** due to hoisting optimizations. But this is not safe or guaranteed, so we forbid relying on it.
 
-TODO: expand this section to explain.
+This means that many things addons will try to access from their surrounding environment will need to be listed as `peerDependencies`. For example, addons that want to import `ember-data` should list `ember-data` as a `peerDependency`, so the app can control the `ember-data` version and the addon is guaranteed to resolve the same copy.
+
+This also applies recursively -- if your addon wants to use an addon that needs `ember-data`, your addon should also list `ember-data` as a `peerDependency`. The clearest documented description of how recursive peerDependencies should work is in the [Yarn PnP Formal Guarantees](https://github.com/yarnpkg/rfcs/blob/master/accepted/0000-plug-an-play.md#c-formal-plugnplay-guarantees).
+
+`ember-source` provides many "virtual" packages like `@ember/component`. If they were real packages, they would be `peerDependencies`, but having non-real packages in package.json is likely to result in errors. Pedantically, they can be listed in **externals** instead. In practice, they are a well-known set that we can always handle correctly automatically, so it's not very imporant whether an addon includes them in **externals**.
+
+### Optional Peer Dependencies
+
+Some addons optionally use another addon if it happens to be available in the app. In order to resolve such a dependency, we really need **Optional Peer Dependencies**.
+
+NPM doesn't have a concept of optional peer dependencies. It has "optional dependencies", but they are something different and pretty useless.
+
+Yarn did an [RFC for optional peer dependency support](https://github.com/yarnpkg/rfcs/blob/master/accepted/0000-optional-peer-dependencies.md). It is basically compatible with NPM, with the only caveat being that if you use NPM you may see a spurious warning at install time. As non-actionable peerDependency warnings are rife throughout the NPM ecosystem this doesn't seem like a big deal.
+
+V2 Packages are allowed to use optional peer dependencies as described in the Yarn RFC.
+
+Our own tooling, like ember-cli-dependency-checker, we can make sure the warnings respect the Yarn standard.
 
 ## Apps as V2 Packages
 
@@ -749,7 +765,7 @@ Embroider effectively supersedes both the [Packager RFC](https://github.com/embe
 
 Packager creates an escape hatch from the existing ember-cli build that is supposed to provide a foundation for many of the same features enabled by this design. The intention was correct, but in my opinion it tries to decompose the build along the wrong abstraction boundaries. It follows the existing pattern within ember-cli of decomposing the build by feature (all app javacript, all addon javascript, all templates, etc) rather than by package (everything from the app, everything from ember-data, everything from ember-power-select, etc), which puts it into direct conflict with the Prebuilt Addons RFC.
 
-The API that packager provides is also incomplete compared with this design. For example, to take the packager output and build it using Webpack, Rollup, or Parcel still requires a significant amount of custom code. Whereas taking a collection of v2 formatted Ember packages and building them with any of those tools requires very little custom code. TODO: link to hopefully more than one working example.
+The API that packager provides is also incomplete compared with this design. For example, to take the packager output and build it using Webpack, Rollup, or Parcel still requires a significant amount of custom code. Whereas taking a collection of v2 formatted Ember packages and building them with any of those tools requires very little Ember-specific code.
 
 The prebuilt addons RFC addresses build performance by doing the same kind of work-moving as this design. Addons can do much of their building up front, thus saving time when apps are building. But it only achieves a speedup when apps happen to be using the same build options that addons authors happened to publish. This design takes a different approach that preserves complete freedom for app authors to postprocess all addon Javascript, including dead-code-elimination based on the addon features their app is using. The prebuilt addons RFC also doesn’t attempt to specify the contents of the prebuilt trees — it just accepts the current implementation-defined contents. This is problematic because shared builds artifacts are long-lived, so it’s worth trying to align them with very general, spec-compliant semantics.
 

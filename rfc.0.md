@@ -7,9 +7,11 @@
 
 ## Summary
 
-This RFC defines a new package format that is designed to make Ember packages (meaning both apps and addons) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem.
+This RFC defines a new package format that is designed to make Ember packages (meaning both apps and addons) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem. This RFC is the first step in stabilizing [Embroider](https://github.com/embroider-build/embroider) as our next-generation build system.
 
-Most of this RFC is already implemented in [Embroider](https://github.com/embroider-build/embroider). Embroider can compile most existing packages to v2 packages. There is a [tracking issue](FIXME) for the remaining gaps between this RFC and the current implementation.
+Much of this RFC is already implemented in Embroider. Embroider can compile most existing packages to v2 packages. There is a [tracking issue](TODO) for the remaining gaps between this RFC and the current implementation.
+
+If this RFC is merged, addons can begin publishing to NPM natively as V2 packages. This greatly improves their stability & build performance under Embroider.
 
 ## Motivation
 
@@ -17,12 +19,14 @@ One of the good things about Ember is that apps and addons have a powerful set o
 
 But one of the challenging things about Ember is that our ecosystem’s build-time capabilities are more implementation-defined than spec-defined, and the implementation has accumulated capabilities organically while only rarely phasing out older patterns. I believe the lack of a clear, foundational, build-time public API specification is the fundamental underlying issue that efforts like the various packaging / packager RFCs have tried to work around.
 
-The benefits to users for this RFC are:
+The benefits to users for this RFC (and Embroider in general) are:
 
 - faster builds and faster NPM installs
-- “zero-config import from NPM — both static and dynamic” as a first-class feature all apps and addons can rely on.
-- tree-shaking of app- and addon-provided modules, components, helpers, etc.
-- a more approachable build system that enables more people to contribute and better integration with other JS toolchains.
+- “zero-config import from NPM — both static and dynamic” as a first-class feature that works for both third-party libraries and Ember addons
+- support for arbitrary code splitting
+- tree-shaking of unused modules, components, helpers, etc from the app and all addons
+- a layered build system with clearly documented APIs between the layers, so it's easier to experiment and contribute
+- a build system that can take advantage of current and future investments by the wider Javascript ecosystem into code bundling & optimization.
 
 ## Key Ideas
 
@@ -93,14 +97,16 @@ Because we're hyper-focused on backward- and forward-compatibility, there is no 
 
 ## Package Public API Overview
 
-The structure we are about to describe _is a publication format_. Not necessarily an authoring format. By separating the two, we make it easier to evolve the authoring formats without breaking ecosystem-wide compatibility. The publication format is deliberately more explicit and less dynamic that what we may want for an authoring format.
+The format we are about to describe _is a publication format_. Not necessarily an authoring format. By separating the two, we make it easier to evolve the authoring format without breaking ecosystem-wide compatibility. The publication format is deliberately more explicit and less dynamic that what we may want for an authoring format.
 
 First, here’s the list of things a v2 package can provide. More detail on each of these will follow:
 
 - **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.{js,hbs}/`)
-- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.{js,hbs}`). Other RFCs are working to move Ember away from needing this feature, but we are not gated on any of those and fully support App Javascript.
+- **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.{js,hbs}`). Other RFCs are working to move Ember away from needing this feature, but we are not gated on any of those and fully support **App Javascript**.
 - **CSS**: available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
-- **Implicit Dependencies**: scripts, modules, and stylesheets that should be implicitly included in the app or the app's tests whenever this addon is active. This is a compatibility feature.
+- **Implicit Dependencies**: scripts, modules, and stylesheets that should be implicitly included in the app or the app's tests whenever this addon is active. This is a backward-compatibility feature.
+- **Renaming Rules**: allow a package to declare that some of its modules should be available at different import paths than their real, resolvable path. This is a backward-compatibility feature that new addons should not use.
+- **Externals**: allows a package to declare that it imports some things that are not **allowed dependencies**. Instead of being resolved at build time, **externals** are deferred until runtime and get handled by the traditional `loader.js` `require()`.
 - **Assets**: any files that must be available in the final built application directory such that they have public URLs (typical examples are images and fonts).
 - **Build Hooks**: code that runs within Node at application build time. The v1 equivalent is an addon's `index.js` file.
 
@@ -130,7 +136,7 @@ Modules in **Own Javascript** are allowed to use dynamic `import()`, and the spe
   - where the static part is required to contain at least one `/`
   - or at least two `/` when the path starts with `@`.
 
-This is designed to allow limited pattern matching of possible targets for your dynamic `import()`. The rules ensure that we can always tell which NPM package you are talking about (the `@` rule covers namespaced NPM packages, so you can't depend on `@ember/${whatever}` but you can depend on `@ember/translations/${lang}`). If your pattern matches zero files, we consider that a static build error.
+This is designed to allow limited pattern matching of possible targets for your dynamic `import()`. The rules ensure that we can always tell which NPM package you are talking about (the `@` rule covers namespaced NPM packages, so you can't depend on `@ember/${whatever}` but you can depend on `@ember/translations/${lang}`). If your pattern matches zero files, we consider that a static build error. (For more background on the thought-process behind this feature, see [Embroider issue #198: Allow dynamic imports to accept more dynamic inputs](https://github.com/embroider-build/embroider/issues/198).
 
 Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it on their Component class). But in v2 packages, import specifiers of templates are required to explicitly include the `.hbs` extension.
 
@@ -215,6 +221,47 @@ While **Implicit Dependencies** are a fully-supported part of the v2 spec, v2 pa
 
 For example, if one of your components depends on a third-party library, you should `import` that library directly from your component. Then the library will only be included if somebody uses that particular component. Whereas if you use `implicit-scripts`, the library will always be included, even if nobody uses the component that needs the library.
 
+## Renaming Rules
+
+V1 Addons have multiple ways (at least five that I've found so far!) of emitting modules that escape the addon's own package namespace. Examples:
+
+- `ember-lodash` remaps all of its modules to the package name `lodash`
+- `@ember/test-helpers` provides some modules under its true name, but also some modules under `ember-test-helpers`.
+
+In order for Embroider compile these packages to valid V2 packages, we give V2 packages the ability to express renaming rules using the following properties in **Ember package metadata**:
+
+- `renamed-packages`: a map from the package name a user would type to the real package name that provides it. Example:
+
+  ```js
+  {
+    "renamed-packages": {
+      "lodash": "ember-lodash"
+    }
+  }
+  ```
+
+- `renamed-modules`: a map from modules that a user may try to import to the real paths where those modules live:
+
+  ```js
+   "renamed-modules": {
+    "ember-test-helpers/index.js": "@ember/test-helpers/ember-test-helpers/index.js"
+   }
+  ```
+
+  When Embroider compiles a V1 package like `@ember/test-helpers` it ensures that the modules that would have "escaped" the package end up _inside_ the package, so that this kind of renaming works.
+
+  The renaming rules allow these addons to adopt V2 format without breaking their public API. New addons _should not_ use renaming rules because it's confusing when the imports people type don't align with their real dependencies.
+
+## Externals
+
+The `externals` property in **Ember package metadata** allows a V2 addon to declare specific imported modules that should not be resolved at build time. Instead they will be resolved at runtime using the traditional `loader.js` `require()`.
+
+When Embroider compiles V1 packages to V2 it does automatic externals detection.
+
+When publishing a native V2 package, any externals need to be listed explicitly in **Ember package metadata**.
+
+An example of when you may need `externals` is when you need to consume a script (not a module) that contains arbitrary `define()` statements. The modules defined by those statements aren't resolvable, in general, at build time. So attempts to import them will generate build errors. By listing them in externals, you can defer them until runtime where they will work.
+
 ## Assets
 
 To provide **Assets**, a package includes the `public-assets` key in **Ember package metadata**. It's a mapping from local paths to app-relative URLs that should be available in the final app. For example:
@@ -287,8 +334,6 @@ Addons are encouraged to merge configuration requests intelligently to try to sa
 The `OwnConfig` return value must be JSON-serializable. It becomes available to your **Own Javascript** via the `getOwnConfig` macro, so that it can influence what code is conditionally compiled out of the build.
 
 ### Build Hook: configureDependencies
-
-TODO: remember to include optional peer deps
 
 ```ts
 configureDependencies(): {
@@ -644,7 +689,8 @@ All these features can appear in v2 _addons_, and the _app_ ensures each one is 
 
 There are also a few V2 package features only supported in apps. These are mostly of interest only to people working within ember-cli and/or embroider to implement new packaging tools. Each of these is a property in **Ember package metadata**:
 
-- `"assets"`: a list of relative paths to files. The intent of `"assets"` is that it declares that each file in the list must result in a valid URL in the final app.
+- `rootURL`: has the same meaning as `rootURL` in `config/environment.js` in a standard Ember app.
+- `assets`: a list of relative paths to files. The intent of `assets` is that it declares that each file in the list must result in a valid URL in the final app.
 
   The most important assets are HTML files. All `contentFor` has already been applied to them. (Remember, we’re talking about the publication format that can be handed to the final stage packager, not necessarily the authoring format.) It is the job of the final stage packager to examine each asset HTML file and decide how to package up all its included assets in a correct and optimal way, emitting a final result HTML file that is rewritten to include the packaged assets.
 
@@ -694,3 +740,11 @@ Unlike addons, an app’s **Own Javascript** is not limited to only ES latest fe
 
 > Optional, but suggested for first drafts. What parts of the design are still
 > TBD?
+
+# Supporting References
+
+- There is a [SPEC draft](https://github.com/embroider-build/embroider/blob/master/SPEC.md) in the Embroider repo that predates this one, but covers a broader scope. Where this document contradicts SPEC.md, this document takes precedence and SPEC.md needs to be updated. But SPEC.md covers a broader scope, including the disposition of the other build hooks that will be handled in future RFCs.
+
+- The definitive list of **Ember package metadata** fields is declared in [AppMeta and AddonMeta interfaces](https://github.com/embroider-build/embroider/blob/master/packages/core/src/metadata.ts).
+
+-

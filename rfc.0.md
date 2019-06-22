@@ -340,7 +340,251 @@ To provide test-support code, make a separate module within your package and tel
 
 ## Macro System
 
-- remember to include `hbs` here
+v1 packages can run arbitrary Node code that completely alters their runtime code. This makes them impossible to analyze. v2 packages are not allowed to do this. There are no "treeFor\*" hooks. Instead, they can influence their runtime code only through the macro system.
+
+It helps to think about the macro system as an extension to Javascript itself that we allow in v2 packages. Because the macros are allowed to appear in any published V2 package, and because the macros are _not_ a dependency that each package can control (you don't get to bring your own separate macro system version with you), it's important that we design a small core that we can support for the long-term. We probably can't make breaking changes to the macro system, we can only introduce new macros.
+
+(I'm proposing the macros live under `@ember/macros`. The current implementation of them lives in `@embroider/macros`.)
+
+The Javascript macros are:
+
+- importSync
+- getOwnConfig
+- getConfig
+- macroCondition
+- moduleExists
+- dependencySatisfies
+- failBuild
+
+The Handlebars macros are:
+
+- macroGetOwnConfig
+- macroGetConfig
+- macroCondition
+- macroDependencySatisfies
+- macroMaybeAttrs
+- macroFailBuild
+
+The difference in naming is because the JS macros get explicitly imported from `@ember/macros`, whereas the Handlebars macros do not, so they need an appropriate namespace prefix. (If we land template imports, I'm find with adjusting this RFC to make the names align.)
+
+### JavaScript Macro: importSync
+
+```js
+import { importSync } from '@ember/macros';
+importSync('some-dependency').default;
+```
+
+`importSync` exists to do a thing that standard Javascript does not do: synchronous dynamic import. Ember historically needs synchronous dynamic import (it's what our runtime AMD `require` does). Until some future date at which Ember has migrated away from synchronous module resolution we need `importSync`.
+
+`importSync` is defined as behaving exactly like the standards-complient `import` except instead of returning `Promise<Module>` it returns `Module`.
+
+In this RFC we don't state explicitly what `importSync` compiles to. It compiles to whatever the Javascript bundler we're using supports in order to achieve synchronous dynamic import. For example, if we're internally using Webpack we can compile `importSync("something")` to `require("something")`, because Webpack supports CommonJS `require` anywhere.
+
+### JavaScript Macro: getOwnConfig
+
+```js
+// this example:
+import { getOwnConfig } from '@ember/macros';
+const shouldEnableCoolFeature = getOwnConfig().coolFeature;
+// might compile to:
+const shouldEnableCoolFeature = true;
+// assuming your ownConfig is `{ coolFeature: true }`.
+```
+
+`getOwnConfig()` behaves like a function that returns your `OwnConfig`, as determined by the return value of your `configure` **Build Hook**. You're allowed to chain property accesses (including array indices) off of `getOwnConfig()`. Since the `OwnConfig` is required to be JSON-serializable, any subset of it can be accessed this way, and we inline that value directly into the code.
+
+You can choose to inline the whole OwnConfig if you want to:
+
+```js
+// this example:
+import { getOwnConfig } from '@ember/macros';
+const myConfig = getOwnConfig();
+// might compile to:
+const myConfig = { coolFeature: true };
+// assuming your ownConfig is `{ coolFeature: true }`.
+```
+
+Since `getOwnConfig` accesses the output of your `configure` build-hook, you have a place to run arbitrary
+
+### Javascript Macro: getConfig
+
+`getConfig` can access the `OwnConfig` of your dependencies.
+
+```js
+import { getConfig } from '@ember/macros';
+const testSelectorsConfig = getConfig('ember-test-selector');
+```
+
+It supports property chaining the same as `getOwnConfig`.
+
+This is a low-level power tool. It's mostly useful as a compile target for custom Babel plugins. For example, `ember-test-selectors` has a custom Babel plugin that _sometimes_ strips test properties out of your components. But if a V2 package is using ember-test-selectors, it needs to run the custom transform _before publishing_. At that point, it's too soon to decide whether to strip them.
+
+Instead of actually doing the stripping, the ember-test-selector plugin would compile the user's code into code that uses `macroCondition` and `getConfig('ember-test-selectors')`. In this way, we get the powerful custo behavior, but only the standard core macros are needed at the time when the app itself is building.
+
+### JavaScript Macro: macroCondition
+
+`macroCondition` acts like a function that takes a boolean value and returns that same boolean value. But whenever `macroCondition` appears directly inside the predicate of an `if` statement or as the predicate of a ternary expression, it tells the macro system to do branch elimination based on the predicate. Here is an example that combines all three macros we've seen so far:
+
+```js
+// This example:
+import { macroCondition, getOwnConfig, importSync } from '@ember/macros';
+
+let implementation;
+
+if (macroCondition(getOwnConfig().useNewVersion)) {
+  implementation = importSync("./new-component");
+} else {
+  implementation = importSync("./old-component");
+}
+
+export default implementation;
+
+// ==============
+// Could compile down to this if OwnConfig contains { useNewVersion: true }
+let implementation;
+implementation = importSync("./new-component");
+export default implementation;
+
+// ===============
+// Or compile down to this if OwnConfig contains { useNewVersion: false }
+let implementation
+implementation = importSync("./new-component");
+export default implementation;
+```
+
+It is a build error if `macroCondition` cannot statically determine the truth status of its argument.
+
+`macroCondition` supports boolean logic, like `macroCondition(getOwnConfig().a && getOwnConfig().b)`.
+
+Here is an example of `macroCondition` in a ternary expression:
+
+```js
+const flavor = macroCondition(getOwnConfig().prefersChocolate) ? 'chocolate' : 'vanilla';
+// could compile down to:
+const flavor = 'chocolate';
+```
+
+`macroCondition` is the foundation that lets us choose which code to include in the build. You can choose to inline two different implementations within the branches of an `if` statement, or you can keep them in entirely separate modules and import only the correct one via `importSync`.
+
+It would also be possible (in the future, when top-level await stabilizes) to use [top-level await](https://github.com/tc39/proposal-top-level-await) to replace usage of our `importSync` macro with standards-compliant `import()`:
+
+```js
+if (macroConditional(getOwnConfig().x)) {
+  await import('x');
+} else {
+  await import('y');
+}
+```
+
+Q: Why not allow `if (getOwnConfig().thing)` instead of `if (macroCondition(getOwnConfig().thing))`?
+
+A: Because we don't want to leave any confusion over whether branch elimination will be done. Boolean expressions that include a macro like `getOwnConfig` alongside other runtime-only values are perfectly legal. But those expressions would not allow branch elimination. The ambiguity means you might accidentally defeat branch elimination without noticing. `macroCondition` is intended to signal -- both to the reader and to the compile -- that this place absolutely _must_ do branch elimination. It's an error if we can't eliminate one branch or the other.
+
+### JavaScript Macro: moduleExists
+
+Allow you to test if an `import` (or `import()` or `importSync()`, since they all accept an argument with identical semantics) would succeed. Always compiles to a boolean literal.
+
+```js
+import { moduleExists, macroCondition, importSync } from '@ember/macros';
+if (macroCondition(moduleExists('ember-data'))) {
+  const DS = importSync('ember-data').default;
+  DS.Adapter.extend({
+    //
+  });
+}
+```
+
+Remember that you're always only allowed to `import` from your own **allowed dependencies**. So if an addon wants to optionally use another package only if that package is present, that package must be listed as an **Optional Peer Dependency**.
+
+### JavaScript Macro: dependencySatisfies
+
+Allows you to test if the given **allowed dependency** satisfies the given semver range. Always compiles to a boolean literal.
+
+```js
+import { dependencySatisfies, macroCondition } from '@ember/macros';
+if (macroCondition(dependencySatisfies('ember-data', '^3.0.0'))) {
+  // include code here for ember-data 3.0 compat
+}
+```
+
+The package version will be `semver.coerce`d first, such that non-standard versions like "3.9.0-beta.0" will appropriately satisfy constraints like "> 3.8".
+
+### Javascript Macro: failBuild
+
+Allow you to cause a build failure with a custom error message. If `failBuild` isn't eliminated by `macroCondition`'s branch elimination, the build will fail.
+
+```js
+import { dependencySatisfies, macroCondition, failBuild } from '@ember/macros';
+if (macroCondition(dependencySatisfies('ember-data', '^3.0.0'))) {
+  // include code here for ember-data 3.0 compat
+} else {
+  failBuild(`We don't support ember-data versions other than ^3.0.0`);
+}
+```
+
+### Handlebars Macro: macroGetOwnConfig
+
+`macroGetOwnConfig` is very similar to the `getOwnConfig` JS macro, but it works as a Handlebars helper. Given this `OwnConfig`:
+
+```json
+{
+  "items": [{ "score": 42 }]
+}
+```
+
+Then:
+
+```hbs
+<SomeComponent @score={{macroGetOwnConfig "items" 0 "score" }} />
+{{! ⬆️compiles to ⬇️ }}
+<SomeComponent @score={{42}} />
+```
+
+If you don't pass any arguments, you can get the whole thing (although this makes your template bigger, so use arguments when you can):
+
+```hbs
+<SomeComponent @config={{macroGetOwnConfig}} />
+{{! ⬆️compiles to ⬇️ }}
+<SomeComponent @config={{hash items=(array (hash score=42))}} />
+```
+
+### Handlebars Macro: macroCondition
+
+Used as a helper within a block `{{#if}}` or inline `{{if}}`. Just like the JS `macroCondition`, it ensures that branch elimination will happen.
+
+```hbs
+  {{#if (macroCondition (macroGetOwnConfig "shouldUseThing")) }}
+    <Thing />
+  {{else}}
+    <OtherThing />
+  {{/if}}
+
+  {{! ⬆️compiles to ⬇️ }}
+  <Thing />
+```
+
+### Handlebars Macro: macroDependencySatisfies
+
+Acts like a helper that returns a boolean. Like the `dependencySatisfies` JS macro, it can only resolve things that are **allowed dependencies**, so the same need for peer dependencies and/or **Optional Peer Dependencies** applies.
+
+```hbs
+<SomeComponent @canAnimate={{macroDependencySatisfies "liquid-fire" "*"}} />
+{{! ⬆️compiles to ⬇️ }}
+<SomeComponent @canAnimate={{true}} />
+```
+
+### Handlebars Macro: macroMaybeAttrs
+
+There is one place where `{{#if}}` doesn't work: within "element space". If you want to _sometimes_ set an attribute, but sometimes not, this doesn't work:
+
+```hbs
+<div {{#if this.testing}} data-test-target={{@id}} {{/if}} />
+```
+
+`macroMaybeAttrs` exists to conditionally compile away attributes and arguments out of element space.
+
+- macroMaybeAttrs
+- macroFailBuild
 
 ## How we teach this
 

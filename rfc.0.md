@@ -599,6 +599,12 @@ Like the JS `failBuild` macro.
 {{/if}}
 ```
 
+## Optional Peer Dependencies
+
+We will support optional peer deps as defined in [Yarn's RFC](https://github.com/yarnpkg/rfcs/blob/master/accepted/0000-optional-peer-dependencies.md).
+
+TODO: expand this section to explain.
+
 ## Apps as V2 Packages
 
 This RFC is focused heavily on addons, because that is the area that is most critical to standardize. Publishing addons to NPM in V2 format has major benefits:

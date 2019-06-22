@@ -9,10 +9,6 @@
 
 This RFC defines a new package format that is designed to make Ember packages (meaning both apps and addons) statically analyzable and more compatible with the rest of the NPM & Javascript ecosystem. This RFC is the first step in stabilizing [Embroider](https://github.com/embroider-build/embroider) as our next-generation build system.
 
-Much of this RFC is already implemented in Embroider. Embroider can compile most existing packages to v2 packages. There is a [tracking issue](TODO) for the remaining gaps between this RFC and the current implementation.
-
-If this RFC is merged, addons can begin publishing to NPM natively as V2 packages. This greatly improves their stability & build performance under Embroider.
-
 ## Motivation
 
 One of the good things about Ember is that apps and addons have a powerful set of build-time capabilities that allow lots of shared code with zero-to-no manual integration steps for the typical user. We have been doing “zero config” since before it was a cool buzzword (it was just called “convention over configuration”). And we’ve been broadly successful at maintaining very wide backward- and forward-compatibility for a large body of highly-rated community-maintained addons.

@@ -194,9 +194,28 @@ What about SCSS _et al_? You’re still free to use them as your authoring forma
 
 ## Implicit Dependencies
 
-FIXME: fill out this section
+Within **Ember package metadata** we support several flavors of implicit dependencies:
 
-New addon's are encouraged to use direct ECMA `import` or CSS `@import` to express explicit, fine-grained dependencies in favor of these coarse, implicit dependencies.
+- implicit-modules
+- implicit-scripts
+- implicit-styles
+- implicit-test-modules
+- implicit-test-scripts
+- implicit-test-styles
+
+Each one is a list of package-relative paths to files within the package.
+
+Whenever your package is active, all of its implicit dependencies will be included in the build. The `-test-` variants will be included only in test suites, and the non-`-test-` variants are always included.
+
+`implicit-modules` and `implicit-test-modules` mean that the app should be built as if someone has explicitly typed ECMA import statements for each of the listed modules.
+
+`implicit-scripts` and `implicit-test-scripts` are for Javascript in a script context. Script context is different from module context (as defined by the ECMA spec). This is how an addon can push things into the equivalent of the traditioanl `vendor.js`, which is in script context.
+
+`implicit-styles` and `implicit-test-styles` are for stylesheets. This is how an addon can push things into the equivalent of the traditional vendor.css.
+
+While **Implicit Dependencies** are a fully-supported part of the v2 spec, v2 packages are encouraged to use direct ECMA `import` or CSS `@import` instead, whenever possible. A direct `import` provides finer-grained dependency information: we know exactly _which_ module inside your package actually depends on the thing, rather than needing to assume that your entire package depends on it.
+
+For example, if one of your components depends on a third-party library, you should `import` that library directly from your component. Then the library will only be included if somebody uses that particular component. Whereas if you use `implicit-scripts`, the library will always be included, even if nobody uses the component that needs the library.
 
 ## Assets
 
@@ -237,10 +256,11 @@ It is no longer the `main` entrypoint of the package (see **Own Javascript**). I
 
 It is now an ECMA module, not a CJS file. The default export is a class that implements your build hooks (there is no required base class).
 
-Here is a list of build hooks, each of which will have its own section below. They are listed in the order they will run:
+Here is a list of build hooks, each of which will have its own section below.
 
 - configure
 - configureDependencies
+- skipBabel
 
 I will describe the hooks using TypeScript signatures for precision. This does not imply anything about us actually using TypeScript to implement them. Each package has two type variables:
 
@@ -270,14 +290,21 @@ The `OwnConfig` return value must be JSON-serializable. It becomes available to 
 
 ### Build Hook: configureDependencies
 
-TODO: search for `disableDependencies`, it should all be factored out.
 TODO: remember to include optional peer deps
 
 ```ts
-configureDependencies(): { [dependencyName: string]:
+configureDependencies(): {
+  [dependencyName: string]: PackageOptionsForDependency | "disabled"
+}
 ```
 
-`disableDependencies` returns a list of package names of Ember packages that you want to disable. If you don't implement `disableDependencies`, all your Ember package dependencies are active.
+The `configureDependencies` hook is how you send configuration down to your own dependencies. For each package in your **allowed dependencies** you may return either the `PackageOptions` expected by that package, or the string `"disabled"`.
+
+Any dependencies that you don't mention are considered active, but don't receive and configuration from you.
+
+Any dependency for which you provide `PackageOptions` is active, and will receive those `PackageOptions` in its own `configure` hook.
+
+If you set a package to `"disabled"`, it will not become active _because of your addon_. It may still become active if another package depends on it and leave it active.
 
 When and only when a package is active:
 
@@ -292,6 +319,18 @@ When and only when a package is active:
 - directly-imported **Own Javascript** and **CSS** are available to any other package as described in those sections. The rationale for allowing `import` of non-active packages is that (1) we follow node module resolution and node module resolution doesn’t care about our notion of “active”, and (2) `import` is an explicit request to use the module in question. It’s not surprising that it would work, it would be more surprising if it didn’t.
 
 The `configureDependencies` hook is the _only_ way to disable child packages. The package hooks are implemented as a class with no base class. There is no `super` to manipulate to interfere with your children’s hooks.
+
+### Build Hook: skipBabel
+
+```ts
+skipBabel({ package: string, semverRange?: string }[]): void;
+```
+
+By default, all imported dependencies (and their recursive importe dependencies) go through the app's babel config. This ensures browser compatibility safety. However, we provide `skipBabel` as an opt-out to work around transpilation problems in cases where the developer has verified that transpilation of a given package isn't needed.
+
+`skipBabel` returns a list of packge names and optionally semver ranges. If no range is included, it defaults to `*`. This is a place where you're allowed to mentioned packages that are _not_ in your **allowed dependencies** because it may be necessary to talk about deeper dependencies within them. The `skipBabel` settings for all active addons are combined and if any addon skips babel for a given package & version, that causes the package to not be transpiled.
+
+The semver range is useful to disambiguate if there are multiple versions of the same package involved in the app, and in cases where a developer has manually verified that transpilation isn't needed, it's good practice to use the semver range so that `skipBabel` doesn't accidentally apply to a future version of the package that may indeed need transpilation.
 
 ## What about Test Support?
 

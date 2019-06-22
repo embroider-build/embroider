@@ -85,7 +85,7 @@ This is intended as the base level spec for v2 packages. **It does not attempt t
 - providing commands and blueprints
 - preprocessing your parent package's code
 - modifying your parent package's babel config
-- injecting content into index.html
+- injecting content into index.html (contentFor)
 
 It is understood that all of these are legitimate things for Ember addons to do. Defining these capabilities within v2 packages will be done in followup RFCs. It is simply too much scope to cover in one RFC.
 
@@ -101,7 +101,8 @@ First, here’s the list of things a v2 package can provide. More detail on each
 
 - **Own Javascript**: javascript and templates under the package’s own namespace (the v1 equivalent is `/addon/**/*.{js,hbs}/`)
 - **App Javascript**: javascript and templates that must be merged with the consuming app’s namespace (the v1 equivalent is `/app/**/*.{js,hbs}`). Other RFCs are working to move Ember away from needing this feature, but we are not gated on any of those and fully support App Javascript.
-- **CSS:** available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
+- **CSS**: available for `@import` by other CSS files (both in the same package and across packages) and by ECMA `import` directives in Javascript modules (both in the same package and across packages).
+- **Implicit Dependencies**: scripts, modules, and stylesheets that should be implicitly included in the app or the app's tests whenever this addon is active. This is a compatibility feature.
 - **Assets**: any files that must be available in the final built application directory such that they have public URLs (typical examples are images and fonts).
 - **Build Hooks**: code that runs within Node at application build time. The v1 equivalent is an addon's `index.js` file.
 
@@ -150,6 +151,153 @@ As already stated, V2 Ember packages must contain only ES modules. However, non-
 The V2 format deliberately eliminates many sources of app-build-time dynamism from addons. Instead, we provide an equivalently-powerful macro system and consider it an always-supported language extension (the macros are always available to every V2 package, ambiently, and we promise to give them their faithful build-time semantics).
 
 See **Macro System** for the full details.
+
+## App Javascript
+
+To provide **App Javascript**, a package includes the `app-js` key in **Ember package metadata**. For example, to duplicate the behavior of v1 packages, you could say:
+
+    "ember-addon": {
+      "version": 2,
+      "app-js": "./app"
+    }
+
+Like the **Own Javascript**, templates are in place in hbs format with any AST transforms already applied. Javascript is in ES modules, using only ES latest features. ECMA static and dynamic imports from any **allowed dependency** are supported. (Even though the app javascript will be addressable within the _app's_ module namespace, your own imports still resolve relative to your addon.)
+
+By making `app-js` an explicit key in **Ember package metadata**, our publication format is more durable (you can rearrange the conventional directory structure in the future without breaking the format) and more performant (less filesystem traversal is required to decide whether the package is using the **App Javascript** feature.
+
+## CSS
+
+To provide **CSS**, a package can include any number of CSS files. These files can `@import` each other via relative paths, which will result in build-time inclusion (as already works in v1 packages).
+
+If any of the **Own Javascript** or **App Javascript** modules depend on the presence of a CSS file in the same package, it should say so explicitly via an ECMA relative import, like:
+
+    import '../css/some-component.css';
+
+This is interpreted as a build-time directive that ensures that before the Javascript module is evaluated, the CSS file's contents will be present in the DOM. ECMA import of CSS files must always include the explicit `.css` extension.
+
+> Q: Does this interfere with the ability to do CSS-in-JS style for people who like that?
+
+> A: No, because that would be a preprocessing step before publication. It’s a choice of authoring format, just like TypeScript or SCSS. CSS-in-JS people would compile all their things to ES modules before we deal with it.
+
+It is also possible for other packages (including the consuming application) to depend on a CSS file in any of its **allowed dependencies**, from either Javascript or CSS. From Javascript it looks like:
+
+    // This will resolve the `your-addon` package and find
+    // './some-component.css' relative to the package root.
+    // The .css file extension is mandatory
+    import 'your-addon/some-component.css';
+
+And from CSS it looks like:
+
+    @import 'your-addon/some-component';
+
+What about SCSS _et al_? You’re still free to use them as your authoring format, and they should be transpiled to CSS in your publication format. If you want to offer the original SCSS to consuming packages, you’re free to include it in the publication format too. Since we’re making all packages resolvable via normal node rules, it’s now dramatically easier to implement a preprocessor that supports inter-package dependencies. (The same logic applies to TypeScript.)
+
+## Implicit Dependencies
+
+FIXME: fill out this section
+
+New addon's are encouraged to use direct ECMA `import` or CSS `@import` to express explicit, fine-grained dependencies in favor of these coarse, implicit dependencies.
+
+## Assets
+
+To provide **Assets**, a package includes the `public-assets` key in **Ember package metadata**. It's a mapping from local paths to app-relative URLs that should be available in the final app. For example:
+
+    "name": "my-addon",
+    "ember-addon": {
+      "version": 2,
+      "public-assets": {
+        "./public/image.png": "/my-addon/image.png"
+      }
+    }
+
+with:
+
+    my-addon
+    └── public
+        └── image.png
+
+will result in final build output:
+
+    dist
+    └── my-addon
+        └── image.png
+
+Notice that we’re _not_ choosing to include assets via explicit ECMA `import`. The reason is that fine-grained inclusion of asset files is not critical to runtime performance. Any assets that your app doesn’t actually need, it should never fetch. Assets are always things with their own URLs.
+
+If two V2 packages try to emit assets with the same public URL, that's a build error.
+
+> Q: Should we just automatically namespace them instead?
+> A: That was considered, but it makes backward compatibility harder, and public URLs are not always free to choose/change.
+
+## Build Hooks
+
+In today’s v1 addon packages, the `index.js` file is the main entrypoint that allows an addon to integrate itself with the overall ember-cli build pipeline. The same idea carries forward to v2, with some changes.
+
+It is no longer the `main` entrypoint of the package (see **Own Javascript**). Instead, it’s located via the `build` key in **Ember package metadata**, which should point at a Javascript file. `build` is optional — if you don’t have anything to say, you don’t need the file.
+
+It is now an ECMA module, not a CJS file. The default export is a class that implements your build hooks (there is no required base class).
+
+Here is a list of build hooks, each of which will have its own section below. They are listed in the order they will run:
+
+- configure
+- configureDependencies
+
+I will describe the hooks using TypeScript signatures for precision. This does not imply anything about us actually using TypeScript to implement them. Each package has two type variables:
+
+- `PackageOptions` is the interface for what options you accept from packages that depend on you. It's your package's build-time public API.
+- `OwnConfig` is the interface for the configuration that you want to send to your own code, which your code can access via the `getOwnConfig` macro. This is how you influence your runtime code from the build hooks.
+
+### Build Hook: configure
+
+```ts
+interface ConfigurationRequest<PackageOptions> = {
+  options: PackageOptions,
+  fromPackageName: string,
+  fromPackageRoot: string,
+};
+configure<PackageOptions, OwnConfig>(
+  requests: ConfigurationRequest<PackageOptions>[]
+): OwnConfig
+```
+
+The configure hook receives an array of configuration requests. Each request contain the `PackageOptions` that a package that depends on this addon has sent to this addon. It also includes the `fromPackageName` and `fromPackageRoot` (the full path on disk to the requesting package) so that any configuration errors can blame the proper source.
+
+`configure` deals with an array because multiple packages may depend on a single copy of our package. But our package can only be configured in one way (for example, we are either going to include some extra code or strip it out via the macro system, but we can't do both).
+
+Addons are encouraged to merge configuration requests intelligently to try to satisfy all requesters. If it's impossible to do so, you can throw an error that explains the problem.
+
+The `OwnConfig` return value must be JSON-serializable. It becomes available to your **Own Javascript** via the `getOwnConfig` macro, so that it can influence what code is conditionally compiled out of the build.
+
+### Build Hook: configureDependencies
+
+TODO: search for `disableDependencies`, it should all be factored out.
+TODO: remember to include optional peer deps
+
+```ts
+configureDependencies(): { [dependencyName: string]:
+```
+
+`disableDependencies` returns a list of package names of Ember packages that you want to disable. If you don't implement `disableDependencies`, all your Ember package dependencies are active.
+
+When and only when a package is active:
+
+- all standard Ember module types (`your-package/components/*.js`, `your-package/services/*.js`, etc) from its **Own Javascript** _that cannot be statically ruled out as unnecessary_ are included in the build as if some application code has `import`ed them. (What counts as “cannot be statically ruled out” is free to change as apps adopt increasingly static practices. This doesn’t break any already published packages, it just makes builds that consume them more efficient.)
+- all of the package's **Implicit Dependencies** are included in the build.
+- all **App Javascript** is included in the build.
+- all **Assets** are included in the build.
+- the package's **Active Dependencies** become active recursively.
+  ​​
+  Whether or not a package is active:
+
+- directly-imported **Own Javascript** and **CSS** are available to any other package as described in those sections. The rationale for allowing `import` of non-active packages is that (1) we follow node module resolution and node module resolution doesn’t care about our notion of “active”, and (2) `import` is an explicit request to use the module in question. It’s not surprising that it would work, it would be more surprising if it didn’t.
+
+The `configureDependencies` hook is the _only_ way to disable child packages. The package hooks are implemented as a class with no base class. There is no `super` to manipulate to interfere with your children’s hooks.
+
+## What about Test Support?
+
+v1 packages can provide `treeForTestSupport`, `treeForAddonTestSupport`, and `app.import` with `type="test"`. All of these features are dropped.
+
+To provide test-support code, make a separate module within your package and tell people to `import` it from their tests. As long as it is only imported from tests, it will not be present in non-test bundles. (Things get simpler when you respect the module dependency graph.)
 
 ## Macro System
 

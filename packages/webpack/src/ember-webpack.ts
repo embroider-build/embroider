@@ -383,9 +383,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
                 this.consoleWrite(
-                  `warning: in ${
-                    entrypoint.filename
-                  } <script src="${script}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                  `warning: in ${entrypoint.filename} <script src="${script
+                    .split(sep)
+                    .join(
+                      '/'
+                    )}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
                 );
               } else {
                 throw err;
@@ -400,9 +402,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
                 this.consoleWrite(
-                  `warning: in ${
-                    entrypoint.filename
-                  }  <link rel="stylesheet" href="${style}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
+                  `warning: in ${entrypoint.filename}  <link rel="stylesheet" href="${style
+                    .split(sep)
+                    .join(
+                      '/'
+                    )}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
                 );
               } else {
                 throw err;

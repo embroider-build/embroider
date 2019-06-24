@@ -5,7 +5,7 @@ import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, existsSync } from 'fs-extra';
-import { join, dirname } from 'path';
+import { join, dirname, sep } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
@@ -25,7 +25,6 @@ import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
-import { sep } from 'path';
 import { explicitRelative } from './paths';
 
 export type EmberENV = unknown;
@@ -883,7 +882,10 @@ export class AppBuilder<TreeNames> {
       if (implicitModules) {
         for (let name of implicitModules) {
           lazyModules.push({
-            runtime: join(addon.name, name).replace(/\.hbs$/i, ''),
+            runtime: join(addon.name, name)
+              .replace(/\.hbs$/i, '')
+              .split(sep)
+              .join('/'),
             buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }

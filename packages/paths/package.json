@@ -1,0 +1,25 @@
+{
+  "name": "@embroider/paths",
+  "version": "0.4.3",
+  "description": "Strongly-typed, portable handling of filesystem paths and URLs",
+  "main": "src/index.js",
+  "author": "Edward Faulkner",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "prepare": "tsc",
+    "test": "qunit tests"
+  },
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "devDependencies": {
+    "@types/node": "^10.5.2",
+    "@types/qunit": "^2.5.3",
+    "qunit": "^2.8.0",
+    "typescript": "~3.2.0"
+  },
+  "dependencies": {}
+}

@@ -505,6 +505,8 @@ export default class V1App implements V1Package {
     let rootURL = this.config.readConfig().rootURL;
     if (src.startsWith(rootURL)) {
       src = '/' + src.slice(rootURL.length);
+    } else if (src.startsWith('/' + rootURL)) {
+      src = src.slice(rootURL.length);
     }
     return src;
   }

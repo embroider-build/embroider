@@ -54,6 +54,6 @@
     "node": "8.* || >= 10.*"
   },
   "dependencies": {
-    "ember-cli-babel-polyfills": "link:/Users/spenner/src/pzuraq/ember-cli-babel-polyfills"
+    "ember-cli-babel-polyfills": "1.0.4"
   }
 }

@@ -5135,9 +5135,20 @@ ember-cli-babel-plugin-helpers@^1.0.0, ember-cli-babel-plugin-helpers@^1.1.0:
   resolved "https://registry.yarnpkg.com/ember-cli-babel-plugin-helpers/-/ember-cli-babel-plugin-helpers-1.1.0.tgz#de3baedd093163b6c2461f95964888c1676325ac"
   integrity sha512-Zr4my8Xn+CzO0gIuFNXji0eTRml5AxZUTDQz/wsNJ5AJAtyFWCY4QtKdoELNNbiCVGt1lq5yLiwTm4scGKu6xA==
 
-"ember-cli-babel-polyfills@link:../../pzuraq/ember-cli-babel-polyfills":
-  version "0.0.0"
-  uid ""
+ember-cli-babel-polyfills@1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/ember-cli-babel-polyfills/-/ember-cli-babel-polyfills-1.0.4.tgz#05b4f2e60324bda6e131be61559fdae53d15654b"
+  integrity sha512-oWlTKRplFnEagcVC7ReCznwjyCof672Uf5qYp3YKpGGuBZClsVIIVub4hID8uYC2mUXrVYPfBpMNqZ7ywgayBQ==
+  dependencies:
+    broccoli-file-creator "^2.1.1"
+    broccoli-funnel "^2.0.1"
+    broccoli-merge-trees "^3.0.2"
+    broccoli-persistent-filter "^2.1.1"
+    broccoli-rollup "^2.1.1"
+    ember-cli-version-checker "^3.0.1"
+    resolve "^1.11.1"
+    rollup-plugin-commonjs "^9.2.0"
+    rollup-plugin-node-resolve "^4.0.0"
 
 ember-cli-babel@^6.0.0-beta.4, ember-cli-babel@^6.0.0-beta.7, ember-cli-babel@^6.10.0, ember-cli-babel@^6.12.0, ember-cli-babel@^6.16.0, ember-cli-babel@^6.3.0, ember-cli-babel@^6.6.0, ember-cli-babel@^6.8.1, ember-cli-babel@^6.8.2:
   version "6.18.0"

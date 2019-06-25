@@ -16,12 +16,40 @@ import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
 import ExtendedPackage from './extended-package';
+import Concat from 'broccoli-concat';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
 
+type filePath = string;
+type OutputFileToInputFileMap = { [filePath: string]: filePath[] };
+
+interface EmberApp {
+  env: string;
+  name: string;
+  _scriptOutputFiles: OutputFileToInputFileMap;
+  _styleOutputFiles: OutputFileToInputFileMap;
+  legacyTestFilesToAppend: filePath[];
+  vendorTestStaticStyles: filePath[];
+  _customTransformsMap: Map<string, any>;
+  _nodeModules: Map<string, { name: string; path: filePath }>;
+  options: any;
+  tests: boolean;
+  trees: any;
+  project: any;
+  registry: any;
+  testIndex(): Tree;
+  getLintTests(): Tree;
+}
+
+interface Group {
+  outputFiles: OutputFileToInputFileMap;
+  implicitKey: '_implicitStyles' | '_implicitScripts';
+  vendorOutputPath: 'string';
+}
+
 export default class V1App implements V1Package {
-  static create(app: any, packageCache: PackageCache): V1App {
+  static create(app: EmberApp, packageCache: PackageCache): V1App {
     if (app.project.pkg.keywords && app.project.pkg.keywords.includes('ember-addon')) {
       // we are a dummy app, which is unfortunately weird and special
       return new V1DummyApp(app, packageCache);
@@ -30,7 +58,11 @@ export default class V1App implements V1Package {
     }
   }
 
-  protected constructor(protected app: any, protected packageCache: PackageCache) {
+  private _publicAssets: { [filePath: string]: string } = Object.create(null);
+  private _implicitScripts: string[] = [];
+  private _implicitStyles: string[] = [];
+
+  protected constructor(protected app: EmberApp, protected packageCache: PackageCache) {
     this.extendPackage();
   }
 
@@ -290,11 +322,70 @@ export default class V1App implements V1Package {
         })
       );
     }
-    return mergeTrees(trees, { overwrite: true });
+
+    const tree = mergeTrees(trees, { overwrite: true });
+
+    const outputGroups: Group[] = [
+      // scripts
+      {
+        outputFiles: this.app._scriptOutputFiles,
+        implicitKey: '_implicitScripts',
+        vendorOutputPath: this.app.options.outputPaths.vendor.js,
+      },
+      // styles
+      {
+        outputFiles: this.app._styleOutputFiles,
+        implicitKey: '_implicitStyles',
+        vendorOutputPath: this.app.options.outputPaths.vendor.css,
+      },
+    ];
+
+    const concatentations = [];
+
+    // support: app.import / outputFile / using
+    for (let entry of outputGroups) {
+      const { outputFiles, implicitKey, vendorOutputPath } = entry;
+      for (let importPath of Object.keys(outputFiles)) {
+        const headerFiles = outputFiles[importPath];
+
+        if (importPath === vendorOutputPath) {
+          // these are the default ember-cli output files vendor.js or
+          // vendor.css. Let embroider handle these.
+          this[implicitKey] = headerFiles;
+        } else if (headerFiles.length === 0) {
+          // something went really wrong, open an issue
+          throw new Error('Embroider: EWUT');
+        } else if (headerFiles.length === 1) {
+          // app.import(x, { outputFile: y }); where only one app.imports had this outputFile
+          //
+          // No concat needed. Simply serialize the remapping in the addon's
+          // manifest, this ensures it is included in the final output with no extra work.
+          this._publicAssets[headerFiles[0]] = importPath;
+        } else {
+          // app.import(x, { outputFile: y }); where multiple app.imports share one outputFile
+          // Concat needed. Perform concat, and include the outputFile in the
+          // addon's manifest. This ensures it is included in the final output
+          this._publicAssets[importPath] = importPath;
+
+          concatentations.push(
+            new Concat(tree, {
+              headerFiles,
+              outputFile: importPath,
+              annotation: `Package ${importPath}`,
+              separator: '\n;',
+              sourceMapConfig: this.app.options['sourcemaps'],
+            })
+          );
+        }
+      }
+    }
+
+    return mergeTrees([tree, ...concatentations], { overwrite: true });
   }
 
   private addNodeAssets(inputTree: Tree): Tree {
     let transformedNodeFiles = this.transformedNodeFiles();
+
     return new AddToTree(inputTree, outputPath => {
       for (let [localDestPath, sourcePath] of transformedNodeFiles) {
         let destPath = join(outputPath, localDestPath);
@@ -305,14 +396,11 @@ export default class V1App implements V1Package {
       let addonMeta: AddonMeta = {
         type: 'addon',
         version: 2,
-        'implicit-scripts': this.remapImplicitAssets(
-          this.app._scriptOutputFiles[this.app.options.outputPaths.vendor.js]
-        ),
-        'implicit-styles': this.remapImplicitAssets(
-          this.app._styleOutputFiles[this.app.options.outputPaths.vendor.css]
-        ),
+        'implicit-scripts': this.remapImplicitAssets(this._implicitScripts),
+        'implicit-styles': this.remapImplicitAssets(this._implicitStyles),
         'implicit-test-scripts': this.remapImplicitAssets(this.app.legacyTestFilesToAppend),
         'implicit-test-styles': this.remapImplicitAssets(this.app.vendorTestStaticStyles),
+        'public-assets': this._publicAssets,
       };
       let meta = {
         name: '@embroider/synthesized-vendor',

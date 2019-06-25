@@ -1,7 +1,7 @@
 const execa = require('execa');
 
 test('static-app-classic', async () => {
-  jest.setTimeout(60000);
+  jest.setTimeout(120000);
 
   await execa('yarn', ['test'], {
     cwd: `${__dirname}/static-app`,

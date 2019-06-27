@@ -42,7 +42,11 @@ import { join, basename } from 'path';
 
 type GetMeta = () => Partial<AddonMeta>;
 
-export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: Tree; getMeta: GetMeta } {
+export default function rewriteAddonTree(
+  tree: Tree,
+  name: string,
+  moduleName: string
+): { tree: Tree; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
 
   tree = new AddToTree(tree, outputPath => {
@@ -61,20 +65,20 @@ export default function rewriteAddonTree(tree: Tree, ownName: string): { tree: T
   let goodParts = new Snitch(
     tree,
     {
-      allowedPaths: new RegExp(`^${ownName}/`),
+      allowedPaths: new RegExp(`^${moduleName}/`),
       foundBadPaths: (badPaths: string[]) => {
         for (let badPath of badPaths) {
-          renamed[badPath] = `${ownName}/${badPath}`;
+          renamed[badPath] = `${name}/${badPath}`;
         }
       },
     },
     {
-      srcDir: ownName,
+      srcDir: moduleName,
       allowEmpty: true,
     }
   );
   let badParts = new Funnel(tree, {
-    exclude: [`${ownName}/**`],
+    exclude: [`${moduleName}/**`],
   });
   return {
     tree: mergeTrees([goodParts, badParts]),

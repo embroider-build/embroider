@@ -3,6 +3,7 @@
   "workspaces": [
     "packages/*",
     "test-packages/*",
+    "test-packages/@embroider/*",
     "types/babel-core"
   ],
   "scripts": {

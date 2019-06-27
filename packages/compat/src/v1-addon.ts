@@ -414,7 +414,7 @@ export default class V1Addon implements V1Package {
 
         // this captures addons that are trying to escape their own package's
         // namespace
-        let result = rewriteAddonTree(tree, this.moduleName);
+        let result = rewriteAddonTree(tree, this.name, this.moduleName);
         tree = result.tree;
         built.dynamicMeta.push(result.getMeta);
 
@@ -513,7 +513,7 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForAddonTestSupport')) {
       let original = this.invokeOriginalTreeFor('addon-test-support', { neuterPreprocessors: true });
       if (original) {
-        let { tree, getMeta } = rewriteAddonTree(original, this.name);
+        let { tree, getMeta } = rewriteAddonTree(original, this.name, this.moduleName);
         addonTestSupportTree = this.transpile(tree);
         built.dynamicMeta.push(getMeta);
       }

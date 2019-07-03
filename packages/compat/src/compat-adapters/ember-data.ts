@@ -3,6 +3,8 @@ import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
 import cloneDeep from 'lodash/cloneDeep';
 import { AddonMeta } from '@embroider/core';
+import { Tree } from 'broccoli-plugin';
+import { sync as resolveSync } from 'resolve';
 
 export default class EmberData extends V1Addon {
   // ember-data customizes the addon tree, but we don't want to run that one
@@ -15,10 +17,21 @@ export default class EmberData extends V1Addon {
   // ember-data needs its dynamically generated version module.
   @Memoize()
   get v2Trees() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let version = require(join(this.root, 'lib/version'));
+    let versionTree: () => Tree;
+    try {
+      // ember-data 3.10 and earlier kept the version module here.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      versionTree = require(join(this.root, 'lib/version'));
+    } catch (err) {
+      if (err.code !== 'MODULE_NOT_FOUND') {
+        throw err;
+      }
+      // ember-data 3.11 and later keep the version module here.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      versionTree = require(resolveSync('@ember-data/-build-infra/src/create-version-module', { basedir: this.root }));
+    }
     let trees = super.v2Trees;
-    trees.push(version());
+    trees.push(versionTree());
     return trees;
   }
 

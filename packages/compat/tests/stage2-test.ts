@@ -66,6 +66,11 @@ QUnit.module('stage2 build', function() {
             });
           `,
           't.hbs': ``,
+          'uses-amd-require.js': `
+            export default function() {
+              require('some-package');
+            }
+          `,
         },
         'synthetic-import-1.js': '',
         templates: {
@@ -105,7 +110,11 @@ QUnit.module('stage2 build', function() {
       };
 
       app.addDependency('babel-filter-test4', '1.0.0').files = {
-        'index.js': '',
+        'index.js': `
+          module.exports = function() {
+            return require('some-package');
+          }
+        `,
       };
 
       let options: Options = {
@@ -251,6 +260,16 @@ QUnit.module('stage2 build', function() {
     test('app can import a deep addon', function(assert) {
       let assertFile = assert.file('use-deep-addon.js').transform(build.transpile);
       assertFile.matches(/import thing from ["']\.\/node_modules\/my-addon\/node_modules\/deep-addon['"]/);
+    });
+
+    test('amd require in an addon gets rewritten to window.require', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/components/uses-amd-require.js').transform(build.transpile);
+      assertFile.matches(/window\.require\(['"]some-package['"]\)/, 'should find window.require');
+    });
+
+    test('cjs require in non-ember package does not get rewritten to window.require', function(assert) {
+      let assertFile = assert.file('node_modules/babel-filter-test4/index.js').transform(build.transpile);
+      assertFile.matches(/return require\(['"]some-package['"]\)/, 'should find plain cjs require');
     });
 
     test('transpilation runs for ember addons', async function(assert) {

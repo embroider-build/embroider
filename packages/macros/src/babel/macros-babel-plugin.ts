@@ -1,7 +1,7 @@
 import { NodePath } from '@babel/traverse';
 import { ImportDeclaration, CallExpression, Identifier, memberExpression, identifier } from '@babel/types';
 import { PackageCache } from '@embroider/core';
-import State from './state';
+import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroIf from './macro-if';
@@ -75,7 +75,7 @@ export default function main() {
         // simultaneously.
         //
         // given that we're inside classic ember-cli, stop here without trying
-        // to require bare `require`. It's not needed, because both our
+        // to rewrite bare `require`. It's not needed, because both our
         // `importSync` and any user-written bare `require` can both mean the
         // same thing: runtime AMD `require`.
         return;
@@ -84,11 +84,12 @@ export default function main() {
       if (
         path.node.name === 'require' &&
         !state.generatedRequires.has(path.node) &&
-        !path.scope.hasBinding('require')
+        !path.scope.hasBinding('require') &&
+        ownedByEmberPackage(path, state)
       ) {
         // Our importSync macro has been compiled to `require`. But we want to
-        // distinguish that from any pre-existing, user-written `require`, which
-        // should retain its *runtime* meaning.
+        // distinguish that from any pre-existing, user-written `require` in an
+        // Ember addon, which should retain its *runtime* meaning.
         path.replaceWith(memberExpression(identifier('window'), path.node));
       }
     },
@@ -133,4 +134,10 @@ function pruneMacroImports(path: NodePath) {
       topLevelPath.remove();
     }
   }
+}
+
+function ownedByEmberPackage(path: NodePath, state: State) {
+  let filename = sourceFile(path, state);
+  let pkg = packageCache.ownerOfFile(filename);
+  return pkg && pkg.isEmberPackage();
 }

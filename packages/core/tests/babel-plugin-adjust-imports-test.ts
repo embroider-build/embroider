@@ -55,6 +55,7 @@ test('main', function(assert) {
     extraImports: [],
     relocatedFiles: {},
     externalsDir: 'test',
+    resolvableExtensions: ['.js', '.hbs'],
   };
 
   {

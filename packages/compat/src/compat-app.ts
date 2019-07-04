@@ -121,7 +121,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  get activeAddonDescendants(): AddonPackage[] {
+  get allActiveAddons(): AddonPackage[] {
     // todo: filter by addon-provided hook
     let shouldInclude = (dep: Package) => dep.isEmberPackage();
 
@@ -130,6 +130,34 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
     return result;
+  }
+
+  @Memoize()
+  get directActiveAddons(): AddonPackage[] {
+    // todo: filter by addon-provided hook
+    let shouldInclude = (dep: Package) => dep.isEmberPackage();
+    return this.appPackage.dependencies.filter(shouldInclude) as AddonPackage[];
+  }
+
+  @Memoize()
+  resolvableExtensions(): string[] {
+    let extensions = ['.js', '.hbs'];
+
+    // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
+    // resolvable. Once we implement a preprocessor-registration build hook,
+    // this logic can be pushed down first into `@embroider/compat` (which can
+    // generate the appropriate hooks when it upcompiles ember-cli-typescript),
+    // and then later into ember-cli-typescript itself (which can ship a v2
+    // version with the hook).
+    //
+    // Typescript is a slightly weird example of a preprocessor because it gets
+    // implemented in babel, so all we realy need to do is make the extension
+    // resolvable and there's no other "loader" or anything to apply.
+    if (this.directActiveAddons.find(pkg => pkg.name === 'ember-cli-typescript')) {
+      extensions.unshift('.ts');
+    }
+
+    return extensions;
   }
 
   private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
@@ -215,13 +243,19 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
       this.appPackage,
-      ...this.activeAddonDescendants.filter(p => p.meta['auto-upgraded']),
+      ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }
 
   @Memoize()
   templateResolver(): Resolver {
-    return new CompatResolver(this.root, this.modulePrefix(), this.options, this.activeRules());
+    return new CompatResolver({
+      root: this.root,
+      modulePrefix: this.modulePrefix(),
+      options: this.options,
+      activePackageRules: this.activeRules(),
+      resolvableExtensions: this.resolvableExtensions(),
+    });
   }
 
   // unlike `templateResolver`, this one brings its own simple TemplateCompiler
@@ -229,7 +263,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   // rules.
   @Memoize()
   private internalTemplateResolver(): CompatResolver {
-    let resolver = new CompatResolver(this.root, this.modulePrefix(), this.options, this.activeRules());
+    let resolver = new CompatResolver({
+      root: this.root,
+      modulePrefix: this.modulePrefix(),
+      options: this.options,
+      activePackageRules: this.activeRules(),
+      resolvableExtensions: this.resolvableExtensions(),
+    });
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
     resolver.astTransformer(

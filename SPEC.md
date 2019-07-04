@@ -763,6 +763,19 @@ And then in an app that depends on `ember-lodash`, our Babel plugin will rewrite
 
 This is a backward compatibility feature and you should stop doing this. Exposing a module under some other package's name is Not Nice.
 
+## resolvable-extensions
+
+```
+Allowed in: apps
+Status: required
+```
+
+A list of file extensions that are considered resolvable as modules. In priority order. Example:
+
+```
+"resolvable-extensions": [".ts", ".js", ".hbs"]
+```
+
 ## root-url
 
 ```

@@ -14,6 +14,7 @@ export interface AppMeta {
     majorVersion: 6 | 7;
     fileFilter: string;
   };
+  'resolvable-extensions': string[];
   'root-url': string;
   'template-compiler': {
     filename: string;

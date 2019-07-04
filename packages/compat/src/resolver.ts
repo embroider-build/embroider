@@ -1,4 +1,4 @@
-import { Resolver, warn, TemplateCompiler, PackageCache, explicitRelative } from '@embroider/core';
+import { Resolver, warn, TemplateCompiler, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
 import {
   ComponentRules,
   PackageRules,
@@ -89,13 +89,16 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
   };
 }
 
-export function rehydrate(params: {
+interface RehydrationParams {
   root: string;
   modulePrefix: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
-}) {
-  return new CompatResolver(params.root, params.modulePrefix, params.options, params.activePackageRules);
+  resolvableExtensions: string[];
+}
+
+export function rehydrate(params: RehydrationParams) {
+  return new CompatResolver(params);
 }
 
 export default class CompatResolver implements Resolver {
@@ -103,24 +106,18 @@ export default class CompatResolver implements Resolver {
   private dependencies: Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
 
-  _parallelBabel: any;
+  _parallelBabel: {
+    requireFile: string;
+    buildUsing: string;
+    params: RehydrationParams;
+  };
 
-  constructor(
-    private root: string,
-    private modulePrefix: string,
-    options: ResolverOptions,
-    private activePackageRules: ActivePackageRules[]
-  ) {
-    this.options = extractOptions(options);
+  constructor(private params: RehydrationParams) {
+    this.options = extractOptions(params.options);
     this._parallelBabel = {
       requireFile: __filename,
       buildUsing: 'rehydrate',
-      params: {
-        root: root,
-        modulePrefix: modulePrefix,
-        options: this.options,
-        activePackageRules: activePackageRules,
-      },
+      params,
     };
   }
 
@@ -159,7 +156,7 @@ export default class CompatResolver implements Resolver {
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
-    for (let rule of this.activePackageRules) {
+    for (let rule of this.params.activePackageRules) {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
           if (componentRules.safeToIgnore) {
@@ -177,7 +174,7 @@ export default class CompatResolver implements Resolver {
           // those templates.
           if (componentRules.layout) {
             if (componentRules.layout.appPath) {
-              components.set(join(this.root, componentRules.layout.appPath), processedRules);
+              components.set(join(this.params.root, componentRules.layout.appPath), processedRules);
             } else if (componentRules.layout.addonPath) {
               for (let root of rule.roots) {
                 components.set(join(root, componentRules.layout.addonPath), processedRules);
@@ -264,7 +261,10 @@ export default class CompatResolver implements Resolver {
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
     let absPath;
     try {
-      absPath = resolve.sync(path, { basedir: dirname(from) });
+      absPath = resolve.sync(path, {
+        basedir: dirname(from),
+        extensions: this.params.resolvableExtensions,
+      });
     } catch (err) {
       return;
     }
@@ -276,66 +276,101 @@ export default class CompatResolver implements Resolver {
     }
   }
 
+  @Memoize()
+  private get resolvableExtensionsPattern() {
+    return extensionsPattern(this.params.resolvableExtensions);
+  }
+
   absPathToRuntimeName(absPath: string) {
     let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
       return join(pkg.name, relative(pkg.root, absPath))
-        .replace(/\.js$/, '')
+        .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
         .join('/');
-    } else if (absPath.startsWith(this.root)) {
-      return join(this.modulePrefix, relative(this.root, absPath))
-        .replace(/\.js$/, '')
+    } else if (absPath.startsWith(this.params.root)) {
+      return join(this.params.modulePrefix, relative(this.params.root, absPath))
+        .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
         .join('/');
     }
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
-    let absPath = join(this.root, 'helpers', path) + '.js';
-    if (pathExistsSync(absPath)) {
-      return {
-        type: 'helper',
-        modules: [
-          {
-            runtimeName: `${this.modulePrefix}/helpers/${path}`,
-            path: explicitRelative(dirname(from), absPath),
-            absPath,
-          },
-        ],
-      };
+    for (let extension of this.params.resolvableExtensions) {
+      let absPath = join(this.params.root, 'helpers', path) + extension;
+      if (pathExistsSync(absPath)) {
+        return {
+          type: 'helper',
+          modules: [
+            {
+              runtimeName: `${this.params.modulePrefix}/helpers/${path}`,
+              path: explicitRelative(dirname(from), absPath),
+              absPath,
+            },
+          ],
+        };
+      }
     }
     return null;
   }
 
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
-    let componentModules = [
-      // The order here is important! We always put our .hbs paths first here,
-      // so that if we have an hbs file of our own, that will be the first
-      // resolved dependency. The first resolved dependency is special because
-      // we use that as a key into the rules, and we want to be able to find our
-      // rules when checking from our own template (among other times).
-      {
-        runtimeName: `${this.modulePrefix}/templates/components/${path}`,
-        absPath: join(this.root, 'templates', 'components', path) + '.hbs',
-      },
-      {
-        runtimeName: `${this.modulePrefix}/components/${path}`,
-        absPath: join(this.root, 'components', path) + '.js',
-      },
-      {
-        runtimeName: `${this.modulePrefix}/templates/components/${path}`,
-        absPath: join(this.root, 'templates', 'components', path) + '.js',
-      },
-      {
-        runtimeName: `${this.modulePrefix}/components/${path}/template`,
-        absPath: join(this.root, 'components', path, 'template') + '.hbs',
-      },
-      {
-        runtimeName: `${this.modulePrefix}/components/${path}/component`,
-        absPath: join(this.root, 'components', path, 'component') + '.js',
-      },
-    ].filter(candidate => pathExistsSync(candidate.absPath));
+    // The order here is important! We always put our .hbs paths first here, so
+    // that if we have an hbs file of our own, that will be the first resolved
+    // dependency. The first resolved dependency is special because we use that
+    // as a key into the rules, and we want to be able to find our rules when
+    // checking from our own template (among other times).
+
+    let extensions = ['.hbs', ...this.params.resolvableExtensions.filter(e => e !== '.hbs')];
+
+    let componentModules = [];
+
+    // first, the various places our template might be
+    for (let extension of extensions) {
+      let absPath = join(this.params.root, 'templates', 'components', path) + extension;
+      if (pathExistsSync(absPath)) {
+        componentModules.push({
+          runtimeName: `${this.params.modulePrefix}/templates/components/${path}`,
+          absPath,
+        });
+        break;
+      }
+
+      absPath = join(this.params.root, 'components', path, 'template') + extension;
+      if (pathExistsSync(absPath)) {
+        componentModules.push({
+          runtimeName: `${this.params.modulePrefix}/components/${path}/template`,
+          absPath: join(this.params.root, 'components', path, 'template') + extension,
+        });
+        break;
+      }
+    }
+
+    // then the various places our javascript might be
+    for (let extension of extensions) {
+      if (extension === '.hbs') {
+        continue;
+      }
+
+      let absPath = join(this.params.root, 'components', path) + extension;
+      if (pathExistsSync(absPath)) {
+        componentModules.push({
+          runtimeName: `${this.params.modulePrefix}/components/${path}`,
+          absPath,
+        });
+        break;
+      }
+
+      absPath = join(this.params.root, 'components', path, 'component') + extension;
+      if (pathExistsSync(absPath)) {
+        componentModules.push({
+          runtimeName: `${this.params.modulePrefix}/components/${path}/component`,
+          absPath,
+        });
+        break;
+      }
+    }
 
     if (componentModules.length > 0) {
       let componentRules;
@@ -461,7 +496,7 @@ export default class CompatResolver implements Resolver {
         {
           type: 'error',
           hardFail: false,
-          message: `ignoring dynamic component ${path} in ${humanReadableFile(this.root, from)}`,
+          message: `ignoring dynamic component ${path} in ${humanReadableFile(this.params.root, from)}`,
         },
         from
       );
@@ -474,7 +509,7 @@ export default class CompatResolver implements Resolver {
       {
         type: 'error',
         hardFail: true,
-        message: `Missing component ${path} in ${humanReadableFile(this.root, from)}`,
+        message: `Missing component ${path} in ${humanReadableFile(this.params.root, from)}`,
       },
       from
     );
@@ -486,7 +521,7 @@ export default class CompatResolver implements Resolver {
         type: 'error',
         hardFail: false,
         message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(
-          this.root,
+          this.params.root,
           from
         )} is treated as a component, but the value you're passing is dynamic`,
       },

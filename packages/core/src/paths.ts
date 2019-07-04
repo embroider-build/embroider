@@ -20,3 +20,9 @@ export function explicitRelative(fromDir: string, toFile: string) {
   }
   return result;
 }
+
+// given a list like ['.js', '.ts'], return a regular expression for files ending
+// in those extensions.
+export function extensionsPattern(extensions: string[]): RegExp {
+  return new RegExp(`(${extensions.map(e => `${e.replace('.', '\\.')}`).join('|')})$`, 'i');
+}

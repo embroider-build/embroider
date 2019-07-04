@@ -50,6 +50,7 @@ interface State {
       [packageName: string]: string;
     };
     relocatedFiles: { [relativePath: string]: string };
+    resolvableExtensions: string[];
   };
 }
 
@@ -101,11 +102,13 @@ function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['
     if (candidate === specifier) {
       return replacement;
     }
-    if (candidate === specifier + '/index.js') {
-      return replacement;
-    }
-    if (candidate === specifier + '.js') {
-      return replacement;
+    for (let extension of opts.resolvableExtensions) {
+      if (candidate === specifier + '/index' + extension) {
+        return replacement;
+      }
+      if (candidate === specifier + extension) {
+        return replacement;
+      }
     }
   }
 

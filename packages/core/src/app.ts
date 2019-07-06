@@ -25,7 +25,7 @@ import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
-import { explicitRelative } from './paths';
+import { explicitRelative, extensionsPattern } from './paths';
 
 export type EmberENV = unknown;
 
@@ -40,8 +40,11 @@ export type EmberENV = unknown;
       because they opt into new authoring standards.
 */
 export interface AppAdapter<TreeNames> {
-  // the set of addon packages that are active.
-  readonly activeAddonDescendants: V2AddonPackage[];
+  // the set of all addon packages that are active (recursive)
+  readonly allActiveAddons: V2AddonPackage[];
+
+  // the set of active addons used by the app directly (not recursive)
+  readonly directActiveAddons: V2AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -80,6 +83,10 @@ export interface AppAdapter<TreeNames> {
   // Path to a build-time Resolver module to be used during template
   // compilation.
   templateResolver(): Resolver;
+
+  // the list of file extensions that should be considered resolvable as modules
+  // within this app. For example: ['.js', '.ts'].
+  resolvableExtensions(): string[];
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -139,9 +146,13 @@ class BuiltEmberAsset {
 
 class ConcatenatedAsset {
   kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(public relativePath: string, public sources: (OnDiskAsset | InMemoryAsset)[]) {}
+  constructor(
+    public relativePath: string,
+    public sources: (OnDiskAsset | InMemoryAsset)[],
+    private resolvableExtensions: RegExp
+  ) {}
   get sourcemapPath() {
-    return this.relativePath.replace(/\.js$/, '') + '.map';
+    return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
   }
 }
 
@@ -162,7 +173,7 @@ class AppFiles {
   readonly otherAppFiles: ReadonlyArray<string>;
   readonly relocatedFiles: Map<string, string>;
 
-  constructor(relativePaths: Map<string, string | null>) {
+  constructor(relativePaths: Map<string, string | null>, resolvableExtensions: RegExp) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
@@ -170,12 +181,12 @@ class AppFiles {
     this.perRoute = { children: new Map() };
     for (let relativePath of relativePaths.keys()) {
       relativePath = relativePath.split(sep).join('/');
-      if (!relativePath.endsWith('.js') && !relativePath.endsWith('.hbs')) {
+      if (!resolvableExtensions.test(relativePath)) {
         continue;
       }
 
       if (relativePath.startsWith('tests/')) {
-        if (relativePath.endsWith('-test.js')) {
+        if (/-test\.\w+$/.test(relativePath)) {
           tests.push(relativePath);
         }
         continue;
@@ -259,6 +270,11 @@ export class AppBuilder<TreeNames> {
     }
   }
 
+  @Memoize()
+  private get resolvableExtensionsPattern(): RegExp {
+    return extensionsPattern(this.adapter.resolvableExtensions());
+  }
+
   private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map(
       (sourcePath: string): OnDiskAsset => {
@@ -284,7 +300,7 @@ export class AppBuilder<TreeNames> {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result = [];
-    for (let addon of sortBy(this.adapter.activeAddonDescendants, this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         for (let mod of implicitScripts) {
@@ -331,18 +347,12 @@ export class AppBuilder<TreeNames> {
   }
 
   private adjustImportsPlugin(appFiles: AppFiles): PluginItem {
-    let renamePackages = Object.assign(
-      {},
-      ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-packages'])
-    );
+    let renamePackages = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-packages']));
 
-    let renameModules = Object.assign(
-      {},
-      ...this.adapter.activeAddonDescendants.map(dep => dep.meta['renamed-modules'])
-    );
+    let renameModules = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
     let activeAddons: AdjustImportsOptions['activeAddons'] = {};
-    for (let addon of this.adapter.activeAddonDescendants) {
+    for (let addon of this.adapter.allActiveAddons) {
       activeAddons[addon.name] = addon.root;
     }
 
@@ -361,6 +371,7 @@ export class AppBuilder<TreeNames> {
       renamePackages,
       extraImports: this.adapter.extraImports(),
       relocatedFiles,
+      resolvableExtensions: this.adapter.resolvableExtensions(),
 
       // it's important that this is a persistent location, because we fill it
       // up as a side-effect of babel transpilation, and babel is subject to
@@ -389,14 +400,14 @@ export class AppBuilder<TreeNames> {
 
     let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
     if (implicitScripts.length > 0) {
-      let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts);
+      let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
       prepared.set(vendorJS.relativePath, vendorJS);
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
 
     let implicitStyles = this.impliedAssets('implicit-styles');
     if (implicitStyles.length > 0) {
-      let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles);
+      let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
       prepared.set(vendorCSS.relativePath, vendorCSS);
       html.insertStyleLink(html.implicitStyles, vendorCSS.relativePath);
     }
@@ -411,14 +422,22 @@ export class AppBuilder<TreeNames> {
 
       let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
       if (implicitTestScripts.length > 0) {
-        let testSupportJS = new ConcatenatedAsset('assets/test-support.js', implicitTestScripts);
+        let testSupportJS = new ConcatenatedAsset(
+          'assets/test-support.js',
+          implicitTestScripts,
+          this.resolvableExtensionsPattern
+        );
         prepared.set(testSupportJS.relativePath, testSupportJS);
         html.insertScriptTag(html.implicitTestScripts, testSupportJS.relativePath);
       }
 
       let implicitTestStyles = this.impliedAssets('implicit-test-styles');
       if (implicitTestStyles.length > 0) {
-        let testSupportCSS = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles);
+        let testSupportCSS = new ConcatenatedAsset(
+          'assets/test-support.css',
+          implicitTestStyles,
+          this.resolvableExtensionsPattern
+        );
         prepared.set(testSupportCSS.relativePath, testSupportCSS);
         html.insertStyleLink(html.implicitTestStyles, testSupportCSS.relativePath);
       }
@@ -429,10 +448,10 @@ export class AppBuilder<TreeNames> {
 
   private updateAppJS(appJSPath: string): AppFiles {
     if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.activeAddonDescendants);
+      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.allActiveAddons);
     }
     this.appDiffer.update();
-    return new AppFiles(this.appDiffer.files);
+    return new AppFiles(this.appDiffer.files, this.resolvableExtensionsPattern);
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
@@ -567,7 +586,7 @@ export class AppBuilder<TreeNames> {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.adapter.activeAddonDescendants) {
+    for (let pkg of this.adapter.allActiveAddons) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
           assets.push({
@@ -619,6 +638,7 @@ export class AppBuilder<TreeNames> {
         majorVersion: this.adapter.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
+      'resolvable-extensions': this.adapter.resolvableExtensions(),
       'root-url': this.adapter.rootURL(),
     };
 
@@ -821,7 +841,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private importPaths(appRelativePath: string, fromFile: string) {
-    let noJS = appRelativePath.replace(/\.js$/, '');
+    let noJS = appRelativePath.replace(this.resolvableExtensionsPattern, '');
     let noHBS = noJS.replace(/\.hbs$/, '');
     return {
       runtime: `${this.modulePrefix}/${noHBS}`,
@@ -877,7 +897,7 @@ export class AppBuilder<TreeNames> {
     section: 'implicit-modules' | 'implicit-test-modules',
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
-    for (let addon of this.adapter.activeAddonDescendants) {
+    for (let addon of this.adapter.allActiveAddons) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         for (let name of implicitModules) {

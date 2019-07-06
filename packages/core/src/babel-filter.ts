@@ -4,7 +4,7 @@ import semver from 'semver';
 
 export default function babelFilter(skipBabel: Required<Options>['skipBabel']) {
   return function shouldTranspileFile(filename: string) {
-    if (!isJS(filename)) {
+    if (!babelCanHandle(filename)) {
       // quick exit for non JS extensions
       return false;
     }
@@ -26,6 +26,10 @@ export default function babelFilter(skipBabel: Required<Options>['skipBabel']) {
   };
 }
 
-function isJS(filename: string) {
-  return /\.js$/i.test(filename);
+function babelCanHandle(filename: string) {
+  // we can handle .js and .ts files with babel. If typescript is enabled, .ts
+  // files become resolvable and stage3 will be asking us if they should get
+  // transpiled and the answer is yes. If typescript is not enbled, they will
+  // not be resolvable, so stage3 won't ask us about them.
+  return /\.[jt]s$/i.test(filename);
 }

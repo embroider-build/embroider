@@ -20,14 +20,15 @@ QUnit.module('compat-resolver', function(hooks) {
     let EmberENV = {};
     let plugins = { ast: [] };
     appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
-    let resolver = new Resolver(
-      appDir,
-      'the-app',
-      optionsWithDefaults(options),
-      optionsWithDefaults(options).packageRules.map(rule => {
+    let resolver = new Resolver({
+      root: appDir,
+      modulePrefix: 'the-app',
+      options: optionsWithDefaults(options),
+      activePackageRules: optionsWithDefaults(options).packageRules.map(rule => {
         return Object.assign({ roots: [appDir] }, rule);
-      })
-    );
+      }),
+      resolvableExtensions: ['.js', '.hbs'],
+    });
     let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function(relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);

@@ -143,12 +143,10 @@ class HTMLEntrypoint {
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
-  templateCompiler: {
-    filename: string;
-    isParallelSafe: boolean;
-  };
+  templateCompiler: AppMeta['template-compiler'];
   babel: AppMeta['babel'];
-  rootURL: string;
+  rootURL: AppMeta['root-url'];
+  resolvableExtensions: AppMeta['resolvable-extensions'];
 }
 
 // AppInfos are equal if they result in the same webpack config.
@@ -210,12 +208,20 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];
-    return { entrypoints, otherAssets, templateCompiler, babel, rootURL };
+    let resolvableExtensions = meta['resolvable-extensions'];
+
+    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions };
   }
 
   private mode: 'production' | 'development' = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
 
-  private configureWebpack({ entrypoints, templateCompiler, babel, rootURL }: AppInfo): Configuration {
+  private configureWebpack({
+    entrypoints,
+    templateCompiler,
+    babel,
+    rootURL,
+    resolvableExtensions,
+  }: AppInfo): Configuration {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -280,6 +286,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         splitChunks: {
           chunks: 'all',
         },
+      },
+      resolve: {
+        extensions: resolvableExtensions,
       },
       resolveLoader: {
         alias: {

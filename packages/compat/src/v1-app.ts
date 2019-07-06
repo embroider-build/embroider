@@ -215,6 +215,7 @@ export default class V1App implements V1Package {
 
   @Memoize()
   babelConfig(): TransformOptions {
+    // this finds all the built-in babel configuration that comes with ember-cli-babel
     const babelAddon = (this.app.project as any).findAddonByName('ember-cli-babel');
     const babelConfig = babelAddon.buildBabelOptions({
       'ember-cli-babel': {
@@ -229,6 +230,19 @@ export default class V1App implements V1Package {
 
     let plugins = babelConfig.plugins as any[];
     let presets = babelConfig.presets;
+
+    // this finds any custom babel configuration that's on the app (either
+    // because the app author explicitly added some, or because addons have
+    // pushed plugins into it).
+    let appBabel = this.app.options.babel;
+    if (appBabel) {
+      if (appBabel.plugins) {
+        plugins = plugins.concat(appBabel.plugins);
+      }
+      if (appBabel.presets) {
+        presets = presets.concat(appBabel.presets);
+      }
+    }
 
     plugins = plugins.filter(p => {
       // even if the app was using @embroider/macros, we drop it from the config

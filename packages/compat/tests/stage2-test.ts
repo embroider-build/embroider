@@ -13,6 +13,7 @@ QUnit.module('stage2 build', function() {
 
     hooks.before(async function(assert) {
       let app = Project.emberNew();
+      app.linkPackage('@embroider/sample-transforms');
       (app.files.app as Project['files']).templates = {
         'index.hbs': `
           <HelloWorld @useDynamic="first-choice" />
@@ -41,6 +42,10 @@ QUnit.module('stage2 build', function() {
 
       (app.files.app as Project['files'])['use-deep-addon.js'] = `
       import thing from 'deep-addon';
+      `;
+
+      (app.files.app as Project['files'])['custom-babel-needed.js'] = `
+        console.log('embroider-sample-transforms-target');
       `;
 
       let addon = app.addAddon('my-addon');
@@ -290,6 +295,11 @@ QUnit.module('stage2 build', function() {
 
     test('transpilation runs for non-ember package that is not explicitly skipped', async function(assert) {
       assert.ok(build.shouldTranspile(assert.file('node_modules/babel-filter-test4/index.js')));
+    });
+
+    test(`app's babel plugins ran`, async function(assert) {
+      let assertFile = assert.file('custom-babel-needed.js').transform(build.transpile);
+      assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
     });
   });
 });

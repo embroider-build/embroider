@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## master
+
+- COMPAT: added a compatAdapter for ember-svg-jar
+- ENHANCEMENT: apps that use ember-cli-typescript are now supported
+- BUGFIX: respect the app's custom babel config (this was a regression)
+- COMPAT: try to match ember-cli's file-smooshing priority more closely when an addon is consumed multiple times
+- BUGFIX: don't mess with bare `require` in non-Ember packages.
+- COMPAT: adjust compatibility adapter for ember-data 3.11
+- BUGFIX: correctly handled a renamed module inside a renamed package by @stefanpenner
+- ENHANCEMENT: implement the outputFile option to app.import, by @stefanpenner
+- BUGFIX: windows path handling by @lifeart
+- ENHANCEMENT: skip the OneShot optimization on broccoli versions that don't need it, by @thoov
+- BUGFIX: error message formatting on windows by @lifeart
+- BUGFIX: don't leak the full filesystem path in compiled templates, by @lifeart
+- BUGFIX: support a blank pod prefix by @lifeart
+- BUGFIX: ignore new built-in angle-bracket components: Input, LinkTo, TextArea. By @cyk.
+- HOUSEKEEPING: module name cleanup by @lifeart
+- ENHANCEMENT: allow unresolved style by @lifeart
+- HOUSEKEEPING: upgrade macro test fixtures by @stefanpenner
+- ENHANCEMENT: invoke ember-cli-babel to get its latest default babel config, by @stefanpenner
+
 ## v0.4.3
 
 - BUGFIX: nested files were missing from previous published packages

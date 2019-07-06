@@ -124,7 +124,7 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
   let template = arg.value;
   if (state.opts.stage === 1) {
     let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
-    path.get('arguments')[0].replaceWith(stringLiteral(compiled));
+    (path.get('arguments')[0] as NodePath).replaceWith(stringLiteral(compiled));
   } else {
     let { compiled, dependencies } = compiler(state.opts).precompile(state.file.opts.filename, template);
     for (let dep of dependencies) {

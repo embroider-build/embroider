@@ -345,7 +345,7 @@ export default class V1Addon implements V1Package {
   }
 
   get v2Tree() {
-    return mergeTrees(this.v2Trees);
+    return mergeTrees(this.v2Trees, { overwrite: true });
   }
 
   // this is split out so that compatibility shims can override it to add more
@@ -418,16 +418,7 @@ export default class V1Addon implements V1Package {
         tree = result.tree;
         built.dynamicMeta.push(result.getMeta);
 
-        tree = this.transpile(tree);
-
-        // Stock ember-cli would ignore files other than these types. And addons
-        // do emit other weird stuff (generally by accident). So we filter down
-        // to prevent collisions with other important things (like the
-        // package.json). Any other types should already have been preprocessed
-        // away by `this.transpile()` above.
-        return new Funnel(tree, {
-          include: ['**/*.js', '**/*.hbs', '**/*.css'],
-        });
+        return this.transpile(tree);
       }
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon'));

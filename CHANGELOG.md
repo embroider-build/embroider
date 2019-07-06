@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.5.1
+
+- COMPAT: tolerate addons that overwrite their own files
+
 ## 0.5.0
 
 - COMPAT: added a compatAdapter for ember-svg-jar

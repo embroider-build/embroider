@@ -3978,6 +3978,11 @@ buffer@^4.3.0:
     ieee754 "^1.1.4"
     isarray "^1.0.0"
 
+builtin-modules@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-2.0.0.tgz#60b7ef5ae6546bd7deefa74b08b62a43a232648e"
+  integrity sha512-3U5kUA5VPsRUA3nofm/BXX7GVHKfxz0hOBAPxXrIvHzlDRkQVqEn6yi8QJegxl4LzOHLdvb7XF5dVawa/VVYBg==
+
 builtin-modules@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-3.1.0.tgz#aad97c15131eb76b65b50ef208e7584cd76a7484"
@@ -4830,6 +4835,15 @@ cross-spawn@^3.0.0:
     lru-cache "^4.0.1"
     which "^1.2.9"
 
+cross-spawn@^5.0.1:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.1.0.tgz#e8bd0efee58fcff6f8f94510a0a554bbfa235449"
+  integrity sha1-6L0O/uWPz/b4+UUQoKVUu/ojVEk=
+  dependencies:
+    lru-cache "^4.0.1"
+    shebang-command "^1.2.0"
+    which "^1.2.9"
+
 cross-spawn@^6.0.0, cross-spawn@^6.0.5:
   version "6.0.5"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-6.0.5.tgz#4a5ec7c64dfae22c3a14124dbacdee846d80cbc4"
@@ -5537,6 +5551,24 @@ ember-cli-broccoli-sane-watcher@^3.0.0:
     heimdalljs-logger "^0.1.7"
     rsvp "^3.0.18"
     sane "^4.0.0"
+
+ember-cli-cjs-transform@^1.3.0:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/ember-cli-cjs-transform/-/ember-cli-cjs-transform-1.3.1.tgz#ae8c0da709ec3c02311b0afbb3a5974abbac3707"
+  integrity sha512-ZN21Me25DtuK5O9H8ilTE0kuZ1WbNzXQ2gI4ZYBPc49YckDaPSC3PELl0s7k9+TsdUpNtBZ92jW12ghWD77YLg==
+  dependencies:
+    broccoli-debug "^0.6.4"
+    broccoli-plugin "^1.3.0"
+    ember-cli-babel "^6.6.0"
+    fs-extra "^5.0.0"
+    hash-for-dep "^1.2.3"
+    pkg-dir "^2.0.0"
+    resolve "^1.7.1"
+    rollup "^0.59.0"
+    rollup-plugin-commonjs "^9.1.0"
+    rollup-plugin-node-resolve "^3.3.0"
+    sync-disk-cache "^1.3.3"
+    username "^3.0.0"
 
 ember-cli-dependency-checker@^3.1.0:
   version "3.2.0"
@@ -6719,6 +6751,19 @@ exec-sh@^0.3.2:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/exec-sh/-/exec-sh-0.3.2.tgz#6738de2eb7c8e671d0366aea0b0db8c6f7d7391b"
   integrity sha512-9sLAvzhI5nc8TpuQUh4ahMdCrWT00wPWz7j47/emR5+2qEfoZP5zzUXvx+vdx+H6ohhnsYC31iX04QLYJK8zTg==
+
+execa@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/execa/-/execa-0.7.0.tgz#944becd34cc41ee32a63a9faf27ad5a65fc59777"
+  integrity sha1-lEvs00zEHuMqY6n68nrVpl/Fl3c=
+  dependencies:
+    cross-spawn "^5.0.1"
+    get-stream "^3.0.0"
+    is-stream "^1.1.0"
+    npm-run-path "^2.0.0"
+    p-finally "^1.0.0"
+    signal-exit "^3.0.0"
+    strip-eof "^1.0.0"
 
 execa@^1.0.0:
   version "1.0.0"
@@ -7928,6 +7973,16 @@ heimdalljs@^0.3.0:
   integrity sha1-6S0sb3f9RtW/ULYQ0orTF1UFTQs=
   dependencies:
     rsvp "~3.2.1"
+
+highcharts@^7.0.0:
+  version "7.1.2"
+  resolved "https://registry.yarnpkg.com/highcharts/-/highcharts-7.1.2.tgz#f337e75cf0614f58f87fb28fbab48e1096265b5d"
+  integrity sha512-diSTVxWKefQzShi22gaV63pdrIFlQAsTGe3f328Ur7cqBoYFvHMtiMP+q+VOFdM2mdGVtlUR0QQSxj62LLsPpg==
+
+highlight.js@^9.13.1:
+  version "9.15.8"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-9.15.8.tgz#f344fda123f36f1a65490e932cf90569e4999971"
+  integrity sha512-RrapkKQWwE+wKdF73VsOa2RQdIoO3mxwJ4P8mhbI6KYJUraUHRKM5w5zQQKXNk0xNL4UVRdulV9SBJcmzJNzVA==
 
 hmac-drbg@^1.0.0:
   version "1.0.1"
@@ -10013,6 +10068,13 @@ media-typer@0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/media-typer/-/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
   integrity sha1-hxDXrwqmJvj/+hzgAWhUUmMlV0g=
+
+mem@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/mem/-/mem-1.1.0.tgz#5edd52b485ca1d900fe64895505399a0dfa45f76"
+  integrity sha1-Xt1StIXKHZAP5kiVUFOZoN+kX3Y=
+  dependencies:
+    mimic-fn "^1.0.0"
 
 mem@^4.0.0:
   version "4.2.0"
@@ -12197,7 +12259,7 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rollup-plugin-commonjs@^9.2.0:
+rollup-plugin-commonjs@^9.1.0, rollup-plugin-commonjs@^9.2.0:
   version "9.3.4"
   resolved "https://registry.yarnpkg.com/rollup-plugin-commonjs/-/rollup-plugin-commonjs-9.3.4.tgz#2b3dddbbbded83d45c36ff101cdd29e924fd23bc"
   integrity sha512-DTZOvRoiVIHHLFBCL4pFxOaJt8pagxsVldEXBOn6wl3/V21wVaj17HFfyzTsQUuou3sZL3lEJZVWKPFblJfI6w==
@@ -12206,6 +12268,15 @@ rollup-plugin-commonjs@^9.2.0:
     magic-string "^0.25.2"
     resolve "^1.10.0"
     rollup-pluginutils "^2.6.0"
+
+rollup-plugin-node-resolve@^3.3.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-node-resolve/-/rollup-plugin-node-resolve-3.4.0.tgz#908585eda12e393caac7498715a01e08606abc89"
+  integrity sha512-PJcd85dxfSBWih84ozRtBkB731OjXk0KnzN0oGp7WOWcarAFkVa71cV5hTJg2qpVsV2U8EUwrzHP3tvy9vS3qg==
+  dependencies:
+    builtin-modules "^2.0.0"
+    is-module "^1.0.0"
+    resolve "^1.1.6"
 
 rollup-plugin-node-resolve@^4.0.0:
   version "4.2.4"
@@ -12248,6 +12319,14 @@ rollup@^0.57.1:
     rollup-pluginutils "^2.0.1"
     signal-exit "^3.0.2"
     sourcemap-codec "^1.4.1"
+
+rollup@^0.59.0:
+  version "0.59.4"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.59.4.tgz#6f80f7017c22667ff1bf3e62adf8624a44cc44aa"
+  integrity sha512-ISiMqq/aJa+57QxX2MRcvLESHdJ7wSavmr6U1euMr+6UgFe6KM+3QANrYy8LQofwhTC1I7BcAdlLnDiaODs1BA==
+  dependencies:
+    "@types/estree" "0.0.39"
+    "@types/node" "*"
 
 rsvp@^3.0.14, rsvp@^3.0.17, rsvp@^3.0.18, rsvp@^3.0.21, rsvp@^3.0.6, rsvp@^3.1.0, rsvp@^3.2.1, rsvp@^3.3.3, rsvp@^3.5.0:
   version "3.6.2"
@@ -13782,6 +13861,14 @@ username-sync@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/username-sync/-/username-sync-1.0.2.tgz#0a3697909fb7b5768d29e2921f573acfdd427592"
   integrity sha512-ayNkOJdoNSGNDBE46Nkc+l6IXmeugbzahZLSMkwvgRWv5y5ZqNY2IrzcgmkR4z32sj1W3tM3TuTUMqkqBzO+RA==
+
+username@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/username/-/username-3.0.0.tgz#b3dba982a72b4ce59d52f159fa1aeba266af5fc8"
+  integrity sha1-s9upgqcrTOWdUvFZ+hrromavX8g=
+  dependencies:
+    execa "^0.7.0"
+    mem "^1.1.0"
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"

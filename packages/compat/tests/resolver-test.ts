@@ -552,6 +552,33 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
+  test('ignores dot-rule curly component invocation, inline', function(assert) {
+    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+    assert.deepEqual(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{thing.body x=1}}
+        `
+      ),
+      []
+    );
+  });
+
+  test('ignores dot-rule curly component invocation, block', function(assert) {
+    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+    assert.deepEqual(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#thing.body}}
+        {{/thing.body}}
+        `
+      ),
+      []
+    );
+  });
+
   test('respects yieldsSafeComponents rule, position 0', function(assert) {
     assert.expect(0);
     let packageRules = [

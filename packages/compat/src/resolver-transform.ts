@@ -27,6 +27,13 @@ export function makeResolverTransform(resolver: Resolver) {
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
+          if (node.path.parts.length > 1) {
+            // paths with a dot in them (which therefore split into more than
+            // one "part") are classically understood by ember to be contextual
+            // components, which means there's nothing to resolve at this
+            // location.
+            return;
+          }
           if (node.path.original === 'component' && node.params.length > 0) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
@@ -64,6 +71,13 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.parts.length > 1) {
+            // paths with a dot in them (which therefore split into more than
+            // one "part") are classically understood by ember to be contextual
+            // components, which means there's nothing to resolve at this
+            // location.
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {

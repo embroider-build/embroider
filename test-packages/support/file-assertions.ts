@@ -149,10 +149,10 @@ export class JSONAssert {
     private assert: Assert,
     private path: string,
     private readUpstream: () => JSONResult,
-    private propertyPath?: string
+    private propertyPath?: string | string[]
   ) {}
 
-  get(propertyPath: string) {
+  get(propertyPath: string | string[]) {
     return new JSONAssert(this.assert, this.path, () => this.contents, propertyPath);
   }
 

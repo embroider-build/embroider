@@ -40,6 +40,7 @@ interface EmberApp {
   registry: any;
   testIndex(): Tree;
   getLintTests(): Tree;
+  otherAssetPaths: any[];
 }
 
 interface Group {
@@ -394,7 +395,14 @@ export default class V1App implements V1Package {
       }
     }
 
+    this.addOtherAssets();
     return mergeTrees([tree, ...concatentations], { overwrite: true });
+  }
+
+  addOtherAssets() {
+    for (let asset of this.app.otherAssetPaths) {
+      this._publicAssets[`${asset.src}/${asset.file}`] = `${asset.dest}/${asset.file}`;
+    }
   }
 
   private addNodeAssets(inputTree: Tree): Tree {

@@ -395,14 +395,14 @@ export default class V1App implements V1Package {
       }
     }
 
+    this.addOtherAssets();
     return mergeTrees([tree, ...concatentations], { overwrite: true });
   }
 
-  addOtherAssets(inputTree: Tree): Tree {
+  addOtherAssets() {
     for (let asset of this.app.otherAssetPaths) {
       this._publicAssets[`${asset.src}/${asset.file}`] = `${asset.dest}/${asset.file}`;
     }
-    return inputTree;
   }
 
   private addNodeAssets(inputTree: Tree): Tree {
@@ -435,7 +435,7 @@ export default class V1App implements V1Package {
   }
 
   synthesizeVendorPackage(addonTrees: Tree[]): Tree {
-    return this.applyCustomTransforms(this.addOtherAssets(this.addNodeAssets(this.combinedVendor(addonTrees))));
+    return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
   }
 
   private combinedStyles(addonTrees: Tree[]): Tree {

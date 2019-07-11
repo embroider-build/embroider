@@ -25,6 +25,16 @@ module('Acceptance | smoke tests', function(hooks) {
   });
 
   test('/ordered.js is ordered correctly', function(assert) {
-    assert.deepEqual(self.ORDER, ['FOUR', 'TWO', 'THREE', 'ONE']);
+    assert.deepEqual(self.ORDER, [
+      // these come via app.import(name, { prepend: true });
+      // which ultimately end up in vendor.js
+      // and vendor.js is loaded first
+      'prepend/four', 'prepend/three', 'prepend/two', 'prepend/one',
+
+      // these come via app.import(name, { outputFile:  'ordered.js' });
+      // so they will end up in ordered.js
+      // and ordered.js is loaded after vendor.js
+      'FOUR', 'TWO', 'THREE', 'ONE'
+    ]);
   });
 });

@@ -39,6 +39,11 @@ module.exports = function(defaults) {
   app.import('vendor/three.js', { outputFile: 'ordered.js' });
   app.import('vendor/one.js', { outputFile: 'ordered.js' });
 
+  app.import('vendor/prepend/one.js', { prepend: true });
+  app.import('vendor/prepend/two.js', { prepend: true });
+  app.import('vendor/prepend/three.js', { prepend: true });
+  app.import('vendor/prepend/four.js', { prepend: true });
+
   if (process.env.CLASSIC) {
     return app.toTree();
   }

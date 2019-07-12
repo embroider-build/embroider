@@ -104,7 +104,6 @@ export function rehydrate(params: RehydrationParams) {
 }
 
 export default class CompatResolver implements Resolver {
-  private options: ResolverOptions;
   private dependencies: Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
 
@@ -115,7 +114,7 @@ export default class CompatResolver implements Resolver {
   };
 
   constructor(private params: RehydrationParams) {
-    this.options = extractOptions(params.options);
+    this.params.options = extractOptions(this.params.options);
     this._parallelBabel = {
       requireFile: __filename,
       buildUsing: 'rehydrate',
@@ -233,7 +232,7 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
     this.templateCompiler = templateCompiler;
-    if (this.options.staticComponents || this.options.staticHelpers) {
+    if (this.params.options.staticComponents || this.params.options.staticHelpers) {
       return makeResolverTransform(this);
     }
   }
@@ -396,7 +395,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveSubExpression(path: string, from: string): Resolution | null {
-    if (!this.options.staticHelpers) {
+    if (!this.params.options.staticHelpers) {
       return null;
     }
     let found = this.tryHelper(path, from);
@@ -417,13 +416,13 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null {
-    if (this.options.staticHelpers) {
+    if (this.params.options.staticHelpers) {
       let found = this.tryHelper(path, from);
       if (found) {
         return this.add(found, from);
       }
     }
-    if (this.options.staticComponents) {
+    if (this.params.options.staticComponents) {
       let found = this.tryComponent(path, from);
       if (found) {
         return this.add(found, from);
@@ -431,8 +430,8 @@ export default class CompatResolver implements Resolver {
     }
     if (
       hasArgs &&
-      this.options.staticComponents &&
-      this.options.staticHelpers &&
+      this.params.options.staticComponents &&
+      this.params.options.staticHelpers &&
       !builtInHelpers.includes(path) &&
       !this.isIgnoredComponent(path)
     ) {
@@ -450,7 +449,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveElement(tagName: string, from: string): Resolution | null {
-    if (!this.options.staticComponents) {
+    if (!this.params.options.staticComponents) {
       return null;
     }
 
@@ -486,7 +485,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null {
-    if (!this.options.staticComponents) {
+    if (!this.params.options.staticComponents) {
       return null;
     }
     if (!isLiteral) {

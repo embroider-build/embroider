@@ -23,6 +23,7 @@ import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
 import modulesCompat from './modules-compat';
+import writeFile from 'broccoli-file-creator';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -647,6 +648,16 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  private buildEngineConfig(built: IntermediateBuild) {
+    if (typeof this.addonInstance.getEngineConfigContents !== 'function') {
+      return;
+    }
+
+    // this addon is an engine, so it needs its own config/environment.js
+    let configTree = writeFile('config/environment.js', this.addonInstance.getEngineConfigContents());
+    built.trees.push(configTree);
+  }
+
   @Memoize()
   private build(): IntermediateBuild {
     let built = new IntermediateBuild();
@@ -669,6 +680,7 @@ export default class V1Addon implements V1Package {
     this.buildTreeForApp(built);
     this.buildPublicTree(built);
     this.buildVendorTree(built);
+    this.buildEngineConfig(built);
 
     return built;
   }

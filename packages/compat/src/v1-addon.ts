@@ -617,11 +617,12 @@ export default class V1Addon implements V1Package {
     }
     if (publicTree) {
       let publicAssets: { [filename: string]: string } = {};
+      let destPrefix = this.isLazyEngine() ? `engines-dist/${this.name}/` : '';
       publicTree = new ObserveTree(publicTree, (outputPath: string) => {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {
-            publicAssets[`public/${filename}`] = filename;
+            publicAssets[`public/${filename}`] = `${destPrefix}${filename}`;
           }
         }
       });
@@ -648,8 +649,16 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  private isEngine(): boolean {
+    return typeof this.addonInstance.getEngineConfigContents === 'function';
+  }
+
+  private isLazyEngine(): boolean {
+    return this.isEngine() && this.addonInstance.lazyLoading && this.addonInstance.lazyLoading.enabled;
+  }
+
   private buildEngineConfig(built: IntermediateBuild) {
-    if (typeof this.addonInstance.getEngineConfigContents !== 'function') {
+    if (!this.isEngine()) {
       return;
     }
 

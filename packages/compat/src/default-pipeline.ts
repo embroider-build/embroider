@@ -4,6 +4,7 @@ import { Tree } from 'broccoli-plugin';
 
 interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
+  onOutputPath?: (outputPath: string) => void;
 }
 
 export default function defaultPipeline<PackagerOptions>(
@@ -23,7 +24,11 @@ export default function defaultPipeline<PackagerOptions>(
     }
     addons = new CompatAddons(emberApp, options);
     addons.ready().then(result => {
-      console.log(`Building into ${result.outputPath}`);
+      if (options && options.onOutputPath) {
+        options.onOutputPath(result.outputPath);
+      } else {
+        console.log(`Building into ${result.outputPath}`);
+      }
     });
   }
 

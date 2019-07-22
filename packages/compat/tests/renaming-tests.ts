@@ -1,5 +1,5 @@
 import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, installFileAssertions, definesPattern } from '@embroider/test-support';
 
 import { throwOnWarnings } from '@embroider/core';
 
@@ -153,6 +153,15 @@ QUnit.module('renaming tests', function(origHooks) {
     let assertFile = assert.file('components/import-somebody-elses-utils-index-explicit.js').transform(build.transpile);
     assertFile.matches(
       /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
+    );
+  });
+  test('renamed modules keep their classic runtime name when used as implicit-modules', function(assert) {
+    let assertFile = assert.file('assets/my-app.js').transform(build.transpile);
+    assertFile.matches(
+      definesPattern(
+        'somebody-elses-package/environment',
+        '../node_modules/emits-multiple-packages/somebody-elses-package/environment'
+      )
     );
   });
   test('rewriting one modules does not capture entire package namespace', function(assert) {

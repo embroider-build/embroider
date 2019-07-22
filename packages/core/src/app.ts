@@ -720,7 +720,7 @@ export class AppBuilder<TreeNames> {
   ) {
     let shouldSplit = routeName && this.shouldSplitRoute(routeName);
     let ownFiles = [];
-    let ownNames = new Set();
+    let ownNames = new Set() as Set<string>;
 
     if (files.template) {
       if (shouldSplit) {

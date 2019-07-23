@@ -1,5 +1,6 @@
 import TemplateCompiler, { rehydrate } from '../src/template-compiler';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { Resolver } from '../src';
 
 const compilerPath = emberTemplateCompilerPath();
 
@@ -9,12 +10,25 @@ function run(moduleCode: string): any {
   return module.exports;
 }
 
+export function fakeResolver() {
+  return new FakeResolver();
+}
+
+class FakeResolver {
+  _parallelBabel = {
+    requireFile: __filename,
+    buildUsing: 'fakeResolver',
+  };
+}
+
 describe('portable-template-config', () => {
   let compiler: TemplateCompiler;
   beforeEach(() => {
+    let resolver = new FakeResolver();
     compiler = new TemplateCompiler({
       compilerPath,
       EmberENV: {},
+      resolver: (resolver as unknown) as Resolver,
       plugins: {
         ast: [
           function() {
@@ -23,6 +37,10 @@ describe('portable-template-config', () => {
         ],
       },
     });
+    // This adds circularity to the template compiler's params. It doesn't add
+    // circularity to the portableParams because FakeResolver knows how to
+    // serialize itself via _parallelBabel.
+    (resolver as any).compiler = compiler;
   });
 
   test('passthrough', () => {

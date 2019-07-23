@@ -144,8 +144,9 @@ class PortableTemplateCompilerConfig extends PortablePluginConfig {
 export default class TemplateCompiler {
   private userPluginsCount = 0;
   private portableParams: object;
+  private params: SetupCompilerParams;
 
-  constructor(private params: SetupCompilerParams) {
+  constructor(params: SetupCompilerParams) {
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
@@ -156,6 +157,11 @@ export default class TemplateCompiler {
       get() {
         return this.portableConfig.portable;
       },
+    });
+
+    this.params = params;
+    Object.defineProperty(this, 'params', {
+      enumerable: false,
     });
   }
 

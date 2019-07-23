@@ -37,7 +37,6 @@ interface HTMLBarsParallelPlaceholder {
 type Placeholder = GlobalPlaceholder | BroccoliParallelPlaceholder | HTMLBarsParallelPlaceholder;
 
 export class PortablePluginConfig {
-  protected basedir: string | undefined;
   protected here = __filename;
 
   private parallelSafeFlag = true;

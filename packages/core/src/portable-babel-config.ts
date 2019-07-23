@@ -6,6 +6,7 @@ export type ResolveOptions = { basedir: string } | { resolve: (name: string) => 
 
 export default class PortableBabelConfig extends PortablePluginConfig {
   private resolve: (name: string) => any;
+  private basedir: string | undefined;
 
   constructor(config: TransformOptions, resolveOptions: ResolveOptions) {
     super(config);

@@ -50,7 +50,7 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
   runtimeName = escapeRegExp(runtimeName);
   buildTimeName = escapeRegExp(buildTimeName);
   return new RegExp(
-    `d\\(['"]${runtimeName}['"], *function *\\(\\) *\\{[\\s\\n]*return require\\(['"]${buildTimeName}['"]\\)\\.default;?[\\s\\n]*\\}\\)`
+    `d\\(['"]${runtimeName}['"], *function *\\(\\) *\\{[\\s\\n]*return require\\(['"]${buildTimeName}['"]\\);?[\\s\\n]*\\}\\)`
   );
 }
 

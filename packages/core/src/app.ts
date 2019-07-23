@@ -923,7 +923,7 @@ let w = window;
 let d = w.define;
 
 {{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
+  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
 {{#each eagerModules as |eagerModule| ~}}
@@ -975,7 +975,7 @@ const routeEntryTemplate = compile(`
 import { importSync as i } from '@embroider/macros';
 let d = window.define;
 {{#each files as |amdModule| ~}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
+d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 `) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
 

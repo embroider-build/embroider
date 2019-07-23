@@ -3,6 +3,7 @@ import 'qunit';
 import 'jest';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
+import escapeRegExp from 'lodash/escapeRegExp';
 
 export function runDefault(code: string): any {
   let cjsCode = transform7(code, {
@@ -43,6 +44,14 @@ export function allBabelVersions(params: {
 
 export function emberTemplateCompilerPath() {
   return join(__dirname, 'vendor', 'ember-template-compiler.js');
+}
+
+export function definesPattern(runtimeName: string, buildTimeName: string): RegExp {
+  runtimeName = escapeRegExp(runtimeName);
+  buildTimeName = escapeRegExp(buildTimeName);
+  return new RegExp(
+    `d\\(['"]${runtimeName}['"], *function *\\(\\) *\\{[\\s\\n]*return require\\(['"]${buildTimeName}['"]\\);?[\\s\\n]*\\}\\)`
+  );
 }
 
 export { Project } from './project';

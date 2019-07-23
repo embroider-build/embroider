@@ -720,7 +720,7 @@ export class AppBuilder<TreeNames> {
   ) {
     let shouldSplit = routeName && this.shouldSplitRoute(routeName);
     let ownFiles = [];
-    let ownNames = new Set();
+    let ownNames = new Set() as Set<string>;
 
     if (files.template) {
       if (shouldSplit) {
@@ -900,12 +900,15 @@ export class AppBuilder<TreeNames> {
     for (let addon of this.adapter.allActiveAddons) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
+        let renamedModules = inverseRenamedModules(addon.meta, this.resolvableExtensionsPattern);
         for (let name of implicitModules) {
+          let runtime = join(addon.name, name).replace(this.resolvableExtensionsPattern, '');
+          if (renamedModules && renamedModules[runtime]) {
+            runtime = renamedModules[runtime];
+          }
+          runtime = runtime.split(sep).join('/');
           lazyModules.push({
-            runtime: join(addon.name, name)
-              .replace(/\.hbs$/i, '')
-              .split(sep)
-              .join('/'),
+            runtime,
             buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
           });
         }
@@ -920,7 +923,7 @@ let w = window;
 let d = w.define;
 
 {{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
+  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
 {{#each eagerModules as |eagerModule| ~}}
@@ -972,7 +975,7 @@ const routeEntryTemplate = compile(`
 import { importSync as i } from '@embroider/macros';
 let d = window.define;
 {{#each files as |amdModule| ~}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}").default;});
+d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 `) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
 
@@ -990,3 +993,17 @@ const babelFilterTemplate = compile(`
 const { babelFilter } = require('@embroider/core');
 module.exports = babelFilter({{{json-stringify skipBabel}}});
 `) as (params: { skipBabel: Options['skipBabel'] }) => string;
+
+// meta['renamed-modules'] has mapping from classic filename to real filename.
+// This takes that and converts it to the inverst mapping from real import path
+// to classic import path.
+function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp) {
+  let renamed = meta['renamed-modules'];
+  if (renamed) {
+    let inverted = {} as { [name: string]: string };
+    for (let [classic, real] of Object.entries(renamed)) {
+      inverted[real.replace(extensions, '')] = classic.replace(extensions, '');
+    }
+    return inverted;
+  }
+}

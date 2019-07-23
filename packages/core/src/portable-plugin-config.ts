@@ -1,4 +1,3 @@
-import resolve from 'resolve';
 import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
@@ -10,8 +9,6 @@ const template = compile(`
 const { PortablePluginConfig } = require('{{{js-string-escape here}}}');
 module.exports = PortablePluginConfig.load({{{json-stringify portable 2}}});
 `) as (params: { portable: any; here: string }) => string;
-
-export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
 interface GlobalPlaceholder {
   embroiderPlaceholder: true;
@@ -40,33 +37,48 @@ interface HTMLBarsParallelPlaceholder {
 type Placeholder = GlobalPlaceholder | BroccoliParallelPlaceholder | HTMLBarsParallelPlaceholder;
 
 export class PortablePluginConfig {
-  protected basedir: string | undefined;
-  protected resolve: (name: string) => any;
   protected here = __filename;
 
   private parallelSafeFlag = true;
+  private cachedPortable: any;
 
-  readonly portable: any;
+  readonly portable: object;
   readonly isParallelSafe: boolean;
 
-  constructor(private config: any, resolveOptions?: ResolveOptions) {
-    if (resolveOptions) {
-      if ('resolve' in resolveOptions) {
-        this.resolve = resolveOptions.resolve;
-      } else {
-        this.basedir = resolveOptions.basedir;
-        this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
-      }
-    } else {
-      this.resolve = (_: string) => {
-        throw new Error(`No file resolving is configured for this PortablePluginConfig`);
-      };
+  constructor(private config: object) {
+    // these properties defined this way because we want getters that are
+    // enumerable own properties, such that they will run even when people do
+    // things like Object.assign us onto another object or json stringify us.
+
+    this.portable = {}; // this just makes typescript happy, we overwrite it with the defineProperty below
+    Object.defineProperty(this, 'portable', {
+      enumerable: true,
+      get() {
+        return this.ensurePortable().portable;
+      },
+    });
+
+    this.isParallelSafe = true; // this just makes typescript happy, we overwrite it with the defineProperty below
+    Object.defineProperty(this, 'isParallelSafe', {
+      enumerable: true,
+      get() {
+        return this.ensurePortable().isParallelSafe;
+      },
+    });
+  }
+
+  private ensurePortable() {
+    if (!this.cachedPortable) {
+      this.cachedPortable = this.makePortable(this.config);
     }
-    this.portable = this.makePortable(this.config);
-    this.isParallelSafe = this.parallelSafeFlag;
+    return { portable: this.cachedPortable, isParallelSafe: this.parallelSafeFlag };
   }
 
   serialize(): string {
+    // this call to ensurePortable is not strictly needed, but it's cheap
+    // because of the cache and it keeps typescript happy since typescript can't
+    // see into our defineProperties.
+    this.ensurePortable();
     return template({ portable: this.portable, here: this.here });
   }
 

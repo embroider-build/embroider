@@ -110,16 +110,22 @@ interface SetupCompilerParams {
   plugins: Plugins;
 }
 
-export function rehydrate(portable: unknown) {
-  return new TemplateCompiler(PortableTemplateCompiler.load(portable));
+export function rehydrate(state: unknown) {
+  if (state instanceof TemplateCompiler && (state as any).params) {
+    return state;
+  }
+  if ((state as any).portableParams) {
+    return new TemplateCompiler(PortableTemplateCompilerConfig.load((state as any).portableParams));
+  }
+  throw new Error(`unable to rehydrate TemplateCompiler ${state}`);
 }
 
-class PortableTemplateCompiler extends PortablePluginConfig {
+class PortableTemplateCompilerConfig extends PortablePluginConfig {
   private static template = compile(`
   "use strict";
   const { rehydrate } = require('{{{js-string-escape here}}}');
-  module.exports = rehydrate({{{json-stringify portable 2 }}});
-  `) as (params: { portable: any; here: string }) => string;
+  module.exports = rehydrate({{{json-stringify params 2 }}});
+  `) as (params: { params: { portableParams: unknown }; here: string }) => string;
 
   protected here = __filename;
 
@@ -128,28 +134,40 @@ class PortableTemplateCompiler extends PortablePluginConfig {
   }
 
   serialize() {
-    return PortableTemplateCompiler.template({
+    return PortableTemplateCompilerConfig.template({
       here: this.here,
-      portable: this.portable,
+      params: { portableParams: this.portable },
     });
   }
 }
 
 export default class TemplateCompiler {
   private userPluginsCount = 0;
+  private portableParams: object;
+  private params: SetupCompilerParams;
 
-  // The signature of this function may feel a little weird, but that's because
-  // it's designed to be easy to invoke via our portable plugin config in a new
-  // process.
-  constructor(private params: SetupCompilerParams) {
+  constructor(params: SetupCompilerParams) {
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
+
+    this.portableParams = {};
+    Object.defineProperty(this, 'portableParams', {
+      enumerable: true,
+      get() {
+        return this.portableConfig.portable;
+      },
+    });
+
+    this.params = params;
+    Object.defineProperty(this, 'params', {
+      enumerable: false,
+    });
   }
 
   @Memoize()
   private get portableConfig() {
-    return new PortableTemplateCompiler(this.params);
+    return new PortableTemplateCompilerConfig(this.params);
   }
 
   get isParallelSafe(): boolean {
@@ -165,7 +183,7 @@ export default class TemplateCompiler {
       return {
         requireFile: __filename,
         buildUsing: 'rehydrate',
-        params: this.portableConfig.portable,
+        params: { portableParams: this.portableParams },
       };
     }
   }
@@ -177,17 +195,20 @@ export default class TemplateCompiler {
     return this.portableConfig.serialize();
   }
 
-  // This allows us to survive even naive stringification in places like
-  // thread-loader and babel-loader.
-  toJSON() {
-    return this.portableConfig.portable;
-  }
-
   private get syntax(): GlimmerSyntax {
     return this.setup().syntax;
   }
 
   get cacheKey(): string {
+    // when we are inside a babel config, this can get called when we are in a
+    // partially serialized state due to somebody cloning us, etc.
+    //
+    // The rest of our methods don't get called until after passing us through
+    // `rehydrate`, but ember-cli-babel may call this directly and doesn't know
+    // how to rehydrate us.
+    if (!this.params) {
+      this.params = PortableTemplateCompilerConfig.load(this.portableParams);
+    }
     return this.setup().cacheKey;
   }
 

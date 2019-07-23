@@ -12,8 +12,9 @@ import MockUI from 'console-ui/mock';
 import { TransformOptions, transform } from '@babel/core';
 import { Options } from '../../packages/compat/src';
 import { BoundFileAssert } from './file-assertions';
-import { TemplateCompiler } from '@embroider/core';
+import { TemplateCompiler, AppMeta } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros';
+import { Memoize } from 'typescript-memoize';
 
 export interface BuildParams {
   stage: 1 | 2;
@@ -66,13 +67,9 @@ export default class BuildResult {
 
   transpile(contents: string, fileAssert: BoundFileAssert) {
     if (fileAssert.path.endsWith('.hbs')) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      let templateCompiler = require(join(fileAssert.basePath, '_template_compiler_')) as TemplateCompiler;
-      return templateCompiler.compile(fileAssert.fullPath, contents);
+      return this.templateCompiler.compile(fileAssert.fullPath, contents);
     } else if (fileAssert.path.endsWith('.js')) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      let babelConfig = require(join(fileAssert.basePath, '_babel_config_')) as TransformOptions;
-      return transform(contents, Object.assign({ filename: fileAssert.fullPath }, babelConfig))!.code!;
+      return transform(contents, Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
     } else {
       return contents;
     }
@@ -80,8 +77,32 @@ export default class BuildResult {
 
   shouldTranspile(fileAssert: BoundFileAssert) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let shouldTranspile = require(join(fileAssert.basePath, '_babel_filter_'));
+    let shouldTranspile = require(join(this.outputPath, '_babel_filter_'));
     return shouldTranspile(fileAssert.fullPath) as boolean;
+  }
+
+  @Memoize()
+  private get pkgJSON() {
+    return readJSONSync(join(this.outputPath, 'package.json'));
+  }
+
+  private get emberMeta(): AppMeta {
+    return this.pkgJSON['ember-addon'] as AppMeta;
+  }
+
+  @Memoize()
+  private get templateCompiler() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(join(this.outputPath, this.emberMeta['template-compiler'].filename)) as TemplateCompiler;
+  }
+
+  @Memoize()
+  private get babelConfig() {
+    if (this.emberMeta['babel'].majorVersion !== 7) {
+      throw new Error(`@embroider/test-support doesn't support babel 6 inside our app fixture tests`);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(join(this.outputPath, this.emberMeta['babel'].filename)) as TransformOptions;
   }
 }
 

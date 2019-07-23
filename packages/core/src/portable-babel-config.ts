@@ -1,9 +1,21 @@
-import { PortablePluginConfig, ResolveOptions } from './portable-plugin-config';
+import { PortablePluginConfig } from './portable-plugin-config';
 import { TransformOptions } from '@babel/core';
+import resolve from 'resolve';
+
+export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
 export default class PortableBabelConfig extends PortablePluginConfig {
+  private resolve: (name: string) => any;
+  private basedir: string | undefined;
+
   constructor(config: TransformOptions, resolveOptions: ResolveOptions) {
-    super(config, resolveOptions);
+    super(config);
+    if ('resolve' in resolveOptions) {
+      this.resolve = resolveOptions.resolve;
+    } else {
+      this.basedir = resolveOptions.basedir;
+      this.resolve = (name: string) => resolve.sync(name, { basedir: resolveOptions.basedir });
+    }
   }
 
   protected makePortable(value: any, accessPath: string[] = []) {

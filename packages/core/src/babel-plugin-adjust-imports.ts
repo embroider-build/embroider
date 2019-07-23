@@ -122,8 +122,8 @@ function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['
 
   if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
     // we found a self-import, make it relative. Only auto-upgraded packages get
-    // this help, v2 packages are natively supposed to use explicit hbs
-    // extensions, and we want to push them all to do that correctly.
+    // this help, v2 packages are natively supposed to use relative imports for
+    // their own modules, and we want to push them all to do that correctly.
     let fullPath = specifier.replace(packageName, pkg.root);
     return explicitRelative(dirname(sourceFile.name), fullPath);
   }

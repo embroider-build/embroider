@@ -200,6 +200,15 @@ export default class TemplateCompiler {
   }
 
   get cacheKey(): string {
+    // when we are inside a babel config, this can get called when we are in a
+    // partially serialized state due to somebody cloning us, etc.
+    //
+    // The rest of our methods don't get called until after passing us through
+    // `rehydrate`, but ember-cli-babel may call this directly and doesn't know
+    // how to rehydrate us.
+    if (!this.params) {
+      this.params = PortableTemplateCompilerConfig.load(this.portableParams);
+    }
     return this.setup().cacheKey;
   }
 

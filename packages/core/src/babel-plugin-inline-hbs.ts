@@ -29,9 +29,9 @@ const modulePaths = ['htmlbars-inline-precompile', 'ember-cli-htmlbars-inline-pr
 
 interface State {
   opts: {
-    // it can be unknown if somebody json-stringified our babel config on us, in
+    // it can be unknown if somebody serialized our babel config on us, in
     // which case we'll need to rehydrate it ourself
-    templateCompiler: TemplateCompiler | unknown;
+    templateCompiler: unknown;
 
     // the stages here correspond to the two places in the overall Embroider
     // architecture that this transform applies. In stage1 HBS stays as HBS, but
@@ -47,6 +47,7 @@ interface State {
     };
   };
   dependencies: Map<string, ResolvedDep>;
+  templateCompiler: TemplateCompiler | undefined;
 }
 
 export default function inlineHBSTransform() {
@@ -101,10 +102,10 @@ function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
   }
   let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
   if (state.opts.stage === 1) {
-    let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
+    let compiled = compiler(state).applyTransforms(state.file.opts.filename, template);
     path.get('quasi').replaceWith(templateLiteral([templateElement({ raw: compiled, cooked: compiled })], []));
   } else {
-    let { compiled, dependencies } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
@@ -123,10 +124,10 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
   }
   let template = arg.value;
   if (state.opts.stage === 1) {
-    let compiled = compiler(state.opts).applyTransforms(state.file.opts.filename, template);
+    let compiled = compiler(state).applyTransforms(state.file.opts.filename, template);
     (path.get('arguments')[0] as NodePath).replaceWith(stringLiteral(compiled));
   } else {
-    let { compiled, dependencies } = compiler(state.opts).precompile(state.file.opts.filename, template);
+    let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
@@ -156,11 +157,11 @@ function jsonLiteral(value: unknown | undefined) {
   return expression.arguments[0];
 }
 
-function compiler(opts: State['opts']): TemplateCompiler {
-  if (typeof (opts.templateCompiler as any).precompile !== 'function') {
-    opts.templateCompiler = rehydrate(opts.templateCompiler);
+function compiler(state: State) {
+  if (!state.templateCompiler) {
+    state.templateCompiler = rehydrate(state.opts.templateCompiler);
   }
-  return opts.templateCompiler as TemplateCompiler;
+  return state.templateCompiler;
 }
 
 function amdDefine(runtimeName: string, importCounter: number) {

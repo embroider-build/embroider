@@ -1,6 +1,7 @@
 import TemplateCompiler, { rehydrate } from '../src/template-compiler';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Resolver } from '../src';
+import cloneDeep from 'lodash/cloneDeep';
 
 const compilerPath = emberTemplateCompilerPath();
 
@@ -61,6 +62,12 @@ describe('portable-template-config', () => {
 
   test('survives Object.assign', () => {
     let output = rehydrate(Object.assign({}, compiler));
+    expect(output).toHaveProperty('compile');
+    expect((output as any).params.plugins.ast[0]()).toEqual('hello world');
+  });
+
+  test('survives lodash cloneDeep', () => {
+    let output = rehydrate(cloneDeep(compiler));
     expect(output).toHaveProperty('compile');
     expect((output as any).params.plugins.ast[0]()).toEqual('hello world');
   });

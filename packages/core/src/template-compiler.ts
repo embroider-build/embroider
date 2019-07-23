@@ -111,7 +111,7 @@ interface SetupCompilerParams {
 }
 
 export function rehydrate(state: unknown) {
-  if (state instanceof TemplateCompiler) {
+  if (state instanceof TemplateCompiler && (state as any).params) {
     return state;
   }
   if ((state as any).portableParams) {

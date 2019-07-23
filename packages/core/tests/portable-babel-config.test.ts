@@ -36,7 +36,7 @@ function run(config: PortableBabelConfig): any {
   return module.exports;
 }
 
-describe('portable-plugin-config', () => {
+describe('portable-babel-config', () => {
   test('absolute path', () => {
     let config = new PortableBabelConfig(
       {

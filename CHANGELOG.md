@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## 0.6.0
+
+- BUGFIX: make renamed implicit-modules work
+- ENHANCEMENT: expose outputPath from the standard build pipeline
+- ENHANCEMENT: fix a build error when building ember engines
+- BUGFIX: fix template compiler serialization during rebuilds
+- ENHANCEMENT: improved test coverage of app.import with prepend, by @stefanpenner
+- ENHANCEMENT: add support for app.import with the destDir argument, by @balinterdi
+- ENHANCEMENT: teach resolver about Ember's component invocation dot rules
+- ENHANCEMENT: teach resolver about more of Ember's built-ins
+
 ## 0.5.1
 
 - COMPAT: tolerate addons that overwrite their own files

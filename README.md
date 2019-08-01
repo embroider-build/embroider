@@ -23,7 +23,7 @@ This repo implements a new three-stage build system for Ember apps:
    these tools! But because a stable, standards-compliant API between stage 2
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
-   
+
 You can read more about the motivation and key ideas in the [intro to the SPEC](SPEC.md).
 
 ## Status / Should I Use It?
@@ -59,7 +59,7 @@ the format.
 
    ```diff
    -return app.toTree();
-   +const Webpack = require('@embroider/webpack').Webpack;
+   +const { Webpack } = require('@embroider/webpack');
    +return require('@embroider/compat').compatBuild(app, Webpack);
    ```
 
@@ -68,7 +68,7 @@ the format.
 
    ```diff
    -return app.toTree(extraTreeHere);
-   +const Webpack = require('@embroider/webpack').Webpack;
+   +const { Webpack } = require('@embroider/webpack');
    +return require('@embroider/compat').compatBuild(app, Webpack, {
    +  extraPublicTrees: [extraTreeHere]
    +});

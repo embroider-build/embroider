@@ -346,7 +346,8 @@ export default class V1Addon implements V1Package {
   }
 
   get v2Tree() {
-    return mergeTrees(this.v2Trees, { overwrite: true });
+    const buildV2Tree = () => mergeTrees(this.v2Trees, { overwrite: true });
+    return this.throughTreeCache('addon', 'v2Tree', buildV2Tree) || buildV2Tree();
   }
 
   // this is split out so that compatibility shims can override it to add more

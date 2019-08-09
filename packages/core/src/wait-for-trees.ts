@@ -22,9 +22,6 @@ import BroccoliPlugin, { Tree } from 'broccoli-plugin';
 
 */
 export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
-  private _inputNodes!: NamedTrees[];
-  hasInputNodeChanged!: (NamedTree) => boolean;
-
   constructor(
     private trees: NamedTrees,
     annotation: string,
@@ -37,7 +34,7 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     });
   }
 
-  async build() {
+  async build({ changedNodes } = { changedNodes: [] }) {
     let result: { [treeName: string]: string | string[] } = {};
     let changedMap = new Map();
 
@@ -45,13 +42,13 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     for (let entry of findTrees(this.trees)) {
       if (entry.single) {
         result[entry.name] = this.inputPaths[inputPathCounter];
-        changedMap.set(this.inputPaths[inputPathCounter], this.hasInputNodeChanged(this._inputNodes[inputPathCounter]));
+        changedMap.set(this.inputPaths[inputPathCounter], changedNodes[inputPathCounter]);
         inputPathCounter += 1;
       } else if (entry.multi) {
         let sliced = this.inputPaths.slice(inputPathCounter, inputPathCounter + entry.multi.length);
 
         result[entry.name] = sliced.map(slice => {
-          changedMap.set(slice, this.hasInputNodeChanged(this._inputNodes[inputPathCounter]));
+          changedMap.set(slice, changedNodes[inputPathCounter]);
           inputPathCounter++;
           return slice;
         });

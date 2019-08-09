@@ -80,7 +80,6 @@ export default class CompatAddons implements Stage {
     changedMap?: Map<string, boolean>
   ) {
     // empty the directory only on the first pass
-    // TODO: should we still do this?
     if (!this.didBuild) {
       emptyDirSync(this.destDir);
     }
@@ -96,7 +95,11 @@ export default class CompatAddons implements Stage {
         this.treeSyncMap.set(value, treeInstance);
       }
 
-      if (changedMap && changedMap.get(movedAddons[index])) {
+      if (
+        !this.didBuild || // always copy on the first build
+        (changedMap && changedMap.get(movedAddons[index])) || // broccoli has told us that this node has been changed
+        value.mayRebuild // prevent rebuilds if not allowed
+      ) {
         treeInstance.sync();
         this.linkNonCopiedDeps(value, value.root);
       }

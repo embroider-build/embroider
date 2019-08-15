@@ -8,6 +8,7 @@ declare module 'broccoli-plugin' {
     annotation?: string;
     persistentOutput?: boolean;
     needsCache?: boolean;
+    trackInputChanges?: boolean;
   }
 
   export default abstract class Plugin implements Tree {

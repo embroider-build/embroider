@@ -227,6 +227,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().modulePrefix;
   }
 
+  podModulePrefix(): string | undefined {
+    return this.configTree.readConfig().podModulePrefix;
+  }
+
   rootURL(): string {
     return this.configTree.readConfig().rootURL;
   }
@@ -252,6 +256,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return new CompatResolver({
       root: this.root,
       modulePrefix: this.modulePrefix(),
+      podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
       resolvableExtensions: this.resolvableExtensions(),

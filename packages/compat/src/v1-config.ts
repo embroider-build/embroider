@@ -5,6 +5,7 @@ import { EmberENV } from '@embroider/core';
 
 export interface ConfigContents {
   modulePrefix: string;
+  podModulePrefix?: string;
   EmberENV: EmberENV;
   APP: unknown;
   rootURL: string;

@@ -16,13 +16,14 @@ QUnit.module('compat-resolver', function(hooks) {
   let appDir: string;
   let assertWarning: (pattern: RegExp, fn: () => void) => void;
 
-  function configure(options: Options) {
+  function configure(options: Options, podModulePrefix?: string) {
     let EmberENV = {};
     let plugins = { ast: [] };
     appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
     let resolver = new Resolver({
       root: appDir,
       modulePrefix: 'the-app',
+      podModulePrefix,
       options: optionsWithDefaults(options),
       activePackageRules: optionsWithDefaults(options).packageRules.map(rule => {
         return Object.assign({ roots: [appDir] }, rule);
@@ -78,7 +79,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank modulePrefix, js only', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, js only', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
     assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
@@ -89,7 +90,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank modulePrefix, hbs only', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, hbs only', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/template.hbs');
     assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
@@ -100,7 +101,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank modulePrefix, js and hbs', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, js and hbs', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
     givenFile('components/hello-world/template.hbs');
@@ -112,6 +113,44 @@ QUnit.module('compat-resolver', function(hooks) {
       {
         path: '../components/hello-world/template.hbs',
         runtimeName: 'the-app/components/hello-world/template',
+      },
+    ]);
+  });
+
+  test('podded, dasherized component, with non-blank podModulePrefix, js only', function(assert) {
+    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    givenFile('pods/components/hello-world/component.js');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../pods/components/hello-world/component.js',
+        runtimeName: 'the-app/pods/components/hello-world/component',
+      },
+    ]);
+  });
+
+  test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function(assert) {
+    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    givenFile('pods/components/hello-world/template.hbs');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../pods/components/hello-world/template.hbs',
+        runtimeName: 'the-app/pods/components/hello-world/template',
+      },
+    ]);
+  });
+
+  test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function(assert) {
+    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    givenFile('pods/components/hello-world/component.js');
+    givenFile('pods/components/hello-world/template.hbs');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+      {
+        path: '../pods/components/hello-world/component.js',
+        runtimeName: 'the-app/pods/components/hello-world/component',
+      },
+      {
+        path: '../pods/components/hello-world/template.hbs',
+        runtimeName: 'the-app/pods/components/hello-world/template',
       },
     ]);
   });

@@ -38,8 +38,6 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     let result: { [treeName: string]: string | string[] } = {};
     let changedMap = new Map();
 
-    debugger;
-
     let inputPathCounter = 0;
     for (let entry of findTrees(this.trees)) {
       if (entry.single) {

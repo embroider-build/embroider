@@ -79,6 +79,17 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
+  test('nested bare dasherized component, js only', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/something/hello-world.js');
+    assert.deepEqual(findDependencies('templates/application.hbs', `{{something/hello-world}}`), [
+      {
+        path: '../components/something/hello-world.js',
+        runtimeName: 'the-app/components/something/hello-world',
+      },
+    ]);
+  });
+
   test('podded, dasherized component, with blank podModulePrefix, js only', function(assert) {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
@@ -438,6 +449,22 @@ QUnit.module('compat-resolver', function(hooks) {
       {
         path: './components/hello-world.hbs',
         runtimeName: 'the-app/templates/components/hello-world',
+      },
+    ]);
+  });
+
+  test('nested angle component, js and hbs', function(assert) {
+    let findDependencies = configure({ staticComponents: true });
+    givenFile('components/something/hello-world.js');
+    givenFile('templates/components/something/hello-world.hbs');
+    assert.deepEqual(findDependencies('templates/application.hbs', `<Something::HelloWorld />`), [
+      {
+        path: '../components/something/hello-world.js',
+        runtimeName: 'the-app/components/something/hello-world',
+      },
+      {
+        path: './components/something/hello-world.hbs',
+        runtimeName: 'the-app/templates/components/something/hello-world',
       },
     ]);
   });

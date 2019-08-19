@@ -10,7 +10,7 @@ import {
 import Options from './options';
 import { join, relative, dirname, sep } from 'path';
 import { pathExistsSync } from 'fs-extra';
-import { dasherize } from './string';
+import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
 import { Memoize } from 'typescript-memoize';
 import { ResolvedDep } from '@embroider/core/src/resolver';

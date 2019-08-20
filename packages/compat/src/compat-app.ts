@@ -141,7 +141,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   resolvableExtensions(): string[] {
-    let extensions = ['.js', '.hbs'];
+    let extensions = ['.mjs', '.js', '.hbs'];
 
     // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
     // resolvable. Once we implement a preprocessor-registration build hook,

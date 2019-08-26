@@ -1,4 +1,4 @@
-import { Package, explicitRelative } from '@embroider/core';
+import { Package, explicitRelative, getOrCreate } from '@embroider/core';
 import { satisfies } from 'semver';
 import CompatResolver from './resolver';
 import { dirname } from 'path';
@@ -172,12 +172,8 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
   for (let pkg of activePackages) {
     for (let rule of packageRules) {
       if (rule.package === pkg.name && (!rule.semverRange || satisfies(pkg.version, rule.semverRange))) {
-        let roots = rootsPerRule.get(rule);
-        if (roots) {
-          roots.push(pkg.root);
-        } else {
-          rootsPerRule.set(rule, [pkg.root]);
-        }
+        let roots = getOrCreate(rootsPerRule, rule, () => []);
+        roots.push(pkg.root);
         break;
       }
     }

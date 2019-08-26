@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { PluginItem } from '@babel/core';
-import { PackageCache } from '@embroider/core';
+import { PackageCache, getOrCreate } from '@embroider/core';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 
 const packageCache = new PackageCache();
@@ -63,12 +63,8 @@ export default class MacrosConfig {
       throw new Error(`attempted to set config after we have already emitted our config`);
     }
     let targetPackage = this.resolvePackage(fromPath, packageName);
-    let peers = this.configs.get(targetPackage.root);
-    if (peers) {
-      peers.push(config);
-    } else {
-      this.configs.set(targetPackage.root, [config]);
-    }
+    let peers = getOrCreate(this.configs, targetPackage.root, () => []);
+    peers.push(config);
   }
 
   // Allows you to set the merging strategy used for your package's config. The

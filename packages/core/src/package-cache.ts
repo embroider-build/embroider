@@ -88,13 +88,7 @@ export default class PackageCache {
   }
 
   static shared(identifier: string) {
-    let p = shared.get(identifier);
-    if (p) {
-      return p;
-    }
-    p = new PackageCache();
-    shared.set(identifier, p);
-    return p;
+    return getOrCreate(shared, identifier, () => new PackageCache());
   }
 }
 

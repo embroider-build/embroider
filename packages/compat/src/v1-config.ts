@@ -5,6 +5,7 @@ import { EmberENV } from '@embroider/core';
 
 export interface ConfigContents {
   modulePrefix: string;
+  podModulePrefix?: string;
   EmberENV: EmberENV;
   APP: unknown;
   rootURL: string;
@@ -28,7 +29,7 @@ export class V1Config extends Plugin {
 
 export class WriteV1Config extends Plugin {
   private lastContents: string | undefined;
-  constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private appName: string) {
+  constructor(private inputTree: V1Config, private storeConfigInMeta: boolean) {
     super([inputTree], {
       persistentOutput: true,
     });
@@ -37,7 +38,7 @@ export class WriteV1Config extends Plugin {
     let filename = join(this.outputPath, 'config/environment.js');
     let contents;
     if (this.storeConfigInMeta) {
-      contents = metaLoader(this.appName);
+      contents = metaLoader();
     } else {
       contents = `export default ${JSON.stringify(this.inputTree.readConfig())};`;
     }
@@ -48,17 +49,13 @@ export class WriteV1Config extends Plugin {
   }
 }
 
-function metaLoader(appName: string) {
+function metaLoader() {
+  // Supporting config content as JS Module.
+  // Wrapping the content with immediate invoked function as
+  // replaced content for config-module was meant to support AMD module.
   return `
-  let config, metaName;
-  try {
-    metaName = '${appName}/config/environment';
-    let rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
-    config = JSON.parse(unescape(rawConfig));
-  }
-  catch(err) {
-    throw new Error('Could not read config from meta tag with name "' + metaName + '".');
-  }
-  export default config;
+    export default (function() {
+      {{content-for 'config-module'}}
+    })().default;
   `;
 }

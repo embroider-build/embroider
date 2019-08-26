@@ -141,7 +141,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   resolvableExtensions(): string[] {
-    let extensions = ['.js', '.hbs'];
+    let extensions = ['.mjs', '.js', '.hbs'];
 
     // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
     // resolvable. Once we implement a preprocessor-registration build hook,
@@ -227,6 +227,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().modulePrefix;
   }
 
+  podModulePrefix(): string | undefined {
+    return this.configTree.readConfig().podModulePrefix;
+  }
+
   rootURL(): string {
     return this.configTree.readConfig().rootURL;
   }
@@ -252,6 +256,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return new CompatResolver({
       root: this.root,
       modulePrefix: this.modulePrefix(),
+      podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
       resolvableExtensions: this.resolvableExtensions(),

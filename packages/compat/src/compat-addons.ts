@@ -10,12 +10,14 @@ import buildCompatAddon from './build-compat-addon';
 import Options, { optionsWithDefaults } from './options';
 import V1App from './v1-app';
 import { createHash } from 'crypto';
+import TreeSync from 'tree-sync';
 
 export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
   private nonResolvableDeps: Package[];
+  private treeSyncMap: WeakMap<Package, TreeSync>;
   readonly inputPath: string;
   readonly tree: Tree;
 
@@ -43,6 +45,7 @@ export default class CompatAddons implements Stage {
       this.build.bind(this)
     );
     this.inputPath = v1Cache.app.root;
+    this.treeSyncMap = new WeakMap();
   }
 
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
@@ -64,35 +67,61 @@ export default class CompatAddons implements Stage {
     return this.packageCache.app;
   }
 
-  private async build({
-    movedAddons,
-    synthVendor,
-    synthStyles,
-  }: {
-    movedAddons: string[];
-    synthVendor: string;
-    synthStyles: string;
-  }) {
-    if (this.didBuild) {
-      // TODO: we can selectively allow some addons to rebuild, equivalent to
-      // the old isDevelopingAddon. This should be based off Package#mayRebuild.
-      return;
+  private async build(
+    {
+      movedAddons,
+      synthVendor,
+      synthStyles,
+    }: {
+      movedAddons: string[];
+      synthVendor: string;
+      synthStyles: string;
+    },
+    changedMap?: Map<string, boolean>
+  ) {
+    // empty the directory only on the first pass
+    if (!this.didBuild) {
+      emptyDirSync(this.destDir);
     }
 
-    emptyDirSync(this.destDir);
+    [...this.packageCache.moved.values()].forEach((value, index) => {
+      let treeInstance = this.treeSyncMap.get(value);
 
-    [...this.packageCache.moved.values()].forEach((movedPkg, index) => {
-      copySync(movedAddons[index], movedPkg.root, { dereference: true });
-      this.linkNonCopiedDeps(movedPkg, movedPkg.root);
+      if (!treeInstance) {
+        treeInstance = new TreeSync(movedAddons[index], value.root, {
+          ignore: ['**/node_modules'],
+        });
+
+        this.treeSyncMap.set(value, treeInstance);
+      }
+
+      if (
+        !this.didBuild || // always copy on the first build
+        (changedMap && changedMap.get(movedAddons[index])) || // broccoli has told us that this node has been changed
+        value.mayRebuild // prevent rebuilds if not allowed
+      ) {
+        treeInstance.sync();
+        this.linkNonCopiedDeps(value, value.root);
+      }
     });
+
     this.linkNonCopiedDeps(this.app, this.appDestDir);
     await this.packageCache.updatePreexistingResolvableSymlinks();
-    copySync(synthVendor, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-vendor'), {
-      dereference: true,
-    });
-    copySync(synthStyles, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-styles'), {
-      dereference: true,
-    });
+
+    if (changedMap && changedMap.get(synthVendor)) {
+      copySync(synthVendor, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-vendor'), {
+        dereference: true,
+        overwrite: true,
+      });
+    }
+
+    if (changedMap && changedMap.get(synthStyles)) {
+      copySync(synthStyles, join(this.appDestDir, 'node_modules', '@embroider', 'synthesized-styles'), {
+        dereference: true,
+        overwrite: true,
+      });
+    }
+
     this.handleNonResolvableDeps();
     this.didBuild = true;
     this.deferReady.resolve();

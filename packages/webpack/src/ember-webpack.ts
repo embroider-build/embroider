@@ -9,7 +9,7 @@
   getting script vs module context correct).
 */
 
-import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
+import { PackagerInstance, AppMeta, Packager, getOrCreate } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import {
   readFileSync,
@@ -59,12 +59,8 @@ class HTMLEntrypoint {
         let url = this.relativeToApp(href);
         this.styles.push(url);
         let placeholder = new Placeholder(styleTag);
-        let list = this.placeholders.get(url);
-        if (list) {
-          list.push(placeholder);
-        } else {
-          this.placeholders.set(url, [placeholder]);
-        }
+        let list = getOrCreate(this.placeholders, url, () => []);
+        list.push(placeholder);
       }
     }
 
@@ -80,12 +76,8 @@ class HTMLEntrypoint {
       }
 
       let placeholder = new Placeholder(scriptTag);
-      let list = this.placeholders.get(src);
-      if (list) {
-        list.push(placeholder);
-      } else {
-        this.placeholders.set(src, [placeholder]);
-      }
+      let list = getOrCreate(this.placeholders, src, () => []);
+      list.push(placeholder);
     }
   }
 

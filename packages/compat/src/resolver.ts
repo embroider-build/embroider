@@ -10,7 +10,7 @@ import {
 import Options from './options';
 import { join, relative, dirname, sep } from 'path';
 import { pathExistsSync } from 'fs-extra';
-import { dasherize } from './string';
+import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
 import { Memoize } from 'typescript-memoize';
 import { ResolvedDep } from '@embroider/core/src/resolver';
@@ -50,12 +50,13 @@ const builtInHelpers = [
   'component',
   'concat',
   'debugger',
-  'each-in',
   'each',
+  'each-in',
+  'fn',
   'get',
   'has-block',
-  'hasBlock',
   'has-block-params',
+  'hasBlock',
   'hasBlockParams',
   'hash',
   'if',
@@ -66,6 +67,7 @@ const builtInHelpers = [
   'log',
   'mount',
   'mut',
+  'on',
   'outlet',
   'partial',
   'query-params',
@@ -94,6 +96,7 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
 interface RehydrationParams {
   root: string;
   modulePrefix: string;
+  podModulePrefix?: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
   resolvableExtensions: string[];
@@ -342,9 +345,22 @@ export default class CompatResolver implements Resolver {
       if (pathExistsSync(absPath)) {
         componentModules.push({
           runtimeName: `${this.params.modulePrefix}/components/${path}/template`,
-          absPath: join(this.params.root, 'components', path, 'template') + extension,
+          absPath,
         });
         break;
+      }
+
+      if (typeof this.params.podModulePrefix !== 'undefined' && this.params.podModulePrefix !== '') {
+        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
+
+        absPath = join(this.params.root, podPrefix, 'components', path, 'template') + extension;
+        if (pathExistsSync(absPath)) {
+          componentModules.push({
+            runtimeName: `${this.params.podModulePrefix}/components/${path}/template`,
+            absPath,
+          });
+          break;
+        }
       }
     }
 
@@ -370,6 +386,19 @@ export default class CompatResolver implements Resolver {
           absPath,
         });
         break;
+      }
+
+      if (typeof this.params.podModulePrefix !== 'undefined' && this.params.podModulePrefix !== '') {
+        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
+
+        absPath = join(this.params.root, podPrefix, 'components', path, 'component') + extension;
+        if (pathExistsSync(absPath)) {
+          componentModules.push({
+            runtimeName: `${this.params.podModulePrefix}/components/${path}/component`,
+            absPath,
+          });
+          break;
+        }
       }
     }
 

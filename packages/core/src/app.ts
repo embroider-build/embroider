@@ -5,7 +5,7 @@ import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, existsSync } from 'fs-extra';
-import { join, dirname, sep } from 'path';
+import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
@@ -591,7 +591,7 @@ export class AppBuilder<TreeNames> {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
           assets.push({
             kind: 'on-disk',
-            sourcePath: join(pkg.root, filename),
+            sourcePath: resolvePath(pkg.root, filename),
             relativePath: appRelativeURL,
             mtime: 0,
             size: 0,

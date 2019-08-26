@@ -345,8 +345,8 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  get v2Tree() {
-    return mergeTrees(this.v2Trees, { overwrite: true });
+  get v2Tree(): Tree {
+    return this.throughTreeCache('addon', 'v2Tree', () => mergeTrees(this.v2Trees, { overwrite: true }));
   }
 
   // this is split out so that compatibility shims can override it to add more
@@ -364,6 +364,7 @@ export default class V1Addon implements V1Package {
     return trees;
   }
 
+  protected throughTreeCache(name: string, category: string, fn: () => Tree): Tree;
   protected throughTreeCache(name: string, category: string, fn: () => Tree | undefined): Tree | undefined {
     let cacheKey;
     if (typeof this.addonInstance.cacheKeyForTree === 'function') {

@@ -41,7 +41,7 @@ QUnit.module('app.import tests', function(origHooks) {
 
   test('destDir puts vendor files into public assets', function(assert) {
     let assertFile = assert.file('node_modules/@embroider/synthesized-vendor/package.json').json();
-    assertFile.get(['ember-addon', 'public-assets', 'vendor/some-font.ttf']).equals('fonts/some-font.ttf');
+    assertFile.get(['ember-addon', 'public-assets', './vendor/some-font.ttf']).equals('fonts/some-font.ttf');
     assert.file('node_modules/@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
   });
 });

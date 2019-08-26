@@ -17,7 +17,7 @@ export default class CompatAddons implements Stage {
   private destDir: string;
   private packageCache: MovedPackageCache;
   private nonResolvableDeps: Package[];
-  private treeSyncMap: WeakMap<Package, any>;
+  private treeSyncMap: WeakMap<Package, TreeSync>;
   readonly inputPath: string;
   readonly tree: Tree;
 

@@ -102,7 +102,13 @@ export default class V1App implements V1Package {
 
   @Memoize()
   private get emberCLILocation() {
-    return dirname(resolvePackagePath('ember-cli', this.root));
+    const emberCLIPackage = resolvePackagePath('ember-cli', this.root);
+
+    if (emberCLIPackage === null) {
+      throw new Error(`Embroider: cannot resolve ember-cli's package.json`);
+    }
+
+    return dirname(emberCLIPackage);
   }
 
   private requireFromEmberCLI(specifier: string) {

@@ -944,7 +944,9 @@ let d = w.define;
 {{/if}}
 
 {{#if autoRun ~}}
-  i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+  if (typeof EMBER_DISABLE_AUTO_BOOT === 'undefined' || !EMBER_DISABLE_AUTO_BOOT) {
+    i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+  }
 {{/if}}
 
 {{#if testSuffix ~}}

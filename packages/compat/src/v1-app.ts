@@ -17,6 +17,7 @@ import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
 import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
+import mapKeys from 'lodash/mapKeys';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -426,14 +427,16 @@ export default class V1App implements V1Package {
         copySync(sourcePath, destPath);
       }
 
+      let remapAsset = this.remapAsset.bind(this);
+
       let addonMeta: AddonMeta = {
         type: 'addon',
         version: 2,
-        'implicit-scripts': this.remapImplicitAssets(this._implicitScripts),
-        'implicit-styles': this.remapImplicitAssets(this._implicitStyles),
-        'implicit-test-scripts': this.remapImplicitAssets(this.app.legacyTestFilesToAppend),
-        'implicit-test-styles': this.remapImplicitAssets(this.app.vendorTestStaticStyles),
-        'public-assets': this._publicAssets,
+        'implicit-scripts': this._implicitScripts.map(remapAsset),
+        'implicit-styles': this._implicitStyles.map(remapAsset),
+        'implicit-test-scripts': this.app.legacyTestFilesToAppend.map(remapAsset),
+        'implicit-test-styles': this.app.vendorTestStaticStyles.map(remapAsset),
+        'public-assets': mapKeys(this._publicAssets, (_, key) => remapAsset(key)),
       };
       let meta = {
         name: '@embroider/synthesized-vendor',
@@ -517,27 +520,24 @@ export default class V1App implements V1Package {
     return externalTree;
   }
 
-  private remapImplicitAssets(assets: string[]) {
-    let transformedNodeFiles = this.transformedNodeFiles();
-    return assets.map(asset => {
-      if (transformedNodeFiles.has(asset)) {
-        // transformed node assets become local paths, because we have copied
-        // those ones into our synthesized vendor package.
-        return './' + asset;
-      }
-      let preresolved = this.preresolvedNodeFile(asset);
-      if (preresolved) {
-        // non-transformed node assets point directly at their pre-resolved
-        // original files (this is an absolute path).
-        return preresolved;
-      }
-      // non node assets are local paths. They need an explicit `/` or `.` at
-      // the start.
-      if (asset.startsWith('/') || asset.startsWith('.')) {
-        return asset;
-      }
+  private remapAsset(asset: string) {
+    if (this.transformedNodeFiles().has(asset)) {
+      // transformed node assets become local paths, because we have copied
+      // those ones into our synthesized vendor package.
       return './' + asset;
-    });
+    }
+    let preresolved = this.preresolvedNodeFile(asset);
+    if (preresolved) {
+      // non-transformed node assets point directly at their pre-resolved
+      // original files (this is an absolute path).
+      return preresolved;
+    }
+    // non node assets are local paths. They need an explicit `/` or `.` at
+    // the start.
+    if (asset.startsWith('/') || asset.startsWith('.')) {
+      return asset;
+    }
+    return './' + asset;
   }
 
   private preprocessJS(tree: Tree): Tree {

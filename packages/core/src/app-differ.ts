@@ -29,7 +29,7 @@ export default class AppDiffer {
             return {
               mayChange: addon.mayRebuild,
               walk() {
-                return walkSync.entries(definitelyDir);
+                return walkSync.entries(definitelyDir, { ignore: ['**/.*'] });
               },
             };
           }

@@ -114,6 +114,10 @@ export interface AppAdapter<TreeNames> {
   strictV2Format(): boolean;
 }
 
+export function excludeDotFiles(files: string[]) {
+  return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
+}
+
 class ParsedEmberAsset {
   kind: 'parsed-ember' = 'parsed-ember';
   relativePath: string;
@@ -808,7 +812,7 @@ export class AppBuilder<TreeNames> {
       );
     }
 
-    let amdModules = flatten(requiredAppFiles).map(file => this.importPaths(file, relativePath));
+    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file => this.importPaths(file, relativePath));
 
     // for the src tree, we can limit ourselves to only known resolvable
     // collections

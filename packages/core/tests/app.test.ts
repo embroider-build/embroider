@@ -1,7 +1,7 @@
 import 'qunit';
 import { excludeDotFiles } from '../src/app';
 
-describe('excludeDotFiles works', () => {
+describe('dot files can be excluded', () => {
   test('excludeDotFiles works', () => {
     expect(excludeDotFiles([])).toEqual([]);
     expect(excludeDotFiles(['.foo.js'])).toEqual([]);

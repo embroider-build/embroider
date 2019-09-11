@@ -56,6 +56,6 @@
   },
   "dependencies": {
     "ember-cli-babel-polyfills": "1.0.4",
-    "ember-cli-fastboot": "^2.2.0"
+    "ember-cli-fastboot": "^2.2.1"
   }
 }

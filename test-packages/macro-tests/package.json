@@ -22,6 +22,7 @@
     "@ember/optional-features": "^0.7.0",
     "@embroider/compat": "0.6.0",
     "@embroider/core": "0.6.0",
+    "@embroider/funky-sample-addon": "0.0.0",
     "@embroider/macros": "0.6.0",
     "@embroider/webpack": "0.6.0",
     "ember-ajax": "^5.0.0",
@@ -48,7 +49,6 @@
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "macro-sample-addon": "0.0.0",
-    "@embroider/funky-sample-addon": "0.0.0",
     "qunit-dom": "^0.8.4"
   },
   "engines": {

@@ -44,6 +44,8 @@ module.exports = function(defaults) {
   app.import('vendor/prepend/three.js', { prepend: true });
   app.import('vendor/prepend/four.js', { prepend: true });
 
+  app.import('vendor/prepend/order.js', { prepend: true });
+
   if (process.env.CLASSIC) {
     return app.toTree();
   }

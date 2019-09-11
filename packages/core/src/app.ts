@@ -253,15 +253,16 @@ class AppFiles {
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
+  static activateMacroConfig() {
+    MacrosConfig.shared().setOwnConfig(__filename, { active: true });
+  }
 
   constructor(
     private root: string,
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>
-  ) {
-    MacrosConfig.shared().setOwnConfig(__filename, { active: true });
-  }
+  ) {}
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {

@@ -60,7 +60,7 @@ export default class MacrosConfig {
 
   private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
     if (this.cachedUserConfigs) {
-      throw new Error(`attempted to set config after we have already emitted our config`);
+      throw new Error(`attempted to set config after we have already emitted our config` + fromPath);
     }
     let targetPackage = this.resolvePackage(fromPath, packageName);
     let peers = getOrCreate(this.configs, targetPackage.root, () => []);

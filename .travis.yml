@@ -12,7 +12,6 @@ cache:
 
 install:
   - yarn install
-  - yarn compile
 
 script:
   - yarn lint

@@ -37,4 +37,11 @@ module('Acceptance | smoke tests', function(hooks) {
       'FOUR', 'TWO', 'THREE', 'ONE'
     ]);
   });
+
+  test('navigate to engines', async function(assert) {
+    await visit('eager');
+    assert.equal(document.querySelector('#engine-title').textContent, 'Eager');
+    await visit('lazy');
+    assert.equal(document.querySelector('#engine-title').textContent, 'Lazy');
+  });
 });

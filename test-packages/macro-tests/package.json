@@ -22,6 +22,7 @@
     "@ember/optional-features": "^0.7.0",
     "@embroider/compat": "0.6.0",
     "@embroider/core": "0.6.0",
+    "@embroider/funky-sample-addon": "0.0.0",
     "@embroider/macros": "0.6.0",
     "@embroider/webpack": "0.6.0",
     "ember-ajax": "^5.0.0",
@@ -37,6 +38,7 @@
     "ember-cli-template-lint": "^1.0.0-beta.3",
     "ember-cli-uglify": "^2.1.0",
     "ember-data": "~3.10.0",
+    "ember-engines": "^0.8.2",
     "ember-export-application-global": "^2.0.0",
     "ember-load-initializers": "^2.0.0",
     "ember-maybe-import-regenerator": "^0.1.6",
@@ -48,7 +50,6 @@
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "macro-sample-addon": "0.0.0",
-    "@embroider/funky-sample-addon": "0.0.0",
     "qunit-dom": "^0.8.4"
   },
   "engines": {
@@ -56,5 +57,12 @@
   },
   "dependencies": {
     "ember-cli-babel-polyfills": "1.0.4"
+  },
+  "ember-addon": {
+    "paths": [
+      "lib/eager",
+      "lib/lazy",
+      "lib/routeless"
+    ]
   }
 }

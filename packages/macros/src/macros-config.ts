@@ -65,8 +65,10 @@ export default class MacrosConfig {
   }
 
   private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
-    if (this._configWritable === false) {
-      throw new Error(`[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`);
+    if (!this._configWritable) {
+      throw new Error(
+        `[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`
+      );
     }
 
     let targetPackage = this.resolvePackage(fromPath, packageName);
@@ -87,8 +89,8 @@ export default class MacrosConfig {
     if (other) {
       throw new Error(
         `[Embroider:MacrosConfig] conflicting mergers registered for package ${targetPackage.name} at ${
-          targetPackage.root}. See ${
-          other.fromPath } and ${fromPath}.`
+          targetPackage.root
+        }. See ${other.fromPath} and ${fromPath}.`
       );
     }
     this.mergers.set(targetPackage.root, { merger, fromPath });
@@ -174,7 +176,7 @@ export default class MacrosConfig {
   // this exists because @embroider/compat rewrites and moves v1 addons, and
   // their macro configs need to follow them to their new homes.
   packageMoved(oldPath: string, newPath: string) {
-    if (this._configWritable === false) {
+    if (!this._configWritable) {
       throw new Error(`[Embroider:MacrosConfig] attempted to call packageMoved after configs have been finalized`);
     }
 

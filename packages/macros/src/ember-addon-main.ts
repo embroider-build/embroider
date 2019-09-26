@@ -29,11 +29,9 @@ export = {
     // TODO: LOL MEGA HACK
     const originalToTree = parent.toTree;
     parent.toTree = function() {
-      console.log('TO TREE');
-      debugger;
       MacrosConfig.shared().finalize();
       return originalToTree.apply(this, arguments);
-    }
+    };
   },
 
   // treeFor() : any {
@@ -56,7 +54,6 @@ export = {
           },
         });
       });
-
     }
   },
 };

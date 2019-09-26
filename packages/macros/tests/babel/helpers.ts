@@ -4,7 +4,6 @@ import { allBabelVersions as allBabel, runDefault } from '@embroider/test-suppor
 import 'qunit';
 
 export { runDefault };
-
 export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
   let config: MacrosConfig;
 
@@ -12,6 +11,10 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
     allBabel({
       babelConfig() {
         config = new MacrosConfig();
+        if (createTests.length < 2) {
+          config.finalize();
+        }
+
         return {
           filename: join(__dirname, 'sample.js'),
           presets: [],
@@ -28,6 +31,10 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
     allBabel({
       babelConfig(major: number) {
         config = new MacrosConfig();
+        if (createTests.length < 2) {
+          config.finalize();
+        }
+
         return {
           filename: join(__dirname, 'sample.js'),
           presets: [

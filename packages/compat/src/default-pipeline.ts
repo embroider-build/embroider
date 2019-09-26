@@ -1,5 +1,5 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
-import { toBroccoliPlugin, Packager } from '@embroider/core';
+import { toBroccoliPlugin, Packager, AppBuilder } from '@embroider/core';
 import { Tree } from 'broccoli-plugin';
 
 interface PipelineOptions<PackagerOptions> extends Options {
@@ -13,6 +13,7 @@ export default function defaultPipeline<PackagerOptions>(
   options?: PipelineOptions<PackagerOptions>
 ): Tree {
   let addons;
+
   if (process.env.REUSE_WORKSPACE) {
     addons = new PrebuiltAddons(emberApp, options, process.env.REUSE_WORKSPACE);
   } else {
@@ -32,6 +33,7 @@ export default function defaultPipeline<PackagerOptions>(
     });
   }
 
+  AppBuilder.finalizeMacroConfig();
   if (process.env.STAGE1_ONLY) {
     return addons.tree;
   }

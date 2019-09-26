@@ -25,7 +25,20 @@ export = {
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
     babelPlugins.unshift(MacrosConfig.shared().babelPluginConfig(source));
+
+    // TODO: LOL MEGA HACK
+    const originalToTree = parent.toTree;
+    parent.toTree = function() {
+      console.log('TO TREE');
+      debugger;
+      MacrosConfig.shared().finalize();
+      return originalToTree.apply(this, arguments);
+    }
   },
+
+  // treeFor() : any {
+  //   return ((this as any)._super as any).treeFor(...arguments);
+  // },
 
   setupPreprocessorRegistry(type: 'parent' | 'self', registry: any) {
     if (type === 'parent') {
@@ -43,6 +56,7 @@ export = {
           },
         });
       });
+
     }
   },
 };

@@ -36,11 +36,17 @@ export default class MacrosConfig {
   }
 
   static reset() {
-    this.shared().configs.clear();
-    this.shared().mergers.clear();
+    this.shared().reset();
     localSharedState = undefined;
   }
 
+  reset() {
+    this.configs.clear();
+    this.mergers.clear();
+    this._configWritable = true;
+  }
+
+  private _configWritable = true;
   private configs: Map<string, unknown[]> = new Map();
   private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
 
@@ -59,9 +65,10 @@ export default class MacrosConfig {
   }
 
   private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
-    if (this.cachedUserConfigs) {
-      throw new Error(`attempted to set config after we have already emitted our config`);
+    if (this._configWritable === false) {
+      throw new Error(`[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`);
     }
+
     let targetPackage = this.resolvePackage(fromPath, packageName);
     let peers = getOrCreate(this.configs, targetPackage.root, () => []);
     peers.push(config);
@@ -71,16 +78,17 @@ export default class MacrosConfig {
   // merging strategy applies when multiple other packages all try to send
   // configuration to you.
   useMerger(fromPath: string, merger: Merger) {
-    if (this.cachedUserConfigs) {
-      throw new Error(`attempted to call useMerger after we have already emitted our config`);
+    if (this._configWritable) {
+      throw new Error(`[Embroider:MacrosConfig] attempted to call useMerger after configs have been finalized`);
     }
+
     let targetPackage = this.resolvePackage(fromPath, undefined);
     let other = this.mergers.get(targetPackage.root);
     if (other) {
       throw new Error(
-        `conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${
-          other.fromPath
-        } and ${fromPath}.`
+        `[Embroider:MacrosConfig] conflicting mergers registered for package ${targetPackage.name} at ${
+          targetPackage.root}. See ${
+          other.fromPath } and ${fromPath}.`
       );
     }
     this.mergers.set(targetPackage.root, { merger, fromPath });
@@ -89,6 +97,10 @@ export default class MacrosConfig {
   private cachedUserConfigs: { [packageRoot: string]: unknown } | undefined;
 
   private get userConfigs() {
+    if (this._configWritable) {
+      throw new Error('[Embroider:MacrosConfig] cannot read userConfigs until MacrosConfig has been finalized.');
+    }
+
     if (!this.cachedUserConfigs) {
       let userConfigs: { [packageRoot: string]: unknown } = {};
       for (let [pkgRoot, configs] of this.configs) {
@@ -105,6 +117,7 @@ export default class MacrosConfig {
       }
       this.cachedUserConfigs = userConfigs;
     }
+
     return this.cachedUserConfigs;
   }
 
@@ -161,9 +174,10 @@ export default class MacrosConfig {
   // this exists because @embroider/compat rewrites and moves v1 addons, and
   // their macro configs need to follow them to their new homes.
   packageMoved(oldPath: string, newPath: string) {
-    if (this.cachedUserConfigs) {
-      throw new Error(`attempted to call packageMoved after we have already emitted our config`);
+    if (this._configWritable === false) {
+      throw new Error(`[Embroider:MacrosConfig] attempted to call packageMoved after configs have been finalized`);
     }
+
     this.moves.set(oldPath, newPath);
   }
 
@@ -180,13 +194,21 @@ export default class MacrosConfig {
   resolvePackage(fromPath: string, packageName?: string | undefined) {
     let us = packageCache.ownerOfFile(fromPath);
     if (!us) {
-      throw new Error(`unable to determine which npm package owns the file ${fromPath}`);
+      throw new Error(`[Embroider:MacrosConfig] unable to determine which npm package owns the file ${fromPath}`);
     }
     if (packageName) {
       return packageCache.resolve(packageName, us);
     } else {
       return us;
     }
+  }
+
+  finalize() {
+    if (!this._configWritable) {
+      throw new Error(`[Embroider:MacrosConfig] attempted to finalize configs after they have already been finalized`);
+    }
+
+    this._configWritable = false;
   }
 }
 

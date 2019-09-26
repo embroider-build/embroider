@@ -1,1 +1,1 @@
-self.ORDER.push('prepend/two')
+self.ORDER && self.ORDER.push('prepend/two')

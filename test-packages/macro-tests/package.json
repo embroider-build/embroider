@@ -49,7 +49,9 @@
     "loader.js": "^4.7.0",
     "macro-sample-addon": "0.0.0",
     "@embroider/funky-sample-addon": "0.0.0",
-    "qunit-dom": "^0.8.4"
+    "qunit-dom": "^0.8.4",
+    "ember-cli-fastboot": "dnalagatla/ember-cli-fastboot#all-embroider-support-changes",
+    "ember-cli-fastboot-testing": "latest"
   },
   "engines": {
     "node": "8.* || >= 10.*"

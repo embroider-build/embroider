@@ -1,1 +1,1 @@
-self.ORDER.push('prepend/four');
+self.ORDER && self.ORDER.push('prepend/four');

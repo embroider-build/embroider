@@ -6,7 +6,10 @@ const path = require('path');
 
 process.env.EMBER_CLI_IGNORE_ADDON_NAME_MISMATCH = true;
 module.exports = {
-  name: 'funky-sample-addon',
+  name: '@embroider/funky-sample-addon',
+  moduleName() {
+    return 'funky-sample-addon'
+  },
 
   treeForAddon() {
     const addonTree = this._super.treeForAddon.apply(this, arguments),

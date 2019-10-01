@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## 0.7.0
+
+- HOUSEKEEPING: multiple fixes and improvements by @stefanpenner
+- ENHANCEMENT: treat dotfiles the same way ember-cli does by @thoov
+- HOUSEKEEPING: upgrade babel plugin-debug-macros by @k-fish
+- ENHANCEMENT: compatibility with app.import from node_modules with outputFile option
+- ENHANCEMENT: build performance improvement by caching v2tree by @tmquinn
+- ENHANCEMENT: allow interactive rebuilds of addons by @thoov
+- ENHANCEMENT: fastboot compatibility improves by @dnalagatla
+- ENHANCEMENT: support node's mjs extension by @knownasilya
+- ENHANCEMENT: usage of getOrCreate cleaned up by @2hu12
+- ENHANCEMENT: add support for nested angle components by @josemarluedke
+- ENHANCEMENT: add support for pod module prefix by @josemarluedke
+- ENHANCEMENT: add support for ember's new `on` and `fn` by @josemarluedke
+- ENHANCEMENT: add compatibility rules for ember-basic-dropdown v2 by @josemarluedke
+- DOCS: improved readme code samples by @efx
+
 ## 0.6.0
 
 - BUGFIX: make renamed implicit-modules work

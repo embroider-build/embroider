@@ -50,8 +50,7 @@
     "macro-sample-addon": "0.0.0",
     "@embroider/funky-sample-addon": "0.0.0",
     "qunit-dom": "^0.8.4",
-    "ember-cli-fastboot": "dnalagatla/ember-cli-fastboot#all-embroider-support-changes",
-    "ember-cli-fastboot-testing": "latest"
+    "ember-cli-fastboot": "dnalagatla/ember-cli-fastboot#all-embroider-support-changes"
   },
   "engines": {
     "node": "8.* || >= 10.*"

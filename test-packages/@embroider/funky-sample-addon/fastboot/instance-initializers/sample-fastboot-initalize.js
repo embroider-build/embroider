@@ -1,6 +1,6 @@
 import funkyAddon from 'funky-sample-addon';
 
-function initialize(applicationInstance) {
+function initialize() {
   funkyAddon();
 }
 

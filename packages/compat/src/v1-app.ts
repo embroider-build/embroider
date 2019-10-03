@@ -8,6 +8,7 @@ import resolve from 'resolve';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import { V1Config, WriteV1Config } from './v1-config';
+import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
@@ -170,6 +171,22 @@ export default class V1App implements V1Package {
 
   get autoRun(): boolean {
     return this.app.options.autoRun;
+  }
+
+  @Memoize()
+  get appBoot(): ReadV1AppBoot {
+    let env = this.app.env;
+    let appBootContentTree = new WriteV1AppBoot();
+
+    let patterns = this.configReplacePatterns;
+
+    appBootContentTree = new this.configReplace(appBootContentTree, this.configTree, {
+      configPath: join('environments', `${env}.json`),
+      files: ['config/app-boot.js'],
+      patterns,
+    });
+
+    return new ReadV1AppBoot(appBootContentTree);
   }
 
   private get storeConfigInMeta(): boolean {

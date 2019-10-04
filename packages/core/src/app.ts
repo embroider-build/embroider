@@ -251,9 +251,10 @@ class AppFiles {
 }
 
 export class AppBuilder<TreeNames> {
-  static finalizeMacroConfig() {
-    MacrosConfig.shared().setOwnConfig(__filename, { active: true });
-    MacrosConfig.shared().finalize();
+  static finalizeMacroConfig(emberApp: any) {
+    const config = MacrosConfig.for(emberApp);
+    config.setOwnConfig(__filename, { active: true });
+    config.finalize();
   }
 
   // for each relativePath, an Asset we have already emitted
@@ -263,7 +264,8 @@ export class AppBuilder<TreeNames> {
     private root: string,
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
-    private options: Required<Options>
+    private options: Required<Options>,
+    private appInstance: any,
   ) {}
 
   private scriptPriority(pkg: Package) {
@@ -337,7 +339,7 @@ export class AppBuilder<TreeNames> {
     );
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+    babel.plugins.push(MacrosConfig.for(this.appInstance).babelPluginConfig());
 
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
@@ -678,7 +680,7 @@ export class AppBuilder<TreeNames> {
     if (!plugins.ast) {
       plugins.ast = [];
     }
-    for (let macroPlugin of MacrosConfig.shared().astPlugins()) {
+    for (let macroPlugin of MacrosConfig.for(this.appInstance).astPlugins()) {
       plugins.ast.push(macroPlugin);
     }
 

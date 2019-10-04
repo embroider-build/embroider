@@ -33,7 +33,7 @@ export default function defaultPipeline<PackagerOptions>(
     });
   }
 
-  AppBuilder.finalizeMacroConfig();
+  AppBuilder.finalizeMacroConfig(emberApp);
   if (process.env.STAGE1_ONLY) {
     return addons.tree;
   }

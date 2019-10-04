@@ -43,7 +43,7 @@ export default class BuildResult {
     }
     let addons = new Addons(instance, params.embroiderOptions);
     let tree;
-    AppBuilder.finalizeMacroConfig();
+    AppBuilder.finalizeMacroConfig(instance);
     if (params.stage === 1) {
       tree = addons.tree;
     } else {

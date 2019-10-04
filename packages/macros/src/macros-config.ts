@@ -9,35 +9,61 @@ export type Merger = (configs: unknown[]) => unknown;
 
 // Do not change the public signature of this class without pondering deeply the
 // mysteries of being compatible with unwritten future versions of this library.
-class GlobalSharedState {
-  configs: Map<string, unknown[]> = new Map();
-  mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
-}
+// class GlobalSharedState {
+//   configs: Map<string, unknown[]> = new Map();
+//   mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
+// }
 
 // this is a module-scoped cache. If multiple callers ask _this copy_ of
 // @embroider/macros for the shared MacrosConfig, they'll all get the same one.
 // And if somebody asks a *different* copy of @embroider/macros for the shared
 // MacrosConfig, it will have its own instance with its own code, but will still
 // share the GlobalSharedState beneath.
-let localSharedState: MacrosConfig | undefined;
+// let localSharedState: MacrosConfig | undefined;
 
+const g = global as any;
+let CONFIGS: WeakMap<any, MacrosConfig>;
+
+if (g.__embroider_macros_config_global__) {
+  CONFIGS = g.__embroider_macros_config_global__;
+} else {
+  CONFIGS = g.__embroider_macros_config_global__ = new WeakMap<any, MacrosConfig>();
+}
+let COUNTER = 0;
 export default class MacrosConfig {
-  static shared(): MacrosConfig {
-    if (!localSharedState) {
-      let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
-      if (!g.__embroider_macros_global__) {
-        g.__embroider_macros_global__ = new GlobalSharedState();
-      }
-      localSharedState = new MacrosConfig();
-      localSharedState.configs = g.__embroider_macros_global__.configs;
-      localSharedState.mergers = g.__embroider_macros_global__.mergers;
+  public id = COUNTER++;
+  // static shared(): MacrosConfig {
+  //   if (!localSharedState) {
+  //     let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
+  //     if (!g.__embroider_macros_global__) {
+  //       g.__embroider_macros_global__ = new GlobalSharedState();
+  //     }
+  //     localSharedState = new MacrosConfig();
+  //     localSharedState.configs = g.__embroider_macros_global__.configs;
+  //     localSharedState.mergers = g.__embroider_macros_global__.mergers;
+  //   }
+  //   return localSharedState;
+  // }
+
+  static for(key: any): MacrosConfig {
+    let config = CONFIGS.get(key);
+    if (config) {
+      return config;
     }
-    return localSharedState;
+    COUNTER;
+    debugger;
+
+    // TODO: error if `key` isn't what we want someone using. Is it an EmberApp instance?
+
+    config = new MacrosConfig();
+    CONFIGS.set(key, config);
+
+    return config;
   }
 
   static reset() {
-    this.shared().reset();
-    localSharedState = undefined;
+    // TODO: confirm we dont need this
+    // this.shared().reset();
   }
 
   reset() {

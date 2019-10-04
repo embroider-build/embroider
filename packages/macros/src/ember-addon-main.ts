@@ -3,28 +3,29 @@ import { MacrosConfig } from '.';
 
 export = {
   name: '@embroider/macros',
-
+  appInstance: {}, // TODO: don't do this
   included(this: any, parent: any) {
     this._super.included.apply(this, arguments);
     let parentOptions = (parent.options = parent.options || {});
     let ownOptions = (parentOptions['@embroider/macros'] = parentOptions['@embroider/macros'] || {});
 
+    const appInstance = (this.appInstance = this._findHost());
     // if parent is an addon it has root. If it's an app it has project.root.
     let source = parent.root || parent.project.root;
 
     if (ownOptions.setOwnConfig) {
-      MacrosConfig.shared().setOwnConfig(source, ownOptions.setOwnConfig);
+      MacrosConfig.for(this.appInstance).setOwnConfig(source, ownOptions.setOwnConfig);
     }
 
     if (ownOptions.setConfig) {
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        MacrosConfig.shared().setConfig(source, packageName, config);
+        MacrosConfig.for(this.appInstance).setConfig(source, packageName, config);
       }
     }
 
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
-    babelPlugins.unshift(MacrosConfig.shared().babelPluginConfig(source));
+    babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
 
     // Here we attach to ember-cli's default EmberApp#toTree. This allows us to
     // mimic the appropriate timing semantics of the MacrosConfig read after
@@ -38,7 +39,8 @@ export = {
     // thing.
     const originalToTree = parent.toTree;
     parent.toTree = function() {
-      MacrosConfig.shared().finalize();
+      debugger;
+      MacrosConfig.for(appInstance).finalize();
       return originalToTree.apply(this, arguments);
     };
   },
@@ -49,7 +51,7 @@ export = {
       // important. Weirdly, they appear to run in the reverse order that you
       // register them here.
 
-      let plugins = MacrosConfig.shared().astPlugins((this as any).parent.root);
+      let plugins = MacrosConfig.for(this.appInstance).astPlugins((this as any).parent.root);
       plugins.forEach((plugin, index) => {
         registry.add('htmlbars-ast-plugin', {
           name: `@embroider/macros/${index}`,

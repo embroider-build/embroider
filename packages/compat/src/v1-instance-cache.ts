@@ -27,11 +27,11 @@ export default class V1InstanceCache {
   private addons: Map<string, V1Addon[]> = new Map();
 
   app: V1App;
-  packageCache = new MovablePackageCache();
+  packageCache: MovablePackageCache;
 
   private constructor(oldApp: any, private options: Required<Options>) {
+    this.packageCache = new MovablePackageCache(oldApp);
     this.app = V1App.create(oldApp, this.packageCache);
-
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
     (oldApp.project.addons as any[]).forEach(addon => {

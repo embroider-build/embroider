@@ -26,17 +26,22 @@ export = {
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
     babelPlugins.unshift(MacrosConfig.shared().babelPluginConfig(source));
 
-    // TODO: LOL MEGA HACK
+    // Here we attach to ember-cli's default EmberApp#toTree. This allows us to
+    // mimic the appropriate timing semantics of the MacrosConfig read after
+    // write guarantee.
+    //
+    // In general, we do not condone this type of monkey patching and our plan
+    // is if this indeed remains needed, to add the appropriate public API in
+    // ember-cli. One interesting tid-bit, once users use embroider primarily
+    // this hack will have no impact, and then adding the API to ember-cli
+    // may be wasted. We will see how this plays out, and do the appropriate
+    // thing.
     const originalToTree = parent.toTree;
     parent.toTree = function() {
       MacrosConfig.shared().finalize();
       return originalToTree.apply(this, arguments);
     };
   },
-
-  // treeFor() : any {
-  //   return ((this as any)._super as any).treeFor(...arguments);
-  // },
 
   setupPreprocessorRegistry(type: 'parent' | 'self', registry: any) {
     if (type === 'parent') {

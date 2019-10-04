@@ -2,7 +2,7 @@
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 
-module.exports = function(defaults) {
+module.exports = function (defaults) {
   let app = new EmberApp(defaults, {
     '@embroider/macros': {
       setOwnConfig: {
@@ -28,7 +28,7 @@ module.exports = function(defaults) {
 
   app.import('vendor/apple.js', {
     using: [
-      { transformation: 'amd', as: 'amd'}
+      { transformation: 'amd', as: 'amd' }
     ],
     outputFile: 'apple.js'
   })
@@ -43,6 +43,8 @@ module.exports = function(defaults) {
   app.import('vendor/prepend/two.js', { prepend: true });
   app.import('vendor/prepend/three.js', { prepend: true });
   app.import('vendor/prepend/four.js', { prepend: true });
+
+  app.import('vendor/prepend/order.js', { prepend: true });
 
   if (process.env.CLASSIC) {
     return app.toTree();

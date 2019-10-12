@@ -18,4 +18,12 @@ module('Acceptance | basics', function(hooks) {
     assert.dom('[data-test-truth-helpers-ok]').exists();
     assert.dom('[data-test-duplicated-helper]').containsText('from-eager-engine-helper');
   });
+
+  test('eager styles', async function(assert) {
+    await visit('/style-check');
+    assert.dom('.shared-style-target').exists();
+
+    // this style comes from eager-engine
+    assert.equal(getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'], '2px');
+  });
 });

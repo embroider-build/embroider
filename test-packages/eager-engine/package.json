@@ -23,7 +23,8 @@
   },
   "dependencies": {
     "ember-cli-babel": "^7.7.3",
-    "ember-cli-htmlbars": "^3.0.1"
+    "ember-cli-htmlbars": "^3.0.1",
+    "ember-truth-helpers": "^2.1.0"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
@@ -54,7 +55,10 @@
     "node": "8.* || >= 10.*"
   },
   "ember-addon": {
-    "configPath": "tests/dummy/config"
+    "configPath": "tests/dummy/config",
+    "paths": [
+      "lib/eager-engine-helper"
+    ]
   },
   "peerDependencies": {
     "ember-engines": "^0.8.2"

@@ -6,6 +6,9 @@ const Router = EmberRouter.extend({
   rootURL: config.rootURL,
 });
 
-Router.map(function() {});
+Router.map(function() {
+  this.route('use-eager-engine');
+  this.route('style-check');
+});
 
 export default Router;

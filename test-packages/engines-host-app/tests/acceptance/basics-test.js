@@ -19,11 +19,42 @@ module('Acceptance | basics', function(hooks) {
     assert.dom('[data-test-duplicated-helper]').containsText('from-eager-engine-helper');
   });
 
-  test('eager styles', async function(assert) {
+  test('styles', async function(assert) {
     await visit('/style-check');
     assert.dom('.shared-style-target').exists();
 
-    // this style comes from eager-engine
-    assert.equal(getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'], '2px');
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'],
+      '2px',
+      'eager-engine styles are present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
+      '0px',
+      'lazy-engine styles are not present'
+    );
+
+    await visit('/use-lazy-engine');
+    await visit('/style-check');
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'],
+      '2px',
+      'eager-engine styles are still present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
+      '2px',
+      'now lazy-engine styles are present'
+    );
+  });
+
+  test('lazy-engine', async function(assert) {
+    await visit('/use-lazy-engine');
+    assert.equal(currentURL(), '/use-lazy-engine');
+    assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
+    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
   });
 });

@@ -26,7 +26,8 @@
       "name": "Run jest tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/dependency-satisfies.test.js"]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/macro-condition.test.js"],
+      "outputCapture": "std"
     },
     {
       "type": "node",

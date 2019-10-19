@@ -12,11 +12,22 @@ function evaluateKey(path: NodePath, visitor: BoundVisitor): { confident: boolea
   return { confident: false, value: undefined };
 }
 
-export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
+export default function evaluate(path: NodePath, visitor: BoundVisitor) {
+  let builtIn = path.evaluate();
+  if (builtIn.confident) {
+    return builtIn;
+  }
+
+  // we can go further than babel's evaluate() because we know that we're
+  // typically used on JSON, not full Javascript.
+  return evaluateJSON(path, visitor);
+}
+
+export function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
   if (path.isMemberExpression()) {
     let property = evaluateKey(assertNotArray(path.get('property')), visitor);
     if (property.confident) {
-      let object = evaluateJSON(path.get('object'), visitor);
+      let object = evaluate(path.get('object'), visitor);
       if (object.confident) {
         return { confident: true, value: object.value[property.value] };
       }
@@ -41,8 +52,8 @@ export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { c
 
   if (path.isObjectExpression()) {
     let props = assertArray(path.get('properties')).map(p => [
-      evaluateJSON(assertNotArray(p.get('key')), visitor),
-      evaluateJSON(assertNotArray(p.get('value')), visitor),
+      evaluate(assertNotArray(p.get('key')), visitor),
+      evaluate(assertNotArray(p.get('value')), visitor),
     ]);
     let result: any = {};
     for (let [k, v] of props) {
@@ -56,7 +67,7 @@ export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { c
 
   if (path.isArrayExpression()) {
     let elements = path.get('elements').map(element => {
-      return evaluateJSON(element as NodePath, visitor);
+      return evaluate(element as NodePath, visitor);
     });
     if (elements.every(element => element.confident)) {
       return { confident: true, value: elements.map(element => element.value) };
@@ -65,7 +76,7 @@ export default function evaluateJSON(path: NodePath, visitor: BoundVisitor): { c
 
   if (path.isCallExpression()) {
     visitor.CallExpression(path);
-    return evaluateJSON(path, visitor);
+    return evaluate(path, visitor);
   }
 
   return { confident: false, value: undefined };

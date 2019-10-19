@@ -1,10 +1,17 @@
 import { NodePath } from '@babel/traverse';
-import { ImportDeclaration, CallExpression, Identifier, memberExpression, identifier } from '@babel/types';
+import {
+  CallExpression,
+  Identifier,
+  memberExpression,
+  identifier,
+  IfStatement,
+  ConditionalExpression,
+} from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
-import macroIf from './macro-if';
+import macroCondition from './macro-condition';
 import error from './error';
 import failBuild from './fail-build';
 import { bindState } from './visitor';
@@ -15,15 +22,29 @@ export default function main() {
   let visitor = {
     Program: {
       enter(_: NodePath, state: State) {
-        state.removed = [];
-        state.pendingTasks = [];
         state.generatedRequires = new Set();
       },
-      exit(path: NodePath, state: State) {
-        state.pendingTasks.forEach(task => task());
-        pruneRemovedImports(state);
+      exit(path: NodePath) {
         pruneMacroImports(path);
       },
+    },
+    IfStatement(path: NodePath<IfStatement>, state: State) {
+      let test = path.get('test');
+      if (test.isCallExpression()) {
+        let callee = test.get('callee');
+        if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
+          macroCondition(path, test, bindState(visitor, state));
+        }
+      }
+    },
+    ConditionalExpression(path: NodePath<ConditionalExpression>, state: State) {
+      let test = path.get('test');
+      if (test.isCallExpression()) {
+        let callee = test.get('callee');
+        if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
+          macroCondition(path, test, bindState(visitor, state));
+        }
+      }
     },
     CallExpression(path: NodePath<CallExpression>, state: State) {
       let callee = path.get('callee');
@@ -35,9 +56,6 @@ export default function main() {
       }
       if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
         getConfig(path, state, packageCache, true);
-      }
-      if (callee.referencesImport('@embroider/macros', 'macroIf')) {
-        macroIf(path, state, bindState(visitor, state));
       }
       if (callee.referencesImport('@embroider/macros', 'failBuild')) {
         failBuild(path, bindState(visitor, state));
@@ -58,8 +76,8 @@ export default function main() {
       if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
         throw error(path, `You can only use getOwnConfig as a function call`);
       }
-      if (path.referencesImport('@embroider/macros', 'macroIf')) {
-        throw error(path, `You can only use macroIf as a function call`);
+      if (path.referencesImport('@embroider/macros', 'macroCondition')) {
+        throw error(path, `macroCondition can only be used as the predicate of an if statement or ternary expression`);
       }
       if (path.referencesImport('@embroider/macros', 'failBuild')) {
         throw error(path, `You can only use failBuild as a function call`);
@@ -95,32 +113,6 @@ export default function main() {
     },
   };
   return { visitor };
-}
-
-function wasRemoved(path: NodePath, state: State) {
-  return state.removed.includes(path) || Boolean(path.findParent(p => state.removed.includes(p)));
-}
-
-// This removes imports that are only referred to from within code blocks that
-// we killed.
-function pruneRemovedImports(state: State) {
-  if (state.removed.length === 0) {
-    return;
-  }
-  let moduleScope = state.removed[0].findParent(path => path.type === 'Program').scope;
-  for (let name of Object.keys(moduleScope.bindings)) {
-    let binding = moduleScope.bindings[name];
-    let bindingPath = binding.path;
-    if (bindingPath.isImportSpecifier() || bindingPath.isImportDefaultSpecifier()) {
-      if (binding.referencePaths.length > 0 && binding.referencePaths.every(path => wasRemoved(path, state))) {
-        bindingPath.remove();
-        let importPath = bindingPath.parentPath as NodePath<ImportDeclaration>;
-        if (importPath.get('specifiers').length === 0) {
-          importPath.remove();
-        }
-      }
-    }
-  }
 }
 
 // This removes imports from "@embroider/macros" itself, because we have no

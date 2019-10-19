@@ -30,5 +30,12 @@ describe('importSync', function() {
       `);
       expect(code).toMatch(/window\.require\(['"]foo['"]\)/);
     });
+    test('importSync accepts a macro-expanded argument', () => {
+      let code = transform(`
+      import { importSync, getOwnConfig } from '@embroider/macros';
+      importSync(getOwnConfig().target);
+      `);
+      expect(code).toMatch(/require\(['"]my-plugin['"]\)/);
+    });
   });
 });

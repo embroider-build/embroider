@@ -74,6 +74,8 @@ export function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident
     }
   }
 
+  // TODO: this can go away now that we handle conditional nodes on the exit
+  // side
   if (path.isCallExpression()) {
     visitor.CallExpression(path);
     return evaluate(path, visitor);

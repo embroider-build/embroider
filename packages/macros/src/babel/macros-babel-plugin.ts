@@ -11,7 +11,7 @@ import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
-import macroCondition from './macro-condition';
+import macroCondition, { MacroConditionPath } from './macro-condition';
 import error from './error';
 import failBuild from './fail-build';
 import { bindState } from './visitor';
@@ -23,28 +23,32 @@ export default function main() {
     Program: {
       enter(_: NodePath, state: State) {
         state.generatedRequires = new Set();
+        state.pendingConditionals = new Set();
+        state.pendingConditions = new Set();
       },
       exit(path: NodePath) {
         pruneMacroImports(path);
       },
     },
-    IfStatement(path: NodePath<IfStatement>, state: State) {
-      let test = path.get('test');
-      if (test.isCallExpression()) {
-        let callee = test.get('callee');
-        if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
-          macroCondition(path, test, bindState(visitor, state));
+    'IfStatement|ConditionalExpression': {
+      enter(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
+        let test = path.get('test');
+        if (test.isCallExpression()) {
+          let callee = test.get('callee');
+          if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
+            state.pendingConditionals.add(path as MacroConditionPath);
+            state.pendingConditions.add(callee.node);
+          }
         }
-      }
-    },
-    ConditionalExpression(path: NodePath<ConditionalExpression>, state: State) {
-      let test = path.get('test');
-      if (test.isCallExpression()) {
-        let callee = test.get('callee');
-        if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
-          macroCondition(path, test, bindState(visitor, state));
+      },
+      exit(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
+        let candidate = path as MacroConditionPath;
+        if (state.pendingConditionals.has(candidate)) {
+          state.pendingConditionals.delete(candidate);
+          state.pendingConditions.delete(candidate.get('test').node);
+          macroCondition(candidate, bindState(visitor, state));
         }
-      }
+      },
     },
     CallExpression(path: NodePath<CallExpression>, state: State) {
       let callee = path.get('callee');
@@ -76,7 +80,7 @@ export default function main() {
       if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
         throw error(path, `You can only use getOwnConfig as a function call`);
       }
-      if (path.referencesImport('@embroider/macros', 'macroCondition')) {
+      if (path.referencesImport('@embroider/macros', 'macroCondition') && !state.pendingConditions.has(path.node)) {
         throw error(path, `macroCondition can only be used as the predicate of an if statement or ternary expression`);
       }
       if (path.referencesImport('@embroider/macros', 'failBuild')) {

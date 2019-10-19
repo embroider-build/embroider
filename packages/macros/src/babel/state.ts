@@ -1,7 +1,12 @@
 import { NodePath, Node } from '@babel/traverse';
+import { MacroConditionPath } from './macro-condition';
 
 export default interface State {
   generatedRequires: Set<Node>;
+
+  pendingConditionals: Set<MacroConditionPath>;
+  pendingConditions: Set<Node>;
+
   opts: {
     userConfigs: {
       [pkgRoot: string]: unknown;

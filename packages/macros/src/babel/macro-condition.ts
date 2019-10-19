@@ -4,12 +4,12 @@ import { IfStatement, ConditionalExpression, CallExpression } from '@babel/types
 import error from './error';
 import { BoundVisitor } from './visitor';
 
-export default function macroCondition(
-  conditionalPath: NodePath<IfStatement | ConditionalExpression>,
-  calleePath: NodePath<CallExpression>,
-  visitor: BoundVisitor
-) {
-  let args = calleePath.get('arguments');
+export type MacroConditionPath = NodePath<IfStatement | ConditionalExpression> & {
+  get(test: 'test'): NodePath<CallExpression>;
+};
+
+export default function macroCondition(conditionalPath: MacroConditionPath, visitor: BoundVisitor) {
+  let args = conditionalPath.get('test').get('arguments');
   if (args.length !== 1) {
     throw error(conditionalPath, `macroCondition accepts exactly one argument, you passed ${args.length}`);
   }

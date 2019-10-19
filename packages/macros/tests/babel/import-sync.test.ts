@@ -1,7 +1,10 @@
 import { allBabelVersions } from './helpers';
+import { MacrosConfig } from '../..';
 
 describe('importSync', function() {
-  allBabelVersions(function createTests(transform: (code: string) => string) {
+  allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
+    config.setOwnConfig(__filename, { target: 'my-plugin' });
+
     test('importSync becomes require', () => {
       let code = transform(`
       import { importSync } from '@embroider/macros';

@@ -23,7 +23,7 @@ export default function main() {
     Program: {
       enter(_: NodePath, state: State) {
         state.generatedRequires = new Set();
-        state.pendingConditionals = new Set();
+        state.pendingConditionals = [];
         state.pendingConditions = new Set();
       },
       exit(path: NodePath) {
@@ -36,7 +36,7 @@ export default function main() {
         if (test.isCallExpression()) {
           let callee = test.get('callee');
           if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
-            state.pendingConditionals.add(path as MacroConditionPath);
+            state.pendingConditionals.unshift(path as MacroConditionPath);
             state.pendingConditions.add(callee.node);
           }
         }

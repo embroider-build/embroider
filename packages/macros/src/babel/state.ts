@@ -4,7 +4,7 @@ import { MacroConditionPath } from './macro-condition';
 export default interface State {
   generatedRequires: Set<Node>;
 
-  pendingConditionals: Set<MacroConditionPath>;
+  pendingConditionals: { conditionalPath: MacroConditionPath, waiting: [];
   pendingConditions: Set<Node>;
 
   opts: {

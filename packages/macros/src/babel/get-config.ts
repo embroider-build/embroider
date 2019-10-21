@@ -5,12 +5,10 @@ import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import evaluate, { assertArray } from './evaluate-json';
-import { BoundVisitor } from './visitor';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
   state: State,
-  visitor: BoundVisitor,
   packageCache: PackageCache,
   own: boolean
 ) {
@@ -35,7 +33,7 @@ export default function getConfig(
   if (pkg) {
     config = state.opts.userConfigs[pkg.root];
   }
-  let collapsed = collapse(path, config, visitor);
+  let collapsed = collapse(path, config);
   collapsed.path.replaceWith(literalConfig(collapsed.config));
 }
 
@@ -64,14 +62,14 @@ function literalConfig(config: unknown | undefined) {
   return expression.arguments[0];
 }
 
-function collapse(path: NodePath<Expression>, config: any, visitor: BoundVisitor) {
+function collapse(path: NodePath<Expression>, config: any) {
   while (true) {
     let parentPath = path.parentPath;
     if (parentPath.isMemberExpression()) {
       if (parentPath.get('object').node === path.node) {
         let property = parentPath.get('property') as NodePath;
         if (parentPath.node.computed) {
-          let evalProperty = evaluate(property, visitor);
+          let evalProperty = evaluate(property);
           if (evalProperty.confident) {
             config = config[evalProperty.value];
             path = parentPath;

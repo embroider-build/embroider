@@ -2,7 +2,6 @@ import { NodePath } from '@babel/traverse';
 import evaluate from './evaluate-json';
 import { IfStatement, ConditionalExpression, CallExpression } from '@babel/types';
 import error from './error';
-import { BoundVisitor } from './visitor';
 import State from './state';
 
 export type MacroConditionPath = NodePath<IfStatement | ConditionalExpression> & {
@@ -20,14 +19,14 @@ export function isMacroConditionPath(path: NodePath<IfStatement | ConditionalExp
   return false;
 }
 
-export default function macroCondition(conditionalPath: MacroConditionPath, state: State, visitor: BoundVisitor) {
+export default function macroCondition(conditionalPath: MacroConditionPath, state: State) {
   let args = conditionalPath.get('test').get('arguments');
   if (args.length !== 1) {
     throw error(conditionalPath, `macroCondition accepts exactly one argument, you passed ${args.length}`);
   }
 
   let [predicatePath] = args;
-  let predicate = evaluate(predicatePath, visitor);
+  let predicate = evaluate(predicatePath);
   if (!predicate.confident) {
     throw error(args[0], `the first argument to macroCondition must be statically known`);
   }

@@ -2,31 +2,30 @@ import { NodePath } from '@babel/traverse';
 import evaluate from './evaluate-json';
 import { CallExpression } from '@babel/types';
 import error from './error';
-import { BoundVisitor } from './visitor';
 import { format } from 'util';
 import State from './state';
 
-export default function failBuild(path: NodePath<CallExpression>, state: State, visitor: BoundVisitor) {
+export default function failBuild(path: NodePath<CallExpression>, state: State) {
   let args = path.get('arguments');
   if (args.length < 1) {
     throw error(path, `failBuild needs at least one argument`);
   }
 
-  let argValues = args.map(a => evaluate(a, visitor));
-  for (let i = 0; i < argValues.length; i++) {
-    if (!argValues[i].confident) {
-      throw error(args[i], `the arguments to failBuild must be statically known`);
-    }
-  }
-
   state.jobs.push(() => {
+    let argValues = args.map(a => evaluate(a));
+    for (let i = 0; i < argValues.length; i++) {
+      if (!argValues[i].confident) {
+        throw error(args[i], `the arguments to failBuild must be statically known`);
+      }
+    }
+
     if (!wasRemoved(path, state)) {
-      emitError(path, argValues);
+      maybeEmitError(path, argValues);
     }
   });
 }
 
-function emitError(path: NodePath<CallExpression>, argValues: { value: any }[]) {
+function maybeEmitError(path: NodePath<CallExpression>, argValues: { value: any }[]) {
   let [message, ...rest] = argValues;
   throw error(path, format(`failBuild: ${message.value}`, ...rest.map(r => r.value)));
 }

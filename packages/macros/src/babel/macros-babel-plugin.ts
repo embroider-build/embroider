@@ -14,7 +14,6 @@ import getConfig from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import error from './error';
 import failBuild from './fail-build';
-import { bindState } from './visitor';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
@@ -42,7 +41,7 @@ export default function main() {
       },
       exit(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
         if (isMacroConditionPath(path)) {
-          macroCondition(path, state, bindState(visitor, state));
+          macroCondition(path, state);
         }
       },
     },
@@ -54,15 +53,15 @@ export default function main() {
       }
       if (callee.referencesImport('@embroider/macros', 'getConfig')) {
         state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, bindState(visitor, state), packageCache, false);
+        getConfig(path, state, packageCache, false);
       }
       if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
         state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, bindState(visitor, state), packageCache, true);
+        getConfig(path, state, packageCache, true);
       }
       if (callee.referencesImport('@embroider/macros', 'failBuild')) {
         state.calledIdentifiers.add(callee.node);
-        failBuild(path, state, bindState(visitor, state));
+        failBuild(path, state);
       }
       if (callee.referencesImport('@embroider/macros', 'importSync')) {
         let r = identifier('require');

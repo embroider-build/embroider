@@ -593,12 +593,14 @@ export class AppBuilder<TreeNames> {
     for (let pkg of this.adapter.allActiveAddons) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
+          let sourcePath = resolvePath(pkg.root, filename);
+          let stats = statSync(sourcePath);
           assets.push({
             kind: 'on-disk',
-            sourcePath: resolvePath(pkg.root, filename),
+            sourcePath,
             relativePath: appRelativeURL,
-            mtime: 0,
-            size: 0,
+            mtime: stats.mtimeMs,
+            size: stats.size,
           });
         }
       }

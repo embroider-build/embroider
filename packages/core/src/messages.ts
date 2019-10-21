@@ -38,10 +38,10 @@ export function warn(message: string, ...params: any[]) {
 // for use in our test suites
 let hardFailMode = 0;
 export function throwOnWarnings(hooks: any) {
-  hooks.beforeEach(() => {
+  hooks.before(() => {
     hardFailMode++;
   });
-  hooks.afterEach(() => {
+  hooks.after(() => {
     hardFailMode--;
   });
 }

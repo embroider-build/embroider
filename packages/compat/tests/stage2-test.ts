@@ -3,16 +3,19 @@ import { Project, BuildResult, installFileAssertions } from '@embroider/test-sup
 
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
+import { join } from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
 
 QUnit.module('stage2 build', function() {
   QUnit.module('static with rules', function(origHooks) {
     let { hooks, test } = installFileAssertions(origHooks);
     let build: BuildResult;
+    let app: Project;
 
     throwOnWarnings(hooks);
 
     hooks.before(async function(assert) {
-      let app = Project.emberNew();
+      app = Project.emberNew();
       app.linkPackage('@embroider/sample-transforms');
       (app.files.app as Project['files']).templates = {
         'index.hbs': `
@@ -47,6 +50,10 @@ QUnit.module('stage2 build', function() {
       (app.files.app as Project['files'])['custom-babel-needed.js'] = `
         console.log('embroider-sample-transforms-target');
       `;
+
+      app.files.public = {
+        'public-file-1.txt': `initial state`,
+      };
 
       let addon = app.addAddon('my-addon');
       addon.files.addon = {
@@ -300,6 +307,50 @@ QUnit.module('stage2 build', function() {
     test(`app's babel plugins ran`, async function(assert) {
       let assertFile = assert.file('custom-babel-needed.js').transform(build.transpile);
       assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
+    });
+
+    test(`changes in app.css are propagated at rebuild`, async function(assert) {
+      assert.file('assets/my-app.css').doesNotMatch('newly-added-class');
+      writeFileSync(join(app.baseDir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
+      await build.rebuild();
+      assert.file('assets/my-app.css').matches('newly-added-class');
+    });
+
+    test(`public assets are included`, async function(assert) {
+      assert.file('public-file-1.txt').matches(/initial state/);
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .includes('public-file-1.txt');
+    });
+
+    test(`updated public asset`, async function(assert) {
+      writeFileSync(join(app.baseDir, 'public/public-file-1.txt'), `updated state`);
+      await build.rebuild();
+      assert.file('public-file-1.txt').matches(/updated state/);
+    });
+
+    test(`added public asset`, async function(assert) {
+      writeFileSync(join(app.baseDir, 'public/public-file-2.txt'), `added`);
+      await build.rebuild();
+      assert.file('public-file-2.txt').matches(/added/);
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .includes('public-file-2.txt');
+    });
+
+    test(`removed public asset`, async function(assert) {
+      unlinkSync(join(app.baseDir, 'public/public-file-1.txt'));
+      await build.rebuild();
+      assert.file('public-file-1.txt').doesNotExist();
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .doesNotInclude('public-file-1.txt');
     });
   });
 });

@@ -54,6 +54,15 @@ export class BoundFileAssert {
     });
   }
 
+  doesNotExist(message?: string) {
+    this.assert.pushResult({
+      result: !pathExistsSync(this.fullPath),
+      actual: 'file present',
+      expected: 'file missing',
+      message: message || `${this.path} should not exist`,
+    });
+  }
+
   private doMatch(pattern: string | RegExp, message: string | undefined, invert: boolean) {
     if (!this.contents.result) {
       this.assert.pushResult(this.contents);
@@ -182,6 +191,19 @@ export class JSONAssert {
       actual: this.contents.data,
       expected,
       message: message || `expected value missing from array`,
+    });
+  }
+
+  doesNotInclude(notExpected: any, message?: string): void {
+    if (!this.contents.result) {
+      this.assert.pushResult(this.contents);
+      return;
+    }
+    this.assert.pushResult({
+      result: Array.isArray(this.contents.data) && !this.contents.data.includes(notExpected),
+      actual: this.contents.data,
+      expected: `not ${notExpected}`,
+      message: message || `expected array to not include ${notExpected}`,
     });
   }
 

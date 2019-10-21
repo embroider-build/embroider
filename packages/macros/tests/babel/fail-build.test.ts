@@ -25,13 +25,13 @@ describe(`fail build macro`, function() {
 
     test('it does not fail the build when its inside a dead branch', () => {
       let code = transform(`
-      import { macroIf, failBuild } from '@embroider/macros';
+      import { macroCondition, failBuild } from '@embroider/macros';
       export default function() {
-        return macroIf(
-          true,
-          () => 'it works',
-          () => failBuild('not supposed to happen')
-        );
+        if (macroCondition(true)) {
+          return 'it works';
+        } else {
+          failBuild('not supposed to happen');
+        }
       }
       `);
       expect(runDefault(code)).toEqual('it works');

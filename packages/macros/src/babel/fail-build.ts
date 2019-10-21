@@ -1,11 +1,12 @@
 import { NodePath } from '@babel/traverse';
-import evaluateJSON from './evaluate-json';
+import evaluate from './evaluate-json';
 import { CallExpression } from '@babel/types';
 import error from './error';
 import { BoundVisitor } from './visitor';
 import { format } from 'util';
+import State from './state';
 
-export default function failBuild(path: NodePath<CallExpression>, visitor: BoundVisitor) {
+export default function failBuild(path: NodePath<CallExpression>, state: State, visitor: BoundVisitor) {
   let args = path.get('arguments');
   if (args.length < 1) {
     throw error(path, `failBuild needs at least one argument`);
@@ -18,14 +19,18 @@ export default function failBuild(path: NodePath<CallExpression>, visitor: Bound
     }
   }
 
-  let [message, ...rest] = argValues;
-  throw new Error(format(`failBuild: ${message.value}`, ...rest.map(r => r.value)));
+  state.jobs.push(() => {
+    if (!wasRemoved(path, state)) {
+      emitError(path, argValues);
+    }
+  });
 }
 
-function evaluate(path: NodePath, visitor: BoundVisitor) {
-  let builtIn = path.evaluate();
-  if (builtIn.confident) {
-    return builtIn;
-  }
-  return evaluateJSON(path, visitor);
+function emitError(path: NodePath<CallExpression>, argValues: { value: any }[]) {
+  let [message, ...rest] = argValues;
+  throw error(path, format(`failBuild: ${message.value}`, ...rest.map(r => r.value)));
+}
+
+function wasRemoved(path: NodePath, state: State) {
+  return state.removed.has(path.node) || Boolean(path.findParent(p => state.removed.has(p.node)));
 }

@@ -1,11 +1,10 @@
 import { NodePath, Node } from '@babel/traverse';
-import { MacroConditionPath } from './macro-condition';
 
 export default interface State {
   generatedRequires: Set<Node>;
-
-  pendingConditionals: { conditionalPath: MacroConditionPath, waiting: [];
-  pendingConditions: Set<Node>;
+  removed: Set<Node>;
+  calledIdentifiers: Set<Node>;
+  jobs: (() => void)[];
 
   opts: {
     userConfigs: {

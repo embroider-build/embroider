@@ -23,7 +23,7 @@ export default function evaluate(path: NodePath, visitor: BoundVisitor) {
   return evaluateJSON(path, visitor);
 }
 
-export function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
+function evaluateJSON(path: NodePath, visitor: BoundVisitor): { confident: boolean; value: any } {
   if (path.isMemberExpression()) {
     let property = evaluateKey(assertNotArray(path.get('property')), visitor);
     if (property.confident) {

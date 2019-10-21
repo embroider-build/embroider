@@ -11,7 +11,7 @@ import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
-import macroCondition, { MacroConditionPath } from './macro-condition';
+import macroCondition, { isMacroConditionPath } from './macro-condition';
 import error from './error';
 import failBuild from './fail-build';
 import { bindState } from './visitor';
@@ -23,46 +23,46 @@ export default function main() {
     Program: {
       enter(_: NodePath, state: State) {
         state.generatedRequires = new Set();
-        state.pendingConditionals = [];
-        state.pendingConditions = new Set();
+        state.jobs = [];
+        state.removed = new Set();
+        state.calledIdentifiers = new Set();
       },
-      exit(path: NodePath) {
+      exit(path: NodePath, state: State) {
         pruneMacroImports(path);
+        for (let handler of state.jobs) {
+          handler();
+        }
       },
     },
     'IfStatement|ConditionalExpression': {
       enter(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
-        let test = path.get('test');
-        if (test.isCallExpression()) {
-          let callee = test.get('callee');
-          if (callee.referencesImport('@embroider/macros', 'macroCondition')) {
-            state.pendingConditionals.unshift(path as MacroConditionPath);
-            state.pendingConditions.add(callee.node);
-          }
+        if (isMacroConditionPath(path)) {
+          state.calledIdentifiers.add(path.get('test').get('callee').node);
         }
       },
       exit(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
-        let candidate = path as MacroConditionPath;
-        if (state.pendingConditionals.has(candidate)) {
-          state.pendingConditionals.delete(candidate);
-          state.pendingConditions.delete(candidate.get('test').node);
-          macroCondition(candidate, bindState(visitor, state));
+        if (isMacroConditionPath(path)) {
+          macroCondition(path, state, bindState(visitor, state));
         }
       },
     },
     CallExpression(path: NodePath<CallExpression>, state: State) {
       let callee = path.get('callee');
       if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+        state.calledIdentifiers.add(callee.node);
         dependencySatisfies(path, state, packageCache);
       }
       if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+        state.calledIdentifiers.add(callee.node);
         getConfig(path, state, packageCache, false);
       }
       if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+        state.calledIdentifiers.add(callee.node);
         getConfig(path, state, packageCache, true);
       }
       if (callee.referencesImport('@embroider/macros', 'failBuild')) {
-        failBuild(path, bindState(visitor, state));
+        state.calledIdentifiers.add(callee.node);
+        failBuild(path, state, bindState(visitor, state));
       }
       if (callee.referencesImport('@embroider/macros', 'importSync')) {
         let r = identifier('require');
@@ -71,23 +71,14 @@ export default function main() {
       }
     },
     ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
-      if (path.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-        throw error(path, `You can only use dependencySatisfies as a function call`);
+      for (let candidate of ['dependencySatisfies', 'getConfig', 'getOwnConfig', 'failBuild', 'importSync']) {
+        if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
+          throw error(path, `You can only use ${candidate} as a function call`);
+        }
       }
-      if (path.referencesImport('@embroider/macros', 'getConfig')) {
-        throw error(path, `You can only use getConfig as a function call`);
-      }
-      if (path.referencesImport('@embroider/macros', 'getOwnConfig')) {
-        throw error(path, `You can only use getOwnConfig as a function call`);
-      }
-      if (path.referencesImport('@embroider/macros', 'macroCondition') && !state.pendingConditions.has(path.node)) {
+
+      if (path.referencesImport('@embroider/macros', 'macroCondition') && !state.calledIdentifiers.has(path.node)) {
         throw error(path, `macroCondition can only be used as the predicate of an if statement or ternary expression`);
-      }
-      if (path.referencesImport('@embroider/macros', 'failBuild')) {
-        throw error(path, `You can only use failBuild as a function call`);
-      }
-      if (path.referencesImport('@embroider/macros', 'importSync')) {
-        throw error(path, `You can only use importSync as a function call`);
       }
 
       if (state.opts.owningPackageRoot) {

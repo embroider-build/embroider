@@ -3,16 +3,19 @@ import { Project, BuildResult, installFileAssertions } from '@embroider/test-sup
 
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
+import { join } from 'path';
+import { writeFileSync } from 'fs';
 
 QUnit.module('stage2 build', function() {
   QUnit.module('static with rules', function(origHooks) {
     let { hooks, test } = installFileAssertions(origHooks);
     let build: BuildResult;
+    let app: Project;
 
     throwOnWarnings(hooks);
 
     hooks.before(async function(assert) {
-      let app = Project.emberNew();
+      app = Project.emberNew();
       app.linkPackage('@embroider/sample-transforms');
       (app.files.app as Project['files']).templates = {
         'index.hbs': `
@@ -300,6 +303,13 @@ QUnit.module('stage2 build', function() {
     test(`app's babel plugins ran`, async function(assert) {
       let assertFile = assert.file('custom-babel-needed.js').transform(build.transpile);
       assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
+    });
+
+    test(`changes in app.css are propagated at rebuild`, async function(assert) {
+      assert.file('assets/my-app.css').doesNotMatch('newly-added-class');
+      writeFileSync(join(app.baseDir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
+      await build.rebuild();
+      assert.file('assets/my-app.css').matches('newly-added-class');
     });
   });
 });

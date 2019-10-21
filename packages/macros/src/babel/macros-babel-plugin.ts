@@ -54,11 +54,11 @@ export default function main() {
       }
       if (callee.referencesImport('@embroider/macros', 'getConfig')) {
         state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, packageCache, false);
+        getConfig(path, state, bindState(visitor, state), packageCache, false);
       }
       if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
         state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, packageCache, true);
+        getConfig(path, state, bindState(visitor, state), packageCache, true);
       }
       if (callee.referencesImport('@embroider/macros', 'failBuild')) {
         state.calledIdentifiers.add(callee.node);

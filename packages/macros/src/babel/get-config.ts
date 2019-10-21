@@ -1,14 +1,16 @@
 import { NodePath } from '@babel/traverse';
-import { identifier, File, ExpressionStatement, CallExpression } from '@babel/types';
+import { identifier, File, ExpressionStatement, CallExpression, Expression } from '@babel/types';
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
-import { assertArray } from './evaluate-json';
+import evaluate, { assertArray } from './evaluate-json';
+import { BoundVisitor } from './visitor';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
   state: State,
+  visitor: BoundVisitor,
   packageCache: PackageCache,
   own: boolean
 ) {
@@ -33,7 +35,8 @@ export default function getConfig(
   if (pkg) {
     config = state.opts.userConfigs[pkg.root];
   }
-  path.replaceWith(literalConfig(config));
+  let collapsed = collapse(path, config, visitor);
+  collapsed.path.replaceWith(literalConfig(collapsed.config));
 }
 
 function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {
@@ -59,4 +62,31 @@ function literalConfig(config: unknown | undefined) {
   let statement = ast.program.body[0] as ExpressionStatement;
   let expression = statement.expression as CallExpression;
   return expression.arguments[0];
+}
+
+function collapse(path: NodePath<Expression>, config: any, visitor: BoundVisitor) {
+  while (true) {
+    let parentPath = path.parentPath;
+    if (parentPath.isMemberExpression()) {
+      if (parentPath.get('object').node === path.node) {
+        let property = parentPath.get('property') as NodePath;
+        if (parentPath.node.computed) {
+          let evalProperty = evaluate(property, visitor);
+          if (evalProperty.confident) {
+            config = config[evalProperty.value];
+            path = parentPath;
+            continue;
+          }
+        } else {
+          if (property.isIdentifier()) {
+            config = config[property.node.name];
+            path = parentPath;
+            continue;
+          }
+        }
+      }
+    }
+    break;
+  }
+  return { path, config };
 }

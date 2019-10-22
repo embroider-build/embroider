@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.7.1
+
+- BUGFIX: changes to CSS and public assets were not always reflected after rebuilds
+
 ## 0.7.0
 
 - HOUSEKEEPING: multiple fixes and improvements by @stefanpenner

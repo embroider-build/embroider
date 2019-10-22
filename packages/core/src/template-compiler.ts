@@ -365,7 +365,7 @@ class TemplateCompileTree extends Filter {
 }
 
 function matchesSourceFile(filename: string) {
-  return /htmlbars-inline-precompile\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
+  return /(htmlbars-inline-precompile|ember-cli-htmlbars)\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
 }
 
 function hasProperties(item: any) {

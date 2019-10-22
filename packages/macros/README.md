@@ -172,20 +172,21 @@ These are analogous to the Javascript macros, although here (because we don't im
 
    ```js
    let app = new EmberApp(defaults, {
-   '@embroider/macros': {
-     // this is how you configure your own package
-     setOwnConfig: {
-       // your config goes here
-     },
-     // this is how you can optionally send configuration into your
-     // dependencies, if those dependencies choose to use
-     // @embroider/macros configs.
-     setConfig: {
-       'some-dependency': {
-         // config for some-dependency
+     '@embroider/macros': {
+       // this is how you configure your own package
+       setOwnConfig: {
+         // your config goes here
+       },
+       // this is how you can optionally send configuration into your
+       // dependencies, if those dependencies choose to use
+       // @embroider/macros configs.
+       setConfig: {
+         'some-dependency': {
+           // config for some-dependency
+         }
        }
      }
-   }
+   });
    ```
 
 ## Setting Configuration: from an Ember Addon

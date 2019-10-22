@@ -489,8 +489,10 @@ export default class V1Addon implements V1Package {
       tree = this.invokeOriginalTreeFor('styles');
       if (tree) {
         tree = new Funnel(tree, {
-          srcDir: 'app/styles',
           destDir: '_app_styles_',
+          getDestinationPath(path) {
+            return path.replace(/^app\/styles\//, '');
+          },
         });
       }
     } else if (this.hasStockTree('styles')) {

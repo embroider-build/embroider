@@ -6,12 +6,15 @@ import {
   identifier,
   IfStatement,
   ConditionalExpression,
+  ForOfStatement,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import getConfig from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
+import { isEachPath, prepareEachPath, finishEachPath } from './each';
+
 import error from './error';
 import failBuild from './fail-build';
 
@@ -25,6 +28,7 @@ export default function main() {
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
+        state.pendingEachMacros = [];
       },
       exit(path: NodePath, state: State) {
         pruneMacroImports(path);
@@ -45,29 +49,45 @@ export default function main() {
         }
       },
     },
-    CallExpression(path: NodePath<CallExpression>, state: State) {
-      let callee = path.get('callee');
-      if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-        state.calledIdentifiers.add(callee.node);
-        dependencySatisfies(path, state, packageCache);
-      }
-      if (callee.referencesImport('@embroider/macros', 'getConfig')) {
-        state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, packageCache, false);
-      }
-      if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
-        state.calledIdentifiers.add(callee.node);
-        getConfig(path, state, packageCache, true);
-      }
-      if (callee.referencesImport('@embroider/macros', 'failBuild')) {
-        state.calledIdentifiers.add(callee.node);
-        failBuild(path, state);
-      }
-      if (callee.referencesImport('@embroider/macros', 'importSync')) {
-        let r = identifier('require');
-        state.generatedRequires.add(r);
-        callee.replaceWith(r);
-      }
+    ForOfStatement: {
+      enter(path: NodePath<ForOfStatement>, state: State) {
+        if (isEachPath(path)) {
+          state.calledIdentifiers.add(path.get('right').get('callee').node);
+          prepareEachPath(path, state);
+        }
+      },
+    },
+    CallExpression: {
+      enter(path: NodePath<CallExpression>, state: State) {
+        let callee = path.get('callee');
+        if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+          state.calledIdentifiers.add(callee.node);
+          dependencySatisfies(path, state, packageCache);
+        }
+        if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+          state.calledIdentifiers.add(callee.node);
+          getConfig(path, state, packageCache, false);
+        }
+        if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+          state.calledIdentifiers.add(callee.node);
+          getConfig(path, state, packageCache, true);
+        }
+        if (callee.referencesImport('@embroider/macros', 'failBuild')) {
+          state.calledIdentifiers.add(callee.node);
+          failBuild(path, state);
+        }
+        if (callee.referencesImport('@embroider/macros', 'importSync')) {
+          let r = identifier('require');
+          state.generatedRequires.add(r);
+          callee.replaceWith(r);
+        }
+      },
+      exit(path: NodePath<CallExpression>, state: State) {
+        let callee = path.get('callee');
+        if (callee.isIdentifier() && callee.node.name === '_eachMacroPlaceholder_') {
+          finishEachPath(path, state);
+        }
+      },
     },
     ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
       for (let candidate of ['dependencySatisfies', 'getConfig', 'getOwnConfig', 'failBuild', 'importSync']) {
@@ -78,6 +98,13 @@ export default function main() {
 
       if (path.referencesImport('@embroider/macros', 'macroCondition') && !state.calledIdentifiers.has(path.node)) {
         throw error(path, `macroCondition can only be used as the predicate of an if statement or ternary expression`);
+      }
+
+      if (path.referencesImport('@embroider/macros', 'each') && !state.calledIdentifiers.has(path.node)) {
+        throw error(
+          path,
+          `the each() macro can only be used within a for ... of statement, like: for (let x of each(thing)){}`
+        );
       }
 
       if (state.opts.owningPackageRoot) {

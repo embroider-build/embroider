@@ -8,8 +8,12 @@ export function dependencySatisfies(packageName: string, semverRange: string): b
   throw new Oops(packageName, semverRange);
 }
 
-export function macroIf(predicate: boolean, consequent: () => void, alternate: () => void) {
-  throw new Oops(predicate, consequent, alternate);
+export function macroCondition(predicate: boolean) {
+  throw new Oops(predicate);
+}
+
+export function each<T>(array: T[]): T[] {
+  throw new Oops(array);
 }
 
 export function getConfig<T>(packageName: string): T {

@@ -47,6 +47,27 @@ QUnit.module('addon.styles tests', function(origHooks) {
     };
     addon2.linkPackage('broccoli-funnel');
 
+    let addon3 = app.addAddon('my-addon3');
+    (addon3.files.addon as Project['files']).styles = {
+      'addon.css': `
+        .from-addon {
+          background-color: red;
+        }
+      `,
+      'outer.css': `
+        .from-outer {
+          background-color: blue;
+        }
+      `,
+      nested: {
+        'inner.css': `
+          .from-inner {
+            background-color: green;
+          }
+        `,
+      },
+    };
+
     build = await BuildResult.build(app, {
       stage: 1,
       type: 'app',
@@ -70,5 +91,18 @@ QUnit.module('addon.styles tests', function(origHooks) {
     assert
       .file('node_modules/@embroider/synthesized-styles/assets/third-party2.css')
       .matches('.success { color: green }');
+  });
+
+  test(`all addon CSS gets convert to implicit-styles`, function(assert) {
+    let implicitStyles = assert
+      .file('node_modules/my-addon3/package.json')
+      .json()
+      .get('ember-addon.implicit-styles');
+    implicitStyles.includes('./my-addon3.css');
+    implicitStyles.includes('./outer.css');
+    implicitStyles.includes('./nested/inner.css');
+    assert.file('node_modules/my-addon3/my-addon3.css').matches(`from-addon`);
+    assert.file('node_modules/my-addon3/outer.css').matches(`from-outer`);
+    assert.file('node_modules/my-addon3/nested/inner.css').matches(`from-inner`);
   });
 });

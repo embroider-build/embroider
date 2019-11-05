@@ -3,7 +3,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
+import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
@@ -470,7 +470,7 @@ export default class V1Addon implements V1Package {
     if (addonStylesTree) {
       let discoveredFiles: string[] = [];
       let tree = new ObserveTree(addonStylesTree, outputPath => {
-        discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
+        discoveredFiles = walkSync(outputPath, { globs: ['**/*.css'], directories: false });
       });
       built.trees.push(tree);
       built.dynamicMeta.push(() => {

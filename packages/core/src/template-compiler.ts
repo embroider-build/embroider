@@ -37,9 +37,18 @@ interface GlimmerSyntax {
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   registerPlugin(type: string, plugin: unknown): void;
-  precompile(templateContents: string, options: {
-    contents: string; moduleName: string; filename: string, plugins?: any
-  }): string;
+  precompile(
+    templateContents: string,
+    options: {
+      contents: string;
+      moduleName: string;
+      filename: string;
+      plugins?: any;
+      parseOptions?: {
+        srcName?: string;
+      };
+    }
+  ): string;
   _Ember: { FEATURES: any; ENV: any };
   cacheKey: string;
 }
@@ -80,14 +89,11 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
     if (
       currentStat.mode === entry.stat.mode &&
       currentStat.size === entry.stat.size &&
-      currentStat.mtime === entry.stat.mtime
+      currentStat.mtime.getTime() === entry.stat.mtime.getTime()
     ) {
-      console.count('HIT');
       return entry.value;
     }
   }
-
-  console.count('MISS');
 
   let replacedVar = false;
   let stat = statSync(templateCompilerPath);
@@ -210,7 +216,6 @@ class PortableTemplateCompilerConfig extends PortablePluginConfig {
 }
 
 export default class TemplateCompiler {
-  private userPluginsCount = 0;
   private portableParams: object;
   private params: SetupCompilerParams;
 
@@ -283,15 +288,6 @@ export default class TemplateCompiler {
   @Memoize()
   private setup() {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
-    if (this.params.resolver) {
-      let transform = this.params.resolver.astTransformer(this);
-      if (transform) {
-        // TODO: make this work
-        syntax.registerPlugin('ast', transform);
-        this.userPluginsCount++;
-        // throw new Error('EWUT');
-      }
-    }
     initializeEmberENV(syntax, this.params.EmberENV);
     let cacheKey = createHash('md5')
       .update(
@@ -302,6 +298,11 @@ export default class TemplateCompiler {
       )
       .digest('hex');
     return { syntax, cacheKey };
+  }
+
+  @Memoize()
+  private getReversedASTPlugins(ast: unknown[]): unknown[] {
+    return ast.slice().reverse();
   }
 
   // Compiles to the wire format plus dependency list.
@@ -316,12 +317,19 @@ export default class TemplateCompiler {
     }
 
     let opts = this.syntax.defaultOptions({ contents, moduleName });
-    opts.plugins!.ast = [...this.params.plugins.ast!.slice().reverse(), ...opts.plugins!.ast!];
+    if (this.params.resolver) {
+      let transform = this.params.resolver.astTransformer(this);
+      if (transform) {
+        this.params.plugins.ast!.push(transform);
+      }
+    }
+    opts.plugins!.ast = [...this.getReversedASTPlugins(this.params.plugins.ast!), ...opts.plugins!.ast!];
+
     let compiled = this.syntax.precompile(stripBom(contents), {
       contents,
       moduleName: runtimeName,
       filename: moduleName,
-      plugins: opts.plugins
+      plugins: opts.plugins,
     });
 
     if (this.params.resolver) {
@@ -359,18 +367,11 @@ export default class TemplateCompiler {
       // rather than slicing them off, we could choose instead to not call
       // syntax.defaultOptions, but then we lose some of the compatibility
       // normalization that it does on the user-provided plugins.
-      opts.plugins.ast = this.params.plugins.ast!
-        .slice()
-        .reverse()
-        .map(plugin => {
-          // Although the precompile API does, this direct glimmer syntax api
-          // does not support these legacy plugins, so we must wrap them.
-          return wrapLegacyHbsPluginIfNeeded(plugin as any);
+      opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
+        // Although the precompile API does, this direct glimmer syntax api
+        // does not support these legacy plugins, so we must wrap them.
+        return wrapLegacyHbsPluginIfNeeded(plugin as any);
       });
-
-      if (this.userPluginsCount) {
-        console.log('hi');
-      }
     }
 
     opts.filename = this.params.resolver

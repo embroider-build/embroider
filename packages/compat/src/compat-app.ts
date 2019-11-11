@@ -141,7 +141,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   resolvableExtensions(): string[] {
-    let extensions = ['.mjs', '.js', '.hbs'];
+    // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
+    // subset in that order is sensible, since many third-party libraries will
+    // expect it to work that way.
+    let extensions = ['.wasm', '.mjs', '.js', '.json', '.hbs'];
 
     // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
     // resolvable. Once we implement a preprocessor-registration build hook,

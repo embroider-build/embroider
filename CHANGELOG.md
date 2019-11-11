@@ -1,5 +1,13 @@
 # Embroider Changelog
 
+## 0.8.0
+
+- HOUSEKEEPING: upgrade css-loader.
+- BUGFIX: include nested CSS files from addons that use no preprocessor
+- ENHANCEMENT: support addons that customize treeForStyles and don't call `super`, by @simonihmig.
+- DOCS: improvement to README by @simonihmig
+- HOUSEKEEPING: update for compatibility with newest ember-cli-htmlbars
+
 ## 0.7.1
 
 - BUGFIX: changes to CSS and public assets were not always reflected after rebuilds

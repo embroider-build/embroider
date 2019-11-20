@@ -7325,15 +7325,14 @@ fireworm@^0.7.0:
     lodash.flatten "^3.0.2"
     minimatch "^3.0.2"
 
-fixturify-project@^1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-1.8.0.tgz#c2b2d510afbb4c9ab6c94cf85659565b3794e1d1"
-  integrity sha512-D+UqEd/2vdK12CJTwKCoUyMOM3/iqevck8xvDQcHFkD7xPYzl4NIYi4uLp4O1Yi7HLNCHl/KfMg7ex8XwqbEfg==
+"fixturify-project@git+https://github.com/ef4/node-fixturify-project#e52e2e7724ae1da8dc57a231d74a8ccfdffc119a":
+  version "1.9.1"
+  resolved "git+https://github.com/ef4/node-fixturify-project#e52e2e7724ae1da8dc57a231d74a8ccfdffc119a"
   dependencies:
-    fixturify "^0.3.4"
+    fixturify "^1.2.0"
     tmp "^0.0.33"
 
-fixturify@^0.3.2, fixturify@^0.3.4:
+fixturify@^0.3.2:
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/fixturify/-/fixturify-0.3.4.tgz#c676de404a7f8ee8e64d0b76118e62ec95ab7b25"
   integrity sha512-Gx+KSB25b6gMc4bf7UFRTA85uE0iZR+RYur0JHh6dg4AGBh0EksOv4FCHyM7XpGmiJO7Bc7oV7vxENQBT+2WEQ==

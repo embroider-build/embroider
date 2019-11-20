@@ -82,7 +82,13 @@ You can pass options into Embroider by passing them into the `compatBuild` funct
 
 ```js
 return require('@embroider/compat').compatBuild(app, Webpack, {
-  // options go here
+  // staticAddonTestSupportTrees: true,
+  // staticAddonTrees: true,
+  // staticHelpers: true,
+  // staticComponents: true,
+  // packagerOptions: {
+  //    webpackConfig: { }
+  // }
 });
 ```
 

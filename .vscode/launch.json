@@ -15,9 +15,9 @@
         "packages/core/tests",
         "packages/macros/tests",
         "--require",
-        "./test-packages/support/qunit-jest-shim.js"
-        // "--filter",
-        // "stage1 build"
+        "./test-packages/support/qunit-jest-shim.js",
+        "--filter",
+        "namespaced"
       ]
     },
     {

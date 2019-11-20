@@ -1,5 +1,13 @@
 # Embroider Changelog
 
+## 0.9.0
+
+- DOCS: improved README example code by @jenweber
+- PERFORMANCE: memoize template compiler, by @kratiahuja and @stefanpenner
+- BUGFIX: fix implicit-modules in apps with NPM scoped names
+- BUGFIX: keep json and wasm as default resolvable extensions
+- COMPAT: short-circuit template compilation to be compatible with addons with broken template preprocessors but no templates
+
 ## 0.8.0
 
 - HOUSEKEEPING: upgrade css-loader.

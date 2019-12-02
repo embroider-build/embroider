@@ -23,13 +23,23 @@ export default class EmberData extends V1Addon {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       versionTree = require(join(this.root, 'lib/version'));
     } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
+      handleErr(err);
+      try {
+        // ember-data 3.11 to 3.14 keep the version module here.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        versionTree = require(resolveSync('@ember-data/-build-infra/src/create-version-module', {
+          basedir: this.root,
+        }));
+      } catch (err) {
+        handleErr(err);
+        // ember-data 3.15+ keeps the version module here.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        versionTree = require(resolveSync('@ember-data/private-build-infra/src/create-version-module', {
+          basedir: this.root,
+        }));
       }
-      // ember-data 3.11 and later keep the version module here.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      versionTree = require(resolveSync('@ember-data/-build-infra/src/create-version-module', { basedir: this.root }));
     }
+
     let trees = super.v2Trees;
     trees.push(versionTree());
     return trees;
@@ -58,4 +68,10 @@ function isProductionEnv() {
 
 function isInstrumentedBuild() {
   return process.argv.includes('--instrument');
+}
+
+function handleErr(err: any) {
+  if (err.code !== 'MODULE_NOT_FOUND') {
+    throw err;
+  }
 }

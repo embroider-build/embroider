@@ -25,7 +25,11 @@ import { returnStatement } from '@babel/types';
 // These are the known names that people are using to import the `hbs` macro
 // from. In theory the original plugin lets people customize these names, but
 // that is a terrible idea.
-const modulePaths = ['htmlbars-inline-precompile', 'ember-cli-htmlbars-inline-precompile'];
+const modulePaths = [
+  ['htmlbars-inline-precompile', 'default'],
+  ['ember-cli-htmlbars-inline-precompile', 'default'],
+  ['ember-cli-htmlbars', 'hbs'],
+];
 
 interface State {
   opts: {
@@ -71,15 +75,15 @@ export default function inlineHBSTransform() {
         },
       },
       TaggedTemplateExpression(path: NodePath<TaggedTemplateExpression>, state: State) {
-        for (let modulePath of modulePaths) {
-          if (path.get('tag').referencesImport(modulePath, 'default')) {
+        for (let [modulePath, identifier] of modulePaths) {
+          if (path.get('tag').referencesImport(modulePath, identifier)) {
             handleTagged(path, state);
           }
         }
       },
       CallExpression(path: NodePath<CallExpression>, state: State) {
-        for (let modulePath of modulePaths) {
-          if (path.get('callee').referencesImport(modulePath, 'default')) {
+        for (let [modulePath, identifier] of modulePaths) {
+          if (path.get('callee').referencesImport(modulePath, identifier)) {
             handleCalled(path, state);
           }
         }
@@ -141,8 +145,11 @@ function pruneImports(path: NodePath) {
     return;
   }
   for (let topLevelPath of path.get('body')) {
-    if (topLevelPath.isImportDeclaration() && modulePaths.includes(topLevelPath.get('source').node.value)) {
-      topLevelPath.remove();
+    if (topLevelPath.isImportDeclaration()) {
+      let modulePath = topLevelPath.get('source').node.value;
+      if (modulePaths.find(p => p[0] === modulePath)) {
+        topLevelPath.remove();
+      }
     }
   }
 }

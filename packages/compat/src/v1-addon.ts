@@ -134,10 +134,26 @@ export default class V1Addon implements V1Package {
   // we need to run custom inline hbs preprocessing if there are custom hbs
   // plugins and there are inline hbs templates
   private needsInlineHBS(): boolean {
-    return (
-      Boolean(this.templateCompiler) &&
-      Boolean(this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile'))
-    );
+    if (!this.templateCompiler) {
+      // no custom transforms
+      return false;
+    }
+    if (this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile')) {
+      // the older inline template compiler is present
+      return true;
+    }
+
+    if (
+      this.addonInstance.addons.find(
+        (a: any) =>
+          a.name === 'ember-cli-htmlbars' && semver.satisfies(semver.coerce(a.pkg.version) || a.pkg.version, '>4.0.0')
+      )
+    ) {
+      // a version of ember-cli-htmlbars that natively supports inline hbs is present
+      return true;
+    }
+
+    return false;
   }
 
   private needsCustomBabel() {

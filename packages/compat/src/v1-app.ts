@@ -262,11 +262,11 @@ export default class V1App implements V1Package {
       // here in favor of our globally-configured one.
       return (
         !isEmbroiderMacrosPlugin(p) &&
-        // similarly, if the app was already using
-        // ember-cli-htmlbars-inline-precompile, we remove it here because we
-        // have our own always-installed version of that (v2 addons are
-        // allowed to assume it will be present in the final app build, the
-        // app doesn't get to turn that off or configure it.)
+        // similarly, if the app was already using an inline template compiler
+        // babel plugin, we remove it here because we have our own
+        // always-installed version of that (v2 addons are allowed to assume it
+        // will be present in the final app build, the app doesn't get to turn
+        // that off or configure it.)
         !TemplateCompiler.isInlinePrecompilePlugin(p)
       );
     });

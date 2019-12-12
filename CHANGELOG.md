@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+## 0.10.0
+
+- BUGFIX: make TemplateCompiler's isParallelSafe flag survive clone()
+- COMPAT: support ember-cli-htmlbars>=4, which has native support for inline hbs
+- BUGFIX: fix CSS ordering between certain kinds of addon CSS by @kandhavivekraj
+- COMPAT: updated compat adapter for ember-data 3.15 by @jenweber
+
 ## 0.9.0
 
 - DOCS: improved README example code by @jenweber

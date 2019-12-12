@@ -302,12 +302,21 @@ export class AppBuilder<TreeNames> {
   }
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
-    let result = [];
+    let result: Array<string> = [];
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
+        let styles = [];
+        let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
-          result.push(resolve.sync(mod, { basedir: addon.root }));
+          if (type === 'implicit-styles') {
+            styles.push(resolve.sync(mod, options));
+          } else {
+            result.push(resolve.sync(mod, options));
+          }
+        }
+        if (styles.length) {
+          result = [...styles, ...result];
         }
       }
     }

@@ -216,15 +216,22 @@ class PortableTemplateCompilerConfig extends PortablePluginConfig {
 }
 
 export default class TemplateCompiler {
-  private portableParams: object;
+  private portableParams!: object;
   private params: SetupCompilerParams;
+  isParallelSafe!: boolean;
 
   constructor(params: SetupCompilerParams) {
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
 
-    this.portableParams = {};
+    // as a side effect of binding `this`, this.compile became enumerable. this
+    // puts it back to non-enumerable, because it doesn't participate in
+    // cloning, assigning, etc.
+    Object.defineProperty(this, 'compile', {
+      enumerable: false,
+    });
+
     Object.defineProperty(this, 'portableParams', {
       enumerable: true,
       get() {
@@ -236,6 +243,13 @@ export default class TemplateCompiler {
     Object.defineProperty(this, 'params', {
       enumerable: false,
     });
+
+    Object.defineProperty(this, 'isParallelSafe', {
+      enumerable: true,
+      get() {
+        return this.portableConfig.isParallelSafe;
+      },
+    });
   }
 
   @Memoize()
@@ -243,16 +257,12 @@ export default class TemplateCompiler {
     return new PortableTemplateCompilerConfig(this.params);
   }
 
-  get isParallelSafe(): boolean {
-    return this.portableConfig.isParallelSafe;
-  }
-
   // this supports the case where we are included as part of a larger config
   // that's getting serialized. Specifically, we are passed as an argument into
   // babel-plugin-inline-hbs, so when the whole babel config is being serialized
   // this gets detected by PortablePluginConfig so we can represent ourself.
   get _parallelBabel() {
-    if (this.portableConfig.isParallelSafe) {
+    if (this.isParallelSafe) {
       return {
         requireFile: __filename,
         buildUsing: 'rehydrate',

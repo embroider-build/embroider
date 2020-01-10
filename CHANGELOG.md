@@ -1,5 +1,28 @@
 # Embroider Changelog
 
+## 0.10.0
+
+- BUGFIX: make TemplateCompiler's isParallelSafe flag survive clone()
+- COMPAT: support ember-cli-htmlbars>=4, which has native support for inline hbs
+- BUGFIX: fix CSS ordering between certain kinds of addon CSS by @kandhavivekraj
+- COMPAT: updated compat adapter for ember-data 3.15 by @jenweber
+
+## 0.9.0
+
+- DOCS: improved README example code by @jenweber
+- PERFORMANCE: memoize template compiler, by @kratiahuja and @stefanpenner
+- BUGFIX: fix implicit-modules in apps with NPM scoped names
+- BUGFIX: keep json and wasm as default resolvable extensions
+- COMPAT: short-circuit template compilation to be compatible with addons with broken template preprocessors but no templates
+
+## 0.8.0
+
+- HOUSEKEEPING: upgrade css-loader.
+- BUGFIX: include nested CSS files from addons that use no preprocessor
+- ENHANCEMENT: support addons that customize treeForStyles and don't call `super`, by @simonihmig.
+- DOCS: improvement to README by @simonihmig
+- HOUSEKEEPING: update for compatibility with newest ember-cli-htmlbars
+
 ## 0.7.1
 
 - BUGFIX: changes to CSS and public assets were not always reflected after rebuilds

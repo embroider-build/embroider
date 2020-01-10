@@ -82,7 +82,13 @@ You can pass options into Embroider by passing them into the `compatBuild` funct
 
 ```js
 return require('@embroider/compat').compatBuild(app, Webpack, {
-  // options go here
+  // staticAddonTestSupportTrees: true,
+  // staticAddonTrees: true,
+  // staticHelpers: true,
+  // staticComponents: true,
+  // packagerOptions: {
+  //    webpackConfig: { }
+  // }
 });
 ```
 
@@ -93,7 +99,7 @@ The recommended steps when introducing Embroider into an existing app are:
 1. First make it work with no options. This is the mode that supports maximum backward compatibility.
 2. Enable `staticAddonTestSupportTrees` and `staticAddonTrees` and test your application. This is usually safe, because most code in these trees gets consumed via `import` statements that we can analyze. But you might find exceptional cases where some code is doing a more dynamic thing.
 3. Enable `staticHelpers` and test. This is usually safe because addons get invoke declarative in templates and we can see all invocations.
-4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component inovcation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
+4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
 
 ## Analyzing Bundles

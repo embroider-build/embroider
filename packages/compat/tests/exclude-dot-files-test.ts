@@ -12,16 +12,16 @@ QUnit.module('dot files are excluded as modules from apps and addons', function(
   hooks.before(async function(assert) {
     app = Project.emberNew();
     app.files.app = Object.assign({}, app.files.app, {
-      '.foobar.js': `foobar content`,
-      '.barbaz.js': `barbaz content`,
-      'bizbiz.js': `bizbiz content`,
+      '.foobar.js': `// foobar content`,
+      '.barbaz.js': `// barbaz content`,
+      'bizbiz.js': `// bizbiz content`,
     });
 
     let addon = app.addAddon('my-addon');
 
     addon.files.addon = Object.assign({}, addon.files.addon, {
-      '.fooaddon.js': `fooaddon content`,
-      'baraddon.js': `bizbiz content`,
+      '.fooaddon.js': `// fooaddon content`,
+      'baraddon.js': `// bizbiz content`,
     });
 
     build = await BuildResult.build(app, {

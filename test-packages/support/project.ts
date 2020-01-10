@@ -117,8 +117,7 @@ export default App;
 }
 
 export class Project extends FixturifyProject {
-  static emberNew(emberAppOptions?: any, embroiderOptions?: Options): Project {
-    let name = 'my-app';
+  static emberNew(emberAppOptions?: any, embroiderOptions?: Options, name = 'my-app'): Project {
     let app = new Project(name);
     app.files = {
       'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
@@ -249,7 +248,8 @@ export class Project extends FixturifyProject {
   toJSON(key?: string) {
     let result = key ? super.toJSON(key) : super.toJSON();
     if (!key && this.packageLinks.size > 0) {
-      let pkg = JSON.parse((result as any)[this.name]['package.json']);
+      let baseJSON = unwrapPackageName(result, this.name);
+      let pkg = JSON.parse(baseJSON['package.json']);
       for (let [name] of this.packageLinks) {
         if (this.devPackageLinks.has(name)) {
           pkg.devDependencies[name] = '*';
@@ -257,8 +257,27 @@ export class Project extends FixturifyProject {
           pkg.dependencies[name] = '*';
         }
       }
-      (result as any)[this.name]['package.json'] = JSON.stringify(pkg, null, 2);
+      baseJSON['package.json'] = JSON.stringify(pkg, null, 2);
     }
     return result;
   }
+}
+
+function parseScoped(name: string) {
+  let matched = name.match(/(@[^@\/]+)\/(.*)/);
+  if (matched) {
+    return {
+      scope: matched[1],
+      name: matched[2],
+    };
+  }
+  return null;
+}
+
+function unwrapPackageName(obj: any, packageName: string) {
+  let scoped = parseScoped(packageName);
+  if (scoped) {
+    return obj[scoped.scope][scoped.name];
+  }
+  return obj[packageName];
 }

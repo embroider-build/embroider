@@ -3,7 +3,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
+import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
@@ -134,10 +134,26 @@ export default class V1Addon implements V1Package {
   // we need to run custom inline hbs preprocessing if there are custom hbs
   // plugins and there are inline hbs templates
   private needsInlineHBS(): boolean {
-    return (
-      Boolean(this.templateCompiler) &&
-      Boolean(this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile'))
-    );
+    if (!this.templateCompiler) {
+      // no custom transforms
+      return false;
+    }
+    if (this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile')) {
+      // the older inline template compiler is present
+      return true;
+    }
+
+    if (
+      this.addonInstance.addons.find(
+        (a: any) =>
+          a.name === 'ember-cli-htmlbars' && semver.satisfies(semver.coerce(a.pkg.version) || a.pkg.version, '>4.0.0')
+      )
+    ) {
+      // a version of ember-cli-htmlbars that natively supports inline hbs is present
+      return true;
+    }
+
+    return false;
   }
 
   private needsCustomBabel() {
@@ -295,7 +311,7 @@ export default class V1Addon implements V1Package {
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
-    if (this.addonInstance.registry.load('template').length > 0) {
+    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template').length > 0) {
       tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
         registry: this.addonInstance.registry,
       });
@@ -470,7 +486,7 @@ export default class V1Addon implements V1Package {
     if (addonStylesTree) {
       let discoveredFiles: string[] = [];
       let tree = new ObserveTree(addonStylesTree, outputPath => {
-        discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
+        discoveredFiles = walkSync(outputPath, { globs: ['**/*.css'], directories: false });
       });
       built.trees.push(tree);
       built.dynamicMeta.push(() => {
@@ -489,8 +505,10 @@ export default class V1Addon implements V1Package {
       tree = this.invokeOriginalTreeFor('styles');
       if (tree) {
         tree = new Funnel(tree, {
-          srcDir: 'app/styles',
           destDir: '_app_styles_',
+          getDestinationPath(path) {
+            return path.replace(/^app\/styles\//, '');
+          },
         });
       }
     } else if (this.hasStockTree('styles')) {

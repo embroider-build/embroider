@@ -302,12 +302,21 @@ export class AppBuilder<TreeNames> {
   }
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
-    let result = [];
+    let result: Array<string> = [];
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
+        let styles = [];
+        let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
-          result.push(resolve.sync(mod, { basedir: addon.root }));
+          if (type === 'implicit-styles') {
+            styles.push(resolve.sync(mod, options));
+          } else {
+            result.push(resolve.sync(mod, options));
+          }
+        }
+        if (styles.length) {
+          result = [...styles, ...result];
         }
       }
     }
@@ -773,7 +782,8 @@ export class AppBuilder<TreeNames> {
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
-    let cached = prepared.get(`assets/${this.app.name}.js`);
+    let relativePath = `assets/${this.app.name}.js`;
+    let cached = prepared.get(relativePath);
     if (cached) {
       return cached;
     }
@@ -785,8 +795,6 @@ export class AppBuilder<TreeNames> {
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
-
-    let relativePath = `assets/${this.app.name}.js`;
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
@@ -814,7 +822,7 @@ export class AppBuilder<TreeNames> {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', amdModules);
+    this.gatherImplicitModules('implicit-modules', relativePath, amdModules);
 
     let source = entryTemplate({
       amdModules,
@@ -876,7 +884,7 @@ export class AppBuilder<TreeNames> {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', amdModules);
+    this.gatherImplicitModules('implicit-test-modules', myName, amdModules);
 
     let source = entryTemplate({
       amdModules,
@@ -893,6 +901,7 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
+    relativeTo: string,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
     for (let addon of this.adapter.allActiveAddons) {
@@ -907,7 +916,7 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
+            buildtime: explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
           });
         }
       }

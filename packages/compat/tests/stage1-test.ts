@@ -1,6 +1,7 @@
 import 'qunit';
 import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
 import resolve from 'resolve';
+import { dirname } from 'path';
 
 QUnit.module('stage1 build', function() {
   QUnit.module('max compatibility', function(origHooks) {
@@ -27,7 +28,7 @@ QUnit.module('stage1 build', function() {
           `,
           'has-inline-template.js': `
             import Component from '@ember/component';
-            import hbs from 'htmlbars-inline-precompile';
+            import { hbs } from 'ember-cli-htmlbars';
             export default Component.extend({
               // tagged template form:
               layout: ${"hbs`<div class={{embroider-sample-transforms-target}}>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"},
@@ -54,7 +55,6 @@ QUnit.module('stage1 build', function() {
       // Our addon will use @embroider/sample-transforms as examples of custom
       // AST and babel transforms.
       addon.linkPackage('@embroider/sample-transforms');
-      addon.linkPackage('ember-cli-htmlbars-inline-precompile');
       addon.linkPackage('@embroider/macros');
 
       // our app will include an in-repo addon
@@ -144,6 +144,63 @@ QUnit.module('stage1 build', function() {
     test('in-repo-addon is available', function(assert) {
       assert.expect(0);
       resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: assert.basePath });
+    });
+  });
+
+  QUnit.module('inline hbs, ember-cli-htmlbars@3', function(origHooks) {
+    let { hooks, test } = installFileAssertions(origHooks);
+    let build: BuildResult;
+
+    hooks.before(async function(assert) {
+      // A simple ember app with no tests
+      let app = Project.emberNew();
+
+      // We create an addon
+      let addon = app.addAddon('my-addon');
+      addon.files.addon = {
+        components: {
+          'has-inline-template.js': `
+              import Component from '@ember/component';
+              import hbs from 'htmlbars-inline-precompile';
+              export default Component.extend({
+                // tagged template form:
+                layout: ${"hbs`<div class={{embroider-sample-transforms-target}}>Inline</div><span>{{macroDependencySatisfies 'ember-source' '>3'}}</span>`"},
+                // call expression form:
+                extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
+              });
+            `,
+        },
+      };
+
+      // Our addon will use @embroider/sample-transforms as examples of custom
+      // AST and babel transforms.
+      addon.linkPackage('@embroider/sample-transforms');
+      addon.linkPackage('ember-cli-htmlbars-inline-precompile');
+      addon.linkPackage('ember-cli-htmlbars', dirname(require.resolve('ember-cli-htmlbars-3/package.json')));
+      addon.linkPackage('@embroider/macros');
+
+      build = await BuildResult.build(app, { stage: 1 });
+      assert.basePath = build.outputPath;
+    });
+
+    hooks.after(async function() {
+      await build.cleanup();
+    });
+
+    test('component with inline template', function(assert) {
+      let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
+      assertFile.matches(
+        'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
+        'tagged template is still hbs and custom transforms have run'
+      );
+      assertFile.matches(
+        /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+        'called template is still hbs and custom transforms have run'
+      );
+      assertFile.matches(
+        /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
+        'template macros have not run'
+      );
     });
   });
 

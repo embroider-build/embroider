@@ -11,6 +11,7 @@ import {
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
+import moduleExists from './module-exists';
 import getConfig from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, prepareEachPath, finishEachPath } from './each';
@@ -64,6 +65,10 @@ export default function main() {
           state.calledIdentifiers.add(callee.node);
           dependencySatisfies(path, state, packageCache);
         }
+        if (callee.referencesImport('@embroider/macros', 'moduleExists')) {
+          state.calledIdentifiers.add(callee.node);
+          moduleExists(path, state, packageCache);
+        }
         if (callee.referencesImport('@embroider/macros', 'getConfig')) {
           state.calledIdentifiers.add(callee.node);
           getConfig(path, state, packageCache, false);
@@ -90,7 +95,14 @@ export default function main() {
       },
     },
     ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
-      for (let candidate of ['dependencySatisfies', 'getConfig', 'getOwnConfig', 'failBuild', 'importSync']) {
+      for (let candidate of [
+        'dependencySatisfies',
+        'moduleExists',
+        'getConfig',
+        'getOwnConfig',
+        'failBuild',
+        'importSync',
+      ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
           throw error(path, `You can only use ${candidate} as a function call`);
         }

@@ -67,7 +67,7 @@ export default function main() {
         }
         if (callee.referencesImport('@embroider/macros', 'moduleExists')) {
           state.calledIdentifiers.add(callee.node);
-          moduleExists(path, state, packageCache);
+          moduleExists(path, state);
         }
         if (callee.referencesImport('@embroider/macros', 'getConfig')) {
           state.calledIdentifiers.add(callee.node);

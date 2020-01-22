@@ -87,7 +87,7 @@ export default class Package {
   // traditionally, ember-cli only rebuilds addons that set their own
   // isDevelopingAddon to true. This is a performance optimization. But as of
   // ember-cli 3.15, the performance problem is fixed behind the
-  // BROCCOLI_ENABLE_MEMOIZE feature flag. We will rely on that feature here,
+  // BROCCOLI_ENABLED_MEMOIZE feature flag. We will rely on that feature here,
   // and just enable all rebuilds whenever the flag is set.
   get mayRebuild(): boolean {
     let broccoli_memoization = process.env['BROCCOLI_ENABLED_MEMOIZE'];

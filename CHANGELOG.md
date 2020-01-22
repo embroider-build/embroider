@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## master
+
+- ENHANCEMENT: support rebuilding of linked addons when using the BROCCOLI_ENABLED_MEMOIZE feature flag
+
 ## 0.10.0
 
 - BUGFIX: make TemplateCompiler's isParallelSafe flag survive clone()

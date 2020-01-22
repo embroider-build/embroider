@@ -5,7 +5,7 @@ import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
+import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
 import { Tree } from 'broccoli-plugin';
@@ -14,7 +14,7 @@ import semver from 'semver';
 import Snitch from './snitch';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -56,7 +56,12 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, protected addonOptions: Required<Options>, private app: V1App) {
+  constructor(
+    protected addonInstance: any,
+    protected addonOptions: Required<Options>,
+    private app: V1App,
+    private packageCache: PackageCache
+  ) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
     }
@@ -295,7 +300,11 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private get rootTree() {
-    return new UnwatchedDir(this.root);
+    if (this.packageCache.get(this.root).mayRebuild) {
+      return new WatchedDir(this.root);
+    } else {
+      return new UnwatchedDir(this.root);
+    }
   }
 
   @Memoize()
@@ -706,7 +715,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, options: Required<Options>, app: V1App): V1Addon;
+  new (addonInstance: any, options: Required<Options>, app: V1App, packageCache: PackageCache): V1Addon;
 }
 
 class IntermediateBuild {

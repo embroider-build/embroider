@@ -251,8 +251,8 @@ QUnit.module('stage2 build', function() {
     test('app/templates/components/direct-template-reexport.js', function(assert) {
       let assertFile = assert.file('./templates/components/direct-template-reexport.js').transform(build.transpile);
       assertFile.matches(
-        /export \{ default \} from ['"]\.\.\/\.\.\/node_modules\/my-addon\/templates\/components\/hello-world['"]/,
-        'rewrites reexports of templates'
+        /export \{ default \} from ['"]\.\.\/\.\.\/node_modules\/my-addon\/templates\/components\/hello-world.hbs['"]/,
+        'rewrites absolute imports of templates to explicit hbs'
       );
     });
 
@@ -266,7 +266,7 @@ QUnit.module('stage2 build', function() {
       let assertFile = assert
         .file('node_modules/my-addon/components/has-relative-template.js')
         .transform(build.transpile);
-      assertFile.matches(/import layout from ["']\.\/t['"]/, 'arbitrary relative template remains the same');
+      assertFile.matches(/import layout from ["']\.\/t.hbs['"]/, 'arbitrary relative template gets hbs extension');
     });
 
     test('app can import a deep addon', function(assert) {

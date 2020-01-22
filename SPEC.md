@@ -99,7 +99,7 @@ Notice that a package’s **allowed dependencies** do not include the package it
 
 Modules in **Own Javascript** are also allowed to use the (currently stage 3) ECMA dynamic `import()`, and the specifiers have the same meanings as in static import. We impose one caveat: only string-literal specifiers are supported. So `import('./lang-en')` is OK but `import("./lang-"+language)` is not. We retain the option to relax this restriction in the future. The restriction allows us to do better analysis of possible inter-module dependencies (see **Build-time Conditionals** below for an example).
 
-Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly).
+Modules in **Own Javascript** are allowed to import template files. This is common in today’s addons (they import their own layout to set it explicitly). But import specifiers of templates are required to include the `.hbs` extension.
 
 Modules in **Own Javascript** are allowed to use `hbs` tagged template strings as provided by `ember-cli-htmlbars-inline-precompile`, and we promise to compile the templates at app build time.
 

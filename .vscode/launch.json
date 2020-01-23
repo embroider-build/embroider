@@ -17,8 +17,9 @@
         "--require",
         "./test-packages/support/qunit-jest-shim.js",
         "--filter",
-        "namespaced"
-      ]
+        "component with relative import of arbitrarily placed template"
+      ],
+      "env": { "JOBS": "1" }
     },
     {
       "type": "node",

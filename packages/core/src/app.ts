@@ -354,6 +354,7 @@ export class AppBuilder<TreeNames> {
     ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
+    babel.plugins.unshift([require.resolve('./template-colocation-plugin')]);
 
     return new PortableBabelConfig(babel, { basedir: this.root });
   }

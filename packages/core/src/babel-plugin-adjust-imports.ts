@@ -22,6 +22,12 @@ import {
   ExportNamedDeclaration,
   ImportDeclaration,
   ExportAllDeclaration,
+  isImportDeclaration,
+  isImportDefaultSpecifier,
+  importSpecifier,
+  isExportNamedDeclaration,
+  isExportSpecifier,
+  exportSpecifier,
 } from '@babel/types';
 import PackageCache from './package-cache';
 import Package, { V2Package } from './package';
@@ -88,7 +94,6 @@ function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
   if (file.isRelocated) {
     specifier = handleRelocation(specifier, file);
   }
-  specifier = makeHBSExplicit(specifier, file);
   return specifier;
 }
 
@@ -236,24 +241,23 @@ function handleRelocation(specifier: string, sourceFile: AdjustFile) {
   return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, targetPkg.root));
 }
 
-function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
+function handleHBSImport(specifier: string, sourceFile: AdjustFile): { specifier: string; isTemplate: boolean } {
   if (/\.(hbs)|(js)|(css)$/.test(specifier)) {
     // already has a well-known explicit extension, so nevermind
-    return specifier;
+    return { specifier, isTemplate: false };
   }
 
   // our own externals by definition aren't things we can find on disk, so no
   // point trying
   if (specifier.startsWith('@embroider/externals/')) {
-    return specifier;
+    return { specifier, isTemplate: false };
   }
 
   let pkg = sourceFile.owningPackage();
   if (!pkg || !pkg.isV2Ember() || !pkg.meta['auto-upgraded']) {
     // only auto-upgraded packages get this adjustment, native v2 packages are
-    // supposed to already say '.hbs' explicitly whenever they import a
-    // template.
-    return specifier;
+    // supposed to import the named TEMPLATE export if they want a raw template.
+    return { specifier, isTemplate: false };
   }
 
   let target;
@@ -267,10 +271,30 @@ function makeHBSExplicit(specifier: string, sourceFile: AdjustFile) {
   }
 
   if (pathExistsSync(target)) {
-    return specifier + '.hbs';
+    return { specifier: explicitRelative(dirname(sourceFile.name), target), isTemplate: true };
   }
+  return { specifier, isTemplate: false };
+}
 
-  return specifier;
+function rewriteHBSImport(path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>) {
+  let { node } = path;
+  if (isImportDeclaration(node)) {
+    node.specifiers = node.specifiers.map(s => {
+      if (isImportDefaultSpecifier(s)) {
+        return importSpecifier(s.local, identifier('TEMPLATE'));
+      } else {
+        return s;
+      }
+    });
+  } else if (isExportNamedDeclaration(node)) {
+    node.specifiers = node.specifiers.map(s => {
+      if (isExportSpecifier(s) && s.local.name === 'default') {
+        return exportSpecifier(identifier('TEMPLATE'), s.exported);
+      } else {
+        return s;
+      }
+    });
+  }
 }
 
 export default function main() {
@@ -340,8 +364,18 @@ export default function main() {
         }
 
         let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
-        if (specifier !== source.value) {
-          emberCLIVanillaJobs.push(() => (source.value = specifier));
+        let isTemplate: boolean;
+        ({ specifier, isTemplate } = handleHBSImport(specifier, state.adjustFile));
+
+        if (specifier !== source.value || isTemplate) {
+          emberCLIVanillaJobs.push(() => {
+            if (specifier !== source.value) {
+              source.value = specifier;
+            }
+            if (isTemplate) {
+              rewriteHBSImport(path);
+            }
+          });
         }
       },
     },

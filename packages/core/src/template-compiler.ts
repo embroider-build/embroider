@@ -360,7 +360,8 @@ export default class TemplateCompiler {
       lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
-    lines.push(`export default Ember.HTMLBars.template(${compiled});`);
+    lines.push(`export const TEMPLATE = Ember.HTMLBars.template(${compiled});`);
+    lines.push(`export default Ember._setComponentTemplate(TEMPLATE, Ember._templateOnlyComponent)`);
     return lines.join('\n');
   }
 

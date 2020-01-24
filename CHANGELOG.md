@@ -1,6 +1,6 @@
 # Embroider Changelog
 
-## master
+## 0.11.0
 
 - ENHANCEMENT: support rebuilding of linked addons when using the BROCCOLI_ENABLED_MEMOIZE feature flag
 

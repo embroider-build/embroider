@@ -453,17 +453,27 @@ export default class V1App implements V1Package {
   }
 
   private combinedStyles(addonTrees: Tree[]): Tree {
-    let trees = addonTrees.map(
+    let trees: Tree[] = addonTrees.map(
       tree =>
         new Funnel(tree, {
           allowEmpty: true,
           srcDir: '_app_styles_',
         })
     );
-    if (this.app.trees.styles) {
-      trees.push(this.app.trees.styles);
+    let appStyles = this.app.trees.styles as Tree | undefined;
+    if (appStyles) {
+      // Workaround for https://github.com/ember-cli/ember-cli/issues/9020
+      //
+      // The default app styles tree is unwatched and relies on side effects
+      // elsewhere in ember-cli's build pipeline to actually get rebuilds to
+      // work. Here we need it to actually be watched properly if we want to
+      // rely on it, particularly when using BROCCOLI_ENABLED_MEMOIZE.
+      if ((appStyles as any)._watched === false && (appStyles as any)._directoryPath) {
+        appStyles = new WatchedDir((appStyles as any)._directoryPath);
+      }
+      trees.push(appStyles);
     }
-    return mergeTrees(trees, { overwrite: true });
+    return mergeTrees(trees, { overwrite: true, annotation: 'embroider-v1-app-combined-styles' });
   }
 
   synthesizeStylesPackage(addonTrees: Tree[]): Tree {

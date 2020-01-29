@@ -142,6 +142,8 @@ export class Project extends FixturifyProject {
     app.linkPackage('@embroider/compat');
     app.linkPackage('@embroider/core');
     app.linkPackage('@embroider/webpack');
+    app.linkPackage('@glimmer/component');
+
     return app;
   }
 

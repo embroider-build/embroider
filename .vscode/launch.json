@@ -17,8 +17,9 @@
         "--require",
         "./test-packages/support/qunit-jest-shim.js",
         "--filter",
-        "namespaced"
-      ]
+        "component with relative import of arbitrarily placed template"
+      ],
+      "env": { "JOBS": "1" }
     },
     {
       "type": "node",
@@ -26,7 +27,7 @@
       "name": "Run jest tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/dependency-satisfies.test.js"]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/macro-if.test.js"]
     },
     {
       "type": "node",

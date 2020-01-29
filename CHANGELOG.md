@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+## 0.11.1
+
+- BUGFIX: the previous release broke CSS rebuilding if you were using the
+  experimental BROCCOLI_ENABLED_MEMOIZE feature flag due to the way ember-cli
+  constructs the app styles tree that Embroider relies on. This release includes
+  a workaround.
+
 ## 0.11.0
 
 - ENHANCEMENT: support rebuilding of linked addons when using the BROCCOLI_ENABLED_MEMOIZE feature flag

@@ -11,17 +11,20 @@ import {
   stringLiteral,
   importDefaultSpecifier,
   memberExpression,
+  expressionStatement,
+  isFunctionDeclaration,
+  isTSDeclareFunction,
+  functionExpression,
+  ExportNamedDeclaration,
+  isExportDefaultSpecifier,
+  isExportSpecifier,
+  importSpecifier,
 } from '@babel/types';
 import { dirname } from 'path';
 import { explicitRelative } from './paths';
-import { expressionStatement } from '@babel/types';
-import { isFunctionDeclaration } from '@babel/types';
-import { isTSDeclareFunction } from '@babel/types';
-import { functionExpression } from '@babel/types';
-import { ExportNamedDeclaration } from '@babel/types';
-import { isExportDefaultSpecifier } from '@babel/types';
-import { isExportSpecifier } from '@babel/types';
-import { importSpecifier } from '@babel/types';
+import PackageCache from './package-cache';
+
+const packageCache = PackageCache.shared('embroider-stage3');
 
 interface State {
   colocatedTemplate: string | undefined;
@@ -49,6 +52,11 @@ export default function main() {
       Program: {
         enter(path: NodePath<Program>, state: State) {
           let filename = path.hub.file.opts.filename;
+
+          let owningPackage = packageCache.ownerOfFile(filename);
+          if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
+            return;
+          }
 
           let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + '.hbs';
           if (existsSync(hbsFilename)) {

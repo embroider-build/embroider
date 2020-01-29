@@ -2,6 +2,8 @@ import { allBabelVersions } from '@embroider/test-support';
 import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
+import { writeJSONSync } from 'fs-extra';
+import { AppMeta } from '../src';
 
 tmp.setGracefulCleanup();
 
@@ -25,6 +27,15 @@ describe('template-colocation-plugin', () => {
         let name;
         ({ name, removeCallback } = tmp.dirSync());
         filename = join(name, 'sample.js');
+        writeJSONSync(join(name, 'package.json'), {
+          name: 'sample-package',
+          keywords: ['ember-addon'],
+          'ember-addon': {
+            version: 2,
+            type: 'app',
+            'auto-upgraded': true,
+          } as AppMeta,
+        });
       });
 
       afterEach(function() {

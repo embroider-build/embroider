@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.12.0
+
+- ENHANCEMENT: support for Octane's component template colocation.
+
 ## 0.11.1
 
 - BUGFIX: the previous release broke CSS rebuilding if you were using the

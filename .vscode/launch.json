@@ -17,7 +17,7 @@
         "--require",
         "./test-packages/support/qunit-jest-shim.js",
         "--filter",
-        "component with relative import of arbitrarily placed template"
+        "template colocation"
       ],
       "env": { "JOBS": "1" }
     },

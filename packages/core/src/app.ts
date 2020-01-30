@@ -195,10 +195,19 @@ class AppFiles {
         continue;
       }
 
-      if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components/')) {
+      // hbs files are resolvable, but not when they're inside the components
+      // directory (where they are used for colocation only)
+      if (relativePath.startsWith('components/') && !relativePath.endsWith('.hbs')) {
         components.push(relativePath);
         continue;
-      } else if (relativePath.startsWith('helpers/')) {
+      }
+
+      if (relativePath.startsWith('templates/components/')) {
+        components.push(relativePath);
+        continue;
+      }
+
+      if (relativePath.startsWith('helpers/')) {
         helpers.push(relativePath);
         continue;
       }

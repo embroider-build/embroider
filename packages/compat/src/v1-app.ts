@@ -18,6 +18,7 @@ import resolvePackagePath from 'resolve-package-path';
 import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
+import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -627,6 +628,8 @@ export default class V1App implements V1Package {
 
     let trees: Tree[] = [];
     trees.push(appTree);
+    trees.push(new SynthesizeTemplateOnlyComponents(appTree, ['components']));
+
     trees.push(configReplaced);
     if (testsTree) {
       trees.push(testsTree);

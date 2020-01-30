@@ -17,16 +17,17 @@
         "--require",
         "./test-packages/support/qunit-jest-shim.js",
         "--filter",
-        "namespaced"
-      ]
+        "template colocation"
+      ],
+      "env": { "JOBS": "1" }
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Run jest tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/dependency-satisfies.test.js"]
+      "cwd": "${workspaceFolder}/packages/core",
+      "args": ["--runInBand", "--testPathPattern", "tests/template-colocation-plugin.test.js"]
     },
     {
       "type": "node",

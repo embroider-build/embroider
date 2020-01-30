@@ -142,6 +142,8 @@ export class Project extends FixturifyProject {
     app.linkPackage('@embroider/compat');
     app.linkPackage('@embroider/core');
     app.linkPackage('@embroider/webpack');
+    app.linkPackage('@glimmer/component');
+
     return app;
   }
 
@@ -175,6 +177,7 @@ export class Project extends FixturifyProject {
     app.linkDevPackage('loader.js');
     app.linkPackage('ember-cli-htmlbars');
     app.linkPackage('ember-cli-babel');
+    app.linkPackage('@glimmer/component');
     app.linkDevPackage('ember-source');
     app.linkDevPackage('ember-resolver');
     app.linkDevPackage('@embroider/compat');

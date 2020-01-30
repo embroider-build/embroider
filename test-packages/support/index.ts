@@ -14,32 +14,67 @@ export function runDefault(code: string): any {
   return (exports as any).default();
 }
 
+function presetsFor(major: 6 | 7) {
+  return [
+    [
+      require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),
+      {
+        modules: false,
+        targets: {
+          ie: '11.0.0',
+        },
+      },
+    ],
+  ];
+}
+
 export function allBabelVersions(params: {
   babelConfig(major: 6): Options6;
   babelConfig(major: 7): Options7;
   createTests(transform: (code: string) => string): void;
+  includePresetsTests?: boolean;
 }) {
   let _describe = typeof QUnit !== 'undefined' ? (QUnit.module as any) : describe;
 
-  _describe('babel6', function() {
-    let options6: Options6 = params.babelConfig(6);
-    if (!options6.filename) {
-      options6.filename = 'sample.js';
-    }
-    params.createTests(function(code: string) {
-      return transform6(code, options6).code!;
-    });
-  });
+  function versions(usePresets: boolean) {
+    _describe('babel6', function() {
+      params.createTests(function(code: string) {
+        let options6: Options6 = params.babelConfig(6);
+        if (!options6.filename) {
+          options6.filename = 'sample.js';
+        }
+        if (usePresets) {
+          options6.presets = presetsFor(6);
+        }
 
-  _describe('babel7', function() {
-    let options7: Options7 = params.babelConfig(7);
-    if (!options7.filename) {
-      options7.filename = 'sample.js';
-    }
-    params.createTests(function(code: string) {
-      return transform7(code, options7)!.code!;
+        return transform6(code, options6).code!;
+      });
     });
-  });
+
+    _describe('babel7', function() {
+      params.createTests(function(code: string) {
+        let options7: Options7 = params.babelConfig(7);
+        if (!options7.filename) {
+          options7.filename = 'sample.js';
+        }
+        if (usePresets) {
+          options7.presets = presetsFor(7);
+        }
+        return transform7(code, options7)!.code!;
+      });
+    });
+  }
+
+  if (params.includePresetsTests) {
+    _describe('with presets', function() {
+      versions(true);
+    });
+    _describe('without presets', function() {
+      versions(false);
+    });
+  } else {
+    versions(false);
+  }
 }
 
 export function emberTemplateCompilerPath() {

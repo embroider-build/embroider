@@ -24,6 +24,7 @@ import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
+import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -476,18 +477,32 @@ export default class V1Addon implements V1Package {
 
   private buildTreeForAddon(built: IntermediateBuild) {
     let tree = this.treeForAddon(built);
-    if (tree) {
-      if (!this.addonOptions.staticAddonTrees) {
-        let filenames: string[] = [];
-        tree = new ObserveTree(tree, outputDir => {
-          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/\.js$/i, '')}`);
-        });
-        built.dynamicMeta.push(() => ({
-          'implicit-modules': filenames,
-        }));
-      }
-      built.trees.push(tree);
+    if (!tree) {
+      return;
     }
+    let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
+    if (!this.addonOptions.staticAddonTrees) {
+      let filenames: string[] = [];
+      let templateOnlyComponentNames: string[] = [];
+
+      tree = new ObserveTree(tree, outputDir => {
+        filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] })
+          .map(f => `./${f.replace(/\.js$/i, '')}`)
+          .filter(notColocatedTemplate);
+      });
+
+      templateOnlyComponents = new ObserveTree(templateOnlyComponents, outputDir => {
+        templateOnlyComponentNames = walkSync(outputDir, { globs: ['**/*.js'] }).map(
+          f => `./${f.replace(/\.js$/i, '')}`
+        );
+      });
+
+      built.dynamicMeta.push(() => ({
+        'implicit-modules': filenames.concat(templateOnlyComponentNames),
+      }));
+    }
+    built.trees.push(tree);
+    built.trees.push(templateOnlyComponents);
   }
 
   private buildAddonStyles(built: IntermediateBuild) {
@@ -741,4 +756,8 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
   }
 
   return true;
+}
+
+function notColocatedTemplate(path: string) {
+  return !/^\.\/components\/.*\.hbs$/.test(path);
 }

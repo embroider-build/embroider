@@ -1,4 +1,4 @@
-import { relative, isAbsolute } from 'path';
+import { relative, isAbsolute, dirname, join, basename } from 'path';
 
 // by "explicit", I mean that we want "./local/thing" instead of "local/thing"
 // because
@@ -7,7 +7,7 @@ import { relative, isAbsolute } from 'path';
 //     import "local/thing"
 //
 export function explicitRelative(fromDir: string, toFile: string) {
-  let result = relative(fromDir, toFile);
+  let result = join(relative(fromDir, dirname(toFile)), basename(toFile));
   if (!result.startsWith('/') && !result.startsWith('.')) {
     result = './' + result;
   }

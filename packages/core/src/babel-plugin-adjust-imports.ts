@@ -25,7 +25,7 @@ import {
 } from '@babel/types';
 import PackageCache from './package-cache';
 import Package, { V2Package } from './package';
-import { writeFileSync, ensureDirSync } from 'fs-extra';
+import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { explicitRelative } from './paths';
@@ -212,8 +212,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
   let target = join(opts.externalsDir, specifier + '.js');
-  ensureDirSync(dirname(target));
-  writeFileSync(
+  outputFileSync(
     target,
     externalTemplate({
       runtimeName: specifier,

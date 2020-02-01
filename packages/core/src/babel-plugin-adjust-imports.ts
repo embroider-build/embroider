@@ -1,5 +1,5 @@
 import getPackageName from './package-name';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import {
   blockStatement,
@@ -130,8 +130,8 @@ function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['
   return specifier;
 }
 
-function isExplicitlyExternal(packageName: string, fromPkg: V2Package): boolean {
-  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(packageName));
+function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
+  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
 function isResolvable(packageName: string, fromPkg: V2Package): boolean {
@@ -173,18 +173,31 @@ module.exports = m;
 `) as (params: { runtimeName: string }) => string;
 
 function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let packageName = getPackageName(specifier);
-  if (!packageName) {
-    // must have been relative, we only care about absolute imports here
-    return specifier;
-  }
-
   let pkg = sourceFile.owningPackage();
   if (!pkg || !pkg.isV2Ember()) {
     return specifier;
   }
 
-  if (isExplicitlyExternal(packageName, pkg)) {
+  let packageName = getPackageName(specifier);
+  if (!packageName) {
+    // This is a relative import. We don't automatically externalize those
+    // because it's rare, and by keeping them static we give better errors. But
+    // we do allow them to be explicitly externalized by the package author (or
+    // a compat adapter). In the metadata, they would be listed in
+    // package-relative form, so we need to convert this specifier to that.
+    let absoluteSpecifier = resolve(dirname(sourceFile.name), specifier);
+    let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
+    if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
+      let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
+      return makeExternal(publicSpecifier, sourceFile, opts);
+    } else {
+      return specifier;
+    }
+  }
+
+  // absolute package imports can also be explicitly external based on their
+  // full specifier name
+  if (isExplicitlyExternal(specifier, pkg)) {
     return makeExternal(specifier, sourceFile, opts);
   }
 

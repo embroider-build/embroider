@@ -1,5 +1,5 @@
 import Plugin, { Tree } from 'broccoli-plugin';
-import { join } from 'path';
+import { join, basename } from 'path';
 import walkSync from 'walk-sync';
 import { remove, outputFileSync, pathExistsSync } from 'fs-extra';
 
@@ -38,7 +38,12 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
   }
   private add(filename: string) {
     if (!this.emitted.has(filename)) {
-      outputFileSync(filename + '.js', source, 'utf8');
+      // special case: ember-cli doesn't allow template-only components named
+      // "template.hbs" because there are too many people doing a "pods-like"
+      // layout that happens to match that pattern.🤮
+      if (basename(filename) !== 'template') {
+        outputFileSync(filename + '.js', source, 'utf8');
+      }
       this.emitted.add(filename);
     }
   }

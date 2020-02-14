@@ -58,6 +58,9 @@ export interface AppAdapter<TreeNames> {
   // whether the ember app should boot itself automatically
   autoRun(): boolean;
 
+  // custom app-boot logic when the autoRun is set to false
+  appBoot(): string | undefined;
+
   // the ember app's main module
   mainModule(): string;
 
@@ -837,6 +840,7 @@ export class AppBuilder<TreeNames> {
     let source = entryTemplate({
       amdModules,
       autoRun: this.adapter.autoRun(),
+      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: this.adapter.mainModuleConfig(),
       lazyRoutes,
@@ -964,6 +968,8 @@ let d = w.define;
   if (typeof EMBER_DISABLE_AUTO_BOOT === 'undefined' || !EMBER_DISABLE_AUTO_BOOT) {
     i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
   }
+{{else  if appBoot ~}}
+  {{{ appBoot }}}
 {{/if}}
 
 {{#if testSuffix ~}}
@@ -984,6 +990,7 @@ let d = w.define;
   amdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;
+  appBoot?: string;
   mainModule?: string;
   appConfig?: unknown;
   testSuffix?: boolean;

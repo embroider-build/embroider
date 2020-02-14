@@ -48,6 +48,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let htmlTree = oldPackage.htmlTree;
   let publicTree = oldPackage.publicTree;
   let configTree = oldPackage.config;
+  let appBootTree = oldPackage.appBoot;
 
   if (options.extraPublicTrees.length > 0) {
     publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean));
@@ -58,6 +59,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     htmlTree,
     publicTree,
     configTree,
+    appBootTree,
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
@@ -212,6 +214,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   autoRun(): boolean {
     return this.oldPackage.autoRun;
+  }
+
+  appBoot(): string | undefined {
+    return this.oldPackage.appBoot.readAppBoot();
   }
 
   mainModule(): string {

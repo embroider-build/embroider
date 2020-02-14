@@ -25,6 +25,8 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
+import merge from 'lodash/merge';
+import { isEmpty } from 'lodash';
 
 export type EmberENV = unknown;
 
@@ -630,6 +632,18 @@ export class AppBuilder<TreeNames> {
     return assets.concat(this.adapter.assets(inputPaths));
   }
 
+  private gatherPackageJson(assets: any) {
+    let pkgContent = {};
+    for (let asset of assets) {
+      if (asset.relativePath === 'package.json') {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        let content = require(asset.sourcePath);
+        merge(pkgContent, content);
+      }
+    }
+    return pkgContent;
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
@@ -673,6 +687,7 @@ export class AppBuilder<TreeNames> {
       meta['auto-upgraded'] = true;
     }
 
+    let pkgContent = this.gatherPackageJson(assets);
     let pkg = cloneDeep(this.app.packageJSON);
     if (pkg.keywords) {
       if (!pkg.keywords.includes('ember-addon')) {
@@ -683,6 +698,10 @@ export class AppBuilder<TreeNames> {
     }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     const pkgPath = join(this.root, 'package.json');
+    if (!isEmpty(pkgContent)) {
+      merge(pkgContent, pkg);
+      pkg = pkgContent;
+    }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
   }
 

@@ -3,11 +3,13 @@ import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
 import Options from '../../packages/core/src/options';
 
-function cliBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
+function cliBuildFile(emberAppOptions: string = '', embroiderOptions: Options = {}) {
   return `
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 module.exports = function(defaults) {
-  let app = new EmberApp(defaults, ${JSON.stringify(emberAppOptions, null, 2)});
+  let app = new EmberApp(defaults, {
+    ${emberAppOptions}
+  });
   if (process.env.CLASSIC) {
     return app.toTree();
   }
@@ -117,10 +119,14 @@ export default App;
 }
 
 export class Project extends FixturifyProject {
-  static emberNew(emberAppOptions?: any, embroiderOptions?: Options, name = 'my-app'): Project {
+  static emberNew(name = 'my-app'): Project {
     let app = new Project(name);
     app.files = {
-      'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
+      // you might think you want to pass params to customize cliBuildFile, but
+      // that doesn't really work given how our tests work. Pass emberAppOptions
+      // to BuildResult.build instead, because it needs access to the EmberApp
+      // instance, which is not returned out of ember-cli-build.js.
+      'ember-cli-build.js': cliBuildFile(),
       config: {
         'environment.js': environmentFile(name),
       },

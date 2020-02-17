@@ -25,6 +25,7 @@ import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -363,7 +364,17 @@ export default class V1Addon implements V1Package {
     if (!babelConfig.plugins) {
       babelConfig.plugins = [];
     } else {
+      let hadAutoImport = Boolean(babelConfig.plugins.find(isEmberAutoImportDynamic));
       babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
+      if (hadAutoImport) {
+        // if we removed ember-auto-import's dynamic import() plugin, the code
+        // may use import() syntax and we need to re-add it to the parser.
+        if (version && semver.satisfies(semver.coerce(version) || version, '^6')) {
+          babelConfig.plugins.push(require.resolve('babel-plugin-syntax-dynamic-import'));
+        } else {
+          babelConfig.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
+        }
+      }
     }
 
     if (this.templateCompiler) {
@@ -752,6 +763,12 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline
     // templates.
+    return false;
+  }
+
+  if (isEmberAutoImportDynamic(plugin)) {
+    // We replace ember-auto-import's implementation of dynamic import(), so we
+    // need to stop its plugin from rewriting those.
     return false;
   }
 

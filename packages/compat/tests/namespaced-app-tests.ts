@@ -9,7 +9,7 @@ QUnit.module('namespaced app', function(origHooks) {
   throwOnWarnings(hooks);
 
   hooks.before(async function(assert) {
-    let app = Project.emberNew(undefined, undefined, '@ef4/namespaced-app');
+    let app = Project.emberNew('@ef4/namespaced-app');
     let addon = app.addAddon('my-addon');
     addon.files['my-implicit-module.js'] = '';
     addon.pkg['ember-addon'] = {

@@ -17,7 +17,7 @@
         "--require",
         "./test-packages/support/qunit-jest-shim.js",
         "--filter",
-        "template colocation"
+        "stage2 build"
       ],
       "env": { "JOBS": "1" }
     },

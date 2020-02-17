@@ -364,7 +364,17 @@ export default class V1Addon implements V1Package {
     if (!babelConfig.plugins) {
       babelConfig.plugins = [];
     } else {
+      let hadAutoImport = Boolean(babelConfig.plugins.find(isEmberAutoImportDynamic));
       babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
+      if (hadAutoImport) {
+        // if we removed ember-auto-import's dynamic import() plugin, the code
+        // may use import() syntax and we need to re-add it to the parser.
+        if (version && semver.satisfies(semver.coerce(version) || version, '^6')) {
+          babelConfig.plugins.push(require.resolve('babel-plugin-syntax-dynamic-import'));
+        } else {
+          babelConfig.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
+        }
+      }
     }
 
     if (this.templateCompiler) {

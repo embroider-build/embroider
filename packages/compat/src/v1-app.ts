@@ -205,42 +205,40 @@ export default class V1App implements V1Package {
 
   get htmlTree() {
     if (this.app.tests) {
-      return mergeTrees([this.indexTree, this.app.testIndex()]);
-    }
-    {
+      return mergeTrees([this.indexTree, this.testIndexTree]);
+    } else {
       return this.indexTree;
     }
   }
 
   get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
-
-    let index: Tree = new Funnel(this.app.trees.app, {
+    let index = new Funnel(this.app.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
       annotation: 'app/index.html',
     });
-
-    if (this.isModuleUnification) {
-      let srcIndex = new Funnel(new WatchedDir(join(this.root, 'src')), {
-        files: ['ui/index.html'],
-        getDestinationPath: () => indexFilePath,
-        annotation: 'src/ui/index.html',
-      });
-
-      index = mergeTrees([index, srcIndex], {
-        overwrite: true,
-        annotation: 'merge classic and MU index.html',
-      });
-    }
-
-    let patterns = this.configReplacePatterns;
-
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
       files: [indexFilePath],
-      patterns,
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/indexTree',
+    });
+  }
+
+  get testIndexTree() {
+    let index = new Funnel(this.app.trees.tests, {
+      allowEmpty: true,
+      include: [`index.html`],
+      destDir: 'tests',
+      annotation: 'tests/index.html',
+    });
+    return new this.configReplace(index, this.configTree, {
+      configPath: join('environments', `test.json`),
+      files: ['tests/index.html'],
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/testIndexTree',
     });
   }
 

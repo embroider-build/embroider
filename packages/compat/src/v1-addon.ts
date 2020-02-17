@@ -25,6 +25,7 @@ import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -752,6 +753,12 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline
     // templates.
+    return false;
+  }
+
+  if (isEmberAutoImportDynamic(plugin)) {
+    // We replace ember-auto-import's implementation of dynamic import(), so we
+    // need to stop its plugin from rewriting those.
     return false;
   }
 

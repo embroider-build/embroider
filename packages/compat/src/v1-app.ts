@@ -20,6 +20,7 @@ import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -283,7 +284,8 @@ export default class V1App implements V1Package {
         // always-installed version of that (v2 addons are allowed to assume it
         // will be present in the final app build, the app doesn't get to turn
         // that off or configure it.)
-        !TemplateCompiler.isInlinePrecompilePlugin(p)
+        !TemplateCompiler.isInlinePrecompilePlugin(p) &&
+        !isEmberAutoImportDynamic(p)
       );
     });
 

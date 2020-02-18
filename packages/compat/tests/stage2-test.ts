@@ -108,6 +108,9 @@ QUnit.module('stage2 build', function() {
             },
           },
         },
+        public: {
+          'package.json': JSON.stringify({ customStuff: { fromMyAddon: true }, name: 'should-be-overridden' }),
+        },
       });
 
       let deepAddon = addon.addAddon('deep-addon');
@@ -369,6 +372,13 @@ QUnit.module('stage2 build', function() {
         .file('./does-dynamic-import.js')
         .transform(build.transpile)
         .matches(/return import\(['"]some-library['"]\)/);
+    });
+
+    test('addons can merge additional content into package.json', function(assert) {
+      let file = assert.file('./package.json').json();
+      file.get('ember-addon.version').equals(2, 'our own content is present');
+      file.get('customStuff').deepEquals({ fromMyAddon: true }, 'the addons content is present');
+      file.get('name').equals('my-app', 'app takes precedence over addon');
     });
   });
 });

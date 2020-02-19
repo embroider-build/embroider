@@ -212,7 +212,7 @@ export default class V1App implements V1Package {
     }
   }
 
-  get indexTree() {
+  private get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
     let index = new Funnel(this.app.trees.app, {
       allowEmpty: true,
@@ -228,7 +228,7 @@ export default class V1App implements V1Package {
     });
   }
 
-  get testIndexTree() {
+  private get testIndexTree() {
     let index = new Funnel(this.app.trees.tests, {
       allowEmpty: true,
       include: [`index.html`],

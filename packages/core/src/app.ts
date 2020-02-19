@@ -4,7 +4,7 @@ import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
@@ -25,6 +25,7 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
+import merge from 'lodash/merge';
 
 export type EmberENV = unknown;
 
@@ -630,6 +631,41 @@ export class AppBuilder<TreeNames> {
     return assets.concat(this.adapter.assets(inputPaths));
   }
 
+  // This supports a slightly weird thing used (AFAIK) only by
+  // ember-cli-fastboot. ember-cli-fastboot emits a package.json file in its
+  // treeForPublic, which means in embroider terms it has a public-asset named
+  // "package.json". It wants that to be in the final build output.
+  //
+  // We can't let it just overwrite our own stage2 package.json because we use
+  // that for our own purposes. So we make it our policy that any time an addon
+  // emits a public-asset named package.json, we will merge it into our
+  // package.json. This is enough to make ember-cli-fastboot happy.
+  private gatherPackageJson(assets: Asset[]) {
+    let found = [] as object[];
+    for (let asset of assets) {
+      if (asset.relativePath === 'package.json') {
+        switch (asset.kind) {
+          case 'on-disk':
+            found.push(readJSONSync(asset.sourcePath));
+            break;
+          case 'in-memory':
+            if (typeof asset.source === 'string') {
+              found.push(JSON.parse(asset.source));
+            } else {
+              found.push(JSON.parse(asset.source.toString('utf8')));
+            }
+            break;
+          case 'ember':
+            // deliberately skipped. An ember entrypoint asset can never be JSON.
+            break;
+          default:
+            assertNever(asset);
+        }
+      }
+    }
+    return found;
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
@@ -683,6 +719,10 @@ export class AppBuilder<TreeNames> {
     }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     const pkgPath = join(this.root, 'package.json');
+    let addonProvidedPackageJSONS = this.gatherPackageJson(assets);
+    if (addonProvidedPackageJSONS.length > 0) {
+      pkg = merge({}, ...addonProvidedPackageJSONS, pkg);
+    }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
   }
 

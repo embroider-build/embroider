@@ -44,6 +44,18 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Build engines-host-app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/engines-host-app",
+      "args": ["build"],
+      "env": {
+        "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Serve macro-tests app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/macro-tests",

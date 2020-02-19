@@ -11,7 +11,6 @@ import { todo, unsupported } from '@embroider/core/src/messages';
 import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
-import Snitch from './snitch';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import { AddonMeta, TemplateCompiler, debug, PackageCache } from '@embroider/core';
@@ -651,20 +650,9 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForPublic')) {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
-        publicTree = new Snitch(
-          original,
-          {
-            // The normal behavior is to namespace your public files under your
-            // own name. But addons can flaunt that, and that goes beyond what
-            // the v2 format is allowed to do.
-            allowedPaths: new RegExp(`^${this.name}/`),
-            foundBadPaths: (badPaths: string[]) =>
-              `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`,
-          },
-          {
-            destDir: 'public',
-          }
-        );
+        publicTree = new Funnel(original, {
+          destDir: 'public',
+        });
       }
     } else if (this.hasStockTree('public')) {
       publicTree = this.stockTree('public');

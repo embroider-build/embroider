@@ -1,7 +1,7 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
 import { PortablePluginConfig } from './portable-plugin-config';
-import { readFileSync } from 'fs';
+import fs, { readFileSync, statSync } from 'fs';
 import { Tree } from 'broccoli-plugin';
 import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
@@ -12,6 +12,7 @@ import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import { NodePath } from '@babel/traverse';
 import { VariableDeclarator } from '@babel/types';
+import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 
 export interface Plugins {
   ast?: unknown[];
@@ -36,18 +37,68 @@ interface GlimmerSyntax {
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   registerPlugin(type: string, plugin: unknown): void;
-  precompile(templateContents: string, options: { contents: string; moduleName: string; filename: string }): string;
+  precompile(
+    templateContents: string,
+    options: {
+      contents: string;
+      moduleName: string;
+      filename: string;
+      plugins?: any;
+      parseOptions?: {
+        srcName?: string;
+      };
+    }
+  ): string;
   _Ember: { FEATURES: any; ENV: any };
   cacheKey: string;
 }
 
-// we could directly depend on @glimmer/syntax and have nice types and
-// everything. But the problem is, we really want to use the exact version that
-// the app itself is using, and its copy is bundled away inside
-// ember-template-compiler.js.
-function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
-  let source = readFileSync(templateCompilerPath, 'utf8');
+// Here we cache the templateCompiler, as we tend to reuse the same template
+// compiler throughout the build.
+//
+type EmbersExports = {
+  cacheKey: string;
+  theExports: any;
+};
+
+type TemplateCompilerCacheEntry = {
+  value: EmbersExports;
+  stat: fs.Stats;
+};
+
+const CACHE = new Map<string, TemplateCompilerCacheEntry>();
+
+// Today the template compiler seems to not expose a public way to to source 2 source compilation of templates.
+// because of this, we must resort to some hackery.
+//
+// TODO: expose a way to accomplish this via purely public API's.
+// Today we use the following API's
+// * glimmer/syntax's preprocess
+// * glimmer/syntax's print
+// * ember-template-compiler/lib/system/compile-options's defaultOptions
+function getEmberExports(templateCompilerPath: string): EmbersExports {
+  let theExports: any;
+  let cacheKey: string;
+  let source;
+  let entry = CACHE.get(templateCompilerPath);
+
+  if (entry) {
+    let currentStat = statSync(templateCompilerPath);
+
+    // Let's ensure the template is still what we cached
+    if (
+      currentStat.mode === entry.stat.mode &&
+      currentStat.size === entry.stat.size &&
+      currentStat.mtime.getTime() === entry.stat.mtime.getTime()
+    ) {
+      return entry.value;
+    }
+  }
+
   let replacedVar = false;
+  let stat = statSync(templateCompilerPath);
+
+  source = readFileSync(templateCompilerPath, 'utf8');
 
   // here we are stripping off the first `var Ember;`. That one small change
   // lets us crack open the file and get access to its internal loader, because
@@ -77,9 +128,14 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
     );
   }
 
+  // cacheKey, theExports
+  cacheKey = createHash('md5')
+    .update(source)
+    .digest('hex');
+
   // evades the require cache, which we need because the template compiler
   // shares internal module scoped state.
-  let theExports = new Function(`
+  theExports = new Function(`
   let module = { exports: {} };
   let Ember = {};
   ${source};
@@ -87,6 +143,26 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   return module.exports
   `)();
 
+  entry = Object.freeze({
+    value: {
+      cacheKey,
+      theExports,
+    },
+    stat, // This is stored, so we can reload the templateCompiler if it changes mid-build.
+  });
+
+  CACHE.set(templateCompilerPath, entry);
+  return entry.value;
+}
+
+// we could directly depend on @glimmer/syntax and have nice types and
+// everything. But the problem is, we really want to use the exact version that
+// the app itself is using, and its copy is bundled away inside
+// ember-template-compiler.js.
+function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
+  let { theExports, cacheKey } = getEmberExports(templateCompilerPath);
+
+  // TODO: we should work to make this, or what it intends to accomplish, public API
   let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
   let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
 
@@ -97,9 +173,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
     registerPlugin: compilerOptions.registerPlugin,
     precompile: theExports.precompile,
     _Ember: theExports._Ember,
-    cacheKey: createHash('md5')
-      .update(source)
-      .digest('hex'),
+    cacheKey,
   };
 }
 
@@ -142,16 +216,22 @@ class PortableTemplateCompilerConfig extends PortablePluginConfig {
 }
 
 export default class TemplateCompiler {
-  private userPluginsCount = 0;
-  private portableParams: object;
+  private portableParams!: object;
   private params: SetupCompilerParams;
+  isParallelSafe!: boolean;
 
   constructor(params: SetupCompilerParams) {
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
 
-    this.portableParams = {};
+    // as a side effect of binding `this`, this.compile became enumerable. this
+    // puts it back to non-enumerable, because it doesn't participate in
+    // cloning, assigning, etc.
+    Object.defineProperty(this, 'compile', {
+      enumerable: false,
+    });
+
     Object.defineProperty(this, 'portableParams', {
       enumerable: true,
       get() {
@@ -163,6 +243,13 @@ export default class TemplateCompiler {
     Object.defineProperty(this, 'params', {
       enumerable: false,
     });
+
+    Object.defineProperty(this, 'isParallelSafe', {
+      enumerable: true,
+      get() {
+        return this.portableConfig.isParallelSafe;
+      },
+    });
   }
 
   @Memoize()
@@ -170,16 +257,12 @@ export default class TemplateCompiler {
     return new PortableTemplateCompilerConfig(this.params);
   }
 
-  get isParallelSafe(): boolean {
-    return this.portableConfig.isParallelSafe;
-  }
-
   // this supports the case where we are included as part of a larger config
   // that's getting serialized. Specifically, we are passed as an argument into
   // babel-plugin-inline-hbs, so when the whole babel config is being serialized
   // this gets detected by PortablePluginConfig so we can represent ourself.
   get _parallelBabel() {
-    if (this.portableConfig.isParallelSafe) {
+    if (this.isParallelSafe) {
       return {
         requireFile: __filename,
         buildUsing: 'rehydrate',
@@ -215,14 +298,6 @@ export default class TemplateCompiler {
   @Memoize()
   private setup() {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
-    this.userPluginsCount += registerPlugins(syntax, this.params.plugins);
-    if (this.params.resolver) {
-      let transform = this.params.resolver.astTransformer(this);
-      if (transform) {
-        syntax.registerPlugin('ast', transform);
-        this.userPluginsCount++;
-      }
-    }
     initializeEmberENV(syntax, this.params.EmberENV);
     let cacheKey = createHash('md5')
       .update(
@@ -233,6 +308,11 @@ export default class TemplateCompiler {
       )
       .digest('hex');
     return { syntax, cacheKey };
+  }
+
+  @Memoize()
+  private getReversedASTPlugins(ast: unknown[]): unknown[] {
+    return ast.slice().reverse();
   }
 
   // Compiles to the wire format plus dependency list.
@@ -246,10 +326,20 @@ export default class TemplateCompiler {
       runtimeName = moduleName;
     }
 
+    let opts = this.syntax.defaultOptions({ contents, moduleName });
+    if (this.params.resolver) {
+      let transform = this.params.resolver.astTransformer(this);
+      if (transform) {
+        this.params.plugins.ast!.push(transform);
+      }
+    }
+    opts.plugins!.ast = [...this.getReversedASTPlugins(this.params.plugins.ast!), ...opts.plugins!.ast!];
+
     let compiled = this.syntax.precompile(stripBom(contents), {
       contents,
       moduleName: runtimeName,
       filename: moduleName,
+      plugins: opts.plugins,
     });
 
     if (this.params.resolver) {
@@ -287,8 +377,13 @@ export default class TemplateCompiler {
       // rather than slicing them off, we could choose instead to not call
       // syntax.defaultOptions, but then we lose some of the compatibility
       // normalization that it does on the user-provided plugins.
-      opts.plugins.ast = opts.plugins.ast.slice(0, this.userPluginsCount);
+      opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
+        // Although the precompile API does, this direct glimmer syntax api
+        // does not support these legacy plugins, so we must wrap them.
+        return wrapLegacyHbsPluginIfNeeded(plugin as any);
+      });
     }
+
     opts.filename = this.params.resolver
       ? this.params.resolver.absPathToRuntimeName(moduleName) || moduleName
       : moduleName;
@@ -365,22 +460,11 @@ class TemplateCompileTree extends Filter {
 }
 
 function matchesSourceFile(filename: string) {
-  return /htmlbars-inline-precompile\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
+  return /(htmlbars-inline-precompile|ember-cli-htmlbars)\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
 }
 
 function hasProperties(item: any) {
   return item && (typeof item === 'object' || typeof item === 'function');
-}
-
-function registerPlugins(syntax: GlimmerSyntax, plugins: Plugins) {
-  let userPluginsCount = 0;
-  if (plugins.ast) {
-    for (let i = 0, l = plugins.ast.length; i < l; i++) {
-      syntax.registerPlugin('ast', plugins.ast[i]);
-      userPluginsCount++;
-    }
-  }
-  return userPluginsCount;
 }
 
 function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {

@@ -4,11 +4,10 @@ import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, existsSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
-import merge from 'lodash/merge';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -26,6 +25,7 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
+import merge from 'lodash/merge';
 
 export type EmberENV = unknown;
 
@@ -58,6 +58,9 @@ export interface AppAdapter<TreeNames> {
 
   // whether the ember app should boot itself automatically
   autoRun(): boolean;
+
+  // custom app-boot logic when the autoRun is set to false
+  appBoot(): string | undefined;
 
   // the ember app's main module
   mainModule(): string;
@@ -196,10 +199,19 @@ class AppFiles {
         continue;
       }
 
-      if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components/')) {
+      // hbs files are resolvable, but not when they're inside the components
+      // directory (where they are used for colocation only)
+      if (relativePath.startsWith('components/') && !relativePath.endsWith('.hbs')) {
         components.push(relativePath);
         continue;
-      } else if (relativePath.startsWith('helpers/')) {
+      }
+
+      if (relativePath.startsWith('templates/components/')) {
+        components.push(relativePath);
+        continue;
+      }
+
+      if (relativePath.startsWith('helpers/')) {
         helpers.push(relativePath);
         continue;
       }
@@ -308,12 +320,21 @@ export class AppBuilder<TreeNames> {
   }
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
-    let result = [];
+    let result: Array<string> = [];
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
+        let styles = [];
+        let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
-          result.push(resolve.sync(mod, { basedir: addon.root }));
+          if (type === 'implicit-styles') {
+            styles.push(resolve.sync(mod, options));
+          } else {
+            result.push(resolve.sync(mod, options));
+          }
+        }
+        if (styles.length) {
+          result = [...styles, ...result];
         }
       }
     }
@@ -351,6 +372,7 @@ export class AppBuilder<TreeNames> {
     ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
+    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
@@ -598,18 +620,55 @@ export class AppBuilder<TreeNames> {
     for (let pkg of this.adapter.allActiveAddons) {
       if (pkg.meta['public-assets']) {
         for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
+          let sourcePath = resolvePath(pkg.root, filename);
+          let stats = statSync(sourcePath);
           assets.push({
             kind: 'on-disk',
-            sourcePath: resolvePath(pkg.root, filename),
+            sourcePath,
             relativePath: appRelativeURL,
-            mtime: 0,
-            size: 0,
+            mtime: stats.mtimeMs,
+            size: stats.size,
           });
         }
       }
     }
     // and finally tack on the ones from our app itself
     return assets.concat(this.adapter.assets(inputPaths));
+  }
+
+  // This supports a slightly weird thing used (AFAIK) only by
+  // ember-cli-fastboot. ember-cli-fastboot emits a package.json file in its
+  // treeForPublic, which means in embroider terms it has a public-asset named
+  // "package.json". It wants that to be in the final build output.
+  //
+  // We can't let it just overwrite our own stage2 package.json because we use
+  // that for our own purposes. So we make it our policy that any time an addon
+  // emits a public-asset named package.json, we will merge it into our
+  // package.json. This is enough to make ember-cli-fastboot happy.
+  private gatherPackageJson(assets: Asset[]) {
+    let found = [] as object[];
+    for (let asset of assets) {
+      if (asset.relativePath === 'package.json') {
+        switch (asset.kind) {
+          case 'on-disk':
+            found.push(readJSONSync(asset.sourcePath));
+            break;
+          case 'in-memory':
+            if (typeof asset.source === 'string') {
+              found.push(JSON.parse(asset.source));
+            } else {
+              found.push(JSON.parse(asset.source.toString('utf8')));
+            }
+            break;
+          case 'ember':
+            // deliberately skipped. An ember entrypoint asset can never be JSON.
+            break;
+          default:
+            assertNever(asset);
+        }
+      }
+    }
+    return found;
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -665,12 +724,9 @@ export class AppBuilder<TreeNames> {
     }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     const pkgPath = join(this.root, 'package.json');
-
-    // if package exists in the root, merge properties in pkg
-    if (existsSync(pkgPath)) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const existingPkg = require(pkgPath);
-      merge(pkg, existingPkg);
+    let addonProvidedPackageJSONS = this.gatherPackageJson(assets);
+    if (addonProvidedPackageJSONS.length > 0) {
+      pkg = merge({}, ...addonProvidedPackageJSONS, pkg);
     }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
   }
@@ -784,7 +840,8 @@ export class AppBuilder<TreeNames> {
   }
 
   private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
-    let cached = prepared.get(`assets/${this.app.name}.js`);
+    let relativePath = `assets/${this.app.name}.js`;
+    let cached = prepared.get(relativePath);
     if (cached) {
       return cached;
     }
@@ -796,8 +853,6 @@ export class AppBuilder<TreeNames> {
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
-
-    let relativePath = `assets/${this.app.name}.js`;
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
@@ -825,11 +880,12 @@ export class AppBuilder<TreeNames> {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', amdModules);
+    this.gatherImplicitModules('implicit-modules', relativePath, amdModules);
 
     let source = entryTemplate({
       amdModules,
       autoRun: this.adapter.autoRun(),
+      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: this.adapter.mainModuleConfig(),
       lazyRoutes,
@@ -887,7 +943,7 @@ export class AppBuilder<TreeNames> {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', amdModules);
+    this.gatherImplicitModules('implicit-test-modules', myName, amdModules);
 
     let source = entryTemplate({
       amdModules,
@@ -904,6 +960,7 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
+    relativeTo: string,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
     for (let addon of this.adapter.allActiveAddons) {
@@ -918,7 +975,7 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime: explicitRelative(join(this.root, 'assets'), join(addon.root, name)),
+            buildtime: explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
           });
         }
       }
@@ -956,6 +1013,8 @@ let d = w.define;
   if (typeof EMBER_DISABLE_AUTO_BOOT === 'undefined' || !EMBER_DISABLE_AUTO_BOOT) {
     i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
   }
+{{else  if appBoot ~}}
+  {{{ appBoot }}}
 {{/if}}
 
 {{#if testSuffix ~}}
@@ -976,6 +1035,7 @@ let d = w.define;
   amdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;
+  appBoot?: string;
   mainModule?: string;
   appConfig?: unknown;
   testSuffix?: boolean;

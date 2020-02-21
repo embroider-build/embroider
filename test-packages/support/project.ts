@@ -3,11 +3,13 @@ import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
 import Options from '../../packages/core/src/options';
 
-function cliBuildFile(emberAppOptions: any = {}, embroiderOptions: Options = {}) {
+function cliBuildFile(emberAppOptions: string = '', embroiderOptions: Options = {}) {
   return `
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 module.exports = function(defaults) {
-  let app = new EmberApp(defaults, ${JSON.stringify(emberAppOptions, null, 2)});
+  let app = new EmberApp(defaults, {
+    ${emberAppOptions}
+  });
   if (process.env.CLASSIC) {
     return app.toTree();
   }
@@ -117,11 +119,14 @@ export default App;
 }
 
 export class Project extends FixturifyProject {
-  static emberNew(emberAppOptions?: any, embroiderOptions?: Options): Project {
-    let name = 'my-app';
+  static emberNew(name = 'my-app'): Project {
     let app = new Project(name);
     app.files = {
-      'ember-cli-build.js': cliBuildFile(emberAppOptions, embroiderOptions),
+      // you might think you want to pass params to customize cliBuildFile, but
+      // that doesn't really work given how our tests work. Pass emberAppOptions
+      // to BuildResult.build instead, because it needs access to the EmberApp
+      // instance, which is not returned out of ember-cli-build.js.
+      'ember-cli-build.js': cliBuildFile(),
       config: {
         'environment.js': environmentFile(name),
       },
@@ -143,6 +148,8 @@ export class Project extends FixturifyProject {
     app.linkPackage('@embroider/compat');
     app.linkPackage('@embroider/core');
     app.linkPackage('@embroider/webpack');
+    app.linkPackage('@glimmer/component');
+
     return app;
   }
 
@@ -176,6 +183,7 @@ export class Project extends FixturifyProject {
     app.linkDevPackage('loader.js');
     app.linkPackage('ember-cli-htmlbars');
     app.linkPackage('ember-cli-babel');
+    app.linkPackage('@glimmer/component');
     app.linkDevPackage('ember-source');
     app.linkDevPackage('ember-resolver');
     app.linkDevPackage('@embroider/compat');
@@ -249,7 +257,8 @@ export class Project extends FixturifyProject {
   toJSON(key?: string) {
     let result = key ? super.toJSON(key) : super.toJSON();
     if (!key && this.packageLinks.size > 0) {
-      let pkg = JSON.parse((result as any)[this.name]['package.json']);
+      let baseJSON = unwrapPackageName(result, this.name);
+      let pkg = JSON.parse(baseJSON['package.json']);
       for (let [name] of this.packageLinks) {
         if (this.devPackageLinks.has(name)) {
           pkg.devDependencies[name] = '*';
@@ -257,8 +266,27 @@ export class Project extends FixturifyProject {
           pkg.dependencies[name] = '*';
         }
       }
-      (result as any)[this.name]['package.json'] = JSON.stringify(pkg, null, 2);
+      baseJSON['package.json'] = JSON.stringify(pkg, null, 2);
     }
     return result;
   }
+}
+
+function parseScoped(name: string) {
+  let matched = name.match(/(@[^@\/]+)\/(.*)/);
+  if (matched) {
+    return {
+      scope: matched[1],
+      name: matched[2],
+    };
+  }
+  return null;
+}
+
+function unwrapPackageName(obj: any, packageName: string) {
+  let scoped = parseScoped(packageName);
+  if (scoped) {
+    return obj[scoped.scope][scoped.name];
+  }
+  return obj[packageName];
 }

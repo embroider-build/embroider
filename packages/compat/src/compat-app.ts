@@ -48,6 +48,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let htmlTree = oldPackage.htmlTree;
   let publicTree = oldPackage.publicTree;
   let configTree = oldPackage.config;
+  let appBootTree = oldPackage.appBoot;
 
   if (options.extraPublicTrees.length > 0) {
     publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean));
@@ -58,6 +59,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     htmlTree,
     publicTree,
     configTree,
+    appBootTree,
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
@@ -141,7 +143,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   resolvableExtensions(): string[] {
-    let extensions = ['.mjs', '.js', '.hbs'];
+    // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
+    // subset in that order is sensible, since many third-party libraries will
+    // expect it to work that way.
+    let extensions = ['.wasm', '.mjs', '.js', '.json', '.hbs'];
 
     // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
     // resolvable. Once we implement a preprocessor-registration build hook,
@@ -209,6 +214,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   autoRun(): boolean {
     return this.oldPackage.autoRun;
+  }
+
+  appBoot(): string | undefined {
+    return this.oldPackage.appBoot.readAppBoot();
   }
 
   mainModule(): string {

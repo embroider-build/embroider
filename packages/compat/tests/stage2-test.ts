@@ -3,55 +3,67 @@ import { Project, BuildResult, installFileAssertions } from '@embroider/test-sup
 
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
+import { join } from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
+import merge from 'lodash/merge';
 
 QUnit.module('stage2 build', function() {
   QUnit.module('static with rules', function(origHooks) {
     let { hooks, test } = installFileAssertions(origHooks);
     let build: BuildResult;
+    let app: Project;
 
     throwOnWarnings(hooks);
 
     hooks.before(async function(assert) {
-      let app = Project.emberNew();
+      app = Project.emberNew();
+      app.linkPackage('ember-auto-import');
       app.linkPackage('@embroider/sample-transforms');
-      (app.files.app as Project['files']).templates = {
-        'index.hbs': `
+
+      merge(app.files, {
+        app: {
+          templates: {
+            'index.hbs': `
           <HelloWorld @useDynamic="first-choice" />
           <HelloWorld @useDynamic={{"second-choice"}} />
           <HelloWorld @useDynamic={{component "third-choice"}} />
         `,
-        'curly.hbs': `
+            'curly.hbs': `
           {{hello-world useDynamic="first-choice" }}
           {{hello-world useDynamic=(component "third-choice") }}
         `,
-        components: {
-          'first-choice.hbs': 'first',
-          'second-choice.hbs': 'second',
-          'third-choice.hbs': 'third',
-        },
-      };
-
-      (app.files.app as Project['files']).components = {
-        'uses-inline-template.js': `
-        import hbs from "htmlbars-inline-precompile";
-        export default Component.extend({
-          layout: hbs${'`'}{{first-choice}}${'`'}
-        })
+            components: {
+              'first-choice.hbs': 'first',
+              'second-choice.hbs': 'second',
+              'third-choice.hbs': 'third',
+            },
+          },
+          components: {
+            'uses-inline-template.js': `
+          import hbs from "htmlbars-inline-precompile";
+          export default Component.extend({
+            layout: hbs${'`'}{{first-choice}}${'`'}
+          })
+          `,
+          },
+          'use-deep-addon.js': `import thing from 'deep-addon'`,
+          'custom-babel-needed.js': `console.log('embroider-sample-transforms-target');`,
+          'does-dynamic-import.js': `
+          export default function() {
+            return import('some-library');
+          }
         `,
-      };
-
-      (app.files.app as Project['files'])['use-deep-addon.js'] = `
-      import thing from 'deep-addon';
-      `;
-
-      (app.files.app as Project['files'])['custom-babel-needed.js'] = `
-        console.log('embroider-sample-transforms-target');
-      `;
+        },
+        public: {
+          'public-file-1.txt': `initial state`,
+        },
+      });
 
       let addon = app.addAddon('my-addon');
-      addon.files.addon = {
-        components: {
-          'hello-world.js': `
+      merge(addon.files, {
+        addon: {
+          components: {
+            'hello-world.js': `
             import Component from '@ember/component';
             import layout from '../templates/components/hello-world';
             import computed from '@ember/object/computed';
@@ -63,44 +75,50 @@ QUnit.module('stage2 build', function() {
               layout
             });
           `,
-          'has-relative-template.js': `
+            'has-relative-template.js': `
             import Component from '@ember/component';
             import layout from './t';
             export default Component.extend({
               layout
             });
           `,
-          't.hbs': ``,
-          'uses-amd-require.js': `
+            't.hbs': ``,
+            'uses-amd-require.js': `
             export default function() {
               require('some-package');
             }
           `,
-        },
-        'synthetic-import-1.js': '',
-        templates: {
-          components: {
-            'hello-world.hbs': `
+          },
+          'synthetic-import-1.js': '',
+          templates: {
+            components: {
+              'hello-world.hbs': `
               {{component dynamicComponentName}}
             `,
+            },
           },
         },
-      };
-      addon.files.app = {
-        components: {
-          'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
-        },
-        templates: {
+        app: {
           components: {
-            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
+            'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
+          },
+          templates: {
+            components: {
+              'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
+            },
           },
         },
-      };
+        public: {
+          'package.json': JSON.stringify({ customStuff: { fromMyAddon: true }, name: 'should-be-overridden' }),
+        },
+      });
 
       let deepAddon = addon.addAddon('deep-addon');
-      deepAddon.files.addon = {
-        'index.js': '// deep-addon index',
-      };
+      merge(deepAddon.files, {
+        addon: {
+          'index.js': '// deep-addon index',
+        },
+      });
 
       app.addDependency('babel-filter-test1', '1.2.3').files = {
         'index.js': '',
@@ -173,6 +191,9 @@ QUnit.module('stage2 build', function() {
         type: 'app',
         emberAppOptions: {
           tests: false,
+          babel: {
+            plugins: [require.resolve('ember-auto-import/babel-plugin')],
+          },
         },
         embroiderOptions: options,
       });
@@ -300,6 +321,64 @@ QUnit.module('stage2 build', function() {
     test(`app's babel plugins ran`, async function(assert) {
       let assertFile = assert.file('custom-babel-needed.js').transform(build.transpile);
       assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
+    });
+
+    test(`changes in app.css are propagated at rebuild`, async function(assert) {
+      assert.file('assets/my-app.css').doesNotMatch('newly-added-class');
+      writeFileSync(join(app.baseDir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
+      await build.rebuild();
+      assert.file('assets/my-app.css').matches('newly-added-class');
+    });
+
+    test(`public assets are included`, async function(assert) {
+      assert.file('public-file-1.txt').matches(/initial state/);
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .includes('public-file-1.txt');
+    });
+
+    test(`updated public asset`, async function(assert) {
+      writeFileSync(join(app.baseDir, 'public/public-file-1.txt'), `updated state`);
+      await build.rebuild();
+      assert.file('public-file-1.txt').matches(/updated state/);
+    });
+
+    test(`added public asset`, async function(assert) {
+      writeFileSync(join(app.baseDir, 'public/public-file-2.txt'), `added`);
+      await build.rebuild();
+      assert.file('public-file-2.txt').matches(/added/);
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .includes('public-file-2.txt');
+    });
+
+    test(`removed public asset`, async function(assert) {
+      unlinkSync(join(app.baseDir, 'public/public-file-1.txt'));
+      await build.rebuild();
+      assert.file('public-file-1.txt').doesNotExist();
+      assert
+        .file('package.json')
+        .json()
+        .get('ember-addon.assets')
+        .doesNotInclude('public-file-1.txt');
+    });
+
+    test('dynamic import is preserved', function(assert) {
+      assert
+        .file('./does-dynamic-import.js')
+        .transform(build.transpile)
+        .matches(/return import\(['"]some-library['"]\)/);
+    });
+
+    test('addons can merge additional content into package.json', function(assert) {
+      let file = assert.file('./package.json').json();
+      file.get('ember-addon.version').equals(2, 'our own content is present');
+      file.get('customStuff').deepEquals({ fromMyAddon: true }, 'the addons content is present');
+      file.get('name').equals('my-app', 'app takes precedence over addon');
     });
   });
 });

@@ -39,7 +39,7 @@ export class MovedPackageCache extends PackageCache {
     resolutionCache: PackageCache['resolutionCache'],
     private destDir: string,
     movedSet: MovedSet,
-    origApp: Package,
+    private origApp: Package,
     emberApp: any
   ) {
     super();
@@ -113,9 +113,14 @@ export class MovedPackageCache extends PackageCache {
 
   // places that might have symlinks we need to mimic
   private candidateDirs(): Set<string> {
-    let candidates = new Set();
-    for (let pkg of this.moved.keys()) {
+    let candidates = new Set() as Set<string>;
+    let originalPackages = [this.origApp, ...this.moved.keys()];
+    for (let pkg of originalPackages) {
       let segments = pathSegments(pkg.root);
+
+      let candidate = join(pkg.root, 'node_modules');
+      candidates.add(candidate);
+
       for (let i = segments.length - 1; i >= this.commonSegmentCount; i--) {
         if (segments[i - 1] !== 'node_modules') {
           let candidate = '/' + join(...segments.slice(0, i), 'node_modules');
@@ -225,7 +230,7 @@ class MovedSet {
 
   @Memoize()
   get packages(): Set<Package> {
-    let result = new Set();
+    let result = new Set() as Set<Package>;
     for (let [pkg, mustMove] of this.mustMove) {
       if (mustMove) {
         result.add(pkg);

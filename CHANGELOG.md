@@ -1,5 +1,72 @@
 # Embroider Changelog
 
+## 0.13.0
+
+- COMPAT: follow the stock build's special-case behavior that forbids "template.hbs" as a template-only component
+- ENHANCEMENT: add support for apps with custom app-boot content by @dnalagatla
+- ENHANCEMENT: allow explicitly declared relative externals, which makes it easier to workaround some badly-behaved addons
+- BUGFIX: fixed a bug in the way we make module paths relative
+- COMPAT: support ember-cli 3.16, which dropped a function we were calling.
+
+## 0.12.0
+
+- ENHANCEMENT: support for Octane's component template colocation.
+
+## 0.11.1
+
+- BUGFIX: the previous release broke CSS rebuilding if you were using the
+  experimental BROCCOLI_ENABLED_MEMOIZE feature flag due to the way ember-cli
+  constructs the app styles tree that Embroider relies on. This release includes
+  a workaround.
+
+## 0.11.0
+
+- ENHANCEMENT: support rebuilding of linked addons when using the BROCCOLI_ENABLED_MEMOIZE feature flag
+
+## 0.10.0
+
+- BUGFIX: make TemplateCompiler's isParallelSafe flag survive clone()
+- COMPAT: support ember-cli-htmlbars>=4, which has native support for inline hbs
+- BUGFIX: fix CSS ordering between certain kinds of addon CSS by @kandhavivekraj
+- COMPAT: updated compat adapter for ember-data 3.15 by @jenweber
+
+## 0.9.0
+
+- DOCS: improved README example code by @jenweber
+- PERFORMANCE: memoize template compiler, by @kratiahuja and @stefanpenner
+- BUGFIX: fix implicit-modules in apps with NPM scoped names
+- BUGFIX: keep json and wasm as default resolvable extensions
+- COMPAT: short-circuit template compilation to be compatible with addons with broken template preprocessors but no templates
+
+## 0.8.0
+
+- HOUSEKEEPING: upgrade css-loader.
+- BUGFIX: include nested CSS files from addons that use no preprocessor
+- ENHANCEMENT: support addons that customize treeForStyles and don't call `super`, by @simonihmig.
+- DOCS: improvement to README by @simonihmig
+- HOUSEKEEPING: update for compatibility with newest ember-cli-htmlbars
+
+## 0.7.1
+
+- BUGFIX: changes to CSS and public assets were not always reflected after rebuilds
+
+## 0.7.0
+
+- HOUSEKEEPING: multiple fixes and improvements by @stefanpenner
+- ENHANCEMENT: treat dotfiles the same way ember-cli does by @thoov
+- HOUSEKEEPING: upgrade babel plugin-debug-macros by @k-fish
+- ENHANCEMENT: compatibility with app.import from node_modules with outputFile option
+- ENHANCEMENT: build performance improvement by caching v2tree by @tmquinn
+- ENHANCEMENT: allow interactive rebuilds of addons by @thoov
+- ENHANCEMENT: fastboot compatibility improves by @dnalagatla
+- ENHANCEMENT: support node's mjs extension by @knownasilya
+- ENHANCEMENT: usage of getOrCreate cleaned up by @2hu12
+- ENHANCEMENT: add support for nested angle components by @josemarluedke
+- ENHANCEMENT: add support for pod module prefix by @josemarluedke
+- ENHANCEMENT: add support for ember's new `on` and `fn` by @josemarluedke
+- ENHANCEMENT: add compatibility rules for ember-basic-dropdown v2 by @josemarluedke
+- DOCS: improved readme code samples by @efx
+
 ## 0.6.0
 
 - BUGFIX: make renamed implicit-modules work

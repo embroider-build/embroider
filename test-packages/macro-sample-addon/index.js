@@ -9,6 +9,10 @@ module.exports = {
       }
     }
   },
+  included(app) {
+    app.options.autoRun = false;
+    this._super.included.apply(this, arguments);
+  },
   contentFor(type, config, contents) {
     if (type === 'config-module') {
       const originalContents = contents.join('');
@@ -19,6 +23,16 @@ module.exports = {
         'return config;'
       );
       return;
+    }
+
+    if (type === 'app-boot') {
+      let appSuffix = 'app';
+      let prefix = config.modulePrefix;
+      let configAppAsString = JSON.stringify(config.APP || {});
+      return [
+        "require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
+        "window.LoadedFromCustomAppBoot = true",
+      ].join("\n").replace(/\{\{MODULE_PREFIX\}\}/g, prefix).replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
     }
   }
 };

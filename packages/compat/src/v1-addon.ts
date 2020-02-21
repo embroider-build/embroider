@@ -3,18 +3,17 @@ import { Memoize } from 'typescript-memoize';
 import { dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
-import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
+import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
+import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
 import { Tree } from 'broccoli-plugin';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
-import Snitch from './snitch';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -24,6 +23,8 @@ import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
+import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -56,7 +57,12 @@ const appPublicationDir = '_app_';
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
-  constructor(protected addonInstance: any, protected addonOptions: Required<Options>, private app: V1App) {
+  constructor(
+    protected addonInstance: any,
+    protected addonOptions: Required<Options>,
+    private app: V1App,
+    private packageCache: PackageCache
+  ) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
     }
@@ -134,10 +140,26 @@ export default class V1Addon implements V1Package {
   // we need to run custom inline hbs preprocessing if there are custom hbs
   // plugins and there are inline hbs templates
   private needsInlineHBS(): boolean {
-    return (
-      Boolean(this.templateCompiler) &&
-      Boolean(this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile'))
-    );
+    if (!this.templateCompiler) {
+      // no custom transforms
+      return false;
+    }
+    if (this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile')) {
+      // the older inline template compiler is present
+      return true;
+    }
+
+    if (
+      this.addonInstance.addons.find(
+        (a: any) =>
+          a.name === 'ember-cli-htmlbars' && semver.satisfies(semver.coerce(a.pkg.version) || a.pkg.version, '>4.0.0')
+      )
+    ) {
+      // a version of ember-cli-htmlbars that natively supports inline hbs is present
+      return true;
+    }
+
+    return false;
   }
 
   private needsCustomBabel() {
@@ -279,7 +301,11 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private get rootTree() {
-    return new UnwatchedDir(this.root);
+    if (this.packageCache.get(this.root).mayRebuild) {
+      return new WatchedDir(this.root);
+    } else {
+      return new UnwatchedDir(this.root);
+    }
   }
 
   @Memoize()
@@ -295,7 +321,7 @@ export default class V1Addon implements V1Package {
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
-    if (this.addonInstance.registry.load('template').length > 0) {
+    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template').length > 0) {
       tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
         registry: this.addonInstance.registry,
       });
@@ -337,7 +363,17 @@ export default class V1Addon implements V1Package {
     if (!babelConfig.plugins) {
       babelConfig.plugins = [];
     } else {
+      let hadAutoImport = Boolean(babelConfig.plugins.find(isEmberAutoImportDynamic));
       babelConfig.plugins = babelConfig.plugins.filter(babelPluginAllowedInStage1);
+      if (hadAutoImport) {
+        // if we removed ember-auto-import's dynamic import() plugin, the code
+        // may use import() syntax and we need to re-add it to the parser.
+        if (version && semver.satisfies(semver.coerce(version) || version, '^6')) {
+          babelConfig.plugins.push(require.resolve('babel-plugin-syntax-dynamic-import'));
+        } else {
+          babelConfig.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
+        }
+      }
     }
 
     if (this.templateCompiler) {
@@ -451,18 +487,32 @@ export default class V1Addon implements V1Package {
 
   private buildTreeForAddon(built: IntermediateBuild) {
     let tree = this.treeForAddon(built);
-    if (tree) {
-      if (!this.addonOptions.staticAddonTrees) {
-        let filenames: string[] = [];
-        tree = new ObserveTree(tree, outputDir => {
-          filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/\.js$/i, '')}`);
-        });
-        built.dynamicMeta.push(() => ({
-          'implicit-modules': filenames,
-        }));
-      }
-      built.trees.push(tree);
+    if (!tree) {
+      return;
     }
+    let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
+    if (!this.addonOptions.staticAddonTrees) {
+      let filenames: string[] = [];
+      let templateOnlyComponentNames: string[] = [];
+
+      tree = new ObserveTree(tree, outputDir => {
+        filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] })
+          .map(f => `./${f.replace(/\.js$/i, '')}`)
+          .filter(notColocatedTemplate);
+      });
+
+      templateOnlyComponents = new ObserveTree(templateOnlyComponents, outputDir => {
+        templateOnlyComponentNames = walkSync(outputDir, { globs: ['**/*.js'] }).map(
+          f => `./${f.replace(/\.js$/i, '')}`
+        );
+      });
+
+      built.dynamicMeta.push(() => ({
+        'implicit-modules': filenames.concat(templateOnlyComponentNames),
+      }));
+    }
+    built.trees.push(tree);
+    built.trees.push(templateOnlyComponents);
   }
 
   private buildAddonStyles(built: IntermediateBuild) {
@@ -470,7 +520,7 @@ export default class V1Addon implements V1Package {
     if (addonStylesTree) {
       let discoveredFiles: string[] = [];
       let tree = new ObserveTree(addonStylesTree, outputPath => {
-        discoveredFiles = readdirSync(outputPath).filter(name => name.endsWith('.css'));
+        discoveredFiles = walkSync(outputPath, { globs: ['**/*.css'], directories: false });
       });
       built.trees.push(tree);
       built.dynamicMeta.push(() => {
@@ -489,8 +539,10 @@ export default class V1Addon implements V1Package {
       tree = this.invokeOriginalTreeFor('styles');
       if (tree) {
         tree = new Funnel(tree, {
-          srcDir: 'app/styles',
           destDir: '_app_styles_',
+          getDestinationPath(path) {
+            return path.replace(/^app\/styles\//, '');
+          },
         });
       }
     } else if (this.hasStockTree('styles')) {
@@ -598,20 +650,9 @@ export default class V1Addon implements V1Package {
     if (this.customizes('treeForPublic')) {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
-        publicTree = new Snitch(
-          original,
-          {
-            // The normal behavior is to namespace your public files under your
-            // own name. But addons can flaunt that, and that goes beyond what
-            // the v2 format is allowed to do.
-            allowedPaths: new RegExp(`^${this.name}/`),
-            foundBadPaths: (badPaths: string[]) =>
-              `${this.name} treeForPublic contains unsupported paths: ${badPaths.join(', ')}`,
-          },
-          {
-            destDir: 'public',
-          }
-        );
+        publicTree = new Funnel(original, {
+          destDir: 'public',
+        });
       }
     } else if (this.hasStockTree('public')) {
       publicTree = this.stockTree('public');
@@ -688,7 +729,7 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, options: Required<Options>, app: V1App): V1Addon;
+  new (addonInstance: any, options: Required<Options>, app: V1App, packageCache: PackageCache): V1Addon;
 }
 
 class IntermediateBuild {
@@ -713,5 +754,15 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
+  if (isEmberAutoImportDynamic(plugin)) {
+    // We replace ember-auto-import's implementation of dynamic import(), so we
+    // need to stop its plugin from rewriting those.
+    return false;
+  }
+
   return true;
+}
+
+function notColocatedTemplate(path: string) {
+  return !/^\.\/components\/.*\.hbs$/.test(path);
 }

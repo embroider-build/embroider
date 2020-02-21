@@ -52,8 +52,8 @@ export default class BuildResult {
     }
     let builder = new Builder(tree);
     let builderPromise = builder.build();
-    let basePath = (await addons.ready()).outputPath;
-    await builderPromise;
+    let results = await Promise.all([builderPromise, addons.ready()]);
+    let basePath = results[1].outputPath;
     return new BuildResult(project, basePath, builder);
   }
   private constructor(private project: Project, public outputPath: string, private builder: Builder) {
@@ -74,6 +74,10 @@ export default class BuildResult {
     } else {
       return contents;
     }
+  }
+
+  async rebuild() {
+    await this.builder.build();
   }
 
   shouldTranspile(fileAssert: BoundFileAssert) {

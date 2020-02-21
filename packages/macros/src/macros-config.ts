@@ -29,47 +29,17 @@ if (g.__embroider_macros_config_global__) {
 } else {
   CONFIGS = g.__embroider_macros_config_global__ = new WeakMap<any, MacrosConfig>();
 }
-let COUNTER = 0;
-export default class MacrosConfig {
-  public id = COUNTER++;
-  // static shared(): MacrosConfig {
-  //   if (!localSharedState) {
-  //     let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
-  //     if (!g.__embroider_macros_global__) {
-  //       g.__embroider_macros_global__ = new GlobalSharedState();
-  //     }
-  //     localSharedState = new MacrosConfig();
-  //     localSharedState.configs = g.__embroider_macros_global__.configs;
-  //     localSharedState.mergers = g.__embroider_macros_global__.mergers;
-  //   }
-  //   return localSharedState;
-  // }
 
+export default class MacrosConfig {
   static for(key: any): MacrosConfig {
     let config = CONFIGS.get(key);
     if (config) {
       return config;
     }
-    COUNTER;
-    debugger;
-
-    // TODO: error if `key` isn't what we want someone using. Is it an EmberApp instance?
-
     config = new MacrosConfig();
     CONFIGS.set(key, config);
 
     return config;
-  }
-
-  static reset() {
-    // TODO: confirm we dont need this
-    // this.shared().reset();
-  }
-
-  reset() {
-    this.configs.clear();
-    this.mergers.clear();
-    this._configWritable = true;
   }
 
   private _configWritable = true;
@@ -176,19 +146,26 @@ export default class MacrosConfig {
     ];
   }
 
-  astPlugins(owningPackageRoot?: string): Function[] {
-    let self = this;
-    return [
+  static astPlugins(owningPackageRoot?: string): { plugins: Function[]; setConfig: (config: MacrosConfig) => void } {
+    let configs: MacrosConfig | undefined;
+    let plugins = [
       makeFirstTransform({
         // this is deliberately lazy because we want to allow everyone to finish
         // setting config before we generate the userConfigs
         get userConfigs() {
-          return self.userConfigs;
+          if (!configs) {
+            throw new Error(`Bug: @embroider/maros ast-transforms were not plugged into a MacrosConfig`);
+          }
+          return configs.userConfigs;
         },
         baseDir: owningPackageRoot,
       }),
       makeSecondTransform(),
     ].reverse();
+    function setConfig(c: MacrosConfig) {
+      configs = c;
+    }
+    return { plugins, setConfig };
   }
 
   private mergerFor(pkgRoot: string) {
@@ -232,10 +209,6 @@ export default class MacrosConfig {
   }
 
   finalize() {
-    if (!this._configWritable) {
-      throw new Error(`[Embroider:MacrosConfig] attempted to finalize configs after they have already been finalized`);
-    }
-
     this._configWritable = false;
   }
 }

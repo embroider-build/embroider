@@ -277,7 +277,7 @@ export class AppBuilder<TreeNames> {
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>,
-    private appInstance: any,
+    private appInstance: any
   ) {}
 
   private scriptPriority(pkg: Package) {
@@ -736,7 +736,9 @@ export class AppBuilder<TreeNames> {
     if (!plugins.ast) {
       plugins.ast = [];
     }
-    for (let macroPlugin of MacrosConfig.for(this.appInstance).astPlugins()) {
+    let { plugins: macroPlugins, setConfig } = MacrosConfig.astPlugins();
+    setConfig(MacrosConfig.for(this.appInstance));
+    for (let macroPlugin of macroPlugins) {
       plugins.ast.push(macroPlugin);
     }
 

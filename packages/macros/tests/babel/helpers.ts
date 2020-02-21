@@ -4,7 +4,11 @@ import { allBabelVersions as allBabel, runDefault } from '@embroider/test-suppor
 import 'qunit';
 
 export { runDefault };
-export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
+
+type CreateTestsWithConfig = (transform: (code: string) => string, config: MacrosConfig) => void;
+type CreateTests = (transform: (code: string) => string) => void;
+
+export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
   let config: MacrosConfig;
   allBabel({
     includePresetsTests: true,
@@ -18,7 +22,15 @@ export function allBabelVersions(createTests: (transform: (code: string) => stri
 
     createTests(transform) {
       config = new MacrosConfig();
-      createTests(transform, config!);
+      if (createTests.length === 1) {
+        // The caller will not be using `config`, so we finalize it for them.
+        config.finalize();
+        (createTests as CreateTests)(transform);
+      } else {
+        // The caller is receivng `config` and they are responsible for
+        // finalizing it.
+        (createTests as CreateTestsWithConfig)(transform, config!);
+      }
     },
   });
 }

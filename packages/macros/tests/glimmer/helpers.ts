@@ -7,8 +7,9 @@ const compilerPath = emberTemplateCompilerPath();
 export function templateTests(
   createTests: (transform: (templateContents: string) => string, config: MacrosConfig) => void
 ) {
+  let { plugins, setConfig } = MacrosConfig.astPlugins();
   let config = new MacrosConfig();
-  let plugins = config.astPlugins();
+  setConfig(config);
   let compiler = new TemplateCompiler({
     compilerPath,
     EmberENV: {},

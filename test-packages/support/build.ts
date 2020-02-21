@@ -13,7 +13,6 @@ import { TransformOptions, transform } from '@babel/core';
 import { Options } from '../../packages/compat/src';
 import { BoundFileAssert } from './file-assertions';
 import { TemplateCompiler, AppMeta, AppBuilder } from '@embroider/core';
-import { MacrosConfig } from '@embroider/macros';
 import { Memoize } from 'typescript-memoize';
 
 export interface BuildParams {
@@ -32,7 +31,6 @@ const defaultParams = {
 
 export default class BuildResult {
   static async build(project: Project, params: Partial<BuildParams>) {
-    MacrosConfig.reset();
     let paramsWithDefaults: BuildParams = Object.assign({}, params, defaultParams);
     project.writeSync();
     let instance;

@@ -27,16 +27,11 @@ export = {
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
     babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
 
-    // Here we attach to ember-cli's default EmberApp#toTree. This allows us to
-    // mimic the appropriate timing semantics of the MacrosConfig read after
-    // write guarantee.
-    //
-    // In general, we do not condone this type of monkey patching and our plan
-    // is if this indeed remains needed, to add the appropriate public API in
-    // ember-cli. One interesting tid-bit, once users use embroider primarily
-    // this hack will have no impact, and then adding the API to ember-cli
-    // may be wasted. We will see how this plays out, and do the appropriate
-    // thing.
+    // When we're used inside the traditional ember-cli build pipeline without
+    // Embroider, we unfortunately need to hook into here uncleanly because we
+    // need to delineate the point in time after which writing macro config is
+    // forbidden and consuming it becomes allowed. There's no existing hook with
+    // that timing.
     const originalToTree = appInstance.toTree;
     appInstance.toTree = function() {
       MacrosConfig.for(appInstance).finalize();

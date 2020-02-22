@@ -9,36 +9,46 @@ export type Merger = (configs: unknown[]) => unknown;
 
 // Do not change the public signature of this class without pondering deeply the
 // mysteries of being compatible with unwritten future versions of this library.
-// class GlobalSharedState {
-//   configs: Map<string, unknown[]> = new Map();
-//   mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
-// }
+type GlobalSharedState = WeakMap<
+  any,
+  {
+    configs: Map<string, unknown[]>;
+    mergers: Map<string, { merger: Merger; fromPath: string }>;
+  }
+>;
 
 // this is a module-scoped cache. If multiple callers ask _this copy_ of
-// @embroider/macros for the shared MacrosConfig, they'll all get the same one.
+// @embroider/macros for a shared MacrosConfig, they'll all get the same one.
 // And if somebody asks a *different* copy of @embroider/macros for the shared
 // MacrosConfig, it will have its own instance with its own code, but will still
 // share the GlobalSharedState beneath.
-// let localSharedState: MacrosConfig | undefined;
-
-const g = global as any;
-let CONFIGS: WeakMap<any, MacrosConfig>;
-
-if (g.__embroider_macros_config_global__) {
-  CONFIGS = g.__embroider_macros_config_global__;
-} else {
-  CONFIGS = g.__embroider_macros_config_global__ = new WeakMap<any, MacrosConfig>();
-}
+let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
 export default class MacrosConfig {
   static for(key: any): MacrosConfig {
-    let config = CONFIGS.get(key);
-    if (config) {
-      return config;
+    let found = localSharedState.get(key);
+    if (found) {
+      return found;
     }
-    config = new MacrosConfig();
-    CONFIGS.set(key, config);
 
+    let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
+    if (!g.__embroider_macros_global__) {
+      g.__embroider_macros_global__ = new WeakMap();
+    }
+
+    let shared = g.__embroider_macros_global__.get(key);
+    if (!shared) {
+      shared = {
+        configs: new Map(),
+        mergers: new Map(),
+      };
+      g.__embroider_macros_global__.set(key, shared);
+    }
+
+    let config = new MacrosConfig();
+    config.configs = shared.configs;
+    config.mergers = shared.mergers;
+    localSharedState.set(key, config);
     return config;
   }
 

@@ -4,6 +4,7 @@ import { MacrosConfig } from '../..';
 describe('macroIf', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
+    config.finalize();
 
     test('select consequent, drop alternate', () => {
       let code = transform(`

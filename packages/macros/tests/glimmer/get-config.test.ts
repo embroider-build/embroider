@@ -16,6 +16,8 @@ describe(`macroGetConfig`, function() {
       color: 'orange',
     });
 
+    config.finalize();
+
     test('macroGetOwnConfig in content position', function() {
       let code = transform(`{{macroGetOwnConfig "mode"}}`);
       expect(code).toMatch(/\{\{["']amazing["']\}\}/);

@@ -6,7 +6,7 @@ const { MacrosConfig } = require('@embroider/macros');
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {});
 
-  MacrosConfig.shared().setOwnConfig(__filename, {
+  MacrosConfig.for(app).setOwnConfig(__filename, {
     isClassic: Boolean(process.env.CLASSIC),
   });
 

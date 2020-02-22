@@ -30,6 +30,7 @@ import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
 import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
+import { MacrosConfig } from '@embroider/macros';
 
 interface TreeNames {
   appJS: Tree;
@@ -74,7 +75,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
-    return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
+    return new AppBuilder<TreeNames>(root, appPackage, adapter, options, MacrosConfig.for(legacyEmberAppInstance));
   };
 
   return { inTrees, instantiate };

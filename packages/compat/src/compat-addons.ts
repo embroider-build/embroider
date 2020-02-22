@@ -18,8 +18,8 @@ export default class CompatAddons implements Stage {
   private packageCache: MovedPackageCache;
   private nonResolvableDeps: Package[];
   private treeSyncMap: WeakMap<Package, TreeSync>;
+  private v1Cache: V1InstanceCache;
   readonly inputPath: string;
-  readonly tree: Tree;
 
   constructor(legacyEmberAppInstance: object, maybeOptions?: Options) {
     let options = optionsWithDefaults(maybeOptions);
@@ -36,16 +36,20 @@ export default class CompatAddons implements Stage {
       this.destDir = realpathSync(dir);
     }
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
-    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, v1Cache));
-    let { synthVendor, synthStyles } = this.getSyntheticPackages(v1Cache.app, movedAddons);
     this.nonResolvableDeps = v1Cache.app.nonResolvableDependencies();
-    this.tree = new WaitForTrees(
+    this.inputPath = v1Cache.app.root;
+    this.treeSyncMap = new WeakMap();
+    this.v1Cache = v1Cache;
+  }
+
+  get tree(): Tree {
+    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, this.v1Cache));
+    let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
+    return new WaitForTrees(
       { movedAddons, synthVendor, synthStyles },
       '@embroider/compat/addons',
       this.build.bind(this)
     );
-    this.inputPath = v1Cache.app.root;
-    this.treeSyncMap = new WeakMap();
   }
 
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {

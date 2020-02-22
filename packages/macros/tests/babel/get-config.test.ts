@@ -5,6 +5,7 @@ describe(`getConfig`, function() {
   allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { beverage: 'coffee' });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
+    config.finalize();
 
     test(`returns correct value for own package's config`, () => {
       let code = transform(`

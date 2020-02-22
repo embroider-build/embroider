@@ -4,6 +4,7 @@ import { MacrosConfig } from '../..';
 describe(`fail build macro`, function() {
   allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { failureMessage: 'I said so' });
+    config.finalize();
 
     test('it can fail the build', () => {
       expect(() => {

@@ -7,8 +7,8 @@ const packageCache = new PackageCache();
 
 export type Merger = (configs: unknown[]) => unknown;
 
-// Do not change the public signature of this class without pondering deeply the
-// mysteries of being compatible with unwritten future versions of this library.
+// Do not change this type signature without pondering deeply the mysteries of
+// being compatible with unwritten future versions of this library.
 type GlobalSharedState = WeakMap<
   any,
   {

@@ -271,9 +271,9 @@ export class AppBuilder<TreeNames> {
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>,
-    private appInstance: any
+    private macrosConfig: MacrosConfig
   ) {
-    MacrosConfig.for(appInstance).setOwnConfig(__filename, { active: true });
+    macrosConfig.setOwnConfig(__filename, { active: true });
   }
 
   private scriptPriority(pkg: Package) {
@@ -356,7 +356,7 @@ export class AppBuilder<TreeNames> {
     );
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(MacrosConfig.for(this.appInstance).babelPluginConfig());
+    babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
@@ -670,7 +670,7 @@ export class AppBuilder<TreeNames> {
   async build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
-    MacrosConfig.for(this.appInstance).finalize();
+    this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
@@ -737,7 +737,7 @@ export class AppBuilder<TreeNames> {
       plugins.ast = [];
     }
     let { plugins: macroPlugins, setConfig } = MacrosConfig.astPlugins();
-    setConfig(MacrosConfig.for(this.appInstance));
+    setConfig(this.macrosConfig);
     for (let macroPlugin of macroPlugins) {
       plugins.ast.push(macroPlugin);
     }

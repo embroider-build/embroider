@@ -12,7 +12,7 @@ import MockUI from 'console-ui/mock';
 import { TransformOptions, transform } from '@babel/core';
 import { Options } from '../../packages/compat/src';
 import { BoundFileAssert } from './file-assertions';
-import { TemplateCompiler, AppMeta, AppBuilder } from '@embroider/core';
+import { TemplateCompiler, AppMeta } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 
 export interface BuildParams {
@@ -41,7 +41,6 @@ export default class BuildResult {
     }
     let addons = new Addons(instance, params.embroiderOptions);
     let tree;
-    AppBuilder.finalizeMacroConfig(instance);
     if (params.stage === 1) {
       tree = addons.tree;
     } else {

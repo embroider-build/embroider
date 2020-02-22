@@ -263,12 +263,6 @@ class AppFiles {
 }
 
 export class AppBuilder<TreeNames> {
-  static finalizeMacroConfig(emberApp: any) {
-    const config = MacrosConfig.for(emberApp);
-    config.setOwnConfig(__filename, { active: true });
-    config.finalize();
-  }
-
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
 
@@ -278,7 +272,9 @@ export class AppBuilder<TreeNames> {
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>,
     private appInstance: any
-  ) {}
+  ) {
+    MacrosConfig.for(appInstance).setOwnConfig(__filename, { active: true });
+  }
 
   private scriptPriority(pkg: Package) {
     switch (pkg.name) {
@@ -672,6 +668,10 @@ export class AppBuilder<TreeNames> {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
+    // on the first build, we lock down the macros config. on subsequent builds,
+    // this doesn't do anything anyway because it's idempotent.
+    MacrosConfig.for(this.appInstance).finalize();
+
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);

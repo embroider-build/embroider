@@ -4,9 +4,10 @@ import { MacrosConfig } from '../..';
 import { join } from 'path';
 const compilerPath = emberTemplateCompilerPath();
 
-export function templateTests(
-  createTests: (transform: (templateContents: string) => string, config?: MacrosConfig) => void
-) {
+type CreateTestsWithConfig = (transform: (templateContents: string) => string, config: MacrosConfig) => void;
+type CreateTests = (transform: (templateContents: string) => string) => void;
+
+export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
   let { plugins, setConfig } = MacrosConfig.astPlugins();
   let config = MacrosConfig.for({});
   setConfig(config);
@@ -21,9 +22,9 @@ export function templateTests(
     return compiler.applyTransforms(join(__dirname, 'sample.hbs'), templateContents);
   };
   if (createTests.length === 2) {
-    createTests(transform, config);
+    (createTests as CreateTestsWithConfig)(transform, config);
   } else {
     config.finalize();
-    createTests(transform);
+    (createTests as CreateTests)(transform);
   }
 }

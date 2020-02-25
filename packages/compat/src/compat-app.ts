@@ -30,6 +30,7 @@ import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
 import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
+import { MacrosConfig } from '@embroider/macros';
 
 interface TreeNames {
   appJS: Tree;
@@ -48,6 +49,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let htmlTree = oldPackage.htmlTree;
   let publicTree = oldPackage.publicTree;
   let configTree = oldPackage.config;
+  let appBootTree = oldPackage.appBoot;
 
   if (options.extraPublicTrees.length > 0) {
     publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean));
@@ -58,6 +60,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     htmlTree,
     publicTree,
     configTree,
+    appBootTree,
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
@@ -72,7 +75,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
-    return new AppBuilder<TreeNames>(root, appPackage, adapter, options);
+    return new AppBuilder<TreeNames>(root, appPackage, adapter, options, MacrosConfig.for(legacyEmberAppInstance));
   };
 
   return { inTrees, instantiate };
@@ -212,6 +215,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   autoRun(): boolean {
     return this.oldPackage.autoRun;
+  }
+
+  appBoot(): string | undefined {
+    return this.oldPackage.appBoot.readAppBoot();
   }
 
   mainModule(): string {

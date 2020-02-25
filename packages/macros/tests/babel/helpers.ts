@@ -5,48 +5,32 @@ import 'qunit';
 
 export { runDefault };
 
-export function allBabelVersions(createTests: (transform: (code: string) => string, config: MacrosConfig) => void) {
+type CreateTestsWithConfig = (transform: (code: string) => string, config: MacrosConfig) => void;
+type CreateTests = (transform: (code: string) => string) => void;
+
+export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
   let config: MacrosConfig;
+  allBabel({
+    includePresetsTests: true,
+    babelConfig() {
+      return {
+        filename: join(__dirname, 'sample.js'),
+        presets: [],
+        plugins: [config.babelPluginConfig()],
+      };
+    },
 
-  describe('without presets', function() {
-    allBabel({
-      babelConfig() {
-        config = new MacrosConfig();
-        return {
-          filename: join(__dirname, 'sample.js'),
-          presets: [],
-          plugins: [config.babelPluginConfig()],
-        };
-      },
-      createTests(transform: (code: string) => string) {
-        createTests(transform, config);
-      },
-    });
-  });
-
-  describe('with presets', function() {
-    allBabel({
-      babelConfig(major: number) {
-        config = new MacrosConfig();
-        return {
-          filename: join(__dirname, 'sample.js'),
-          presets: [
-            [
-              require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),
-              {
-                modules: false,
-                targets: {
-                  ie: '11.0.0',
-                },
-              },
-            ],
-          ],
-          plugins: [config.babelPluginConfig()],
-        };
-      },
-      createTests(transform: (code: string) => string) {
-        createTests(transform, config);
-      },
-    });
+    createTests(transform) {
+      config = new MacrosConfig();
+      if (createTests.length === 1) {
+        // The caller will not be using `config`, so we finalize it for them.
+        config.finalize();
+        (createTests as CreateTests)(transform);
+      } else {
+        // The caller is receivng `config` and they are responsible for
+        // finalizing it.
+        (createTests as CreateTestsWithConfig)(transform, config!);
+      }
+    },
   });
 }

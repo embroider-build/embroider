@@ -8,6 +8,7 @@ import resolve from 'resolve';
 import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import { V1Config, WriteV1Config } from './v1-config';
+import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
@@ -18,6 +19,8 @@ import resolvePackagePath from 'resolve-package-path';
 import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
+import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -171,6 +174,22 @@ export default class V1App implements V1Package {
     return this.app.options.autoRun;
   }
 
+  @Memoize()
+  get appBoot(): ReadV1AppBoot {
+    let env = this.app.env;
+    let appBootContentTree = new WriteV1AppBoot();
+
+    let patterns = this.configReplacePatterns;
+
+    appBootContentTree = new this.configReplace(appBootContentTree, this.configTree, {
+      configPath: join('environments', `${env}.json`),
+      files: ['config/app-boot.js'],
+      patterns,
+    });
+
+    return new ReadV1AppBoot(appBootContentTree);
+  }
+
   private get storeConfigInMeta(): boolean {
     return this.app.options.storeConfigInMeta;
   }
@@ -187,42 +206,40 @@ export default class V1App implements V1Package {
 
   get htmlTree() {
     if (this.app.tests) {
-      return mergeTrees([this.indexTree, this.app.testIndex()]);
-    }
-    {
+      return mergeTrees([this.indexTree, this.testIndexTree]);
+    } else {
       return this.indexTree;
     }
   }
 
-  get indexTree() {
+  private get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
-
-    let index: Tree = new Funnel(this.app.trees.app, {
+    let index = new Funnel(this.app.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
       annotation: 'app/index.html',
     });
-
-    if (this.isModuleUnification) {
-      let srcIndex = new Funnel(new WatchedDir(join(this.root, 'src')), {
-        files: ['ui/index.html'],
-        getDestinationPath: () => indexFilePath,
-        annotation: 'src/ui/index.html',
-      });
-
-      index = mergeTrees([index, srcIndex], {
-        overwrite: true,
-        annotation: 'merge classic and MU index.html',
-      });
-    }
-
-    let patterns = this.configReplacePatterns;
-
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),
       files: [indexFilePath],
-      patterns,
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/indexTree',
+    });
+  }
+
+  private get testIndexTree() {
+    let index = new Funnel(this.app.trees.tests, {
+      allowEmpty: true,
+      include: [`index.html`],
+      destDir: 'tests',
+      annotation: 'tests/index.html',
+    });
+    return new this.configReplace(index, this.configTree, {
+      configPath: join('environments', `test.json`),
+      files: ['tests/index.html'],
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/testIndexTree',
     });
   }
 
@@ -267,7 +284,8 @@ export default class V1App implements V1Package {
         // always-installed version of that (v2 addons are allowed to assume it
         // will be present in the final app build, the app doesn't get to turn
         // that off or configure it.)
-        !TemplateCompiler.isInlinePrecompilePlugin(p)
+        !TemplateCompiler.isInlinePrecompilePlugin(p) &&
+        !isEmberAutoImportDynamic(p)
       );
     });
 
@@ -453,17 +471,27 @@ export default class V1App implements V1Package {
   }
 
   private combinedStyles(addonTrees: Tree[]): Tree {
-    let trees = addonTrees.map(
+    let trees: Tree[] = addonTrees.map(
       tree =>
         new Funnel(tree, {
           allowEmpty: true,
           srcDir: '_app_styles_',
         })
     );
-    if (this.app.trees.styles) {
-      trees.push(this.app.trees.styles);
+    let appStyles = this.app.trees.styles as Tree | undefined;
+    if (appStyles) {
+      // Workaround for https://github.com/ember-cli/ember-cli/issues/9020
+      //
+      // The default app styles tree is unwatched and relies on side effects
+      // elsewhere in ember-cli's build pipeline to actually get rebuilds to
+      // work. Here we need it to actually be watched properly if we want to
+      // rely on it, particularly when using BROCCOLI_ENABLED_MEMOIZE.
+      if ((appStyles as any)._watched === false && (appStyles as any)._directoryPath) {
+        appStyles = new WatchedDir((appStyles as any)._directoryPath);
+      }
+      trees.push(appStyles);
     }
-    return mergeTrees(trees, { overwrite: true });
+    return mergeTrees(trees, { overwrite: true, annotation: 'embroider-v1-app-combined-styles' });
   }
 
   synthesizeStylesPackage(addonTrees: Tree[]): Tree {
@@ -617,6 +645,8 @@ export default class V1App implements V1Package {
 
     let trees: Tree[] = [];
     trees.push(appTree);
+    trees.push(new SynthesizeTemplateOnlyComponents(appTree, ['components']));
+
     trees.push(configReplaced);
     if (testsTree) {
       trees.push(testsTree);

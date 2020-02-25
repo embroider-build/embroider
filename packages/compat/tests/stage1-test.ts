@@ -2,6 +2,7 @@ import 'qunit';
 import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
 import resolve from 'resolve';
 import { dirname } from 'path';
+import merge from 'lodash/merge';
 
 QUnit.module('stage1 build', function() {
   QUnit.module('max compatibility', function(origHooks) {
@@ -12,11 +13,23 @@ QUnit.module('stage1 build', function() {
       // A simple ember app with no tests
       let app = Project.emberNew();
 
-      // We create an addon
-      let addon = app.addAddon('my-addon');
-      addon.files.addon = {
-        components: {
-          'hello-world.js': `
+      // We create an addon.
+      // Our addon is configured to use ember-auto-import's dynamic import.
+      let addon = app.addAddon(
+        'my-addon',
+        `
+        options: {
+          babel: {
+            plugins: [ require.resolve('ember-auto-import/babel-plugin') ]
+          }
+        },
+      `
+      );
+
+      merge(addon.files, {
+        addon: {
+          components: {
+            'hello-world.js': `
             import Component from '@ember/component';
             import layout from '../templates/components/hello-world';
             import { getOwnConfig } from '@embroider/macros';
@@ -26,7 +39,7 @@ QUnit.module('stage1 build', function() {
               layout
             });
           `,
-          'has-inline-template.js': `
+            'has-inline-template.js': `
             import Component from '@ember/component';
             import { hbs } from 'ember-cli-htmlbars';
             export default Component.extend({
@@ -36,26 +49,33 @@ QUnit.module('stage1 build', function() {
               extra: hbs("<div class={{embroider-sample-transforms-target}}>Extra</div>")
             });
           `,
-        },
-        templates: {
-          components: {
-            'hello-world.hbs': `
+            'does-dynamic-import.js': `
+            export default function() {
+              return import('some-library');
+            }
+          `,
+          },
+          templates: {
+            components: {
+              'hello-world.hbs': `
               <div class={{embroider-sample-transforms-target}}>hello world</div>
               <span>{{macroDependencySatisfies "ember-source" ">3"}}</span>
             `,
+            },
           },
         },
-      };
-      addon.files.app = {
-        components: {
-          'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
+        app: {
+          components: {
+            'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
+          },
         },
-      };
+      });
 
       // Our addon will use @embroider/sample-transforms as examples of custom
       // AST and babel transforms.
       addon.linkPackage('@embroider/sample-transforms');
       addon.linkPackage('@embroider/macros');
+      addon.linkPackage('ember-auto-import');
 
       // our app will include an in-repo addon
       app.pkg['ember-addon'] = {
@@ -144,6 +164,12 @@ QUnit.module('stage1 build', function() {
     test('in-repo-addon is available', function(assert) {
       assert.expect(0);
       resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: assert.basePath });
+    });
+
+    test('dynamic import is preserved', function(assert) {
+      assert
+        .file('node_modules/my-addon/components/does-dynamic-import.js')
+        .matches(/return import\(['"]some-library['"]\)/);
     });
   });
 

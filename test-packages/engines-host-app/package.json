@@ -20,9 +20,9 @@
   "devDependencies": {
     "@ember/jquery": "^0.6.0",
     "@ember/optional-features": "^0.7.0",
-    "@embroider/compat": "0.10.0",
-    "@embroider/core": "0.10.0",
-    "@embroider/webpack": "0.10.0",
+    "@embroider/compat": "0.13.0",
+    "@embroider/core": "0.13.0",
+    "@embroider/webpack": "0.13.0",
     "broccoli-asset-rev": "^3.0.0",
     "eager-engine": "0.0.0",
     "ember-cli": "~3.10.1",

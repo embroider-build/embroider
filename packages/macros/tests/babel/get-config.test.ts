@@ -10,6 +10,7 @@ describe(`getConfig`, function() {
       sizes: [{ name: 'small', oz: 4 }, { name: 'medium', oz: 8 }],
     });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
+    config.finalize();
 
     test(`returns correct value for own package's config`, () => {
       let code = transform(`

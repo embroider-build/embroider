@@ -4,7 +4,7 @@ import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { todo, debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
@@ -25,6 +25,7 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
+import merge from 'lodash/merge';
 
 export type EmberENV = unknown;
 
@@ -57,6 +58,9 @@ export interface AppAdapter<TreeNames> {
 
   // whether the ember app should boot itself automatically
   autoRun(): boolean;
+
+  // custom app-boot logic when the autoRun is set to false
+  appBoot(): string | undefined;
 
   // the ember app's main module
   mainModule(): string;
@@ -195,10 +199,19 @@ class AppFiles {
         continue;
       }
 
-      if (relativePath.startsWith('components/') || relativePath.startsWith('templates/components/')) {
+      // hbs files are resolvable, but not when they're inside the components
+      // directory (where they are used for colocation only)
+      if (relativePath.startsWith('components/') && !relativePath.endsWith('.hbs')) {
         components.push(relativePath);
         continue;
-      } else if (relativePath.startsWith('helpers/')) {
+      }
+
+      if (relativePath.startsWith('templates/components/')) {
+        components.push(relativePath);
+        continue;
+      }
+
+      if (relativePath.startsWith('helpers/')) {
         helpers.push(relativePath);
         continue;
       }
@@ -257,9 +270,10 @@ export class AppBuilder<TreeNames> {
     private root: string,
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
-    private options: Required<Options>
+    private options: Required<Options>,
+    private macrosConfig: MacrosConfig
   ) {
-    MacrosConfig.shared().setOwnConfig(__filename, { active: true });
+    macrosConfig.setOwnConfig(__filename, { active: true });
   }
 
   private scriptPriority(pkg: Package) {
@@ -342,7 +356,7 @@ export class AppBuilder<TreeNames> {
     );
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(MacrosConfig.shared().babelPluginConfig());
+    babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
@@ -354,6 +368,7 @@ export class AppBuilder<TreeNames> {
     ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
+    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
@@ -617,7 +632,46 @@ export class AppBuilder<TreeNames> {
     return assets.concat(this.adapter.assets(inputPaths));
   }
 
+  // This supports a slightly weird thing used (AFAIK) only by
+  // ember-cli-fastboot. ember-cli-fastboot emits a package.json file in its
+  // treeForPublic, which means in embroider terms it has a public-asset named
+  // "package.json". It wants that to be in the final build output.
+  //
+  // We can't let it just overwrite our own stage2 package.json because we use
+  // that for our own purposes. So we make it our policy that any time an addon
+  // emits a public-asset named package.json, we will merge it into our
+  // package.json. This is enough to make ember-cli-fastboot happy.
+  private gatherPackageJson(assets: Asset[]) {
+    let found = [] as object[];
+    for (let asset of assets) {
+      if (asset.relativePath === 'package.json') {
+        switch (asset.kind) {
+          case 'on-disk':
+            found.push(readJSONSync(asset.sourcePath));
+            break;
+          case 'in-memory':
+            if (typeof asset.source === 'string') {
+              found.push(JSON.parse(asset.source));
+            } else {
+              found.push(JSON.parse(asset.source.toString('utf8')));
+            }
+            break;
+          case 'ember':
+            // deliberately skipped. An ember entrypoint asset can never be JSON.
+            break;
+          default:
+            assertNever(asset);
+        }
+      }
+    }
+    return found;
+  }
+
   async build(inputPaths: OutputPaths<TreeNames>) {
+    // on the first build, we lock down the macros config. on subsequent builds,
+    // this doesn't do anything anyway because it's idempotent.
+    this.macrosConfig.finalize();
+
     let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
@@ -670,6 +724,10 @@ export class AppBuilder<TreeNames> {
     }
     pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
     const pkgPath = join(this.root, 'package.json');
+    let addonProvidedPackageJSONS = this.gatherPackageJson(assets);
+    if (addonProvidedPackageJSONS.length > 0) {
+      pkg = merge({}, ...addonProvidedPackageJSONS, pkg);
+    }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
   }
 
@@ -678,7 +736,9 @@ export class AppBuilder<TreeNames> {
     if (!plugins.ast) {
       plugins.ast = [];
     }
-    for (let macroPlugin of MacrosConfig.shared().astPlugins()) {
+    let { plugins: macroPlugins, setConfig } = MacrosConfig.astPlugins();
+    setConfig(this.macrosConfig);
+    for (let macroPlugin of macroPlugins) {
       plugins.ast.push(macroPlugin);
     }
 
@@ -827,6 +887,7 @@ export class AppBuilder<TreeNames> {
     let source = entryTemplate({
       amdModules,
       autoRun: this.adapter.autoRun(),
+      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
       appConfig: this.adapter.mainModuleConfig(),
       lazyRoutes,
@@ -954,6 +1015,8 @@ let d = w.define;
   if (typeof EMBER_DISABLE_AUTO_BOOT === 'undefined' || !EMBER_DISABLE_AUTO_BOOT) {
     i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
   }
+{{else  if appBoot ~}}
+  {{{ appBoot }}}
 {{/if}}
 
 {{#if testSuffix ~}}
@@ -974,6 +1037,7 @@ let d = w.define;
   amdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;
+  appBoot?: string;
   mainModule?: string;
   appConfig?: unknown;
   testSuffix?: boolean;

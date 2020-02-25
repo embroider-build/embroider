@@ -1,5 +1,28 @@
 # Embroider Changelog
 
+## 0.13.0
+
+- COMPAT: follow the stock build's special-case behavior that forbids "template.hbs" as a template-only component
+- ENHANCEMENT: add support for apps with custom app-boot content by @dnalagatla
+- ENHANCEMENT: allow explicitly declared relative externals, which makes it easier to workaround some badly-behaved addons
+- BUGFIX: fixed a bug in the way we make module paths relative
+- COMPAT: support ember-cli 3.16, which dropped a function we were calling.
+
+## 0.12.0
+
+- ENHANCEMENT: support for Octane's component template colocation.
+
+## 0.11.1
+
+- BUGFIX: the previous release broke CSS rebuilding if you were using the
+  experimental BROCCOLI_ENABLED_MEMOIZE feature flag due to the way ember-cli
+  constructs the app styles tree that Embroider relies on. This release includes
+  a workaround.
+
+## 0.11.0
+
+- ENHANCEMENT: support rebuilding of linked addons when using the BROCCOLI_ENABLED_MEMOIZE feature flag
+
 ## 0.10.0
 
 - BUGFIX: make TemplateCompiler's isParallelSafe flag survive clone()

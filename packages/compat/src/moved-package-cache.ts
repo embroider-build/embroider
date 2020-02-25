@@ -12,6 +12,10 @@ function assertNoTildeExpansion(source: string, target: string) {
   }
 }
 export class MovablePackageCache extends PackageCache {
+  constructor(private macrosConfig: MacrosConfig) {
+    super();
+  }
+
   moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
     // start with the plain old app package
     let origApp = this.getApp(appSrcDir);
@@ -20,7 +24,7 @@ export class MovablePackageCache extends PackageCache {
     // workspace
     let movedSet = new MovedSet(origApp);
 
-    return new MovedPackageCache(this.rootCache, this.resolutionCache, destDir, movedSet, origApp);
+    return new MovedPackageCache(this.rootCache, this.resolutionCache, destDir, movedSet, origApp, this.macrosConfig);
   }
 }
 
@@ -35,7 +39,8 @@ export class MovedPackageCache extends PackageCache {
     resolutionCache: PackageCache['resolutionCache'],
     private destDir: string,
     movedSet: MovedSet,
-    private origApp: Package
+    private origApp: Package,
+    private macrosConfig: MacrosConfig
   ) {
     super();
 
@@ -44,7 +49,7 @@ export class MovedPackageCache extends PackageCache {
 
     // so we can now determine where the app will go inside the workspace
     this.appDestDir = this.localPath(origApp.root);
-    MacrosConfig.shared().packageMoved(origApp.root, this.appDestDir);
+    this.macrosConfig.packageMoved(origApp.root, this.appDestDir);
 
     for (let originalPkg of movedSet.packages) {
       // Update our rootCache so we don't need to rediscover moved packages
@@ -59,7 +64,7 @@ export class MovedPackageCache extends PackageCache {
       } else {
         movedPkg = this.movedPackage(originalPkg);
         this.moved.set(originalPkg, movedPkg);
-        MacrosConfig.shared().packageMoved(originalPkg.root, movedPkg.root);
+        this.macrosConfig.packageMoved(originalPkg.root, movedPkg.root);
       }
 
       // Update our resolutionCache so we still know as much about the moved

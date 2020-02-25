@@ -4,6 +4,7 @@ import { MacrosConfig } from '../..';
 describe('each', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
+    config.finalize();
 
     test('plugins example unrolls correctly', () => {
       let code = transform(`

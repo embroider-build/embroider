@@ -1,10 +1,7 @@
 import { templateTests } from './helpers';
-import { MacrosConfig } from '../..';
 
 describe(`macroIf`, function() {
-  templateTests(function(transform: (code: string) => string, config: MacrosConfig) {
-    config.setOwnConfig(__filename, { failureMessage: 'I said so' });
-
+  templateTests(function(transform: (code: string) => string) {
     test('macroIf in content position when true', function() {
       let code = transform(`{{#macroIf true}}red{{else}}blue{{/macroIf}}`);
       expect(code).toMatch(/red/);

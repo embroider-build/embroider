@@ -4,6 +4,7 @@ import { MacrosConfig } from '../..';
 describe('importSync', function() {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
+    config.finalize();
 
     test('importSync becomes require', () => {
       let code = transform(`

@@ -5,10 +5,10 @@ import { join } from 'path';
 const compilerPath = emberTemplateCompilerPath();
 
 export function templateTests(
-  createTests: (transform: (templateContents: string) => string, config: MacrosConfig) => void
+  createTests: (transform: (templateContents: string) => string, config?: MacrosConfig) => void
 ) {
   let { plugins, setConfig } = MacrosConfig.astPlugins();
-  let config = new MacrosConfig();
+  let config = MacrosConfig.for({});
   setConfig(config);
   let compiler = new TemplateCompiler({
     compilerPath,
@@ -20,5 +20,10 @@ export function templateTests(
   let transform = (templateContents: string) => {
     return compiler.applyTransforms(join(__dirname, 'sample.hbs'), templateContents);
   };
-  createTests(transform, config);
+  if (createTests.length === 2) {
+    createTests(transform, config);
+  } else {
+    config.finalize();
+    createTests(transform);
+  }
 }

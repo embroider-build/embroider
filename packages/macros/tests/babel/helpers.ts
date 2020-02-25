@@ -21,7 +21,7 @@ export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfi
     },
 
     createTests(transform) {
-      config = new MacrosConfig();
+      config = MacrosConfig.for({});
       if (createTests.length === 1) {
         // The caller will not be using `config`, so we finalize it for them.
         config.finalize();

@@ -91,7 +91,7 @@ export default class MultiTreeDiff {
               return latest(accum, entry.mtime);
             }, undefined),
             isDirectory() {
-              return false;
+              return winningEntries.reduce((isDir, entry) => isDir || entry.isDirectory(), false);
             },
           };
           result.set(relativePath, combinedEntry);

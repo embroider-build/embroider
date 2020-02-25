@@ -31,6 +31,7 @@ import { Memoize } from 'typescript-memoize';
 import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros';
+import { pathExistsSync } from 'fs-extra';
 
 interface TreeNames {
   appJS: Tree;
@@ -94,6 +95,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
     return treePaths.appJS;
+  }
+
+  @Memoize()
+  fastbootJSSrcDir(_treePaths: OutputPaths<TreeNames>) {
+    let target = join(this.root, 'fastboot');
+    if (pathExistsSync(target)) {
+      return target;
+    }
   }
 
   assets(treePaths: OutputPaths<TreeNames>): Asset[] {

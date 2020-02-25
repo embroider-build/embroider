@@ -6,7 +6,7 @@ import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
-import { todo, debug, warn } from './messages';
+import { debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -26,6 +26,7 @@ import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import merge from 'lodash/merge';
+import partition from 'lodash/partition';
 
 export type EmberENV = unknown;
 
@@ -50,6 +51,11 @@ export interface AppAdapter<TreeNames> {
   // any files copied out of addons, we take care of that generically in
   // AppBuilder.
   appJSSrcDir(treePaths: OutputPaths<TreeNames>): string;
+
+  // path to the directory where the app's own Fastboot-only Javascript lives.
+  // Doesn't include any files copied out of addons, we take care of that
+  // generically in AppBuilder.
+  fastbootJSSrcDir(treePaths: OutputPaths<TreeNames>): string | undefined;
 
   // this is where you declare what assets must be in the final output
   // (especially index.html, tests/index.html, and anything from your classic
@@ -179,14 +185,15 @@ class AppFiles {
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
   readonly relocatedFiles: Map<string, string>;
+  readonly isFastbootOnly: Map<string, boolean>;
 
-  constructor(relativePaths: Map<string, string | null>, resolvableExtensions: RegExp) {
+  constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
-    for (let relativePath of relativePaths.keys()) {
+    for (let relativePath of appDiffer.files.keys()) {
       relativePath = relativePath.split(sep).join('/');
       if (!resolvableExtensions.test(relativePath)) {
         continue;
@@ -228,12 +235,13 @@ class AppFiles {
     this.otherAppFiles = otherAppFiles;
 
     let relocatedFiles: Map<string, string> = new Map();
-    for (let [relativePath, owningPath] of relativePaths) {
+    for (let [relativePath, owningPath] of appDiffer.files) {
       if (owningPath) {
         relocatedFiles.set(relativePath, owningPath);
       }
     }
     this.relocatedFiles = relocatedFiles;
+    this.isFastbootOnly = appDiffer.isFastbootOnly;
   }
 
   private handleRouteFile(relativePath: string): boolean {
@@ -471,14 +479,30 @@ export class AppBuilder<TreeNames> {
     }
   }
 
+  @Memoize()
+  private get hasFastboot() {
+    return Boolean(this.adapter.directActiveAddons.find(a => a.name === 'ember-cli-fastboot'));
+  }
+
   private appDiffer: AppDiffer | undefined;
 
-  private updateAppJS(appJSPath: string): AppFiles {
+  private updateAppJS(inputPaths: OutputPaths<TreeNames>): AppFiles {
+    let appJSPath = this.adapter.appJSSrcDir(inputPaths);
     if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.allActiveAddons);
+      if (this.hasFastboot) {
+        this.appDiffer = new AppDiffer(
+          this.root,
+          appJSPath,
+          this.adapter.allActiveAddons,
+          true,
+          this.adapter.fastbootJSSrcDir(inputPaths)
+        );
+      } else {
+        this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.allActiveAddons);
+      }
     }
     this.appDiffer.update();
-    return new AppFiles(this.appDiffer.files, this.resolvableExtensionsPattern);
+    return new AppFiles(this.appDiffer, this.resolvableExtensionsPattern);
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
@@ -672,7 +696,7 @@ export class AppBuilder<TreeNames> {
     // this doesn't do anything anyway because it's idempotent.
     this.macrosConfig.finalize();
 
-    let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
+    let appFiles = this.updateAppJS(inputPaths);
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
 
@@ -867,18 +891,18 @@ export class AppBuilder<TreeNames> {
         (routeNames: string[], files: string[]) => {
           let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {
-            prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
+            prepared.set(routeEntrypoint, this.routeEntrypoint(appFiles, routeEntrypoint, files));
           }
           lazyRoutes.push({ names: routeNames, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
         }
       );
     }
 
-    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file => this.importPaths(file, relativePath));
-
-    // for the src tree, we can limit ourselves to only known resolvable
-    // collections
-    todo('app src tree');
+    let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
+      appFiles.isFastbootOnly.get(file)
+    );
+    let amdModules = nonFastboot.map(file => this.importPaths(file, relativePath));
+    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(file, relativePath));
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
@@ -886,6 +910,7 @@ export class AppBuilder<TreeNames> {
 
     let source = entryTemplate({
       amdModules,
+      fastbootOnlyAmdModules,
       autoRun: this.adapter.autoRun(),
       appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
       mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
@@ -916,11 +941,13 @@ export class AppBuilder<TreeNames> {
     };
   }
 
-  private routeEntrypoint(relativePath: string, files: string[]) {
+  private routeEntrypoint(appFiles: AppFiles, relativePath: string, files: string[]) {
+    let [fastboot, nonFastboot] = partition(files, file => appFiles.isFastbootOnly.get(file));
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: files.map(f => this.importPaths(f, relativePath)),
+        files: nonFastboot.map(f => this.importPaths(f, relativePath)),
+        fastbootOnlyFiles: fastboot.map(f => this.importPaths(f, relativePath)),
       }),
       relativePath,
     };
@@ -949,6 +976,7 @@ export class AppBuilder<TreeNames> {
 
     let source = entryTemplate({
       amdModules,
+      fastbootOnlyAmdModules: [],
       eagerModules: testModules,
       testSuffix: true,
     });
@@ -994,6 +1022,15 @@ let d = w.define;
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
+{{#if fastbootOnlyAmdModules}}
+  import { macroCondition, getConfig } from '@embroider/macros';
+  if (macroCondition(getConfig("fastboot").running)) {
+    {{#each fastbootOnlyAmdModules as |amdModule| ~}}
+      d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+    {{/each}}
+  }
+{{/if}}
+
 {{#each eagerModules as |eagerModule| ~}}
   i("{{js-string-escape eagerModule}}");
 {{/each}}
@@ -1034,7 +1071,8 @@ let d = w.define;
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  amdModules?: ({ runtime: string; buildtime: string })[];
+  amdModules: ({ runtime: string; buildtime: string })[];
+  fastbootOnlyAmdModules: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;
@@ -1050,7 +1088,18 @@ let d = window.define;
 {{#each files as |amdModule| ~}}
 d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
-`) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
+{{#if fastbootOnlyFiles}}
+  import { macroCondition, getConfig } from '@embroider/macros';
+  if (macroCondition(getConfig("fastboot").running)) {
+    {{#each fastbootOnlyFiles as |amdModule| ~}}
+    d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+    {{/each}}
+  }
+{{/if}}
+`) as (params: {
+  files: { runtime: string; buildtime: string }[];
+  fastbootOnlyFiles: { runtime: string; buildtime: string }[];
+}) => string;
 
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {

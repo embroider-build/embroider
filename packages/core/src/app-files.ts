@@ -1,5 +1,6 @@
 import { sep } from 'path';
 import Package, { V2AddonPackage } from './package';
+import AppDiffer from './app-differ';
 
 export interface RouteFiles {
   route?: string;
@@ -15,14 +16,15 @@ export class AppFiles {
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
   readonly relocatedFiles: Map<string, string>;
+  readonly isFastbootOnly: Map<string, boolean>;
 
-  constructor(relativePaths: Map<string, string | null>, resolvableExtensions: RegExp) {
+  constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
-    for (let relativePath of relativePaths.keys()) {
+    for (let relativePath of appDiffer.files.keys()) {
       relativePath = relativePath.split(sep).join('/');
       if (!resolvableExtensions.test(relativePath)) {
         continue;
@@ -64,12 +66,13 @@ export class AppFiles {
     this.otherAppFiles = otherAppFiles;
 
     let relocatedFiles: Map<string, string> = new Map();
-    for (let [relativePath, owningPath] of relativePaths) {
+    for (let [relativePath, owningPath] of appDiffer.files) {
       if (owningPath) {
         relocatedFiles.set(relativePath, owningPath);
       }
     }
     this.relocatedFiles = relocatedFiles;
+    this.isFastbootOnly = appDiffer.isFastbootOnly;
   }
 
   private handleRouteFile(relativePath: string): boolean {

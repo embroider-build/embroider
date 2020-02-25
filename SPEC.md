@@ -551,7 +551,7 @@ Allowed in: addons
 Status: intent to deprecate
 ```
 
-A list of paths to folders that should be merged with the app's own namespace. This is a backward-compatibility feature, avoiding using it.
+A path to a directory that should be merged with the app's own namespace. This is a backward-compatibility feature, avoiding using it.
 
 ## auto-upgraded
 
@@ -630,6 +630,15 @@ Status: intent to deprecate
 List of module names that are used within the package but not statically build-time resolvable.
 
 This is a backward-compatibility feature that allows us to more efficiently bridge the gap between build-time and run-time resolution.
+
+## fastboot-js
+
+```
+Allowed in: addons
+Status: intent to deprecate
+```
+
+A path to a directory that should be merged with the app's own namespace, but only when running in Fastboot. This is a backward-compatibility feature, avoiding using it. New addons can use the macro system to guard fastboot-only imports.
 
 ## implicit-modules
 

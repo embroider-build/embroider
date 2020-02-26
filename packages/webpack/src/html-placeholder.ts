@@ -80,5 +80,5 @@ interface InDOMNode extends Node {
 
 // an html node that definitely has a next sibling.
 interface StartNode extends InDOMNode {
-  nextSibling: InDOMNode;
+  nextSibling: InDOMNode & ChildNode;
 }

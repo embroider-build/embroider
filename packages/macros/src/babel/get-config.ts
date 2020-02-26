@@ -1,10 +1,17 @@
 import { NodePath } from '@babel/traverse';
-import { identifier, File, ExpressionStatement, CallExpression } from '@babel/types';
+import {
+  identifier,
+  File,
+  ExpressionStatement,
+  CallExpression,
+  Expression,
+  OptionalMemberExpression,
+} from '@babel/types';
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
-import { assertArray } from './evaluate-json';
+import evaluate, { assertArray } from './evaluate-json';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
@@ -33,7 +40,8 @@ export default function getConfig(
   if (pkg) {
     config = state.opts.userConfigs[pkg.root];
   }
-  path.replaceWith(literalConfig(config));
+  let collapsed = collapse(path, config);
+  collapsed.path.replaceWith(literalConfig(collapsed.config));
 }
 
 function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {
@@ -59,4 +67,48 @@ function literalConfig(config: unknown | undefined) {
   let statement = ast.program.body[0] as ExpressionStatement;
   let expression = statement.expression as CallExpression;
   return expression.arguments[0];
+}
+
+function collapse(path: NodePath<Expression>, config: any) {
+  while (true) {
+    let parentPath = path.parentPath;
+    if (parentPath.isMemberExpression() && parentPath.get('object').node === path.node) {
+      let property = parentPath.get('property') as NodePath;
+      if (parentPath.node.computed) {
+        let evalProperty = evaluate(property);
+        if (evalProperty.confident) {
+          config = config[evalProperty.value];
+          path = parentPath;
+          continue;
+        }
+      } else {
+        if (property.isIdentifier()) {
+          config = config[property.node.name];
+          path = parentPath;
+          continue;
+        }
+      }
+    } else if (parentPath.node.type === 'OptionalMemberExpression') {
+      let castParentPath = parentPath as NodePath<OptionalMemberExpression>;
+      if (castParentPath.get('object').node === path.node) {
+        let property = castParentPath.get('property') as NodePath;
+        if (castParentPath.node.computed) {
+          let evalProperty = evaluate(property);
+          if (evalProperty.confident) {
+            config = config == null ? config : config[evalProperty.value];
+            path = castParentPath;
+            continue;
+          }
+        } else {
+          if (property.isIdentifier()) {
+            config = config == null ? config : config[property.node.name];
+            path = castParentPath;
+            continue;
+          }
+        }
+      }
+    }
+    break;
+  }
+  return { path, config };
 }

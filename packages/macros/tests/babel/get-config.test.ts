@@ -1,9 +1,13 @@
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '../..';
 
 describe(`getConfig`, function() {
-  allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {
-    config.setOwnConfig(__filename, { beverage: 'coffee' });
+  allBabelVersions(function(transform, config) {
+    config.setOwnConfig(__filename, {
+      beverage: 'coffee',
+    });
+    config.setConfig(__filename, '@babel/traverse', {
+      sizes: [{ name: 'small', oz: 4 }, { name: 'medium', oz: 8 }],
+    });
     config.setConfig(__filename, '@babel/core', [1, 2, 3]);
     config.finalize();
 
@@ -47,14 +51,57 @@ describe(`getConfig`, function() {
       expect(runDefault(code)).toBe(undefined);
     });
 
-    test('import gets removed', () => {
+    test(`collapses property access`, () => {
       let code = transform(`
-      import { dependencySatisfies } from '@embroider/macros';
+      import { getOwnConfig } from '@embroider/macros';
       export default function() {
-        return dependencySatisfies('not-a-real-dep', '1');
+        return doSomething(getOwnConfig().beverage);
       }
       `);
-      expect(code).not.toMatch(/dependencySatisfies/);
+      expect(code).toMatch(/doSomething\(["']coffee["']\)/);
     });
+
+    test(`collapses computed property access`, () => {
+      let code = transform(`
+      import { getOwnConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getOwnConfig()["beverage"]);
+      }
+      `);
+      expect(code).toMatch(/doSomething\(["']coffee["']\)/);
+    });
+
+    test(`collapses chained property access`, () => {
+      let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getConfig('@babel/traverse').sizes[1].oz);
+      }
+      `);
+      expect(code).toMatch(/doSomething\(8\)/);
+    });
+
+    // babel 6 doesn't parse nullish coalescing
+    if (transform.babelMajorVersion === 7) {
+      test(`collapses nullish coalescing, not null case`, () => {
+        let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getConfig('@babel/traverse')?.sizes?.[1]?.oz);
+      }
+      `);
+        expect(code).toMatch(/doSomething\(8\)/);
+      });
+
+      test(`collapses nullish coalescing, nullish case`, () => {
+        let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getConfig('not-a-real-package')?.sizes?.[1]?.oz);
+      }
+      `);
+        expect(code).toMatch(/doSomething\(undefined\)/);
+      });
+    }
   });
 });

@@ -29,13 +29,14 @@
     "@types/qunit": "^2.5.3",
     "@types/resolve": "^0.0.8",
     "qunit": "^2.8.0",
-    "typescript": "~3.2.0"
+    "typescript": "~3.4.0"
   },
   "dependencies": {
     "@babel/core": "^7.2.2",
     "@babel/traverse": "^7.2.4",
     "@babel/types": "^7.3.2",
     "@embroider/core": "0.13.0",
+    "lodash": "^4.17.10",
     "resolve": "^1.8.1",
     "semver": "^5.6.0"
   },

@@ -8,8 +8,19 @@ export function dependencySatisfies(packageName: string, semverRange: string): b
   throw new Oops(packageName, semverRange);
 }
 
-export function macroIf(predicate: boolean, consequent: () => void, alternate: () => void) {
-  throw new Oops(predicate, consequent, alternate);
+export function macroCondition(predicate: boolean) {
+  throw new Oops(predicate);
+}
+
+export function each<T>(array: T[]): T[] {
+  throw new Oops(array);
+}
+
+// We would prefer to write:
+//   export function importSync<T extends string>(specifier: T): typeof import(T) {
+// but TS doesn't seem to support that at present.
+export function importSync(specifier: string): unknown {
+  throw new Oops(specifier);
 }
 
 export function getConfig<T>(packageName: string): T {

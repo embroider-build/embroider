@@ -52,6 +52,8 @@ export default class MacrosConfig {
     return config;
   }
 
+  private constructor() {}
+
   private _configWritable = true;
   private configs: Map<string, unknown[]> = new Map();
   private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();

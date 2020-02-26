@@ -33,6 +33,9 @@ export default function dependencySatisfies(path: NodePath<CallExpression>, stat
     let version = packageCache.resolve(packageName.value, us).version;
     path.replaceWith(booleanLiteral(satisfies(version, range.value)));
   } catch (err) {
+    if (err.code !== 'MODULE_NOT_FOUND') {
+      throw err;
+    }
     path.replaceWith(booleanLiteral(false));
   }
 }

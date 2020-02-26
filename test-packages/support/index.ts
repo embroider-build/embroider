@@ -28,17 +28,23 @@ function presetsFor(major: 6 | 7) {
   ];
 }
 
+export interface Transform {
+  (code: string): string;
+  babelMajorVersion: 6 | 7;
+  usingPresets: boolean;
+}
+
 export function allBabelVersions(params: {
   babelConfig(major: 6): Options6;
   babelConfig(major: 7): Options7;
-  createTests(transform: (code: string) => string): void;
+  createTests(transform: Transform): void;
   includePresetsTests?: boolean;
 }) {
   let _describe = typeof QUnit !== 'undefined' ? (QUnit.module as any) : describe;
 
   function versions(usePresets: boolean) {
     _describe('babel6', function() {
-      params.createTests(function(code: string) {
+      function transform(code: string) {
         let options6: Options6 = params.babelConfig(6);
         if (!options6.filename) {
           options6.filename = 'sample.js';
@@ -48,11 +54,14 @@ export function allBabelVersions(params: {
         }
 
         return transform6(code, options6).code!;
-      });
+      }
+      transform.babelMajorVersion = 6 as 6;
+      transform.usingPresets = usePresets;
+      params.createTests(transform);
     });
 
     _describe('babel7', function() {
-      params.createTests(function(code: string) {
+      function transform(code: string) {
         let options7: Options7 = params.babelConfig(7);
         if (!options7.filename) {
           options7.filename = 'sample.js';
@@ -61,7 +70,10 @@ export function allBabelVersions(params: {
           options7.presets = presetsFor(7);
         }
         return transform7(code, options7)!.code!;
-      });
+      }
+      transform.babelMajorVersion = 7 as 7;
+      transform.usingPresets = usePresets;
+      params.createTests(transform);
     });
   }
 

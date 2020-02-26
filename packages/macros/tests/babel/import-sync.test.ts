@@ -1,7 +1,11 @@
 import { allBabelVersions } from './helpers';
+import { MacrosConfig } from '../..';
 
 describe('importSync', function() {
-  allBabelVersions(function createTests(transform: (code: string) => string) {
+  allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
+    config.setOwnConfig(__filename, { target: 'my-plugin' });
+    config.finalize();
+
     test('importSync becomes require', () => {
       let code = transform(`
       import { importSync } from '@embroider/macros';
@@ -29,6 +33,13 @@ describe('importSync', function() {
       require('foo');
       `);
       expect(code).toMatch(/window\.require\(['"]foo['"]\)/);
+    });
+    test('importSync accepts a macro-expanded argument', () => {
+      let code = transform(`
+      import { importSync, getOwnConfig } from '@embroider/macros';
+      importSync(getOwnConfig().target);
+      `);
+      expect(code).toMatch(/require\(['"]my-plugin['"]\)/);
     });
   });
 });

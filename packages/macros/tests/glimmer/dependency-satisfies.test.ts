@@ -1,7 +1,7 @@
 import { templateTests } from './helpers';
 
 describe('dependency satisfies', () => {
-  templateTests(transform => {
+  templateTests((transform: (code: string) => string) => {
     test('in content position', () => {
       let result = transform(`{{macroDependencySatisfies 'qunit' '^2.8.0'}}`);
       expect(result).toEqual('{{true}}');

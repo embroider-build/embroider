@@ -1,9 +1,13 @@
 import { NodePath, Node } from '@babel/traverse';
+import { Statement, Expression } from '@babel/types';
 
 export default interface State {
-  removed: NodePath[];
-  pendingTasks: (() => void)[];
   generatedRequires: Set<Node>;
+  removed: Set<Node>;
+  calledIdentifiers: Set<Node>;
+  jobs: (() => void)[];
+  pendingEachMacros: { body: NodePath<Statement>; nameRefs: NodePath<Node>[]; arg: NodePath<Expression> }[];
+
   opts: {
     userConfigs: {
       [pkgRoot: string]: unknown;

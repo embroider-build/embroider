@@ -1,12 +1,12 @@
 import { MacrosConfig } from '../..';
 import { join } from 'path';
-import { allBabelVersions as allBabel, runDefault } from '@embroider/test-support';
+import { allBabelVersions as allBabel, runDefault, Transform } from '@embroider/test-support';
 import 'qunit';
 
 export { runDefault };
 
-type CreateTestsWithConfig = (transform: (code: string) => string, config: MacrosConfig) => void;
-type CreateTests = (transform: (code: string) => string) => void;
+type CreateTestsWithConfig = (transform: Transform, config: MacrosConfig) => void;
+type CreateTests = (transform: Transform) => void;
 
 export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
   let config: MacrosConfig;
@@ -21,7 +21,7 @@ export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfi
     },
 
     createTests(transform) {
-      config = new MacrosConfig();
+      config = MacrosConfig.for({});
       if (createTests.length === 1) {
         // The caller will not be using `config`, so we finalize it for them.
         config.finalize();

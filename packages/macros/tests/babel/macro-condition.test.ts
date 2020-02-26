@@ -111,6 +111,78 @@ describe('macroCondition', function() {
       expect(runDefault(code)).toBe(undefined);
     });
 
+    test('else if consequent', () => {
+      let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        if (macroCondition(false)) {
+          return 'alpha';
+        } else if (macroCondition(true)) {
+          return 'beta';
+        } else {
+          return 'gamma';
+        }
+      }
+      `);
+      expect(runDefault(code)).toBe('beta');
+      expect(code).not.toMatch(/alpha/);
+      expect(code).not.toMatch(/gamma/);
+    });
+
+    test('else if alternate', () => {
+      let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        if (macroCondition(false)) {
+          return 'alpha';
+        } else if (macroCondition(false)) {
+          return 'beta';
+        } else {
+          return 'gamma';
+        }
+      }
+      `);
+      expect(runDefault(code)).toBe('gamma');
+      expect(code).not.toMatch(/alpha/);
+      expect(code).not.toMatch(/beta/);
+    });
+
+    test('else if with indeterminate predecessor, alternate', () => {
+      let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        if (window.x) {
+          return 'alpha';
+        } else if (macroCondition(false)) {
+          return 'beta';
+        } else {
+          return 'gamma';
+        }
+      }
+      `);
+      expect(code).toMatch(/alpha/);
+      expect(code).not.toMatch(/beta/);
+      expect(code).toMatch(/gamma/);
+    });
+
+    test('else if with indeterminate predecessor, consequent', () => {
+      let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        if (window.x) {
+          return 'alpha';
+        } else if (macroCondition(true)) {
+          return 'beta';
+        } else {
+          return 'gamma';
+        }
+      }
+      `);
+      expect(code).toMatch(/alpha/);
+      expect(code).toMatch(/beta/);
+      expect(code).not.toMatch(/gamma/);
+    });
+
     test('non-static predicate refuses to build', () => {
       expect(() => {
         transform(`

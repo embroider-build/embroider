@@ -10,13 +10,20 @@ The [Embroider package spec](../../SPEC.md) proposes fixing this by making Ember
 
 This package works in both Embroider builds and normal ember-cli builds, so that addon authors can switch to this newer pattern without disruption.
 
-## The Javascript Macros
+## Examples
 
-TODO: update this to match latest version of RFC 507 as soon as that is implemented.
+```js
+import { dependencySatisfies, macroCondition, failBuild } from '@embroider/macros';
 
-## The Template Macros
+if (macroCondition(dependencySatisfies('ember-data', '^3.0.0'))) {
+} else
+```
 
-TODO: update this to match latest version of RFC 507 as soon as that is implemented.
+## The Macros
+
+### dependencySatisfies
+
+Tests whether a given dependency is present and satisfies the given semver range.
 
 ## Setting Configuration: from an Ember app
 
@@ -36,9 +43,9 @@ TODO: update this to match latest version of RFC 507 as soon as that is implemen
        setConfig: {
          'some-dependency': {
            // config for some-dependency
-         }
-       }
-     }
+         },
+       },
+     },
    });
    ```
 
@@ -64,17 +71,3 @@ TODO: update this to match latest version of RFC 507 as soon as that is implemen
      },
    };
    ```
-
-## Setting Configuration: Low Level API
-
-Configuration is stored per NPM package, based off their true on-disk locations. So it's possible to configure two independent copies of the same package when they're being consumed by different subsets of the total NPM dependency graph.
-
-Configuration gets set during the build process, from within Node.
-
-The entrypoints to the low level API are:
-
-- `import { MacrosConfig } from '@embroider/macros'`: constructs the shared global object that stores config. It has methods for setting configuration and for retrieving the necessary Babel and HTMLBars plugins that will implment the config. See `macros-config.ts` for details.
-
-```
-
-```

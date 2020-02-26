@@ -1,8 +1,7 @@
 import { allBabelVersions, runDefault } from './helpers';
-import { MacrosConfig } from '../..';
 
 describe(`getConfig`, function() {
-  allBabelVersions(function(transform: (code: string) => string, config: MacrosConfig) {
+  allBabelVersions(function(transform, config) {
     config.setOwnConfig(__filename, {
       beverage: 'coffee',
     });
@@ -81,5 +80,27 @@ describe(`getConfig`, function() {
       `);
       expect(code).toMatch(/doSomething\(8\)/);
     });
+
+    if (transform.babelMajorVersion === 7) {
+      test.skip(`collapses nullish coalescing, not null case`, () => {
+        let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getConfig('@babel/traverse')?.sizes?.[1]?.oz);
+      }
+      `);
+        expect(code).toMatch(/doSomething\(8\)/);
+      });
+
+      test.skip(`collapses nullish coalescing, nullish case`, () => {
+        let code = transform(`
+      import { getConfig } from '@embroider/macros';
+      export default function() {
+        return doSomething(getConfig('not-a-real-package')?.sizes?.[1]?.oz);
+      }
+      `);
+        expect(code).toMatch(/doSomething\(undefined\)/);
+      });
+    }
   });
 });

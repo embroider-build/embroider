@@ -1,23 +1,27 @@
 import { MacrosConfig } from '../..';
 import { join } from 'path';
-import { allBabelVersions as allBabel, runDefault } from '@embroider/test-support';
+import { allBabelVersions as allBabel, runDefault, Transform } from '@embroider/test-support';
 import 'qunit';
 
 export { runDefault };
 
-type CreateTestsWithConfig = (transform: (code: string) => string, config: MacrosConfig) => void;
-type CreateTests = (transform: (code: string) => string) => void;
+type CreateTestsWithConfig = (transform: Transform, config: MacrosConfig) => void;
+type CreateTests = (transform: Transform) => void;
 
 export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
   let config: MacrosConfig;
   allBabel({
     includePresetsTests: true,
-    babelConfig() {
-      return {
+    babelConfig(majorVersion: 6 | 7) {
+      let b = {
         filename: join(__dirname, 'sample.js'),
         presets: [],
         plugins: [config.babelPluginConfig()],
       };
+      if (majorVersion === 7) {
+        b.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
+      }
+      return b;
     },
 
     createTests(transform) {

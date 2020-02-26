@@ -12,16 +12,12 @@ export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfi
   let config: MacrosConfig;
   allBabel({
     includePresetsTests: true,
-    babelConfig(majorVersion: 6 | 7) {
-      let b = {
+    babelConfig() {
+      return {
         filename: join(__dirname, 'sample.js'),
         presets: [],
         plugins: [config.babelPluginConfig()],
       };
-      if (majorVersion === 7) {
-        b.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
-      }
-      return b;
     },
 
     createTests(transform) {

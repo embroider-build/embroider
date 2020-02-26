@@ -1,5 +1,12 @@
 import { NodePath } from '@babel/traverse';
-import { identifier, File, ExpressionStatement, CallExpression, Expression } from '@babel/types';
+import {
+  identifier,
+  File,
+  ExpressionStatement,
+  CallExpression,
+  Expression,
+  OptionalMemberExpression,
+} from '@babel/types';
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
@@ -79,6 +86,25 @@ function collapse(path: NodePath<Expression>, config: any) {
           config = config[property.node.name];
           path = parentPath;
           continue;
+        }
+      }
+    } else if (parentPath.node.type === 'OptionalMemberExpression') {
+      let castParentPath = parentPath as NodePath<OptionalMemberExpression>;
+      if (castParentPath.get('object').node === path.node) {
+        let property = castParentPath.get('property') as NodePath;
+        if (castParentPath.node.computed) {
+          let evalProperty = evaluate(property);
+          if (evalProperty.confident) {
+            config = config == null ? config : config[evalProperty.value];
+            path = castParentPath;
+            continue;
+          }
+        } else {
+          if (property.isIdentifier()) {
+            config = config == null ? config : config[property.node.name];
+            path = castParentPath;
+            continue;
+          }
         }
       }
     }

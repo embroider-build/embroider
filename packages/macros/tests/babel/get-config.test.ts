@@ -81,8 +81,9 @@ describe(`getConfig`, function() {
       expect(code).toMatch(/doSomething\(8\)/);
     });
 
+    // babel 6 doesn't parse nullish coalescing
     if (transform.babelMajorVersion === 7) {
-      test.skip(`collapses nullish coalescing, not null case`, () => {
+      test(`collapses nullish coalescing, not null case`, () => {
         let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {
@@ -92,7 +93,7 @@ describe(`getConfig`, function() {
         expect(code).toMatch(/doSomething\(8\)/);
       });
 
-      test.skip(`collapses nullish coalescing, nullish case`, () => {
+      test(`collapses nullish coalescing, nullish case`, () => {
         let code = transform(`
       import { getConfig } from '@embroider/macros';
       export default function() {

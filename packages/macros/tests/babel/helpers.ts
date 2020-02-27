@@ -8,6 +8,14 @@ export { runDefault };
 type CreateTestsWithConfig = (transform: Transform, config: MacrosConfig) => void;
 type CreateTests = (transform: Transform) => void;
 
+export function makeBabelConfig(macroConfig: MacrosConfig) {
+  return {
+    filename: join(__dirname, 'sample.js'),
+    presets: [],
+    plugins: [macroConfig.babelPluginConfig()],
+  };
+}
+
 export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
   let config: MacrosConfig;
   allBabel({

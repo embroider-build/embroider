@@ -1,19 +1,9 @@
 import { NodePath } from '@babel/traverse';
 import evaluate from './evaluate-json';
 import { parse } from '@babel/core';
-import {
-  CallExpression,
-  ForOfStatement,
-  identifier,
-  File,
-  ExpressionStatement,
-  Identifier,
-  callExpression,
-  Expression,
-} from '@babel/types';
+import { CallExpression, ForOfStatement, identifier, File, ExpressionStatement, Identifier } from '@babel/types';
 import error from './error';
-import cloneDeep from 'lodash/cloneDeep';
-import State from './state';
+import State, { cloneDeep } from './state';
 
 export type EachPath = NodePath<ForOfStatement> & {
   get(right: 'right'): NodePath<CallExpression>;
@@ -45,33 +35,26 @@ export function prepareEachPath(path: EachPath, state: State) {
   let varName = (left.get('declarations')[0].get('id') as NodePath<Identifier>).node.name;
   let nameRefs = body.scope.getBinding(varName)!.referencePaths;
 
-  state.pendingEachMacros.push({
-    body: path.get('body'),
-    nameRefs,
-    arg: args[0] as NodePath<Expression>,
-  });
-
-  path.replaceWith(callExpression(identifier('_eachMacroPlaceholder_'), [args[0].node]));
-}
-
-export function finishEachPath(path: NodePath<CallExpression>, state: State) {
-  let resumed = state.pendingEachMacros.pop()!;
-  let [arrayPath] = path.get('arguments');
+  let [arrayPath] = args;
   let array = evaluate(arrayPath);
   if (!array.confident) {
-    throw error(resumed.arg, `the argument to the each() macro must be statically known`);
+    throw error(args[0], `the argument to the each() macro must be statically known`);
   }
 
   if (!Array.isArray(array.value)) {
-    throw error(resumed.arg, `the argument to the each() macro must be an array`);
+    throw error(args[0], `the argument to the each() macro must be an array`);
+  }
+
+  if (state.opts.mode === 'run-time') {
+    return;
   }
 
   for (let element of array.value) {
     let literalElement = asLiteral(element);
-    for (let target of resumed.nameRefs) {
+    for (let target of nameRefs) {
       target.replaceWith(literalElement);
     }
-    path.insertBefore(cloneDeep(resumed.body.node));
+    path.insertBefore(cloneDeep(path.get('body').node, state));
   }
   path.remove();
 }

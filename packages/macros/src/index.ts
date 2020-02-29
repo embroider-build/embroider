@@ -1,10 +1,26 @@
 /* Macro Type Signatures */
 
-// These are the macros you can use from your code. They have these stub
-// implementations here so that their types work out correctly. Their real
-// implementations are done in babel of course.
+/*
+  CAUTION: this code is not necessarily what you are actually running. In
+  general, the macros are implemented at build time using babel, and so calls to
+  these functions get compiled away before they ever run. However, this code is
+  here because:
+
+  1. It provides types to typescript users of the macros.
+
+  2. Some macros have runtime implementations that are useful in development
+     mode, in addition to their build-time implementations in babel. This lets
+     us do things like produce a single build in development that works for both
+     fastboot and browser, using the macros to switch between modes. For
+     production, you would switch to the build-time macro implementation to get
+     two optimized builds instead.
+*/
 
 export function dependencySatisfies(packageName: string, semverRange: string): boolean {
+  // this has no runtime implementation, it's always evaluated at build time
+  // because only at build time can we see what set of dependencies are
+  // resolvable on disk, and there's really no way to change your set of
+  // dependencies on the fly anyway.
   throw new Oops(packageName, semverRange);
 }
 
@@ -13,7 +29,7 @@ export function macroCondition(predicate: boolean) {
 }
 
 export function each<T>(array: T[]): T[] {
-  throw new Oops(array);
+  return array;
 }
 
 // We would prefer to write:

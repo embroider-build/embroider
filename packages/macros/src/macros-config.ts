@@ -2,6 +2,7 @@ import { join } from 'path';
 import { PluginItem } from '@babel/core';
 import { PackageCache, getOrCreate } from '@embroider/core';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
+import State from './babel/state';
 
 const packageCache = new PackageCache();
 
@@ -50,6 +51,12 @@ export default class MacrosConfig {
     config.mergers = shared.mergers;
     localSharedState.set(key, config);
     return config;
+  }
+
+  private mode: 'compile-time' | 'run-time' = 'compile-time';
+
+  enableRuntimeMode() {
+    this.mode = 'run-time';
   }
 
   private constructor() {}
@@ -141,21 +148,23 @@ export default class MacrosConfig {
   // it's not appropriate inside embroider.
   babelPluginConfig(owningPackageRoot?: string): PluginItem {
     let self = this;
-    return [
-      join(__dirname, 'babel', 'macros-babel-plugin.js'),
-      {
-        // this is deliberately lazy because we want to allow everyone to finish
-        // setting config before we generate the userConfigs
-        get userConfigs() {
-          return self.userConfigs;
-        },
-        owningPackageRoot,
-
-        // This is used as a signature so we can detect ourself among the plugins
-        // emitted from v1 addons.
-        embroiderMacrosConfigMarker: true,
+    let opts: State['opts'] = {
+      // this is deliberately lazy because we want to allow everyone to finish
+      // setting config before we generate the userConfigs
+      get userConfigs() {
+        return self.userConfigs;
       },
-    ];
+      owningPackageRoot,
+
+      // This is used as a signature so we can detect ourself among the plugins
+      // emitted from v1 addons.
+      embroiderMacrosConfigMarker: true,
+
+      get mode() {
+        return self.mode;
+      },
+    };
+    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts];
   }
 
   static astPlugins(owningPackageRoot?: string): { plugins: Function[]; setConfig: (config: MacrosConfig) => void } {

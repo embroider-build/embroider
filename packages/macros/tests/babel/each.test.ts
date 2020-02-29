@@ -1,22 +1,23 @@
-import { allBabelVersions } from '@embroider/test-support';
-import { makeBabelConfig } from './helpers';
+import { allBabelVersions, runDefault } from '@embroider/test-support';
+import { makeBabelConfig, allModes } from './helpers';
 import { MacrosConfig } from '../..';
 
 describe('each', function() {
   let macrosConfig: MacrosConfig;
 
   allBabelVersions({
-    babelConfig() {
-      return makeBabelConfig(macrosConfig);
+    babelConfig(version: number) {
+      return makeBabelConfig(version, macrosConfig);
     },
-    createTests(transform: (code: string) => string) {
+    createTests: allModes(function(transform, { buildTimeTest, applyMode, runTimeTest }) {
       beforeEach(function() {
         macrosConfig = MacrosConfig.for({});
         macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
+        applyMode(macrosConfig);
         macrosConfig.finalize();
       });
 
-      test('plugins example unrolls correctly', () => {
+      buildTimeTest('plugins example unrolls correctly', () => {
         let code = transform(`
       import { each, getOwnConfig, importSync } from '@embroider/macros';
       let plugins = [];
@@ -27,6 +28,21 @@ describe('each', function() {
         expect(code).toMatch(/plugins\.push\(require\(["']beta['"]\)\)/);
         expect(code).toMatch(/plugins\.push\(require\(["']alpha['"]\)\)/);
         expect(code).not.toMatch(/for/);
+      });
+
+      runTimeTest('loop executes', () => {
+        let code = transform(`
+          import { each, getOwnConfig } from '@embroider/macros';
+          export default function() {
+            let plugins = [];
+            for (let plugin of each(getOwnConfig().plugins)) {
+              plugins.push('saw ' + plugin);
+            }
+            return plugins;
+          }
+        `);
+        expect(runDefault(code)).toEqual(['saw alpha', 'saw beta']);
+        expect(code).not.toMatch(/alpha/);
       });
 
       test('non-static array causes build error', () => {
@@ -73,6 +89,6 @@ describe('each', function() {
         `);
         }).toThrow(/the each\(\) macro can only be used within a for \.\.\. of statement/);
       });
-    },
+    }),
   });
 });

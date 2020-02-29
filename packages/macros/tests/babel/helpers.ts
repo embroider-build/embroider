@@ -6,13 +6,46 @@ import 'qunit';
 export { runDefault };
 
 type CreateTestsWithConfig = (transform: Transform, config: MacrosConfig) => void;
-type CreateTests = (transform: Transform) => void;
 
-export function makeBabelConfig(macroConfig: MacrosConfig) {
+export function makeBabelConfig(_babelVersion: number, macroConfig: MacrosConfig) {
   return {
     filename: join(__dirname, 'sample.js'),
     presets: [],
     plugins: [macroConfig.babelPluginConfig()],
+  };
+}
+
+type CreateTests = (transform: Transform) => void;
+interface ModeTestHooks {
+  runTimeTest: typeof test;
+  buildTimeTest: typeof test;
+  applyMode: (m: MacrosConfig) => void;
+}
+type CreateModeTests = (transform: Transform, hooks: ModeTestHooks) => void;
+
+function disabledTest(_name: string, _impl: jest.ProvidesCallback | undefined) {}
+disabledTest.only = disabledTest;
+disabledTest.skip = disabledTest;
+disabledTest.todo = disabledTest;
+disabledTest.concurrent = disabledTest;
+disabledTest.each = test.each;
+
+export function allModes(fn: CreateModeTests): CreateTests {
+  return function createTests(transform: Transform) {
+    for (let mode of ['build-time', 'run-time']) {
+      describe(mode, function() {
+        function applyMode(macrosConfig: MacrosConfig) {
+          if (mode === 'run-time') {
+            macrosConfig.enableRuntimeMode();
+          }
+        }
+        fn(transform, {
+          runTimeTest: mode === 'run-time' ? test : disabledTest,
+          buildTimeTest: mode === 'build-time' ? test : disabledTest,
+          applyMode,
+        });
+      });
+    }
   };
 }
 

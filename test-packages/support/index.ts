@@ -4,14 +4,41 @@ import 'jest';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
 import escapeRegExp from 'lodash/escapeRegExp';
+import { createContext, Script } from 'vm';
 
-export function runDefault(code: string): any {
-  let cjsCode = transform7(code, {
-    plugins: ['@babel/plugin-transform-modules-commonjs'],
+interface RunDefaultOptions {
+  dependencies?: { [name: string]: any };
+}
+
+export function toJS(code: string): string {
+  return transform7(code, {
+    plugins: ['@babel/plugin-transform-typescript'],
   })!.code!;
-  let exports = {};
-  eval(cjsCode);
-  return (exports as any).default();
+}
+
+export function toCJS(code: string): string {
+  return transform7(code, {
+    plugins: ['@babel/plugin-transform-modules-commonjs', '@babel/plugin-transform-typescript'],
+  })!.code!;
+}
+
+export function runDefault(code: string, opts: RunDefaultOptions = {}): any {
+  let cjsCode = toCJS(code);
+
+  function myRequire(name: string): any {
+    if (opts.dependencies && opts.dependencies[name]) {
+      return opts.dependencies[name];
+    }
+    return require(name);
+  }
+
+  let context = createContext({
+    exports: {},
+    require: myRequire,
+  });
+  let script = new Script(cjsCode);
+  script.runInContext(context);
+  return context.exports.default();
 }
 
 function presetsFor(major: 6 | 7) {
@@ -29,7 +56,7 @@ function presetsFor(major: 6 | 7) {
 }
 
 export interface Transform {
-  (code: string): string;
+  (code: string, opts?: { filename?: string }): string;
   babelMajorVersion: 6 | 7;
   usingPresets: boolean;
 }
@@ -44,7 +71,7 @@ export function allBabelVersions(params: {
 
   function versions(usePresets: boolean) {
     _describe('babel6', function() {
-      function transform(code: string) {
+      function transform(code: string, opts?: { filename?: string }) {
         let options6: Options6 = params.babelConfig(6);
         if (!options6.filename) {
           options6.filename = 'sample.js';
@@ -52,7 +79,9 @@ export function allBabelVersions(params: {
         if (usePresets) {
           options6.presets = presetsFor(6);
         }
-
+        if (opts && opts.filename) {
+          options6.filename = opts.filename;
+        }
         return transform6(code, options6).code!;
       }
       transform.babelMajorVersion = 6 as 6;
@@ -61,7 +90,7 @@ export function allBabelVersions(params: {
     });
 
     _describe('babel7', function() {
-      function transform(code: string) {
+      function transform(code: string, opts?: { filename?: string }) {
         let options7: Options7 = params.babelConfig(7);
         if (!options7.filename) {
           options7.filename = 'sample.js';
@@ -69,6 +98,10 @@ export function allBabelVersions(params: {
         if (usePresets) {
           options7.presets = presetsFor(7);
         }
+        if (opts && opts.filename) {
+          options7.filename = opts.filename;
+        }
+
         return transform7(code, options7)!.code!;
       }
       transform.babelMajorVersion = 7 as 7;

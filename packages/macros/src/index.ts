@@ -61,6 +61,33 @@ class Oops extends Error {
   }
 }
 
+// This is here as a compile target for `getConfig` and `getOwnConfig` when
+// we're in runtime mode. This is not public API to call from your own code.
+function _runtimeGetConfig<T>(packageRoot: string | undefined): T | undefined {
+  if (packageRoot) {
+    return runtimeConfig[packageRoot] as T;
+  }
+}
+function _runtimeSetConfig<T>(packageRoot: string | undefined, config: T): void {
+  if (packageRoot) {
+    runtimeConfig[packageRoot] = config;
+  }
+}
+getOwnConfig._runtimeGet = _runtimeGetConfig;
+getOwnConfig._runtimeSet = _runtimeSetConfig;
+getConfig._runtimeGet = _runtimeGetConfig;
+getConfig._runtimeSet = _runtimeSetConfig;
+
+const runtimeConfig: { [packageRoot: string]: unknown } = initializeRuntimeMacrosConfig();
+
+// this exists to be targeted by our babel plugin in runtime mode.
+function initializeRuntimeMacrosConfig() {
+  return {};
+}
+
+// TODO: beyond this point should only ever be used within the build system. We
+// need to guard it so it never ships in apps.
+
 // Entrypoint for managing the macro config within Node.
 export { default as MacrosConfig, Merger } from './macros-config';
 

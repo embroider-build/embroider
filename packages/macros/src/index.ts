@@ -24,8 +24,8 @@ export function dependencySatisfies(packageName: string, semverRange: string): b
   throw new Oops(packageName, semverRange);
 }
 
-export function macroCondition(predicate: boolean) {
-  throw new Oops(predicate);
+export function macroCondition(predicate: boolean): boolean {
+  return predicate;
 }
 
 export function each<T>(array: T[]): T[] {

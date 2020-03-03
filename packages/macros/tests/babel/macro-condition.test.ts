@@ -1,13 +1,24 @@
-import { allBabelVersions, runDefault } from './helpers';
+import { makeRunner, makeBabelConfig } from './helpers';
+import { allBabelVersions } from '@embroider/test-support';
 import { MacrosConfig } from '../..';
 
 describe('macroCondition', function() {
-  allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
-    config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
-    config.finalize();
+  let config: MacrosConfig;
 
-    test('if selects consequent, drops alternate', () => {
-      let code = transform(`
+  allBabelVersions({
+    babelConfig(version: number) {
+      return makeBabelConfig(version, config);
+    },
+    createTests(transform) {
+      let run = makeRunner(transform);
+      beforeEach(function() {
+        config = MacrosConfig.for({});
+        config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
+        config.finalize();
+      });
+
+      test('if selects consequent, drops alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(true)) {
@@ -17,30 +28,30 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/beta/);
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/if/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/beta/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/if/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('non-block if selects consequent', () => {
-      let code = transform(`
+      test('non-block if selects consequent', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(true))
           return 'alpha';
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/beta/);
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/if/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/beta/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/if/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('if selects alternate, drops consequent', () => {
-      let code = transform(`
+      test('if selects alternate, drops consequent', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(false)) {
@@ -50,43 +61,43 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe('beta');
-      expect(code).not.toMatch(/alpha/);
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/if/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/if/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('ternary selects consequent, drops alternate', () => {
-      let code = transform(`
+      test('ternary selects consequent, drops alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         return macroCondition(true) ? 'alpha' : 'beta';
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/beta/);
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/\?/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/beta/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/\?/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('ternary selects alternate, drops consequent', () => {
-      let code = transform(`
+      test('ternary selects alternate, drops consequent', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         return macroCondition(false) ? 'alpha' : 'beta';
       }
       `);
-      expect(runDefault(code)).toBe('beta');
-      expect(code).not.toMatch(/alpha/);
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/\?/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/\?/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('if selects consequent, no alternate', () => {
-      let code = transform(`
+      test('if selects consequent, no alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(true)) {
@@ -94,13 +105,13 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/macroCondition/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('if drops consequent, no alternate', () => {
-      let code = transform(`
+      test('if drops consequent, no alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(false)) {
@@ -108,11 +119,11 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe(undefined);
-    });
+        expect(run(code)).toBe(undefined);
+      });
 
-    test('else if consequent', () => {
-      let code = transform(`
+      test('else if consequent', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(false)) {
@@ -124,13 +135,13 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe('beta');
-      expect(code).not.toMatch(/alpha/);
-      expect(code).not.toMatch(/gamma/);
-    });
+        expect(run(code)).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/gamma/);
+      });
 
-    test('else if alternate', () => {
-      let code = transform(`
+      test('else if alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (macroCondition(false)) {
@@ -142,13 +153,13 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(runDefault(code)).toBe('gamma');
-      expect(code).not.toMatch(/alpha/);
-      expect(code).not.toMatch(/beta/);
-    });
+        expect(run(code)).toBe('gamma');
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/beta/);
+      });
 
-    test('else if with indeterminate predecessor, alternate', () => {
-      let code = transform(`
+      test('else if with indeterminate predecessor, alternate', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (window.x) {
@@ -160,13 +171,13 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(code).toMatch(/alpha/);
-      expect(code).not.toMatch(/beta/);
-      expect(code).toMatch(/gamma/);
-    });
+        expect(code).toMatch(/alpha/);
+        expect(code).not.toMatch(/beta/);
+        expect(code).toMatch(/gamma/);
+      });
 
-    test('else if with indeterminate predecessor, consequent', () => {
-      let code = transform(`
+      test('else if with indeterminate predecessor, consequent', () => {
+        let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
         if (window.x) {
@@ -178,58 +189,58 @@ describe('macroCondition', function() {
         }
       }
       `);
-      expect(code).toMatch(/alpha/);
-      expect(code).toMatch(/beta/);
-      expect(code).not.toMatch(/gamma/);
-    });
+        expect(code).toMatch(/alpha/);
+        expect(code).toMatch(/beta/);
+        expect(code).not.toMatch(/gamma/);
+      });
 
-    test('non-static predicate refuses to build', () => {
-      expect(() => {
-        transform(`
+      test('non-static predicate refuses to build', () => {
+        expect(() => {
+          transform(`
         import { macroCondition } from '@embroider/macros';
         import other from 'other';
         export default function() {
           return macroCondition(other) ? 1 : 2;
         }
         `);
-      }).toThrow(/the first argument to macroCondition must be statically known/);
-    });
+        }).toThrow(/the first argument to macroCondition must be statically known/);
+      });
 
-    test('wrong arity refuses to build', () => {
-      expect(() => {
-        transform(`
+      test('wrong arity refuses to build', () => {
+        expect(() => {
+          transform(`
         import { macroCondition } from '@embroider/macros';
         export default function() {
           return macroCondition() ? 1 : 2;
         }
         `);
-      }).toThrow(/macroCondition accepts exactly one argument, you passed 0/);
-    });
+        }).toThrow(/macroCondition accepts exactly one argument, you passed 0/);
+      });
 
-    test('usage inside expression refuses to build', () => {
-      expect(() => {
-        transform(`
+      test('usage inside expression refuses to build', () => {
+        expect(() => {
+          transform(`
         import { macroCondition } from '@embroider/macros';
         export default function() {
           return macroCondition(true);
         }
         `);
-      }).toThrow(/macroCondition can only be used as the predicate of an if statement or ternary expression/);
-    });
+        }).toThrow(/macroCondition can only be used as the predicate of an if statement or ternary expression/);
+      });
 
-    test('composes with other macros using ternary', () => {
-      let code = transform(`
+      test('composes with other macros using ternary', () => {
+        let code = transform(`
       import { macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
         return macroCondition(dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/beta/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/beta/);
+      });
 
-    test('composes with other macros using if', () => {
-      let code = transform(`
+      test('composes with other macros using if', () => {
+        let code = transform(`
       import { macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
         let qunit;
@@ -247,23 +258,23 @@ describe('macroCondition', function() {
         return { qunit, notARealPackage };
       }
       `);
-      expect(runDefault(code)).toEqual({ qunit: 'found', notARealPackage: 'not found' });
-      expect(code).not.toMatch(/beta/);
-    });
+        expect(run(code)).toEqual({ qunit: 'found', notARealPackage: 'not found' });
+        expect(code).not.toMatch(/beta/);
+      });
 
-    test('can evaluate boolean expressions', () => {
-      let code = transform(`
+      test('can evaluate boolean expressions', () => {
+        let code = transform(`
       import { macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
         return macroCondition((2 > 1) && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-      expect(runDefault(code)).toBe('alpha');
-      expect(code).not.toMatch(/beta/);
-    });
+        expect(run(code)).toBe('alpha');
+        expect(code).not.toMatch(/beta/);
+      });
 
-    test('can see booleans inside getConfig', () => {
-      let code = transform(`
+      test('can see booleans inside getConfig', () => {
+        let code = transform(`
       import { macroCondition, getConfig } from '@embroider/macros';
       export default function() {
         // this deliberately chains three kinds of property access syntax: by
@@ -271,8 +282,9 @@ describe('macroCondition', function() {
         return macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
       }
       `);
-      expect(runDefault(code)).toBe('beta');
-      expect(code).not.toMatch(/alpha/);
-    });
+        expect(run(code)).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+      });
+    },
   });
 });

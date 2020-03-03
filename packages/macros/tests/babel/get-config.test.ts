@@ -43,7 +43,6 @@ describe(`getConfig`, function() {
             return getOwnConfig();
           }
         `);
-        debugger;
         expect(run(code)).toEqual({ beverage: 'coffee' });
       });
 

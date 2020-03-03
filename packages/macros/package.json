@@ -19,7 +19,6 @@
     "src/**/*.js.map"
   ],
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.2.0",
     "@embroider/test-support": "0.13.0",
     "@types/babel__core": "^7.0.4",
     "@types/babel__generator": "^7.0.1",

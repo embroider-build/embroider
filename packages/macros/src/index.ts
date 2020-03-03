@@ -29,6 +29,9 @@ export function macroCondition(predicate: boolean) {
 }
 
 export function each<T>(array: T[]): T[] {
+  if (!Array.isArray(array)) {
+    throw new Error(`the argument to the each() macro must be an array`);
+  }
   return array;
 }
 

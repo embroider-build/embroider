@@ -41,7 +41,7 @@ export function prepareEachPath(path: EachPath, state: State) {
     throw error(args[0], `the argument to the each() macro must be statically known`);
   }
 
-  if (!Array.isArray(array.value)) {
+  if (state.opts.mode === 'compile-time' && !Array.isArray(array.value)) {
     throw error(args[0], `the argument to the each() macro must be an array`);
   }
 

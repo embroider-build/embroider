@@ -28,7 +28,12 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
     if (property.confident) {
       let object = evaluate(path.get('object'));
       if (object.confident) {
-        return { confident: true, value: object.value[property.value] };
+        return {
+          confident: true,
+          get value() {
+            return object.value[property.value];
+          },
+        };
       }
     }
   }
@@ -54,14 +59,21 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
       evaluate(assertNotArray(p.get('key'))),
       evaluate(assertNotArray(p.get('value'))),
     ]);
-    let result: any = {};
     for (let [k, v] of props) {
       if (!k.confident || !v.confident) {
         return { confident: false, value: undefined };
       }
-      result[k.value] = v.value;
     }
-    return { confident: true, value: result };
+    return {
+      confident: true,
+      get value() {
+        let result: any = {};
+        for (let [k, v] of props) {
+          result[k.value] = v.value;
+        }
+        return result;
+      },
+    };
   }
 
   if (path.isArrayExpression()) {
@@ -69,7 +81,41 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
       return evaluate(element as NodePath);
     });
     if (elements.every(element => element.confident)) {
-      return { confident: true, value: elements.map(element => element.value) };
+      return {
+        confident: true,
+        get value() {
+          return elements.map(element => element.value);
+        },
+      };
+    }
+  }
+
+  // This handles the presence of our runtime-mode getConfig functions. We want
+  // to designate them as { confident: true }, because it's important that we
+  // give feedback even in runtime-mode if the developer is trying to pass
+  // non-static arguments somewhere they're not supposed to. But we don't
+  // actually want to calculate their value here because that has been deferred
+  // to runtime. That's why we've made `value` lazy. It lets us check the
+  // confidence without actually forcing the value.
+  if (path.isCallExpression()) {
+    let callee = path.get('callee');
+    if (callee.isMemberExpression()) {
+      let prop = assertNotArray(callee.get('property'));
+      if (prop.isIdentifier() && prop.node.name === '_runtimeGet') {
+        let obj = callee.get('object');
+        if (
+          obj.isIdentifier() &&
+          (obj.referencesImport('@embroider/macros', 'getConfig') ||
+            obj.referencesImport('@embroider/macros', 'getOwnConfig'))
+        ) {
+          return {
+            confident: true,
+            get value() {
+              throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
+            },
+          };
+        }
+      }
     }
   }
 

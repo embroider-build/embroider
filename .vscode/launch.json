@@ -27,13 +27,7 @@
       "name": "Run jest tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": [
-        "--runInBand",
-        "--testPathPattern",
-        "tests/babel/get-config.test.js",
-        " --testNamePattern",
-        "babel7.*run-time"
-      ]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/each.test.js", " --testNamePattern", "babel7.*run-time"]
     },
     {
       "type": "node",

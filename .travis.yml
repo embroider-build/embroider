@@ -20,4 +20,4 @@ install:
 
 script:
   - yarn lint
-  - yarn test
+  - JOBS=1 yarn test

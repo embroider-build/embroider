@@ -1,18 +1,18 @@
-import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, ExpectFile, expectFilesAt } from '@embroider/test-support';
 
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
 import merge from 'lodash/merge';
 
-QUnit.module('template colocation', function(origHooks) {
-  let { hooks, test } = installFileAssertions(origHooks);
+describe('template colocation', function() {
+  jest.setTimeout(120000);
+  let expectFile: ExpectFile;
   let build: BuildResult;
   let app: Project;
 
-  throwOnWarnings(hooks);
+  throwOnWarnings();
 
-  hooks.before(async function(assert) {
+  beforeAll(async function() {
     app = Project.emberNew();
 
     merge(app.files, {
@@ -70,15 +70,15 @@ QUnit.module('template colocation', function(origHooks) {
       },
       embroiderOptions: options,
     });
-    assert.basePath = build.outputPath;
+    expectFile = expectFilesAt(build.outputPath);
   });
 
-  hooks.after(async function() {
+  afterAll(async function() {
     await build.cleanup();
   });
 
-  test(`app's colocated template is associated with JS`, function(assert) {
-    let assertFile = assert.file('components/has-colocated-template.js').transform(build.transpile);
+  test(`app's colocated template is associated with JS`, function() {
+    let assertFile = expectFile('components/has-colocated-template.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/has-colocated-template.hbs['"];/, 'imported template');
     assertFile.matches(
       /export default Ember._setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
@@ -86,8 +86,8 @@ QUnit.module('template colocation', function(origHooks) {
     );
   });
 
-  test(`app's template-only component JS is synthesized`, function(assert) {
-    let assertFile = assert.file('components/template-only-component.js').transform(build.transpile);
+  test(`app's template-only component JS is synthesized`, function() {
+    let assertFile = expectFile('components/template-only-component.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/template-only-component.hbs['"];/, 'imported template');
     assertFile.matches(
       /export default Ember._setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
@@ -95,8 +95,8 @@ QUnit.module('template colocation', function(origHooks) {
     );
   });
 
-  test(`app's colocated components are implicitly included correctly`, function(assert) {
-    let assertFile = assert.file('assets/my-app.js');
+  test(`app's colocated components are implicitly included correctly`, function() {
+    let assertFile = expectFile('assets/my-app.js');
     assertFile.matches(
       /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/has-colocated-template['"]\);\s*\}/
     );
@@ -105,8 +105,8 @@ QUnit.module('template colocation', function(origHooks) {
     );
   });
 
-  test(`addon's colocated template is associated with JS`, function(assert) {
-    let assertFile = assert.file('node_modules/my-addon/components/component-one.js').transform(build.transpile);
+  test(`addon's colocated template is associated with JS`, function() {
+    let assertFile = expectFile('node_modules/my-addon/components/component-one.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
     assertFile.matches(
       /export default Ember._setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
@@ -114,8 +114,8 @@ QUnit.module('template colocation', function(origHooks) {
     );
   });
 
-  test(`addon's template-only component JS is synthesized`, function(assert) {
-    let assertFile = assert.file('node_modules/my-addon/components/component-two.js').transform(build.transpile);
+  test(`addon's template-only component JS is synthesized`, function() {
+    let assertFile = expectFile('node_modules/my-addon/components/component-two.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
     assertFile.matches(
       /export default Ember._setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
@@ -123,8 +123,8 @@ QUnit.module('template colocation', function(origHooks) {
     );
   });
 
-  test(`addon's colocated components are correct in implicit-modules`, function(assert) {
-    let assertFile = assert.file('node_modules/my-addon/package.json').json();
+  test(`addon's colocated components are correct in implicit-modules`, function() {
+    let assertFile = expectFile('node_modules/my-addon/package.json').json();
     assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
     assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');
     assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-one.hbs');

@@ -1,29 +1,19 @@
-import 'qunit';
 import { pathExistsSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import get from 'lodash/get';
 import { Memoize } from 'typescript-memoize';
 
-export interface FileAssert extends Assert {
-  basePath: string;
-  file(path: string): BoundFileAssert;
-}
-
 type ContentsResult = { result: true; data: string } | { result: false; actual: any; expected: any; message: string };
 type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
 
-export class BoundFileAssert {
-  constructor(readonly path: string, private assert: FileAssert) {}
-
-  get basePath() {
-    return this.assert.basePath;
-  }
+export class BoundExpectFile {
+  constructor(readonly basePath: string, readonly path: string, readonly stack: Error) {}
 
   @Memoize()
   get fullPath() {
     let path = this.path;
-    if (this.assert.basePath) {
-      path = join(this.assert.basePath, path);
+    if (this.basePath) {
+      path = join(this.basePath, path);
     }
     return path;
   }
@@ -46,7 +36,7 @@ export class BoundFileAssert {
   }
 
   exists(message?: string) {
-    this.assert.pushResult({
+    assert(this.stack, this.path, {
       result: pathExistsSync(this.fullPath),
       actual: 'file missing',
       expected: 'file present',
@@ -55,7 +45,7 @@ export class BoundFileAssert {
   }
 
   doesNotExist(message?: string) {
-    this.assert.pushResult({
+    assert(this.stack, this.path, {
       result: !pathExistsSync(this.fullPath),
       actual: 'file present',
       expected: 'file missing',
@@ -65,7 +55,7 @@ export class BoundFileAssert {
 
   private doMatch(pattern: string | RegExp, message: string | undefined, invert: boolean) {
     if (!this.contents.result) {
-      this.assert.pushResult(this.contents);
+      assert(this.stack, this.path, this.contents);
     } else {
       let result;
       if (typeof pattern === 'string') {
@@ -76,7 +66,7 @@ export class BoundFileAssert {
       if (invert) {
         result = !result;
       }
-      this.assert.pushResult({
+      assert(this.stack, this.path, {
         result,
         actual: this.contents.data,
         expected: pattern.toString(),
@@ -91,9 +81,9 @@ export class BoundFileAssert {
   doesNotMatch(pattern: string | RegExp, message?: string): void {
     this.doMatch(pattern, message, true);
   }
-  json(propertyPath?: string): JSONAssert {
-    return new JSONAssert(
-      this.assert,
+  json(propertyPath?: string): JSONExpect {
+    return new JSONExpect(
+      this.stack,
       this.path,
       () => {
         if (!this.contents.result) {
@@ -118,18 +108,19 @@ export class BoundFileAssert {
       propertyPath
     );
   }
-  transform(fn: (contents: string, file: BoundFileAssert) => string) {
-    return new TransformedFileAssert(this.path, this.assert, fn);
+  transform(fn: (contents: string, file: BoundExpectFile) => string) {
+    return new TransformedFileExpect(this.basePath, this.path, this.stack, fn);
   }
 }
 
-export class TransformedFileAssert extends BoundFileAssert {
+export class TransformedFileExpect extends BoundExpectFile {
   constructor(
+    basePath: string,
     path: string,
-    assert: FileAssert,
-    private transformer: (contents: string, file: BoundFileAssert) => string
+    stack: Error,
+    private transformer: (contents: string, file: BoundExpectFile) => string
   ) {
-    super(path, assert);
+    super(basePath, path, stack);
   }
   @Memoize()
   protected get contents(): ContentsResult {
@@ -153,40 +144,40 @@ export class TransformedFileAssert extends BoundFileAssert {
   }
 }
 
-export class JSONAssert {
+export class JSONExpect {
   constructor(
-    private assert: Assert,
+    private stack: Error,
     private path: string,
     private readUpstream: () => JSONResult,
     private propertyPath?: string | string[]
   ) {}
 
   get(propertyPath: string | string[]) {
-    return new JSONAssert(this.assert, this.path, () => this.contents, propertyPath);
+    return new JSONExpect(this.stack, this.path, () => this.contents, propertyPath);
   }
 
   deepEquals(expected: any, message?: string): void {
     if (!this.contents.result) {
-      this.assert.pushResult(this.contents);
+      assert(this.stack, this.path, this.contents);
       return;
     }
-    this.assert.deepEqual(this.contents.data, expected, message);
+    expect(this.contents.data).toEqual(expected);
   }
 
   equals(expected: any, message?: string): void {
     if (!this.contents.result) {
-      this.assert.pushResult(this.contents);
+      assert(this.stack, this.path, this.contents);
       return;
     }
-    return this.assert.equal(this.contents.data, expected, message);
+    expect(this.contents.data).toBe(expected);
   }
 
   includes(expected: any, message?: string): void {
     if (!this.contents.result) {
-      this.assert.pushResult(this.contents);
+      assert(this.stack, this.path, this.contents);
       return;
     }
-    this.assert.pushResult({
+    assert(this.stack, this.path, {
       result: Array.isArray(this.contents.data) && this.contents.data.includes(expected),
       actual: this.contents.data,
       expected,
@@ -196,10 +187,10 @@ export class JSONAssert {
 
   doesNotInclude(notExpected: any, message?: string): void {
     if (!this.contents.result) {
-      this.assert.pushResult(this.contents);
+      assert(this.stack, this.path, this.contents);
       return;
     }
-    this.assert.pushResult({
+    assert(this.stack, this.path, {
       result: Array.isArray(this.contents.data) && !this.contents.data.includes(notExpected),
       actual: this.contents.data,
       expected: `not ${notExpected}`,
@@ -224,67 +215,66 @@ export class JSONAssert {
   }
 }
 
-export interface FileHooks {
-  before(fn: (assert: FileAssert) => void | Promise<void>): void;
-  beforeEach(fn: (assert: FileAssert) => void | Promise<void>): void;
-  afterEach(fn: (assert: FileAssert) => void | Promise<void>): void;
-  after(fn: (assert: FileAssert) => void | Promise<void>): void;
-}
-
-function fileTest(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
-  QUnit.test(name, function(plainAssert: Assert) {
-    return definition(plainAssert as FileAssert);
-  });
-}
-
-function fileOnly(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
-  QUnit.only(name, function(plainAssert: Assert) {
-    return definition(plainAssert as FileAssert);
-  });
-}
-
-interface FileTest {
-  (name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
-  skip(name: string, definition: (assert: FileAssert) => void | Promise<void>): void;
-}
-
-fileTest.skip = fileSkip;
-
-function fileSkip(name: string, definition: (assert: FileAssert) => void | Promise<void>) {
-  QUnit.skip(name, function(plainAssert: Assert) {
-    return definition(plainAssert as FileAssert);
-  });
-}
-
-function makeBoundFile(this: FileAssert, path: string) {
-  return new BoundFileAssert(path, this);
-}
-
-export function installFileAssertions(hooks: NestedHooks) {
-  let basePath: { current: string | undefined } = {
-    current: undefined,
-  };
-
-  function installAssertions(plainAssert: Assert) {
-    let assert = plainAssert as FileAssert;
-    if (!assert.hasOwnProperty('basePath')) {
-      Object.defineProperty(assert, 'basePath', {
-        get() {
-          return basePath.current;
-        },
-        set(value) {
-          basePath.current = value;
-        },
-      });
-    }
-    assert.file = makeBoundFile;
+function fileAssertionsMatcher(
+  this: jest.MatcherUtils,
+  path: string,
+  state: {
+    result: boolean;
+    actual: any;
+    expected: any;
+    message: string;
   }
+) {
+  let pass = this.isNot ? !state.result : state.result;
+  let message = () =>
+    `${path}\n` +
+    `Exected: ${this.utils.printExpected(state.expected)}\n` +
+    `Received: ${this.utils.printReceived(state.actual)}`;
+  return { actual: state.actual, pass, message };
+}
 
-  // we need "before" if we want to be available in the user's "before" hook.
-  // But we also need "beforeEach" because there's a new assert instance for
-  // each test.
-  hooks.before(installAssertions);
-  hooks.beforeEach(installAssertions);
+expect.extend({
+  _fileAssertionsMatcher: fileAssertionsMatcher,
+});
 
-  return { test: fileTest as FileTest, only: fileOnly, skip: fileSkip, hooks: hooks as FileHooks };
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      _fileAssertionsMatcher(state: { result: boolean; actual: any; expected: any; message: string }): void;
+    }
+  }
+}
+
+function assert(
+  err: Error,
+  path: string,
+  state: {
+    result: boolean;
+    actual: any;
+    expected: any;
+    message: string;
+  }
+): void {
+  try {
+    expect(path)._fileAssertionsMatcher(state);
+  } catch (upstreamErr) {
+    (err as any).matcherResult = upstreamErr.matcherResult;
+    err.message = upstreamErr.message;
+    throw err;
+  }
+}
+
+export function expectFilesAt(basePath: string): ExpectFile {
+  let func = (relativePath: string) => {
+    return expectFile(func, basePath, relativePath);
+  };
+  return func;
+}
+
+export type ExpectFile = (relativePath: string) => BoundExpectFile;
+
+function expectFile(callsite: any, basePath: string, relativePath: string): BoundExpectFile {
+  let err = new Error();
+  Error.captureStackTrace(err, callsite);
+  return new BoundExpectFile(basePath, relativePath, err);
 }

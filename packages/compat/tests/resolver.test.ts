@@ -1,4 +1,3 @@
-import 'qunit';
 import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
@@ -9,10 +8,9 @@ import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
 
-const { test } = QUnit;
 const compilerPath = emberTemplateCompilerPath();
 
-QUnit.module('compat-resolver', function(hooks) {
+describe('compat-resolver', function() {
   let appDir: string;
   let assertWarning: (pattern: RegExp, fn: () => void) => void;
 
@@ -41,15 +39,22 @@ QUnit.module('compat-resolver', function(hooks) {
     };
   }
 
-  throwOnWarnings(hooks);
+  throwOnWarnings();
 
-  hooks.beforeEach(function(assert) {
+  beforeEach(function() {
     assertWarning = function(pattern: RegExp, fn: () => void) {
-      assert.ok(expectWarning(pattern, fn), `expected to get a warning matching ${pattern}`);
+      try {
+        expect(expectWarning(pattern, fn)).toBeTruthy();
+      } catch (err) {
+        if (err.matcherResult) {
+          err.message = `expected to get a warning matching ${pattern}`;
+        }
+        throw err;
+      }
     };
   });
 
-  hooks.afterEach(function() {
+  afterEach(function() {
     if (appDir) {
       removeSync(appDir);
     }
@@ -62,16 +67,16 @@ QUnit.module('compat-resolver', function(hooks) {
     return target;
   }
 
-  test('emits no components when staticComponents is off', function(assert) {
+  test('emits no components when staticComponents is off', function() {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}} <HelloWorld />`), []);
+    expect(findDependencies('templates/application.hbs', `{{hello-world}} <HelloWorld />`)).toEqual([]);
   });
 
-  test('bare dasherized component, js only', function(assert) {
+  test('bare dasherized component, js only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -79,10 +84,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('nested bare dasherized component, js only', function(assert) {
+  test('nested bare dasherized component, js only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{something/hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{something/hello-world}}`)).toEqual([
       {
         path: '../components/something/hello-world.js',
         runtimeName: 'the-app/components/something/hello-world',
@@ -90,10 +95,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, js only', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, js only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world/component.js',
         runtimeName: 'the-app/components/hello-world/component',
@@ -101,10 +106,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, hbs only', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, hbs only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/template.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world/template.hbs',
         runtimeName: 'the-app/components/hello-world/template',
@@ -112,11 +117,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, js and hbs', function(assert) {
+  test('podded, dasherized component, with blank podModulePrefix, js and hbs', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
     givenFile('components/hello-world/template.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world/component.js',
         runtimeName: 'the-app/components/hello-world/component',
@@ -128,10 +133,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, js only', function(assert) {
+  test('podded, dasherized component, with non-blank podModulePrefix, js only', function() {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/component.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../pods/components/hello-world/component.js',
         runtimeName: 'the-app/pods/components/hello-world/component',
@@ -139,10 +144,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function(assert) {
+  test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function() {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/template.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../pods/components/hello-world/template.hbs',
         runtimeName: 'the-app/pods/components/hello-world/template',
@@ -150,11 +155,11 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function(assert) {
+  test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function() {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/component.js');
     givenFile('pods/components/hello-world/template.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../pods/components/hello-world/component.js',
         runtimeName: 'the-app/pods/components/hello-world/component',
@@ -166,22 +171,21 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('bare dasherized component, hbs only', function(assert) {
+  test('bare dasherized component, hbs only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('templates/components/hello-world.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: './components/hello-world.hbs',
         runtimeName: 'the-app/templates/components/hello-world',
       },
     ]);
   });
-
-  test('bare dasherized component, js and hbs', function(assert) {
+  test('bare dasherized component, js and hbs', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -192,11 +196,10 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ]);
   });
-
-  test('coalesces repeated components', function(assert) {
+  test('coalesces repeated components', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -204,15 +207,15 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('tolerates non path mustaches', function(assert) {
+  test('tolerates non path mustaches', function() {
     let findDependencies = configure({ staticComponents: false, staticHelpers: true });
-    assert.deepEqual(findDependencies('templates/application.hbs', `<Thing @foo={{1}} />`), []);
+    expect(findDependencies('templates/application.hbs', `<Thing @foo={{1}} />`)).toEqual([]);
   });
 
-  test('block form curly component', function(assert) {
+  test('block form curly component', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`), [
+    expect(findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -220,10 +223,10 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('block form angle component', function(assert) {
+  test('block form angle component', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`), [
+    expect(findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -231,58 +234,49 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('curly contextual component', function(assert) {
+  test('curly contextual component', function() {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/application.hbs',
         `{{#hello-world as |h|}} {{h.title flavor="chocolate"}} {{/hello-world}}`
-      ),
-      [
-        {
-          path: '../components/hello-world.js',
-          runtimeName: 'the-app/components/hello-world',
-        },
-      ]
-    );
+      )
+    ).toEqual([
+      {
+        path: '../components/hello-world.js',
+        runtimeName: 'the-app/components/hello-world',
+      },
+    ]);
   });
 
-  test('angle contextual component, upper', function(assert) {
+  test('angle contextual component, upper', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(
-      findDependencies(
-        'templates/application.hbs',
-        `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`
-      ),
-      [
-        {
-          path: '../components/hello-world.js',
-          runtimeName: 'the-app/components/hello-world',
-        },
-      ]
-    );
+    expect(
+      findDependencies('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`)
+    ).toEqual([
+      {
+        path: '../components/hello-world.js',
+        runtimeName: 'the-app/components/hello-world',
+      },
+    ]);
   });
 
-  test('angle contextual component, lower', function(assert) {
+  test('angle contextual component, lower', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assert.deepEqual(
-      findDependencies(
-        'templates/application.hbs',
-        `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`
-      ),
-      [
-        {
-          path: '../components/hello-world.js',
-          runtimeName: 'the-app/components/hello-world',
-        },
-      ]
-    );
+    expect(
+      findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`)
+    ).toEqual([
+      {
+        path: '../components/hello-world.js',
+        runtimeName: 'the-app/components/hello-world',
+      },
+    ]);
   });
 
-  test('optional component missing in mustache', function(assert) {
+  test('optional component missing in mustache', function() {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -295,10 +289,9 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       ],
     });
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{this-one x=true}}`), []);
+    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
-
-  test('optional component missing in mustache block', function(assert) {
+  test('optional component missing in mustache block', function() {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -311,10 +304,9 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       ],
     });
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`), []);
+    expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
   });
-
-  test('optional component missing in mustache', function(assert) {
+  test('optional component missing in mustache', function() {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -327,10 +319,9 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       ],
     });
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{this-one x=true}}`), []);
+    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
-
-  test('optional component declared as element missing in mustache block', function(assert) {
+  test('optional component declared as element missing in mustache block', function() {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -343,10 +334,9 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       ],
     });
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`), []);
+    expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
   });
-
-  test('optional component missing in element', function(assert) {
+  test('optional component missing in element', function() {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -359,48 +349,53 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       ],
     });
-    assert.deepEqual(findDependencies('templates/application.hbs', `<ThisOne/>`), []);
+    expect(findDependencies('templates/application.hbs', `<ThisOne/>`)).toEqual([]);
   });
-
-  test('mustache missing, no args', function(assert) {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{hello-world}}`), []);
+  test('mustache missing, no args', function() {
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+    });
+    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([]);
   });
-
-  test('mustache missing, with args', function(assert) {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    assert.throws(() => {
+  test('mustache missing, with args', function() {
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+    });
+    expect(() => {
       findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
-    }, new RegExp(`Missing component or helper hello-world in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing component or helper hello-world in ${appDir}/templates/application.hbs`));
   });
-
-  test('string literal passed to component helper in content position', function(assert) {
-    let findDependencies = configure({ staticComponents: true });
+  test('string literal passed to component helper in content position', function() {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{component "hello-world"}}`), [
+    expect(findDependencies('templates/application.hbs', `{{component "hello-world"}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
   });
-
-  test('string literal passed to component helper with block', function(assert) {
-    let findDependencies = configure({ staticComponents: true });
+  test('string literal passed to component helper with block', function() {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
     givenFile('components/hello-world.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{#component "hello-world"}} {{/component}}`), [
+    expect(findDependencies('templates/application.hbs', `{{#component "hello-world"}} {{/component}}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
   });
-
-  test('string literal passed to component helper in helper position', function(assert) {
+  test('string literal passed to component helper in helper position', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('components/my-thing.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`), [
+    expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -411,24 +406,18 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ]);
   });
-
-  test('string literal passed to component helper fails to resolve', function(assert) {
+  test('string literal passed to component helper fails to resolve', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
-    assert.throws(() => {
+    expect(() => {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
-    }, new RegExp(`Missing component hello-world in templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing component hello-world in templates/application.hbs`));
   });
-
-  test('string literal passed to component helper fails to resolve when staticComponents is off', function(assert) {
+  test('string literal passed to component helper fails to resolve when staticComponents is off', function() {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`),
-      []
-    );
+    expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
   });
-
   test('dynamic component helper warning in content position', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
@@ -436,12 +425,11 @@ QUnit.module('compat-resolver', function(hooks) {
       findDependencies('templates/application.hbs', `{{component this.which}}`);
     });
   });
-
-  test('angle component, js and hbs', function(assert) {
+  test('angle component, js and hbs', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `<HelloWorld />`), [
+    expect(findDependencies('templates/application.hbs', `<HelloWorld />`)).toEqual([
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
@@ -452,12 +440,11 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ]);
   });
-
-  test('nested angle component, js and hbs', function(assert) {
+  test('nested angle component, js and hbs', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
     givenFile('templates/components/something/hello-world.hbs');
-    assert.deepEqual(findDependencies('templates/application.hbs', `<Something::HelloWorld />`), [
+    expect(findDependencies('templates/application.hbs', `<Something::HelloWorld />`)).toEqual([
       {
         path: '../components/something/hello-world.js',
         runtimeName: 'the-app/components/something/hello-world',
@@ -468,19 +455,16 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ]);
   });
-
-  test('angle component missing', function(assert) {
+  test('angle component missing', function() {
     let findDependencies = configure({ staticComponents: true });
-    assert.throws(() => {
+    expect(() => {
       findDependencies('templates/application.hbs', `<HelloWorld />`);
-    }, new RegExp(`Missing component HelloWorld in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing component HelloWorld in ${appDir}/templates/application.hbs`));
   });
-
-  test('helper in subexpression', function(assert) {
+  test('helper in subexpression', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`),
+    expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
       [
         {
           runtimeName: 'the-app/helpers/array',
@@ -489,121 +473,104 @@ QUnit.module('compat-resolver', function(hooks) {
       ]
     );
   });
-
-  test('missing subexpression with args', function(assert) {
+  test('missing subexpression with args', function() {
     let findDependencies = configure({ staticHelpers: true });
-    assert.throws(() => {
+    expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
-    }, new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
-
-  test('missing subexpression no args', function(assert) {
+  test('missing subexpression no args', function() {
     let findDependencies = configure({ staticHelpers: true });
-    assert.throws(() => {
+    expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
-    }, new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
-
-  test('emits no helpers when staticHelpers is off', function(assert) {
+  test('emits no helpers when staticHelpers is off', function() {
     let findDependencies = configure({ staticHelpers: false });
     givenFile('helpers/array.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`),
+    expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
       []
     );
   });
-
-  test('helper as component argument', function(assert) {
+  test('helper as component argument', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`), [
+    expect(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/array',
         path: '../helpers/array.js',
       },
     ]);
   });
-
-  test('helper as html attribute', function(assert) {
+  test('helper as html attribute', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`), [
+    expect(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
         path: '../helpers/capitalize.js',
       },
     ]);
   });
-
-  test('helper in bare mustache, no args', function(assert) {
+  test('helper in bare mustache, no args', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{capitalize}}`), [
+    expect(findDependencies('templates/application.hbs', `{{capitalize}}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
         path: '../helpers/capitalize.js',
       },
     ]);
   });
-
-  test('helper in bare mustache, with args', function(assert) {
+  test('helper in bare mustache, with args', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{capitalize name}}`), [
+    expect(findDependencies('templates/application.hbs', `{{capitalize name}}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
         path: '../helpers/capitalize.js',
       },
     ]);
   });
-
-  test('local binding takes precedence over helper in bare mustache', function(assert) {
+  test('local binding takes precedence over helper in bare mustache', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`),
-      []
-    );
+    expect(
+      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`)
+    ).toEqual([]);
   });
-
-  test('local binding takes precedence over component in element position', function(assert) {
+  test('local binding takes precedence over component in element position', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('components/the-thing.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`),
+    expect(
+      findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
+    ).toEqual([]);
+  });
+  test('angle components can establish local bindings', function() {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/capitalize.js');
+    expect(findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqual(
       []
     );
   });
-
-  test('angle components can establish local bindings', function(assert) {
+  test('local binding only applies within block', function() {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`),
-      []
-    );
-  });
-
-  test('local binding only applies within block', function(assert) {
-    let findDependencies = configure({ staticHelpers: true });
-    givenFile('helpers/capitalize.js');
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/application.hbs',
         `{{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}`
-      ),
-      [
-        {
-          runtimeName: 'the-app/helpers/capitalize',
-          path: '../helpers/capitalize.js',
-        },
-      ]
-    );
+      )
+    ).toEqual([
+      {
+        runtimeName: 'the-app/helpers/capitalize',
+        path: '../helpers/capitalize.js',
+      },
+    ]);
   });
-
-  test('ignores builtins', function(assert) {
+  test('ignores builtins', function() {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/application.hbs',
         `
@@ -613,40 +580,34 @@ QUnit.module('compat-resolver', function(hooks) {
         {{/with}}
         <LinkTo @route="index"/>
       `
-      ),
-      []
-    );
+      )
+    ).toEqual([]);
   });
-
-  test('ignores dot-rule curly component invocation, inline', function(assert) {
+  test('ignores dot-rule curly component invocation, inline', function() {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/application.hbs',
         `
         {{thing.body x=1}}
         `
-      ),
-      []
-    );
+      )
+    ).toEqual([]);
   });
-
-  test('ignores dot-rule curly component invocation, block', function(assert) {
+  test('ignores dot-rule curly component invocation, block', function() {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/application.hbs',
         `
         {{#thing.body}}
         {{/thing.body}}
         `
-      ),
-      []
-    );
+      )
+    ).toEqual([]);
   });
 
-  test('respects yieldsSafeComponents rule, position 0', function(assert) {
-    assert.expect(0);
+  test('respects yieldsSafeComponents rule, position 0', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -669,8 +630,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  test('respects yieldsSafeComponents rule on element, position 0', function(assert) {
-    assert.expect(0);
+  test('respects yieldsSafeComponents rule on element, position 0', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -704,7 +664,10 @@ QUnit.module('compat-resolver', function(hooks) {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let findDependencies = configure({
+      staticComponents: true,
+      packageRules,
+    });
     givenFile('templates/components/form-builder.hbs');
     findDependencies(
       'templates/application.hbs',
@@ -732,12 +695,19 @@ QUnit.module('compat-resolver', function(hooks) {
         package: 'the-test-package',
         components: {
           '<FormBuilder />': {
-            yieldsSafeComponents: [{ field: true }],
+            yieldsSafeComponents: [
+              {
+                field: true,
+              },
+            ],
           },
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let findDependencies = configure({
+      staticComponents: true,
+      packageRules,
+    });
     givenFile('templates/components/form-builder.hbs');
     findDependencies(
       'templates/application.hbs',
@@ -765,7 +735,12 @@ QUnit.module('compat-resolver', function(hooks) {
         package: 'the-test-package',
         components: {
           '<FormBuilder />': {
-            yieldsSafeComponents: [false, { field: true }],
+            yieldsSafeComponents: [
+              false,
+              {
+                field: true,
+              },
+            ],
           },
         },
       },
@@ -792,7 +767,7 @@ QUnit.module('compat-resolver', function(hooks) {
     });
   });
 
-  test('acceptsComponentArguments on mustache with valid literal', function(assert) {
+  test('acceptsComponentArguments on mustache with valid literal', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -806,8 +781,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`), [
+    expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
         path: './components/fancy-title.hbs',
@@ -819,7 +793,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('acceptsComponentArguments on mustache block with valid literal', function(assert) {
+  test('acceptsComponentArguments on mustache block with valid literal', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -833,23 +807,21 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`),
-      [
-        {
-          runtimeName: 'the-app/templates/components/fancy-title',
-          path: './components/fancy-title.hbs',
-        },
-        {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-      ]
-    );
+    expect(
+      findDependencies('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`)
+    ).toEqual([
+      {
+        runtimeName: 'the-app/templates/components/fancy-title',
+        path: './components/fancy-title.hbs',
+      },
+      {
+        runtimeName: 'the-app/templates/components/form-builder',
+        path: './components/form-builder.hbs',
+      },
+    ]);
   });
 
-  test('acceptsComponentArguments argument name may include optional @', function(assert) {
+  test('acceptsComponentArguments argument name may include optional @', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -863,8 +835,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`), [
+    expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
         path: './components/fancy-title.hbs',
@@ -876,7 +847,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('acceptsComponentArguments on mustache with component subexpression', function(assert) {
+  test('acceptsComponentArguments on mustache with component subexpression', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -890,23 +861,19 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`),
-      [
-        {
-          runtimeName: 'the-app/templates/components/fancy-title',
-          path: './components/fancy-title.hbs',
-        },
-        {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-      ]
-    );
+    expect(findDependencies('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`)).toEqual([
+      {
+        runtimeName: 'the-app/templates/components/fancy-title',
+        path: './components/fancy-title.hbs',
+      },
+      {
+        runtimeName: 'the-app/templates/components/form-builder',
+        path: './components/form-builder.hbs',
+      },
+    ]);
   });
 
-  test('acceptsComponentArguments on element with component helper mustache', function(assert) {
+  test('acceptsComponentArguments on element with component helper mustache', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -920,9 +887,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(
-      findDependencies('templates/application.hbs', `<FormBuilder @title={{component "fancy-title"}} />`),
+    expect(findDependencies('templates/application.hbs', `<FormBuilder @title={{component "fancy-title"}} />`)).toEqual(
       [
         {
           runtimeName: 'the-app/templates/components/fancy-title',
@@ -936,7 +901,7 @@ QUnit.module('compat-resolver', function(hooks) {
     );
   });
 
-  test(`element block params are not in scope for element's own attributes`, function(assert) {
+  test(`element block params are not in scope for element's own attributes`, function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -950,21 +915,19 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-
     assertWarning(/ignoring dynamic component title/, () => {
-      assert.deepEqual(
-        findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`),
-        [
-          {
-            runtimeName: 'the-app/templates/components/form-builder',
-            path: './components/form-builder.hbs',
-          },
-        ]
-      );
+      expect(
+        findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
+      ).toEqual([
+        {
+          runtimeName: 'the-app/templates/components/form-builder',
+          path: './components/form-builder.hbs',
+        },
+      ]);
     });
   });
 
-  test('acceptsComponentArguments on mustache with invalid literal', function(assert) {
+  test('acceptsComponentArguments on mustache with invalid literal', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -977,13 +940,12 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-
-    assert.throws(() => {
+    expect(() => {
       findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
-    }, /Missing component fancy-title in templates\/application\.hbs/);
+    }).toThrow(/Missing component fancy-title in templates\/application\.hbs/);
   });
 
-  test('acceptsComponentArguments on element with valid literal', function(assert) {
+  test('acceptsComponentArguments on element with valid literal', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -997,8 +959,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(findDependencies('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`), [
+    expect(findDependencies('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
         path: './components/fancy-title.hbs',
@@ -1010,7 +971,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('acceptsComponentArguments on element with valid attribute', function(assert) {
+  test('acceptsComponentArguments on element with valid attribute', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1024,8 +985,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-
-    assert.deepEqual(findDependencies('templates/application.hbs', `<FormBuilder @title="fancy-title" />`), [
+    expect(findDependencies('templates/application.hbs', `<FormBuilder @title="fancy-title" />`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
         path: './components/fancy-title.hbs',
@@ -1037,7 +997,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('acceptsComponentArguments interior usage of path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of path generates no warning', function() {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1049,27 +1009,30 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
-
-    assert.deepEqual(findDependencies('templates/components/form-builder.hbs', `{{component title}}`), []);
+    expect(findDependencies('templates/components/form-builder.hbs', `{{component title}}`)).toEqual([]);
   });
 
-  test('acceptsComponentArguments interior usage of this.path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of this.path generates no warning', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
         components: {
           '<FormBuilder />': {
-            acceptsComponentArguments: [{ name: 'title', becomes: 'this.title' }],
+            acceptsComponentArguments: [
+              {
+                name: 'title',
+                becomes: 'this.title',
+              },
+            ],
           },
         },
       },
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
-
-    assert.deepEqual(findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`), []);
+    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqual([]);
   });
 
-  test('acceptsComponentArguments interior usage of @path generates no warning', function(assert) {
+  test('acceptsComponentArguments interior usage of @path generates no warning', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1081,11 +1044,10 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
-
-    assert.deepEqual(findDependencies('templates/components/form-builder.hbs', `{{component @title}}`), []);
+    expect(findDependencies('templates/components/form-builder.hbs', `{{component @title}}`)).toEqual([]);
   });
 
-  test('safeToIgnore a missing component', function(assert) {
+  test('safeToIgnore a missing component', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1097,11 +1059,10 @@ QUnit.module('compat-resolver', function(hooks) {
       },
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
-
-    assert.deepEqual(findDependencies('templates/components/x.hbs', `<FormBuilder />`), []);
+    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([]);
   });
 
-  test('safeToIgnore a present component', function(assert) {
+  test('safeToIgnore a present component', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1114,7 +1075,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    assert.deepEqual(findDependencies('templates/components/x.hbs', `<FormBuilder />`), [
+    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([
       {
         path: './form-builder.hbs',
         runtimeName: 'the-app/templates/components/form-builder',
@@ -1122,7 +1083,7 @@ QUnit.module('compat-resolver', function(hooks) {
     ]);
   });
 
-  test('respects yieldsArguments rule for positional block param, angle', function(assert) {
+  test('respects yieldsArguments rule for positional block param, angle', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1136,8 +1097,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
-
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/components/x.hbs',
         `
@@ -1145,21 +1105,20 @@ QUnit.module('compat-resolver', function(hooks) {
           {{component bar}}
         </FormBuilder>
         `
-      ),
-      [
-        {
-          path: './fancy-navbar.hbs',
-          runtimeName: 'the-app/templates/components/fancy-navbar',
-        },
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]
-    );
+      )
+    ).toEqual([
+      {
+        path: './fancy-navbar.hbs',
+        runtimeName: 'the-app/templates/components/fancy-navbar',
+      },
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
   });
 
-  test('respects yieldsArguments rule for positional block param, curly', function(assert) {
+  test('respects yieldsArguments rule for positional block param, curly', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1173,8 +1132,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
-
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/components/x.hbs',
         `
@@ -1182,27 +1140,30 @@ QUnit.module('compat-resolver', function(hooks) {
           {{component bar}}
         {{/form-builder}}
         `
-      ),
-      [
-        {
-          path: './fancy-navbar.hbs',
-          runtimeName: 'the-app/templates/components/fancy-navbar',
-        },
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]
-    );
+      )
+    ).toEqual([
+      {
+        path: './fancy-navbar.hbs',
+        runtimeName: 'the-app/templates/components/fancy-navbar',
+      },
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
   });
 
-  test('respects yieldsArguments rule for hash block param', function(assert) {
+  test('respects yieldsArguments rule for hash block param', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
         components: {
           '<FormBuilder />': {
-            yieldsArguments: [{ bar: 'navbar' }],
+            yieldsArguments: [
+              {
+                bar: 'navbar',
+              },
+            ],
           },
         },
       },
@@ -1210,8 +1171,7 @@ QUnit.module('compat-resolver', function(hooks) {
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
-
-    assert.deepEqual(
+    expect(
       findDependencies(
         'templates/components/x.hbs',
         `
@@ -1219,21 +1179,20 @@ QUnit.module('compat-resolver', function(hooks) {
           {{component f.bar}}
         </FormBuilder>
         `
-      ),
-      [
-        {
-          path: './fancy-navbar.hbs',
-          runtimeName: 'the-app/templates/components/fancy-navbar',
-        },
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]
-    );
+      )
+    ).toEqual([
+      {
+        path: './fancy-navbar.hbs',
+        runtimeName: 'the-app/templates/components/fancy-navbar',
+      },
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, angle', function(assert) {
+  test('yieldsArguments causes warning to propagate up lexically, angle', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1246,9 +1205,8 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-
     assertWarning(/ignoring dynamic component this\.unknown/, () => {
-      assert.deepEqual(
+      expect(
         findDependencies(
           'templates/components/x.hbs',
           `
@@ -1256,18 +1214,17 @@ QUnit.module('compat-resolver', function(hooks) {
             {{component bar}}
           </FormBuilder>
           `
-        ),
-        [
-          {
-            path: './form-builder.hbs',
-            runtimeName: 'the-app/templates/components/form-builder',
-          },
-        ]
-      );
+        )
+      ).toEqual([
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+      ]);
     });
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, curl', function(assert) {
+  test('yieldsArguments causes warning to propagate up lexically, curl', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1280,9 +1237,8 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-
     assertWarning(/ignoring dynamic component this\.unknown/, () => {
-      assert.deepEqual(
+      expect(
         findDependencies(
           'templates/components/x.hbs',
           `
@@ -1290,18 +1246,17 @@ QUnit.module('compat-resolver', function(hooks) {
             {{component bar}}
           {{/form-builder}}
           `
-        ),
-        [
-          {
-            path: './form-builder.hbs',
-            runtimeName: 'the-app/templates/components/form-builder',
-          },
-        ]
-      );
+        )
+      ).toEqual([
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+      ]);
     });
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function(assert) {
+  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function() {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1314,9 +1269,8 @@ QUnit.module('compat-resolver', function(hooks) {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-
     assertWarning(/ignoring dynamic component this\.unknown/, () => {
-      assert.deepEqual(
+      expect(
         findDependencies(
           'templates/components/x.hbs',
           `
@@ -1326,14 +1280,13 @@ QUnit.module('compat-resolver', function(hooks) {
             {{/form-builder}}
           {{/form-builder}}
           `
-        ),
-        [
-          {
-            path: './form-builder.hbs',
-            runtimeName: 'the-app/templates/components/form-builder',
-          },
-        ]
-      );
+        )
+      ).toEqual([
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+      ]);
     });
   });
 });

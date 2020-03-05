@@ -8,6 +8,8 @@ import { AppMeta } from '../src';
 tmp.setGracefulCleanup();
 
 describe('template-colocation-plugin', () => {
+  jest.setTimeout(120000);
+
   let filename: string;
   allBabelVersions({
     babelConfig() {

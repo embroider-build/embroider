@@ -8,26 +8,15 @@
       "type": "node",
       "request": "launch",
       "name": "Run tests",
-      "program": "${workspaceFolder}/node_modules/.bin/qunit",
-      "cwd": "${workspaceFolder}",
-      "args": [
-        "packages/compat/tests",
-        "packages/core/tests",
-        "packages/macros/tests",
-        "--require",
-        "./test-packages/support/qunit-jest-shim.js",
-        "--filter",
-        "stage2 build"
-      ],
-      "env": { "JOBS": "1" }
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "cwd": "${workspaceFolder}/packages/compat",
+      "args": ["--runInBand", "--testPathPattern", "tests/addon-styles.test.js"]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Run jest tests",
-      "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/each.test.js", " --testNamePattern", "babel7.*run-time"]
+      "name": "Run codemod",
+      "program": "${workspaceFolder}/test-packages/support/codemod.js"
     },
     {
       "type": "node",

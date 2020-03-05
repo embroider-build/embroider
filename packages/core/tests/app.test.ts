@@ -1,4 +1,3 @@
-import 'qunit';
 import { excludeDotFiles } from '../src/app';
 
 describe('dot files can be excluded', () => {

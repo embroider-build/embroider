@@ -1,7 +1,6 @@
 import { MacrosConfig } from '../..';
 import { join } from 'path';
 import { allBabelVersions as allBabel, runDefault, Transform, toCJS, toJS } from '@embroider/test-support';
-import 'qunit';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
 

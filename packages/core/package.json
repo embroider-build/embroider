@@ -8,7 +8,7 @@
   "private": false,
   "scripts": {
     "prepare": "tsc",
-    "test": "qunit tests"
+    "test": "jest"
   },
   "files": [
     "src/**/*.js",
@@ -25,13 +25,11 @@
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.116",
     "@types/node": "^10.5.2",
-    "@types/qunit": "^2.5.3",
     "@types/resolve": "^0.0.8",
     "@types/semver": "^5.5.0",
     "@types/strip-bom": "^3.0.0",
     "@types/tmp": "^0.1.0",
     "fixturify": "^1.2.0",
-    "qunit": "^2.8.0",
     "tmp": "^0.1.0",
     "typescript": "~3.4.0"
   },

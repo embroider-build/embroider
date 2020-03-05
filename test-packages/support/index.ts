@@ -1,5 +1,4 @@
 import { join } from 'path';
-import 'qunit';
 import 'jest';
 import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
@@ -67,10 +66,8 @@ export function allBabelVersions(params: {
   createTests(transform: Transform): void;
   includePresetsTests?: boolean;
 }) {
-  let _describe = typeof QUnit !== 'undefined' ? (QUnit.module as any) : describe;
-
   function versions(usePresets: boolean) {
-    _describe('babel6', function() {
+    describe('babel6', function() {
       function transform(code: string, opts?: { filename?: string }) {
         let options6: Options6 = params.babelConfig(6);
         if (!options6.filename) {
@@ -89,7 +86,7 @@ export function allBabelVersions(params: {
       params.createTests(transform);
     });
 
-    _describe('babel7', function() {
+    describe('babel7', function() {
       function transform(code: string, opts?: { filename?: string }) {
         let options7: Options7 = params.babelConfig(7);
         if (!options7.filename) {
@@ -111,10 +108,10 @@ export function allBabelVersions(params: {
   }
 
   if (params.includePresetsTests) {
-    _describe('with presets', function() {
+    describe('with presets', function() {
       versions(true);
     });
-    _describe('without presets', function() {
+    describe('without presets', function() {
       versions(false);
     });
   } else {
@@ -136,4 +133,4 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
 
 export { Project } from './project';
 export { default as BuildResult } from './build';
-export { installFileAssertions } from './file-assertions';
+export { expectFilesAt, ExpectFile } from './file-assertions';

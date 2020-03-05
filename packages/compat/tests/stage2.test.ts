@@ -375,9 +375,9 @@ describe('stage2 build', function() {
 
     test('addons can merge additional content into package.json', function() {
       let file = expectFile('./package.json').json();
-      file.get('ember-addon.version').equals(2, 'our own content is present');
-      file.get('customStuff').deepEquals({ fromMyAddon: true }, 'the addons content is present');
-      file.get('name').equals('my-app', 'app takes precedence over addon');
+      file.get('ember-addon.version').equals(2); // our own content is present
+      file.get('customStuff').deepEquals({ fromMyAddon: true }); // the addons content is present
+      file.get('name').equals('my-app'); // app takes precedence over addon
     });
   });
 });

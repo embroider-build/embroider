@@ -156,7 +156,7 @@ export class JSONExpect {
     return new JSONExpect(this.stack, this.path, () => this.contents, propertyPath);
   }
 
-  deepEquals(expected: any, message?: string): void {
+  deepEquals(expected: any): void {
     if (!this.contents.result) {
       assert(this.stack, this.path, this.contents);
       return;
@@ -164,7 +164,7 @@ export class JSONExpect {
     expect(this.contents.data).toEqual(expected);
   }
 
-  equals(expected: any, message?: string): void {
+  equals(expected: any): void {
     if (!this.contents.result) {
       assert(this.stack, this.path, this.contents);
       return;

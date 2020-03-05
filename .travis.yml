@@ -1,7 +1,7 @@
 ---
 language: node_js
 node_js:
-  - "10"
+  - '10'
 
 sudo: false
 
@@ -10,10 +10,14 @@ dist: trusty
 cache:
   yarn: true
 
+before_install:
+  # travis includes an old yarn with more bugs
+  - curl -o- -L https://yarnpkg.com/install.sh | bash
+  - export PATH=$HOME/.yarn/bin:$PATH
+
 install:
   - yarn install
 
 script:
   - yarn lint
-  - yarn test
-
+  - JOBS=1 yarn test

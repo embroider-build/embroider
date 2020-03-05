@@ -34,6 +34,10 @@ export default function macroCondition(conditionalPath: MacroConditionPath, stat
   let consequent = conditionalPath.get('consequent');
   let alternate = conditionalPath.get('alternate');
 
+  if (state.opts.mode === 'run-time') {
+    return;
+  }
+
   let [kept, removed] = predicate.value ? [consequent.node, alternate.node] : [alternate.node, consequent.node];
   if (kept) {
     conditionalPath.replaceWith(kept);

@@ -1,15 +1,16 @@
-import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, ExpectFile, expectFilesAt } from '@embroider/test-support';
 import resolve from 'resolve';
 import { dirname } from 'path';
 import merge from 'lodash/merge';
 
-QUnit.module('stage1 build', function() {
-  QUnit.module('max compatibility', function(origHooks) {
-    let { hooks, test } = installFileAssertions(origHooks);
-    let build: BuildResult;
+describe('stage1 build', function() {
+  jest.setTimeout(120000);
 
-    hooks.before(async function(assert) {
+  describe('max compatibility', function() {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function() {
       // A simple ember app with no tests
       let app = Project.emberNew();
 
@@ -101,20 +102,20 @@ QUnit.module('stage1 build', function() {
       };
 
       build = await BuildResult.build(app, { stage: 1 });
-      assert.basePath = build.outputPath;
+      expectFile = expectFilesAt(build.outputPath);
     });
 
-    hooks.after(async function() {
+    afterAll(async function() {
       await build.cleanup();
     });
 
-    test('component in app tree', function(assert) {
-      assert.file('node_modules/my-addon/_app_/components/hello-world.js').exists();
+    test('component in app tree', function() {
+      expectFile('node_modules/my-addon/_app_/components/hello-world.js').exists();
     });
 
-    test('addon metadata', function(assert) {
-      let assertMeta = assert.file('node_modules/my-addon/package.json').json('ember-addon');
-      assertMeta.get('app-js').equals('_app_', 'should have app-js metadata');
+    test('addon metadata', function() {
+      let assertMeta = expectFile('node_modules/my-addon/package.json').json('ember-addon');
+      assertMeta.get('app-js').equals('_app_'); // should have app-js metadata
       assertMeta
         .get('implicit-modules')
         .includes('./components/hello-world', 'staticAddonTrees is off so we should include the component implicitly');
@@ -127,14 +128,14 @@ QUnit.module('stage1 build', function() {
       assertMeta.get('version').equals(2);
     });
 
-    test('component in addon tree', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/components/hello-world.js');
+    test('component in addon tree', function() {
+      let assertFile = expectFile('node_modules/my-addon/components/hello-world.js');
       assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);
       assertFile.matches(`embroider-sample-transforms-result`, `custom babel plugins have run`);
     });
 
-    test('component template in addon tree', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/templates/components/hello-world.hbs');
+    test('component template in addon tree', function() {
+      let assertFile = expectFile('node_modules/my-addon/templates/components/hello-world.hbs');
       assertFile.matches(
         '<div class={{embroider-sample-transforms-result}}>hello world</div>',
         'template is still hbs and custom transforms have run'
@@ -145,8 +146,8 @@ QUnit.module('stage1 build', function() {
       );
     });
 
-    test('component with inline template', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
+    test('component with inline template', function() {
+      let assertFile = expectFile('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
         'tagged template is still hbs and custom transforms have run'
@@ -161,23 +162,22 @@ QUnit.module('stage1 build', function() {
       );
     });
 
-    test('in-repo-addon is available', function(assert) {
-      assert.expect(0);
-      resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: assert.basePath });
+    test('in-repo-addon is available', function() {
+      resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: build.outputPath });
     });
 
-    test('dynamic import is preserved', function(assert) {
-      assert
-        .file('node_modules/my-addon/components/does-dynamic-import.js')
-        .matches(/return import\(['"]some-library['"]\)/);
+    test('dynamic import is preserved', function() {
+      expectFile('node_modules/my-addon/components/does-dynamic-import.js').matches(
+        /return import\(['"]some-library['"]\)/
+      );
     });
   });
 
-  QUnit.module('inline hbs, ember-cli-htmlbars@3', function(origHooks) {
-    let { hooks, test } = installFileAssertions(origHooks);
+  describe('inline hbs, ember-cli-htmlbars@3', function() {
     let build: BuildResult;
+    let expectFile: ExpectFile;
 
-    hooks.before(async function(assert) {
+    beforeAll(async function() {
       // A simple ember app with no tests
       let app = Project.emberNew();
 
@@ -206,15 +206,15 @@ QUnit.module('stage1 build', function() {
       addon.linkPackage('@embroider/macros');
 
       build = await BuildResult.build(app, { stage: 1 });
-      assert.basePath = build.outputPath;
+      expectFile = expectFilesAt(build.outputPath);
     });
 
-    hooks.after(async function() {
+    afterAll(async function() {
       await build.cleanup();
     });
 
-    test('component with inline template', function(assert) {
-      let assertFile = assert.file('node_modules/my-addon/components/has-inline-template.js');
+    test('component with inline template', function() {
+      let assertFile = expectFile('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
         'tagged template is still hbs and custom transforms have run'
@@ -230,35 +230,32 @@ QUnit.module('stage1 build', function() {
     });
   });
 
-  QUnit.module('addon dummy app', function(origHooks) {
-    let { hooks, test } = installFileAssertions(origHooks);
+  describe('addon dummy app', function() {
     let build: BuildResult;
 
-    hooks.before(async function(assert) {
+    beforeAll(async function() {
       let app = Project.addonNew();
       (app.files.addon as Project['files']).components = {
         'hello-world.js': '',
       };
 
       build = await BuildResult.build(app, { stage: 1, type: 'addon' });
-      assert.basePath = build.outputPath;
     });
 
-    hooks.after(async function() {
+    afterAll(async function() {
       await build.cleanup();
     });
 
-    test('dummy app can resolve own addon', function(assert) {
-      assert.expect(0);
-      resolve.sync('my-addon/components/hello-world.js', { basedir: assert.basePath });
+    test('dummy app can resolve own addon', function() {
+      resolve.sync('my-addon/components/hello-world.js', { basedir: build.outputPath });
     });
   });
 
-  QUnit.module('problematic addon zoo', function(origHooks) {
-    let { hooks, test } = installFileAssertions(origHooks);
+  describe('problematic addon zoo', function() {
     let build: BuildResult;
+    let expectFile: ExpectFile;
 
-    hooks.before(async function(assert) {
+    beforeAll(async function() {
       let app = Project.emberNew();
 
       // an addon that emits a package.json file from its treeForAddon
@@ -293,19 +290,19 @@ QUnit.module('stage1 build', function() {
       };
 
       build = await BuildResult.build(app, { stage: 1, type: 'app' });
-      assert.basePath = build.outputPath;
+      expectFile = expectFilesAt(build.outputPath);
     });
 
-    hooks.after(async function() {
+    afterAll(async function() {
       await build.cleanup();
     });
 
-    test('real package.json wins', function(assert) {
-      assert.file('node_modules/alpha/package.json').matches(`alpha`);
+    test('real package.json wins', function() {
+      expectFile('node_modules/alpha/package.json').matches(`alpha`);
     });
 
-    test('custom tree hooks are detected in addons that manually extend from Addon', function(assert) {
-      let assertFile = assert.file('node_modules/has-custom-base/file.js');
+    test('custom tree hooks are detected in addons that manually extend from Addon', function() {
+      let assertFile = expectFile('node_modules/has-custom-base/file.js');
       assertFile.matches(/weird-addon-path\/file\.js/);
     });
   });

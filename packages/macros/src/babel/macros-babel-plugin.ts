@@ -7,14 +7,15 @@ import {
   IfStatement,
   ConditionalExpression,
   ForOfStatement,
+  FunctionDeclaration,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
-import getConfig from './get-config';
+import getConfig, { inlineRuntimeConfig } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
-import { isEachPath, prepareEachPath, finishEachPath } from './each';
+import { isEachPath, prepareEachPath } from './each';
 
 import error from './error';
 import failBuild from './fail-build';
@@ -29,10 +30,9 @@ export default function main() {
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
-        state.pendingEachMacros = [];
       },
       exit(path: NodePath, state: State) {
-        pruneMacroImports(path);
+        pruneMacroImports(path, state);
         for (let handler of state.jobs) {
           handler();
         }
@@ -54,7 +54,22 @@ export default function main() {
       enter(path: NodePath<ForOfStatement>, state: State) {
         if (isEachPath(path)) {
           state.calledIdentifiers.add(path.get('right').get('callee').node);
+        }
+      },
+      exit(path: NodePath<ForOfStatement>, state: State) {
+        if (isEachPath(path)) {
           prepareEachPath(path, state);
+        }
+      },
+    },
+    FunctionDeclaration: {
+      enter(path: NodePath<FunctionDeclaration>, state: State) {
+        let id = path.get('id');
+        if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
+          let pkg = packageCache.ownerOfFile(sourceFile(path, state));
+          if (pkg && pkg.name === '@embroider/macros') {
+            inlineRuntimeConfig(path, state);
+          }
         }
       },
     },
@@ -85,12 +100,6 @@ export default function main() {
           let r = identifier('require');
           state.generatedRequires.add(r);
           callee.replaceWith(r);
-        }
-      },
-      exit(path: NodePath<CallExpression>, state: State) {
-        let callee = path.get('callee');
-        if (callee.isIdentifier() && callee.node.name === '_eachMacroPlaceholder_') {
-          finishEachPath(path, state);
         }
       },
     },
@@ -150,8 +159,8 @@ export default function main() {
 
 // This removes imports from "@embroider/macros" itself, because we have no
 // runtime behavior at all.
-function pruneMacroImports(path: NodePath) {
-  if (!path.isProgram()) {
+function pruneMacroImports(path: NodePath, state: State) {
+  if (!path.isProgram() || state.opts.mode === 'run-time') {
     return;
   }
   for (let topLevelPath of path.get('body')) {

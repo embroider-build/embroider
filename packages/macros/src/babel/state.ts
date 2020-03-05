@@ -1,12 +1,12 @@
 import { NodePath, Node } from '@babel/traverse';
-import { Statement, Expression } from '@babel/types';
+import cloneDeepWith from 'lodash/cloneDeepWith';
+import lodashCloneDeep from 'lodash/cloneDeep';
 
 export default interface State {
   generatedRequires: Set<Node>;
   removed: Set<Node>;
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
-  pendingEachMacros: { body: NodePath<Statement>; nameRefs: NodePath<Node>[]; arg: NodePath<Expression> }[];
 
   opts: {
     userConfigs: {
@@ -18,9 +18,23 @@ export default interface State {
     // don't set this, because each file is visible at its full
     // globally-relevant path.
     owningPackageRoot: string | undefined;
+
+    embroiderMacrosConfigMarker: true;
+
+    mode: 'compile-time' | 'run-time';
   };
 }
 
 export function sourceFile(path: NodePath, state: State): string {
   return state.opts.owningPackageRoot || path.hub.file.opts.filename;
+}
+
+export function cloneDeep(node: Node, state: State): Node {
+  return cloneDeepWith(node, function(value: any) {
+    if (state.generatedRequires.has(value)) {
+      let cloned = lodashCloneDeep(value);
+      state.generatedRequires.add(cloned);
+      return cloned;
+    }
+  });
 }

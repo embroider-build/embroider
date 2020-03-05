@@ -1,15 +1,15 @@
-import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, expectFilesAt, ExpectFile } from '@embroider/test-support';
 import { throwOnWarnings } from '@embroider/core';
 
-QUnit.module('addon.styles tests', function(origHooks) {
-  let { hooks, test } = installFileAssertions(origHooks);
+describe('addon.styles tests', function() {
+  jest.setTimeout(120000);
   let build: BuildResult;
   let app: Project;
+  let expectFile: ExpectFile;
 
-  throwOnWarnings(hooks);
+  throwOnWarnings();
 
-  hooks.before(async function(assert) {
+  beforeAll(async function() {
     app = Project.emberNew();
 
     let addon1 = app.addAddon(
@@ -75,34 +75,33 @@ QUnit.module('addon.styles tests', function(origHooks) {
         tests: false,
       },
     });
-    assert.basePath = build.outputPath;
+    expectFile = expectFilesAt(build.outputPath);
   });
 
-  hooks.after(async function() {
+  afterAll(async function() {
     await build.cleanup();
   });
 
-  test('treeForStyles adds styles to build', function(assert) {
-    assert.file('node_modules/@embroider/synthesized-styles/assets/third-party1.css').matches('.error { color: red; }');
+  test('treeForStyles adds styles to build', function() {
+    expectFile('node_modules/@embroider/synthesized-styles/assets/third-party1.css').matches('.error { color: red; }');
   });
 
   // prevent regression of https://github.com/embroider-build/embroider/issues/164
-  test('treeForStyles not calling super adds styles to build', function(assert) {
-    assert
-      .file('node_modules/@embroider/synthesized-styles/assets/third-party2.css')
-      .matches('.success { color: green }');
+  test('treeForStyles not calling super adds styles to build', function() {
+    expectFile('node_modules/@embroider/synthesized-styles/assets/third-party2.css').matches(
+      '.success { color: green }'
+    );
   });
 
-  test(`all addon CSS gets convert to implicit-styles`, function(assert) {
-    let implicitStyles = assert
-      .file('node_modules/my-addon3/package.json')
+  test(`all addon CSS gets convert to implicit-styles`, function() {
+    let implicitStyles = expectFile('node_modules/my-addon3/package.json')
       .json()
       .get('ember-addon.implicit-styles');
     implicitStyles.includes('./my-addon3.css');
     implicitStyles.includes('./outer.css');
     implicitStyles.includes('./nested/inner.css');
-    assert.file('node_modules/my-addon3/my-addon3.css').matches(`from-addon`);
-    assert.file('node_modules/my-addon3/outer.css').matches(`from-outer`);
-    assert.file('node_modules/my-addon3/nested/inner.css').matches(`from-inner`);
+    expectFile('node_modules/my-addon3/my-addon3.css').matches(`from-addon`);
+    expectFile('node_modules/my-addon3/outer.css').matches(`from-outer`);
+    expectFile('node_modules/my-addon3/nested/inner.css').matches(`from-inner`);
   });
 });

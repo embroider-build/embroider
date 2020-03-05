@@ -6,6 +6,13 @@ import {
   CallExpression,
   Expression,
   OptionalMemberExpression,
+  callExpression,
+  stringLiteral,
+  memberExpression,
+  FunctionDeclaration,
+  returnStatement,
+  Identifier,
+  ObjectExpression,
 } from '@babel/types';
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
@@ -37,11 +44,21 @@ export default function getConfig(
   }
   let config: unknown | undefined;
   let pkg = targetPackage(sourceFile(path, state), packageName, packageCache);
-  if (pkg) {
-    config = state.opts.userConfigs[pkg.root];
+  if (state.opts.mode === 'compile-time') {
+    if (pkg) {
+      config = state.opts.userConfigs[pkg.root];
+    }
+    let collapsed = collapse(path, config);
+    collapsed.path.replaceWith(literalConfig(collapsed.config));
+  } else {
+    let pkgRoot;
+    if (pkg) {
+      pkgRoot = stringLiteral(pkg.root);
+    } else {
+      pkgRoot = identifier('undefined');
+    }
+    path.replaceWith(callExpression(memberExpression(path.get('callee').node, identifier('_runtimeGet')), [pkgRoot]));
   }
-  let collapsed = collapse(path, config);
-  collapsed.path.replaceWith(literalConfig(collapsed.config));
 }
 
 function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {
@@ -59,14 +76,14 @@ function targetPackage(fromPath: string, packageName: string | undefined, packag
   }
 }
 
-function literalConfig(config: unknown | undefined) {
+function literalConfig(config: unknown | undefined): Identifier | ObjectExpression {
   if (typeof config === 'undefined') {
     return identifier('undefined');
   }
   let ast = parse(`a(${JSON.stringify(config)})`, {}) as File;
   let statement = ast.program.body[0] as ExpressionStatement;
   let expression = statement.expression as CallExpression;
-  return expression.arguments[0];
+  return expression.arguments[0] as ObjectExpression;
 }
 
 function collapse(path: NodePath<Expression>, config: any) {
@@ -111,4 +128,8 @@ function collapse(path: NodePath<Expression>, config: any) {
     break;
   }
   return { path, config };
+}
+
+export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State) {
+  path.get('body').node.body = [returnStatement(literalConfig(state.opts.userConfigs))];
 }

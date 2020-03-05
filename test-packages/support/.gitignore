@@ -4,4 +4,3 @@
 *.map
 
 !vendor/ember-template-compiler.js
-!qunit-jest-shim.js

@@ -1,14 +1,14 @@
-import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, expectFilesAt, ExpectFile } from '@embroider/test-support';
 import { throwOnWarnings } from '@embroider/core';
 
-QUnit.module('namespaced app', function(origHooks) {
-  let { hooks, test } = installFileAssertions(origHooks);
+describe('namespaced app', function() {
+  jest.setTimeout(120000);
   let build: BuildResult;
+  let expectFile: ExpectFile;
 
-  throwOnWarnings(hooks);
+  throwOnWarnings();
 
-  hooks.before(async function(assert) {
+  beforeAll(async function() {
     let app = Project.emberNew('@ef4/namespaced-app');
     let addon = app.addAddon('my-addon');
     addon.files['my-implicit-module.js'] = '';
@@ -24,19 +24,19 @@ QUnit.module('namespaced app', function(origHooks) {
         tests: false,
       },
     });
-    assert.basePath = build.outputPath;
+    expectFile = expectFilesAt(build.outputPath);
   });
 
-  hooks.after(async function() {
+  afterAll(async function() {
     await build.cleanup();
   });
 
-  test(`app js location`, function(assert) {
-    assert.file('assets/@ef4/namespaced-app.js').exists();
+  test(`app js location`, function() {
+    expectFile('assets/@ef4/namespaced-app.js').exists();
   });
 
-  test(`imports within app js`, function(assert) {
-    let assertFile = assert.file('assets/@ef4/namespaced-app.js');
+  test(`imports within app js`, function() {
+    let assertFile = expectFile('assets/@ef4/namespaced-app.js');
     assertFile.matches(
       /d\(["'"]my-addon\/my-implicit-module["'], function\(\)\{ return i\(["']\.\.\/\.\.\/node_modules\/my-addon\/my-implicit-module\.js["']\);/,
       'implicit-modules have correct paths'
@@ -47,7 +47,7 @@ QUnit.module('namespaced app', function(origHooks) {
     );
   });
 
-  test(`app css location`, function(assert) {
-    assert.file('assets/@ef4/namespaced-app.css').exists();
+  test(`app css location`, function() {
+    expectFile('assets/@ef4/namespaced-app.css').exists();
   });
 });

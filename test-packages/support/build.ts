@@ -11,7 +11,7 @@ import { join } from 'path';
 import MockUI from 'console-ui/mock';
 import { TransformOptions, transform } from '@babel/core';
 import { Options } from '../../packages/compat/src';
-import { BoundFileAssert } from './file-assertions';
+import { BoundExpectFile } from './file-assertions';
 import { TemplateCompiler, AppMeta } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 
@@ -63,7 +63,7 @@ export default class BuildResult {
     await this.builder.cleanup();
   }
 
-  transpile(contents: string, fileAssert: BoundFileAssert) {
+  transpile(contents: string, fileAssert: BoundExpectFile): string {
     if (fileAssert.path.endsWith('.hbs')) {
       return this.templateCompiler.compile(fileAssert.fullPath, contents);
     } else if (fileAssert.path.endsWith('.js')) {
@@ -77,7 +77,7 @@ export default class BuildResult {
     await this.builder.build();
   }
 
-  shouldTranspile(fileAssert: BoundFileAssert) {
+  shouldTranspile(fileAssert: BoundExpectFile) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     let shouldTranspile = require(join(this.outputPath, '_babel_filter_'));
     return shouldTranspile(fileAssert.fullPath) as boolean;

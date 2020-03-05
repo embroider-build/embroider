@@ -1,16 +1,16 @@
-import 'qunit';
-import { Project, BuildResult, installFileAssertions } from '@embroider/test-support';
+import { Project, BuildResult, expectFilesAt, ExpectFile } from '@embroider/test-support';
 import { throwOnWarnings } from '@embroider/core';
 import { join } from 'path';
 
-QUnit.module('app.import tests', function(origHooks) {
-  let { hooks, test } = installFileAssertions(origHooks);
+describe('app.import tests', function() {
+  jest.setTimeout(120000);
   let build: BuildResult;
   let app: Project;
+  let expectFile: ExpectFile;
 
-  throwOnWarnings(hooks);
+  throwOnWarnings();
 
-  hooks.before(async function(assert) {
+  beforeAll(async function() {
     app = Project.emberNew();
 
     let addon = app.addAddon(
@@ -38,22 +38,24 @@ QUnit.module('app.import tests', function(origHooks) {
         tests: false,
       },
     });
-    assert.basePath = build.outputPath;
+    expectFile = expectFilesAt(build.outputPath);
   });
 
-  hooks.after(async function() {
+  afterAll(async function() {
     await build.cleanup();
   });
 
-  test('destDir puts vendor files into public assets', function(assert) {
-    let assertFile = assert.file('node_modules/@embroider/synthesized-vendor/package.json').json();
-    assertFile.get(['ember-addon', 'public-assets', './vendor/some-font.ttf']).equals('fonts/some-font.ttf');
-    assert.file('node_modules/@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
+  test('destDir puts vendor files into public assets', function() {
+    expectFile('node_modules/@embroider/synthesized-vendor/package.json')
+      .json()
+      .get(['ember-addon', 'public-assets', './vendor/some-font.ttf'])
+      .equals('fonts/some-font.ttf');
+    expectFile('node_modules/@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
   });
 
-  test('handle non-transformed node_module with explicit outputFile', function(assert) {
-    let assertFile = assert.file('node_modules/@embroider/synthesized-vendor/package.json').json();
-    assertFile
+  test('handle non-transformed node_module with explicit outputFile', function() {
+    expectFile('node_modules/@embroider/synthesized-vendor/package.json')
+      .json()
       .get([
         'ember-addon',
         'public-assets',

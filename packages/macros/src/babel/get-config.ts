@@ -57,7 +57,9 @@ export default function getConfig(
     } else {
       pkgRoot = identifier('undefined');
     }
-    path.replaceWith(callExpression(memberExpression(path.get('callee').node, identifier('_runtimeGet')), [pkgRoot]));
+    path.replaceWith(
+      callExpression(memberExpression(path.get('callee').node as Identifier, identifier('_runtimeGet')), [pkgRoot])
+    );
   }
 }
 

@@ -14,6 +14,7 @@ describe(`getConfig`, function() {
       c.filename = filename;
       return c;
     },
+    includePresetsTests: true,
     createTests: allModes(function(transform, { applyMode, buildTimeTest }) {
       beforeEach(function() {
         // we have some tests that behave differently on files that appear to be

@@ -22,7 +22,7 @@ import failBuild from './fail-build';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-export default function main() {
+export default function main(): unknown {
   let visitor = {
     Program: {
       enter(_: NodePath, state: State) {

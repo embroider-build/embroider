@@ -9,6 +9,7 @@ describe('each', function() {
     babelConfig(version: number) {
       return makeBabelConfig(version, macrosConfig);
     },
+    includePresetsTests: true,
     createTests: allModes(function(transform, { buildTimeTest, applyMode, runTimeTest }) {
       let run = makeRunner(transform);
 

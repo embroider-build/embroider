@@ -1024,7 +1024,7 @@ let d = w.define;
 
 {{#if fastbootOnlyAmdModules}}
   import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot").running)) {
+  if (macroCondition(getConfig("fastboot")?.running)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}

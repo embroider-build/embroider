@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 // Type definitions for @babel/traverse 7.0
 // Project: https://github.com/babel/babel/tree/master/packages/babel-traverse, https://babeljs.io
 // Definitions by: Troy Gerwien <https://github.com/yortus>

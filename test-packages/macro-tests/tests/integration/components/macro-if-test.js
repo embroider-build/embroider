@@ -4,25 +4,25 @@ import { render, click } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import { helper } from '@ember/component/helper';
 
-module('Integration | Macro | macroIf', function(hooks) {
+module('Integration | Macro | macroCondition', function(hooks) {
   setupRenderingTest(hooks);
 
-  test('macroIf in content position when true', async function(assert) {
-    await render(hbs`{{#macroIf true}}red{{else}}blue{{/macroIf}}`);
+  test('macroCondition in content position when true', async function(assert) {
+    await render(hbs`{{#if (macroCondition true)}}red{{else}}blue{{/if}}`);
     assert.equal(this.element.textContent.trim(), 'red');
   });
 
-  test('macroIf in content position when false', async function(assert) {
-    await render(hbs`{{#macroIf false}}red{{else}}blue{{/macroIf}}`);
+  test('macroCondition in content position when false', async function(assert) {
+    await render(hbs`{{#if (macroCondition false)}}red{{else}}blue{{/if}}`);
     assert.equal(this.element.textContent.trim(), 'blue');
   });
 
-  test('macroIf in content position when false with no alternate', async function(assert) {
-    await render(hbs`{{#macroIf false}}red{{/macroIf}}`);
+  test('macroCondition in content position when false with no alternate', async function(assert) {
+    await render(hbs`{{#if (macroCondition false)}}red{{/if}}`);
     assert.equal(this.element.textContent.trim(), '');
   });
 
-  test('macroIf in subexpression position when true', async function(assert) {
+  test('macroCondition in subexpression position when true', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -30,16 +30,16 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, 'red');
       })
     );
-    await render(hbs`{{my-assertion (macroIf true 'red' 'blue') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition true) 'red' 'blue') }}`);
   });
 
-  test('macroIf inside string', async function(assert) {
+  test('macroCondition inside string', async function(assert) {
     assert.expect(1);
-    await render(hbs`<div class="target {{macroIf true 'red' 'blue' }}"></div>`);
+    await render(hbs`<div class="target {{if (macroCondition true) 'red' 'blue' }}"></div>`);
     assert.ok(this.element.querySelector('.target').matches('.red'));
   });
 
-  test('macroIf in subexpression position when false', async function(assert) {
+  test('macroCondition in subexpression position when false', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -47,10 +47,10 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, 'blue');
       })
     );
-    await render(hbs`{{my-assertion (macroIf false 'red' 'blue') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition false) 'red' 'blue') }}`);
   });
 
-  test('macroIf in subexpression position when false with no alternate', async function(assert) {
+  test('macroCondition in subexpression position when false with no alternate', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -58,7 +58,7 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, undefined);
       })
     );
-    await render(hbs`{{my-assertion (macroIf false 'red') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition false) 'red') }}`);
   });
 
   test('macroMaybeAttrs when true', async function(assert) {
@@ -94,7 +94,7 @@ module('Integration | Macro | macroIf', function(hooks) {
     await click(target);
   });
 
-  test('macroIf composes with other macros, true case', async function(assert) {
+  test('macroCondition composes with other macros, true case', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -102,10 +102,10 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, 'red');
       })
     );
-    await render(hbs`{{my-assertion (macroIf (macroDependencySatisfies 'ember-source' '3.x') 'red' 'blue') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x')) 'red' 'blue') }}`);
   });
 
-  test('macroIf composes with other macros, false case', async function(assert) {
+  test('macroCondition composes with other macros, false case', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -113,10 +113,10 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, 'blue');
       })
     );
-    await render(hbs`{{my-assertion (macroIf (macroDependencySatisfies 'ember-source' '10.x') 'red' 'blue') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`);
   });
 
-  test('macroIf composes with self', async function(assert) {
+  test('macroCondition composes with self', async function(assert) {
     assert.expect(1);
     this.owner.register(
       'helper:my-assertion',
@@ -124,6 +124,6 @@ module('Integration | Macro | macroIf', function(hooks) {
         assert.strictEqual(value, 'red');
       })
     );
-    await render(hbs`{{my-assertion (macroIf true (macroIf false 'green' 'red') 'blue') }}`);
+    await render(hbs`{{my-assertion (if (macroCondition true) (if (macroCondition false) 'green' 'red') 'blue') }}`);
   });
 });

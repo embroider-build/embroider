@@ -32,7 +32,7 @@ describe(`macroFailBuild`, function() {
 
     test('it does not fail the build when its inside a dead branch', () => {
       let code = transform(`
-        {{macroIf true someValue (macroFailBuild 'not supposed to happen')}}
+        {{if (macroCondition true) someValue (macroFailBuild 'not supposed to happen')}}
       }
       `);
       expect(code).toMatch(/\{\{someValue\}\}/);

@@ -1,5 +1,5 @@
 import { format } from 'util';
-import { evaluate } from './macro-if';
+import evaluate from './evaluate';
 
 export function failBuild(node: any) {
   if (node.params.length < 1) {

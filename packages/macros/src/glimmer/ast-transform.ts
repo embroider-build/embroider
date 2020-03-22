@@ -1,7 +1,8 @@
 import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
-import { macroIfBlock, macroIfExpression, maybeAttrs } from './macro-if';
+import { maybeAttrs } from './macro-maybe-attrs';
+import { macroIfBlock, macroIfExpression } from './macro-condition';
 import { failBuild } from './fail-build';
 
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
@@ -120,7 +121,7 @@ export function makeSecondTransform() {
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
-          if (node.path.original === 'macroIf') {
+          if (node.path.original === 'if') {
             return macroIfBlock(node);
           }
         },
@@ -131,7 +132,7 @@ export function makeSecondTransform() {
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
-          if (node.path.original === 'macroIf') {
+          if (node.path.original === 'if') {
             return macroIfExpression(node, env.syntax.builders);
           }
           if (node.path.original === 'macroFailBuild') {
@@ -160,7 +161,7 @@ export function makeSecondTransform() {
           if (inScope(scopeStack, node.path.parts[0])) {
             return;
           }
-          if (node.path.original === 'macroIf') {
+          if (node.path.original === 'if') {
             return env.syntax.builders.mustache(macroIfExpression(node, env.syntax.builders));
           }
           if (node.path.original === 'macroFailBuild') {

@@ -1,4 +1,4 @@
-const execa = require('execa');
+import execa from 'execa';
 
 test('static-app-classic', async () => {
   jest.setTimeout(120000);

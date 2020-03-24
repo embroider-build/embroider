@@ -1,4 +1,4 @@
-const execa = require('execa');
+import execa from 'execa';
 const { tmpdir } = require('os');
 const { join } = require('path');
 

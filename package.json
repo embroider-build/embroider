@@ -22,7 +22,7 @@
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-prettier": "^3.0.1",
-    "execa": "^1.0.0",
+    "execa": "^4.0.0",
     "jest": "^24.5.0",
     "prettier": "1.16.4"
   },

@@ -62,3 +62,7 @@ typings/
 
 # Intermediate Broccoli output
 tmp/
+
+test-packages/*.js
+test-packages/*.js.map
+test-packages/*.d.ts

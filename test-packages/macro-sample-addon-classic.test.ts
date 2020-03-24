@@ -1,4 +1,4 @@
-const execa = require('execa');
+import execa from 'execa';
 
 test('macro-addon-classic', async () => {
   jest.setTimeout(120000);

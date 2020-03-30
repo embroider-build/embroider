@@ -5,9 +5,10 @@ import get from 'lodash/get';
 import { AddonMeta, AppMeta } from './metadata';
 import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
+import { lexicographically, pushUnique } from './dependency-ordering-utils';
 
 export default class Package {
-  private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
+  private dependencyKeys: ('devDependencies' | 'dependencies' | 'peerDependencies')[];
 
   constructor(readonly root: string, protected packageCache: PackageCache, isApp?: boolean) {
     // In stage1 and stage2, we're careful to make sure our PackageCache entry
@@ -17,7 +18,7 @@ export default class Package {
     let mayUseDevDeps = typeof isApp === 'boolean' ? isApp : this.isV2App();
 
     this.dependencyKeys = mayUseDevDeps
-      ? ['dependencies', 'devDependencies', 'peerDependencies']
+      ? ['devDependencies', 'dependencies', 'peerDependencies']
       : ['dependencies', 'peerDependencies'];
   }
 
@@ -94,10 +95,22 @@ export default class Package {
     return broccoli_memoization === 'true';
   }
 
+  // ensures ordering within devDependencies or dependencies is always lexicographical sorted
+  // (regardless of the order within package.json). If duplicates exist between devDependencies
+  // and dependencies, we take a “element of least surprise approach”. They are de-duped, and
+  // the “last occurrence” encountered solidifies the ordering.  order([a,b,c,a]) => [b,c,a]
+  // We follow this pattern as it is what ember-cli does and we want to maintain that ordering
+  // because it will effect "who wins" when it comes to merging the appTree.
   @Memoize()
   get dependencies(): Package[] {
-    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
-    return names.map(name => this.packageCache.resolve(name, this));
+    let names = flatMap(this.dependencyKeys, key => {
+      let keys = Object.keys(this.packageJSON[key] || {});
+      return keys.sort(lexicographically);
+    });
+
+    let sorted_list: string[] = [];
+    names.forEach(name => pushUnique(sorted_list, name));
+    return sorted_list.map(name => this.packageCache.resolve(name, this));
   }
 
   hasDependency(name: string): boolean {

@@ -9,6 +9,60 @@ import merge from 'lodash/merge';
 describe('stage2 build', function() {
   jest.setTimeout(120000);
 
+  describe('appTree merge order should be identical to ember-cli', function() {
+    let expectFile: ExpectFile;
+    let build: BuildResult;
+    let app: Project;
+
+    throwOnWarnings();
+
+    beforeAll(async function() {
+      app = Project.emberNew();
+      let fastbootAddonNamespace = app.addAddon('bbb');
+      merge(fastbootAddonNamespace.files, {
+        app: {
+          service: {
+            'fastboot.js': `bbb`,
+          },
+        },
+      });
+
+      let fastbootAddon = app.addAddon('aaa');
+      merge(fastbootAddon.files, {
+        app: {
+          service: {
+            'fastboot.js': `aaa`,
+          },
+        },
+      });
+
+      build = await BuildResult.build(app, {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      });
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function() {
+      await build.cleanup();
+    });
+
+    it('the correct service file gets merged into app code', function() {
+      // the reason why this file should win is because we lexicographically
+      // sort the addons by name then apply a last addon wins approach.
+
+      let assertFile = expectFile('./service/fastboot.js');
+      assertFile.matches(/bbb/);
+    });
+  });
+
   describe('static with rules', function() {
     let expectFile: ExpectFile;
     let build: BuildResult;

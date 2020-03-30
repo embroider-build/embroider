@@ -17,3 +17,4 @@ export { AppAdapter, AppBuilder, EmberENV } from './app';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
 export { explicitRelative, extensionsPattern } from './paths';
 export { default as babelFilter } from './babel-filter';
+// export { lexicographically, pushUnique } from './dependency-ordering-utils';

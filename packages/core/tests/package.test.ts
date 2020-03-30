@@ -2,6 +2,7 @@ import Package from '../src/package';
 import PackageCache from '../src/package-cache';
 import tmp from 'tmp';
 import fixturify from 'fixturify';
+//import { Project } from '@embroider/test-support';
 
 tmp.setGracefulCleanup();
 

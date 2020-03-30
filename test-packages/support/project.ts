@@ -216,6 +216,10 @@ export class Project extends FixturifyProject {
     return super.addDependency(name, version, cb) as Project;
   }
 
+  addDevDependency(name: string | Project, version?: string, cb?: (project: FixturifyProject) => void): Project {
+    return super.addDevDependency(name, version, cb) as Project;
+  }
+
   writeSync(root?: string) {
     super.writeSync(root);
     let stack: { project: Project; root: string }[] = [{ project: this, root: root || this.root }];
@@ -233,8 +237,27 @@ export class Project extends FixturifyProject {
     }
   }
 
-  addAddon(name: string, indexContent = '') {
-    let addon = this.addDependency(name);
+  addAddon(name: string, indexContent = '', version: string = '1.0.0') {
+    let addon = this.addDependency(name, version);
+    addon.files = {
+      'index.js': addonIndexFile(indexContent),
+      addon: {
+        templates: {
+          components: {},
+        },
+      },
+      app: {},
+    };
+    addon.linkPackage('ember-cli-htmlbars');
+    addon.linkPackage('ember-cli-babel');
+
+    addon.pkg.keywords = ['ember-addon'];
+    addon.pkg['ember-addon'] = {};
+    return addon;
+  }
+
+  addDevAddon(name: string, indexContent = '', version: string = '1.0.0') {
+    let addon = this.addDevDependency(name, version);
     addon.files = {
       'index.js': addonIndexFile(indexContent),
       addon: {

@@ -2,6 +2,7 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import get from 'lodash/get';
+//import DAGMap from 'dag-map';
 import { AddonMeta, AppMeta } from './metadata';
 import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
@@ -103,14 +104,31 @@ export default class Package {
   // because it will effect "who wins" when it comes to merging the appTree.
   @Memoize()
   get dependencies(): Package[] {
-    let names = flatMap(this.dependencyKeys, key => {
+    let sortedDependencies = flatMap(this.dependencyKeys, key => {
       let keys = Object.keys(this.packageJSON[key] || {});
       return keys.sort(lexicographically);
     });
 
-    let sorted_list: string[] = [];
-    names.forEach(name => pushUnique(sorted_list, name));
-    return sorted_list.map(name => this.packageCache.resolve(name, this));
+    let unqiuelySortedDeps: string[] = [];
+    sortedDependencies.forEach(dep => pushUnique(unqiuelySortedDeps, dep));
+
+    // let graph = new DAGMap<Package>();
+    // unqiuelySortedDeps.forEach(name => {
+    //   let cache = this.packageCache.resolve(name, this);
+    //   let emberAddonConfig = cache.meta;
+
+    //   graph.add(name, cache, emberAddonConfig.before, emberAddonConfig.after);
+    // });
+
+    // let values: Package[] = [];
+    // graph.each((_, val) => {
+    //   if (val) {
+    //     values.push(val);
+    //   }
+    // });
+    // return values;
+
+    return unqiuelySortedDeps.map(name => this.packageCache.resolve(name, this));
   }
 
   hasDependency(name: string): boolean {

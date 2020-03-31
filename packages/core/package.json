@@ -45,6 +45,7 @@
     "broccoli-persistent-filter": "^2.2.2",
     "broccoli-plugin": "^3.0.0",
     "broccoli-source": "^1.1.0",
+    "dag-map": "^2.0.2",
     "debug": "^3.1.0",
     "fast-sourcemap-concat": "^1.4.0",
     "filesize": "^4.1.2",

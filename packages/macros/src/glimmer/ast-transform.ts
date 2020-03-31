@@ -2,7 +2,7 @@ import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
 import { maybeAttrs } from './macro-maybe-attrs';
-import { macroIfBlock, macroIfExpression } from './macro-condition';
+import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
 import { failBuild } from './fail-build';
 
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
@@ -162,7 +162,7 @@ export function makeSecondTransform() {
             return;
           }
           if (node.path.original === 'if') {
-            return env.syntax.builders.mustache(macroIfExpression(node, env.syntax.builders));
+            return macroIfMustache(node, env.syntax.builders);
           }
           if (node.path.original === 'macroFailBuild') {
             failBuild(node);

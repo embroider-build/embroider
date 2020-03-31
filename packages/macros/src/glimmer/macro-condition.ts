@@ -3,7 +3,7 @@ import evaluate from './evaluate';
 export function macroIfBlock(node: any) {
   let condition = node.params[0];
 
-  if (condition.type !== 'SubExpression' || condition.path.original !== 'macroCondition') {
+  if (!condition || condition.type !== 'SubExpression' || condition.path.original !== 'macroCondition') {
     return node;
   }
 
@@ -30,7 +30,7 @@ export function macroIfBlock(node: any) {
 export function macroIfExpression(node: any, builders: any) {
   let condition = node.params[0];
 
-  if (condition.type !== 'SubExpression' || condition.path.original !== 'macroCondition') {
+  if (!condition || condition.type !== 'SubExpression' || condition.path.original !== 'macroCondition') {
     return node;
   }
 
@@ -48,4 +48,18 @@ export function macroIfExpression(node: any, builders: any) {
   } else {
     return node.params[2] || builders.undefined();
   }
+}
+
+export function macroIfMustache(node: any, builders: any) {
+  let result = macroIfExpression(node, builders);
+
+  if (result === node) {
+    return node;
+  }
+
+  if (result.type === 'SubExpression') {
+    return builders.mustache(result.path, result.params, result.hash);
+  }
+
+  return builders.mustache(result);
 }

@@ -27,6 +27,7 @@ export interface AppMeta {
 // addon.
 export interface AddonMeta {
   type: 'addon';
+  orderIdx?: number;
 
   'auto-upgraded'?: true;
   'app-js'?: filename;

@@ -1,6 +1,7 @@
 import FixturifyProject from 'fixturify-project';
 import { join, dirname } from 'path';
 import { ensureSymlinkSync } from 'fs-extra';
+import merge from 'lodash/merge';
 import Options from '../../packages/core/src/options';
 
 function cliBuildFile(emberAppOptions: string = '', embroiderOptions: Options = {}) {
@@ -216,6 +217,10 @@ export class Project extends FixturifyProject {
     return super.addDependency(name, version, cb) as Project;
   }
 
+  addDevDependency(name: string | Project, version?: string, cb?: (project: FixturifyProject) => void): Project {
+    return super.addDevDependency(name, version, cb) as Project;
+  }
+
   writeSync(root?: string) {
     super.writeSync(root);
     let stack: { project: Project; root: string }[] = [{ project: this, root: root || this.root }];
@@ -250,6 +255,55 @@ export class Project extends FixturifyProject {
     addon.pkg.keywords = ['ember-addon'];
     addon.pkg['ember-addon'] = {};
     return addon;
+  }
+
+  addDevAddon(name: string, indexContent = '') {
+    let addon = this.addDevDependency(name);
+    addon.files = {
+      'index.js': addonIndexFile(indexContent),
+      addon: {
+        templates: {
+          components: {},
+        },
+      },
+      app: {},
+    };
+    addon.linkPackage('ember-cli-htmlbars');
+    addon.linkPackage('ember-cli-babel');
+
+    addon.pkg.keywords = ['ember-addon'];
+    addon.pkg['ember-addon'] = {};
+    return addon;
+  }
+
+  addInRepoAddon(name: string, additionalFiles: {}) {
+    if (!this.pkg['ember-addon']) {
+      this.pkg['ember-addon'] = {};
+    }
+
+    if (!this.pkg['ember-addon'].paths) {
+      this.pkg['ember-addon'].paths = [];
+    }
+
+    this.pkg['ember-addon'].paths.push(`lib/${name}`);
+
+    let inRepoAddon = {
+      files: {
+        lib: {
+          [name]: {
+            'index.js': addonIndexFile(''),
+            'package.json': JSON.stringify({
+              name,
+              keywords: ['ember-addon'],
+            }),
+          },
+        },
+      },
+    };
+
+    merge(inRepoAddon.files.lib[name], additionalFiles);
+    merge(this.files, inRepoAddon.files);
+    return inRepoAddon;
   }
 
   toJSON(): Project['files'];

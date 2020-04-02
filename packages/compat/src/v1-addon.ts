@@ -61,7 +61,8 @@ export default class V1Addon implements V1Package {
     protected addonInstance: any,
     protected addonOptions: Required<Options>,
     private app: V1App,
-    private packageCache: PackageCache
+    private packageCache: PackageCache,
+    private orderIdx: number
   ) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
@@ -389,7 +390,7 @@ export default class V1Addon implements V1Package {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend({}, built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
   }
 
   @Memoize()
@@ -703,6 +704,7 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private build(): IntermediateBuild {
     let built = new IntermediateBuild();
+    built.staticMeta['order-index'] = this.orderIdx;
 
     if (this.moduleName !== this.name) {
       built.staticMeta['renamed-packages'] = {
@@ -729,7 +731,13 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, options: Required<Options>, app: V1App, packageCache: PackageCache): V1Addon;
+  new (
+    addonInstance: any,
+    options: Required<Options>,
+    app: V1App,
+    packageCache: PackageCache,
+    orderIdx: number
+  ): V1Addon;
 }
 
 class IntermediateBuild {

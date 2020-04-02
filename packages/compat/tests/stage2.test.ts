@@ -1,5 +1,5 @@
 import { Project, BuildResult, ExpectFile, expectFilesAt } from '@embroider/test-support';
-
+import { BuildParams } from '@embroider/test-support/build';
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
 import { join } from 'path';
@@ -8,13 +8,97 @@ import merge from 'lodash/merge';
 
 describe('stage2 build', function() {
   jest.setTimeout(120000);
+  throwOnWarnings();
+
+  describe('addon ordering is preserved from ember-cli', function() {
+    it('addons are lexographically sorted by ember-cli and the last one wins', async function() {
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+      let app = Project.emberNew();
+      // even though the bAddon was added first since it will be sorted lexographically it should
+      // come after aAddon and thus win once the services are merged
+      let bAddon = app.addAddon('bbb');
+      let aAddon = app.addAddon('aaa');
+
+      merge(aAddon.files, { app: { service: { 'foo.js': 'aaa' } } });
+      merge(bAddon.files, { app: { service: { 'foo.js': 'bbb' } } });
+
+      let build = await BuildResult.build(app, buildOptions);
+      let expectFile = expectFilesAt(build.outputPath);
+
+      let assertFile = expectFile('./service/foo.js');
+      assertFile.matches(/bbb/);
+      await build.cleanup();
+    });
+
+    it('addons declared as dependencies should win over devDependencies', async function() {
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+      let app = Project.emberNew();
+      let aAddon = app.addAddon('aaa');
+      let bAddon = app.addDevAddon('bbb');
+
+      merge(aAddon.files, { app: { service: { 'foo.js': 'aaa' } } });
+      merge(bAddon.files, { app: { service: { 'foo.js': 'bbb' } } });
+
+      let build = await BuildResult.build(app, buildOptions);
+      let expectFile = expectFilesAt(build.outputPath);
+
+      let assertFile = expectFile('./service/foo.js');
+      assertFile.matches(/aaa/);
+
+      await build.cleanup();
+    });
+
+    it('in repo addons declared win over dependencies', async function() {
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+      let app = Project.emberNew();
+      let aAddon = app.addAddon('aaa');
+      app.addInRepoAddon('bbb', { app: { service: { 'foo.js': 'bbb' } } });
+
+      merge(aAddon.files, { app: { service: { 'foo.js': 'aaa' } } });
+
+      let build = await BuildResult.build(app, buildOptions);
+      let expectFile = expectFilesAt(build.outputPath);
+
+      let assertFile = expectFile('./service/foo.js');
+      assertFile.matches(/bbb/);
+      await build.cleanup();
+    });
+  });
 
   describe('static with rules', function() {
     let expectFile: ExpectFile;
     let build: BuildResult;
     let app: Project;
-
-    throwOnWarnings();
 
     beforeAll(async function() {
       app = Project.emberNew();

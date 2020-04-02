@@ -29,10 +29,12 @@ export default class V1InstanceCache {
 
   app: V1App;
   packageCache: MovablePackageCache;
+  orderIdx: number;
 
   private constructor(oldApp: any, private options: Required<Options>) {
     this.packageCache = new MovablePackageCache(MacrosConfig.for(oldApp));
     this.app = V1App.create(oldApp, this.packageCache);
+    this.orderIdx = 0;
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
@@ -56,8 +58,9 @@ export default class V1InstanceCache {
   }
 
   private addAddon(addonInstance: any) {
+    this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance.pkg.name);
-    let v1Addon = new Klass(addonInstance, this.options, this.app, this.packageCache);
+    let v1Addon = new Klass(addonInstance, this.options, this.app, this.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);
     (addonInstance.addons as any[]).forEach(a => this.addAddon(a));

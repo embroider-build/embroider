@@ -62,6 +62,7 @@ describe('stage1 build', function() {
               <div class={{embroider-sample-transforms-target}}>hello world</div>
               <span>{{macroDependencySatisfies "ember-source" ">3"}}</span>
             `,
+              'module-name.hbs': `<div class={{embroider-sample-transforms-module}}>hello world</div>`,
             },
           },
         },
@@ -143,6 +144,14 @@ describe('stage1 build', function() {
       assertFile.matches(
         '<span>{{macroDependencySatisfies "ember-source" ">3"}}</span>',
         'template macros have not run'
+      );
+    });
+
+    test('test module name added', function() {
+      let assertFile = expectFile('node_modules/my-addon/templates/components/module-name.hbs');
+      assertFile.matches(
+        '<div class={{embroider-sample-transforms-module "my-addon/templates/components/module-name.hbs"}}>hello world</div>',
+        'template is still hbs and module name transforms have run'
       );
     });
 

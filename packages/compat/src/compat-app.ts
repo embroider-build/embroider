@@ -133,10 +133,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       let depBIdx = 0;
 
       if (depA && depA.meta && depA.isV2Addon()) {
-        depAIdx = depA.meta.orderIdx || 0;
+        depAIdx = depA.meta['order-index'] || 0;
       }
       if (depB && depB.meta && depB.isV2Addon()) {
-        depBIdx = depB.meta.orderIdx || 0;
+        depBIdx = depB.meta['order-index'] || 0;
       }
 
       return depAIdx - depBIdx;

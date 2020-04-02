@@ -390,7 +390,7 @@ export default class V1Addon implements V1Package {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend({ orderIdx: this.orderIdx }, built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
   }
 
   @Memoize()
@@ -704,6 +704,7 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private build(): IntermediateBuild {
     let built = new IntermediateBuild();
+    built.staticMeta['order-index'] = this.orderIdx;
 
     if (this.moduleName !== this.name) {
       built.staticMeta['renamed-packages'] = {

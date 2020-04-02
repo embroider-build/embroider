@@ -11,7 +11,16 @@ function evaluateKey(path: NodePath): { confident: boolean; value: any } {
   return { confident: false, value: undefined };
 }
 
-export default function evaluate(path: NodePath) {
+export default function evaluate(
+  path: NodePath,
+  context: { [localVar: string]: any },
+  knownPaths: Map<NodePath, { confident: boolean; value: unknown }>
+): { confident: boolean; value: unknown } {
+  let known = knownPaths.get(path);
+  if (known) {
+    return known;
+  }
+
   let builtIn = path.evaluate();
   if (builtIn.confident) {
     return builtIn;

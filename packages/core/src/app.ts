@@ -326,7 +326,7 @@ export class AppBuilder<TreeNames> {
     // our tests entrypoint already includes a correct module dependency on the
     // app, so we only insert the app when we're not inserting tests
     if (!asset.fileAsset.includeTests) {
-      let appJS = this.appJSAsset(appFiles, prepared);
+      let appJS = this.topAppJSAsset(appFiles, prepared);
       html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     }
 
@@ -395,7 +395,15 @@ export class AppBuilder<TreeNames> {
 
   private partitionEngines(appJSPath: string): EngineSummary[] {
     let queue: EngineSummary[] = [
-      { package: this.app, addons: new Set(), parent: undefined, sourcePath: appJSPath, destPath: this.root },
+      {
+        package: this.app,
+        addons: new Set(),
+        parent: undefined,
+        sourcePath: appJSPath,
+        destPath: this.root,
+        modulePrefix: this.modulePrefix,
+        appRelativePath: '.',
+      },
     ];
     let done: EngineSummary[] = [];
     let seenEngines: Set<Package> = new Set();
@@ -414,6 +422,8 @@ export class AppBuilder<TreeNames> {
             parent: current,
             sourcePath: mangledEngineRoot(addon),
             destPath: addon.root,
+            modulePrefix: addon.name,
+            appRelativePath: explicitRelative(this.root, addon.root),
           });
         }
       }
@@ -435,7 +445,10 @@ export class AppBuilder<TreeNames> {
     // this is in reverse order because we need deeper engines to update before
     // their parents, because they aren't really valid packages until they
     // update, and their parents will go looking for their own `app-js` content.
-    this.appDiffers.reverse().forEach(a => a.differ.update());
+    this.appDiffers
+      .slice()
+      .reverse()
+      .forEach(a => a.differ.update());
     return this.appDiffers.map(a => {
       return Object.assign({}, a.engine, {
         appFiles: new AppFiles(a.differ.files, this.resolvableExtensionsPattern),
@@ -803,20 +816,47 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private appJSAsset(_appFiles: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
-    let appFiles = _appFiles[0].appFiles;
+  private topAppJSAsset(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    let [app, ...childEngines] = engines;
     let relativePath = `assets/${this.app.name}.js`;
+    return this.appJSAsset(relativePath, app, childEngines, prepared, {
+      autoRun: this.adapter.autoRun(),
+      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
+      mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
+      appConfig: this.adapter.mainModuleConfig(),
+    });
+  }
+
+  private appJSAsset(
+    relativePath: string,
+    engine: Engine,
+    childEngines: Engine[],
+    prepared: Map<string, InternalAsset>,
+    entryParams?: Partial<Parameters<typeof entryTemplate>[0]>
+  ): InternalAsset {
+    let { appFiles } = engine;
     let cached = prepared.get(relativePath);
     if (cached) {
       return cached;
     }
 
+    let eagerModules = [];
     let requiredAppFiles = [appFiles.otherAppFiles];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
+    }
+
+    for (let childEngine of childEngines) {
+      let asset = this.appJSAsset(
+        `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
+        childEngine,
+        [],
+        prepared
+      );
+      eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
     }
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
@@ -830,27 +870,30 @@ export class AppBuilder<TreeNames> {
         (routeNames: string[], files: string[]) => {
           let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {
-            prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
+            prepared.set(routeEntrypoint, this.routeEntrypoint(engine, routeEntrypoint, files));
           }
-          lazyRoutes.push({ names: routeNames, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
+          lazyRoutes.push({
+            names: routeNames,
+            path: this.importPaths(engine, routeEntrypoint, relativePath).buildtime,
+          });
         }
       );
     }
 
-    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file => this.importPaths(file, relativePath));
+    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file =>
+      this.importPaths(engine, file, relativePath)
+    );
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', relativePath, amdModules);
+    this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let source = entryTemplate({
-      amdModules,
-      autoRun: this.adapter.autoRun(),
-      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
-      mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
-      appConfig: this.adapter.mainModuleConfig(),
-      lazyRoutes,
-    });
+    let params = { amdModules, lazyRoutes, eagerModules };
+    if (entryParams) {
+      Object.assign(params, entryParams);
+    }
+
+    let source = entryTemplate(params);
 
     let asset: InternalAsset = {
       kind: 'in-memory',
@@ -866,28 +909,32 @@ export class AppBuilder<TreeNames> {
     return this.adapter.modulePrefix();
   }
 
-  private importPaths(appRelativePath: string, fromFile: string) {
+  private importPaths(engine: Engine, engineRelativePath: string, fromFile: string) {
+    let appRelativePath = join(engine.appRelativePath, engineRelativePath);
     let noJS = appRelativePath.replace(this.resolvableExtensionsPattern, '');
-    let noHBS = noJS.replace(/\.hbs$/, '');
+    let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
-      runtime: `${this.modulePrefix}/${noHBS}`,
+      runtime: `${engine.modulePrefix}/${noHBS}`,
       buildtime: explicitRelative(dirname(fromFile), noJS),
     };
   }
 
-  private routeEntrypoint(relativePath: string, files: string[]) {
+  private routeEntrypoint(engine: Engine, relativePath: string, files: string[]) {
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: files.map(f => this.importPaths(f, relativePath)),
+        files: files.map(f => this.importPaths(engine, f, relativePath)),
       }),
       relativePath,
     };
     return asset;
   }
 
-  private testJSEntrypoint(_appFiles: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
-    let appFiles = _appFiles[0].appFiles;
+  private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    // TODO: we're only building tests from the first engine (the app)
+    let engine = engines[0];
+
+    let { appFiles } = engine;
     const myName = 'assets/test.js';
     let testModules = appFiles.tests
       .map(relativePath => {
@@ -900,12 +947,12 @@ export class AppBuilder<TreeNames> {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    testModules.unshift(explicitRelative(dirname(myName), this.appJSAsset(_appFiles, prepared).relativePath));
+    testModules.unshift(explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath));
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', myName, amdModules);
+    this.gatherImplicitModules('implicit-test-modules', myName, engine, amdModules);
 
     let source = entryTemplate({
       amdModules,
@@ -923,9 +970,10 @@ export class AppBuilder<TreeNames> {
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
     relativeTo: string,
+    engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
-    for (let addon of this.adapter.allActiveAddons) {
+    for (let addon of engine.addons) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         let renamedModules = inverseRenamedModules(addon.meta, this.resolvableExtensionsPattern);

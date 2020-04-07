@@ -99,11 +99,21 @@ export class AppFiles {
 }
 
 export interface EngineSummary {
+  // the engine's own package
   package: Package;
+  // the set of active addons in the engine
   addons: Set<V2AddonPackage>;
+  // the parent engine, if any
   parent: EngineSummary | undefined;
+  // where the engine's own V2 code comes from
   sourcePath: string;
+  // where the engine gets built into, combining its own code with all its
+  // addons
   destPath: string;
+  // runtime name for the engine's own module namespace
+  modulePrefix: string;
+  // this is destPath but relative to the app itself
+  appRelativePath: string;
 }
 
 export interface Engine extends EngineSummary {

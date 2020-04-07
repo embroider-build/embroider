@@ -27,6 +27,7 @@ import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import merge from 'lodash/merge';
 import { mangledEngineRoot } from './engine-mangler';
+import { AppFiles, RouteFiles } from './app-files';
 
 export type EmberENV = unknown;
 
@@ -165,103 +166,6 @@ class ConcatenatedAsset {
 }
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
-
-interface RouteFiles {
-  route?: string;
-  template?: string;
-  controller?: string;
-  children: Map<string, RouteFiles>;
-}
-
-class AppFiles {
-  readonly tests: ReadonlyArray<string>;
-  readonly components: ReadonlyArray<string>;
-  readonly helpers: ReadonlyArray<string>;
-  private perRoute: RouteFiles;
-  readonly otherAppFiles: ReadonlyArray<string>;
-  readonly relocatedFiles: Map<string, string>;
-
-  constructor(relativePaths: Map<string, string | null>, resolvableExtensions: RegExp) {
-    let tests: string[] = [];
-    let components: string[] = [];
-    let helpers: string[] = [];
-    let otherAppFiles: string[] = [];
-    this.perRoute = { children: new Map() };
-    for (let relativePath of relativePaths.keys()) {
-      relativePath = relativePath.split(sep).join('/');
-      if (!resolvableExtensions.test(relativePath)) {
-        continue;
-      }
-
-      if (relativePath.startsWith('tests/')) {
-        if (/-test\.\w+$/.test(relativePath)) {
-          tests.push(relativePath);
-        }
-        continue;
-      }
-
-      // hbs files are resolvable, but not when they're inside the components
-      // directory (where they are used for colocation only)
-      if (relativePath.startsWith('components/') && !relativePath.endsWith('.hbs')) {
-        components.push(relativePath);
-        continue;
-      }
-
-      if (relativePath.startsWith('templates/components/')) {
-        components.push(relativePath);
-        continue;
-      }
-
-      if (relativePath.startsWith('helpers/')) {
-        helpers.push(relativePath);
-        continue;
-      }
-
-      if (this.handleRouteFile(relativePath)) {
-        continue;
-      }
-
-      otherAppFiles.push(relativePath);
-    }
-    this.tests = tests;
-    this.components = components;
-    this.helpers = helpers;
-    this.otherAppFiles = otherAppFiles;
-
-    let relocatedFiles: Map<string, string> = new Map();
-    for (let [relativePath, owningPath] of relativePaths) {
-      if (owningPath) {
-        relocatedFiles.set(relativePath, owningPath);
-      }
-    }
-    this.relocatedFiles = relocatedFiles;
-  }
-
-  private handleRouteFile(relativePath: string): boolean {
-    let [prefix, ...rest] = relativePath.replace(/\.\w{1,3}$/, '').split('/');
-    if (!['controllers', 'templates', 'routes'].includes(prefix)) {
-      return false;
-    }
-    let type = prefix.slice(0, -1) as 'controller' | 'template' | 'route';
-    let cursor = this.perRoute;
-    for (let part of rest) {
-      let child = cursor.children.get(part);
-      if (child) {
-        cursor = child;
-      } else {
-        let newEntry = { children: new Map() };
-        cursor.children.set(part, newEntry);
-        cursor = newEntry;
-      }
-    }
-    cursor[type] = relativePath;
-    return true;
-  }
-
-  get routeFiles(): Readonly<RouteFiles> {
-    return this.perRoute;
-  }
-}
 
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
@@ -511,7 +415,7 @@ export class AppBuilder<TreeNames> {
           });
         }
       }
-      done.unshift(current);
+      done.push(current);
     }
     return done;
   }
@@ -523,8 +427,12 @@ export class AppBuilder<TreeNames> {
       let engines = this.partitionEngines(appJSPath);
       this.appDiffers = engines.map(engine => new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]));
     }
-    this.appDiffers.forEach(appDiffer => appDiffer.update());
-    return new AppFiles(this.appDiffers[this.appDiffers.length - 1].files, this.resolvableExtensionsPattern);
+    // this is in reverse order because we need deeper engines to update before
+    // their parents, because they aren't really valid packages until they
+    // update, and their parents will go looking for their own `app-js` content.
+    this.appDiffers.reverse().forEach(appDiffer => appDiffer.update());
+    let enginesFiles = this.appDiffers.map(a => new AppFiles(a.files, this.resolvableExtensionsPattern));
+    return enginesFiles[0];
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {

@@ -4,8 +4,6 @@ import {
   File,
   ExpressionStatement,
   CallExpression,
-  Expression,
-  OptionalMemberExpression,
   callExpression,
   stringLiteral,
   memberExpression,
@@ -13,6 +11,7 @@ import {
   returnStatement,
   Identifier,
   ObjectExpression,
+  OptionalMemberExpression,
 } from '@babel/types';
 import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
@@ -49,7 +48,8 @@ export default function getConfig(
       config = state.opts.userConfigs[pkg.root];
     }
     let collapsed = collapse(path, config);
-    collapsed.path.replaceWith(literalConfig(collapsed.config));
+    let literalResult = literalConfig(collapsed.config);
+    collapsed.path.replaceWith(literalResult);
   } else {
     let pkgRoot;
     if (pkg) {
@@ -88,48 +88,33 @@ function literalConfig(config: unknown | undefined): Identifier | ObjectExpressi
   return expression.arguments[0] as ObjectExpression;
 }
 
-function collapse(path: NodePath<Expression>, config: any) {
+function collapse(path: NodePath, config: any) {
+  let knownPaths: Map<NodePath, { confident: boolean; value: unknown }> = new Map([
+    [path, { confident: true, value: config }],
+  ]);
+  let context = {};
   while (true) {
     let parentPath = path.parentPath;
-    if (parentPath.isMemberExpression() && parentPath.get('object').node === path.node) {
-      let property = parentPath.get('property') as NodePath;
-      if (parentPath.node.computed) {
-        let evalProperty = evaluate(property);
-        if (evalProperty.confident) {
-          config = config[evalProperty.value];
-          path = parentPath;
-          continue;
-        }
-      } else {
-        if (property.isIdentifier()) {
-          config = config[property.node.name];
-          path = parentPath;
-          continue;
-        }
+    if (parentPath.isMemberExpression()) {
+      if (parentPath.get('object').node !== path.node) {
+        return { path, config };
       }
     } else if (parentPath.node.type === 'OptionalMemberExpression') {
       let castParentPath = parentPath as NodePath<OptionalMemberExpression>;
-      if (castParentPath.get('object').node === path.node) {
-        let property = castParentPath.get('property') as NodePath;
-        if (castParentPath.node.computed) {
-          let evalProperty = evaluate(property);
-          if (evalProperty.confident) {
-            config = config == null ? config : config[evalProperty.value];
-            path = castParentPath;
-            continue;
-          }
-        } else {
-          if (property.isIdentifier()) {
-            config = config == null ? config : config[property.node.name];
-            path = castParentPath;
-            continue;
-          }
-        }
+      if (castParentPath.get('object').node !== path.node) {
+        return { path, config };
       }
     }
-    break;
+    let result = evaluate(parentPath, context, knownPaths);
+    if (!result.confident) {
+      if (path.isAssignmentExpression()) {
+        return { path: path.get('right'), config: knownPaths.get(path)!.value };
+      }
+      return { path, config: knownPaths.get(path)!.value };
+    }
+    knownPaths.set(parentPath, result);
+    path = parentPath;
   }
-  return { path, config };
 }
 
 export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State) {

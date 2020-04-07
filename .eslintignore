@@ -32,3 +32,6 @@ coverage/
 bower.json.ember-try
 package.json.ember-try
 
+#types added
+/types/**
+

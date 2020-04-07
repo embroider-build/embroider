@@ -107,6 +107,19 @@ describe(`getConfig`, function() {
         expect(code).toMatch(/doSomething\(8\)/);
       });
 
+      buildTimeTest(`collapses chained property access`, () => {
+        let code = transform(`
+        import { getConfig } from '@embroider/macros';
+
+        export default {
+          test: function() {
+            this.mode = getConfig('@babel/traverse').sizes[1].oz;
+          }
+        };
+        `);
+        expect(code).toMatch(/this.mode = 8/);
+      });
+
       // babel 6 doesn't parse nullish coalescing
       if (transform.babelMajorVersion === 7) {
         buildTimeTest(`collapses nullish coalescing, not null case`, () => {

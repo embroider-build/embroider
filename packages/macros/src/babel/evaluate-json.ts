@@ -1,7 +1,152 @@
 import { NodePath } from '@babel/traverse';
+import { Identifier } from '@babel/types';
+import { MemberExpression } from '@babel/types';
+import { Expression } from '@babel/types';
 
-function evaluateKey(path: NodePath): { confident: boolean; value: any } {
-  let first = evaluateJSON(path);
+type OpValue = String | boolean | number;
+
+const binops = {
+  '||': function(a: OpValue, b: OpValue) {
+    return a || b;
+  },
+  '&&': function(a: OpValue, b: OpValue) {
+    return a && b;
+  },
+  '|': function(a: any, b: any) {
+    return a | b;
+  },
+  '^': function(a: any, b: any) {
+    return a ^ b;
+  },
+  '&': function(a: any, b: any) {
+    return a & b;
+  },
+  '==': function(a: OpValue, b: OpValue) {
+    // eslint-disable-next-line eqeqeq
+    return a == b;
+  },
+  '!=': function(a: OpValue, b: OpValue) {
+    // eslint-disable-next-line eqeqeq
+    return a != b;
+  },
+  '===': function(a: OpValue, b: OpValue) {
+    return a === b;
+  },
+  '!==': function(a: OpValue, b: OpValue) {
+    return a !== b;
+  },
+  '<': function(a: OpValue, b: OpValue) {
+    return a < b;
+  },
+  '>': function(a: OpValue, b: OpValue) {
+    return a > b;
+  },
+  '<=': function(a: OpValue, b: OpValue) {
+    return a <= b;
+  },
+  '>=': function(a: OpValue, b: OpValue) {
+    return a >= b;
+  },
+  '<<': function(a: any, b: any) {
+    return a << b;
+  },
+  '>>': function(a: any, b: any) {
+    return a >> b;
+  },
+  '>>>': function(a: any, b: any) {
+    return a >>> b;
+  },
+  '+': function(a: any, b: any) {
+    return a + b;
+  },
+  '-': function(a: any, b: any) {
+    return a - b;
+  },
+  '*': function(a: any, b: any) {
+    return a * b;
+  },
+  '/': function(a: any, b: any) {
+    return a / b;
+  },
+  '%': function(a: any, b: any) {
+    return a % b;
+  },
+  '??': function(a: any, b: any) {
+    if (a === null || a === undefined) {
+      return b;
+    }
+    return a;
+  },
+  instanceof: function() {
+    // todo implement
+    return;
+  },
+  in: function() {
+    // todo implement
+    return;
+  },
+  '**': function() {
+    // todo implement
+    return;
+  },
+};
+
+const unops = {
+  '-': function(a: OpValue) {
+    return -a;
+  },
+  '+': function(a: OpValue) {
+    return +a;
+  },
+  '~': function(a: OpValue) {
+    return ~a;
+  },
+  '!': function(a: OpValue) {
+    return !a;
+  },
+  void: function() {
+    return undefined;
+  },
+  throw: function() {
+    // Todo implementation
+    return;
+  },
+  delete: function() {
+    // Todo implementation
+    return;
+  },
+  typeof: function() {
+    // Todo implementation
+    return;
+  },
+};
+
+export interface EvaluateResult {
+  confident: boolean;
+  value: any;
+}
+
+function evaluateMember(
+  path: NodePath<MemberExpression>,
+  context: { [localVar: string]: any },
+  knownPaths: Map<NodePath, EvaluateResult>
+): unknown[] {
+  const object = evaluate(path.get('object'), context, knownPaths);
+  let property = path.get('property') as any;
+  if (path.get('computed')) {
+    let result = evaluate(property, context, knownPaths);
+    return [object.value, object.value[result.value]];
+  } else {
+    return [object.value, object.value[property.name || property.value]];
+  }
+}
+
+function evaluateKey(
+  path: NodePath,
+  context: { [localVar: string]: any },
+  knownPaths: Map<NodePath, EvaluateResult>
+): EvaluateResult {
+  let first = evaluate(path, context, knownPaths);
   if (first.confident) {
     return first;
   }
@@ -11,22 +156,28 @@ function evaluateKey(path: NodePath): { confident: boolean; value: any } {
   return { confident: false, value: undefined };
 }
 
-export default function evaluate(path: NodePath) {
+export default function evaluate(
+  path: NodePath,
+  context: { [localVar: string]: any } = {},
+  knownPaths: Map<NodePath, EvaluateResult> = new Map()
+): EvaluateResult {
+  let known = knownPaths.get(path);
+  if (known) {
+    return known;
+  }
   let builtIn = path.evaluate();
   if (builtIn.confident) {
     return builtIn;
   }
 
-  // we can go further than babel's evaluate() because we know that we're
-  // typically used on JSON, not full Javascript.
-  return evaluateJSON(path);
-}
-
-function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
   if (path.isMemberExpression()) {
-    let property = evaluateKey(assertNotArray(path.get('property')));
+    let propertyPath = assertNotArray(path.get('property'));
+    let property = evaluateKey(propertyPath, context, knownPaths);
+    knownPaths.set(propertyPath, property);
     if (property.confident) {
-      let object = evaluate(path.get('object'));
+      let objectPath = path.get('object');
+      let object = evaluate(objectPath, context, knownPaths);
+      knownPaths.set(objectPath, object);
       if (object.confident) {
         return {
           confident: true,
@@ -55,10 +206,15 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
   }
 
   if (path.isObjectExpression()) {
-    let props = assertArray(path.get('properties')).map(p => [
-      evaluate(assertNotArray(p.get('key'))),
-      evaluate(assertNotArray(p.get('value'))),
-    ]);
+    let props = assertArray(path.get('properties')).map(p => {
+      let key = assertNotArray(p.get('key'));
+      let keyEvalValue = evaluate(key, context, knownPaths);
+      knownPaths.set(key, keyEvalValue);
+      let value = assertNotArray(p.get('value'));
+      let valueEvalValue = evaluate(value, context, knownPaths);
+      knownPaths.set(value, valueEvalValue);
+      return [keyEvalValue, valueEvalValue];
+    });
     for (let [k, v] of props) {
       if (!k.confident || !v.confident) {
         return { confident: false, value: undefined };
@@ -78,7 +234,7 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
 
   if (path.isArrayExpression()) {
     let elements = path.get('elements').map(element => {
-      return evaluate(element as NodePath);
+      return evaluate(element as NodePath, context, knownPaths);
     });
     if (elements.every(element => element.confident)) {
       return {
@@ -90,6 +246,19 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
     }
   }
 
+  if (path.isAssignmentExpression()) {
+    let leftPath = path.get('left');
+    let leftNode = leftPath.node as Identifier;
+    let rightPath = path.get('right');
+    let rightNode = rightPath.node as Identifier;
+    let rightEvalValue = evaluate(rightPath, context, knownPaths);
+    let value = context[rightNode.name] || rightEvalValue.value;
+    context[leftNode.name] = value;
+    knownPaths.set(rightPath, rightEvalValue);
+    knownPaths.set(leftPath, { confident: true, value });
+    return { confident: true, value };
+  }
+
   // This handles the presence of our runtime-mode getConfig functions. We want
   // to designate them as { confident: true }, because it's important that we
   // give feedback even in runtime-mode if the developer is trying to pass
@@ -98,6 +267,7 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
   // to runtime. That's why we've made `value` lazy. It lets us check the
   // confidence without actually forcing the value.
   if (path.isCallExpression()) {
+    let caller, fn, assign;
     let callee = path.get('callee');
     if (callee.isMemberExpression()) {
       let prop = assertNotArray(callee.get('property'));
@@ -115,8 +285,80 @@ function evaluateJSON(path: NodePath): { confident: boolean; value: any } {
             },
           };
         }
+      } else {
+        assign = evaluateMember(callee, context, knownPaths);
+        caller = assign[0];
+        fn = assign[1];
+      }
+    } else {
+      assign = evaluate(callee, context, knownPaths);
+      fn = assign.value;
+    }
+
+    if (typeof fn !== 'function') {
+      return { confident: false, value: undefined };
+    }
+
+    let args = path.get('arguments').map(argument => {
+      return evaluate(argument as NodePath, context, knownPaths);
+    });
+
+    return {
+      confident: true,
+      value: fn.apply(caller, args),
+    };
+  }
+
+  if (path.node.type === 'OptionalMemberExpression') {
+    let property = path.get('property') as NodePath;
+    let nodeName;
+    if (path.node.computed) {
+      let evalProperty = evaluate(property, context, knownPaths);
+      if (evalProperty.confident) {
+        nodeName = evalProperty.value;
+      }
+    } else {
+      if (property.isIdentifier()) {
+        nodeName = property.node.name;
       }
     }
+    let object = path.get('object') as NodePath;
+    let knownValue = knownPaths.get(object);
+    let value = knownValue && knownValue.value ? knownValue.value[nodeName] : undefined;
+    knownPaths.set(property, { confident: true, value });
+    return { confident: true, value };
+  }
+
+  if (path.isLogicalExpression() || path.isBinaryExpression()) {
+    let value = binops[path.node.operator](
+      evaluate(path.get('left') as NodePath<Expression>, context, knownPaths).value,
+      evaluate(path.get('right') as NodePath<Expression>, context, knownPaths).value
+    );
+    knownPaths.set(path, { confident: true, value });
+    return { confident: true, value };
+  }
+
+  if (path.isConditionalExpression()) {
+    let value = evaluate(path.get('test'), context, knownPaths).value
+      ? evaluate(path.get('consequent'), context, knownPaths).value
+      : evaluate(path.get('alternate'), context, knownPaths).value;
+    knownPaths.set(path, { confident: true, value });
+    return { confident: true, value };
+  }
+
+  if (path.isUnaryExpression()) {
+    let value = unops[path.node.operator](
+      evaluate(path.get('argument') as NodePath<Expression>, context, knownPaths).value
+    );
+    knownPaths.set(path, { confident: true, value });
+    return { confident: true, value };
+  }
+
+  if (path.isIdentifier()) {
+    if (!context.hasOwnProperty(path.node.name)) {
+      return { confident: false, value: context[path.node.name] };
+    }
+    return { confident: true, value: context[path.node.name] };
   }
 
   return { confident: false, value: undefined };

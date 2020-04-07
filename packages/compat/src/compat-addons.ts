@@ -1,7 +1,7 @@
 import { Tree } from 'broccoli-plugin';
 import { join, relative, dirname } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { tmpdir } from 'os';
 import { MovedPackageCache } from './moved-package-cache';
@@ -99,7 +99,7 @@ export default class CompatAddons implements Stage {
       // Engines get built not into their real package name, but a mangled one.
       // Their real one needs to be free for us to merge all their dependencies
       // into.
-      let destination = isEngine ? `${newPkg.root}__engine_internal__` : newPkg.root;
+      let destination = isEngine ? mangledEngineRoot(newPkg) : newPkg.root;
 
       if (!treeInstance) {
         treeInstance = new TreeSync(movedAddons[index], destination, {
@@ -118,7 +118,7 @@ export default class CompatAddons implements Stage {
         if (!this.didBuild && isEngine) {
           // The first time we encounter an engine, we also create the empty
           // shell for its real module namespace.
-          ensureSymlinkSync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
+          copySync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
         }
         this.linkNonCopiedDeps(newPkg, destination);
       }

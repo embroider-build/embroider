@@ -26,6 +26,7 @@ import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import merge from 'lodash/merge';
+import { mangledEngineRoot } from './engine-mangler';
 
 export type EmberENV = unknown;
 
@@ -43,8 +44,8 @@ export interface AppAdapter<TreeNames> {
   // the set of all addon packages that are active (recursive)
   readonly allActiveAddons: V2AddonPackage[];
 
-  // the set of active addons used by the app directly (not recursive)
-  readonly directActiveAddons: V2AddonPackage[];
+  // the direct active addon dependencies of a given package
+  activeAddonChildren(pkg: Package): V2AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -471,14 +472,59 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private appDiffer: AppDiffer | undefined;
+  // recurse to find all active addons that don't cross an engine boundary.
+  // Inner engines themselves will be returned, but not those engines' children.
+  // The output set's insertion order is the proper ember-cli compatible
+  // ordering of the addons.
+  private findActiveAddons(pkg: Package, engine: EngineSummary): void {
+    for (let child of this.adapter.activeAddonChildren(pkg)) {
+      if (!ancestorsHave(child, engine)) {
+        if (!child.isEngine()) {
+          this.findActiveAddons(child, engine);
+        }
+        engine.addons.add(child);
+      }
+    }
+  }
+
+  private partitionEngines(appJSPath: string): EngineSummary[] {
+    let queue: EngineSummary[] = [
+      { package: this.app, addons: new Set(), parent: undefined, sourcePath: appJSPath, destPath: this.root },
+    ];
+    let done: EngineSummary[] = [];
+    let seenEngines: Set<Package> = new Set();
+    while (true) {
+      let current = queue.shift();
+      if (!current) {
+        break;
+      }
+      this.findActiveAddons(current.package, current);
+      for (let addon of current.addons) {
+        if (addon.isEngine() && !seenEngines.has(addon)) {
+          seenEngines.add(addon);
+          queue.push({
+            package: addon,
+            addons: new Set(),
+            parent: current,
+            sourcePath: mangledEngineRoot(addon),
+            destPath: addon.root,
+          });
+        }
+      }
+      done.unshift(current);
+    }
+    return done;
+  }
+
+  private appDiffers: AppDiffer[] | undefined;
 
   private updateAppJS(appJSPath: string): AppFiles {
-    if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.allActiveAddons);
+    if (!this.appDiffers) {
+      let engines = this.partitionEngines(appJSPath);
+      this.appDiffers = engines.map(engine => new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]));
     }
-    this.appDiffer.update();
-    return new AppFiles(this.appDiffer.files, this.resolvableExtensionsPattern);
+    this.appDiffers.forEach(appDiffer => appDiffer.update());
+    return new AppFiles(this.appDiffers[0].files, this.resolvableExtensionsPattern);
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
@@ -1079,4 +1125,25 @@ function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp)
     }
     return inverted;
   }
+}
+
+interface EngineSummary {
+  package: Package;
+  addons: Set<V2AddonPackage>;
+  parent: EngineSummary | undefined;
+  sourcePath: string;
+  destPath: string;
+}
+
+function ancestorsHave(child: V2AddonPackage, engine: EngineSummary) {
+  let ancestor = engine.parent;
+  while (ancestor) {
+    if (ancestor.addons.has(child)) {
+      // one of our ancestor addons already claimed this child addon, so
+      // we should not
+      return true;
+    }
+    ancestor = ancestor.parent;
+  }
+  return false;
 }

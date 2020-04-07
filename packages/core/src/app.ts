@@ -6,7 +6,7 @@ import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
-import { todo, debug, warn } from './messages';
+import { debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -838,10 +838,6 @@ export class AppBuilder<TreeNames> {
     }
 
     let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file => this.importPaths(file, relativePath));
-
-    // for the src tree, we can limit ourselves to only known resolvable
-    // collections
-    todo('app src tree');
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.

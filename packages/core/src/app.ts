@@ -524,7 +524,7 @@ export class AppBuilder<TreeNames> {
       this.appDiffers = engines.map(engine => new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]));
     }
     this.appDiffers.forEach(appDiffer => appDiffer.update());
-    return new AppFiles(this.appDiffers[0].files, this.resolvableExtensionsPattern);
+    return new AppFiles(this.appDiffers[this.appDiffers.length - 1].files, this.resolvableExtensionsPattern);
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {

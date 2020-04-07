@@ -27,7 +27,7 @@ import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import merge from 'lodash/merge';
 import { mangledEngineRoot } from './engine-mangler';
-import { AppFiles, RouteFiles } from './app-files';
+import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
 
 export type EmberENV = unknown;
 
@@ -243,7 +243,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompiler: TemplateCompiler, appFiles: AppFiles) {
+  private babelConfig(templateCompiler: TemplateCompiler, appFiles: Engine[]) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -278,7 +278,7 @@ export class AppBuilder<TreeNames> {
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
 
-  private adjustImportsPlugin(appFiles: AppFiles): PluginItem {
+  private adjustImportsPlugin(engines: Engine[]): PluginItem {
     let renamePackages = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-packages']));
 
     let renameModules = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-modules']));
@@ -289,12 +289,14 @@ export class AppBuilder<TreeNames> {
     }
 
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
-    for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-      relocatedFiles[
-        join(this.root, relativePath)
-          .split(sep)
-          .join('/')
-      ] = originalPath;
+    for (let { destPath, appFiles } of engines) {
+      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
+        relocatedFiles[
+          join(destPath, relativePath)
+            .split(sep)
+            .join('/')
+        ] = originalPath;
+      }
     }
 
     let adjustOptions: AdjustImportsOptions = {
@@ -315,7 +317,7 @@ export class AppBuilder<TreeNames> {
 
   private insertEmberApp(
     asset: ParsedEmberAsset,
-    appFiles: AppFiles,
+    appFiles: Engine[],
     prepared: Map<string, InternalAsset>,
     emberENV: EmberENV
   ) {
@@ -420,22 +422,28 @@ export class AppBuilder<TreeNames> {
     return done;
   }
 
-  private appDiffers: AppDiffer[] | undefined;
+  private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
 
-  private updateAppJS(appJSPath: string): AppFiles {
+  private updateAppJS(appJSPath: string): Engine[] {
     if (!this.appDiffers) {
       let engines = this.partitionEngines(appJSPath);
-      this.appDiffers = engines.map(engine => new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]));
+      this.appDiffers = engines.map(engine => ({
+        differ: new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]),
+        engine,
+      }));
     }
     // this is in reverse order because we need deeper engines to update before
     // their parents, because they aren't really valid packages until they
     // update, and their parents will go looking for their own `app-js` content.
-    this.appDiffers.reverse().forEach(appDiffer => appDiffer.update());
-    let enginesFiles = this.appDiffers.map(a => new AppFiles(a.files, this.resolvableExtensionsPattern));
-    return enginesFiles[0];
+    this.appDiffers.reverse().forEach(a => a.differ.update());
+    return this.appDiffers.map(a => {
+      return Object.assign({}, a.engine, {
+        appFiles: new AppFiles(a.differ.files, this.resolvableExtensionsPattern),
+      });
+    });
   }
 
-  private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private prepareAsset(asset: Asset, appFiles: Engine[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -453,7 +461,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared, emberENV);
@@ -531,7 +539,7 @@ export class AppBuilder<TreeNames> {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV) {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -795,7 +803,8 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
+  private appJSAsset(_appFiles: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    let appFiles = _appFiles[0].appFiles;
     let relativePath = `assets/${this.app.name}.js`;
     let cached = prepared.get(relativePath);
     if (cached) {
@@ -881,7 +890,8 @@ export class AppBuilder<TreeNames> {
     return asset;
   }
 
-  private testJSEntrypoint(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
+  private testJSEntrypoint(_appFiles: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    let appFiles = _appFiles[0].appFiles;
     const myName = 'assets/test.js';
     let testModules = appFiles.tests
       .map(relativePath => {
@@ -894,7 +904,7 @@ export class AppBuilder<TreeNames> {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    testModules.unshift(explicitRelative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
+    testModules.unshift(explicitRelative(dirname(myName), this.appJSAsset(_appFiles, prepared).relativePath));
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -1033,14 +1043,6 @@ function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp)
     }
     return inverted;
   }
-}
-
-interface EngineSummary {
-  package: Package;
-  addons: Set<V2AddonPackage>;
-  parent: EngineSummary | undefined;
-  sourcePath: string;
-  destPath: string;
 }
 
 function ancestorsHave(child: V2AddonPackage, engine: EngineSummary) {

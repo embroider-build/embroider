@@ -1,4 +1,5 @@
 import { sep } from 'path';
+import Package, { V2AddonPackage } from './package';
 
 export interface RouteFiles {
   route?: string;
@@ -95,4 +96,16 @@ export class AppFiles {
   get routeFiles(): Readonly<RouteFiles> {
     return this.perRoute;
   }
+}
+
+export interface EngineSummary {
+  package: Package;
+  addons: Set<V2AddonPackage>;
+  parent: EngineSummary | undefined;
+  sourcePath: string;
+  destPath: string;
+}
+
+export interface Engine extends EngineSummary {
+  appFiles: AppFiles;
 }

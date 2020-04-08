@@ -4,7 +4,7 @@
     "target": "es2017",
     "module": "commonjs",
     "declaration": true,
-    "typeRoots": ["node_modules/@types", "types"],
+    "typeRoots": ["types", "node_modules/@types"],
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

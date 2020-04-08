@@ -76,7 +76,7 @@ export default function main() {
             );
           }
           if (state.mustImportComponent) {
-            state.associateWithName = unusedNameLike('COMPONENT', path);
+            state.associateWithName = unusedNameLike('COMPONENT', path as NodePath<unknown>);
             let specifier;
             if (state.mustImportComponent.name === 'default') {
               specifier = importDefaultSpecifier(identifier(state.associateWithName));
@@ -108,7 +108,7 @@ export default function main() {
         let declaration = path.get('declaration').node;
 
         if (isClassDeclaration(declaration)) {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+          state.importTemplateAs = unusedNameLike('TEMPLATE', path as NodePath<unknown>);
           if (declaration.id != null) {
             state.associateWithName = declaration.id.name;
           } else {
@@ -118,7 +118,7 @@ export default function main() {
             ]);
           }
         } else if (isFunctionDeclaration(declaration)) {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+          state.importTemplateAs = unusedNameLike('TEMPLATE', path as NodePath<unknown>);
 
           if (declaration.id != null) {
             state.associateWithName = declaration.id.name;
@@ -131,7 +131,7 @@ export default function main() {
         } else if (isTSDeclareFunction(declaration)) {
           // we don't rewrite this
         } else {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+          state.importTemplateAs = unusedNameLike('TEMPLATE', path as NodePath<unknown>);
           path.node.declaration = callExpression(setComponentTemplate(), [
             identifier(state.importTemplateAs),
             declaration,
@@ -147,7 +147,7 @@ export default function main() {
           if (isExportDefaultSpecifier(specifier)) {
           } else if (isExportSpecifier(specifier)) {
             if (specifier.exported.name === 'default') {
-              state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+              state.importTemplateAs = unusedNameLike('TEMPLATE', path as NodePath<unknown>);
               if (node.source) {
                 // our default export is a reexport from elsewhere. We will
                 // synthesize a new import for it so we can get a local handle

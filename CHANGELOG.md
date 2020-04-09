@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## 0.14.0
+
+- ENHANCEMENT: multiple additions and bugfixes to the macro system by @simonihmig
+- COMPAT: ast transforms in stage1 didn't see the same moduleNames as under stock ember-cli, by @SparshithNR
+- COMPAT: always define `runningTests` by @thoov
+- COMPAT: resolve ambiguous addon merges in the same order as stock ember-cli by @thoov
+- COMPAT: more progress on engines support
+- COMPAT: more progress on fastboot support by @SparshithNR
+- BUGFIX: correctly handle ember-auto-import's dynamic `import()`
+- DOCS: add info about disabling the webpack bundle analyzer browser by @ohcibi
+
 ## 0.13.0
 
 - COMPAT: follow the stock build's special-case behavior that forbids "template.hbs" as a template-only component

@@ -1,6 +1,6 @@
 import V1Package from './v1-package';
 import { Memoize } from 'typescript-memoize';
-import { dirname } from 'path';
+import { dirname, isAbsolute } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join } from 'path';
 import { existsSync, pathExistsSync } from 'fs-extra';
@@ -13,7 +13,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -25,6 +25,7 @@ import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
+import { ResolvedDep } from '@embroider/core/src/resolver';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -54,6 +55,32 @@ const dynamicTreeHooks = Object.freeze([
 
 const appPublicationDir = '_app_';
 
+/**
+ * Creating a interface here just to keep the Resolver's structure as it is.
+ */
+interface ResolverParams {
+  root: string;
+  modulePrefix: string;
+}
+class V1AddonCompatResolver implements Resolver {
+  params: ResolverParams;
+  constructor(params: ResolverParams) {
+    this.params = params;
+  }
+  astTransformer(_templateCompiler: TemplateCompiler): unknown {
+    return;
+  }
+  dependenciesOf(_moduleName: string): ResolvedDep[] {
+    return [];
+  }
+  absPathToRuntimeName(moduleName: string) {
+    if (isAbsolute(moduleName)) {
+      return moduleName;
+    }
+    return join(this.params.modulePrefix, moduleName);
+  }
+}
+
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
 export default class V1Addon implements V1Package {
@@ -61,7 +88,8 @@ export default class V1Addon implements V1Package {
     protected addonInstance: any,
     protected addonOptions: Required<Options>,
     private app: V1App,
-    private packageCache: PackageCache
+    private packageCache: PackageCache,
+    private orderIdx: number
   ) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
@@ -82,10 +110,19 @@ export default class V1Addon implements V1Package {
             compilerPath: options.templateCompilerPath,
             EmberENV: {},
             plugins: options.plugins,
+            resolver: this.templateResolver(),
           });
         }
       }
     }
+  }
+
+  @Memoize()
+  templateResolver(): Resolver {
+    return new V1AddonCompatResolver({
+      root: this.app.root,
+      modulePrefix: this.moduleName,
+    });
   }
 
   private updateRegistry(registry: any) {
@@ -389,7 +426,7 @@ export default class V1Addon implements V1Package {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend({}, built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
   }
 
   @Memoize()
@@ -703,6 +740,7 @@ export default class V1Addon implements V1Package {
   @Memoize()
   private build(): IntermediateBuild {
     let built = new IntermediateBuild();
+    built.staticMeta['order-index'] = this.orderIdx;
 
     if (this.moduleName !== this.name) {
       built.staticMeta['renamed-packages'] = {
@@ -729,7 +767,13 @@ export default class V1Addon implements V1Package {
 }
 
 export interface V1AddonConstructor {
-  new (addonInstance: any, options: Required<Options>, app: V1App, packageCache: PackageCache): V1Addon;
+  new (
+    addonInstance: any,
+    options: Required<Options>,
+    app: V1App,
+    packageCache: PackageCache,
+    orderIdx: number
+  ): V1Addon;
 }
 
 class IntermediateBuild {

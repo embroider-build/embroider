@@ -308,6 +308,12 @@ export class AppBuilder<TreeNames> {
     if (type === 'implicit-scripts') {
       result.unshift({
         kind: 'in-memory',
+        relativePath: '_testing_prefix_.js',
+        source: `var runningTests=false;`,
+      });
+
+      result.unshift({
+        kind: 'in-memory',
         relativePath: '_ember_env_.js',
         source: `window.EmberENV=${JSON.stringify(emberENV, null, 2)};`,
       });

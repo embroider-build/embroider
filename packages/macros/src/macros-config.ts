@@ -175,7 +175,7 @@ export default class MacrosConfig {
         // setting config before we generate the userConfigs
         get userConfigs() {
           if (!configs) {
-            throw new Error(`Bug: @embroider/maros ast-transforms were not plugged into a MacrosConfig`);
+            throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
           }
           return configs.userConfigs;
         },

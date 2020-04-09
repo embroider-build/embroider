@@ -128,11 +128,26 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // todo: filter by addon-provided hook
     let shouldInclude = (dep: Package) => dep.isEmberPackage();
 
+    let orderAddons = (depA: Package, depB: Package) => {
+      let depAIdx = 0;
+      let depBIdx = 0;
+
+      if (depA && depA.meta && depA.isV2Addon()) {
+        depAIdx = depA.meta['order-index'] || 0;
+      }
+      if (depB && depB.meta && depB.isV2Addon()) {
+        depBIdx = depB.meta['order-index'] || 0;
+      }
+
+      return depAIdx - depBIdx;
+    };
+
     let result = this.appPackage.findDescendants(shouldInclude) as AddonPackage[];
     let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude) as AddonPackage[];
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
-    return result;
+
+    return result.sort(orderAddons);
   }
 
   @Memoize()

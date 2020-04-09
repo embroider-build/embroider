@@ -384,7 +384,8 @@ export default class TemplateCompiler {
       });
     }
 
-    opts.filename = this.params.resolver
+    opts.filename = moduleName;
+    opts.moduleName = this.params.resolver
       ? this.params.resolver.absPathToRuntimeName(moduleName) || moduleName
       : moduleName;
     let ast = this.syntax.preprocess(contents, opts);

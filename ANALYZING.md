@@ -22,7 +22,29 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 
 Note this step modifies the snippet as described in step 2 in the [README.md](README.md).
 
-This will not show the contents of vendor.js, which provides legacy support for addons that import things into script context and doesn't go through webpack. To see what is contributing to the size of vendor.js, set the environment variable `EMBROIDER_CONCAT_STATS=true` like:
+## Analyzer server
+
+Webpack Bundle Analyzer will spin up an additional server which serves a page that you can visit in the browser to see the results. That server is started no matter if one runs `ember build` or `ember serve`. To disable the server pass the following config to the instantiation of `BundleAnalyzerPlugin()` in the snippet above.
+
+```javascript
+//...
+new BundleAnalyzerPlugin({
+  generateStatsFile: true,
+  openAnalyzer: false,
+  statsFilename: path.join(
+    process.cwd(),
+    'concat-stats-for',
+    'my-stats.json',
+  ),
+})
+//...
+```
+
+With that configuration the results will be written to a json file in your projects directory.
+
+## Include legacy addons in analyzation
+
+The results will not show the contents of vendor.js, which provides legacy support for addons that import things into script context and doesn't go through webpack. To see what is contributing to the size of vendor.js, set the environment variable `EMBROIDER_CONCAT_STATS=true` like:
 
 ```
 EMBROIDER_CONCAT_STATS=true ember build

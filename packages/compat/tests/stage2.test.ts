@@ -1,5 +1,5 @@
 import { Project, BuildResult, ExpectFile, expectFilesAt } from '@embroider/test-support';
-
+import { BuildParams } from '@embroider/test-support/build';
 import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
 import { join } from 'path';
@@ -8,13 +8,93 @@ import merge from 'lodash/merge';
 
 describe('stage2 build', function() {
   jest.setTimeout(120000);
+  throwOnWarnings();
+
+  describe('addon ordering is preserved from ember-cli with orderIdx', function() {
+    let expectFile: ExpectFile;
+    let build: BuildResult;
+
+    // these test attempt to describe the addon ordering behavior from ember-cli that was
+    // introduced via: https://github.com/ember-cli/ember-cli/commit/098a9b304b551fe235bd42399ce6975af2a1bc48
+    beforeAll(async function() {
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+      let app = Project.emberNew();
+
+      let depB = app.addAddon('dep-b');
+      let depA = app.addAddon('dep-a');
+
+      merge(depB.files, {
+        app: { service: { 'addon.js': 'dep-b', 'dep-wins-over-dev.js': 'dep-b', 'in-repo-over-deps.js': 'dep-b' } },
+      });
+      merge(depA.files, { app: { service: { 'addon.js': 'dep-a' } } });
+
+      app.addInRepoAddon('in-repo-a', {
+        app: { service: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
+      });
+      app.addInRepoAddon('in-repo-b', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
+
+      let devA = app.addDevAddon('dev-a');
+      let devB = app.addDevAddon('dev-b');
+      let devC = app.addDevAddon('dev-c');
+      let devD = app.addDevAddon('dev-d');
+      let devE = app.addDevAddon('dev-e');
+      let devF = app.addDevAddon('dev-f');
+
+      devB.pkg['ember-addon'].after = 'dev-e';
+      devF.pkg['ember-addon'].before = 'dev-d';
+
+      merge(devA.files, { app: { service: { 'dev-addon.js': 'dev-a', 'dep-wins-over-dev.js': 'dev-a' } } });
+      merge(devB.files, { app: { service: { 'test-after.js': 'dev-b' } } });
+      merge(devC.files, { app: { service: { 'dev-addon.js': 'dev-c' } } });
+      merge(devD.files, { app: { service: { 'test-before.js': 'dev-d' } } });
+      merge(devE.files, { app: { service: { 'test-after.js': 'dev-e' } } });
+      merge(devF.files, { app: { service: { 'test-before.js': 'dev-f' } } });
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function() {
+      await build.cleanup();
+    });
+
+    it('verifies that the correct lexigraphically sorted addons win', function() {
+      expectFile('./service/in-repo.js').matches(/in-repo-b/);
+      expectFile('./service/addon.js').matches(/dep-b/);
+      expectFile('./service/dev-addon.js').matches(/dev-c/);
+    });
+
+    it('addons declared as dependencies should win over devDependencies', function() {
+      expectFile('./service/dep-wins-over-dev.js').matches(/dep-b/);
+    });
+
+    it('in repo addons declared win over dependencies', function() {
+      expectFile('./service/in-repo-over-deps.js').matches(/in-repo-a/);
+    });
+
+    it('ordering with before specified', function() {
+      expectFile('./service/test-before.js').matches(/dev-d/);
+    });
+
+    it('ordering with after specified', function() {
+      expectFile('./service/test-after.js').matches(/dev-b/);
+    });
+  });
 
   describe('static with rules', function() {
     let expectFile: ExpectFile;
     let build: BuildResult;
     let app: Project;
-
-    throwOnWarnings();
 
     beforeAll(async function() {
       app = Project.emberNew();

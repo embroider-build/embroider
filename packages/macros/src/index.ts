@@ -54,6 +54,10 @@ export function failBuild(message: string): void {
   throw new Oops(message);
 }
 
+export function moduleExists(packageName: string): boolean {
+  throw new Oops(packageName);
+}
+
 class Oops extends Error {
   params: any[];
   constructor(...params: any[]) {

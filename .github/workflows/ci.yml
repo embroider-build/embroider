@@ -12,11 +12,13 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v1
-    - uses: rwjblue/setup-volta@v1
-      with:
-        node-version: ${{ matrix.node_version }}
+      - uses: actions/checkout@v1
+      - uses: rwjblue/setup-volta@v1
+        with:
+          node-version: ${{ matrix.node_version }}
 
-    - run: yarn
-    - run: yarn lint
-    - run: JOBS=1 yarn test
+      - run: yarn
+      - run: yarn lint
+      - run: JOBS=1 yarn test
+        env:
+          NODE_OPTIONS: '--max_old_space_size=8192'

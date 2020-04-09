@@ -390,12 +390,10 @@ export class AppBuilder<TreeNames> {
   // ordering of the addons.
   private findActiveAddons(pkg: Package, engine: EngineSummary): void {
     for (let child of this.adapter.activeAddonChildren(pkg)) {
-      if (!ancestorsHave(child, engine)) {
-        if (!child.isEngine()) {
-          this.findActiveAddons(child, engine);
-        }
-        engine.addons.add(child);
+      if (!child.isEngine()) {
+        this.findActiveAddons(child, engine);
       }
+      engine.addons.add(child);
     }
   }
 
@@ -1093,17 +1091,4 @@ function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp)
     }
     return inverted;
   }
-}
-
-function ancestorsHave(child: V2AddonPackage, engine: EngineSummary) {
-  let ancestor = engine.parent;
-  while (ancestor) {
-    if (ancestor.addons.has(child)) {
-      // one of our ancestor addons already claimed this child addon, so
-      // we should not
-      return true;
-    }
-    ancestor = ancestor.parent;
-  }
-  return false;
 }

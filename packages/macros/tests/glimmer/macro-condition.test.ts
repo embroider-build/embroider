@@ -34,6 +34,11 @@ describe(`macroCondition`, function() {
       expect(code).toMatch(/class="target \{\{['"]red['"]\}\}"/);
     });
 
+    test('macroCondition inside string with subexpressions', function() {
+      let code = transform(`<div class="target {{if (macroCondition true) (if this.error "red") }}"></div>`);
+      expect(code).toMatch(/class="target \{\{if this.error ['"]red['"]\}\}"/);
+    });
+
     test('leaves regular if-subexpression untouched', function() {
       let code = transform(`{{my-assertion (if this.error "red" "blue")}}`);
       expect(code).toEqual(`{{my-assertion (if this.error "red" "blue")}}`);

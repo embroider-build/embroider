@@ -8,21 +8,27 @@ import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
-export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
-  let tree = buildCompatAddon(originalPackage, v1Cache);
+export default function cachedBuildCompatAddon(
+  originalPackage: Package,
+  v1Cache: V1InstanceCache
+): { tree: Tree; nonResolvableDeps: Package[] } {
+  let { tree, nonResolvableDeps } = buildCompatAddon(originalPackage, v1Cache);
   if (!originalPackage.mayRebuild) {
     tree = new OneShot(tree);
   }
-  return tree;
+  return { tree, nonResolvableDeps };
 }
 
-function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
+function buildCompatAddon(
+  originalPackage: Package,
+  v1Cache: V1InstanceCache
+): { tree: Tree; nonResolvableDeps: Package[] } {
   if (originalPackage.isV2Addon()) {
     // this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and
     // therefore moved, so to continue depending on it the native one needs to
     // move too.)
-    return withoutNodeModules(originalPackage.root);
+    return { tree: withoutNodeModules(originalPackage.root), nonResolvableDeps: [] };
   }
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
@@ -36,16 +42,17 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): T
     // because that whole process only depends on looking at all the
     // package.json files on disk -- it can't know which ones are going to end
     // up unused at this point.
-    return new EmptyPackageTree();
+    return { tree: new EmptyPackageTree(), nonResolvableDeps: [] };
   }
 
   let needsSmooshing = oldPackages[0].hasAnyTrees();
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees);
-    return broccoliMergeTrees([...trees, smoosher], { overwrite: true });
+    // TODO: combine nonResolvableDeps from all copies
+    return { tree: broccoliMergeTrees([...trees, smoosher], { overwrite: true }) };
   } else {
-    return oldPackages[0].v2Tree;
+    return { tree: oldPackages[0].v2Tree, nonResolvableDeps: oldPackages[0].nonResolvableDependencies() };
   }
 }
 

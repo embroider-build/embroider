@@ -13,7 +13,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, Package } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -416,6 +416,12 @@ export default class V1Addon implements V1Package {
     if (this.templateCompiler) {
       babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
     }
+  }
+
+  // TODO: implement based on this.packageJSON['ember-addon'].paths also, put
+  // the same things into our output package.json via RewritePackageJSON
+  nonResolvableDependencies(): Package[] {
+    return [];
   }
 
   get v2Tree(): Tree {

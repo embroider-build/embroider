@@ -120,7 +120,11 @@ export default class CompatAddons implements Stage {
           // shell for its real module namespace.
           copySync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
         }
-        this.linkNonCopiedDeps(newPkg, destination);
+
+        // for engines, this isn't the mangled destination (we don't need
+        // resolvable node_modules there), this is the empty shell of their real
+        // location
+        this.linkNonCopiedDeps(newPkg, newPkg.root);
       }
     });
 

@@ -10,6 +10,68 @@ describe('stage2 build', function() {
   jest.setTimeout(120000);
   throwOnWarnings();
 
+  describe('in repo addons of addons works', function() {
+    let expectFile: ExpectFile;
+    let build: BuildResult;
+
+    beforeAll(async function() {
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+      let app = Project.emberNew();
+
+      let depA = app.addAddon('dep-a');
+      let depB = app.addAddon('dep-b');
+
+      depA.addInRepoAddon('in-repo-a', {
+        app: { service: { 'in-repo.js': 'in-repo-a' } },
+      });
+      depB.addInRepoAddon('in-repo-b', {
+        app: { service: { 'in-repo.js': 'in-repo-b' } },
+      });
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function() {
+      await build.cleanup();
+    });
+
+    it('in repo addons are symlinked correctly', function() {
+      // check that package json contains in repo dep
+      expectFile('./node_modules/dep-a/package.json')
+        .json()
+        .get('dependencies.in-repo-a')
+        .equals('*');
+
+      // check that symlinks is correct
+      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json');
+      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json');
+
+      // check that the in repo addons are correct upgraded
+      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json')
+        .json()
+        .get('ember-addon.version')
+        .equals(2);
+      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json')
+        .json()
+        .get('ember-addon.version')
+        .equals(2);
+
+      // check that the app trees with in repo addon are combined correctly
+      expectFile('./service/in-repo.js').matches(/in-repo-b/);
+    });
+  });
+
   describe('addon ordering is preserved from ember-cli with orderIdx', function() {
     let expectFile: ExpectFile;
     let build: BuildResult;

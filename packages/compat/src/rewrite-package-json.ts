@@ -46,6 +46,8 @@ export default class RewritePackageJSON extends Plugin {
       pkg.dependencies = {};
     }
 
+    // add in repo addons to dependencies as they will be symlinked
+    // into node_modules
     for (let dep of nonResolvableDependencies) {
       pkg.dependencies[dep.name] = '*';
     }

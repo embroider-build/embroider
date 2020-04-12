@@ -47,11 +47,9 @@ export default class CompatAddons implements Stage {
   get tree(): Tree {
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => {
       let { tree, nonResolvableDeps } = buildCompatAddon(oldPkg, this.v1Cache);
-
       for (let dep of nonResolvableDeps) {
         this.nonResolvableDepsOfAddons.push({ pkg: oldPkg, dep });
       }
-
       return tree;
     });
     let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);

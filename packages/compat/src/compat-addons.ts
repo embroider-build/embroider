@@ -17,7 +17,7 @@ export default class CompatAddons implements Stage {
   private destDir: string;
   private packageCache: MovedPackageCache;
   private nonResolvableDeps: Package[];
-  private nonResolvableDepsOfAddons: { pkg: Package; deps: Package[] }[];
+  private nonResolvableDepsOfAddons: { pkg: Package; dep: Package }[];
   private treeSyncMap: WeakMap<Package, TreeSync>;
   private v1Cache: V1InstanceCache;
   readonly inputPath: string;
@@ -48,9 +48,10 @@ export default class CompatAddons implements Stage {
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => {
       let { tree, nonResolvableDeps } = buildCompatAddon(oldPkg, this.v1Cache);
 
-      if (nonResolvableDeps.length > 0) {
-        this.nonResolvableDepsOfAddons.push({ pkg: oldPkg, deps: nonResolvableDeps });
+      for (let dep of nonResolvableDeps) {
+        this.nonResolvableDepsOfAddons.push({ pkg: oldPkg, dep });
       }
+
       return tree;
     });
     let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
@@ -151,18 +152,18 @@ export default class CompatAddons implements Stage {
       ensureSymlinkSync(dep.root, target, 'dir');
     }
 
-    for (let dep of this.nonResolvableDepsOfAddons) {
-      let movedPkg = this.packageCache.moved.get(dep.pkg);
-      let movedDep = this.packageCache.moved.get(dep.deps[0]);
+    for (let { dep, pkg } of this.nonResolvableDepsOfAddons) {
+      let movedPkg = this.packageCache.moved.get(pkg);
+      let movedDep = this.packageCache.moved.get(dep);
       if (movedPkg) {
-        dep.pkg = movedPkg;
+        pkg = movedPkg;
       }
       if (movedDep) {
-        dep.deps[0] = movedDep;
+        dep = movedDep;
       }
-      let target = join(dep.pkg.root, 'node_modules', dep.deps[0].name);
+      let target = join(pkg.root, 'node_modules', dep.name);
       ensureDirSync(dirname(target));
-      ensureSymlinkSync(dep.deps[0].root, target, 'dir');
+      ensureSymlinkSync(dep.root, target, 'dir');
     }
   }
 

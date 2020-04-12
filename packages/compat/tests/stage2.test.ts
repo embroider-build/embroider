@@ -37,6 +37,9 @@ describe('stage2 build', function() {
       depB.addInRepoAddon('in-repo-b', {
         app: { service: { 'in-repo.js': 'in-repo-b' } },
       });
+      depB.addInRepoAddon('in-repo-c', {
+        app: { service: { 'in-repo.js': 'in-repo-c' } },
+      });
 
       build = await BuildResult.build(app, buildOptions);
       expectFile = expectFilesAt(build.outputPath);
@@ -52,10 +55,19 @@ describe('stage2 build', function() {
         .json()
         .get('dependencies.in-repo-a')
         .equals('*');
+      expectFile('./node_modules/dep-b/package.json')
+        .json()
+        .get('dependencies.in-repo-b')
+        .equals('*');
+      expectFile('./node_modules/dep-b/package.json')
+        .json()
+        .get('dependencies.in-repo-c')
+        .equals('*');
 
-      // check that symlinks is correct
+      // check that symlinks are correct
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json');
       expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json');
+      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json');
 
       // check that the in repo addons are correct upgraded
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json')
@@ -66,9 +78,13 @@ describe('stage2 build', function() {
         .json()
         .get('ember-addon.version')
         .equals(2);
+      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json')
+        .json()
+        .get('ember-addon.version')
+        .equals(2);
 
       // check that the app trees with in repo addon are combined correctly
-      expectFile('./service/in-repo.js').matches(/in-repo-b/);
+      expectFile('./service/in-repo.js').matches(/in-repo-c/);
     });
   });
 

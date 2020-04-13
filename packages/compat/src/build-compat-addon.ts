@@ -45,16 +45,23 @@ function buildCompatAddon(
     return { tree: new EmptyPackageTree(), nonResolvableDeps: [] };
   }
 
+  let nonResolvableDependencies: Set<Package> = new Set();
+  for (let pkg of oldPackages) {
+    for (let dep of pkg.nonResolvableDependencies()) {
+      nonResolvableDependencies.add(dep);
+    }
+  }
+
   let needsSmooshing = oldPackages[0].hasAnyTrees();
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees);
     return {
       tree: broccoliMergeTrees([...trees, smoosher], { overwrite: true }),
-      nonResolvableDeps: oldPackages[0].nonResolvableDependencies(), // TODO: combine nonResolvableDeps from all copies
+      nonResolvableDeps: Array.from(nonResolvableDependencies),
     };
   } else {
-    return { tree: oldPackages[0].v2Tree, nonResolvableDeps: oldPackages[0].nonResolvableDependencies() };
+    return { tree: oldPackages[0].v2Tree, nonResolvableDeps: Array.from(nonResolvableDependencies) };
   }
 }
 

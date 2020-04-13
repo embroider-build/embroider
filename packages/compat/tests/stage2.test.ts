@@ -30,6 +30,14 @@ describe('stage2 build', function() {
 
       let depA = app.addAddon('dep-a');
       let depB = app.addAddon('dep-b');
+      let depC = app.addAddon('dep-c');
+
+      depA.linkPackage('dep-c', depC.root);
+      depB.linkPackage('dep-c', depC.root);
+
+      depC.addInRepoAddon('in-repo-d', {
+        app: { service: { 'in-repo.js': 'in-repo-d' } },
+      });
 
       depA.addInRepoAddon('in-repo-a', {
         app: { service: { 'in-repo.js': 'in-repo-a' } },

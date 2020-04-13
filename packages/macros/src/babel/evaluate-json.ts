@@ -192,7 +192,7 @@ export default function evaluate(
   if (path.isObjectExpression()) {
     let props = assertArray(path.get('properties')).map(p => {
       let key = assertNotArray(p.get('key'));
-      let keyEvalValue = evaluate(key, context, knownPaths);
+      let keyEvalValue = evaluateKey(key, context, knownPaths);
       knownPaths.set(key, keyEvalValue);
       let value = assertNotArray(p.get('value'));
       let valueEvalValue = evaluate(value, context, knownPaths);
@@ -236,11 +236,13 @@ export default function evaluate(
     let rightPath = path.get('right');
     let rightNode = rightPath.node as Identifier;
     let rightEvalValue = evaluate(rightPath, context, knownPaths);
-    let value = context[rightNode.name] || rightEvalValue.value;
-    context[leftNode.name] = value;
-    knownPaths.set(rightPath, rightEvalValue);
-    knownPaths.set(leftPath, { confident: true, value });
-    return { confident: true, value };
+    if (rightEvalValue.confident) {
+      let value = context[rightNode.name] || rightEvalValue.value;
+      context[leftNode.name] = value;
+      knownPaths.set(rightPath, rightEvalValue);
+      knownPaths.set(leftPath, { confident: true, value });
+      return { confident: true, value };
+    }
   }
 
   // This handles the presence of our runtime-mode getConfig functions. We want
@@ -282,14 +284,20 @@ export default function evaluate(
     if (typeof fn !== 'function') {
       return { confident: false, value: undefined };
     }
-
-    let args = path.get('arguments').map(argument => {
-      return evaluate(argument as NodePath, context, knownPaths);
-    });
+    let confident = true;
+    let args = [];
+    for (const argument of path.get('arguments')) {
+      let result = evaluate(argument as NodePath, context, knownPaths);
+      if (!result.confident) {
+        confident = false;
+        break;
+      }
+      args.push(result.value);
+    }
 
     return {
-      confident: true,
-      value: fn.apply(caller, args),
+      confident,
+      value: confident ? fn.apply(caller, args) : undefined,
     };
   }
 
@@ -316,32 +324,41 @@ export default function evaluate(
   if (path.isLogicalExpression() || path.isBinaryExpression()) {
     let operator = path.node.operator as string;
     if (binops[operator]) {
-      let value = binops[operator](
-        evaluate(path.get('left') as NodePath<Expression>, context, knownPaths).value,
-        evaluate(path.get('right') as NodePath<Expression>, context, knownPaths).value
-      );
-      knownPaths.set(path, { confident: true, value });
-      return { confident: true, value };
+      let leftOperand = evaluate(path.get('left') as NodePath<Expression>, context, knownPaths);
+      if (leftOperand.confident) {
+        let rightOperand = evaluate(path.get('right') as NodePath<Expression>, context, knownPaths);
+        if (leftOperand.confident && rightOperand.confident) {
+          let value = binops[operator](leftOperand.value, rightOperand.value);
+          knownPaths.set(path, { confident: true, value });
+          return { confident: true, value };
+        }
+      }
     }
-    return { confident: false, value: undefined };
   }
 
   if (path.isConditionalExpression()) {
-    let value = evaluate(path.get('test'), context, knownPaths).value
-      ? evaluate(path.get('consequent'), context, knownPaths).value
-      : evaluate(path.get('alternate'), context, knownPaths).value;
-    knownPaths.set(path, { confident: true, value });
-    return { confident: true, value };
+    let test = evaluate(path.get('test'), context, knownPaths);
+    if (test.confident) {
+      let result = test.value
+        ? evaluate(path.get('consequent'), context, knownPaths)
+        : evaluate(path.get('alternate'), context, knownPaths);
+      if (result.confident) {
+        knownPaths.set(path, result);
+        return result;
+      }
+    }
   }
 
   if (path.isUnaryExpression()) {
     let operator = path.node.operator as string;
     if (unops[operator]) {
-      let value = unops[operator](evaluate(path.get('argument') as NodePath<Expression>, context, knownPaths).value);
-      knownPaths.set(path, { confident: true, value });
-      return { confident: true, value };
+      let operand = evaluate(path.get('argument') as NodePath<Expression>, context, knownPaths);
+      if (operand.confident) {
+        let value = unops[operator](operand.value);
+        knownPaths.set(path, { confident: true, value });
+        return { confident: true, value };
+      }
     }
-    return { confident: false, value: undefined };
   }
 
   if (path.isIdentifier()) {

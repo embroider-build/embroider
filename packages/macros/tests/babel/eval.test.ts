@@ -20,6 +20,26 @@ describe('evaluation', function() {
         let code = transform(`const result = x instanceof y;`);
         expect(code).toMatch(/result = x instanceof y/);
       });
+
+      test('binary operators can be statically known', () => {
+        let code = transform(`const result = 1 + 2;`);
+        expect(code).toMatch(/result = 3/);
+      });
+
+      test('binary operators with an unknown input are left alone', () => {
+        let code = transform(`const result = 1 + someNumber();`);
+        expect(code).toMatch(/result = 1 + someNumber();/);
+      });
+
+      test('unary operators can be statically known', () => {
+        let code = transform(`const result = !0;`);
+        expect(code).toMatch(/result = true/);
+      });
+
+      test('unary operators with an unknown input are left alone', () => {
+        let code = transform(`const result = !someNumber();`);
+        expect(code).toMatch(/result = !someNumber();/);
+      });
     },
   });
 });

@@ -11,9 +11,9 @@ import {
 } from '@babel/types';
 import { parse } from '@babel/core';
 
-type OpValue = String | boolean | number;
+type OpValue = string | boolean | number;
 
-const binops = {
+const binops: { [operator: string]: any } = {
   '||': function(a: OpValue, b: OpValue) {
     return a || b;
   },
@@ -85,21 +85,9 @@ const binops = {
     }
     return a;
   },
-  instanceof: function() {
-    // todo implement
-    return;
-  },
-  in: function() {
-    // todo implement
-    return;
-  },
-  '**': function() {
-    // todo implement
-    return;
-  },
 };
 
-const unops = {
+const unops: { [operator: string]: any } = {
   '-': function(a: OpValue) {
     return -a;
   },
@@ -114,18 +102,6 @@ const unops = {
   },
   void: function() {
     return undefined;
-  },
-  throw: function() {
-    // Todo implementation
-    return;
-  },
-  delete: function() {
-    // Todo implementation
-    return;
-  },
-  typeof: function() {
-    // Todo implementation
-    return;
   },
 };
 
@@ -338,12 +314,16 @@ export default function evaluate(
   }
 
   if (path.isLogicalExpression() || path.isBinaryExpression()) {
-    let value = binops[path.node.operator](
-      evaluate(path.get('left') as NodePath<Expression>, context, knownPaths).value,
-      evaluate(path.get('right') as NodePath<Expression>, context, knownPaths).value
-    );
-    knownPaths.set(path, { confident: true, value });
-    return { confident: true, value };
+    let operator = path.node.operator as string;
+    if (binops[operator]) {
+      let value = binops[operator](
+        evaluate(path.get('left') as NodePath<Expression>, context, knownPaths).value,
+        evaluate(path.get('right') as NodePath<Expression>, context, knownPaths).value
+      );
+      knownPaths.set(path, { confident: true, value });
+      return { confident: true, value };
+    }
+    return { confident: false, value: undefined };
   }
 
   if (path.isConditionalExpression()) {
@@ -355,11 +335,13 @@ export default function evaluate(
   }
 
   if (path.isUnaryExpression()) {
-    let value = unops[path.node.operator](
-      evaluate(path.get('argument') as NodePath<Expression>, context, knownPaths).value
-    );
-    knownPaths.set(path, { confident: true, value });
-    return { confident: true, value };
+    let operator = path.node.operator as string;
+    if (unops[operator]) {
+      let value = unops[operator](evaluate(path.get('argument') as NodePath<Expression>, context, knownPaths).value);
+      knownPaths.set(path, { confident: true, value });
+      return { confident: true, value };
+    }
+    return { confident: false, value: undefined };
   }
 
   if (path.isIdentifier()) {

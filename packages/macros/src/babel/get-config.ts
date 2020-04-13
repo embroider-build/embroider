@@ -13,7 +13,7 @@ import {
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
-import evaluate, { assertArray, buildLiterals } from './evaluate-json';
+import evaluate, { assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
@@ -75,9 +75,7 @@ function targetPackage(fromPath: string, packageName: string | undefined, packag
 }
 
 function collapse(path: NodePath, config: any) {
-  let knownPaths: Map<NodePath, { confident: boolean; value: unknown }> = new Map([
-    [path, { confident: true, value: config }],
-  ]);
+  let knownPaths: Map<NodePath, ConfidentResult> = new Map([[path, { confident: true, value: config }]]);
   let context = {};
   while (true) {
     let parentPath = path.parentPath;

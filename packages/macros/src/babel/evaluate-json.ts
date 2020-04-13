@@ -105,12 +105,12 @@ const unops: { [operator: string]: any } = {
   },
 };
 
-interface ConfidentResult {
+export interface ConfidentResult {
   confident: true;
   value: any;
 }
 
-interface UnknownResult {
+export interface UnknownResult {
   confident: false;
 }
 

@@ -105,9 +105,21 @@ const unops: { [operator: string]: any } = {
   },
 };
 
-export interface EvaluateResult {
-  confident: boolean;
+interface ConfidentResult {
+  confident: true;
   value: any;
+}
+
+interface UnknownResult {
+  confident: false;
+}
+
+export type EvaluateResult = ConfidentResult | UnknownResult;
+
+// this is needed to make our strict types work when inter-operating with
+// babel's own built-in evaluator
+function isConfidentResult(result: { confident: boolean; value: any }): result is ConfidentResult {
+  return result.confident;
 }
 
 function evaluateMember(
@@ -137,7 +149,7 @@ function evaluateKey(
   if (path.isIdentifier()) {
     return { confident: true, value: path.node.name };
   }
-  return { confident: false, value: undefined };
+  return { confident: false };
 }
 
 export default function evaluate(
@@ -150,7 +162,7 @@ export default function evaluate(
     return known;
   }
   let builtIn = path.evaluate();
-  if (builtIn.confident) {
+  if (isConfidentResult(builtIn)) {
     return builtIn;
   }
 
@@ -163,10 +175,12 @@ export default function evaluate(
       let object = evaluate(objectPath, context, knownPaths);
       knownPaths.set(objectPath, object);
       if (object.confident) {
+        let confidentObject = object;
+        let confidentProperty = property;
         return {
           confident: true,
           get value() {
-            return object.value[property.value];
+            return confidentObject.value[confidentProperty.value];
           },
         };
       }
@@ -201,14 +215,15 @@ export default function evaluate(
     });
     for (let [k, v] of props) {
       if (!k.confident || !v.confident) {
-        return { confident: false, value: undefined };
+        return { confident: false };
       }
     }
+    let confidentProps = props as ConfidentResult[][];
     return {
       confident: true,
       get value() {
         let result: any = {};
-        for (let [k, v] of props) {
+        for (let [k, v] of confidentProps) {
           result[k.value] = v.value;
         }
         return result;
@@ -221,10 +236,11 @@ export default function evaluate(
       return evaluate(element as NodePath, context, knownPaths);
     });
     if (elements.every(element => element.confident)) {
+      let confidentElements = elements as ConfidentResult[];
       return {
         confident: true,
         get value() {
-          return elements.map(element => element.value);
+          return confidentElements.map(element => element.value);
         },
       };
     }
@@ -280,7 +296,7 @@ export default function evaluate(
     }
 
     if (typeof fn !== 'function') {
-      return { confident: false, value: undefined };
+      return { confident: false };
     }
 
     let args = path.get('arguments').map(argument => {
@@ -323,7 +339,7 @@ export default function evaluate(
       knownPaths.set(path, { confident: true, value });
       return { confident: true, value };
     }
-    return { confident: false, value: undefined };
+    return { confident: false };
   }
 
   if (path.isConditionalExpression()) {
@@ -341,17 +357,17 @@ export default function evaluate(
       knownPaths.set(path, { confident: true, value });
       return { confident: true, value };
     }
-    return { confident: false, value: undefined };
+    return { confident: false };
   }
 
   if (path.isIdentifier()) {
     if (!context.hasOwnProperty(path.node.name)) {
-      return { confident: false, value: context[path.node.name] };
+      return { confident: false };
     }
     return { confident: true, value: context[path.node.name] };
   }
 
-  return { confident: false, value: undefined };
+  return { confident: false };
 }
 
 // these are here because the type definitions we're using don't seem to know

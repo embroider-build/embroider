@@ -1,8 +1,6 @@
 import { NodePath } from '@babel/traverse';
 import {
   identifier,
-  File,
-  ExpressionStatement,
   CallExpression,
   callExpression,
   stringLiteral,
@@ -10,14 +8,12 @@ import {
   FunctionDeclaration,
   returnStatement,
   Identifier,
-  ObjectExpression,
   OptionalMemberExpression,
 } from '@babel/types';
-import { parse } from '@babel/core';
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
-import evaluate, { assertArray } from './evaluate-json';
+import evaluate, { assertArray, buildLiterals } from './evaluate-json';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
@@ -48,7 +44,7 @@ export default function getConfig(
       config = state.opts.userConfigs[pkg.root];
     }
     let collapsed = collapse(path, config);
-    let literalResult = literalConfig(collapsed.config);
+    let literalResult = buildLiterals(collapsed.config);
     collapsed.path.replaceWith(literalResult);
   } else {
     let pkgRoot;
@@ -76,16 +72,6 @@ function targetPackage(fromPath: string, packageName: string | undefined, packag
   } catch (err) {
     return null;
   }
-}
-
-function literalConfig(config: unknown | undefined): Identifier | ObjectExpression {
-  if (typeof config === 'undefined') {
-    return identifier('undefined');
-  }
-  let ast = parse(`a(${JSON.stringify(config)})`, {}) as File;
-  let statement = ast.program.body[0] as ExpressionStatement;
-  let expression = statement.expression as CallExpression;
-  return expression.arguments[0] as ObjectExpression;
 }
 
 function collapse(path: NodePath, config: any) {
@@ -118,5 +104,5 @@ function collapse(path: NodePath, config: any) {
 }
 
 export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State) {
-  path.get('body').node.body = [returnStatement(literalConfig(state.opts.userConfigs))];
+  path.get('body').node.body = [returnStatement(buildLiterals(state.opts.userConfigs))];
 }

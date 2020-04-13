@@ -1,7 +1,15 @@
 import { NodePath } from '@babel/traverse';
-import { Identifier } from '@babel/types';
-import { MemberExpression } from '@babel/types';
-import { Expression } from '@babel/types';
+import {
+  Identifier,
+  ObjectExpression,
+  identifier,
+  MemberExpression,
+  Expression,
+  File,
+  ExpressionStatement,
+  CallExpression,
+} from '@babel/types';
+import { parse } from '@babel/core';
 
 type OpValue = String | boolean | number;
 
@@ -379,4 +387,14 @@ export function assertArray<T>(input: T | T[]): T[] {
     throw new Error(`bug: supposed to be an array`);
   }
   return input;
+}
+
+export function buildLiterals(value: unknown | undefined): Identifier | ObjectExpression {
+  if (typeof value === 'undefined') {
+    return identifier('undefined');
+  }
+  let ast = parse(`a(${JSON.stringify(value)})`, {}) as File;
+  let statement = ast.program.body[0] as ExpressionStatement;
+  let expression = statement.expression as CallExpression;
+  return expression.arguments[0] as ObjectExpression;
 }

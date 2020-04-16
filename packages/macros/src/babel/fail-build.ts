@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import evaluate from './evaluate-json';
+import evaluate, { ConfidentResult } from './evaluate-json';
 import { CallExpression } from '@babel/types';
 import error from './error';
 import { format } from 'util';
@@ -18,9 +18,10 @@ export default function failBuild(path: NodePath<CallExpression>, state: State) 
         throw error(args[i], `the arguments to failBuild must be statically known`);
       }
     }
+    let confidentArgValues = argValues as ConfidentResult[];
 
     if (!wasRemoved(path, state)) {
-      maybeEmitError(path, argValues);
+      maybeEmitError(path, confidentArgValues);
     }
   });
 }

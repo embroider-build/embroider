@@ -125,16 +125,39 @@ function isConfidentResult(result: { confident: boolean; value: any }): result i
 function evaluateMember(
   path: NodePath<MemberExpression>,
   context: { [localVar: string]: any },
-  knownPaths: Map<NodePath, EvaluateResult>
-): unknown[] {
-  const object = evaluate(path.get('object'), context, knownPaths);
-  let property = path.get('property') as any;
-  if (path.get('computed')) {
-    let result = evaluate(property, context, knownPaths);
-    return [object.value, object.value[result.value]];
+  knownPaths: Map<NodePath, EvaluateResult>,
+  optionalChain: boolean
+): EvaluateResult {
+  let propertyPath = assertNotArray(path.get('property'));
+  let property: EvaluateResult;
+  if (path.node.computed) {
+    property = evaluate(propertyPath, context, knownPaths);
   } else {
-    return [object.value, object.value[property.name || property.value]];
+    property = evaluateKey(propertyPath, context, knownPaths);
   }
+  knownPaths.set(propertyPath, property);
+  if (property.confident) {
+    let objectPath = path.get('object');
+    let object = evaluate(objectPath, context, knownPaths);
+    knownPaths.set(objectPath, object);
+    if (object.confident) {
+      let confidentObject = object;
+      let confidentProperty = property;
+      return {
+        confident: true,
+        get value() {
+          if (optionalChain) {
+            return confidentObject.value != null
+              ? confidentObject.value[confidentProperty.value]
+              : confidentObject.value;
+          } else {
+            return confidentObject.value[confidentProperty.value];
+          }
+        },
+      };
+    }
+  }
+  return { confident: false };
 }
 
 function evaluateKey(
@@ -167,24 +190,13 @@ export default function evaluate(
   }
 
   if (path.isMemberExpression()) {
-    let propertyPath = assertNotArray(path.get('property'));
-    let property = evaluateKey(propertyPath, context, knownPaths);
-    knownPaths.set(propertyPath, property);
-    if (property.confident) {
-      let objectPath = path.get('object');
-      let object = evaluate(objectPath, context, knownPaths);
-      knownPaths.set(objectPath, object);
-      if (object.confident) {
-        let confidentObject = object;
-        let confidentProperty = property;
-        return {
-          confident: true,
-          get value() {
-            return confidentObject.value[confidentProperty.value];
-          },
-        };
-      }
-    }
+    return evaluateMember(path, context, knownPaths, false);
+  }
+
+  // Here we are glossing over the lack of a real OptionalMemberExpression type
+  // in our @babel/traverse typings.
+  if (path.node.type === 'OptionalMemberExpression') {
+    return evaluateMember(path as NodePath<MemberExpression>, context, knownPaths, true);
   }
 
   if (path.isStringLiteral()) {
@@ -269,7 +281,6 @@ export default function evaluate(
   // to runtime. That's why we've made `value` lazy. It lets us check the
   // confidence without actually forcing the value.
   if (path.isCallExpression()) {
-    let caller, fn, assign;
     let callee = path.get('callee');
     if (callee.isMemberExpression()) {
       let prop = assertNotArray(callee.get('property'));
@@ -287,54 +298,8 @@ export default function evaluate(
             },
           };
         }
-      } else {
-        assign = evaluateMember(callee, context, knownPaths);
-        caller = assign[0];
-        fn = assign[1];
-      }
-    } else {
-      assign = evaluate(callee, context, knownPaths);
-      fn = assign.value;
-    }
-
-    if (typeof fn !== 'function') {
-      return { confident: false };
-    }
-    let confident = true;
-    let args = [];
-    for (const argument of path.get('arguments')) {
-      let result = evaluate(argument as NodePath, context, knownPaths);
-      if (!result.confident) {
-        confident = false;
-        break;
-      }
-      args.push(result.value);
-    }
-
-    return {
-      confident,
-      value: confident ? fn.apply(caller, args) : undefined,
-    };
-  }
-
-  if (path.node.type === 'OptionalMemberExpression') {
-    let property = path.get('property') as NodePath;
-    let nodeName;
-    if (path.node.computed) {
-      let evalProperty = evaluate(property, context, knownPaths);
-      if (evalProperty.confident) {
-        nodeName = evalProperty.value;
-      }
-    } else {
-      if (property.isIdentifier()) {
-        nodeName = property.node.name;
       }
     }
-    let object = path.get('object') as NodePath;
-    let knownValue = knownPaths.get(object);
-    let value = knownValue && knownValue.value ? knownValue.value[nodeName] : undefined;
-    knownPaths.set(property, { confident: true, value });
-    return { confident: true, value };
   }
 
   if (path.isLogicalExpression() || path.isBinaryExpression()) {
@@ -389,16 +354,15 @@ export default function evaluate(
   return { confident: false };
 }
 
-// these are here because the type definitions we're using don't seem to know
-// exactly which NodePath properties are arrays and which aren't.
-
+// these next two functions are here because the type definitions we're using
+// don't seem to know exactly which NodePath properties are arrays and which
+// aren't.
 export function assertNotArray<T>(input: T | T[]): T {
   if (Array.isArray(input)) {
     throw new Error(`bug: not supposed to be an array`);
   }
   return input;
 }
-
 export function assertArray<T>(input: T | T[]): T[] {
   if (!Array.isArray(input)) {
     throw new Error(`bug: supposed to be an array`);

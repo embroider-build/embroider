@@ -16,6 +16,18 @@ describe('evaluation', function() {
         expect(code).toMatch(`result = 42`);
       });
 
+      if (transform.babelMajorVersion !== 6) {
+        test('optional chaining non-nullish member access', () => {
+          let code = transform(`const result = ({ x: 42 })?.x;`);
+          expect(code).toMatch(`result = 42`);
+        });
+
+        test('optional chaining nullish member access', () => {
+          let code = transform(`const result = knownUndefinedValue?.x;`);
+          expect(code).toMatch(`result = undefined`);
+        });
+      }
+
       test('instanceof is not statically known', () => {
         let code = transform(`const result = x instanceof y;`);
         expect(code).toMatch(`result = x instanceof y`);
@@ -73,40 +85,26 @@ describe('evaluation', function() {
         expect(code).toMatch(`result = 2`);
       });
 
-      test('functions are evaluated with known arguments are evaluated ', () => {
-        let code = transform(`const result = functionCall(knownValue);`);
-        expect(code).toMatch(`result = 2`);
-        code = transform(`const result = functionCall();`);
-        expect(code).toMatch(`result = 4`);
+      test('array expressions with entirely known inputs are evaluated', () => {
+        let code = transform(`const result = [1, knownValue, ({ a: 'b' }).a];`);
+        expect(code).toMatch(`result = [1, 2, "b"]`);
       });
 
-      test('functions are evaluated with with an unknown inputs are left alone', () => {
-        let code = transform(`const result = functionCall(someValue);`);
-        expect(code).toMatch(`result = functionCall(someValue);`);
+      test('array expressions containing unknown inputs are left alone', () => {
+        let code = transform(`const result = [1, knownValue, unknownValue];`);
+        expect(code).toMatch(`result = [1, knownValue, unknownValue];`);
       });
 
-      test('array expressions with a known inputs are evaluated', () => {
-        let code = transform(`const result = [1, knownValue, functionCall(true)];`);
-        expect(code).toMatch(`result = [1, 2, true]`);
-      });
-
-      test('array expressions with a unknown inputs are left alone', () => {
-        let code = transform(`const result = [1, unknownValue, true];`);
-        expect(code).toMatch(`result = [1, unknownValue, true];`);
-      });
-
-      test('object expressions with a known inputs are evaluated', () => {
-        let code = transform(`const result = { a: 1, b: knownValue, c: functionCall(true) };`);
+      test('object expressions with all known inputs are evaluated', () => {
+        let code = transform(`const result = { a: 1, b: knownValue };`);
         expect(code).toMatch(`"a": 1`);
         expect(code).toMatch(`"b": 2`);
-        expect(code).toMatch(`"c": true`);
       });
 
-      test('object expressions with a unknown inputs are left alone', () => {
-        let code = transform(`const result = { a: 1, b: unknownValue, c: functionCall(true) };`);
+      test('object expressions with an unknown input are left alone', () => {
+        let code = transform(`const result = { a: 1, b: unknownValue };`);
         expect(code).toMatch(`a: 1`);
         expect(code).toMatch(`b: unknownValue`);
-        expect(code).toMatch(`c: functionCall(true)`);
       });
     },
   });
@@ -128,6 +126,7 @@ function testEval() {
               return a;
             },
             knownValue: 2,
+            knownUndefinedValue: undefined,
           });
           if (result.confident) {
             value.replaceWith(buildLiterals(result.value));

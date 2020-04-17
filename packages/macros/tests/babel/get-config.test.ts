@@ -164,6 +164,19 @@ describe(`getConfig`, function() {
         `);
         expect(code).toMatch(/function initializeRuntimeMacrosConfig\(\)\s*\{\s*\}/);
       });
+
+      test(`Preserves necessary side effects`, () => {
+        let code = transform(`
+          import { getOwnConfig } from '@embroider/macros';
+          export default function() {
+            let config;
+            if ((config = getOwnConfig()) !== 0) {
+              return config;
+            }
+          }
+        `);
+        expect(run(code)).toEqual({ beverage: 'coffee' });
+      });
     }),
   });
 });

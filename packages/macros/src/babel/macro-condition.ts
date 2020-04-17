@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import evaluate from './evaluate-json';
+import { evaluate } from './evaluate-json';
 import { IfStatement, ConditionalExpression, CallExpression } from '@babel/types';
 import error from './error';
 import State from './state';

@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import evaluate from './evaluate-json';
+import { evaluate } from './evaluate-json';
 import { parse } from '@babel/core';
 import { CallExpression, ForOfStatement, identifier, File, ExpressionStatement, Identifier } from '@babel/types';
 import error from './error';

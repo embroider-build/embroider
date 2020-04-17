@@ -13,7 +13,7 @@ import {
 import State, { sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
-import evaluate, { assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
+import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 
 export default function getConfig(
   path: NodePath<CallExpression>,
@@ -75,8 +75,9 @@ function targetPackage(fromPath: string, packageName: string | undefined, packag
 }
 
 function collapse(path: NodePath, config: any) {
-  let knownPaths: Map<NodePath, ConfidentResult> = new Map([[path, { confident: true, value: config }]]);
-  let context = {};
+  let evaluator = new Evaluator();
+  evaluator.knownPaths.set(path, { confident: true, value: config });
+
   while (true) {
     let parentPath = path.parentPath;
     if (parentPath.isMemberExpression()) {
@@ -89,14 +90,14 @@ function collapse(path: NodePath, config: any) {
         return { path, config };
       }
     }
-    let result = evaluate(parentPath, context, knownPaths);
+    let result = evaluator.evaluate(parentPath);
     if (!result.confident) {
       if (path.isAssignmentExpression()) {
-        return { path: path.get('right'), config: knownPaths.get(path)!.value };
+        return { path: path.get('right'), config: (evaluator.knownPaths.get(path) as ConfidentResult).value };
       }
-      return { path, config: knownPaths.get(path)!.value };
+      return { path, config: (evaluator.knownPaths.get(path) as ConfidentResult).value };
     }
-    knownPaths.set(parentPath, result);
+    evaluator.knownPaths.set(parentPath, result);
     path = parentPath;
   }
 }

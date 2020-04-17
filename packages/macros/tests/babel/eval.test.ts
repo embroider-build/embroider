@@ -1,5 +1,5 @@
 import { allBabelVersions } from '@embroider/test-support';
-import evaluate, { buildLiterals } from '../../src/babel/evaluate-json';
+import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import { VariableDeclarator, isIdentifier, Expression } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 
@@ -121,13 +121,12 @@ function testEval() {
         let id = path.get('id').node;
         let value = path.get('init');
         if (isIdentifier(id) && id.name === 'result' && nodePathNotNull(value)) {
-          let result = evaluate(value, {
-            functionCall: function(a: number = 4) {
-              return a;
-            },
+          let evaluator = new Evaluator();
+          Object.assign(evaluator.context, {
             knownValue: 2,
             knownUndefinedValue: undefined,
           });
+          let result = evaluator.evaluate(value);
           if (result.confident) {
             value.replaceWith(buildLiterals(result.value));
           }

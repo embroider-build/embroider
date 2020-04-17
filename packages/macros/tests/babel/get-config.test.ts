@@ -14,6 +14,7 @@ describe(`getConfig`, function() {
       c.filename = filename;
       return c;
     },
+    includePresetsTests: true,
     createTests: allModes(function(transform, { applyMode, buildTimeTest }) {
       beforeEach(function() {
         // we have some tests that behave differently on files that appear to be
@@ -106,6 +107,19 @@ describe(`getConfig`, function() {
         expect(code).toMatch(/doSomething\(8\)/);
       });
 
+      buildTimeTest(`collapses chained property access`, () => {
+        let code = transform(`
+        import { getConfig } from '@embroider/macros';
+
+        export default {
+          test: function() {
+            this.mode = getConfig('@babel/traverse').sizes[1].oz;
+          }
+        };
+        `);
+        expect(code).toMatch(/this.mode = 8/);
+      });
+
       // babel 6 doesn't parse nullish coalescing
       if (transform.babelMajorVersion === 7) {
         buildTimeTest(`collapses nullish coalescing, not null case`, () => {
@@ -149,6 +163,19 @@ describe(`getConfig`, function() {
           }
         `);
         expect(code).toMatch(/function initializeRuntimeMacrosConfig\(\)\s*\{\s*\}/);
+      });
+
+      test(`Preserves necessary side effects`, () => {
+        let code = transform(`
+          import { getOwnConfig } from '@embroider/macros';
+          export default function() {
+            let config;
+            if ((config = getOwnConfig()) !== 0) {
+              return config;
+            }
+          }
+        `);
+        expect(run(code)).toEqual({ beverage: 'coffee' });
       });
     }),
   });

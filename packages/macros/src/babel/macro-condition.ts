@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import evaluate from './evaluate-json';
+import { Evaluator } from './evaluate-json';
 import { IfStatement, ConditionalExpression, CallExpression } from '@babel/types';
 import error from './error';
 import State from './state';
@@ -26,7 +26,7 @@ export default function macroCondition(conditionalPath: MacroConditionPath, stat
   }
 
   let [predicatePath] = args;
-  let predicate = evaluate(predicatePath);
+  let predicate = new Evaluator({ state }).evaluate(predicatePath);
   if (!predicate.confident) {
     throw error(args[0], `the first argument to macroCondition must be statically known`);
   }

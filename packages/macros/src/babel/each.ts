@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import evaluate from './evaluate-json';
+import { Evaluator } from './evaluate-json';
 import { parse } from '@babel/core';
 import { CallExpression, ForOfStatement, identifier, File, ExpressionStatement, Identifier } from '@babel/types';
 import error from './error';
@@ -20,7 +20,7 @@ export function isEachPath(path: NodePath<ForOfStatement>): path is EachPath {
   return false;
 }
 
-export function prepareEachPath(path: EachPath, state: State) {
+export function insertEach(path: EachPath, state: State) {
   let args = path.get('right').get('arguments');
   if (args.length !== 1) {
     throw error(path, `the each() macro accepts exactly one argument, you passed ${args.length}`);
@@ -36,7 +36,7 @@ export function prepareEachPath(path: EachPath, state: State) {
   let nameRefs = body.scope.getBinding(varName)!.referencePaths;
 
   let [arrayPath] = args;
-  let array = evaluate(arrayPath);
+  let array = new Evaluator({ state }).evaluate(arrayPath);
   if (!array.confident) {
     throw error(args[0], `the argument to the each() macro must be statically known`);
   }

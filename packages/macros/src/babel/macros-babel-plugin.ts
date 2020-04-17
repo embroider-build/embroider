@@ -8,21 +8,21 @@ import {
   ConditionalExpression,
   ForOfStatement,
   FunctionDeclaration,
+  OptionalMemberExpression,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile } from './state';
-import dependencySatisfies from './dependency-satisfies';
-import moduleExists from './module-exists';
-import getConfig, { inlineRuntimeConfig } from './get-config';
+import { inlineRuntimeConfig, insertConfig } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
-import { isEachPath, prepareEachPath } from './each';
+import { isEachPath, insertEach } from './each';
 
 import error from './error';
 import failBuild from './fail-build';
+import { Evaluator, buildLiterals } from './evaluate-json';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-export default function main() {
+export default function main(context: unknown): unknown {
   let visitor = {
     Program: {
       enter(_: NodePath, state: State) {
@@ -42,10 +42,6 @@ export default function main() {
       enter(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
         if (isMacroConditionPath(path)) {
           state.calledIdentifiers.add(path.get('test').get('callee').node);
-        }
-      },
-      exit(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
-        if (isMacroConditionPath(path)) {
           macroCondition(path, state);
         }
       },
@@ -54,11 +50,7 @@ export default function main() {
       enter(path: NodePath<ForOfStatement>, state: State) {
         if (isEachPath(path)) {
           state.calledIdentifiers.add(path.get('right').get('callee').node);
-        }
-      },
-      exit(path: NodePath<ForOfStatement>, state: State) {
-        if (isEachPath(path)) {
-          prepareEachPath(path, state);
+          insertEach(path, state);
         }
       },
     },
@@ -76,30 +68,42 @@ export default function main() {
     CallExpression: {
       enter(path: NodePath<CallExpression>, state: State) {
         let callee = path.get('callee');
-        if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-          state.calledIdentifiers.add(callee.node);
-          dependencySatisfies(path, state, packageCache);
+        if (!callee.isIdentifier()) {
+          return;
         }
-        if (callee.referencesImport('@embroider/macros', 'moduleExists')) {
-          state.calledIdentifiers.add(callee.node);
-          moduleExists(path, state);
-        }
-        if (callee.referencesImport('@embroider/macros', 'getConfig')) {
-          state.calledIdentifiers.add(callee.node);
-          getConfig(path, state, packageCache, false);
-        }
-        if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
-          state.calledIdentifiers.add(callee.node);
-          getConfig(path, state, packageCache, true);
-        }
+
+        // failBuild is implemented for side-effect, not value, so it's not
+        // handled by evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'failBuild')) {
           state.calledIdentifiers.add(callee.node);
           failBuild(path, state);
+          return;
         }
+
+        // importSync doesn't evaluate to a static value, so it's implemented
+        // directly here, not in evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
           let r = identifier('require');
           state.generatedRequires.add(r);
           callee.replaceWith(r);
+          return;
+        }
+
+        // get(Own)Config needs special handling, so even though it also emits
+        // values via evaluateMacroCall when they're needed recursively, by
+        // other macros, it has its own insertion-handling code that we invoke
+        // here.
+        let own = callee.referencesImport('@embroider/macros', 'getOwnConfig');
+        if (own || callee.referencesImport('@embroider/macros', 'getConfig')) {
+          state.calledIdentifiers.add(callee.node);
+          insertConfig(path, state, own);
+          return;
+        }
+
+        let result = new Evaluator({ state }).evaluateMacroCall(path);
+        if (result.confident) {
+          state.calledIdentifiers.add(callee.node);
+          path.replaceWith(buildLiterals(result.value));
         }
       },
     },
@@ -154,6 +158,21 @@ export default function main() {
       }
     },
   };
+
+  if ((context as any).types.OptionalMemberExpression) {
+    // our getConfig and getOwnConfig macros are supposed to be able to absorb
+    // optional chaining. To make that work we need to see the optional chaining
+    // before preset-env compiles them away.
+    (visitor as any).OptionalMemberExpression = {
+      enter(path: NodePath<OptionalMemberExpression>, state: State) {
+        let result = new Evaluator({ state }).evaluate(path);
+        if (result.confident) {
+          path.replaceWith(buildLiterals(result.value));
+        }
+      },
+    };
+  }
+
   return { visitor };
 }
 

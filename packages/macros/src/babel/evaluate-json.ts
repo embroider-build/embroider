@@ -8,6 +8,7 @@ import {
   File,
   ExpressionStatement,
   CallExpression,
+  OptionalMemberExpression,
 } from '@babel/types';
 import { parse } from '@babel/core';
 
@@ -130,7 +131,7 @@ export class Evaluator {
   knownPaths: Map<NodePath, EvaluateResult> = new Map();
   context: { [localVar: string]: any } = {};
 
-  evaluateMember(path: NodePath<MemberExpression>, optionalChain: boolean): EvaluateResult {
+  evaluateMember(path: NodePath<MemberExpression | OptionalMemberExpression>, optionalChain: boolean): EvaluateResult {
     let propertyPath = assertNotArray(path.get('property'));
     let property: EvaluateResult;
     if (path.node.computed) {
@@ -194,7 +195,7 @@ export class Evaluator {
     // Here we are glossing over the lack of a real OptionalMemberExpression type
     // in our @babel/traverse typings.
     if (path.node.type === 'OptionalMemberExpression') {
-      return this.evaluateMember(path as NodePath<MemberExpression>, true);
+      return this.evaluateMember(path as NodePath<OptionalMemberExpression>, true);
     }
 
     if (path.isStringLiteral()) {

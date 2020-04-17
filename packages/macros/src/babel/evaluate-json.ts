@@ -138,11 +138,9 @@ export class Evaluator {
     } else {
       property = this.evaluateKey(propertyPath);
     }
-    this.knownPaths.set(propertyPath, property);
     if (property.confident) {
       let objectPath = path.get('object');
       let object = this.evaluate(objectPath);
-      this.knownPaths.set(objectPath, object);
       if (object.confident) {
         let confidentObject = object;
         let confidentProperty = property;
@@ -179,6 +177,11 @@ export class Evaluator {
     if (known) {
       return known;
     }
+    let result = this.realEvaluate(path);
+    return result;
+  }
+
+  private realEvaluate(path: NodePath): EvaluateResult {
     let builtIn = path.evaluate();
     if (isConfidentResult(builtIn)) {
       return builtIn;
@@ -214,10 +217,8 @@ export class Evaluator {
       let props = assertArray(path.get('properties')).map(p => {
         let key = assertNotArray(p.get('key'));
         let keyEvalValue = this.evaluateKey(key);
-        this.knownPaths.set(key, keyEvalValue);
         let value = assertNotArray(p.get('value'));
         let valueEvalValue = this.evaluate(value);
-        this.knownPaths.set(value, valueEvalValue);
         return [keyEvalValue, valueEvalValue];
       });
       for (let [k, v] of props) {
@@ -262,8 +263,6 @@ export class Evaluator {
       if (rightEvalValue.confident) {
         let value = this.context[rightNode.name] || rightEvalValue.value;
         this.context[leftNode.name] = value;
-        this.knownPaths.set(rightPath, rightEvalValue);
-        this.knownPaths.set(leftPath, { confident: true, value });
         return { confident: true, value };
       }
     }
@@ -305,7 +304,6 @@ export class Evaluator {
           let rightOperand = this.evaluate(path.get('right') as NodePath<Expression>);
           if (leftOperand.confident && rightOperand.confident) {
             let value = binops[operator](leftOperand.value, rightOperand.value);
-            this.knownPaths.set(path, { confident: true, value });
             return { confident: true, value };
           }
         }
@@ -318,7 +316,6 @@ export class Evaluator {
       if (test.confident) {
         let result = test.value ? this.evaluate(path.get('consequent')) : this.evaluate(path.get('alternate'));
         if (result.confident) {
-          this.knownPaths.set(path, result);
           return result;
         }
       }
@@ -330,7 +327,6 @@ export class Evaluator {
         let operand = this.evaluate(path.get('argument') as NodePath<Expression>);
         if (operand.confident) {
           let value = unops[operator](operand.value);
-          this.knownPaths.set(path, { confident: true, value });
           return { confident: true, value };
         }
       }

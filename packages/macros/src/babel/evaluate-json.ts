@@ -11,6 +11,10 @@ import {
   OptionalMemberExpression,
 } from '@babel/types';
 import { parse } from '@babel/core';
+import State from './state';
+import dependencySatisfies from './dependency-satisfies';
+import moduleExists from './module-exists';
+import getConfig from './get-config';
 
 type OpValue = string | boolean | number;
 
@@ -123,13 +127,22 @@ function isConfidentResult(result: { confident: boolean; value: any }): result i
   return result.confident;
 }
 
-export function evaluate(path: NodePath): EvaluateResult {
-  return new Evaluator().evaluate(path);
+export interface EvaluationEnv {
+  knownPaths?: Map<NodePath, EvaluateResult>;
+  locals?: { [localVar: string]: any };
+  state?: State;
 }
 
 export class Evaluator {
-  knownPaths: Map<NodePath, EvaluateResult> = new Map();
-  context: { [localVar: string]: any } = {};
+  private knownPaths: Map<NodePath, EvaluateResult>;
+  private locals: { [localVar: string]: any };
+  private state: State | undefined;
+
+  constructor(env: EvaluationEnv = {}) {
+    this.knownPaths = env.knownPaths || new Map();
+    this.locals = env.locals || {};
+    this.state = env.state;
+  }
 
   evaluateMember(path: NodePath<MemberExpression | OptionalMemberExpression>, optionalChain: boolean): EvaluateResult {
     let propertyPath = assertNotArray(path.get('property'));
@@ -261,38 +274,20 @@ export class Evaluator {
         let rightPath = path.get('right');
         let right = this.evaluate(rightPath);
         if (right.confident) {
-          this.context[leftPath.node.name] = right.value;
+          this.locals[leftPath.node.name] = right.value;
           return right;
         }
       }
     }
 
-    // This handles the presence of our runtime-mode getConfig functions. We want
-    // to designate them as { confident: true }, because it's important that we
-    // give feedback even in runtime-mode if the developer is trying to pass
-    // non-static arguments somewhere they're not supposed to. But we don't
-    // actually want to calculate their value here because that has been deferred
-    // to runtime. That's why we've made `value` lazy. It lets us check the
-    // confidence without actually forcing the value.
     if (path.isCallExpression()) {
-      let callee = path.get('callee');
-      if (callee.isMemberExpression()) {
-        let prop = assertNotArray(callee.get('property'));
-        if (prop.isIdentifier() && prop.node.name === '_runtimeGet') {
-          let obj = callee.get('object');
-          if (
-            obj.isIdentifier() &&
-            (obj.referencesImport('@embroider/macros', 'getConfig') ||
-              obj.referencesImport('@embroider/macros', 'getOwnConfig'))
-          ) {
-            return {
-              confident: true,
-              get value() {
-                throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
-              },
-            };
-          }
-        }
+      let result = this.maybeEvaluateRuntimeConfig(path);
+      if (result.confident) {
+        return result;
+      }
+      result = this.evaluateMacroCall(path);
+      if (result.confident) {
+        return result;
       }
     }
 
@@ -334,12 +329,62 @@ export class Evaluator {
     }
 
     if (path.isIdentifier()) {
-      if (!this.context.hasOwnProperty(path.node.name)) {
+      if (!this.locals.hasOwnProperty(path.node.name)) {
         return { confident: false };
       }
-      return { confident: true, value: this.context[path.node.name] };
+      return { confident: true, value: this.locals[path.node.name] };
     }
 
+    return { confident: false };
+  }
+
+  // This handles the presence of our runtime-mode getConfig functions. We want
+  // to designate them as { confident: true }, because it's important that we
+  // give feedback even in runtime-mode if the developer is trying to pass
+  // non-static arguments somewhere they're not supposed to. But we don't
+  // actually want to calculate their value here because that has been deferred
+  // to runtime. That's why we've made `value` lazy. It lets us check the
+  // confidence without actually forcing the value.
+  private maybeEvaluateRuntimeConfig(path: NodePath<CallExpression>): EvaluateResult {
+    let callee = path.get('callee');
+    if (callee.isMemberExpression()) {
+      let prop = assertNotArray(callee.get('property'));
+      if (prop.isIdentifier() && prop.node.name === '_runtimeGet') {
+        let obj = callee.get('object');
+        if (
+          obj.isIdentifier() &&
+          (obj.referencesImport('@embroider/macros', 'getConfig') ||
+            obj.referencesImport('@embroider/macros', 'getOwnConfig'))
+        ) {
+          return {
+            confident: true,
+            get value() {
+              throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
+            },
+          };
+        }
+      }
+    }
+    return { confident: false };
+  }
+
+  evaluateMacroCall(path: NodePath<CallExpression>): EvaluateResult {
+    if (!this.state) {
+      return { confident: false };
+    }
+    let callee = path.get('callee');
+    if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
+      return { confident: true, value: dependencySatisfies(path, this.state) };
+    }
+    if (callee.referencesImport('@embroider/macros', 'moduleExists')) {
+      return { confident: true, value: moduleExists(path, this.state) };
+    }
+    if (callee.referencesImport('@embroider/macros', 'getConfig')) {
+      return { confident: true, value: getConfig(path, this.state, false) };
+    }
+    if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
+      return { confident: true, value: getConfig(path, this.state, true) };
+    }
     return { confident: false };
   }
 }

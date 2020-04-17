@@ -1,12 +1,12 @@
 import { NodePath } from '@babel/traverse';
-import { booleanLiteral, CallExpression } from '@babel/types';
+import { CallExpression } from '@babel/types';
 import State, { sourceFile } from './state';
 import error from './error';
 import { assertArray } from './evaluate-json';
 import resolve from 'resolve';
 import { dirname } from 'path';
 
-export default function moduleExists(path: NodePath<CallExpression>, state: State) {
+export default function moduleExists(path: NodePath<CallExpression>, state: State): boolean {
   if (path.node.arguments.length !== 1) {
     throw error(path, `moduleExists takes exactly one argument, you passed ${path.node.arguments.length}`);
   }
@@ -17,11 +17,11 @@ export default function moduleExists(path: NodePath<CallExpression>, state: Stat
   let sourceFileName = sourceFile(path, state);
   try {
     resolve.sync(moduleSpecifier.value, { basedir: dirname(sourceFileName) });
-    path.replaceWith(booleanLiteral(true));
+    return true;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;
     }
-    path.replaceWith(booleanLiteral(false));
+    return false;
   }
 }

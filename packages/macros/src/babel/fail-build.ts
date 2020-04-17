@@ -1,5 +1,5 @@
 import { NodePath } from '@babel/traverse';
-import { evaluate, ConfidentResult } from './evaluate-json';
+import { Evaluator, ConfidentResult } from './evaluate-json';
 import { CallExpression } from '@babel/types';
 import error from './error';
 import { format } from 'util';
@@ -11,8 +11,10 @@ export default function failBuild(path: NodePath<CallExpression>, state: State) 
     throw error(path, `failBuild needs at least one argument`);
   }
 
+  let e = new Evaluator({ state });
+
   state.jobs.push(() => {
-    let argValues = args.map(a => evaluate(a));
+    let argValues = args.map(a => e.evaluate(a));
     for (let i = 0; i < argValues.length; i++) {
       if (!argValues[i].confident) {
         throw error(args[i], `the arguments to failBuild must be statically known`);

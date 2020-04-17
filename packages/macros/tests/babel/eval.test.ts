@@ -121,10 +121,11 @@ function testEval() {
         let id = path.get('id').node;
         let value = path.get('init');
         if (isIdentifier(id) && id.name === 'result' && nodePathNotNull(value)) {
-          let evaluator = new Evaluator();
-          Object.assign(evaluator.context, {
-            knownValue: 2,
-            knownUndefinedValue: undefined,
+          let evaluator = new Evaluator({
+            locals: {
+              knownValue: 2,
+              knownUndefinedValue: undefined,
+            },
           });
           let result = evaluator.evaluate(value);
           if (result.confident) {

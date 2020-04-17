@@ -256,14 +256,13 @@ export class Evaluator {
 
     if (path.isAssignmentExpression()) {
       let leftPath = path.get('left');
-      let leftNode = leftPath.node as Identifier;
-      let rightPath = path.get('right');
-      let rightNode = rightPath.node as Identifier;
-      let rightEvalValue = this.evaluate(rightPath);
-      if (rightEvalValue.confident) {
-        let value = this.context[rightNode.name] || rightEvalValue.value;
-        this.context[leftNode.name] = value;
-        return { confident: true, value };
+      if (leftPath.isIdentifier()) {
+        let rightPath = path.get('right');
+        let right = this.evaluate(rightPath);
+        if (right.confident) {
+          this.context[leftPath.node.name] = right.value;
+          return right;
+        }
       }
     }
 

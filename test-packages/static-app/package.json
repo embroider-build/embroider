@@ -51,14 +51,14 @@
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "qunit-dom": "^0.8.4",
-    "sass": "^1.17.2",
+    "sass": "^1.26.3",
     "ember-inline-svg": "^0.2.1"
   },
   "engines": {
     "node": "8.* || >= 10.*"
   },
   "volta": {
-    "node": "10.16.1",
+    "node": "12.16.1",
     "yarn": "1.17.3"
   }
 }

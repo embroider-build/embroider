@@ -31,6 +31,7 @@ import { Memoize } from 'typescript-memoize';
 import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros';
+import bind from 'bind-decorator';
 
 interface TreeNames {
   appJS: Tree;
@@ -124,37 +125,43 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  get allActiveAddons(): AddonPackage[] {
-    // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage();
-
-    let orderAddons = (depA: Package, depB: Package) => {
-      let depAIdx = 0;
-      let depBIdx = 0;
-
-      if (depA && depA.meta && depA.isV2Addon()) {
-        depAIdx = depA.meta['order-index'] || 0;
-      }
-      if (depB && depB.meta && depB.isV2Addon()) {
-        depBIdx = depB.meta['order-index'] || 0;
-      }
-
-      return depAIdx - depBIdx;
-    };
-
-    let result = this.appPackage.findDescendants(shouldInclude) as AddonPackage[];
-    let extras = [this.synthVendor, this.synthStyles].filter(shouldInclude) as AddonPackage[];
-    let extraDescendants = flatMap(extras, dep => dep.findDescendants(shouldInclude)) as AddonPackage[];
-    result = [...result, ...extras, ...extraDescendants];
-
-    return result.sort(orderAddons);
+  activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
+    let result = pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[];
+    if (pkg === this.appPackage) {
+      let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
+      result = [...result, ...extras];
+    }
+    return result.sort(this.orderAddons);
   }
 
   @Memoize()
-  get directActiveAddons(): AddonPackage[] {
+  get allActiveAddons(): AddonPackage[] {
+    let result = this.appPackage.findDescendants(this.isActiveAddon) as AddonPackage[];
+    let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
+    let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
+    result = [...result, ...extras, ...extraDescendants];
+    return result.sort(this.orderAddons);
+  }
+
+  @bind
+  private isActiveAddon(pkg: Package): boolean {
     // todo: filter by addon-provided hook
-    let shouldInclude = (dep: Package) => dep.isEmberPackage();
-    return this.appPackage.dependencies.filter(shouldInclude) as AddonPackage[];
+    return pkg.isEmberPackage();
+  }
+
+  @bind
+  private orderAddons(depA: Package, depB: Package): number {
+    let depAIdx = 0;
+    let depBIdx = 0;
+
+    if (depA && depA.meta && depA.isV2Addon()) {
+      depAIdx = depA.meta['order-index'] || 0;
+    }
+    if (depB && depB.meta && depB.isV2Addon()) {
+      depBIdx = depB.meta['order-index'] || 0;
+    }
+
+    return depAIdx - depBIdx;
   }
 
   @Memoize()
@@ -174,7 +181,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // Typescript is a slightly weird example of a preprocessor because it gets
     // implemented in babel, so all we realy need to do is make the extension
     // resolvable and there's no other "loader" or anything to apply.
-    if (this.directActiveAddons.find(pkg => pkg.name === 'ember-cli-typescript')) {
+    if (this.activeAddonChildren().find(pkg => pkg.name === 'ember-cli-typescript')) {
       extensions.unshift('.ts');
     }
 

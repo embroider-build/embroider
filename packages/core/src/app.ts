@@ -945,7 +945,9 @@ export class AppBuilder<TreeNames> {
   }
 
   private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
-    // TODO: we're only building tests from the first engine (the app)
+    // We're only building tests from the first engine (the app). This is the
+    // normal thing to do -- tests from engines don't automatically roll up into
+    // the app.
     let engine = engines[0];
 
     let { appFiles } = engine;

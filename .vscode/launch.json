@@ -33,21 +33,6 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Build pemberly-example-web",
-      "program": "${workspaceFolder}/../pemberly-example-web_trunk/node_modules/.bin/ember",
-      "cwd": "${workspaceFolder}/../pemberly-example-web_trunk",
-      "args": ["build"],
-      "env": {
-        "JOBS": "1",
-        "EMBROIDER": "true",
-        "FASTBOOT_DISABLED": "true"
-      },
-      "outputCapture": "std"
-    },
-
-    {
-      "type": "node",
-      "request": "launch",
       "name": "Build engines-host-app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/engines-host-app",

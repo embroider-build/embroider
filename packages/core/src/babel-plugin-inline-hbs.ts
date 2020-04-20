@@ -54,7 +54,7 @@ interface State {
   templateCompiler: TemplateCompiler | undefined;
 }
 
-export default function inlineHBSTransform() {
+export default function inlineHBSTransform(): unknown {
   return {
     visitor: {
       Program: {

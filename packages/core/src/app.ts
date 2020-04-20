@@ -362,6 +362,16 @@ export class AppBuilder<TreeNames> {
 
       let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
       if (implicitTestScripts.length > 0) {
+        // this is the traditional test-support-suffix.js, it should go to test-support
+        implicitTestScripts.push({
+          kind: 'in-memory',
+          relativePath: '_testing_suffix_.js',
+          source: `
+          var runningTests=true;
+          if (window.Testem) {
+            window.Testem.hookIntoTestFramework();
+          }`,
+        });
         let testSupportJS = new ConcatenatedAsset(
           'assets/test-support.js',
           implicitTestScripts,
@@ -1024,7 +1034,7 @@ let d = w.define;
 {{/if}}
 
 {{#if autoRun ~}}
-  if (typeof EMBER_DISABLE_AUTO_BOOT === 'undefined' || !EMBER_DISABLE_AUTO_BOOT) {
+  if (!runningTests) {
     i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
   }
 {{else  if appBoot ~}}
@@ -1035,11 +1045,6 @@ let d = w.define;
   {{!- TODO: both of these suffixes should get dynamically generated so they incorporate
        any content-for added by addons. -}}
 
-  {{!- this is the traditional test-support-suffix.js -}}
-  runningTests = true;
-  if (window.Testem) {
-    window.Testem.hookIntoTestFramework();
-  }
 
   {{!- this is the traditional tests-suffix.js -}}
   i('../tests/test-helper');

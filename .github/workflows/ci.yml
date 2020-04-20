@@ -1,0 +1,24 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test on node ${{ matrix.node_version }} and ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node_version: ['10']
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: rwjblue/setup-volta@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+
+      - run: yarn
+      - run: yarn lint
+      - run: JOBS=1 yarn test
+        env:
+          NODE_OPTIONS: '--max_old_space_size=8192'

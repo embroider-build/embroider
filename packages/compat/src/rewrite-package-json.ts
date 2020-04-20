@@ -1,12 +1,17 @@
 import Plugin, { Tree } from 'broccoli-plugin';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { AddonMeta } from '@embroider/core';
+import { AddonMeta, Package } from '@embroider/core';
 
 type GetMeta = () => Partial<AddonMeta>;
+type GetNonResolvableDependencies = () => Package[];
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree: Tree, private getMeta: GetMeta) {
+  constructor(
+    inputTree: Tree,
+    private getMeta: GetMeta,
+    private getNonResolvableDependencies: GetNonResolvableDependencies
+  ) {
     super([inputTree], {
       annotation: 'embroider:core:rewrite-package-json',
     });
@@ -35,6 +40,18 @@ export default class RewritePackageJSON extends Plugin {
     );
     this.cachedLast = pkg;
     pkg['ember-addon'] = meta;
+
+    let nonResolvableDependencies = this.getNonResolvableDependencies();
+    if (nonResolvableDependencies.length && !pkg.dependencies) {
+      pkg.dependencies = {};
+    }
+
+    // add in repo addons to dependencies as they will be symlinked
+    // into node_modules
+    for (let dep of nonResolvableDependencies) {
+      pkg.dependencies[dep.name] = '*';
+    }
+
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 }

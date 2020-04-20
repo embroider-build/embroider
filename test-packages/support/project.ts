@@ -292,10 +292,14 @@ export class Project extends FixturifyProject {
         lib: {
           [name]: {
             'index.js': addonIndexFile(''),
-            'package.json': JSON.stringify({
-              name,
-              keywords: ['ember-addon'],
-            }),
+            'package.json': JSON.stringify(
+              {
+                name,
+                keywords: ['ember-addon'],
+              },
+              null,
+              2
+            ),
           },
         },
       },

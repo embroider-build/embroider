@@ -9,6 +9,7 @@ describe('macroCondition', function() {
     babelConfig(version: number) {
       return makeBabelConfig(version, config);
     },
+    includePresetsTests: true,
     createTests: allModes((transform, { applyMode, buildTimeTest, runTimeTest }) => {
       let run = makeRunner(transform);
       beforeEach(function() {

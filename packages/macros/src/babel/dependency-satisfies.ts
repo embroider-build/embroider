@@ -1,12 +1,14 @@
 import { NodePath } from '@babel/traverse';
-import { booleanLiteral, CallExpression } from '@babel/types';
+import { CallExpression } from '@babel/types';
 import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
 import { PackageCache } from '@embroider/core';
 import error from './error';
 import { assertArray } from './evaluate-json';
 
-export default function dependencySatisfies(path: NodePath<CallExpression>, state: State, packageCache: PackageCache) {
+const packageCache = PackageCache.shared('embroider-stage3');
+
+export default function dependencySatisfies(path: NodePath<CallExpression>, state: State): boolean {
   if (path.node.arguments.length !== 2) {
     throw error(path, `dependencySatisfies takes exactly two arguments, you passed ${path.node.arguments.length}`);
   }
@@ -27,15 +29,14 @@ export default function dependencySatisfies(path: NodePath<CallExpression>, stat
   try {
     let us = packageCache.ownerOfFile(sourceFileName);
     if (!us) {
-      path.replaceWith(booleanLiteral(false));
-      return;
+      return false;
     }
     let version = packageCache.resolve(packageName.value, us).version;
-    path.replaceWith(booleanLiteral(satisfies(version, range.value)));
+    return satisfies(version, range.value);
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;
     }
-    path.replaceWith(booleanLiteral(false));
+    return false;
   }
 }

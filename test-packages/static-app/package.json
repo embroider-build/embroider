@@ -46,7 +46,7 @@
     "ember-paper": "^1.0.0-beta.24",
     "ember-qunit": "^4.4.1",
     "ember-resolver": "^5.0.1",
-    "ember-source": "~3.10.0",
+    "ember-source": "~3.13.0",
     "eslint-plugin-ember": "^7.0.0",
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",

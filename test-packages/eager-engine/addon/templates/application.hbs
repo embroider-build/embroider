@@ -3,5 +3,7 @@
   {{#if (gt 2 1)}}
   <div data-test-truth-helpers-ok>ok</div>
   {{/if}}
-  <div data-test-duplicated-helper>{{duplicated-helper}}</div>
+  <div data-test-duplicated-helper>
+    {{duplicated-helper needAnArgumentHere="to force ember to consider this a helper"}}
+  </div>
 </div>

@@ -206,10 +206,16 @@ class MovedSet {
       return false;
     }
 
-    // The app always moves (because we need a place to mash all the
-    // addon-provided "app-js" trees), and you must move if you are not native
-    // v2
-    let mustMove = pkg === this.app || !pkg.isV2Ember();
+    let mustMove =
+      // The app always moves (because we need a place to mash all the
+      // addon-provided "app-js" trees),
+      pkg === this.app ||
+      // For the same reason, engines need to move (we need a place to mash all
+      // their child addon's provided app-js trees into)
+      pkg.isEngine() ||
+      //  any other ember package that isn't native v2 must move because we've
+      //  got to rewrite them
+      !pkg.isV2Ember();
 
     // this is a partial answer. After we check our children, our own `mustMove`
     // may change from false to true. But it's OK that our children see false in

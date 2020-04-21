@@ -6,7 +6,7 @@ import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
-import { todo, debug, warn } from './messages';
+import { debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -26,6 +26,8 @@ import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import merge from 'lodash/merge';
+import { mangledEngineRoot } from './engine-mangler';
+import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
 
 export type EmberENV = unknown;
 
@@ -43,8 +45,8 @@ export interface AppAdapter<TreeNames> {
   // the set of all addon packages that are active (recursive)
   readonly allActiveAddons: V2AddonPackage[];
 
-  // the set of active addons used by the app directly (not recursive)
-  readonly directActiveAddons: V2AddonPackage[];
+  // the direct active addon dependencies of a given package
+  activeAddonChildren(pkg: Package): V2AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -165,103 +167,6 @@ class ConcatenatedAsset {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
-interface RouteFiles {
-  route?: string;
-  template?: string;
-  controller?: string;
-  children: Map<string, RouteFiles>;
-}
-
-class AppFiles {
-  readonly tests: ReadonlyArray<string>;
-  readonly components: ReadonlyArray<string>;
-  readonly helpers: ReadonlyArray<string>;
-  private perRoute: RouteFiles;
-  readonly otherAppFiles: ReadonlyArray<string>;
-  readonly relocatedFiles: Map<string, string>;
-
-  constructor(relativePaths: Map<string, string | null>, resolvableExtensions: RegExp) {
-    let tests: string[] = [];
-    let components: string[] = [];
-    let helpers: string[] = [];
-    let otherAppFiles: string[] = [];
-    this.perRoute = { children: new Map() };
-    for (let relativePath of relativePaths.keys()) {
-      relativePath = relativePath.split(sep).join('/');
-      if (!resolvableExtensions.test(relativePath)) {
-        continue;
-      }
-
-      if (relativePath.startsWith('tests/')) {
-        if (/-test\.\w+$/.test(relativePath)) {
-          tests.push(relativePath);
-        }
-        continue;
-      }
-
-      // hbs files are resolvable, but not when they're inside the components
-      // directory (where they are used for colocation only)
-      if (relativePath.startsWith('components/') && !relativePath.endsWith('.hbs')) {
-        components.push(relativePath);
-        continue;
-      }
-
-      if (relativePath.startsWith('templates/components/')) {
-        components.push(relativePath);
-        continue;
-      }
-
-      if (relativePath.startsWith('helpers/')) {
-        helpers.push(relativePath);
-        continue;
-      }
-
-      if (this.handleRouteFile(relativePath)) {
-        continue;
-      }
-
-      otherAppFiles.push(relativePath);
-    }
-    this.tests = tests;
-    this.components = components;
-    this.helpers = helpers;
-    this.otherAppFiles = otherAppFiles;
-
-    let relocatedFiles: Map<string, string> = new Map();
-    for (let [relativePath, owningPath] of relativePaths) {
-      if (owningPath) {
-        relocatedFiles.set(relativePath, owningPath);
-      }
-    }
-    this.relocatedFiles = relocatedFiles;
-  }
-
-  private handleRouteFile(relativePath: string): boolean {
-    let [prefix, ...rest] = relativePath.replace(/\.\w{1,3}$/, '').split('/');
-    if (!['controllers', 'templates', 'routes'].includes(prefix)) {
-      return false;
-    }
-    let type = prefix.slice(0, -1) as 'controller' | 'template' | 'route';
-    let cursor = this.perRoute;
-    for (let part of rest) {
-      let child = cursor.children.get(part);
-      if (child) {
-        cursor = child;
-      } else {
-        let newEntry = { children: new Map() };
-        cursor.children.set(part, newEntry);
-        cursor = newEntry;
-      }
-    }
-    cursor[type] = relativePath;
-    return true;
-  }
-
-  get routeFiles(): Readonly<RouteFiles> {
-    return this.perRoute;
-  }
-}
-
 export class AppBuilder<TreeNames> {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
@@ -344,7 +249,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompiler: TemplateCompiler, appFiles: AppFiles) {
+  private babelConfig(templateCompiler: TemplateCompiler, appFiles: Engine[]) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -379,7 +284,7 @@ export class AppBuilder<TreeNames> {
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
 
-  private adjustImportsPlugin(appFiles: AppFiles): PluginItem {
+  private adjustImportsPlugin(engines: Engine[]): PluginItem {
     let renamePackages = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-packages']));
 
     let renameModules = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-modules']));
@@ -390,12 +295,14 @@ export class AppBuilder<TreeNames> {
     }
 
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
-    for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-      relocatedFiles[
-        join(this.root, relativePath)
-          .split(sep)
-          .join('/')
-      ] = originalPath;
+    for (let { destPath, appFiles } of engines) {
+      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
+        relocatedFiles[
+          join(destPath, relativePath)
+            .split(sep)
+            .join('/')
+        ] = originalPath;
+      }
     }
 
     let adjustOptions: AdjustImportsOptions = {
@@ -416,7 +323,7 @@ export class AppBuilder<TreeNames> {
 
   private insertEmberApp(
     asset: ParsedEmberAsset,
-    appFiles: AppFiles,
+    appFiles: Engine[],
     prepared: Map<string, InternalAsset>,
     emberENV: EmberENV
   ) {
@@ -425,7 +332,7 @@ export class AppBuilder<TreeNames> {
     // our tests entrypoint already includes a correct module dependency on the
     // app, so we only insert the app when we're not inserting tests
     if (!asset.fileAsset.includeTests) {
-      let appJS = this.appJSAsset(appFiles, prepared);
+      let appJS = this.topAppJSAsset(appFiles, prepared);
       html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     }
 
@@ -487,17 +394,83 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private appDiffer: AppDiffer | undefined;
-
-  private updateAppJS(appJSPath: string): AppFiles {
-    if (!this.appDiffer) {
-      this.appDiffer = new AppDiffer(this.root, appJSPath, this.adapter.allActiveAddons);
+  // recurse to find all active addons that don't cross an engine boundary.
+  // Inner engines themselves will be returned, but not those engines' children.
+  // The output set's insertion order is the proper ember-cli compatible
+  // ordering of the addons.
+  private findActiveAddons(pkg: Package, engine: EngineSummary): void {
+    for (let child of this.adapter.activeAddonChildren(pkg)) {
+      if (!child.isEngine()) {
+        this.findActiveAddons(child, engine);
+      }
+      engine.addons.add(child);
     }
-    this.appDiffer.update();
-    return new AppFiles(this.appDiffer.files, this.resolvableExtensionsPattern);
   }
 
-  private prepareAsset(asset: Asset, appFiles: AppFiles, prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private partitionEngines(appJSPath: string): EngineSummary[] {
+    let queue: EngineSummary[] = [
+      {
+        package: this.app,
+        addons: new Set(),
+        parent: undefined,
+        sourcePath: appJSPath,
+        destPath: this.root,
+        modulePrefix: this.modulePrefix,
+        appRelativePath: '.',
+      },
+    ];
+    let done: EngineSummary[] = [];
+    let seenEngines: Set<Package> = new Set();
+    while (true) {
+      let current = queue.shift();
+      if (!current) {
+        break;
+      }
+      this.findActiveAddons(current.package, current);
+      for (let addon of current.addons) {
+        if (addon.isEngine() && !seenEngines.has(addon)) {
+          seenEngines.add(addon);
+          queue.push({
+            package: addon,
+            addons: new Set(),
+            parent: current,
+            sourcePath: mangledEngineRoot(addon),
+            destPath: addon.root,
+            modulePrefix: addon.name,
+            appRelativePath: explicitRelative(this.root, addon.root),
+          });
+        }
+      }
+      done.push(current);
+    }
+    return done;
+  }
+
+  private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
+
+  private updateAppJS(appJSPath: string): Engine[] {
+    if (!this.appDiffers) {
+      let engines = this.partitionEngines(appJSPath);
+      this.appDiffers = engines.map(engine => ({
+        differ: new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]),
+        engine,
+      }));
+    }
+    // this is in reverse order because we need deeper engines to update before
+    // their parents, because they aren't really valid packages until they
+    // update, and their parents will go looking for their own `app-js` content.
+    this.appDiffers
+      .slice()
+      .reverse()
+      .forEach(a => a.differ.update());
+    return this.appDiffers.map(a => {
+      return Object.assign({}, a.engine, {
+        appFiles: new AppFiles(a.differ.files, this.resolvableExtensionsPattern),
+      });
+    });
+  }
+
+  private prepareAsset(asset: Asset, appFiles: Engine[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -515,7 +488,7 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared, emberENV);
@@ -593,7 +566,7 @@ export class AppBuilder<TreeNames> {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles, emberENV: EmberENV) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV) {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -857,19 +830,47 @@ export class AppBuilder<TreeNames> {
     }
   }
 
-  private appJSAsset(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
+  private topAppJSAsset(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    let [app, ...childEngines] = engines;
     let relativePath = `assets/${this.app.name}.js`;
+    return this.appJSAsset(relativePath, app, childEngines, prepared, {
+      autoRun: this.adapter.autoRun(),
+      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
+      mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
+      appConfig: this.adapter.mainModuleConfig(),
+    });
+  }
+
+  private appJSAsset(
+    relativePath: string,
+    engine: Engine,
+    childEngines: Engine[],
+    prepared: Map<string, InternalAsset>,
+    entryParams?: Partial<Parameters<typeof entryTemplate>[0]>
+  ): InternalAsset {
+    let { appFiles } = engine;
     let cached = prepared.get(relativePath);
     if (cached) {
       return cached;
     }
 
+    let eagerModules = [];
     let requiredAppFiles = [appFiles.otherAppFiles];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
+    }
+
+    for (let childEngine of childEngines) {
+      let asset = this.appJSAsset(
+        `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
+        childEngine,
+        [],
+        prepared
+      );
+      eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
     }
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
@@ -883,31 +884,30 @@ export class AppBuilder<TreeNames> {
         (routeNames: string[], files: string[]) => {
           let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {
-            prepared.set(routeEntrypoint, this.routeEntrypoint(routeEntrypoint, files));
+            prepared.set(routeEntrypoint, this.routeEntrypoint(engine, routeEntrypoint, files));
           }
-          lazyRoutes.push({ names: routeNames, path: this.importPaths(routeEntrypoint, relativePath).buildtime });
+          lazyRoutes.push({
+            names: routeNames,
+            path: this.importPaths(engine, routeEntrypoint, relativePath).buildtime,
+          });
         }
       );
     }
 
-    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file => this.importPaths(file, relativePath));
-
-    // for the src tree, we can limit ourselves to only known resolvable
-    // collections
-    todo('app src tree');
+    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file =>
+      this.importPaths(engine, file, relativePath)
+    );
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', relativePath, amdModules);
+    this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let source = entryTemplate({
-      amdModules,
-      autoRun: this.adapter.autoRun(),
-      appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
-      mainModule: explicitRelative(dirname(relativePath), this.adapter.mainModule()),
-      appConfig: this.adapter.mainModuleConfig(),
-      lazyRoutes,
-    });
+    let params = { amdModules, lazyRoutes, eagerModules };
+    if (entryParams) {
+      Object.assign(params, entryParams);
+    }
+
+    let source = entryTemplate(params);
 
     let asset: InternalAsset = {
       kind: 'in-memory',
@@ -923,27 +923,34 @@ export class AppBuilder<TreeNames> {
     return this.adapter.modulePrefix();
   }
 
-  private importPaths(appRelativePath: string, fromFile: string) {
+  private importPaths(engine: Engine, engineRelativePath: string, fromFile: string) {
+    let appRelativePath = join(engine.appRelativePath, engineRelativePath);
     let noJS = appRelativePath.replace(this.resolvableExtensionsPattern, '');
-    let noHBS = noJS.replace(/\.hbs$/, '');
+    let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
-      runtime: `${this.modulePrefix}/${noHBS}`,
+      runtime: `${engine.modulePrefix}/${noHBS}`,
       buildtime: explicitRelative(dirname(fromFile), noJS),
     };
   }
 
-  private routeEntrypoint(relativePath: string, files: string[]) {
+  private routeEntrypoint(engine: Engine, relativePath: string, files: string[]) {
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: files.map(f => this.importPaths(f, relativePath)),
+        files: files.map(f => this.importPaths(engine, f, relativePath)),
       }),
       relativePath,
     };
     return asset;
   }
 
-  private testJSEntrypoint(appFiles: AppFiles, prepared: Map<string, InternalAsset>): InternalAsset {
+  private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    // We're only building tests from the first engine (the app). This is the
+    // normal thing to do -- tests from engines don't automatically roll up into
+    // the app.
+    let engine = engines[0];
+
+    let { appFiles } = engine;
     const myName = 'assets/test.js';
     let testModules = appFiles.tests
       .map(relativePath => {
@@ -956,12 +963,12 @@ export class AppBuilder<TreeNames> {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    testModules.unshift(explicitRelative(dirname(myName), this.appJSAsset(appFiles, prepared).relativePath));
+    testModules.unshift(explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath));
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', myName, amdModules);
+    this.gatherImplicitModules('implicit-test-modules', myName, engine, amdModules);
 
     let source = entryTemplate({
       amdModules,
@@ -979,9 +986,10 @@ export class AppBuilder<TreeNames> {
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
     relativeTo: string,
+    engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
-    for (let addon of this.adapter.allActiveAddons) {
+    for (let addon of engine.addons) {
       let implicitModules = addon.meta[section];
       if (implicitModules) {
         let renamedModules = inverseRenamedModules(addon.meta, this.resolvableExtensionsPattern);

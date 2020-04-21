@@ -1,7 +1,7 @@
 import { Tree } from 'broccoli-plugin';
 import { join, relative, dirname } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { tmpdir } from 'os';
 import { MovedPackageCache } from './moved-package-cache';
@@ -96,24 +96,43 @@ export default class CompatAddons implements Stage {
       emptyDirSync(this.destDir);
     }
 
-    [...this.packageCache.moved.values()].forEach((value, index) => {
-      let treeInstance = this.treeSyncMap.get(value);
+    [...this.packageCache.moved.entries()].forEach(([oldPkg, newPkg], index) => {
+      let treeInstance = this.treeSyncMap.get(newPkg);
+
+      // we need to pull metadata off the oldPkg, not the newPkg, because the
+      // newPkg doesn't actually have anything in it yet (including
+      // package.json)
+      let isEngine = oldPkg.isEngine();
+
+      // Engines get built not into their real package name, but a mangled one.
+      // Their real one needs to be free for us to merge all their dependencies
+      // into.
+      let destination = isEngine ? mangledEngineRoot(newPkg) : newPkg.root;
 
       if (!treeInstance) {
-        treeInstance = new TreeSync(movedAddons[index], value.root, {
+        treeInstance = new TreeSync(movedAddons[index], destination, {
           ignore: ['**/node_modules'],
         });
 
-        this.treeSyncMap.set(value, treeInstance);
+        this.treeSyncMap.set(newPkg, treeInstance);
       }
 
       if (
         !this.didBuild || // always copy on the first build
         (changedMap && changedMap.get(movedAddons[index])) || // broccoli has told us that this node has been changed
-        value.mayRebuild // prevent rebuilds if not allowed
+        newPkg.mayRebuild // prevent rebuilds if not allowed
       ) {
         treeInstance.sync();
-        this.linkNonCopiedDeps(value, value.root);
+        if (!this.didBuild && isEngine) {
+          // The first time we encounter an engine, we also create the empty
+          // shell for its real module namespace.
+          copySync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
+        }
+
+        // for engines, this isn't the mangled destination (we don't need
+        // resolvable node_modules there), this is the empty shell of their real
+        // location
+        this.linkNonCopiedDeps(newPkg, newPkg.root);
       }
     });
 

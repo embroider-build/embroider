@@ -31,7 +31,7 @@
     "ember-cli-babel": "^7.7.3",
     "ember-cli-dependency-checker": "^3.1.0",
     "ember-cli-eslint": "^5.1.0",
-    "ember-cli-htmlbars": "^3.0.1",
+    "ember-cli-htmlbars": "^4.3.1",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
     "ember-cli-inject-live-reload": "^1.8.2",
     "ember-cli-sass": "^10.0.0",
@@ -46,19 +46,19 @@
     "ember-paper": "^1.0.0-beta.24",
     "ember-qunit": "^4.4.1",
     "ember-resolver": "^5.0.1",
-    "ember-source": "~3.10.0",
+    "ember-source": "~3.13.0",
     "eslint-plugin-ember": "^7.0.0",
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "qunit-dom": "^0.8.4",
-    "sass": "^1.17.2",
+    "sass": "^1.26.3",
     "ember-inline-svg": "^0.2.1"
   },
   "engines": {
     "node": "8.* || >= 10.*"
   },
   "volta": {
-    "node": "10.16.1",
+    "node": "12.16.1",
     "yarn": "1.17.3"
   }
 }

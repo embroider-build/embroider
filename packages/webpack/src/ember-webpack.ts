@@ -478,13 +478,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private makeCSSRule() {
     return [
-      this.mode === 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
+      this.mode === 'development'
+        ? { loader: 'style-loader', options: { injectType: 'styleTag' } }
+        : MiniCssExtractPlugin.loader,
       {
         loader: 'css-loader',
         options: {
           url: true,
           import: true,
-          modules: true,
+          //modules: true,
+          modules: 'global',
         },
       },
     ];

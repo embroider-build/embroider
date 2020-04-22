@@ -1,11 +1,11 @@
-import { AppMeta } from './metadata';
+import { AppMeta, AddonMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
-import { join, dirname, sep, resolve as resolvePath } from 'path';
+import { join, dirname, sep, resolve as resolvePath, relative } from 'path';
 import { debug, warn } from './messages';
 import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
@@ -230,7 +230,9 @@ export class AppBuilder<TreeNames> {
     let result: Array<string> = [];
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
-      if (implicitScripts) {
+      // do not include styles from lazy engines as they will
+      // bring in their own styles
+      if (implicitScripts && !addon.meta['lazy-import']) {
         let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
@@ -846,7 +848,8 @@ export class AppBuilder<TreeNames> {
     engine: Engine,
     childEngines: Engine[],
     prepared: Map<string, InternalAsset>,
-    entryParams?: Partial<Parameters<typeof entryTemplate>[0]>
+    entryParams?: Partial<Parameters<typeof entryTemplate>[0]>,
+    lazyStyles?: string[]
   ): InternalAsset {
     let { appFiles } = engine;
     let cached = prepared.get(relativePath);
@@ -865,13 +868,23 @@ export class AppBuilder<TreeNames> {
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
+      let engineIsLazy = (childEngine.package.meta && childEngine.package.meta['lazy-import']) || false;
+      let lazyStyles: string[] = [];
+      let childEngineMeta = childEngine.package.meta as AddonMeta;
+
+      if (engineIsLazy && childEngineMeta && childEngineMeta['implicit-styles']) {
+        lazyStyles = childEngineMeta['implicit-styles'].map(p => join(childEngine.destPath, p));
+      }
+
       let asset = this.appJSAsset(
         `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
         childEngine,
         [],
-        prepared
+        prepared,
+        undefined,
+        lazyStyles
       );
-      if (childEngine.package.meta && childEngine.package.meta['lazy-import']) {
+      if (engineIsLazy) {
         lazyRoutes.push({
           names: [childEngine.package.name],
           path: explicitRelative(dirname(relativePath), asset.relativePath),
@@ -879,6 +892,12 @@ export class AppBuilder<TreeNames> {
       } else {
         eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
       }
+    }
+
+    if (Array.isArray(lazyStyles) && lazyStyles.length > 0) {
+      lazyStyles.forEach(style => {
+        eagerModules.push(relative(join(this.root, dirname(relativePath)), style));
+      });
     }
 
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {

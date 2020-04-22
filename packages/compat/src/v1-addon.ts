@@ -769,6 +769,15 @@ export default class V1Addon implements V1Package {
     let built = new IntermediateBuild();
     built.staticMeta['order-index'] = this.orderIdx;
 
+    // TODO I think this can become this.options
+    if (
+      this.addonInstance.options &&
+      this.addonInstance.options.lazyLoading &&
+      this.addonInstance.options.lazyLoading.enabled
+    ) {
+      built.staticMeta['lazy-import'] = true;
+    }
+
     if (this.moduleName !== this.name) {
       built.staticMeta['renamed-packages'] = {
         [this.moduleName]: this.name,

@@ -863,6 +863,7 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
+    let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
         `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
@@ -870,10 +871,16 @@ export class AppBuilder<TreeNames> {
         [],
         prepared
       );
-      eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
+      if (childEngine.package.meta && childEngine.package.meta['lazy-import']) {
+        lazyRoutes.push({
+          names: [childEngine.package.name],
+          path: explicitRelative(dirname(relativePath), asset.relativePath),
+        });
+      } else {
+        eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
+      }
     }
 
-    let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
       this.splitRoute(
         routeName,
@@ -1023,22 +1030,22 @@ let d = w.define;
 {{/each}}
 
 {{#if lazyRoutes}}
-  w._embroiderRouteBundles_ = [
-    {{#each lazyRoutes as |route|}}
-    {
-      names: {{{json-stringify route.names}}},
-      load: function() {
-        return import("{{js-string-escape route.path}}");
-      }
-    },
-    {{/each}}
-  ]
+w._embroiderRouteBundles_ = [
+  {{#each lazyRoutes as |route|}}
+  {
+    names: {{{json-stringify route.names}}},
+    load: function() {
+      return import("{{js-string-escape route.path}}");
+    }
+  },
+  {{/each}}
+]
 {{/if}}
 
 {{#if autoRun ~}}
-  if (!runningTests) {
-    i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
-  }
+if (!runningTests) {
+  i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+}
 {{else  if appBoot ~}}
   {{{ appBoot }}}
 {{/if}}

@@ -11,15 +11,20 @@ module('Acceptance | basics', function(hooks) {
     assert.dom('[data-test-duplicated-helper]').containsText('from-engines-host-app');
   });
 
+  // this test must be the first test that loads the use-lazy-engine engine
+  // as after it has loaded it will not "unload" and we are checking that these
+  // modules are entering require.entries for the first time.
   test('lazy-engine', async function(assert) {
     await visit('/');
-    let entriesBefore = Object.entries(require.entries).length; // eslint-disable-line no-undef
+    let entriesBefore = Object.entries(window.require.entries).length;
+    assert.notOk(window.require.entries['lazy-engine/_app_/helpers/duplicated-helper']);
     await visit('/use-lazy-engine');
-    let entriesAfter = Object.entries(require.entries).length; // eslint-disable-line no-undef
+    let entriesAfter = Object.entries(window.require.entries).length;
+    assert.ok(window.require.entries['lazy-engine/_app_/helpers/duplicated-helper']);
+    assert.ok(entriesAfter > entriesBefore);
     assert.equal(currentURL(), '/use-lazy-engine');
     assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
     assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
-    assert.ok(entriesAfter > entriesBefore);
   });
 
   test('eager-engine', async function(assert) {

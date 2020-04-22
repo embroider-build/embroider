@@ -12,13 +12,14 @@ function lazyBundle(routeName, engineInfoByRoute) {
     return false;
   }
 
-  // because routes and engines can be specified with "as" at build
-  // time we dont know that name (due to how dynamic the router.js is). We
-  // have to map the "mount point" back to the original name which is what we
-  // knew at build time.
-
-  // todo: routename will sometimes be 'use-lazy-engine.index' should we
-  // no op those?
+  // Here we map engine names to route names. We need to do this because
+  // engines can be specified with "as" such as:
+  //
+  // this.mount('lazy-engine', { path: '/use-lazy-engine', as: 'use-lazy-engine' });
+  //
+  // This presents a problem at build time since we cant get this "mount point" name. This is because the
+  // router is dynamic and the string could be defined as anything. Luckly, this._engineInfoByRoute contains
+  // mappings from routeName to the engines "original name" (which we know at build time).
   if (engineInfoByRoute[routeName]) {
     routeName = engineInfoByRoute[routeName].name;
   }

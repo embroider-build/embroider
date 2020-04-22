@@ -11,6 +11,17 @@ module('Acceptance | basics', function(hooks) {
     assert.dom('[data-test-duplicated-helper]').containsText('from-engines-host-app');
   });
 
+  test('lazy-engine', async function(assert) {
+    await visit('/');
+    let entriesBefore = Object.entries(require.entries).length; // eslint-disable-line no-undef
+    await visit('/use-lazy-engine');
+    let entriesAfter = Object.entries(require.entries).length; // eslint-disable-line no-undef
+    assert.equal(currentURL(), '/use-lazy-engine');
+    assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
+    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
+    assert.ok(entriesAfter > entriesBefore);
+  });
+
   test('eager-engine', async function(assert) {
     await visit('/use-eager-engine');
     assert.equal(currentURL(), '/use-eager-engine');
@@ -56,12 +67,5 @@ module('Acceptance | basics', function(hooks) {
 
   skip('lazy styles are not present until after lazy engine loads', function() {
     // See commented assertion in previous test.
-  });
-
-  test('lazy-engine', async function(assert) {
-    await visit('/use-lazy-engine');
-    assert.equal(currentURL(), '/use-lazy-engine');
-    assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
-    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
   });
 });

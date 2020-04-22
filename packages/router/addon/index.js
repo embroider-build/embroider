@@ -7,7 +7,7 @@ import { DEBUG } from '@glimmer/env';
 
 let newSetup = true;
 
-function lazyBundle(routeName, engineInstances) {
+function lazyBundle(routeName, engineInfoByRoute) {
   if (!window._embroiderRouteBundles_) {
     return false;
   }
@@ -16,10 +16,11 @@ function lazyBundle(routeName, engineInstances) {
   // time we dont know that name (due to how dynamic the router.js is). We
   // have to map the "mount point" back to the original name which is what we
   // knew at build time.
-  for (let engine of Object.entries(engineInstances)) {
-    if (engine[1][0].mountPoint === routeName) {
-      return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(engine[0]) !== -1);
-    }
+
+  // todo: routename will sometimes be 'use-lazy-engine.index' should we
+  // no op those?
+  if (engineInfoByRoute[routeName]) {
+    routeName = engineInfoByRoute[routeName].name;
   }
 
   return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
@@ -36,7 +37,7 @@ let Router = EmberRouter.extend({
   // Unfortunately the stock query parameter behavior pulls on routes just to
   // check what their previous QP values were.
   _getQPMeta(handlerInfo) {
-    let bundle = lazyBundle(handlerInfo.name, this._engineInstances);
+    let bundle = lazyBundle(handlerInfo.name, this._engineInfoByRoute);
     if (bundle && !bundle.loaded) {
       return undefined;
     }
@@ -70,7 +71,7 @@ let Router = EmberRouter.extend({
 
   _handlerResolver(original) {
     return name => {
-      let bundle = lazyBundle(name, this._engineInstances);
+      let bundle = lazyBundle(name, this._engineInfoByRoute);
       if (!bundle || bundle.loaded) {
         return original(name);
       }

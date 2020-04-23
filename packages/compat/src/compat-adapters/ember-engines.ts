@@ -19,8 +19,7 @@ export default class extends V1Addon {
   get packageMeta(): Partial<AddonMeta> {
     let meta = super.packageMeta;
 
-    // remove from the build so that it will not be present even
-    // with staticAddonTrees = false
+    // remove from the build so that it will not be present even with staticAddonTrees = false
     if (meta['implicit-modules']) {
       meta['implicit-modules'] = meta['implicit-modules'].filter(mod => mod !== './-private/router-ext');
     }

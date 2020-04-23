@@ -8,10 +8,6 @@ import { DEBUG } from '@glimmer/env';
 let newSetup = true;
 
 function lazyBundle(routeName, engineInfoByRoute) {
-  if (!window._embroiderRouteBundles_ && !window._embroiderEngineBundles_) {
-    return false;
-  }
-
   // Here we map engine names to route names. We need to do this because
   // engines can be specified with "as" such as:
   //
@@ -21,11 +17,15 @@ function lazyBundle(routeName, engineInfoByRoute) {
   // router is dynamic and the string could be defined as anything. Luckly, this._engineInfoByRoute contains
   // mappings from routeName to the engines "original name" (which we know at build time).
   let engine = engineInfoByRoute[routeName];
-  if (engine) {
+  if (engine && window._embroiderEngineBundles_) {
     return window._embroiderEngineBundles_.find(bundle => bundle.names.indexOf(engine.name) !== -1);
   }
 
-  return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+  if (window._embroiderRouteBundles_) {
+    return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+  }
+
+  return false;
 }
 
 let Router = EmberRouter.extend({

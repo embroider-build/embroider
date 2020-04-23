@@ -6,7 +6,6 @@ type appRelativeURL = string;
 export interface AppMeta {
   type: 'app';
 
-  'lazy-import'?: boolean;
   'auto-upgraded'?: true;
   assets: filename[];
   babel: {

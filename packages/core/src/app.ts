@@ -1,4 +1,4 @@
-import { AppMeta } from './metadata';
+import { AppMeta, AddonMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
@@ -871,7 +871,8 @@ export class AppBuilder<TreeNames> {
         [],
         prepared
       );
-      if (childEngine.package.meta && childEngine.package.meta['lazy-import']) {
+      let childEngineMeta = childEngine.package.meta as AddonMeta;
+      if (childEngineMeta && childEngineMeta['lazy-import']) {
         lazyRoutes.push({
           names: [childEngine.package.name],
           path: explicitRelative(dirname(relativePath), asset.relativePath),

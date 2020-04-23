@@ -8,7 +8,7 @@ import { DEBUG } from '@glimmer/env';
 let newSetup = true;
 
 function lazyBundle(routeName, engineInfoByRoute) {
-  if (!window._embroiderRouteBundles_) {
+  if (!window._embroiderRouteBundles_ && !window._embroiderEngineBundles_) {
     return false;
   }
 
@@ -20,8 +20,9 @@ function lazyBundle(routeName, engineInfoByRoute) {
   // This presents a problem at build time since we cant get this "mount point" name. This is because the
   // router is dynamic and the string could be defined as anything. Luckly, this._engineInfoByRoute contains
   // mappings from routeName to the engines "original name" (which we know at build time).
-  if (engineInfoByRoute[routeName]) {
-    routeName = engineInfoByRoute[routeName].name;
+  let engine = engineInfoByRoute[routeName];
+  if (engine) {
+    return window._embroiderEngineBundles_.find(bundle => bundle.names.indexOf(engine.name) !== -1);
   }
 
   return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);

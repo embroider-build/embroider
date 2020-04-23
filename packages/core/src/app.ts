@@ -1,4 +1,4 @@
-import { AppMeta, AddonMeta } from './metadata';
+import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
@@ -863,7 +863,7 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
-    let lazyRoutes: { names: string[]; path: string }[] = [];
+    let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
         `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
@@ -871,9 +871,8 @@ export class AppBuilder<TreeNames> {
         [],
         prepared
       );
-      let childEngineMeta = childEngine.package.meta as AddonMeta;
-      if (childEngineMeta && childEngineMeta['lazy-import']) {
-        lazyRoutes.push({
+      if (childEngine.package.isLazyEngine()) {
+        lazyEngines.push({
           names: [childEngine.package.name],
           path: explicitRelative(dirname(relativePath), asset.relativePath),
         });
@@ -881,7 +880,7 @@ export class AppBuilder<TreeNames> {
         eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
       }
     }
-
+    let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
       this.splitRoute(
         routeName,
@@ -910,7 +909,7 @@ export class AppBuilder<TreeNames> {
     // modules.
     this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let params = { amdModules, lazyRoutes, eagerModules };
+    let params = { amdModules, lazyRoutes, lazyEngines, eagerModules };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -1043,6 +1042,19 @@ w._embroiderRouteBundles_ = [
 ]
 {{/if}}
 
+{{#if lazyEngines}}
+w._embroiderEngineBundles_ = [
+  {{#each lazyEngines as |engine|}}
+  {
+    names: {{{json-stringify engine.names}}},
+    load: function() {
+      return import("{{js-string-escape engine.path}}");
+    }
+  },
+  {{/each}}
+]
+{{/if}}
+
 {{#if autoRun ~}}
 if (!runningTests) {
   i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
@@ -1069,6 +1081,7 @@ if (!runningTests) {
   appConfig?: unknown;
   testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
+  lazyEngines?: { names: string[]; path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`

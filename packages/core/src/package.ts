@@ -54,6 +54,10 @@ export default class Package {
     return Boolean(keywords && (keywords as string[]).includes('ember-engine'));
   }
 
+  isLazyEngine(): boolean {
+    return this.isEngine() && this.packageJSON['ember-addon']['lazy-engine'];
+  }
+
   isV2Ember(): this is V2Package {
     return this.isEmberPackage() && get(this.packageJSON, 'ember-addon.version') === 2;
   }

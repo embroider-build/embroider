@@ -1,4 +1,4 @@
-import { AppMeta, AddonMeta } from './metadata';
+import { AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
@@ -197,8 +197,12 @@ export class AppBuilder<TreeNames> {
     return extensionsPattern(this.adapter.resolvableExtensions());
   }
 
-  private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
-    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map(
+  private impliedAssets(
+    type: keyof ImplicitAssetPaths,
+    addons: V2AddonPackage[],
+    emberENV?: EmberENV
+  ): (OnDiskAsset | InMemoryAsset)[] {
+    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, addons).map(
       (sourcePath: string): OnDiskAsset => {
         let stats = statSync(sourcePath);
         return {
@@ -226,13 +230,13 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths, addons: V2AddonPackage[]): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(addons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       // do not include styles from lazy engines as they will
       // bring in their own styles
-      if (implicitScripts && !addon.meta['lazy-import']) {
+      if (implicitScripts) {
         let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
@@ -340,14 +344,16 @@ export class AppBuilder<TreeNames> {
 
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
-    let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
+    let implicitScripts = this.impliedAssets('implicit-scripts', Array.from(appFiles[0].addons), emberENV);
     if (implicitScripts.length > 0) {
       let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
       prepared.set(vendorJS.relativePath, vendorJS);
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
 
-    let implicitStyles = this.impliedAssets('implicit-styles');
+    let addonList = Array.from(appFiles[0].addons);
+    addonList = addonList.filter(addon => !addon.meta['lazy-import']);
+    let implicitStyles = this.impliedAssets('implicit-styles', addonList);
     if (implicitStyles.length > 0) {
       let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
       prepared.set(vendorCSS.relativePath, vendorCSS);
@@ -362,7 +368,7 @@ export class AppBuilder<TreeNames> {
       }
       html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
-      let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
+      let implicitTestScripts = this.impliedAssets('implicit-test-scripts', Array.from(appFiles[0].addons));
       if (implicitTestScripts.length > 0) {
         // this is the traditional test-support-suffix.js, it should go to test-support
         implicitTestScripts.push({
@@ -383,7 +389,7 @@ export class AppBuilder<TreeNames> {
         html.insertScriptTag(html.implicitTestScripts, testSupportJS.relativePath);
       }
 
-      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
+      let implicitTestStyles = this.impliedAssets('implicit-test-styles', Array.from(appFiles[0].addons));
       if (implicitTestStyles.length > 0) {
         let testSupportCSS = new ConcatenatedAsset(
           'assets/test-support.css',
@@ -849,7 +855,7 @@ export class AppBuilder<TreeNames> {
     childEngines: Engine[],
     prepared: Map<string, InternalAsset>,
     entryParams?: Partial<Parameters<typeof entryTemplate>[0]>,
-    lazyStyles?: string[]
+    additionEagerModules?: string[]
   ): InternalAsset {
     let { appFiles } = engine;
     let cached = prepared.get(relativePath);
@@ -868,12 +874,12 @@ export class AppBuilder<TreeNames> {
 
     let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
+      let implicitStyles: string[] = [];
       let engineIsLazy = (childEngine.package.meta && childEngine.package.meta['lazy-import']) || false;
-      let lazyStyles: string[] = [];
-      let childEngineMeta = childEngine.package.meta as AddonMeta;
-
-      if (engineIsLazy && childEngineMeta && childEngineMeta['implicit-styles']) {
-        lazyStyles = childEngineMeta['implicit-styles'].map(p => join(childEngine.destPath, p));
+      if (engineIsLazy) {
+        let addonList = Array.from(childEngine.addons);
+        addonList.push(childEngine.package as V2AddonPackage);
+        implicitStyles = this.impliedAddonAssets('implicit-styles', addonList);
       }
 
       let asset = this.appJSAsset(
@@ -882,7 +888,7 @@ export class AppBuilder<TreeNames> {
         [],
         prepared,
         undefined,
-        lazyStyles
+        implicitStyles
       );
       if (engineIsLazy) {
         lazyRoutes.push({
@@ -894,9 +900,9 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    if (Array.isArray(lazyStyles) && lazyStyles.length > 0) {
-      lazyStyles.forEach(style => {
-        eagerModules.push(relative(join(this.root, dirname(relativePath)), style));
+    if (Array.isArray(additionEagerModules) && additionEagerModules.length > 0) {
+      additionEagerModules.forEach(assetPath => {
+        eagerModules.push(relative(join(this.root, dirname(relativePath)), assetPath));
       });
     }
 

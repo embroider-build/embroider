@@ -28,6 +28,11 @@ function lazyBundle(routeName, engineInfoByRoute) {
   return false;
 }
 
+function isEmberEngineOverridingRouter(instance) {
+  // todo: should this check requirejs.entries[ember-engines/-private/router-ext]?
+  return instance._enginePromises;
+}
+
 let Router = EmberRouter.extend({
   init(...args) {
     this._super(...args);
@@ -57,7 +62,8 @@ let Router = EmberRouter.extend({
   // overriding to provide our own handlerResolver.
   setupRouter() {
     let isSetup = this._super(...arguments);
-    if (newSetup) {
+
+    if (newSetup && !isEmberEngineOverridingRouter(this)) {
       // Different versions of routerMicrolib use the names `getRoute` vs
       // `getHandler`.
       if (this._routerMicrolib.getRoute !== undefined) {
@@ -72,6 +78,12 @@ let Router = EmberRouter.extend({
   },
 
   _handlerResolver(original) {
+    if (isEmberEngineOverridingRouter(this)) {
+      // use ember engines handler since we are in a classical
+      // build
+      return this._super(...arguments);
+    }
+
     return name => {
       let bundle = lazyBundle(name, this._engineInfoByRoute);
       if (!bundle || bundle.loaded) {

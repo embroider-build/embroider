@@ -352,7 +352,7 @@ export class AppBuilder<TreeNames> {
     }
 
     let addonList = Array.from(appFiles[0].addons);
-    addonList = addonList.filter(addon => !addon.meta['lazy-import']);
+    addonList = addonList.filter(addon => !addon.meta['lazy-engine']);
     let implicitStyles = this.impliedAssets('implicit-styles', addonList);
     if (implicitStyles.length > 0) {
       let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
@@ -872,11 +872,10 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
-    let lazyRoutes: { names: string[]; path: string }[] = [];
+    let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let implicitStyles: string[] = [];
-      let engineIsLazy = (childEngine.package.meta && childEngine.package.meta['lazy-import']) || false;
-      if (engineIsLazy) {
+      if (childEngine.package.isLazyEngine()) {
         let addonList = Array.from(childEngine.addons);
         addonList.push(childEngine.package as V2AddonPackage);
         implicitStyles = this.impliedAddonAssets('implicit-styles', addonList);
@@ -890,8 +889,8 @@ export class AppBuilder<TreeNames> {
         undefined,
         implicitStyles
       );
-      if (engineIsLazy) {
-        lazyRoutes.push({
+      if (childEngine.package.isLazyEngine()) {
+        lazyEngines.push({
           names: [childEngine.package.name],
           path: explicitRelative(dirname(relativePath), asset.relativePath),
         });
@@ -906,6 +905,7 @@ export class AppBuilder<TreeNames> {
       });
     }
 
+    let lazyRoutes: { names: string[]; path: string }[] = [];
     for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
       this.splitRoute(
         routeName,
@@ -934,7 +934,7 @@ export class AppBuilder<TreeNames> {
     // modules.
     this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let params = { amdModules, lazyRoutes, eagerModules };
+    let params = { amdModules, lazyRoutes, lazyEngines, eagerModules };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -1067,6 +1067,19 @@ w._embroiderRouteBundles_ = [
 ]
 {{/if}}
 
+{{#if lazyEngines}}
+w._embroiderEngineBundles_ = [
+  {{#each lazyEngines as |engine|}}
+  {
+    names: {{{json-stringify engine.names}}},
+    load: function() {
+      return import("{{js-string-escape engine.path}}");
+    }
+  },
+  {{/each}}
+]
+{{/if}}
+
 {{#if autoRun ~}}
 if (!runningTests) {
   i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
@@ -1093,6 +1106,7 @@ if (!runningTests) {
   appConfig?: unknown;
   testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
+  lazyEngines?: { names: string[]; path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`

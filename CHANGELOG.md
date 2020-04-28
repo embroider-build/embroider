@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## 0.15.0
+
+- ENHANCEMENT: lazy engines' own JS is now loaded lazily by @thoov
+- HOUSEKEEPING: updated to node 12 by @SparshithNR
+- ENHANCEMENT: apps with ember-engines can now build and run correctly
+- ENHANCEMENT: macro system can now evaluate many more kinds of expressions, and supports optional chaining syntax, by @SparshithNR
+- BUGFIX: support running test suites via `ember s`, not just `ember test`
+- COMPAT: support in-repo-addons inside other addons, by @thoov
+- HOUSEKEEPING: switch to github actions for our own CI, by @thoov
+
 ## 0.14.0
 
 - ENHANCEMENT: multiple additions and bugfixes to the macro system by @simonihmig

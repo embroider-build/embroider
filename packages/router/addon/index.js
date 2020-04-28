@@ -28,9 +28,18 @@ function lazyBundle(routeName, engineInfoByRoute) {
   return false;
 }
 
-function isEmberEngineOverridingRouter(instance) {
-  // todo: should this check requirejs.entries[ember-engines/-private/router-ext]?
-  return instance._enginePromises;
+function isEmberEngineOverridingRouter() {
+  // This router is intended to work with both classical and embroider
+  // builds. Currently, this collides with ember-engines/-private/router-ext's
+  // overrides. To overcome this, during embroider builds we remove that file
+  // from being included as apart of the build (and thus will not reopen the class).
+  // However, during classical builds this is not possible so here we check if that
+  // module is included and if it is we know that we are in a classical build and
+  // that the router is being reopened. If it is being reopened then we can simply
+  // call into ember-engines router as we dont need to do anything.
+
+  // eslint-disable-next-line no-undef
+  return !!requirejs.entries['ember-engines/-private/router-ext'];
 }
 
 let Router = EmberRouter.extend({
@@ -63,7 +72,7 @@ let Router = EmberRouter.extend({
   setupRouter() {
     let isSetup = this._super(...arguments);
 
-    if (newSetup && !isEmberEngineOverridingRouter(this)) {
+    if (newSetup && !isEmberEngineOverridingRouter()) {
       // Different versions of routerMicrolib use the names `getRoute` vs
       // `getHandler`.
       if (this._routerMicrolib.getRoute !== undefined) {
@@ -78,7 +87,7 @@ let Router = EmberRouter.extend({
   },
 
   _handlerResolver(original) {
-    if (isEmberEngineOverridingRouter(this)) {
+    if (isEmberEngineOverridingRouter()) {
       // use ember engines handler since we are in a classical
       // build
       return this._super(...arguments);

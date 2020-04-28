@@ -28,6 +28,7 @@ export interface AppMeta {
 export interface AddonMeta {
   type: 'addon';
   'order-index'?: number;
+  'lazy-engine'?: boolean;
 
   'auto-upgraded'?: true;
   'app-js'?: filename;

@@ -769,6 +769,10 @@ export default class V1Addon implements V1Package {
     let built = new IntermediateBuild();
     built.staticMeta['order-index'] = this.orderIdx;
 
+    if (this.options.lazyLoading && this.options.lazyLoading.enabled) {
+      built.staticMeta['lazy-engine'] = true;
+    }
+
     if (this.moduleName !== this.name) {
       built.staticMeta['renamed-packages'] = {
         [this.moduleName]: this.name,

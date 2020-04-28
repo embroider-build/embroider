@@ -1,4 +1,4 @@
-import EmberRouter from '@ember/routing/router';
+import EmberRouter from '@embroider/router';
 import config from './config/environment';
 
 const Router = EmberRouter.extend({

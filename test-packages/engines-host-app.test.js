@@ -6,4 +6,9 @@ test('engines-host-app', async () => {
   await execa('yarn', ['test'], {
     cwd: `${__dirname}/engines-host-app`,
   });
+
+  await execa('yarn', ['test'], {
+    cwd: `${__dirname}/engines-host-app`,
+    env: { CLASSIC: 'true' },
+  });
 });

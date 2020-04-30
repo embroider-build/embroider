@@ -21,14 +21,15 @@
     "test:all": "ember try:each"
   },
   "dependencies": {
+    "@embroider/macros": "0.15.0",
     "ember-cli-babel": "^7.7.3"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
     "@embroider/compat": "0.15.0",
     "@embroider/core": "0.15.0",
-    "@embroider/macros": "0.15.0",
     "@embroider/webpack": "0.15.0",
+    "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-cli": "~3.10.1",
     "ember-cli-dependency-checker": "^3.1.0",
@@ -52,6 +53,14 @@
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "qunit-dom": "^0.8.4"
+  },
+  "peerDependencies": {
+    "@embroider/core": "*"
+  },
+  "peerDependenciesMeta": {
+    "@embroider/core": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "8.* || >= 10.*"

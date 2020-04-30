@@ -11,7 +11,7 @@ let Router;
 if (macroCondition(getConfig('@embroider/core')?.active)) {
   let newSetup = true;
 
-  function lazyBundle(routeName, engineInfoByRoute) {
+  const lazyBundle = function lazyBundle(routeName, engineInfoByRoute) {
     // Here we map engine names to route names. We need to do this because
     // engines can be specified with "as" such as:
     //
@@ -30,7 +30,7 @@ if (macroCondition(getConfig('@embroider/core')?.active)) {
     }
 
     return false;
-  }
+  };
 
   Router = EmberRouter.extend({
     init(...args) {

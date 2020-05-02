@@ -25,16 +25,17 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
   constructor(
     private trees: NamedTrees,
     annotation: string,
-    private buildHook: (trees: OutputPaths<NamedTrees>, changed?: Map<string, boolean>) => Promise<void>
+    private buildHook: (trees: OutputPaths<NamedTrees>, changed: Map<string, boolean>) => Promise<void>
   ) {
     super(flatTrees(trees), {
       persistentOutput: true,
       needsCache: false,
       annotation: annotation,
+      trackInputChanges: true,
     });
   }
 
-  async build({ changedNodes } = { changedNodes: [] }) {
+  async build(detail: { changedNodes: boolean[] } | undefined) {
     let result: { [treeName: string]: string | string[] } = {};
     let changedMap = new Map();
 
@@ -42,13 +43,15 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     for (let entry of findTrees(this.trees)) {
       if (entry.single) {
         result[entry.name] = this.inputPaths[inputPathCounter];
-        changedMap.set(this.inputPaths[inputPathCounter], changedNodes[inputPathCounter] || true);
+        let didChange = detail ? detail.changedNodes[inputPathCounter] : true;
+        changedMap.set(this.inputPaths[inputPathCounter], didChange);
         inputPathCounter += 1;
       } else if (entry.multi) {
         let sliced = this.inputPaths.slice(inputPathCounter, inputPathCounter + entry.multi.length);
 
         result[entry.name] = sliced.map(slice => {
-          changedMap.set(slice, changedNodes[inputPathCounter] || true);
+          let didChange = detail ? detail.changedNodes[inputPathCounter] : true;
+          changedMap.set(slice, didChange);
           inputPathCounter++;
           return slice;
         });

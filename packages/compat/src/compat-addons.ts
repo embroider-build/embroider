@@ -89,7 +89,7 @@ export default class CompatAddons implements Stage {
       synthVendor: string;
       synthStyles: string;
     },
-    changedMap?: Map<string, boolean>
+    changedMap: Map<string, boolean>
   ) {
     // empty the directory only on the first pass
     if (!this.didBuild) {
@@ -110,8 +110,17 @@ export default class CompatAddons implements Stage {
       let destination = isEngine ? mangledEngineRoot(newPkg) : newPkg.root;
 
       if (!treeInstance) {
+        let ignore = ['**/node_modules'];
+        if (join(destination, 'tests', 'dummy') === this.appDestDir) {
+          // special case: we're building the dummy app of this addon. Because
+          // the dummy app is nested underneath the addon, we need to tell our
+          // TreeSync to ignore it. Not because it's ever present at our input,
+          // but because stage2 will make it appear inside our output and we
+          // should leave that alone.
+          ignore.push('tests');
+        }
         treeInstance = new TreeSync(movedAddons[index], destination, {
-          ignore: ['**/node_modules'],
+          ignore,
         });
 
         this.treeSyncMap.set(newPkg, treeInstance);
@@ -119,8 +128,7 @@ export default class CompatAddons implements Stage {
 
       if (
         !this.didBuild || // always copy on the first build
-        (changedMap && changedMap.get(movedAddons[index])) || // broccoli has told us that this node has been changed
-        newPkg.mayRebuild // prevent rebuilds if not allowed
+        (newPkg.mayRebuild && changedMap.get(movedAddons[index]))
       ) {
         treeInstance.sync();
         if (!this.didBuild && isEngine) {

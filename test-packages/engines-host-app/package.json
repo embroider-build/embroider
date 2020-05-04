@@ -51,5 +51,11 @@
   },
   "engines": {
     "node": "8.* || >= 10.*"
+  },
+  "ember-addon": {
+    "paths": [
+      "lib/bar",
+      "lib/foo"
+    ]
   }
 }

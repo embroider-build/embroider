@@ -1,0 +1,11 @@
+{
+  "name": "bar",
+  "keywords": [
+    "ember-addon"
+  ],
+  "ember-addon": {
+    "paths": [
+      "../baz"
+    ]
+  }
+}

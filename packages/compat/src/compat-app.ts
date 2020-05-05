@@ -100,7 +100,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   fastbootJSSrcDir(_treePaths: OutputPaths<TreeNames>) {
-    let target = join(this.root, 'fastboot');
+    let target = join(this.oldPackage.root, 'fastboot');
     if (pathExistsSync(target)) {
       return target;
     }

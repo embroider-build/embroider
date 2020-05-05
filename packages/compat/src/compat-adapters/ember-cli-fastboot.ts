@@ -2,28 +2,54 @@ import V1Addon from '../v1-addon';
 import Plugin, { Tree } from 'broccoli-plugin';
 import { readJSONSync, outputJSONSync } from 'fs-extra';
 import { join } from 'path';
+import writeFile from 'broccoli-file-creator';
+import { Memoize } from 'typescript-memoize';
 
 export default class EmberCliFastboot extends V1Addon {
   customizes(...trees: string[]): boolean {
     return trees.some(tree => {
       if (tree === 'treeForPublic') {
-        // we ignore the custom treeForPublic, because Embroider natively
-        // understands each addon's fastboot tree and we don't want to bother
-        // rebuilding them all only to ignore them after this point.
+        // This is an optimization. It means we won't bother running
+        // ember-cli-fastboot's custom treeForPublic at all. We don't actually
+        // want *most* of what's in there, because embroider natively
+        // understands how to build each addon's treeForFastboot.
+        //
+        // But we do want *some*, so we handle those specific bits below in
+        // v2Trees.
         return false;
       } else {
         return super.customizes(tree);
       }
     });
   }
-  // there is one thing from treeForPublic that we do want, which is grabbing
-  // the fastboot-generated package.json file so we can get our hands on the
-  // fastboot config.
   get v2Trees() {
     let trees = super.v2Trees;
 
-    trees.push(new RewriteManifest(this.addonInstance._buildFastbootConfigTree(this.rootTree), this.expectedFiles()));
+    // We want to grab the fastboot config and rewrite it. We're going to strip
+    // out the expectedFiles that we know are already accounted for, and we're
+    // going to add app-factory.js which we know is not.
+    trees.push(
+      new RewriteManifest(this.addonInstance._buildFastbootConfigTree(this.rootTree), this.expectedFiles(), [
+        'ember-cli-fastboot/app-factory.js',
+      ])
+    );
+
+    // We also still need to emit the fastboot app factory module. This emits
+    // the actual file into our package.
+    trees.push(writeFile('public/app-factory.js', this.appFactoryModule));
+
     return trees;
+  }
+
+  get packageMeta() {
+    let meta = super.packageMeta;
+    if (!meta['public-assets']) {
+      meta['public-assets'] = {};
+    }
+    // we need to list app-factory.js as a public asset so it will make it's way
+    // into the app's final dist.
+    meta['public-assets']['./public/app-factory.js'] = 'ember-cli-fastboot/app-factory.js';
+    return meta;
   }
 
   // these are the default files that ember-cli-fastbot includes in its appFiles
@@ -45,10 +71,17 @@ export default class EmberCliFastboot extends V1Addon {
 
     return [appFilePath, appFastbootFilePath, vendorFilePath, autoImportPath];
   }
+
+  @Memoize()
+  private get appFactoryModule() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fastbootAppFactoryModule = require(join(this.root, 'lib/utilities/fastboot-app-factory-module.js'));
+    return fastbootAppFactoryModule(this.addonInstance._name, false);
+  }
 }
 
 class RewriteManifest extends Plugin {
-  constructor(tree: Tree, private expectedFiles: string[]) {
+  constructor(tree: Tree, private expectedFiles: string[], private extraAppFiles: string[]) {
     super([tree], { annotation: 'embroider-compat-adapter-ember-cli-fastboot' });
   }
   build() {
@@ -57,6 +90,10 @@ class RewriteManifest extends Plugin {
     let extraAppFiles = (json.fastboot.manifest.appFiles as string[]).filter(
       file => !this.expectedFiles.includes(file)
     );
+
+    for (let file of this.extraAppFiles) {
+      extraAppFiles.push(file);
+    }
 
     let extraVendorFiles = (json.fastboot.manifest.vendorFiles as string[]).filter(
       file => !this.expectedFiles.includes(file)

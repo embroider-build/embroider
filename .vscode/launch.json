@@ -58,6 +58,18 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Test fastboot-app",
+      "program": "${workspaceFolder}/node_modules/.bin/qunit",
+      "cwd": "${workspaceFolder}/test-packages/fastboot-app",
+      "args": ["fastboot-tests"],
+      "env": {
+        "REUSE_FASTBOOT_BUILD": "true"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Build macro-tests app classic",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/macro-tests",

@@ -692,6 +692,12 @@ export class AppBuilder<TreeNames> {
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
+
+    if (this.activeFastboot) {
+      // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
+      assetPaths.push('package.json');
+    }
+
     for (let asset of finalAssets) {
       // our concatenated assets all have map files that ride along. Here we're
       // telling the final stage packager to be sure and serve the map files

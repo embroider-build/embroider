@@ -32,6 +32,9 @@
       "<rootDir>/test-packages/"
     ]
   },
+  "resolutions": {
+    "**/fastboot": "git+https://github.com/ef4/fastboot#d55529e272c06b42d0d27140340e51b9afe7ce15"
+  },
   "volta": {
     "node": "12.16.1",
     "yarn": "1.17.3"

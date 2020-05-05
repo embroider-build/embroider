@@ -331,7 +331,7 @@ export default class V1Addon implements V1Package {
         };
       case 'public':
         return {
-          destDir: 'public',
+          destDir: `public/${this.moduleName}`,
         };
       case 'vendor':
         return {
@@ -362,7 +362,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private get moduleName() {
+  private get moduleName(): string {
     if (typeof this.addonInstance.moduleName === 'function') {
       return this.addonInstance.moduleName();
     }

@@ -7,7 +7,6 @@ import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { debug, warn } from './messages';
-import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -25,10 +24,10 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
-import merge from 'lodash/merge';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
 import partition from 'lodash/partition';
+import mergeWith from 'lodash/mergeWith';
 
 export type EmberENV = unknown;
 
@@ -342,6 +341,14 @@ export class AppBuilder<TreeNames> {
       html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     }
 
+    if (this.fastbootConfig) {
+      // any extra fastboot app files get inserted into our html.javascript
+      // section, after the app has been inserted.
+      for (let script of this.fastbootConfig.extraAppFiles) {
+        html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
+      }
+    }
+
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
@@ -349,6 +356,15 @@ export class AppBuilder<TreeNames> {
       let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
       prepared.set(vendorJS.relativePath, vendorJS);
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
+    }
+
+    if (this.fastbootConfig) {
+      // any extra fastboot vendor files get inserted into our
+      // html.implicitScripts section, after the regular implicit script
+      // (vendor.js) have been inserted.
+      for (let script of this.fastbootConfig.extraVendorFiles) {
+        html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
+      }
     }
 
     let implicitStyles = this.impliedAssets('implicit-styles');
@@ -453,8 +469,21 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private get hasFastboot() {
-    return Boolean(this.adapter.activeAddonChildren(this.app).find(a => a.name === 'ember-cli-fastboot'));
+  private get activeFastboot() {
+    return this.adapter.activeAddonChildren(this.app).find(a => a.name === 'ember-cli-fastboot');
+  }
+
+  @Memoize()
+  private get fastbootConfig():
+    | { packageJSON: object; extraAppFiles: string[]; extraVendorFiles: string[] }
+    | undefined {
+    if (this.activeFastboot) {
+      // this is relying on work done in stage1 by @embroider/compat/src/compat-adapters/ember-cli-fastboot.ts
+      let packageJSON = readJSONSync(join(this.activeFastboot.root, '_fastboot_', 'package.json'));
+      let { extraAppFiles, extraVendorFiles } = packageJSON['embroider-fastboot'];
+      delete packageJSON['embroider-fastboot'];
+      return { packageJSON, extraAppFiles, extraVendorFiles };
+    }
   }
 
   private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
@@ -465,7 +494,7 @@ export class AppBuilder<TreeNames> {
       let engines = this.partitionEngines(appJSPath);
       this.appDiffers = engines.map(engine => {
         let differ: AppDiffer;
-        if (this.hasFastboot) {
+        if (this.activeFastboot) {
           differ = new AppDiffer(
             engine.destPath,
             engine.sourcePath,
@@ -647,41 +676,6 @@ export class AppBuilder<TreeNames> {
     return assets.concat(this.adapter.assets(inputPaths));
   }
 
-  // This supports a slightly weird thing used (AFAIK) only by
-  // ember-cli-fastboot. ember-cli-fastboot emits a package.json file in its
-  // treeForPublic, which means in embroider terms it has a public-asset named
-  // "package.json". It wants that to be in the final build output.
-  //
-  // We can't let it just overwrite our own stage2 package.json because we use
-  // that for our own purposes. So we make it our policy that any time an addon
-  // emits a public-asset named package.json, we will merge it into our
-  // package.json. This is enough to make ember-cli-fastboot happy.
-  private gatherPackageJson(assets: Asset[]) {
-    let found = [] as object[];
-    for (let asset of assets) {
-      if (asset.relativePath === 'package.json') {
-        switch (asset.kind) {
-          case 'on-disk':
-            found.push(readJSONSync(asset.sourcePath));
-            break;
-          case 'in-memory':
-            if (typeof asset.source === 'string') {
-              found.push(JSON.parse(asset.source));
-            } else {
-              found.push(JSON.parse(asset.source.toString('utf8')));
-            }
-            break;
-          case 'ember':
-            // deliberately skipped. An ember entrypoint asset can never be JSON.
-            break;
-          default:
-            assertNever(asset);
-        }
-      }
-    }
-    return found;
-  }
-
   async build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
@@ -729,21 +723,17 @@ export class AppBuilder<TreeNames> {
       meta['auto-upgraded'] = true;
     }
 
-    let pkg = cloneDeep(this.app.packageJSON);
-    if (pkg.keywords) {
-      if (!pkg.keywords.includes('ember-addon')) {
-        pkg.keywords.push('ember-addon');
-      }
-    } else {
-      pkg.keywords = ['ember-addon'];
+    let pkg = this.combinePackageJSON(meta);
+    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+  }
+
+  private combinePackageJSON(meta: AppMeta): object {
+    let pkgLayers = [this.app.packageJSON, { keywords: ['ember-addon'], 'ember-addon': meta }];
+    let fastbootConfig = this.fastbootConfig;
+    if (fastbootConfig) {
+      pkgLayers.push(fastbootConfig.packageJSON);
     }
-    pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
-    const pkgPath = join(this.root, 'package.json');
-    let addonProvidedPackageJSONS = this.gatherPackageJson(assets);
-    if (addonProvidedPackageJSONS.length > 0) {
-      pkg = merge({}, ...addonProvidedPackageJSONS, pkg);
-    }
-    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+    return combinePackageJSON(...pkgLayers);
   }
 
   private templateCompiler(config: EmberENV) {
@@ -1058,7 +1048,7 @@ let d = w.define;
 
 {{#if fastbootOnlyAmdModules}}
   import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot").running)) {
+  if (macroCondition(getConfig("fastboot")?.running)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}
@@ -1133,7 +1123,7 @@ d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-es
 {{/each}}
 {{#if fastbootOnlyFiles}}
   import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot").running)) {
+  if (macroCondition(getConfig("fastboot")?.running)) {
     {{#each fastbootOnlyFiles as |amdModule| ~}}
     d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}
@@ -1171,4 +1161,15 @@ function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp)
     }
     return inverted;
   }
+}
+
+function combinePackageJSON(...layers: object[]) {
+  function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {
+    if (key === 'keywords' && stack.size === 0) {
+      if (Array.isArray(objValue)) {
+        return objValue.concat(srcValue);
+      }
+    }
+  }
+  return mergeWith({}, ...layers, custom);
 }

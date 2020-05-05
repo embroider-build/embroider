@@ -353,7 +353,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private get rootTree() {
+  protected get rootTree() {
     if (this.packageCache.get(this.root).mayRebuild) {
       return new WatchedDir(this.root);
     } else {

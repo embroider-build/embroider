@@ -1,10 +1,13 @@
 import { V2AddonPackage } from './package';
 import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
-import { join } from 'path';
-import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync, readFileSync } from 'fs-extra';
+import { join, basename, dirname } from 'path';
+import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync, writeFileSync, readFileSync } from 'fs-extra';
 import { debug } from './messages';
 import assertNever from 'assert-never';
+import { describeExports } from './describe-exports';
+import { compile } from './js-handlebars';
+import { TransformOptions } from '@babel/core';
 
 export default class AppDiffer {
   private differ: MultiTreeDiff;
@@ -26,8 +29,11 @@ export default class AppDiffer {
     private outputPath: string,
     private ownAppJSDir: string,
     activeAddonDescendants: V2AddonPackage[],
+    // arguments below this point are only needed in fastboot mode. Fastboot
+    // makes this pretty messy because fastboot trees all merge into the app 🤮.
     fastbootEnabled = false,
-    private ownFastbootJSDir?: string | undefined
+    private ownFastbootJSDir?: string | undefined,
+    private babelParserConfig?: TransformOptions | undefined
   ) {
     let trees = activeAddonDescendants
       .map(
@@ -124,12 +130,18 @@ export default class AppDiffer {
             // non-fastboot.
             this.isFastbootOnly.set(relativePath, false);
             let [browserDir, fastbootDir] = sourceIndices.map(i => this.sourceDirs[i]);
-            let browserFile = join(browserDir, relativePath);
-            let browserContents = readFileSync(browserFile, 'utf8');
-            let fastbootContents = readFileSync(join(fastbootDir, relativePath), 'utf8');
-            this.updateFiles(relativePath, browserDir, browserFile);
-            console.log(browserContents, fastbootContents);
-            throw new Error(`unimplemented fastboot merge`);
+            let [browserSourceFile, fastbootSourceFile] = [browserDir, fastbootDir].map(dir => join(dir, relativePath));
+            let dir = dirname(relativePath);
+            let base = basename(relativePath);
+            let browserDest = `_browser_${base}`;
+            let fastbootDest = `_fastboot_${base}`;
+            copySync(browserSourceFile, join(this.outputPath, dir, browserDest), { dereference: true });
+            copySync(fastbootSourceFile, join(this.outputPath, dir, fastbootDest), { dereference: true });
+            writeFileSync(
+              outputPath,
+              switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
+            );
+            this.updateFiles(relativePath, browserDir, browserSourceFile);
           }
           break;
         default:
@@ -174,4 +186,30 @@ function fastbootMerge(firstFastbootTree: number) {
       throw new Error(`bug: should always have at least one winner in fastbootMerge`);
     }
   };
+}
+
+const switcherTemplate = compile(`
+import { macroCondition, getConfig, importSync } from '@embroider/macros';
+let mod;
+if (macroCondition(getConfig('fastboot')?.isRunning)){
+  mod = importSync("./{{js-string-escape fastbootDest}}");
+} else {
+  mod = importSync("./{{js-string-escape browserDest}}");
+}
+{{#if hasDefaultExport}}
+export default mod.default;
+{{/if}}
+{{#each names as |name|}}
+export const {{name}} = mod.{{name}};
+{{/each}}
+`) as (params: { fastbootDest: string; browserDest: string; names: string[]; hasDefaultExport: boolean }) => string;
+
+function switcher(
+  browserDest: string,
+  fastbootDest: string,
+  babelParserConfig: TransformOptions,
+  browserSource: string
+): string {
+  let { names, hasDefaultExport } = describeExports(browserSource, babelParserConfig);
+  return switcherTemplate({ fastbootDest, browserDest, names: [...names], hasDefaultExport });
 }

@@ -28,6 +28,7 @@ import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
+import cloneDeep from 'lodash/cloneDeep';
 
 export type EmberENV = unknown;
 
@@ -251,6 +252,28 @@ export class AppBuilder<TreeNames> {
       }
     }
     return result;
+  }
+
+  // unlike our full config, this one just needs to know how to parse all the
+  // syntax our app can contain.
+  @Memoize()
+  private babelParserConfig(): TransformOptions {
+    let babel = cloneDeep(this.adapter.babelConfig());
+
+    if (!babel.plugins) {
+      babel.plugins = [];
+    }
+
+    // Our stage3 code is always allowed to use dynamic import. We may emit it
+    // ourself when splitting routes.
+    babel.plugins.push(
+      require.resolve(
+        this.adapter.babelMajorVersion() === 6
+          ? 'babel-plugin-syntax-dynamic-import'
+          : '@babel/plugin-syntax-dynamic-import'
+      )
+    );
+    return babel;
   }
 
   @Memoize()
@@ -500,7 +523,8 @@ export class AppBuilder<TreeNames> {
             engine.sourcePath,
             [...engine.addons],
             true,
-            this.adapter.fastbootJSSrcDir(inputPaths)
+            this.adapter.fastbootJSSrcDir(inputPaths),
+            this.babelParserConfig()
           );
         } else {
           differ = new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]);
@@ -1054,7 +1078,7 @@ let d = w.define;
 
 {{#if fastbootOnlyAmdModules}}
   import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot")?.running)) {
+  if (macroCondition(getConfig("fastboot")?.isRunning)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}
@@ -1129,7 +1153,7 @@ d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-es
 {{/each}}
 {{#if fastbootOnlyFiles}}
   import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot")?.running)) {
+  if (macroCondition(getConfig("fastboot")?.isRunning)) {
     {{#each fastbootOnlyFiles as |amdModule| ~}}
     d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}

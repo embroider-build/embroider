@@ -5,8 +5,12 @@ import { CallExpression, ForOfStatement, identifier, File, ExpressionStatement, 
 import error from './error';
 import State, { cloneDeep } from './state';
 
+type CallEachExpression = NodePath<CallExpression> & {
+  get(callee: 'callee'): NodePath<Identifier>;
+};
+
 export type EachPath = NodePath<ForOfStatement> & {
-  get(right: 'right'): NodePath<CallExpression>;
+  get(right: 'right'): CallEachExpression;
 };
 
 export function isEachPath(path: NodePath<ForOfStatement>): path is EachPath {
@@ -46,17 +50,18 @@ export function insertEach(path: EachPath, state: State) {
   }
 
   if (state.opts.mode === 'run-time') {
-    return;
-  }
-
-  for (let element of array.value) {
-    let literalElement = asLiteral(element);
-    for (let target of nameRefs) {
-      target.replaceWith(literalElement);
+    let callee = path.get('right').get('callee');
+    state.neededRuntimeImports.set(callee.node.name, 'each');
+  } else {
+    for (let element of array.value) {
+      let literalElement = asLiteral(element);
+      for (let target of nameRefs) {
+        target.replaceWith(literalElement);
+      }
+      path.insertBefore(cloneDeep(path.get('body').node, state));
     }
-    path.insertBefore(cloneDeep(path.get('body').node, state));
+    path.remove();
   }
-  path.remove();
 }
 
 function asLiteral(value: unknown | undefined) {

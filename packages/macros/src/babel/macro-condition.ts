@@ -1,11 +1,11 @@
 import { NodePath } from '@babel/traverse';
 import { Evaluator } from './evaluate-json';
-import { IfStatement, ConditionalExpression, CallExpression } from '@babel/types';
+import { IfStatement, ConditionalExpression, CallExpression, Identifier } from '@babel/types';
 import error from './error';
 import State from './state';
 
 export type MacroConditionPath = NodePath<IfStatement | ConditionalExpression> & {
-  get(test: 'test'): NodePath<CallExpression>;
+  get(test: 'test'): NodePath<CallExpression> & { get(callee: 'callee'): NodePath<Identifier> };
 };
 
 export function isMacroConditionPath(path: NodePath<IfStatement | ConditionalExpression>): path is MacroConditionPath {
@@ -35,16 +35,17 @@ export default function macroCondition(conditionalPath: MacroConditionPath, stat
   let alternate = conditionalPath.get('alternate');
 
   if (state.opts.mode === 'run-time') {
-    return;
-  }
-
-  let [kept, removed] = predicate.value ? [consequent.node, alternate.node] : [alternate.node, consequent.node];
-  if (kept) {
-    conditionalPath.replaceWith(kept);
+    let callee = conditionalPath.get('test').get('callee');
+    state.neededRuntimeImports.set(callee.node.name, 'macroCondition');
   } else {
-    conditionalPath.remove();
-  }
-  if (removed) {
-    state.removed.add(removed);
+    let [kept, removed] = predicate.value ? [consequent.node, alternate.node] : [alternate.node, consequent.node];
+    if (kept) {
+      conditionalPath.replaceWith(kept);
+    } else {
+      conditionalPath.remove();
+    }
+    if (removed) {
+      state.removed.add(removed);
+    }
   }
 }

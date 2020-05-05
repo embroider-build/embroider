@@ -9,9 +9,13 @@ import {
   ForOfStatement,
   FunctionDeclaration,
   OptionalMemberExpression,
+  importSpecifier,
+  importDeclaration,
+  Program,
+  stringLiteral,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
-import State, { sourceFile } from './state';
+import State, { sourceFile, relativePathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
@@ -25,14 +29,16 @@ const packageCache = PackageCache.shared('embroider-stage3');
 export default function main(context: unknown): unknown {
   let visitor = {
     Program: {
-      enter(_: NodePath, state: State) {
+      enter(_: NodePath<Program>, state: State) {
         state.generatedRequires = new Set();
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
+        state.neededRuntimeImports = new Map();
       },
-      exit(path: NodePath, state: State) {
-        pruneMacroImports(path, state);
+      exit(path: NodePath<Program>, state: State) {
+        pruneMacroImports(path);
+        addRuntimeImports(path, state);
         for (let handler of state.jobs) {
           handler();
         }
@@ -178,14 +184,27 @@ export default function main(context: unknown): unknown {
 
 // This removes imports from "@embroider/macros" itself, because we have no
 // runtime behavior at all.
-function pruneMacroImports(path: NodePath, state: State) {
-  if (!path.isProgram() || state.opts.mode === 'run-time') {
+function pruneMacroImports(path: NodePath) {
+  if (!path.isProgram()) {
     return;
   }
   for (let topLevelPath of path.get('body')) {
     if (topLevelPath.isImportDeclaration() && topLevelPath.get('source').node.value === '@embroider/macros') {
       topLevelPath.remove();
     }
+  }
+}
+
+function addRuntimeImports(path: NodePath<Program>, state: State) {
+  if (state.neededRuntimeImports.size > 0) {
+    path.node.body.push(
+      importDeclaration(
+        [...state.neededRuntimeImports].map(([local, imported]) =>
+          importSpecifier(identifier(local), identifier(imported))
+        ),
+        stringLiteral(relativePathToRuntime(path, state))
+      )
+    );
   }
 }
 

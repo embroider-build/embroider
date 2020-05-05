@@ -4,12 +4,10 @@ import {
   CallExpression,
   callExpression,
   stringLiteral,
-  memberExpression,
   FunctionDeclaration,
   returnStatement,
-  Identifier,
 } from '@babel/types';
-import State, { sourceFile } from './state';
+import State, { sourceFile, unusedNameLike } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
@@ -63,9 +61,9 @@ export function insertConfig(path: NodePath<CallExpression>, state: State, own: 
     } else {
       pkgRoot = identifier('undefined');
     }
-    path.replaceWith(
-      callExpression(memberExpression(path.get('callee').node as Identifier, identifier('_runtimeGet')), [pkgRoot])
-    );
+    let name = unusedNameLike('config', path);
+    path.replaceWith(callExpression(identifier(name), [pkgRoot]));
+    state.neededRuntimeImports.set(name, 'config');
   }
 }
 

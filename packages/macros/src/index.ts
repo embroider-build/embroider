@@ -4,35 +4,28 @@
   CAUTION: this code is not necessarily what you are actually running. In
   general, the macros are implemented at build time using babel, and so calls to
   these functions get compiled away before they ever run. However, this code is
-  here because:
+  here because it provides types to typescript users of the macros.
 
-  1. It provides types to typescript users of the macros.
+  Some macros also have runtime implementations that are useful in development
+  mode, in addition to their build-time implementations in babel. You can find
+  the runtime implementations in ./runtime.ts.
 
-  2. Some macros have runtime implementations that are useful in development
-     mode, in addition to their build-time implementations in babel. This lets
-     us do things like produce a single build in development that works for both
-     fastboot and browser, using the macros to switch between modes. For
-     production, you would switch to the build-time macro implementation to get
-     two optimized builds instead.
+  Having a runtime mode lets us do things like produce a single build in
+  development that works for both fastboot and browser, using the macros to
+  switch between modes. For production, you would switch to the build-time macro
+  implementation to get two optimized builds instead.
 */
 
 export function dependencySatisfies(packageName: string, semverRange: string): boolean {
-  // this has no runtime implementation, it's always evaluated at build time
-  // because only at build time can we see what set of dependencies are
-  // resolvable on disk, and there's really no way to change your set of
-  // dependencies on the fly anyway.
   throw new Oops(packageName, semverRange);
 }
 
 export function macroCondition(predicate: boolean): boolean {
-  return predicate;
+  throw new Oops(predicate);
 }
 
 export function each<T>(array: T[]): T[] {
-  if (!Array.isArray(array)) {
-    throw new Error(`the argument to the each() macro must be an array`);
-  }
-  return array;
+  throw new Oops(array);
 }
 
 // We would prefer to write:
@@ -66,30 +59,6 @@ class Oops extends Error {
     );
     this.params = params;
   }
-}
-
-// This is here as a compile target for `getConfig` and `getOwnConfig` when
-// we're in runtime mode. This is not public API to call from your own code.
-function _runtimeGetConfig<T>(packageRoot: string | undefined): T | undefined {
-  if (packageRoot) {
-    return runtimeConfig[packageRoot] as T;
-  }
-}
-function _runtimeSetConfig<T>(packageRoot: string | undefined, config: T): void {
-  if (packageRoot) {
-    runtimeConfig[packageRoot] = config;
-  }
-}
-getOwnConfig._runtimeGet = _runtimeGetConfig;
-getOwnConfig._runtimeSet = _runtimeSetConfig;
-getConfig._runtimeGet = _runtimeGetConfig;
-getConfig._runtimeSet = _runtimeSetConfig;
-
-const runtimeConfig: { [packageRoot: string]: unknown } = initializeRuntimeMacrosConfig();
-
-// this exists to be targeted by our babel plugin in runtime mode.
-function initializeRuntimeMacrosConfig() {
-  return {};
 }
 
 // TODO: beyond this point should only ever be used within the build system. We

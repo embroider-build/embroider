@@ -11,7 +11,7 @@ export function makeRunner(transform: Transform) {
 
   return function run(code: string) {
     if (!cachedMacrosPackage) {
-      let filename = join(__dirname, '../../src/index.ts');
+      let filename = join(__dirname, '../../src/babel/runtime.ts');
       let tsSrc = readFileSync(filename, 'utf8');
       let jsSrc = toJS(tsSrc);
       let withInlinedConfig = transform(jsSrc, { filename });
@@ -32,7 +32,7 @@ export function makeRunner(transform: Transform) {
       script.runInContext(context);
       cachedMacrosPackage = context.exports;
     }
-    return runDefault(code, { dependencies: { '@embroider/macros': cachedMacrosPackage } });
+    return runDefault(code, { dependencies: { '../../src/babel/runtime': cachedMacrosPackage } });
   };
 }
 

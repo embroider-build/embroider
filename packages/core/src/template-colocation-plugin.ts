@@ -36,7 +36,7 @@ interface State {
 function unusedNameLike(name: string, path: NodePath<unknown>) {
   let candidate = name;
   let counter = 0;
-  while (candidate in path.scope.bindings) {
+  while (path.scope.getBinding(candidate)) {
     candidate = `${name}${counter++}`;
   }
   return candidate;

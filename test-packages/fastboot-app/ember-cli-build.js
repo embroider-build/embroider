@@ -12,6 +12,10 @@ module.exports = function(defaults) {
     },
   });
 
+  let config = require('@embroider/macros').MacrosConfig.for(app);
+  config.setConfig(__filename, 'fastboot', { isRunning: true });
+  config.enableRuntimeMode();
+
   // Use `app.import` to add additional libraries to the generated
   // output files.
   //

@@ -8,5 +8,9 @@ export default class CheckServiceComponent extends Component {
     if (service) {
       this.message = service.message;
     }
+    /* global requirejs, require */
+    if (requirejs.entries['from-fastboot-addon-sample']) {
+      this.addonFileValue = require('from-fastboot-addon-sample').default;
+    }
   }
 }

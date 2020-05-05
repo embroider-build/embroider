@@ -11,5 +11,6 @@ module('Acceptance | runtime basics', function(hooks) {
     assert.dom('[data-test="example"]').containsText('This is the browser implementation');
     assert.dom('[data-test="addon-example"]').containsText('Browser AddonExampleService');
     assert.dom('[data-test="check-service"]').containsText('No service present');
+    assert.dom('[data-test="check-addon-file"]').containsText('No addon file value');
   });
 });

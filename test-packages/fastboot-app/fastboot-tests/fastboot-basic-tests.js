@@ -6,7 +6,7 @@ const setup = require('./util');
 Qmodule('fastboot basics', function(hooks) {
   setup(hooks);
 
-  test('hello', async function(assert) {
+  test('/', async function(assert) {
     let doc = await this.visit('/');
     assert.equal(doc.querySelector('[data-test="hello"]').textContent, 'Hello from fastboot-app');
     assert.equal(doc.querySelector('[data-test="example"]').textContent, 'This is the server implementation');
@@ -15,5 +15,6 @@ Qmodule('fastboot basics', function(hooks) {
       doc.querySelector('[data-test="check-service"]').textContent.trim(),
       `I'm a fastboot-only service in the app`
     );
+    assert.equal(doc.querySelector('[data-test="check-addon-file"]').textContent.trim(), '42');
   });
 });

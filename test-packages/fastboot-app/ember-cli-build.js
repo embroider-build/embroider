@@ -4,7 +4,12 @@ const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 
 module.exports = function(defaults) {
   let app = new EmberApp(defaults, {
-    // Add options here
+    autoImport: {
+      // we have a direct dependency on qunit for use in our fastbot-tests, but
+      // for the standard ember tests we don't want to auto-import this, we want
+      // to use the copy provided magically by ember-qunit.
+      exclude: ['qunit'],
+    },
   });
 
   // Use `app.import` to add additional libraries to the generated

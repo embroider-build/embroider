@@ -45,7 +45,10 @@
     "ember-welcome-page": "^4.0.0",
     "eslint-plugin-ember": "^7.7.2",
     "eslint-plugin-node": "^9.0.0",
+    "fastboot": "^3.0.3",
+    "jsdom": "^16.2.2",
     "loader.js": "^4.7.0",
+    "qunit": "^2.10.0",
     "qunit-dom": "^1.0.0"
   },
   "engines": {
@@ -55,7 +58,7 @@
     "edition": "octane"
   },
   "volta": {
-    "node": "10.16.1",
+    "node": "12.16.1",
     "yarn": "1.17.3"
   }
 }

@@ -1,0 +1,1 @@
+export { default } from 'fastboot-addon/components/addon-example';

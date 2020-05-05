@@ -9,5 +9,6 @@ module('Acceptance | runtime basics', function(hooks) {
     assert.equal(currentURL(), '/');
     assert.dom('[data-test="hello"]').containsText('Hello from fastboot-app');
     assert.dom('[data-test="example"]').containsText('This is the browser implementation');
+    assert.dom('[data-test="addon-example"]').containsText('Browser AddonExampleService');
   });
 });

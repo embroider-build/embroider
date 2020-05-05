@@ -17,6 +17,6 @@ declare module 'broccoli-plugin' {
     outputPath: string;
     cachePath: string;
     __broccoliGetInfo__(): any;
-    abstract build(): Promise<void> | void;
+    abstract build(detail: undefined | { changedNodes: boolean[] }): Promise<void> | void;
   }
 }

@@ -8,5 +8,6 @@ module('Acceptance | runtime basics', function(hooks) {
     await visit('/');
     assert.equal(currentURL(), '/');
     assert.dom('[data-test="hello"]').containsText('Hello from fastboot-app');
+    assert.dom('[data-test="example"]').containsText('This is the browser implementation');
   });
 });

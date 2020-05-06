@@ -7,5 +7,9 @@
     "paths": [
       "../baz"
     ]
+  },
+  "dependencies": {
+    "ember-cli-babel": "^7.19.0",
+    "ember-cli-htmlbars": "^4.2.2"
   }
 }

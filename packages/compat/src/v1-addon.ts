@@ -13,7 +13,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, Package } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, Package, ExtendedPackage } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -26,7 +26,6 @@ import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 import { ResolvedDep } from '@embroider/core/src/resolver';
-import ExtendedPackage from './extended-package';
 
 const stockTreeNames = Object.freeze([
   'addon',

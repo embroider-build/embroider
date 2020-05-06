@@ -18,3 +18,4 @@ export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from '
 export { explicitRelative, extensionsPattern } from './paths';
 export { default as babelFilter } from './babel-filter';
 export { mangledEngineRoot } from './engine-mangler';
+export { default as ExtendedPackage } from './extended-package';

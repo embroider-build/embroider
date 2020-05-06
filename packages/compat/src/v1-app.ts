@@ -9,14 +9,20 @@ import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
+import {
+  PackageCache,
+  TemplateCompiler,
+  TemplateCompilerPlugins,
+  AddonMeta,
+  Package,
+  ExtendedPackage,
+} from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
-import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';

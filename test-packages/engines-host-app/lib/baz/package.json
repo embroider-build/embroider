@@ -2,5 +2,8 @@
   "name": "baz",
   "keywords": [
     "ember-addon"
-  ]
+  ],
+  "dependencies": {
+    "ember-cli-babel": "^7.19.0"
+  }
 }

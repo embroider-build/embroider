@@ -1,4 +1,5 @@
-import { Package, PackageCache } from './';
+import Package from './package';
+import PackageCache from './package-cache';
 import { Memoize } from 'typescript-memoize';
 import cloneDeep from 'lodash/cloneDeep';
 

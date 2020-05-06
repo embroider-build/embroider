@@ -78,7 +78,7 @@ export default class V1App implements V1Package {
       let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
       this.packageCache.overridePackage(extendedPackage);
       for (let addon of inRepoAddons) {
-        this.packageCache.overrideResolution(this.app.project.pkg.name, addon.name, addon);
+        this.packageCache.overrideResolution(this.app.project.pkg.name, addon, addon);
       }
     }
   }

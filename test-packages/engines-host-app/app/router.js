@@ -10,6 +10,7 @@ Router.map(function() {
   this.route('use-eager-engine');
   this.mount('lazy-engine', { path: '/use-lazy-engine', as: 'use-lazy-engine' });
   this.route('style-check');
+  this.route('in-repo-components');
 });
 
 export default Router;

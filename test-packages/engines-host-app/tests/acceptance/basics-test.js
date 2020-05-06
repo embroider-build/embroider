@@ -79,4 +79,9 @@ module('Acceptance | basics', function(hooks) {
   skip('lazy styles are not present until after lazy engine loads', function() {
     // See commented assertion in previous test.
   });
+
+  test('nested in-repo addons are correctly compiled', async function(assert) {
+    await visit('/in-repo-components');
+    assert.dom('[data-test-in-repo-component]').containsText('Hello World');
+  });
 });

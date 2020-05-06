@@ -62,3 +62,6 @@ typings/
 
 # Intermediate Broccoli output
 tmp/
+
+# OSX folder metadata file
+.DS_Store

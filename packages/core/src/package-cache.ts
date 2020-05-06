@@ -4,7 +4,7 @@ import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep, join } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
-import ExtendedPackage from '@embroider/compat/src/extended-package';
+import { ExtendedPackage } from '@embroider/compat';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {

@@ -54,7 +54,7 @@ export default class MacrosConfig {
   }
 
   private mode: 'compile-time' | 'run-time' = 'compile-time';
-  private globalConfig = {};
+  private globalConfig: { [key: string]: unknown } = {};
 
   enableRuntimeMode() {
     this.mode = 'run-time';

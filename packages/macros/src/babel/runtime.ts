@@ -24,21 +24,20 @@ export function macroCondition(predicate: boolean): boolean {
 
 // This is here as a compile target for `getConfig` and `getOwnConfig` when
 // we're in runtime mode. This is not public API to call from your own code.
-export function config<T>(packageRoot: string | undefined): T | undefined {
-  if (packageRoot) {
-    return runtimeConfig[packageRoot] as T;
-  }
+export function config<T>(packageRoot: string): T | undefined {
+  return runtimeConfig.packages[packageRoot] as T;
 }
 
-export function setConfig<T>(packageRoot: string | undefined, config: T): void {
-  if (packageRoot) {
-    runtimeConfig[packageRoot] = config;
-  }
+export function globalConfig(): unknown {
+  return runtimeConfig.global;
 }
 
-const runtimeConfig: { [packageRoot: string]: unknown } = initializeRuntimeMacrosConfig();
+const runtimeConfig: {
+  packages: { [packageRoot: string]: unknown };
+  global: { [key: string]: unknown };
+} = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin
 function initializeRuntimeMacrosConfig() {
-  return {};
+  return { packages: {}, global: {} };
 }

@@ -16,7 +16,7 @@ import {
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile, relativePathToRuntime } from './state';
-import { inlineRuntimeConfig, insertConfig } from './get-config';
+import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
 
@@ -95,14 +95,20 @@ export default function main(context: unknown): unknown {
           return;
         }
 
-        // get(Own)Config needs special handling, so even though it also emits
-        // values via evaluateMacroCall when they're needed recursively, by
-        // other macros, it has its own insertion-handling code that we invoke
-        // here.
-        let own = callee.referencesImport('@embroider/macros', 'getOwnConfig');
-        if (own || callee.referencesImport('@embroider/macros', 'getConfig')) {
+        // getOwnConfig/getGlobalConfig/getConfig needs special handling, so
+        // even though it also emits values via evaluateMacroCall when they're
+        // needed recursively by other macros, it has its own insertion-handling
+        // code that we invoke here.
+        let mode: GetConfigMode | false = callee.referencesImport('@embroider/macros', 'getOwnConfig')
+          ? 'own'
+          : callee.referencesImport('@embroider/macros', 'getGlobalConfig')
+          ? 'global'
+          : callee.referencesImport('@embroider/macros', 'getConfig')
+          ? 'package'
+          : false;
+        if (mode) {
           state.calledIdentifiers.add(callee.node);
-          insertConfig(path, state, own);
+          insertConfig(path, state, mode);
           return;
         }
 

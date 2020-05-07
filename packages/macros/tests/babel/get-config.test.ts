@@ -32,6 +32,7 @@ describe(`getConfig`, function() {
           sizes: [{ name: 'small', oz: 4 }, { name: 'medium', oz: 8 }],
         });
         config.setConfig(filename, '@babel/core', [1, 2, 3]);
+        config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });
         applyMode(config);
         config.finalize();
         run = makeRunner(transform);
@@ -164,7 +165,7 @@ describe(`getConfig`, function() {
         `);
         expect(code).toMatch(/beverage/);
         let coreRoot = dirname(require.resolve('@embroider/core/package.json'));
-        expect(run(code, { filename })[coreRoot].beverage).toEqual('coffee');
+        expect(run(code, { filename }).packages[coreRoot].beverage).toEqual('coffee');
       });
 
       test('does not inline runtime config into other packages', () => {
@@ -186,6 +187,16 @@ describe(`getConfig`, function() {
           }
         `);
         expect(run(code, { filename })).toEqual({ beverage: 'coffee' });
+      });
+
+      test(`Accesses global config`, () => {
+        let code = transform(`
+          import { getGlobalConfig } from '@embroider/macros';
+          export default function() {
+            return getGlobalConfig()['something-very-global'].year;
+          }
+        `);
+        expect(run(code, { filename })).toEqual(2020);
       });
     }),
   });

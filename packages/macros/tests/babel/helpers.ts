@@ -1,20 +1,28 @@
 import { MacrosConfig } from '../..';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { allBabelVersions as allBabel, runDefault, Transform, toCJS, toJS } from '@embroider/test-support';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
+import { explicitRelative } from '@embroider/core';
 
 export { runDefault };
 
-export function makeRunner(transform: Transform) {
-  let cachedMacrosPackage: typeof import('../../src/index');
+const runtimeFilename = join(__dirname, '../../src/babel/runtime.ts');
 
-  return function run(code: string) {
+export function makeRunner(transform: Transform) {
+  let cachedMacrosPackage: typeof import('../../src/babel/runtime');
+
+  return function run(code: string, opts?: { filename: string }) {
+    let optsWithDefaults = Object.assign(
+      {
+        filename: join(__dirname, 'sample.js'),
+      },
+      opts
+    );
     if (!cachedMacrosPackage) {
-      let filename = join(__dirname, '../../src/babel/runtime.ts');
-      let tsSrc = readFileSync(filename, 'utf8');
+      let tsSrc = readFileSync(runtimeFilename, 'utf8');
       let jsSrc = toJS(tsSrc);
-      let withInlinedConfig = transform(jsSrc, { filename });
+      let withInlinedConfig = transform(jsSrc, { filename: runtimeFilename });
       let cjsSrc = toCJS(withInlinedConfig);
       let script = new Script(cjsSrc);
       let context = createContext({
@@ -32,7 +40,14 @@ export function makeRunner(transform: Transform) {
       script.runInContext(context);
       cachedMacrosPackage = context.exports;
     }
-    return runDefault(code, { dependencies: { '../../src/babel/runtime': cachedMacrosPackage } });
+    return runDefault(code, {
+      dependencies: {
+        [explicitRelative(
+          dirname(optsWithDefaults.filename),
+          runtimeFilename.replace(/\.[tj]s$/, '')
+        )]: cachedMacrosPackage,
+      },
+    });
   };
 }
 

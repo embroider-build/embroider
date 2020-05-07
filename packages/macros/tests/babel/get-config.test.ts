@@ -44,7 +44,7 @@ describe(`getConfig`, function() {
             return getOwnConfig();
           }
         `);
-        expect(run(code)).toEqual({ beverage: 'coffee' });
+        expect(run(code, { filename })).toEqual({ beverage: 'coffee' });
       });
 
       test(`returns correct value for another package's config`, () => {
@@ -54,7 +54,7 @@ describe(`getConfig`, function() {
             return getConfig('@babel/core');
           }
         `);
-        expect(run(code)).toEqual([1, 2, 3]);
+        expect(run(code, { filename })).toEqual([1, 2, 3]);
       });
 
       test(`returns undefined when there's no config but the package exists`, () => {
@@ -64,7 +64,7 @@ describe(`getConfig`, function() {
             return getConfig('qunit');
           }
         `);
-        expect(run(code)).toBe(undefined);
+        expect(run(code, { filename })).toBe(undefined);
       });
 
       test(`returns undefined when there's no such package`, () => {
@@ -74,7 +74,7 @@ describe(`getConfig`, function() {
             return getConfig('not-a-thing');
           }
         `);
-        expect(run(code)).toBe(undefined);
+        expect(run(code, { filename })).toBe(undefined);
       });
 
       buildTimeTest(`collapses property access`, () => {
@@ -154,7 +154,7 @@ describe(`getConfig`, function() {
         `);
         expect(code).toMatch(/beverage/);
         let coreRoot = dirname(require.resolve('@embroider/core/package.json'));
-        expect(run(code)[coreRoot].beverage).toEqual('coffee');
+        expect(run(code, { filename })[coreRoot].beverage).toEqual('coffee');
       });
 
       test('does not inline runtime config into other packages', () => {
@@ -175,7 +175,7 @@ describe(`getConfig`, function() {
             }
           }
         `);
-        expect(run(code)).toEqual({ beverage: 'coffee' });
+        expect(run(code, { filename })).toEqual({ beverage: 'coffee' });
       });
     }),
   });

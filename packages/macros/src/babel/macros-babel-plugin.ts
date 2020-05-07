@@ -171,9 +171,11 @@ export default function main(context: unknown): unknown {
     // before preset-env compiles them away.
     (visitor as any).OptionalMemberExpression = {
       enter(path: NodePath<OptionalMemberExpression>, state: State) {
-        let result = new Evaluator({ state }).evaluate(path);
-        if (result.confident) {
-          path.replaceWith(buildLiterals(result.value));
+        if (state.opts.mode === 'compile-time') {
+          let result = new Evaluator({ state }).evaluate(path);
+          if (result.confident) {
+            path.replaceWith(buildLiterals(result.value));
+          }
         }
       },
     };

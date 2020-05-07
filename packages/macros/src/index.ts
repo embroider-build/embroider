@@ -61,9 +61,6 @@ class Oops extends Error {
   }
 }
 
-// TODO: beyond this point should only ever be used within the build system. We
-// need to guard it so it never ships in apps.
-
 // Entrypoint for managing the macro config within Node.
 export { default as MacrosConfig, Merger } from './macros-config';
 

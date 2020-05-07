@@ -69,7 +69,8 @@ type Updater = (methods: ReturnType<typeof updaterMethods>) => void;
 //
 // For an example user of this API, see where we generate
 // embroider_macros_fastboot_init.js' in @embroider/core.
-let updaters: Updater[] | undefined = (window as any)._embroider_macros_runtime_config;
+let updaters: Updater[] | undefined =
+  typeof window !== 'undefined' ? (window as any)._embroider_macros_runtime_config : undefined;
 if (updaters) {
   let methods = updaterMethods();
   for (let updater of updaters) {

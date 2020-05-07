@@ -96,11 +96,11 @@ export class PreparedEmberHTML {
 
   // this takes the src relative to the application root, we adjust it so it's
   // relative to this html file.
-  insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string }) {
-    let newTag = this.dom.window.document.createElement('script');
-    newTag.src = relativeTo(this.asset.relativePath, relativeSrc);
+  insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string; tag?: string }) {
+    let newTag = this.dom.window.document.createElement(opts && opts.tag ? opts.tag : 'script');
+    newTag.setAttribute('src', relativeTo(this.asset.relativePath, relativeSrc));
     if (opts && opts.type) {
-      newTag.type = opts.type;
+      newTag.setAttribute('type', opts.type);
     }
     location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);

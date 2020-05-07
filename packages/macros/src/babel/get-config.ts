@@ -4,26 +4,26 @@ import {
   CallExpression,
   callExpression,
   stringLiteral,
-  memberExpression,
   FunctionDeclaration,
   returnStatement,
-  Identifier,
 } from '@babel/types';
-import State, { sourceFile } from './state';
+import State, { sourceFile, unusedNameLike } from './state';
 import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
+import assertNever from 'assert-never';
 
 const packageCache = PackageCache.shared('embroider-stage3');
+export type Mode = 'own' | 'global' | 'package';
 
-function getPackage(path: NodePath<CallExpression>, state: State, own: boolean): Package | null {
+function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
   let packageName: string | undefined;
-  if (own) {
+  if (mode === 'own') {
     if (path.node.arguments.length !== 0) {
       throw error(path, `getOwnConfig takes zero arguments, you passed ${path.node.arguments.length}`);
     }
     packageName = undefined;
-  } else {
+  } else if (mode === 'package') {
     if (path.node.arguments.length !== 1) {
       throw error(path, `getConfig takes exactly one argument, you passed ${path.node.arguments.length}`);
     }
@@ -32,14 +32,19 @@ function getPackage(path: NodePath<CallExpression>, state: State, own: boolean):
       throw error(assertArray(path.get('arguments'))[0], `the argument to getConfig must be a string literal`);
     }
     packageName = packageNode.value;
+  } else {
+    assertNever(mode);
   }
   return targetPackage(sourceFile(path, state), packageName, packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
-export default function getConfig(path: NodePath<CallExpression>, state: State, own: boolean) {
+export default function getConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
   let config: unknown | undefined;
-  let pkg = getPackage(path, state, own);
+  if (mode === 'global') {
+    return state.opts.globalConfig;
+  }
+  let pkg = getPackage(path, state, mode);
   if (pkg) {
     config = state.opts.userConfigs[pkg.root];
   }
@@ -49,23 +54,29 @@ export default function getConfig(path: NodePath<CallExpression>, state: State, 
 // this is the imperative version that's invoked directly by the babel visitor
 // when we encounter getConfig. It's implemented in terms of getConfig so we can
 // be sure we have the same semantics.
-export function insertConfig(path: NodePath<CallExpression>, state: State, own: boolean) {
+export function insertConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
   if (state.opts.mode === 'compile-time') {
-    let config = getConfig(path, state, own);
+    let config = getConfig(path, state, mode);
     let collapsed = collapse(path, config);
     let literalResult = buildLiterals(collapsed.config);
     collapsed.path.replaceWith(literalResult);
   } else {
-    let pkg = getPackage(path, state, own);
-    let pkgRoot;
-    if (pkg) {
-      pkgRoot = stringLiteral(pkg.root);
+    if (mode === 'global') {
+      let name = unusedNameLike('globalConfig', path);
+      path.replaceWith(callExpression(identifier(name), []));
+      state.neededRuntimeImports.set(name, 'globalConfig');
     } else {
-      pkgRoot = identifier('undefined');
+      let pkg = getPackage(path, state, mode);
+      let pkgRoot;
+      if (pkg) {
+        pkgRoot = stringLiteral(pkg.root);
+      } else {
+        pkgRoot = identifier('undefined');
+      }
+      let name = unusedNameLike('config', path);
+      path.replaceWith(callExpression(identifier(name), [pkgRoot]));
+      state.neededRuntimeImports.set(name, 'config');
     }
-    path.replaceWith(
-      callExpression(memberExpression(path.get('callee').node as Identifier, identifier('_runtimeGet')), [pkgRoot])
-    );
   }
 }
 
@@ -98,5 +109,7 @@ function collapse(path: NodePath, config: any) {
 }
 
 export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State) {
-  path.get('body').node.body = [returnStatement(buildLiterals(state.opts.userConfigs))];
+  path.get('body').node.body = [
+    returnStatement(buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig })),
+  ];
 }

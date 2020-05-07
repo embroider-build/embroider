@@ -10,7 +10,7 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/fail-build.test.js"]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/get-config.test.js"]
     },
     {
       "type": "node",
@@ -52,6 +52,18 @@
       "args": ["build"],
       "env": {
         "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test fastboot-app",
+      "program": "${workspaceFolder}/node_modules/.bin/qunit",
+      "cwd": "${workspaceFolder}/test-packages/fastboot-app",
+      "args": ["fastboot-tests"],
+      "env": {
+        "REUSE_FASTBOOT_BUILD": "true"
       },
       "outputCapture": "std"
     },

@@ -15,7 +15,7 @@ describe(`getConfig`, function() {
       return c;
     },
     includePresetsTests: true,
-    createTests: allModes(function(transform, { applyMode, buildTimeTest }) {
+    createTests: allModes(function(transform, { applyMode, buildTimeTest, runTimeTest }) {
       beforeEach(function() {
         // we have some tests that behave differently on files that appear to be
         // inside or outside of the macros package itself. Most tests don't care
@@ -32,6 +32,7 @@ describe(`getConfig`, function() {
           sizes: [{ name: 'small', oz: 4 }, { name: 'medium', oz: 8 }],
         });
         config.setConfig(filename, '@babel/core', [1, 2, 3]);
+        config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });
         applyMode(config);
         config.finalize();
         run = makeRunner(transform);
@@ -44,7 +45,7 @@ describe(`getConfig`, function() {
             return getOwnConfig();
           }
         `);
-        expect(run(code)).toEqual({ beverage: 'coffee' });
+        expect(run(code, { filename })).toEqual({ beverage: 'coffee' });
       });
 
       test(`returns correct value for another package's config`, () => {
@@ -54,7 +55,7 @@ describe(`getConfig`, function() {
             return getConfig('@babel/core');
           }
         `);
-        expect(run(code)).toEqual([1, 2, 3]);
+        expect(run(code, { filename })).toEqual([1, 2, 3]);
       });
 
       test(`returns undefined when there's no config but the package exists`, () => {
@@ -64,7 +65,7 @@ describe(`getConfig`, function() {
             return getConfig('qunit');
           }
         `);
-        expect(run(code)).toBe(undefined);
+        expect(run(code, { filename })).toBe(undefined);
       });
 
       test(`returns undefined when there's no such package`, () => {
@@ -74,7 +75,7 @@ describe(`getConfig`, function() {
             return getConfig('not-a-thing');
           }
         `);
-        expect(run(code)).toBe(undefined);
+        expect(run(code, { filename })).toBe(undefined);
       });
 
       buildTimeTest(`collapses property access`, () => {
@@ -141,6 +142,16 @@ describe(`getConfig`, function() {
           `);
           expect(code).toMatch(/doSomething\(undefined\)/);
         });
+
+        runTimeTest(`runtime getConfig is still present in runtime mode when using optional chaining`, () => {
+          let code = transform(`
+            import { getConfig } from '@embroider/macros';
+            export default function() {
+              return doSomething(getConfig('not-a-real-package')?.sizes?.[1]?.oz);
+            }
+          `);
+          expect(code).toMatch(/config/);
+        });
       }
 
       test('inlines runtime config into own source', () => {
@@ -154,7 +165,7 @@ describe(`getConfig`, function() {
         `);
         expect(code).toMatch(/beverage/);
         let coreRoot = dirname(require.resolve('@embroider/core/package.json'));
-        expect(run(code)[coreRoot].beverage).toEqual('coffee');
+        expect(run(code, { filename }).packages[coreRoot].beverage).toEqual('coffee');
       });
 
       test('does not inline runtime config into other packages', () => {
@@ -175,7 +186,17 @@ describe(`getConfig`, function() {
             }
           }
         `);
-        expect(run(code)).toEqual({ beverage: 'coffee' });
+        expect(run(code, { filename })).toEqual({ beverage: 'coffee' });
+      });
+
+      test(`Accesses global config`, () => {
+        let code = transform(`
+          import { getGlobalConfig } from '@embroider/macros';
+          export default function() {
+            return getGlobalConfig()['something-very-global'].year;
+          }
+        `);
+        expect(run(code, { filename })).toEqual(2020);
       });
     }),
   });

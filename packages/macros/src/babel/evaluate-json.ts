@@ -380,10 +380,13 @@ export class Evaluator {
       return { confident: true, value: moduleExists(path, this.state) };
     }
     if (callee.referencesImport('@embroider/macros', 'getConfig')) {
-      return { confident: true, value: getConfig(path, this.state, false) };
+      return { confident: true, value: getConfig(path, this.state, 'package') };
     }
     if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
-      return { confident: true, value: getConfig(path, this.state, true) };
+      return { confident: true, value: getConfig(path, this.state, 'own') };
+    }
+    if (callee.referencesImport('@embroider/macros', 'getGlobalConfig')) {
+      return { confident: true, value: getConfig(path, this.state, 'global') };
     }
     return { confident: false };
   }

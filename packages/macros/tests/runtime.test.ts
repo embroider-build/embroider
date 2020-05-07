@@ -11,7 +11,7 @@ import {
 
 const ERROR_REGEX = /this method is really implemented at compile time via a babel plugin. If you're seeing this exception, something went wrong/;
 
-describe(`run-time macro exports`, function() {
+describe(`type-only exports`, function() {
   test('dependencySatisfies exists', function() {
     expect(dependencySatisfies).toBeDefined();
     expect(dependencySatisfies).toThrow(ERROR_REGEX);
@@ -19,15 +19,12 @@ describe(`run-time macro exports`, function() {
 
   test('macroCondition exists', function() {
     expect(macroCondition).toBeDefined();
-    expect(macroCondition(true)).toEqual(true);
-    expect(macroCondition(false)).toEqual(false);
+    expect(macroCondition).toThrow(ERROR_REGEX);
   });
 
   test('each exists', function() {
-    const names = ['Edward', 'Tom', 'Yehuda'];
     expect(each).toBeDefined();
-    expect(each(names)).toEqual(names);
-    expect(each).toThrow('the argument to the each() macro must be an array');
+    expect(macroCondition).toThrow(ERROR_REGEX);
   });
 
   test('importSync exists', function() {
@@ -37,10 +34,12 @@ describe(`run-time macro exports`, function() {
 
   test('getConfig exists', function() {
     expect(getConfig).toBeDefined();
+    expect(importSync).toThrow(ERROR_REGEX);
   });
 
   test('getOwnConfig exists', function() {
     expect(getOwnConfig).toBeDefined();
+    expect(importSync).toThrow(ERROR_REGEX);
   });
 
   test('failBuild exists', function() {

@@ -7,7 +7,6 @@ import { Memoize } from 'typescript-memoize';
 import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, sep, resolve as resolvePath } from 'path';
 import { debug, warn } from './messages';
-import cloneDeep from 'lodash/cloneDeep';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
@@ -25,9 +24,11 @@ import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
-import merge from 'lodash/merge';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
+import partition from 'lodash/partition';
+import mergeWith from 'lodash/mergeWith';
+import cloneDeep from 'lodash/cloneDeep';
 
 export type EmberENV = unknown;
 
@@ -52,6 +53,11 @@ export interface AppAdapter<TreeNames> {
   // any files copied out of addons, we take care of that generically in
   // AppBuilder.
   appJSSrcDir(treePaths: OutputPaths<TreeNames>): string;
+
+  // path to the directory where the app's own Fastboot-only Javascript lives.
+  // Doesn't include any files copied out of addons, we take care of that
+  // generically in AppBuilder.
+  fastbootJSSrcDir(treePaths: OutputPaths<TreeNames>): string | undefined;
 
   // this is where you declare what assets must be in the final output
   // (especially index.html, tests/index.html, and anything from your classic
@@ -117,6 +123,9 @@ export interface AppAdapter<TreeNames> {
   // name. When false, your code is treated more leniently and you get the
   // auto-upgraded behaviors that v1 addons also get.
   strictV2Format(): boolean;
+
+  // development, test, or production
+  env: string;
 }
 
 export function excludeDotFiles(files: string[]) {
@@ -248,6 +257,28 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
+  // unlike our full config, this one just needs to know how to parse all the
+  // syntax our app can contain.
+  @Memoize()
+  private babelParserConfig(): TransformOptions {
+    let babel = cloneDeep(this.adapter.babelConfig());
+
+    if (!babel.plugins) {
+      babel.plugins = [];
+    }
+
+    // Our stage3 code is always allowed to use dynamic import. We may emit it
+    // ourself when splitting routes.
+    babel.plugins.push(
+      require.resolve(
+        this.adapter.babelMajorVersion() === 6
+          ? 'babel-plugin-syntax-dynamic-import'
+          : '@babel/plugin-syntax-dynamic-import'
+      )
+    );
+    return babel;
+  }
+
   @Memoize()
   private babelConfig(templateCompiler: TemplateCompiler, appFiles: Engine[]) {
     let babel = this.adapter.babelConfig();
@@ -336,6 +367,14 @@ export class AppBuilder<TreeNames> {
       html.insertScriptTag(html.javascript, appJS.relativePath, { type: 'module' });
     }
 
+    if (this.fastbootConfig) {
+      // any extra fastboot app files get inserted into our html.javascript
+      // section, after the app has been inserted.
+      for (let script of this.fastbootConfig.extraAppFiles) {
+        html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
+      }
+    }
+
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
@@ -343,6 +382,15 @@ export class AppBuilder<TreeNames> {
       let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
       prepared.set(vendorJS.relativePath, vendorJS);
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
+    }
+
+    if (this.fastbootConfig) {
+      // any extra fastboot vendor files get inserted into our
+      // html.implicitScripts section, after the regular implicit script
+      // (vendor.js) have been inserted.
+      for (let script of this.fastbootConfig.extraVendorFiles) {
+        html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
+      }
     }
 
     let implicitStyles = this.impliedAssets('implicit-styles');
@@ -446,15 +494,50 @@ export class AppBuilder<TreeNames> {
     return done;
   }
 
+  @Memoize()
+  private get activeFastboot() {
+    return this.adapter.activeAddonChildren(this.app).find(a => a.name === 'ember-cli-fastboot');
+  }
+
+  @Memoize()
+  private get fastbootConfig():
+    | { packageJSON: object; extraAppFiles: string[]; extraVendorFiles: string[] }
+    | undefined {
+    if (this.activeFastboot) {
+      // this is relying on work done in stage1 by @embroider/compat/src/compat-adapters/ember-cli-fastboot.ts
+      let packageJSON = readJSONSync(join(this.activeFastboot.root, '_fastboot_', 'package.json'));
+      let { extraAppFiles, extraVendorFiles } = packageJSON['embroider-fastboot'];
+      delete packageJSON['embroider-fastboot'];
+      extraVendorFiles.push('assets/embroider_macros_fastboot_init.js');
+      return { packageJSON, extraAppFiles, extraVendorFiles };
+    }
+  }
+
   private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
 
-  private updateAppJS(appJSPath: string): Engine[] {
+  private updateAppJS(inputPaths: OutputPaths<TreeNames>): Engine[] {
+    let appJSPath = this.adapter.appJSSrcDir(inputPaths);
     if (!this.appDiffers) {
       let engines = this.partitionEngines(appJSPath);
-      this.appDiffers = engines.map(engine => ({
-        differ: new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]),
-        engine,
-      }));
+      this.appDiffers = engines.map(engine => {
+        let differ: AppDiffer;
+        if (this.activeFastboot) {
+          differ = new AppDiffer(
+            engine.destPath,
+            engine.sourcePath,
+            [...engine.addons],
+            true,
+            this.adapter.fastbootJSSrcDir(inputPaths),
+            this.babelParserConfig()
+          );
+        } else {
+          differ = new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]);
+        }
+        return {
+          differ,
+          engine,
+        };
+      });
     }
     // this is in reverse order because we need deeper engines to update before
     // their parents, because they aren't really valid packages until they
@@ -465,7 +548,7 @@ export class AppBuilder<TreeNames> {
       .forEach(a => a.differ.update());
     return this.appDiffers.map(a => {
       return Object.assign({}, a.engine, {
-        appFiles: new AppFiles(a.differ.files, this.resolvableExtensionsPattern),
+        appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern),
       });
     });
   }
@@ -617,51 +700,34 @@ export class AppBuilder<TreeNames> {
         }
       }
     }
+
+    if (this.activeFastboot) {
+      const source = `
+      var key = '_embroider_macros_runtime_config';
+      if (!window[key]){ window[key] = [];}
+      window[key].push(function(m) {
+        m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
+      });`;
+      assets.push({
+        kind: 'in-memory',
+        source,
+        relativePath: 'assets/embroider_macros_fastboot_init.js',
+      });
+    }
+
     // and finally tack on the ones from our app itself
     return assets.concat(this.adapter.assets(inputPaths));
-  }
-
-  // This supports a slightly weird thing used (AFAIK) only by
-  // ember-cli-fastboot. ember-cli-fastboot emits a package.json file in its
-  // treeForPublic, which means in embroider terms it has a public-asset named
-  // "package.json". It wants that to be in the final build output.
-  //
-  // We can't let it just overwrite our own stage2 package.json because we use
-  // that for our own purposes. So we make it our policy that any time an addon
-  // emits a public-asset named package.json, we will merge it into our
-  // package.json. This is enough to make ember-cli-fastboot happy.
-  private gatherPackageJson(assets: Asset[]) {
-    let found = [] as object[];
-    for (let asset of assets) {
-      if (asset.relativePath === 'package.json') {
-        switch (asset.kind) {
-          case 'on-disk':
-            found.push(readJSONSync(asset.sourcePath));
-            break;
-          case 'in-memory':
-            if (typeof asset.source === 'string') {
-              found.push(JSON.parse(asset.source));
-            } else {
-              found.push(JSON.parse(asset.source.toString('utf8')));
-            }
-            break;
-          case 'ember':
-            // deliberately skipped. An ember entrypoint asset can never be JSON.
-            break;
-          default:
-            assertNever(asset);
-        }
-      }
-    }
-    return found;
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
+    if (this.adapter.env !== 'production') {
+      this.macrosConfig.enableRuntimeMode();
+    }
     this.macrosConfig.finalize();
 
-    let appFiles = this.updateAppJS(this.adapter.appJSSrcDir(inputPaths));
+    let appFiles = this.updateAppJS(inputPaths);
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
 
@@ -672,6 +738,12 @@ export class AppBuilder<TreeNames> {
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
+
+    if (this.activeFastboot) {
+      // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
+      assetPaths.push('package.json');
+    }
+
     for (let asset of finalAssets) {
       // our concatenated assets all have map files that ride along. Here we're
       // telling the final stage packager to be sure and serve the map files
@@ -703,21 +775,17 @@ export class AppBuilder<TreeNames> {
       meta['auto-upgraded'] = true;
     }
 
-    let pkg = cloneDeep(this.app.packageJSON);
-    if (pkg.keywords) {
-      if (!pkg.keywords.includes('ember-addon')) {
-        pkg.keywords.push('ember-addon');
-      }
-    } else {
-      pkg.keywords = ['ember-addon'];
+    let pkg = this.combinePackageJSON(meta);
+    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+  }
+
+  private combinePackageJSON(meta: AppMeta): object {
+    let pkgLayers = [this.app.packageJSON, { keywords: ['ember-addon'], 'ember-addon': meta }];
+    let fastbootConfig = this.fastbootConfig;
+    if (fastbootConfig) {
+      pkgLayers.push(fastbootConfig.packageJSON);
     }
-    pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], meta);
-    const pkgPath = join(this.root, 'package.json');
-    let addonProvidedPackageJSONS = this.gatherPackageJson(assets);
-    if (addonProvidedPackageJSONS.length > 0) {
-      pkg = merge({}, ...addonProvidedPackageJSONS, pkg);
-    }
-    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+    return combinePackageJSON(...pkgLayers);
   }
 
   private templateCompiler(config: EmberENV) {
@@ -901,15 +969,17 @@ export class AppBuilder<TreeNames> {
       );
     }
 
-    let amdModules = excludeDotFiles(flatten(requiredAppFiles)).map(file =>
-      this.importPaths(engine, file, relativePath)
+    let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
+      appFiles.isFastbootOnly.get(file)
     );
+    let amdModules = nonFastboot.map(file => this.importPaths(engine, file, relativePath));
+    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(engine, file, relativePath));
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
     this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let params = { amdModules, lazyRoutes, lazyEngines, eagerModules };
+    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -941,10 +1011,13 @@ export class AppBuilder<TreeNames> {
   }
 
   private routeEntrypoint(engine: Engine, relativePath: string, files: string[]) {
+    let [fastboot, nonFastboot] = partition(files, file => engine.appFiles.isFastbootOnly.get(file));
+
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: files.map(f => this.importPaths(engine, f, relativePath)),
+        files: nonFastboot.map(f => this.importPaths(engine, f, relativePath)),
+        fastbootOnlyFiles: fastboot.map(f => this.importPaths(engine, f, relativePath)),
       }),
       relativePath,
     };
@@ -1025,6 +1098,15 @@ let d = w.define;
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
+{{#if fastbootOnlyAmdModules}}
+  import { macroCondition, getGlobalConfig } from '@embroider/macros';
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    {{#each fastbootOnlyAmdModules as |amdModule| ~}}
+      d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+    {{/each}}
+  }
+{{/if}}
+
 {{#each eagerModules as |eagerModule| ~}}
   i("{{js-string-escape eagerModule}}");
 {{/each}}
@@ -1073,7 +1155,8 @@ if (!runningTests) {
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  amdModules?: ({ runtime: string; buildtime: string })[];
+  amdModules: ({ runtime: string; buildtime: string })[];
+  fastbootOnlyAmdModules?: ({ runtime: string; buildtime: string })[];
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;
@@ -1090,7 +1173,18 @@ let d = window.define;
 {{#each files as |amdModule| ~}}
 d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
-`) as (params: { files: { runtime: string; buildtime: string }[] }) => string;
+{{#if fastbootOnlyFiles}}
+  import { macroCondition, getGlobalConfig } from '@embroider/macros';
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    {{#each fastbootOnlyFiles as |amdModule| ~}}
+    d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+    {{/each}}
+  }
+{{/if}}
+`) as (params: {
+  files: { runtime: string; buildtime: string }[];
+  fastbootOnlyFiles: { runtime: string; buildtime: string }[];
+}) => string;
 
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {
@@ -1119,4 +1213,15 @@ function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp)
     }
     return inverted;
   }
+}
+
+function combinePackageJSON(...layers: object[]) {
+  function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {
+    if (key === 'keywords' && stack.size === 0) {
+      if (Array.isArray(objValue)) {
+        return objValue.concat(srcValue);
+      }
+    }
+  }
+  return mergeWith({}, ...layers, custom);
 }

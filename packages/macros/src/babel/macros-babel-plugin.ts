@@ -9,10 +9,14 @@ import {
   ForOfStatement,
   FunctionDeclaration,
   OptionalMemberExpression,
+  importSpecifier,
+  importDeclaration,
+  Program,
+  stringLiteral,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
-import State, { sourceFile } from './state';
-import { inlineRuntimeConfig, insertConfig } from './get-config';
+import State, { sourceFile, relativePathToRuntime } from './state';
+import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
 
@@ -25,14 +29,16 @@ const packageCache = PackageCache.shared('embroider-stage3');
 export default function main(context: unknown): unknown {
   let visitor = {
     Program: {
-      enter(_: NodePath, state: State) {
+      enter(_: NodePath<Program>, state: State) {
         state.generatedRequires = new Set();
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
+        state.neededRuntimeImports = new Map();
       },
-      exit(path: NodePath, state: State) {
-        pruneMacroImports(path, state);
+      exit(path: NodePath<Program>, state: State) {
+        pruneMacroImports(path);
+        addRuntimeImports(path, state);
         for (let handler of state.jobs) {
           handler();
         }
@@ -89,14 +95,20 @@ export default function main(context: unknown): unknown {
           return;
         }
 
-        // get(Own)Config needs special handling, so even though it also emits
-        // values via evaluateMacroCall when they're needed recursively, by
-        // other macros, it has its own insertion-handling code that we invoke
-        // here.
-        let own = callee.referencesImport('@embroider/macros', 'getOwnConfig');
-        if (own || callee.referencesImport('@embroider/macros', 'getConfig')) {
+        // getOwnConfig/getGlobalConfig/getConfig needs special handling, so
+        // even though it also emits values via evaluateMacroCall when they're
+        // needed recursively by other macros, it has its own insertion-handling
+        // code that we invoke here.
+        let mode: GetConfigMode | false = callee.referencesImport('@embroider/macros', 'getOwnConfig')
+          ? 'own'
+          : callee.referencesImport('@embroider/macros', 'getGlobalConfig')
+          ? 'global'
+          : callee.referencesImport('@embroider/macros', 'getConfig')
+          ? 'package'
+          : false;
+        if (mode) {
           state.calledIdentifiers.add(callee.node);
-          insertConfig(path, state, own);
+          insertConfig(path, state, mode);
           return;
         }
 
@@ -165,9 +177,11 @@ export default function main(context: unknown): unknown {
     // before preset-env compiles them away.
     (visitor as any).OptionalMemberExpression = {
       enter(path: NodePath<OptionalMemberExpression>, state: State) {
-        let result = new Evaluator({ state }).evaluate(path);
-        if (result.confident) {
-          path.replaceWith(buildLiterals(result.value));
+        if (state.opts.mode === 'compile-time') {
+          let result = new Evaluator({ state }).evaluate(path);
+          if (result.confident) {
+            path.replaceWith(buildLiterals(result.value));
+          }
         }
       },
     };
@@ -178,14 +192,27 @@ export default function main(context: unknown): unknown {
 
 // This removes imports from "@embroider/macros" itself, because we have no
 // runtime behavior at all.
-function pruneMacroImports(path: NodePath, state: State) {
-  if (!path.isProgram() || state.opts.mode === 'run-time') {
+function pruneMacroImports(path: NodePath) {
+  if (!path.isProgram()) {
     return;
   }
   for (let topLevelPath of path.get('body')) {
     if (topLevelPath.isImportDeclaration() && topLevelPath.get('source').node.value === '@embroider/macros') {
       topLevelPath.remove();
     }
+  }
+}
+
+function addRuntimeImports(path: NodePath<Program>, state: State) {
+  if (state.neededRuntimeImports.size > 0) {
+    path.node.body.push(
+      importDeclaration(
+        [...state.neededRuntimeImports].map(([local, imported]) =>
+          importSpecifier(identifier(local), identifier(imported))
+        ),
+        stringLiteral(relativePathToRuntime(path, state))
+      )
+    );
   }
 }
 

@@ -32,6 +32,7 @@ import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros';
 import bind from 'bind-decorator';
+import { pathExistsSync } from 'fs-extra';
 
 interface TreeNames {
   appJS: Tree;
@@ -95,6 +96,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
     return treePaths.appJS;
+  }
+
+  @Memoize()
+  fastbootJSSrcDir(_treePaths: OutputPaths<TreeNames>) {
+    let target = join(this.oldPackage.root, 'fastboot');
+    if (pathExistsSync(target)) {
+      return target;
+    }
+  }
+
+  get env() {
+    return this.oldPackage.env;
   }
 
   assets(treePaths: OutputPaths<TreeNames>): Asset[] {

@@ -55,6 +55,7 @@ const dynamicTreeHooks = Object.freeze([
 ]);
 
 const appPublicationDir = '_app_';
+const fastbootPublicationDir = '_fastboot_';
 
 /**
  * Creating a interface here just to keep the Resolver's structure as it is.
@@ -330,7 +331,7 @@ export default class V1Addon implements V1Package {
         };
       case 'public':
         return {
-          destDir: 'public',
+          destDir: `public/${this.moduleName}`,
         };
       case 'vendor':
         return {
@@ -352,7 +353,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private get rootTree() {
+  protected get rootTree() {
     if (this.packageCache.get(this.root).mayRebuild) {
       return new WatchedDir(this.root);
     } else {
@@ -361,7 +362,7 @@ export default class V1Addon implements V1Package {
   }
 
   @Memoize()
-  private get moduleName() {
+  private get moduleName(): string {
     if (typeof this.addonInstance.moduleName === 'function') {
       return this.addonInstance.moduleName();
     }
@@ -541,8 +542,7 @@ export default class V1Addon implements V1Package {
     } else if (this.hasStockTree('test-support')) {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
-      // the consuming app, not our own package. That is some of what is lame
-      // about app trees and why they will go away once everyone is all MU.
+      // the consuming app, not our own package.
       return new Funnel(this.stockTree('test-support'), {
         destDir: `${appPublicationDir}/tests`,
       });
@@ -643,7 +643,7 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  private maybeSetAppJS(built: IntermediateBuild, tree: Tree): Tree {
+  private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Tree, localDir: string, key: keyof AddonMeta): Tree {
     // unforunately Funnel doesn't create destDir if its input exists but is
     // empty. And we want to only put the app-js key in package.json if
     // there's really a directory for it to point to. So we need to monitor
@@ -651,20 +651,20 @@ export default class V1Addon implements V1Package {
     let dirExists = false;
     built.dynamicMeta.push(() => {
       if (dirExists) {
-        return { 'app-js': appPublicationDir };
+        return { [key]: localDir };
       } else {
         return {};
       }
     });
     return new ObserveTree(tree, (outputPath: string) => {
-      dirExists = pathExistsSync(join(outputPath, appPublicationDir));
+      dirExists = pathExistsSync(join(outputPath, localDir));
     });
   }
 
   private buildTestSupport(built: IntermediateBuild) {
     let tree = this.treeForTestSupport();
     if (tree) {
-      tree = this.maybeSetAppJS(built, tree);
+      tree = this.maybeSetDirectoryMeta(built, tree, appPublicationDir, 'app-js');
       built.trees.push(tree);
     }
   }
@@ -684,15 +684,8 @@ export default class V1Addon implements V1Package {
 
     if (appTree) {
       // this one doesn't go through transpile yet because it gets handled as
-      // part of the consuming app. For example, imports should be relative to
-      // the consuming app, not our own package. That is some of what is lame
-      // about app trees and why they will go away once everyone is all MU.
-      //
-      // This does need to go through parseImports here, because by the time
-      // these files have been merged into the app we can't tell what their
-      // allowed dependencies are anymore and would get false positive
-      // externals.
-      appTree = this.maybeSetAppJS(built, appTree);
+      // part of the consuming app.
+      appTree = this.maybeSetDirectoryMeta(built, appTree, appPublicationDir, 'app-js');
       built.trees.push(appTree);
     }
 
@@ -703,9 +696,47 @@ export default class V1Addon implements V1Package {
     ) {
       let hintTree = this.addonInstance.jshintAddonTree();
       if (hintTree) {
-        hintTree = this.maybeSetAppJS(built, new Funnel(hintTree, { destDir: appPublicationDir }));
+        hintTree = this.maybeSetDirectoryMeta(
+          built,
+          new Funnel(hintTree, { destDir: appPublicationDir }),
+          appPublicationDir,
+          'app-js'
+        );
         built.trees.push(hintTree);
       }
+    }
+  }
+
+  private buildTreeForFastBoot(built: IntermediateBuild) {
+    let tree;
+
+    if (this.customizes('treeForFastBoot')) {
+      // Arguably, it would be more correct to always create the new Funnel,
+      // because the fastboot directory could be created *after* our build starts.
+      // But that would result in hundreds of additional trees, even though the
+      // vast majority of addons aren't changing and don't have fastboot
+      // directories. So I'm pretty comfortable with the optimization. It means
+      // that an addon author who creates a brand new fastboot directory in a v1
+      // packages will need to restart their build. (Really we hope new addons
+      // will be authored in v2 instead soon anyway, and they won't need the
+      // concept of "fastboot directory" because they can use the macro system to
+      // conditionally import some things only in fastboot.)
+      if (pathExistsSync(join(this.root, 'fastboot'))) {
+        tree = new Funnel(this.rootTree, { srcDir: 'fastboot' });
+      }
+      tree = this.addonInstance.treeForFastBoot(tree);
+      tree = new Funnel(tree, { destDir: fastbootPublicationDir });
+    } else {
+      if (pathExistsSync(join(this.root, 'fastboot'))) {
+        tree = new Funnel(this.rootTree, { srcDir: 'fastboot', destDir: fastbootPublicationDir });
+      }
+    }
+
+    if (tree) {
+      // this one doesn't go through transpile yet because it gets handled as
+      // part of the consuming app.
+      tree = this.maybeSetDirectoryMeta(built, tree, fastbootPublicationDir, 'fastboot-js');
+      built.trees.push(tree);
     }
   }
 
@@ -789,6 +820,7 @@ export default class V1Addon implements V1Package {
     this.buildAddonTestSupport(built);
     this.buildTestSupport(built);
     this.buildTreeForApp(built);
+    this.buildTreeForFastBoot(built);
     this.buildPublicTree(built);
     this.buildVendorTree(built);
     this.buildEngineConfig(built);

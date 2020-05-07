@@ -35,6 +35,7 @@ describe('macroCondition', function() {
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       runTimeTest('evaluates consequent block', () => {
@@ -52,7 +53,8 @@ describe('macroCondition', function() {
         expect(code).toMatch(/beta/);
         expect(code).toMatch(/macroCondition/);
         expect(code).toMatch(/if/);
-        expect(code).toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).toMatch(/\/runtime/);
       });
 
       buildTimeTest('non-block if selects consequent', () => {
@@ -68,6 +70,7 @@ describe('macroCondition', function() {
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       buildTimeTest('if selects alternate, drops consequent', () => {
@@ -86,6 +89,7 @@ describe('macroCondition', function() {
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       buildTimeTest('ternary selects consequent, drops alternate', () => {
@@ -100,6 +104,7 @@ describe('macroCondition', function() {
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/\?/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       runTimeTest('ternary evalutes to consequent', () => {
@@ -113,7 +118,8 @@ describe('macroCondition', function() {
         expect(code).toMatch(/beta/);
         expect(code).toMatch(/macroCondition/);
         expect(code).toMatch(/\?/);
-        expect(code).toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).toMatch(/\/runtime/);
       });
 
       buildTimeTest('ternary selects alternate, drops consequent', () => {
@@ -128,6 +134,7 @@ describe('macroCondition', function() {
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/\?/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       buildTimeTest('if selects consequent, no alternate', () => {
@@ -142,6 +149,7 @@ describe('macroCondition', function() {
         expect(run(code)).toBe('alpha');
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
       });
 
       test('if drops consequent, no alternate', () => {

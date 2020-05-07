@@ -54,6 +54,7 @@ export default class MacrosConfig {
   }
 
   private mode: 'compile-time' | 'run-time' = 'compile-time';
+  private globalConfig: { [key: string]: unknown } = {};
 
   enableRuntimeMode() {
     this.mode = 'run-time';
@@ -77,6 +78,23 @@ export default class MacrosConfig {
   // `__filename`.
   setOwnConfig(fromPath: string, config: unknown) {
     return this.internalSetConfig(fromPath, undefined, config);
+  }
+
+  // Registers a new source of configuration to be shared globally within the
+  // app. USE GLOBALS SPARINGLY! Prefer setConfig or setOwnConfig instead,
+  // unless your state is truly, necessarily global.
+  //
+  // Include a relevant package name in your key to help avoid collisions.
+  //
+  // Your value must be json-serializable. You must always set fromPath to
+  // `__filename`.
+  setGlobalConfig(fromPath: string, key: string, value: unknown) {
+    if (!this._configWritable) {
+      throw new Error(
+        `[Embroider:MacrosConfig] attempted to set global config after configs have been finalized from: '${fromPath}'`
+      );
+    }
+    this.globalConfig[key] = value;
   }
 
   private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
@@ -153,6 +171,9 @@ export default class MacrosConfig {
       // setting config before we generate the userConfigs
       get userConfigs() {
         return self.userConfigs;
+      },
+      get globalConfig() {
+        return self.globalConfig;
       },
       owningPackageRoot,
 

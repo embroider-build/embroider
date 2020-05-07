@@ -189,9 +189,9 @@ function fastbootMerge(firstFastbootTree: number) {
 }
 
 const switcherTemplate = compile(`
-import { macroCondition, getConfig, importSync } from '@embroider/macros';
+import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
 let mod;
-if (macroCondition(getConfig('fastboot')?.isRunning)){
+if (macroCondition(getGlobalConfig().fastboot?.isRunning)){
   mod = importSync("./{{js-string-escape fastbootDest}}");
 } else {
   mod = importSync("./{{js-string-escape browserDest}}");

@@ -41,3 +41,38 @@ const runtimeConfig: {
 function initializeRuntimeMacrosConfig() {
   return { packages: {}, global: {} };
 }
+
+function updaterMethods() {
+  return {
+    config,
+    globalConfig,
+    setConfig(packageRoot: string, value: unknown) {
+      runtimeConfig.packages[packageRoot] = value;
+    },
+    setGlobalConfig(key: string, value: unknown) {
+      runtimeConfig.global[key] = value;
+    },
+  };
+}
+
+type Updater = (methods: ReturnType<typeof updaterMethods>) => void;
+
+// this is how runtime config can get injected at boot. I'm not sure yet if this
+// should be public API, but we certainly need it internally to set things like
+// the global fastboot.isRunning.
+//
+// consumers of this API push a function onto
+// window._embroider_macros_runtime_config. The function is given four methods
+// which allow it to read and write the per-package and global configs. The
+// reason for allowing both read & write is that merging strategies are up to
+// each consumers -- read first, then merge, then write.
+//
+// For an example user of this API, see where we generate
+// embroider_macros_fastboot_init.js' in @embroider/core.
+let updaters: Updater[] | undefined = (window as any)._embroider_macros_runtime_config;
+if (updaters) {
+  let methods = updaterMethods();
+  for (let updater of updaters) {
+    updater(methods);
+  }
+}

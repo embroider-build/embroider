@@ -106,6 +106,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     }
   }
 
+  get env() {
+    return this.oldPackage.env;
+  }
+
   assets(treePaths: OutputPaths<TreeNames>): Asset[] {
     let assets: Asset[] = [];
 

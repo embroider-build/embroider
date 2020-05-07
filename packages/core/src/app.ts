@@ -123,6 +123,9 @@ export interface AppAdapter<TreeNames> {
   // name. When false, your code is treated more leniently and you get the
   // auto-upgraded behaviors that v1 addons also get.
   strictV2Format(): boolean;
+
+  // development, test, or production
+  env: string;
 }
 
 export function excludeDotFiles(files: string[]) {
@@ -505,6 +508,7 @@ export class AppBuilder<TreeNames> {
       let packageJSON = readJSONSync(join(this.activeFastboot.root, '_fastboot_', 'package.json'));
       let { extraAppFiles, extraVendorFiles } = packageJSON['embroider-fastboot'];
       delete packageJSON['embroider-fastboot'];
+      extraVendorFiles.push('assets/embroider_macros_fastboot_init.js');
       return { packageJSON, extraAppFiles, extraVendorFiles };
     }
   }
@@ -696,6 +700,21 @@ export class AppBuilder<TreeNames> {
         }
       }
     }
+
+    if (this.activeFastboot) {
+      const source = `
+      var key = '_embroider_macros_runtime_config';
+      if (!window[key]){ window[key] = [];}
+      window[key].push(function(m) {
+        m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
+      });`;
+      assets.push({
+        kind: 'in-memory',
+        source,
+        relativePath: 'assets/embroider_macros_fastboot_init.js',
+      });
+    }
+
     // and finally tack on the ones from our app itself
     return assets.concat(this.adapter.assets(inputPaths));
   }
@@ -703,6 +722,9 @@ export class AppBuilder<TreeNames> {
   async build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
+    if (this.adapter.env !== 'production') {
+      this.macrosConfig.enableRuntimeMode();
+    }
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);
@@ -1077,8 +1099,8 @@ let d = w.define;
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}
-  import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot")?.isRunning)) {
+  import { macroCondition, getGlobalConfig } from '@embroider/macros';
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}
@@ -1152,8 +1174,8 @@ let d = window.define;
 d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 {{#if fastbootOnlyFiles}}
-  import { macroCondition, getConfig } from '@embroider/macros';
-  if (macroCondition(getConfig("fastboot")?.isRunning)) {
+  import { macroCondition, getGlobalConfig } from '@embroider/macros';
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     {{#each fastbootOnlyFiles as |amdModule| ~}}
     d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
     {{/each}}

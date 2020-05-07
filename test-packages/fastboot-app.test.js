@@ -1,18 +1,17 @@
 const execa = require('execa');
 
-test('engines-host-app embroider', async () => {
+test('fastboot-app embroider', async () => {
   jest.setTimeout(120000);
 
   await execa('yarn', ['test'], {
-    cwd: `${__dirname}/engines-host-app`,
+    cwd: `${__dirname}/fastboot-app`,
   });
 });
 
-test('engines-host-app classic', async () => {
+test('fastboot-app classic', async () => {
   jest.setTimeout(120000);
-
   await execa('yarn', ['test'], {
-    cwd: `${__dirname}/engines-host-app`,
+    cwd: `${__dirname}/fastboot-app`,
     env: { CLASSIC: 'true' },
   });
 });

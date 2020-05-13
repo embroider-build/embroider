@@ -5,6 +5,7 @@ import Options from '../src/options';
 import { join } from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
 import merge from 'lodash/merge';
+import resolve = require('resolve');
 
 describe('stage2 build', function() {
   jest.setTimeout(120000);
@@ -48,6 +49,34 @@ describe('stage2 build', function() {
       depB.addInRepoAddon('in-repo-c', {
         app: { service: { 'in-repo.js': 'in-repo-c' } },
       });
+
+      // make an in-repo addon with a dependency on a secondary in-repo-addon
+      let primary = app.addInRepoAddon('primary-in-repo-addon');
+      if (!primary.pkg['ember-addon']) {
+        primary.pkg['ember-addon'] = {};
+      }
+      if (!primary.pkg['ember-addon'].paths) {
+        primary.pkg['ember-addon'].paths = [];
+      }
+      primary.pkg['ember-addon'].paths.push('../secondary-in-repo-addon');
+
+      // critically, this in-repo addon gets removed from the app's actual
+      // ember-addon.paths, so it's *only* consumed by primary-in-repo-addon.
+      app.addInRepoAddon('secondary-in-repo-addon', {
+        app: {
+          services: {
+            'secondary.js': '// secondary',
+          },
+        },
+        addon: {
+          components: {
+            'secondary.js': '// secondary component',
+          },
+        },
+      });
+      app.pkg['ember-addon'].paths = app.pkg['ember-addon'].paths.filter(
+        (p: string) => p !== 'lib/secondary-in-repo-addon'
+      );
 
       build = await BuildResult.build(app, buildOptions);
       expectFile = expectFilesAt(build.outputPath);
@@ -93,6 +122,18 @@ describe('stage2 build', function() {
 
       // check that the app trees with in repo addon are combined correctly
       expectFile('./service/in-repo.js').matches(/in-repo-c/);
+    });
+
+    it('incorporates in-repo-addons of in-repo-addons correctly', function() {
+      // secondary in-repo-addon was correctly detected and activated
+      expectFile('./service/secondary.js').exists();
+
+      // secondary is resolvable from primary
+      expect(
+        resolve.sync('secondary-in-repo-addon/components/secondary', {
+          basedir: join(build.outputPath, 'my-app', 'node_modules', 'primary-in-repo-addon'),
+        })
+      ).toBeTruthy();
     });
   });
 

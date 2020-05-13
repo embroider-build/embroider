@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
+    "@babel/plugin-proposal-optional-chaining": "^7.9.0",
     "@embroider/babel-loader-7": "0.16.0",
     "@types/source-map": "^0.5.7",
     "babel-core": "^6.26.3",
@@ -42,7 +44,7 @@
     "style-loader": "^0.23.0",
     "terser": "^3.16.1",
     "thread-loader": "^1.2.0",
-    "webpack": "4.28.4"
+    "webpack": "^4.43.0"
   },
   "peerDependencies": {
     "@embroider/core": "0.16.0"

@@ -34,14 +34,11 @@ export default class PackageCache {
     return p;
   }
 
-  overridePackage(pkg: Package) {
+  seed(pkg: Package) {
+    if (this.rootCache.has(pkg.root)) {
+      throw new Error(`bug: tried to seed package ${pkg.name} but it's already in packageCache`);
+    }
     this.rootCache.set(pkg.root, pkg);
-  }
-
-  overrideResolution(packageName: string, fromPackage: Package, answer: Package) {
-    this.rootCache.set(answer.root, answer);
-    let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map());
-    cache.set(packageName, answer);
   }
 
   protected rootCache: Map<string, Package> = new Map();

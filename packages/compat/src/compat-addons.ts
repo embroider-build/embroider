@@ -16,8 +16,6 @@ export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
   private packageCache: MovedPackageCache;
-  private nonResolvableDeps: Package[];
-  private nonResolvableDepsOfAddons: { pkg: Package; dep: Package }[];
   private treeSyncMap: WeakMap<Package, TreeSync>;
   private v1Cache: V1InstanceCache;
   readonly inputPath: string;
@@ -37,21 +35,13 @@ export default class CompatAddons implements Stage {
       this.destDir = realpathSync(dir);
     }
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
-    this.nonResolvableDeps = v1Cache.app.nonResolvableDependencies();
     this.inputPath = v1Cache.app.root;
     this.treeSyncMap = new WeakMap();
     this.v1Cache = v1Cache;
-    this.nonResolvableDepsOfAddons = [];
   }
 
   get tree(): Tree {
-    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => {
-      let { tree, nonResolvableDeps } = buildCompatAddon(oldPkg, this.v1Cache);
-      for (let dep of nonResolvableDeps) {
-        this.nonResolvableDepsOfAddons.push({ pkg: oldPkg, dep });
-      }
-      return tree;
-    });
+    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, this.v1Cache));
     let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
     return new WaitForTrees(
       { movedAddons, synthVendor, synthStyles },
@@ -161,34 +151,40 @@ export default class CompatAddons implements Stage {
       });
     }
 
-    this.handleNonResolvableDeps();
+    if (!this.didBuild) {
+      this.handleNonResolvableDeps();
+    }
     this.didBuild = true;
     this.deferReady.resolve();
   }
 
   private handleNonResolvableDeps() {
-    for (let dep of this.nonResolvableDeps) {
-      let moved = this.packageCache.moved.get(dep);
-      if (moved) {
-        dep = moved;
+    // non-resolvable deps in addons
+    for (let [oldPkg, newPkg] of this.packageCache.moved.entries()) {
+      if (!oldPkg.nonResolvableDeps) {
+        continue;
       }
-      let target = join(this.appDestDir, 'node_modules', dep.name);
-      ensureDirSync(dirname(target));
-      ensureSymlinkSync(dep.root, target, 'dir');
+      for (let dep of oldPkg.nonResolvableDeps.values()) {
+        let moved = this.packageCache.moved.get(dep);
+        if (moved) {
+          dep = moved;
+        }
+        let target = join(newPkg.root, 'node_modules', dep.name);
+        ensureDirSync(dirname(target));
+        ensureSymlinkSync(dep.root, target, 'dir');
+      }
     }
-
-    for (let { dep, pkg } of this.nonResolvableDepsOfAddons) {
-      let movedPkg = this.packageCache.moved.get(pkg);
-      let movedDep = this.packageCache.moved.get(dep);
-      if (movedPkg) {
-        pkg = movedPkg;
+    // non-resolvable deps in app
+    if (this.packageCache.app.nonResolvableDeps) {
+      for (let dep of this.packageCache.app.nonResolvableDeps.values()) {
+        let moved = this.packageCache.moved.get(dep);
+        if (moved) {
+          dep = moved;
+        }
+        let target = join(this.appDestDir, 'node_modules', dep.name);
+        ensureDirSync(dirname(target));
+        ensureSymlinkSync(dep.root, target, 'dir');
       }
-      if (movedDep) {
-        dep = movedDep;
-      }
-      let target = join(pkg.root, 'node_modules', dep.name);
-      ensureDirSync(dirname(target));
-      ensureSymlinkSync(dep.root, target, 'dir');
     }
   }
 

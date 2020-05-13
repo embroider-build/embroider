@@ -5,7 +5,7 @@ import Options from '../src/options';
 import { join } from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
 import merge from 'lodash/merge';
-import resolve = require('resolve');
+import resolve from 'resolve';
 
 describe('stage2 build', function() {
   jest.setTimeout(120000);
@@ -91,15 +91,15 @@ describe('stage2 build', function() {
       expectFile('./node_modules/dep-a/package.json')
         .json()
         .get('dependencies.in-repo-a')
-        .equals('*');
+        .equals('0.0.0');
       expectFile('./node_modules/dep-b/package.json')
         .json()
         .get('dependencies.in-repo-b')
-        .equals('*');
+        .equals('0.0.0');
       expectFile('./node_modules/dep-b/package.json')
         .json()
         .get('dependencies.in-repo-c')
-        .equals('*');
+        .equals('0.0.0');
 
       // check that symlinks are correct
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json').exists();
@@ -126,12 +126,12 @@ describe('stage2 build', function() {
 
     it('incorporates in-repo-addons of in-repo-addons correctly', function() {
       // secondary in-repo-addon was correctly detected and activated
-      expectFile('./service/secondary.js').exists();
+      expectFile('./services/secondary.js').exists();
 
       // secondary is resolvable from primary
       expect(
         resolve.sync('secondary-in-repo-addon/components/secondary', {
-          basedir: join(build.outputPath, 'my-app', 'node_modules', 'primary-in-repo-addon'),
+          basedir: join(build.outputPath, 'node_modules', 'primary-in-repo-addon'),
         })
       ).toBeTruthy();
     });

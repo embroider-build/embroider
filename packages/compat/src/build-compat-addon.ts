@@ -8,27 +8,21 @@ import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
-export default function cachedBuildCompatAddon(
-  originalPackage: Package,
-  v1Cache: V1InstanceCache
-): { tree: Tree; nonResolvableDeps: Package[] } {
-  let { tree, nonResolvableDeps } = buildCompatAddon(originalPackage, v1Cache);
+export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
+  let tree = buildCompatAddon(originalPackage, v1Cache);
   if (!originalPackage.mayRebuild) {
     tree = new OneShot(tree);
   }
-  return { tree, nonResolvableDeps };
+  return tree;
 }
 
-function buildCompatAddon(
-  originalPackage: Package,
-  v1Cache: V1InstanceCache
-): { tree: Tree; nonResolvableDeps: Package[] } {
+function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
   if (originalPackage.isV2Addon()) {
     // this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and
     // therefore moved, so to continue depending on it the native one needs to
     // move too.)
-    return { tree: withoutNodeModules(originalPackage.root), nonResolvableDeps: [] };
+    return withoutNodeModules(originalPackage.root);
   }
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
@@ -42,26 +36,16 @@ function buildCompatAddon(
     // because that whole process only depends on looking at all the
     // package.json files on disk -- it can't know which ones are going to end
     // up unused at this point.
-    return { tree: new EmptyPackageTree(), nonResolvableDeps: [] };
-  }
-
-  let nonResolvableDependencies: Set<Package> = new Set();
-  for (let pkg of oldPackages) {
-    for (let dep of pkg.nonResolvableDependencies()) {
-      nonResolvableDependencies.add(dep);
-    }
+    return new EmptyPackageTree();
   }
 
   let needsSmooshing = oldPackages[0].hasAnyTrees();
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees);
-    return {
-      tree: broccoliMergeTrees([...trees, smoosher], { overwrite: true }),
-      nonResolvableDeps: Array.from(nonResolvableDependencies),
-    };
+    return broccoliMergeTrees([...trees, smoosher], { overwrite: true });
   } else {
-    return { tree: oldPackages[0].v2Tree, nonResolvableDeps: Array.from(nonResolvableDependencies) };
+    return oldPackages[0].v2Tree;
   }
 }
 

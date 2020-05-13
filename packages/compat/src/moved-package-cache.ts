@@ -281,6 +281,12 @@ function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) 
       if (prop === 'dependencies') {
         return pkg.dependencies.map(getMovedPackage);
       }
+      if (prop === 'nonResolvableDeps') {
+        if (!pkg.nonResolvableDeps) {
+          return pkg.nonResolvableDeps;
+        }
+        return new Map([...pkg.nonResolvableDeps.values()].map(dep => [dep.name, getMovedPackage(dep)]));
+      }
       if (prop === 'findDescendants') {
         return pkg.findDescendants.bind(p);
       }

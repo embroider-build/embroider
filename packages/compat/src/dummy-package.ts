@@ -8,25 +8,19 @@ export default class DummyPackage extends Package {
   }
 
   @Memoize()
-  get packageJSON() {
+  protected get internalPackageJSON() {
     let pkg = cloneDeep(this.owningAddon.packageJSON);
     pkg.name = 'dummy';
-    if (!pkg.devDependencies) {
-      pkg.devDependencies = {};
-    }
-    // the dummy app has a dependency on the owning addon
-    pkg.devDependencies[this.owningAddon.name] = this.owningAddon.version;
     return pkg;
   }
 
   @Memoize()
-  get dependencies(): Package[] {
-    // we can't use this.owningAddon.dependencies because that won't include
-    // devDeps. We need to construct a new temporary package with the
-    // mayUseDevDeps flag to true.
-    let upstream = new Package(this.owningAddon.root, this.packageCache, true).dependencies.slice();
-    // the dummy app has a dependency on the owning addon
-    upstream.unshift(this.owningAddon);
-    return upstream;
+  get nonResolvableDeps(): Map<string, Package> {
+    let deps = super.nonResolvableDeps;
+    if (!deps) {
+      deps = new Map();
+    }
+    deps.set(this.owningAddon.name, this.owningAddon);
+    return deps;
   }
 }

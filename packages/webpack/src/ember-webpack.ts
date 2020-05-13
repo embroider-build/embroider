@@ -249,17 +249,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe),
-              {
-                loader: babel.majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                options: Object.assign({}, require(join(this.pathToVanillaApp, babel.filename)), {
-                  // all stage3 packagers should keep persistent caches under
-                  // `join(tmpdir(), 'embroider')`. An important reason is that
-                  // they should have exactly the same lifetime as some of
-                  // embroider's own caches.
-                  cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
-                }),
-              },
+              babelLoaderOptions(babel.majorVersion, join(this.pathToVanillaApp, babel.filename)),
             ]),
           },
           {
@@ -565,6 +555,30 @@ interface StatSummary {
 // this.
 function nonNullArray<T>(array: T[]): NonNullable<T>[] {
   return array.filter(Boolean) as NonNullable<T>[];
+}
+
+function babelLoaderOptions(majorVersion: 6 | 7, appBabelConfigPath: string) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  let options = Object.assign({}, require(appBabelConfigPath), {
+    // all stage3 packagers should keep persistent caches under
+    // `join(tmpdir(), 'embroider')`. An important reason is that
+    // they should have exactly the same lifetime as some of
+    // embroider's own caches.
+    cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+  });
+  if (majorVersion === 7) {
+    if (!options.plugins) {
+      options.plugins = [];
+    }
+    // webpack uses acorn and acorn doesn't parse these features yet, so we
+    // always tranpile them away regardless of what preset-env is doing
+    options.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
+    options.plugins.push(require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'));
+  }
+  return {
+    loader: majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
+    options,
+  };
 }
 
 export { Webpack };

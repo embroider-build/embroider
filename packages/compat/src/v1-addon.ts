@@ -696,7 +696,9 @@ export default class V1Addon implements V1Package {
         tree = new Funnel(this.rootTree, { srcDir: 'fastboot' });
       }
       tree = this.addonInstance.treeForFastBoot(tree);
-      tree = new Funnel(tree, { destDir: fastbootPublicationDir });
+      if (tree) {
+        tree = new Funnel(tree, { destDir: fastbootPublicationDir });
+      }
     } else {
       if (pathExistsSync(join(this.root, 'fastboot'))) {
         tree = new Funnel(this.rootTree, { srcDir: 'fastboot', destDir: fastbootPublicationDir });

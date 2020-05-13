@@ -298,6 +298,18 @@ describe('stage1 build', function() {
         },
       };
 
+      // an addon that nullifies its custom fastboot tree with a custom fastboot hook
+      let undefinedFastboot = app.addAddon('undefined-fastboot');
+      merge(undefinedFastboot.files, {
+        'index.js': `module.exports = {
+          name: 'undefined-fastboot',
+          treeForFastBoot() {}
+        }`,
+        fastboot: {
+          'something.js': '',
+        },
+      });
+
       build = await BuildResult.build(app, { stage: 1, type: 'app' });
       expectFile = expectFilesAt(build.outputPath);
     });
@@ -313,6 +325,13 @@ describe('stage1 build', function() {
     test('custom tree hooks are detected in addons that manually extend from Addon', function() {
       let assertFile = expectFile('node_modules/has-custom-base/file.js');
       assertFile.matches(/weird-addon-path\/file\.js/);
+    });
+
+    test('no fastboot-js is emitted', function() {
+      expectFile('node_modules/undefined-fastboot/package.json')
+        .json()
+        .get('ember-addon.fastboot-js')
+        .equals(undefined);
     });
   });
 });

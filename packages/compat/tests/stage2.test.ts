@@ -5,6 +5,7 @@ import Options from '../src/options';
 import { join } from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
 import merge from 'lodash/merge';
+import resolve from 'resolve';
 
 describe('stage2 build', function() {
   jest.setTimeout(120000);
@@ -49,6 +50,34 @@ describe('stage2 build', function() {
         app: { service: { 'in-repo.js': 'in-repo-c' } },
       });
 
+      // make an in-repo addon with a dependency on a secondary in-repo-addon
+      let primary = app.addInRepoAddon('primary-in-repo-addon');
+      if (!primary.pkg['ember-addon']) {
+        primary.pkg['ember-addon'] = {};
+      }
+      if (!primary.pkg['ember-addon'].paths) {
+        primary.pkg['ember-addon'].paths = [];
+      }
+      primary.pkg['ember-addon'].paths.push('../secondary-in-repo-addon');
+
+      // critically, this in-repo addon gets removed from the app's actual
+      // ember-addon.paths, so it's *only* consumed by primary-in-repo-addon.
+      app.addInRepoAddon('secondary-in-repo-addon', {
+        app: {
+          services: {
+            'secondary.js': '// secondary',
+          },
+        },
+        addon: {
+          components: {
+            'secondary.js': '// secondary component',
+          },
+        },
+      });
+      app.pkg['ember-addon'].paths = app.pkg['ember-addon'].paths.filter(
+        (p: string) => p !== 'lib/secondary-in-repo-addon'
+      );
+
       build = await BuildResult.build(app, buildOptions);
       expectFile = expectFilesAt(build.outputPath);
     });
@@ -62,20 +91,20 @@ describe('stage2 build', function() {
       expectFile('./node_modules/dep-a/package.json')
         .json()
         .get('dependencies.in-repo-a')
-        .equals('*');
+        .equals('0.0.0');
       expectFile('./node_modules/dep-b/package.json')
         .json()
         .get('dependencies.in-repo-b')
-        .equals('*');
+        .equals('0.0.0');
       expectFile('./node_modules/dep-b/package.json')
         .json()
         .get('dependencies.in-repo-c')
-        .equals('*');
+        .equals('0.0.0');
 
       // check that symlinks are correct
-      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json');
-      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json');
-      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json');
+      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json').exists();
+      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json').exists();
+      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json').exists();
 
       // check that the in repo addons are correct upgraded
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json')
@@ -93,6 +122,18 @@ describe('stage2 build', function() {
 
       // check that the app trees with in repo addon are combined correctly
       expectFile('./service/in-repo.js').matches(/in-repo-c/);
+    });
+
+    it('incorporates in-repo-addons of in-repo-addons correctly', function() {
+      // secondary in-repo-addon was correctly detected and activated
+      expectFile('./services/secondary.js').exists();
+
+      // secondary is resolvable from primary
+      expect(
+        resolve.sync('secondary-in-repo-addon/components/secondary', {
+          basedir: join(build.outputPath, 'node_modules', 'primary-in-repo-addon'),
+        })
+      ).toBeTruthy();
     });
   });
 
@@ -466,25 +507,23 @@ describe('stage2 build', function() {
     });
 
     test('transpilation runs for ember addons', async function() {
-      expect(
-        build.shouldTranspile(expectFile('node_modules/my-addon/components/has-relative-template.js'))
-      ).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/my-addon/components/has-relative-template.js')).toBeTruthy();
     });
 
     test('transpilation is skipped when package matches skipBabel', async function() {
-      expect(!build.shouldTranspile(expectFile('node_modules/babel-filter-test1/index.js'))).toBeTruthy();
+      expect(!build.shouldTranspile('node_modules/babel-filter-test1/index.js')).toBeTruthy();
     });
 
     test('transpilation is skipped when package and version match skipBabel', async function() {
-      expect(!build.shouldTranspile(expectFile('node_modules/babel-filter-test2/index.js'))).toBeTruthy();
+      expect(!build.shouldTranspile('node_modules/babel-filter-test2/index.js')).toBeTruthy();
     });
 
     test('transpilation runs when package version does not match skipBabel', async function() {
-      expect(build.shouldTranspile(expectFile('node_modules/babel-filter-test3/index.js'))).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/babel-filter-test3/index.js')).toBeTruthy();
     });
 
     test('transpilation runs for non-ember package that is not explicitly skipped', async function() {
-      expect(build.shouldTranspile(expectFile('node_modules/babel-filter-test4/index.js'))).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/babel-filter-test4/index.js')).toBeTruthy();
     });
 
     test(`app's babel plugins ran`, async function() {

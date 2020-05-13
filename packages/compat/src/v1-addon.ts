@@ -13,7 +13,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, Package } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -26,7 +26,6 @@ import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 import { ResolvedDep } from '@embroider/core/src/resolver';
-import ExtendedPackage from './extended-package';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -95,20 +94,6 @@ export default class V1Addon implements V1Package {
   ) {
     if (addonInstance.registry) {
       this.updateRegistry(addonInstance.registry);
-    }
-
-    this.extendPackage();
-  }
-
-  protected extendPackage() {
-    let meta = this.packageJSON['ember-addon'];
-    if (meta && meta.paths) {
-      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
-      let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
-      this.packageCache.overridePackage(extendedPackage);
-      for (let addon of inRepoAddons) {
-        this.packageCache.overrideResolution(this.packageJSON.name, addon.name, addon);
-      }
     }
   }
 
@@ -434,14 +419,6 @@ export default class V1Addon implements V1Package {
     }
   }
 
-  nonResolvableDependencies(): Package[] {
-    let meta = this.packageJSON['ember-addon'];
-    if (meta && meta.paths) {
-      return meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
-    }
-    return [];
-  }
-
   get v2Tree(): Tree {
     return this.throughTreeCache('addon', 'v2Tree', () => mergeTrees(this.v2Trees, { overwrite: true }));
   }
@@ -456,12 +433,6 @@ export default class V1Addon implements V1Package {
   @Memoize()
   protected get v2Trees() {
     let { trees } = this.build();
-    let packageJSONRewriter = new RewritePackageJSON(
-      this.rootTree,
-      () => this.packageMeta,
-      () => this.nonResolvableDependencies()
-    );
-    trees.push(packageJSONRewriter);
     return trees;
   }
 
@@ -795,6 +766,15 @@ export default class V1Addon implements V1Package {
     built.trees.push(configTree);
   }
 
+  private buildPackageJSON(built: IntermediateBuild) {
+    let packageJSONRewriter = new RewritePackageJSON(
+      this.rootTree,
+      () => this.packageMeta,
+      this.packageCache.get(this.root).packageJSON
+    );
+    built.trees.push(packageJSONRewriter);
+  }
+
   @Memoize()
   private build(): IntermediateBuild {
     let built = new IntermediateBuild();
@@ -824,7 +804,7 @@ export default class V1Addon implements V1Package {
     this.buildPublicTree(built);
     this.buildVendorTree(built);
     this.buildEngineConfig(built);
-
+    this.buildPackageJSON(built);
     return built;
   }
 }

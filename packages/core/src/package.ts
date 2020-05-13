@@ -30,8 +30,22 @@ export default class Package {
   }
 
   @Memoize()
-  get packageJSON() {
+  protected get internalPackageJSON() {
     return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+  }
+
+  @Memoize()
+  get packageJSON() {
+    let json = this.internalPackageJSON;
+    if (this.nonResolvableDeps) {
+      if (!json.dependencies) {
+        json.dependencies = {};
+      }
+      for (let dep of this.nonResolvableDeps.values()) {
+        json.dependencies[dep.name] = dep.version || '*';
+      }
+    }
+    return json;
   }
 
   get meta(): AddonMeta | AppMeta | undefined {
@@ -111,9 +125,30 @@ export default class Package {
   }
 
   @Memoize()
+  get nonResolvableDeps(): Map<string, Package> | undefined {
+    let meta = this.internalPackageJSON['ember-addon'];
+    if (meta && meta.paths) {
+      return new Map(
+        meta.paths.map((path: string) => {
+          let pkg = this.packageCache.get(join(this.root, path));
+          return [pkg.name, pkg];
+        })
+      );
+    }
+  }
+
+  @Memoize()
   get dependencies(): Package[] {
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
-    return names.map(name => this.packageCache.resolve(name, this));
+    return names.map(name => {
+      if (this.nonResolvableDeps) {
+        let dep = this.nonResolvableDeps.get(name);
+        if (dep) {
+          return dep;
+        }
+      }
+      return this.packageCache.resolve(name, this);
+    });
   }
 
   hasDependency(name: string): boolean {

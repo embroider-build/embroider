@@ -200,6 +200,7 @@ export class Project extends FixturifyProject {
 
   private packageLinks: Map<string, string> = new Map();
   private devPackageLinks: Set<string> = new Set();
+  private inRepoAddons: Set<Project> = new Set();
 
   linkDevPackage(name: string, target?: string) {
     this.devPackageLinks.add(name);
@@ -228,6 +229,11 @@ export class Project extends FixturifyProject {
       let { project, root } = stack.shift()!;
       for (let [name, target] of project.packageLinks) {
         ensureSymlinkSync(target, join(root, project.name, 'node_modules', name), 'dir');
+      }
+      for (let dep of project.inRepoAddons) {
+        let root = join(project.root, project.name, 'lib');
+        dep.writeSync(root);
+        stack.push({ project: dep, root });
       }
       for (let dep of project.dependencies()) {
         stack.push({ project: dep as Project, root: join(root, project.name, 'node_modules') });
@@ -276,7 +282,7 @@ export class Project extends FixturifyProject {
     return addon;
   }
 
-  addInRepoAddon(name: string, additionalFiles: {}) {
+  addInRepoAddon(name: string, additionalFiles?: {}) {
     if (!this.pkg['ember-addon']) {
       this.pkg['ember-addon'] = {};
     }
@@ -287,27 +293,17 @@ export class Project extends FixturifyProject {
 
     this.pkg['ember-addon'].paths.push(`lib/${name}`);
 
-    let inRepoAddon = {
-      files: {
-        lib: {
-          [name]: {
-            'index.js': addonIndexFile(''),
-            'package.json': JSON.stringify(
-              {
-                name,
-                keywords: ['ember-addon'],
-              },
-              null,
-              2
-            ),
-          },
-        },
+    let addon = new Project(name);
+    merge(
+      addon.files,
+      {
+        'index.js': addonIndexFile(''),
       },
-    };
-
-    merge(inRepoAddon.files.lib[name], additionalFiles);
-    merge(this.files, inRepoAddon.files);
-    return inRepoAddon;
+      additionalFiles
+    );
+    addon.pkg['keywords'] = ['ember-addon'];
+    this.inRepoAddons.add(addon);
+    return addon;
   }
 
   toJSON(): Project['files'];

@@ -16,7 +16,6 @@ import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
-import ExtendedPackage from './extended-package';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
@@ -67,21 +66,7 @@ export default class V1App implements V1Package {
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
-  protected constructor(protected app: EmberApp, protected packageCache: PackageCache) {
-    this.extendPackage();
-  }
-
-  protected extendPackage() {
-    let meta = this.app.project.pkg['ember-addon'];
-    if (meta && meta.paths) {
-      let inRepoAddons = meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
-      let extendedPackage = new ExtendedPackage(this.root, inRepoAddons, this.packageCache);
-      this.packageCache.overridePackage(extendedPackage);
-      for (let addon of inRepoAddons) {
-        this.packageCache.overrideResolution(this.app.project.pkg.name, addon.name, addon);
-      }
-    }
-  }
+  protected constructor(protected app: EmberApp, protected packageCache: PackageCache) {}
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
@@ -130,17 +115,6 @@ export default class V1App implements V1Package {
 
   private get appUtils() {
     return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
-  }
-
-  // these are packages that we depend on that aren't resolvable via normal
-  // node_modules rules. In-repo addons are one example. Another example is the
-  // way an addon's dummy app implicitly depends on the addon (see V1DummyApp).
-  nonResolvableDependencies(): Package[] {
-    let meta = this.app.project.pkg['ember-addon'];
-    if (meta && meta.paths) {
-      return meta.paths.map((path: string) => this.packageCache.get(join(this.root, path)));
-    }
-    return [];
   }
 
   @Memoize()
@@ -703,11 +677,10 @@ export default class V1App implements V1Package {
 class V1DummyApp extends V1App {
   private owningAddon!: Package;
 
-  extendPackage() {
+  constructor(app: EmberApp, packageCache: PackageCache) {
+    super(app, packageCache);
     this.owningAddon = this.packageCache.get(this.app.project.root);
-    let dummyPackage = new DummyPackage(this.root, this.owningAddon, this.packageCache);
-    this.packageCache.overridePackage(dummyPackage);
-    this.packageCache.overrideResolution(this.app.project.pkg.name, dummyPackage, this.owningAddon);
+    this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
   }
 
   get name(): string {
@@ -718,12 +691,6 @@ class V1DummyApp extends V1App {
   get root(): string {
     // this is the Known Hack for finding the true root of the dummy app.
     return join(this.app.project.configPath(), '..', '..');
-  }
-
-  nonResolvableDependencies() {
-    let deps = super.nonResolvableDependencies();
-    deps.push(this.owningAddon);
-    return deps;
   }
 }
 

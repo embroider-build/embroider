@@ -16,7 +16,7 @@ export default class V1InstanceCache {
 
   static forApp(emberApp: object, options: Required<Options>): V1InstanceCache {
     let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
-    if (options && !isEqual(instance.options, options)) {
+    if (!isEqual(instance.options, options)) {
       throw new Error(`attempted double set of app Options`);
     }
     return instance;

@@ -77,10 +77,10 @@ export default class BuildResult {
     await this.builder.build();
   }
 
-  shouldTranspile(fileAssert: BoundExpectFile) {
+  shouldTranspile(relativePath: string) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     let shouldTranspile = require(join(this.outputPath, '_babel_filter_'));
-    return shouldTranspile(fileAssert.fullPath) as boolean;
+    return shouldTranspile(join(this.outputPath, relativePath)) as boolean;
   }
 
   @Memoize()

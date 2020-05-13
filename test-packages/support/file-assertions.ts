@@ -7,7 +7,17 @@ type ContentsResult = { result: true; data: string } | { result: false; actual: 
 type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
 
 export class BoundExpectFile {
-  constructor(readonly basePath: string, readonly path: string, readonly stack: Error) {}
+  private consumed = false;
+
+  constructor(readonly basePath: string, readonly path: string, readonly stack: Error) {
+    Promise.resolve().then(() => {
+      if (!this.consumed) {
+        this.stack.message =
+          "expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything";
+        throw this.stack;
+      }
+    });
+  }
 
   @Memoize()
   get fullPath() {
@@ -20,6 +30,7 @@ export class BoundExpectFile {
 
   @Memoize()
   protected get contents(): ContentsResult {
+    this.consumed = true;
     try {
       return {
         result: true,
@@ -36,6 +47,7 @@ export class BoundExpectFile {
   }
 
   exists(message?: string) {
+    this.consumed = true;
     assert(this.stack, this.path, {
       result: pathExistsSync(this.fullPath),
       actual: 'file missing',
@@ -45,6 +57,7 @@ export class BoundExpectFile {
   }
 
   doesNotExist(message?: string) {
+    this.consumed = true;
     assert(this.stack, this.path, {
       result: !pathExistsSync(this.fullPath),
       actual: 'file present',
@@ -109,6 +122,7 @@ export class BoundExpectFile {
     );
   }
   transform(fn: (contents: string, file: BoundExpectFile) => string) {
+    this.consumed = true;
     return new TransformedFileExpect(this.basePath, this.path, this.stack, fn);
   }
 }

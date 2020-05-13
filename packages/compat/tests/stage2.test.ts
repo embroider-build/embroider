@@ -73,9 +73,9 @@ describe('stage2 build', function() {
         .equals('*');
 
       // check that symlinks are correct
-      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json');
-      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json');
-      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json');
+      expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json').exists();
+      expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json').exists();
+      expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json').exists();
 
       // check that the in repo addons are correct upgraded
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json')
@@ -466,25 +466,23 @@ describe('stage2 build', function() {
     });
 
     test('transpilation runs for ember addons', async function() {
-      expect(
-        build.shouldTranspile(expectFile('node_modules/my-addon/components/has-relative-template.js'))
-      ).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/my-addon/components/has-relative-template.js')).toBeTruthy();
     });
 
     test('transpilation is skipped when package matches skipBabel', async function() {
-      expect(!build.shouldTranspile(expectFile('node_modules/babel-filter-test1/index.js'))).toBeTruthy();
+      expect(!build.shouldTranspile('node_modules/babel-filter-test1/index.js')).toBeTruthy();
     });
 
     test('transpilation is skipped when package and version match skipBabel', async function() {
-      expect(!build.shouldTranspile(expectFile('node_modules/babel-filter-test2/index.js'))).toBeTruthy();
+      expect(!build.shouldTranspile('node_modules/babel-filter-test2/index.js')).toBeTruthy();
     });
 
     test('transpilation runs when package version does not match skipBabel', async function() {
-      expect(build.shouldTranspile(expectFile('node_modules/babel-filter-test3/index.js'))).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/babel-filter-test3/index.js')).toBeTruthy();
     });
 
     test('transpilation runs for non-ember package that is not explicitly skipped', async function() {
-      expect(build.shouldTranspile(expectFile('node_modules/babel-filter-test4/index.js'))).toBeTruthy();
+      expect(build.shouldTranspile('node_modules/babel-filter-test4/index.js')).toBeTruthy();
     });
 
     test(`app's babel plugins ran`, async function() {

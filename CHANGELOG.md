@@ -1,5 +1,10 @@
 # Embroider Changelog
 
+## 0.16.1
+
+- BUGFIX: addons that return undefined from treeForFastboot caused a build-time exception
+- BUGFIX: apps with sufficiently modern preset-env configuration saw webpack parse errors
+
 ## 0.16.0
 
 - BUGFIX: improved support for in-repo addons, including in-repo addons inside in-repo addons

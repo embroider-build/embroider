@@ -22,9 +22,9 @@
   },
   "devDependencies": {
     "@ember/optional-features": "^1.3.0",
-    "@embroider/compat": "0.15.0",
-    "@embroider/core": "0.15.0",
-    "@embroider/webpack": "0.15.0",
+    "@embroider/compat": "0.16.0",
+    "@embroider/core": "0.16.0",
+    "@embroider/webpack": "0.16.0",
     "@glimmer/component": "^1.0.0",
     "@glimmer/tracking": "^1.0.0",
     "babel-eslint": "^10.1.0",

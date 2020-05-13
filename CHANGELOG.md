@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+## 0.16.0
+
+- BUGFIX: improved support for in-repo addons, including in-repo addons inside in-repo addons
+- ENHANCEMENT: full fastboot support (depends on upstream changes in fastboot that are still in a PR)
+- ENHANCEMENT: addon rebuilding improvements
+- BUGFIX: make @embroider/router coexist correctly with ember-engines
+
 ## 0.15.0
 
 - ENHANCEMENT: lazy engines' own JS is now loaded lazily by @thoov

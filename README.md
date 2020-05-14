@@ -42,13 +42,11 @@ The main risks to be aware of if you choose to use Embroider in production are:
 - Embroider's own configuration options are subject to change, so you'll need
   to read the CHANGELOG.md when updating the Embroider packages.
 
-## V2 Package Spec
+## For Addon Authors
 
-See [SPEC.md](SPEC.md) for a draft of the new addon publication format we are
-targeting. Addon authors **SHOULD NOT** publish packages to NPM that use this
-format (yet), because it's still subject to change. The spec will eventually
-become an RFC, and only once that is final is it a good idea to publish using
-the format.
+The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors **SHOULD NOT** publish packages to NPM that use this format until the RFC is merged.
+
+Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
 
 ## How to try it
 
@@ -106,6 +104,7 @@ The recommended steps when introducing Embroider into an existing app are:
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
 
 ## Analyzing Bundles
+
 see [`ANALYZING.md`](ANALYZING.md)
 
 ## Contributing

@@ -1,5 +1,10 @@
 # Embroider Changelog
 
+## 0.17.0
+
+- COMPAT: tolerate broken in-repo-addons for compatibility with ember-cli by @thoov
+- ENHANCEMENT: add data-fastboot-ignore to scripts that shouldn't run in fastboot by @thoov
+
 ## 0.16.1
 
 - BUGFIX: addons that return undefined from treeForFastboot caused a build-time exception

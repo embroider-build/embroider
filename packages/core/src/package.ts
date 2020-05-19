@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { readFileSync, readJsonSync, existsSync } from 'fs-extra';
+import { readFileSync, existsSync } from 'fs-extra';
 import { join, extname } from 'path';
 import get from 'lodash/get';
 import { AddonMeta, AppMeta } from './metadata';
@@ -130,43 +130,37 @@ export default class Package {
     if (meta && meta.paths) {
       return new Map(
         meta.paths
-          .filter((path: string) => {
+          .map((path: string) => {
             // ember-cli gives a warning if the path specifies an invalid, malformed or missing addon. the logic for invalidating an addon is:
             // https://github.com/ember-cli/ember-cli/blob/627934f91b2aa0e19b041fdb1b547873c1855793/lib/models/package-info-cache/index.js#L427
-            let pathRoot = join(this.root, path);
-            let pathPkg = join(this.root, path, 'package.json');
-
-            if (!existsSync(pathRoot) || !existsSync(pathPkg)) {
-              // reject if either the path doesn't exist or the path does not
-              // contain a package.json
-              return false;
-            }
-
+            //
+            // Note that we only need to be this lenient with in-repo addons,
+            // which is why this logic is here in nonResolvableDeps. If you try
+            // to ship broken stuff in regular dependencies, NPM is going to
+            // stop you.
+            let pkg;
             try {
-              let pkg = readJsonSync(pathPkg);
-              let main = (pkg['ember-addon'] && pkg['ember-addon'].main) || pkg['main'];
-
-              if (!main || main === '.' || main === './') {
-                main = 'index.js';
-              } else if (!extname(main)) {
-                main = `${main}.js`;
-              }
-
-              let mainPath = join(this.root, path, main);
-              if (!existsSync(mainPath)) {
-                return false;
-              }
-            } catch (e) {
-              // reject if there is malformed package.json
+              pkg = this.packageCache.get(join(this.root, path));
+            } catch (err) {
+              // package was missing or had invalid package.json
               return false;
             }
+            let main =
+              (pkg.packageJSON['ember-addon'] && pkg.packageJSON['ember-addon'].main) || pkg.packageJSON['main'];
+            if (!main || main === '.' || main === './') {
+              main = 'index.js';
+            } else if (!extname(main)) {
+              main = `${main}.js`;
+            }
 
-            return true;
-          })
-          .map((path: string) => {
-            let pkg = this.packageCache.get(join(this.root, path));
+            let mainPath = join(this.root, path, main);
+            if (!existsSync(mainPath)) {
+              // package has no valid main
+              return false;
+            }
             return [pkg.name, pkg];
           })
+          .filter(Boolean)
       );
     }
   }

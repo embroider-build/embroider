@@ -1,6 +1,6 @@
 import { Memoize } from 'typescript-memoize';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync } from 'fs-extra';
+import { join, extname } from 'path';
 import get from 'lodash/get';
 import { AddonMeta, AppMeta } from './metadata';
 import PackageCache from './package-cache';
@@ -129,10 +129,38 @@ export default class Package {
     let meta = this.internalPackageJSON['ember-addon'];
     if (meta && meta.paths) {
       return new Map(
-        meta.paths.map((path: string) => {
-          let pkg = this.packageCache.get(join(this.root, path));
-          return [pkg.name, pkg];
-        })
+        meta.paths
+          .map((path: string) => {
+            // ember-cli gives a warning if the path specifies an invalid, malformed or missing addon. the logic for invalidating an addon is:
+            // https://github.com/ember-cli/ember-cli/blob/627934f91b2aa0e19b041fdb1b547873c1855793/lib/models/package-info-cache/index.js#L427
+            //
+            // Note that we only need to be this lenient with in-repo addons,
+            // which is why this logic is here in nonResolvableDeps. If you try
+            // to ship broken stuff in regular dependencies, NPM is going to
+            // stop you.
+            let pkg;
+            try {
+              pkg = this.packageCache.get(join(this.root, path));
+            } catch (err) {
+              // package was missing or had invalid package.json
+              return false;
+            }
+            let main =
+              (pkg.packageJSON['ember-addon'] && pkg.packageJSON['ember-addon'].main) || pkg.packageJSON['main'];
+            if (!main || main === '.' || main === './') {
+              main = 'index.js';
+            } else if (!extname(main)) {
+              main = `${main}.js`;
+            }
+
+            let mainPath = join(this.root, path, main);
+            if (!existsSync(mainPath)) {
+              // package has no valid main
+              return false;
+            }
+            return [pkg.name, pkg];
+          })
+          .filter(Boolean)
       );
     }
   }

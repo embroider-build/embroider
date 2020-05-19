@@ -332,16 +332,7 @@ export default class CompatResolver implements Resolver {
 
     // first, the various places our template might be
     for (let extension of extensions) {
-      let absPath = join(this.params.root, 'components', path, 'index') + '.hbs';
-      if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/templates/components/${path}`,
-          absPath,
-        });
-        break;
-      }
-
-      absPath = join(this.params.root, 'templates', 'components', path) + extension;
+      let absPath = join(this.params.root, 'templates', 'components', path) + extension;
       if (pathExistsSync(absPath)) {
         componentModules.push({
           runtimeName: `${this.params.modulePrefix}/templates/components/${path}`,

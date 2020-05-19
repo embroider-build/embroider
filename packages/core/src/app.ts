@@ -360,6 +360,15 @@ export class AppBuilder<TreeNames> {
   ) {
     let html = asset.html;
 
+    if (this.fastbootConfig) {
+      // ignore scripts like ember-cli-livereload.js which are not really associated with
+      // "the app".
+      let ignoreScripts = html.dom.window.document.querySelectorAll('script');
+      ignoreScripts.forEach(script => {
+        script.setAttribute('data-fastboot-ignore', '');
+      });
+    }
+
     // our tests entrypoint already includes a correct module dependency on the
     // app, so we only insert the app when we're not inserting tests
     if (!asset.fileAsset.includeTests) {

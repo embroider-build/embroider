@@ -370,7 +370,16 @@ export default class CompatResolver implements Resolver {
         continue;
       }
 
-      let absPath = join(this.params.root, 'components', path) + extension;
+      let absPath = join(this.params.root, 'components', path, 'index') + extension;
+      if (pathExistsSync(absPath)) {
+        componentModules.push({
+          runtimeName: `${this.params.modulePrefix}/components/${path}`,
+          absPath,
+        });
+        break;
+      }
+
+      absPath = join(this.params.root, 'components', path) + extension;
       if (pathExistsSync(absPath)) {
         componentModules.push({
           runtimeName: `${this.params.modulePrefix}/components/${path}`,

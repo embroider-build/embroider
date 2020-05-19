@@ -95,6 +95,36 @@ describe('compat-resolver', function() {
     ]);
   });
 
+  describe('bare namespaced', function() {
+    test('dasherized component, js only', function() {
+      let findDependencies = configure({ staticComponents: true });
+      givenFile('components/hello-world/index.js');
+      expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
+        {
+          path: '../components/hello-world/index.js',
+          runtimeName: 'the-app/components/hello-world',
+        },
+      ]);
+    });
+
+    test('dasherized component, js and hbs', function() {
+      let findDependencies = configure({ staticComponents: true });
+      givenFile('components/hello-world/index.js');
+      givenFile('components/hello-world/index.hbs');
+      // the resolver only needs to handle the JS. Template-colocation causes
+      // the JS to already import the HBS. That is also why we don't have a test
+      // here for the hbs-only case -- from the resolver's perspective that case
+      // doesn't exist, because we will have always synthesized the JS before
+      // getting to the resolver.
+      expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
+        {
+          path: '../components/hello-world/index.js',
+          runtimeName: 'the-app/components/hello-world',
+        },
+      ]);
+    });
+  });
+
   test('podded, dasherized component, with blank podModulePrefix, js only', function() {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');

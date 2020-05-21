@@ -219,6 +219,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         sourcePath,
         mtime: stats.mtime.getTime(),
         size: stats.size,
+        rootURL: this.rootURL(),
         prepare: (dom: JSDOM) => {
           let scripts = [...dom.window.document.querySelectorAll('script')];
           let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];

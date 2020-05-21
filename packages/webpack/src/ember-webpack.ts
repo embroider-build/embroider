@@ -21,7 +21,7 @@ import {
   statSync,
   readJsonSync,
 } from 'fs-extra';
-import { join, dirname, relative, resolve, sep } from 'path';
+import { join, dirname, relative, sep } from 'path';
 import { JSDOM } from 'jsdom';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -42,14 +42,12 @@ import { MinifyOptions } from 'terser';
 
 class HTMLEntrypoint {
   private dom: JSDOM;
-  private dir: string;
   private placeholders: Map<string, Placeholder[]> = new Map();
   modules: string[] = [];
   scripts: string[] = [];
   styles: string[] = [];
 
-  constructor(private pathToVanillaApp: string, public filename: string) {
-    this.dir = dirname(this.filename);
+  constructor(private pathToVanillaApp: string, private rootURL: string, public filename: string) {
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
     for (let tag of this.handledStyles()) {
@@ -65,8 +63,7 @@ class HTMLEntrypoint {
     }
 
     for (let scriptTag of this.handledScripts()) {
-      // scriptTag.src is relative to this HTML file. Convert it to be relative
-      // to the app.
+      // scriptTag.src include rootURL. Convert it to be relative to the app.
       let src = this.relativeToApp(scriptTag.src);
 
       if (scriptTag.type === 'module') {
@@ -81,10 +78,8 @@ class HTMLEntrypoint {
     }
   }
 
-  private relativeToApp(relativeToHTML: string) {
-    const resolvedPath = resolve('/', this.dir, relativeToHTML);
-    const [, ...tail] = resolvedPath.split(sep);
-    return tail.join(sep);
+  private relativeToApp(rootRelativeURL: string) {
+    return rootRelativeURL.replace(this.rootURL, '');
   }
 
   private handledScripts() {
@@ -185,23 +180,20 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private examineApp(): AppInfo {
     let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
-
+    let templateCompiler = meta['template-compiler'];
+    let rootURL = meta['root-url'];
+    let babel = meta['babel'];
+    let resolvableExtensions = meta['resolvable-extensions'];
     let entrypoints = [];
     let otherAssets = [];
 
     for (let relativePath of meta.assets) {
       if (/\.html/i.test(relativePath)) {
-        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, relativePath));
+        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, relativePath));
       } else {
         otherAssets.push(relativePath);
       }
     }
-
-    let templateCompiler = meta['template-compiler'];
-    let rootURL = meta['root-url'];
-    let babel = meta['babel'];
-    let resolvableExtensions = meta['resolvable-extensions'];
-
     return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions };
   }
 

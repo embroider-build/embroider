@@ -4,6 +4,7 @@ import { readJSONSync, outputJSONSync } from 'fs-extra';
 import { join } from 'path';
 import writeFile from 'broccoli-file-creator';
 import { Memoize } from 'typescript-memoize';
+import bind from 'bind-decorator';
 
 export default class EmberCliFastboot extends V1Addon {
   customizes(...trees: string[]): boolean {
@@ -29,7 +30,7 @@ export default class EmberCliFastboot extends V1Addon {
     // out the expectedFiles that we know are already accounted for, and we're
     // going to add app-factory.js which we know is not.
     trees.push(
-      new RewriteManifest(this.addonInstance._buildFastbootConfigTree(this.rootTree), this.expectedFiles(), [
+      new RewriteManifest(this.addonInstance._buildFastbootConfigTree(this.rootTree), this.scriptFilter, [
         'ember-cli-fastboot/app-factory.js',
       ])
     );
@@ -55,6 +56,7 @@ export default class EmberCliFastboot extends V1Addon {
   // these are the default files that ember-cli-fastbot includes in its appFiles
   // and vendorFiles that we know are already accounted for by the standard
   // embroider build
+  @Memoize()
   private expectedFiles(): string[] {
     let outputPaths = this.addonInstance.app.options.outputPaths;
     function stripLeadingSlash(filePath: string) {
@@ -69,7 +71,20 @@ export default class EmberCliFastboot extends V1Addon {
     // stuff directly.
     let autoImportPath = 'assets/auto-import-fastboot.js';
 
-    return [appFilePath, appFastbootFilePath, vendorFilePath, autoImportPath];
+    // the compat adapter for ember-asset-loader has already removed the code
+    // that reads from this file. And this file fails to get generated because
+    // we don't run ember-asset-loader's "all" postprocess tree. So we need to
+    // remove it here so it doesn't try to load.
+    let nodeAssetManifest = 'assets/node-asset-manifest.js';
+
+    return [appFilePath, appFastbootFilePath, vendorFilePath, autoImportPath, nodeAssetManifest];
+  }
+
+  @bind
+  private scriptFilter(file: string): boolean {
+    // we can drop all of engines-dist here because engines are handled natively
+    // by embroider (the engine code is part of the regular module graph)
+    return !this.expectedFiles().includes(file) && !file.startsWith('engines-dist/');
   }
 
   @Memoize()
@@ -81,31 +96,29 @@ export default class EmberCliFastboot extends V1Addon {
 }
 
 class RewriteManifest extends Plugin {
-  constructor(tree: Tree, private expectedFiles: string[], private extraAppFiles: string[]) {
+  constructor(tree: Tree, private scriptFilter: (file: string) => boolean, private extraAppFiles: string[]) {
     super([tree], { annotation: 'embroider-compat-adapter-ember-cli-fastboot' });
   }
   build() {
     let json = readJSONSync(join(this.inputPaths[0], 'package.json'));
 
-    let extraAppFiles = (json.fastboot.manifest.appFiles as string[]).filter(
-      file => !this.expectedFiles.includes(file)
-    );
+    let extraAppFiles = (json.fastboot.manifest.appFiles as string[]).filter(this.scriptFilter);
 
     for (let file of this.extraAppFiles) {
       extraAppFiles.push(file);
     }
 
-    let extraVendorFiles = (json.fastboot.manifest.vendorFiles as string[]).filter(
-      file => !this.expectedFiles.includes(file)
-    );
+    let extraVendorFiles = (json.fastboot.manifest.vendorFiles as string[]).filter(this.scriptFilter);
 
     // we're using our own new style of fastboot manifest that loads everything
     // via the HTML. HTML is better understood by tools beyond Ember and
     // Fastboot, so it's more robust to going through third-party bundlers
     // without breaking. We can get by with only a very small extension over
     // purely standards-compliant HTML.
-    json.fastboot.manifest = {
+    json.fastboot = {
+      schemaVersion: 5,
       htmlEntrypoint: 'index.html',
+      moduleWhitelist: json.fastboot.moduleWhitelist,
     };
 
     // this is a message to Embroider stage2 (in app.ts), because we need it to

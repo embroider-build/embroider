@@ -44,6 +44,9 @@ export interface EmberAsset extends BaseAsset {
   // whether we should include the test suite (in addition to the ember app)
   includeTests: boolean;
 
+  // the rootURL at which this Ember app expects to be hosted.
+  rootURL: string;
+
   // This will receive the parsed document. It may optionally modify the
   // document. And it must return a description of the locations where we're
   // supposed to insert the parts of the Ember app.

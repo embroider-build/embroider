@@ -712,11 +712,13 @@ export class AppBuilder<TreeNames> {
 
     if (this.activeFastboot) {
       const source = `
-      var key = '_embroider_macros_runtime_config';
-      if (!window[key]){ window[key] = [];}
-      window[key].push(function(m) {
-        m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
-      });`;
+      (function(){
+        var key = '_embroider_macros_runtime_config';
+        if (!window[key]){ window[key] = [];}
+        window[key].push(function(m) {
+          m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
+        });
+      }())`;
       assets.push({
         kind: 'in-memory',
         source,

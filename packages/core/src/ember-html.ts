@@ -1,7 +1,6 @@
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'fs';
 import { EmberAsset } from './asset';
-import { relative, dirname, sep } from 'path';
 
 export interface EmberHTML {
   // each of the Nodes in here points at where we should insert the
@@ -95,10 +94,10 @@ export class PreparedEmberHTML {
   }
 
   // this takes the src relative to the application root, we adjust it so it's
-  // relative to this html file.
+  // root-relative via the configured rootURL
   insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string; tag?: string }) {
     let newTag = this.dom.window.document.createElement(opts && opts.tag ? opts.tag : 'script');
-    newTag.setAttribute('src', relativeTo(this.asset.relativePath, relativeSrc));
+    newTag.setAttribute('src', this.asset.rootURL + relativeSrc);
     if (opts && opts.type) {
       newTag.setAttribute('type', opts.type);
     }
@@ -107,20 +106,14 @@ export class PreparedEmberHTML {
   }
 
   // this takes the href relative to the application root, we adjust it so it's
-  // relative to this html file.
+  // root-relative via the configured rootURL
   insertStyleLink(location: NodeRange, relativeHref: string) {
     let newTag = this.dom.window.document.createElement('link');
     newTag.rel = 'stylesheet';
-    newTag.href = relativeTo(this.asset.relativePath, relativeHref);
+    newTag.href = this.asset.rootURL + relativeHref;
     location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);
   }
-}
-
-function relativeTo(documentPath: string, otherPath: string) {
-  return relative(dirname(documentPath), otherPath)
-    .split(sep)
-    .join('/');
 }
 
 export function insertNewline(at: Node) {

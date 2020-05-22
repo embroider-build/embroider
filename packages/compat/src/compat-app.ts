@@ -130,11 +130,38 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         });
     }
 
+    // ember-cli traditionally outputs a dummy testem.js file to prevent
+    // spurious errors when running tests under "ember s".
+    if (this.oldPackage.shouldBuildTests) {
+      let testemAsset = this.findTestemAsset();
+      if (testemAsset) {
+        assets.push(testemAsset);
+      }
+    }
+
     for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
       assets.push(asset);
     }
 
     return assets;
+  }
+
+  @Memoize()
+  findTestemAsset(): Asset | undefined {
+    let sourcePath;
+    try {
+      sourcePath = resolveSync('ember-cli/lib/broccoli/testem.js', { basedir: this.root });
+    } catch (err) {}
+    if (sourcePath) {
+      let stat = statSync(sourcePath);
+      return {
+        kind: 'on-disk',
+        relativePath: 'testem.js',
+        sourcePath,
+        mtime: stat.mtime.getTime(),
+        size: stat.size,
+      };
+    }
   }
 
   @Memoize()

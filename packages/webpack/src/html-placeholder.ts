@@ -49,12 +49,17 @@ export default class Placeholder {
     }
   }
 
-  insertScriptTag(src: string, opts?: { type?: string }) {
+  insertScriptTag(src: string) {
     let newTag = this.end.ownerDocument.createElement('script');
-    newTag.src = src;
-    if (opts && opts.type) {
-      newTag.type = opts.type;
+    for (let { name, value } of [...this.target.attributes]) {
+      if (name === 'type' && value === 'module') {
+        // we always convert modules to scripts
+        continue;
+      }
+      // all other attributes are copied forward unchanged
+      newTag.setAttribute(name, value);
     }
+    newTag.src = src;
     this.insert(newTag);
     this.insertNewline();
   }

@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+## 0.18.0
+
+- COMPAT: updated to new proposed fastboot v5 format (https://github.com/ember-fastboot/fastboot/pull/272)
+- COMPAT: avoid spurious testem error when running tests directly in browser
+- ENHANCEMENT: support static resolution of components named like `foo/index.js` as opposed to `foo.js`, by @NullVoxPopuli
+
 ## 0.17.0
 
 - COMPAT: tolerate broken in-repo-addons for compatibility with ember-cli by @thoov

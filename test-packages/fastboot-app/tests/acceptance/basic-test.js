@@ -5,6 +5,7 @@ import {
   teardownApplicationContext,
   setupContext,
   teardownContext,
+  waitUntil,
 } from '@ember/test-helpers';
 
 module('Acceptance | runtime basics', function(hooks) {
@@ -14,6 +15,7 @@ module('Acceptance | runtime basics', function(hooks) {
     await setupContext(this, opts);
     await setupApplicationContext(this);
     await visit('/');
+    await waitUntil(() => window.lazyComponentDone);
   });
 
   hooks.after(async function() {
@@ -39,5 +41,9 @@ module('Acceptance | runtime basics', function(hooks) {
 
   test('found no fastboot-only file from the addon', function(assert) {
     assert.dom('[data-test="check-addon-file"]').containsText('No addon file value');
+  });
+
+  test('a component lazily loaded some code', async function(assert) {
+    assert.dom('[data-test="lazy-component"]').containsText('From sample-lib');
   });
 });

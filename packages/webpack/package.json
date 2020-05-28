@@ -1,6 +1,6 @@
 {
   "name": "@embroider/webpack",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Builds EmberJS apps with Webpack",
   "main": "src/ember-webpack.js",
   "author": "Edward Faulkner",
@@ -27,7 +27,7 @@
     "@babel/core": "^7.8.7",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
     "@babel/plugin-proposal-optional-chaining": "^7.9.0",
-    "@embroider/babel-loader-7": "0.17.0",
+    "@embroider/babel-loader-7": "0.18.0",
     "@types/source-map": "^0.5.7",
     "babel-core": "^6.26.3",
     "babel-loader": "8",
@@ -47,6 +47,6 @@
     "webpack": "^4.43.0"
   },
   "peerDependencies": {
-    "@embroider/core": "0.17.0"
+    "@embroider/core": "0.18.0"
   }
 }

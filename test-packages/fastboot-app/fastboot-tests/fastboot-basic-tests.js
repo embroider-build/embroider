@@ -30,4 +30,7 @@ Qmodule('fastboot basics', function(hooks) {
   test('found fastboot-only file from the addon', async function(assert) {
     assert.equal(doc.querySelector('[data-test="check-addon-file"]').textContent.trim(), '42');
   });
+  test('a component successfully lazy loaded some code', async function(assert) {
+    assert.equal(doc.querySelector('[data-test="lazy-component"]').textContent.trim(), 'From sample-lib');
+  });
 });

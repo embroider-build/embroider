@@ -1,6 +1,6 @@
 {
   "name": "@embroider/test-support",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "dependencies": {
     "@babel/core": "^7.8.7",
@@ -25,5 +25,9 @@
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",
     "qunit": "^2.8.0"
+  },
+  "volta": {
+    "node": "12.16.1",
+    "yarn": "1.17.3"
   }
 }

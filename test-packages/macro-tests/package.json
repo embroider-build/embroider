@@ -56,5 +56,9 @@
   },
   "dependencies": {
     "ember-cli-babel-polyfills": "1.0.4"
+  },
+  "volta": {
+    "node": "12.16.1",
+    "yarn": "1.17.3"
   }
 }

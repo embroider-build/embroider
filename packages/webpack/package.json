@@ -48,5 +48,9 @@
   },
   "peerDependencies": {
     "@embroider/core": "0.18.0"
+  },
+  "volta": {
+    "node": "12.16.1",
+    "yarn": "1.17.3"
   }
 }

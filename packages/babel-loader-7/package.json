@@ -1,10 +1,14 @@
 {
   "name": "@embroider/babel-loader-7",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "7"
+  },
+  "volta": {
+    "node": "12.16.1",
+    "yarn": "1.17.3"
   }
 }

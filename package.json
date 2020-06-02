@@ -33,7 +33,7 @@
     ]
   },
   "resolutions": {
-    "**/fastboot": "git+https://github.com/thoov/fastboot#3fae95c11734a88e6c183daac3595df66bc54b6b"
+    "**/fastboot": "^3.1.0"
   },
   "volta": {
     "node": "12.16.1",

@@ -10,6 +10,9 @@ module.exports = function(defaults) {
       // to use the copy provided magically by ember-qunit.
       exclude: ['qunit'],
     },
+    babel: {
+      plugins: [require.resolve('ember-auto-import/babel-plugin')],
+    },
   });
 
   // Use `app.import` to add additional libraries to the generated

@@ -9,6 +9,7 @@
   getting script vs module context correct).
 */
 
+import { getOrCreate, Variant, applyVariantToBabelConfig } from '@embroider/core';
 import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import {
@@ -24,12 +25,14 @@ import {
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
+import flatMap from 'lodash/flatMap';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import makeDebug from 'debug';
 import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
+import { StatSummary } from './stat-summary';
 
 const debug = makeDebug('embroider:debug');
 
@@ -74,6 +77,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   constructor(
     pathToVanillaApp: string,
     private outputPath: string,
+    private variants: Variant[],
     private consoleWrite: (msg: string) => void,
     options?: Options
   ) {
@@ -108,15 +112,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions };
   }
 
-  private mode: 'production' | 'development' = process.env.EMBER_ENV === 'production' ? 'production' : 'development';
-
-  private configureWebpack({
-    entrypoints,
-    templateCompiler,
-    babel,
-    rootURL,
-    resolvableExtensions,
-  }: AppInfo): Configuration {
+  private configureWebpack(
+    { entrypoints, templateCompiler, babel, rootURL, resolvableExtensions }: AppInfo,
+    variant: Variant
+  ): Configuration {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -125,7 +124,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     return {
-      mode: this.mode,
+      mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
       entry,
       performance: {
@@ -143,6 +142,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
                 loader: join(__dirname, './webpack-hbs-loader'),
                 options: {
                   templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
+                  variant,
                 },
               },
             ]),
@@ -152,12 +152,12 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe),
-              babelLoaderOptions(babel.majorVersion, join(this.pathToVanillaApp, babel.filename)),
+              babelLoaderOptions(babel.majorVersion, variant, join(this.pathToVanillaApp, babel.filename)),
             ]),
           },
           {
             test: isCSS,
-            use: this.makeCSSRule(),
+            use: this.makeCSSRule(variant),
           },
         ],
       },
@@ -191,7 +191,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private lastAppInfo: AppInfo | undefined;
-  private lastWebpack: webpack.Compiler | undefined;
+  private lastWebpack: webpack.MultiCompiler | undefined;
 
   private getWebpack(appInfo: AppInfo) {
     if (this.lastWebpack && this.lastAppInfo && equalAppInfo(appInfo, this.lastAppInfo)) {
@@ -199,13 +199,15 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       return this.lastWebpack;
     }
     debug(`configuring webpack`);
-    let config = mergeWith({}, this.configureWebpack(appInfo), this.extraConfig, appendArrays);
+    let config = this.variants.map(variant =>
+      mergeWith({}, this.configureWebpack(appInfo, variant), this.extraConfig, appendArrays)
+    );
     this.lastAppInfo = appInfo;
     return (this.lastWebpack = webpack(config));
   }
 
-  private async writeScript(script: string, written: Set<string>) {
-    if (this.mode !== 'production') {
+  private async writeScript(script: string, written: Set<string>, variant: Variant) {
+    if (!variant.optimizeForProduction) {
       this.copyThrough(script);
       return script;
     }
@@ -263,17 +265,20 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     // that handles multiple HTML entrypoints correctly.
 
     let written: Set<string> = new Set();
-
     // scripts (as opposed to modules) and stylesheets (as opposed to CSS
     // modules that are imported from JS modules) get passed through without
     // going through webpack.
-    let bundles = new Map(stats.entrypoints);
     for (let entrypoint of entrypoints) {
       await this.provideErrorContext('needed by %s', [entrypoint.filename], async () => {
         for (let script of entrypoint.scripts) {
-          if (!bundles.has(script)) {
+          if (!stats.entrypoints.has(script)) {
             try {
-              bundles.set(script, [await this.writeScript(script, written)]);
+              // zero here means we always attribute passthrough scripts to the
+              // first build variant
+              stats.entrypoints.set(
+                script,
+                new Map([[0, [await this.writeScript(script, written, this.variants[0])]]])
+              );
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
                 this.consoleWrite(
@@ -290,9 +295,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           }
         }
         for (let style of entrypoint.styles) {
-          if (!bundles.has(style)) {
+          if (!stats.entrypoints.has(style)) {
             try {
-              bundles.set(style, [await this.writeStyle(style, written)]);
+              // zero here means we always attribute passthrough styles to the
+              // first build variant
+              stats.entrypoints.set(style, new Map([[0, [await this.writeStyle(style, written)]]]));
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
                 this.consoleWrite(
@@ -313,11 +320,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     for (let entrypoint of entrypoints) {
       ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-      writeFileSync(
-        join(this.outputPath, entrypoint.filename),
-        entrypoint.render(bundles, stats.lazyBundles, rootURL),
-        'utf8'
-      );
+      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats, rootURL), 'utf8');
       written.add(entrypoint.filename);
     }
 
@@ -341,29 +344,39 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
   }
 
-  private summarizeStats(stats: any): StatSummary {
+  private summarizeStats(multiStats: any): StatSummary {
     let output: StatSummary = {
       entrypoints: new Map(),
       lazyBundles: new Set(),
+      variants: this.variants,
     };
-    let nonLazyAssets: Set<string> = new Set();
-    for (let id of Object.keys(stats.entrypoints)) {
-      let entrypoint = stats.entrypoints[id];
-      let assets = (entrypoint.assets as string[]).map(asset => 'assets/' + asset);
-      output.entrypoints.set(id, assets);
-      for (let asset of entrypoint.assets as string[]) {
-        nonLazyAssets.add(asset);
+    for (let [variantIndex, variant] of this.variants.entries()) {
+      let stats = multiStats.children[variantIndex];
+      let nonLazyAssets: Set<string> = new Set();
+      for (let id of Object.keys(stats.entrypoints)) {
+        let entrypoint = stats.entrypoints[id];
+        let assets = (entrypoint.assets as string[]).map(asset => 'assets/' + asset);
+        getOrCreate(output.entrypoints, id, () => new Map()).set(variantIndex, assets);
+        for (let asset of entrypoint.assets as string[]) {
+          nonLazyAssets.add(asset);
+        }
       }
-    }
-    for (let asset of stats.assets) {
-      if (!nonLazyAssets.has(asset.name)) {
-        output.lazyBundles.add('assets/' + asset.name);
+      if (variant.runtime !== 'browser') {
+        // in the browser we don't need to worry about lazy assets (they will be
+        // handled automatically by webpack as needed), but in any other runtime
+        // we need the ability to preload them
+        output.lazyBundles = new Set();
+        for (let asset of stats.assets) {
+          if (!nonLazyAssets.has(asset.name)) {
+            output.lazyBundles.add('assets/' + asset.name);
+          }
+        }
       }
     }
     return output;
   }
 
-  private runWebpack(webpack: webpack.Compiler): Promise<any> {
+  private runWebpack(webpack: webpack.MultiCompiler): Promise<any> {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         if (err) {
@@ -372,7 +385,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           return;
         }
         if (stats.hasErrors()) {
-          reject(this.findBestError(stats.compilation.errors));
+          // the typing for MultiCompiler are all foobared.
+          reject(this.findBestError(flatMap((stats as any).stats, s => s.compilation.errors)));
           return;
         }
         if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
@@ -383,9 +397,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     });
   }
 
-  private makeCSSRule() {
+  private makeCSSRule(variant: Variant) {
     return [
-      this.mode === 'development' ? 'style-loader' : MiniCssExtractPlugin.loader,
+      variant.optimizeForProduction ? MiniCssExtractPlugin.loader : 'style-loader',
       {
         loader: 'css-loader',
         options: {
@@ -460,20 +474,15 @@ function isCSS(filename: string) {
   return /\.css$/i.test(filename);
 }
 
-interface StatSummary {
-  entrypoints: Map<string, string[]>;
-  lazyBundles: Set<string>;
-}
-
 // typescript doesn't understand that regular use of array.filter(Boolean) does
 // this.
 function nonNullArray<T>(array: T[]): NonNullable<T>[] {
   return array.filter(Boolean) as NonNullable<T>[];
 }
 
-function babelLoaderOptions(majorVersion: 6 | 7, appBabelConfigPath: string) {
+function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfigPath: string) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let options = Object.assign({}, require(appBabelConfigPath), {
+  let options = Object.assign({}, applyVariantToBabelConfig(variant, require(appBabelConfigPath)), {
     // all stage3 packagers should keep persistent caches under
     // `join(tmpdir(), 'embroider')`. An important reason is that
     // they should have exactly the same lifetime as some of
@@ -481,7 +490,9 @@ function babelLoaderOptions(majorVersion: 6 | 7, appBabelConfigPath: string) {
     cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
   });
   if (majorVersion === 7) {
-    if (!options.plugins) {
+    if (options.plugins) {
+      options.plugins = options.plugins.slice();
+    } else {
       options.plugins = [];
     }
     // webpack uses acorn and acorn doesn't parse these features yet, so we

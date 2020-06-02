@@ -762,10 +762,29 @@ export default class V1Addon implements V1Package {
     if (typeof this.addonInstance.getEngineConfigContents !== 'function') {
       return;
     }
-
-    // this addon is an engine, so it needs its own config/environment.js
-    let configTree = writeFile('config/environment.js', this.addonInstance.getEngineConfigContents());
-    built.trees.push(configTree);
+    // this addon is an engine, so it needs its own config/environment.js.
+    // ember-engines always emits a separate inline (not-meta-tag) config for
+    // fastboot, so we mimic that behavior here.
+    //
+    // getEngineConfigContents is an arbitrary customizable module, so we can't
+    // easily rewrite it to live inside our conditional, so it's safer in a
+    // separate module.
+    built.trees.push(writeFile('config/_environment_browser_.js', this.addonInstance.getEngineConfigContents()));
+    built.trees.push(
+      writeFile(
+        'config/environment.js',
+        `
+      import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+      let config;
+      if (macroCondition(getGlobalConfig().fastboot?.isRunning)){
+        config = ${JSON.stringify(this.addonInstance.engineConfig(this.app.env, {}), null, 2)};
+      } else {
+        config = importSync('./_environment_browser_.js').default;
+      }
+      export default config;
+    `
+      )
+    );
   }
 
   private buildPackageJSON(built: IntermediateBuild) {

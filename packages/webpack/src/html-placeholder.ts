@@ -36,6 +36,10 @@ export default class Placeholder {
     this.end.parentElement.insertBefore(node, this.end);
   }
 
+  isScript(): boolean {
+    return this.target.tagName === 'SCRIPT';
+  }
+
   insertURL(url: string) {
     switch (this.target.tagName) {
       case 'SCRIPT':

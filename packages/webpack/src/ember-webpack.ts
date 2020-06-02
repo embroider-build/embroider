@@ -104,11 +104,14 @@ class HTMLEntrypoint {
     return handledStyleTags;
   }
 
-  render(bundles: Map<string, string[]>, rootURL: string): string {
+  render(bundles: Map<string, string[]>, lazyBundles: Set<string>, rootURL: string): string {
+    let insertedLazy = false;
+
     for (let [src, placeholders] of this.placeholders) {
       let matchingBundles = bundles.get(src);
       if (matchingBundles) {
         for (let placeholder of placeholders) {
+          insertedLazy = maybeInsertLazyBundles(insertedLazy, lazyBundles, placeholder, rootURL);
           for (let matchingBundle of matchingBundles) {
             let src = rootURL + matchingBundle;
             placeholder.insertURL(src);
@@ -125,6 +128,25 @@ class HTMLEntrypoint {
     }
     return this.dom.serialize();
   }
+}
+
+// we (somewhat arbitrarily) decide to put the lazy bundles before the very
+// first <script> that we have rewritten
+function maybeInsertLazyBundles(
+  insertedLazy: boolean,
+  lazyBundles: Set<string>,
+  placeholder: Placeholder,
+  rootURL: string
+): boolean {
+  if (!insertedLazy && placeholder.isScript()) {
+    for (let bundle of lazyBundles) {
+      let element = placeholder.start.ownerDocument.createElement('fastboot-script');
+      element.setAttribute('src', rootURL + bundle);
+      placeholder.insert(element);
+    }
+    return true;
+  }
+  return insertedLazy;
 }
 
 interface AppInfo {
@@ -402,7 +424,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     for (let entrypoint of entrypoints) {
       ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(bundles, rootURL), 'utf8');
+      writeFileSync(
+        join(this.outputPath, entrypoint.filename),
+        entrypoint.render(bundles, stats.lazyBundles, rootURL),
+        'utf8'
+      );
       written.add(entrypoint.filename);
     }
 
@@ -427,13 +453,23 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private summarizeStats(stats: any): StatSummary {
-    let output: { entrypoints: Map<string, string[]> } = {
+    let output: StatSummary = {
       entrypoints: new Map(),
+      lazyBundles: new Set(),
     };
+    let nonLazyAssets: Set<string> = new Set();
     for (let id of Object.keys(stats.entrypoints)) {
       let entrypoint = stats.entrypoints[id];
       let assets = (entrypoint.assets as string[]).map(asset => 'assets/' + asset);
       output.entrypoints.set(id, assets);
+      for (let asset of entrypoint.assets as string[]) {
+        nonLazyAssets.add(asset);
+      }
+    }
+    for (let asset of stats.assets) {
+      if (!nonLazyAssets.has(asset.name)) {
+        output.lazyBundles.add('assets/' + asset.name);
+      }
     }
     return output;
   }
@@ -541,6 +577,7 @@ function isCSS(filename: string) {
 
 interface StatSummary {
   entrypoints: Map<string, string[]>;
+  lazyBundles: Set<string>;
 }
 
 // typescript doesn't understand that regular use of array.filter(Boolean) does

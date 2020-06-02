@@ -9175,9 +9175,10 @@ fastboot-transform@^0.1.3:
     broccoli-stew "^1.5.0"
     convert-source-map "^1.5.1"
 
-fastboot@^2.0.0, fastboot@^2.0.1, "fastboot@git+https://github.com/ef4/fastboot#d55529e272c06b42d0d27140340e51b9afe7ce15", "fastboot@git+https://github.com/thoov/fastboot#3fae95c11734a88e6c183daac3595df66bc54b6b":
-  version "3.0.3"
-  resolved "git+https://github.com/thoov/fastboot#3fae95c11734a88e6c183daac3595df66bc54b6b"
+fastboot@^2.0.0, fastboot@^2.0.1, fastboot@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/fastboot/-/fastboot-3.1.0.tgz#e71a2d45c9b034f8a5909562a125888325100843"
+  integrity sha512-1GyX0seImE0l4Di/LVwTzL1XqXKECQvvDeEZmReNwMUDbsQxETGz3j7XUq/eWSxl1o4R/vZomvxOXdtae6kpfA==
   dependencies:
     chalk "^3.0.0"
     cookie "^0.4.0"

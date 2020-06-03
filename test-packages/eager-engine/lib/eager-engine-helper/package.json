@@ -4,6 +4,6 @@
     "ember-addon"
   ],
   "dependencies": {
-    "ember-cli-babel": "^7.7.3"
+    "ember-cli-babel": "^7.20.5"
   }
 }

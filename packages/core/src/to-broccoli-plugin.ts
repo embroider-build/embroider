@@ -1,15 +1,15 @@
 import Plugin from 'broccoli-plugin';
-import { Packager, PackagerInstance } from './packager';
+import { Packager, PackagerInstance, Variant } from './packager';
 import Stage from './stage';
 
 interface BroccoliPackager<Options> {
-  new (stage: Stage, options?: Options): Plugin;
+  new (stage: Stage, variants: Variant[], options?: Options): Plugin;
 }
 
 export default function toBroccoliPlugin<Options>(packagerClass: Packager<Options>): BroccoliPackager<Options> {
   class PackagerRunner extends Plugin {
     private packager: PackagerInstance | undefined;
-    constructor(private stage: Stage, private options?: Options) {
+    constructor(private stage: Stage, private variants: Variant[], private options?: Options) {
       super([stage.tree], {
         persistentOutput: true,
         needsCache: false,
@@ -25,7 +25,13 @@ export default function toBroccoliPlugin<Options>(packagerClass: Packager<Option
         if (packageCache) {
           packageCache.shareAs('embroider-stage3');
         }
-        this.packager = new packagerClass(outputPath, this.outputPath, msg => console.log(msg), this.options);
+        this.packager = new packagerClass(
+          outputPath,
+          this.outputPath,
+          this.variants,
+          msg => console.log(msg),
+          this.options
+        );
       }
       return this.packager.build();
     }

@@ -4,7 +4,7 @@ const { module: Qmodule, test } = require('qunit');
 const setup = require('./util');
 
 Qmodule('fastboot basics', function(hooks) {
-  setup(hooks);
+  setup(hooks, process.env.FASTBOOT_APP_PROD === 'true' ? ['--environment', 'production'] : undefined);
 
   let doc;
 

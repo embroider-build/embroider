@@ -1,11 +1,12 @@
 import { loader } from 'webpack';
 import { getOptions } from 'loader-utils';
+import { applyVariantToTemplateCompiler } from '@embroider/core';
 
 export default function hbsLoader(this: loader.LoaderContext, templateContent: string) {
-  let { templateCompilerFile } = getOptions(this);
+  let { templateCompilerFile, variant } = getOptions(this);
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let templateCompiler = require(templateCompilerFile).compile;
+  let templateCompiler = applyVariantToTemplateCompiler(variant, require(templateCompilerFile)).compile;
 
   try {
     return templateCompiler(this.resourcePath, templateContent);

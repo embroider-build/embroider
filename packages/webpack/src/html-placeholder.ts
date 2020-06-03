@@ -66,6 +66,7 @@ export default class Placeholder {
     newTag.src = src;
     this.insert(newTag);
     this.insertNewline();
+    return newTag;
   }
 
   insertStyleLink(href: string) {

@@ -5,7 +5,7 @@ const { execFileSync } = require('child_process');
 const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
 
-module.exports = function setup(hooks) {
+module.exports = function setup(hooks, buildArgs = []) {
   let fastboot;
 
   async function visit(assert, url, { expectStatus } = {}) {
@@ -24,7 +24,7 @@ module.exports = function setup(hooks) {
 
   hooks.before(async function(assert) {
     if (!process.env.REUSE_FASTBOOT_BUILD) {
-      execFileSync('node', ['./node_modules/.bin/ember', 'build']);
+      execFileSync('node', ['./node_modules/.bin/ember', 'build', ...buildArgs]);
       process.env.REUSE_FASTBOOT_BUILD = 'true';
     }
     fastboot = new FastBoot({

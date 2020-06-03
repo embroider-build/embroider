@@ -1,4 +1,10 @@
-export { Packager, PackagerInstance } from './packager';
+export {
+  Packager,
+  PackagerInstance,
+  Variant,
+  applyVariantToBabelConfig,
+  applyVariantToTemplateCompiler,
+} from './packager';
 export { Resolver } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
 export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';

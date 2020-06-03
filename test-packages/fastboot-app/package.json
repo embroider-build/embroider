@@ -18,7 +18,9 @@
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test --test-port=0",
-    "test:fastboot": "qunit fastboot-tests"
+    "test:ember-production": "ember test --test-port=0 --environment=production",
+    "test:fastboot": "qunit fastboot-tests",
+    "test:fastboot-production": "FASTBOOT_APP_PROD=true qunit fastboot-tests"
   },
   "devDependencies": {
     "@ember/optional-features": "^1.3.0",

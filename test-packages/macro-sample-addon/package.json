@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@embroider/macros": "0.18.0",
-    "ember-cli-babel": "^7.7.3",
+    "ember-cli-babel": "^7.20.5",
     "ember-cli-htmlbars": "^4.3.1"
   },
   "devDependencies": {

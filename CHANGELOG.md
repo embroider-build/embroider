@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## 0.19.0
+
+- HOUSEKEEPING: Updating some babel-related deps to avoid upstream bugs
+- ENHANCEMENT: implement a build-variants system to begin supporting multiple simultaneous flavors of builds in stage3 packagers.
+- BUGFIX: use the build-variants system to fix optimized production fastboot builds
+- COMPAT: added a compat-adapter for ember-cli-fastboot-testing
+- BUGFIX: make engine configs fastboot-friendly
+- BUGFIX: preload webpack's lazy chunks in fastboot
+- HOUSEKEEPING: update volta pinning on all packages in monorepo
+
 ## 0.18.0
 
 - COMPAT: updated to new proposed fastboot v5 format (https://github.com/ember-fastboot/fastboot/pull/272)

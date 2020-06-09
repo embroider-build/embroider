@@ -44,9 +44,7 @@ The main risks to be aware of if you choose to use Embroider in production are:
 
 ## For Addon Authors
 
-The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors **SHOULD NOT** publish packages to NPM that use this format until the RFC is merged.
-
-Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
+The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
 
 ## How to try it
 

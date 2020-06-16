@@ -488,11 +488,9 @@ export default class V1Addon implements V1Package {
 
         // this captures addons that are trying to escape their own package's
         // namespace
-        let result = rewriteAddonTree(tree, this.name, this.moduleName);
-        tree = result.tree;
+        let result = rewriteAddonTree(this.transpile(tree), this.name, this.moduleName);
         built.dynamicMeta.push(result.getMeta);
-
-        return this.transpile(tree);
+        return result.tree;
       }
     } else if (this.hasStockTree('addon')) {
       return this.transpile(this.stockTree('addon'));

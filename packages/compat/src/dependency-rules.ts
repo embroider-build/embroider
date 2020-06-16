@@ -116,7 +116,7 @@ export type ArgumentMapping =
     };
 
 // A component snippet is a string containing valid HBS that is a single
-// component invocation. We use it to refer to compoanents in a way that doesn't
+// component invocation. We use it to refer to components in a way that doesn't
 // require any new syntax or rules, and that's necessarily supported by whatever
 // build-time template resolver is in use.
 //

@@ -221,7 +221,7 @@ export default class CompatResolver implements Resolver {
     } catch (err) {
       throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);
     }
-    if (ast.type === 'Program' && ast.body.length > 0) {
+    if ((ast.type === 'Program' || ast.type === 'Template') && ast.body.length > 0) {
       let first = ast.body[0];
       if (first.type === 'MustacheStatement' && first.path.type === 'PathExpression') {
         return first.path.original;

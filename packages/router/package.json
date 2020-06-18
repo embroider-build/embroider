@@ -69,6 +69,6 @@
     "configPath": "tests/dummy/config"
   },
   "volta": {
-    "extends": "../package.json"
+    "extends": "../../package.json"
   }
 }

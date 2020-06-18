@@ -3,7 +3,7 @@ import { Package } from '@embroider/core';
 import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Tree } from 'broccoli-plugin';
-import OneShot from './one-shot';
+//import OneShot from './one-shot';
 import Funnel from 'broccoli-funnel';
 import { UnwatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
@@ -11,7 +11,7 @@ import EmptyPackageTree from './empty-package-tree';
 export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Tree {
   let tree = buildCompatAddon(originalPackage, v1Cache);
   if (!originalPackage.mayRebuild) {
-    tree = new OneShot(tree);
+    //tree = new OneShot(tree);
   }
   return tree;
 }

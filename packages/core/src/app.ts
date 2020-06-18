@@ -312,6 +312,24 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
+    let classicDecorator = babel.plugins.findIndex(entry => {
+      let path: string | undefined;
+      if (typeof entry === 'string') {
+        path = entry;
+      } else if (Array.isArray(entry) && entry.length > 0 && typeof entry[0] === 'string') {
+        path = entry[0];
+      }
+      if (path) {
+        return /classic-decorator/.test(path);
+      }
+      return false;
+    });
+    if (classicDecorator !== -1) {
+      let entry = babel.plugins[classicDecorator];
+      babel.plugins.splice(classicDecorator, 1);
+      babel.plugins.unshift(entry);
+    }
+
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
 

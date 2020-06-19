@@ -7,7 +7,7 @@ import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { compile } from './js-handlebars';
-import { join, sep } from 'path';
+import { join, sep, extname } from 'path';
 import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import { NodePath } from '@babel/traverse';
@@ -321,7 +321,7 @@ export default class TemplateCompiler {
     let runtimeName: string;
 
     if (this.params.resolver) {
-      runtimeName = this.params.resolver.absPathToRuntimeName(moduleName) || moduleName;
+      runtimeName = `${this.params.resolver.absPathToRuntimeName(moduleName)}${extname(moduleName)}` || moduleName;
     } else {
       runtimeName = moduleName;
     }

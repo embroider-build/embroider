@@ -27,7 +27,6 @@
     "qunit": "^2.8.0"
   },
   "volta": {
-    "node": "12.16.1",
-    "yarn": "1.17.3"
+    "extends": "../../package.json"
   }
 }

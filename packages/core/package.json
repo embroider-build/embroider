@@ -65,7 +65,6 @@
     "wrap-legacy-hbs-plugin-if-needed": "^1.0.1"
   },
   "volta": {
-    "node": "12.16.1",
-    "yarn": "1.17.3"
+    "extends": "../../package.json"
   }
 }

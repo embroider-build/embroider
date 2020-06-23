@@ -241,10 +241,10 @@ export default class V1App implements V1Package {
     let appBabel = this.app.options.babel;
     if (appBabel) {
       if (appBabel.plugins) {
-        plugins = plugins.concat(appBabel.plugins);
+        plugins = appBabel.plugins.concat(plugins);
       }
       if (appBabel.presets) {
-        presets = presets.concat(appBabel.presets);
+        presets = appBabel.presets.concat(presets);
       }
     }
 

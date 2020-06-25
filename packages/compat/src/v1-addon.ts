@@ -230,18 +230,6 @@ export default class V1Addon implements V1Package {
     return dirname(pkgUpSync(this.addonInstance.root)!);
   }
 
-  @Memoize()
-  private get mainModule() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require(this.addonInstance.constructor._meta_.modulePath);
-
-    if (typeof mod === 'function') {
-      return mod.prototype;
-    } else {
-      return mod;
-    }
-  }
-
   protected get options() {
     if (!this.addonInstance.options) {
       this.addonInstance.options = {};
@@ -279,8 +267,20 @@ export default class V1Addon implements V1Package {
     return options;
   }
 
+  private baseImplementation(treeName: string): Function | undefined {
+    let base;
+    let cursor = this.addonInstance.__proto__;
+    while (cursor) {
+      if (cursor[treeName]) {
+        base = cursor[treeName];
+      }
+      cursor = cursor.__proto__;
+    }
+    return base;
+  }
+
   protected customizes(...treeNames: string[]) {
-    return Boolean(treeNames.find(treeName => this.mainModule[treeName]));
+    return Boolean(treeNames.find(treeName => this.addonInstance[treeName] !== this.baseImplementation(treeName)));
   }
 
   @Memoize()

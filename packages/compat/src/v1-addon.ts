@@ -499,7 +499,7 @@ export default class V1Addon implements V1Package {
 
   protected addonStylesTree(): Tree | undefined {
     if (this.customizes('treeForAddonStyles')) {
-      todo(`${this.name} may have customized the addon style tree`);
+      return this.invokeOriginalTreeFor('addon-styles');
     } else if (this.hasStockTree('addon-styles')) {
       return this.addonInstance.compileStyles(this.stockTree('addon-styles'));
     }

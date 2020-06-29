@@ -280,7 +280,16 @@ export default class V1Addon implements V1Package {
   }
 
   protected customizes(...treeNames: string[]) {
-    return Boolean(treeNames.find(treeName => this.mainModule[treeName]));
+    return Boolean(
+      treeNames.find(treeName => {
+        return (
+          // customized hook exists in actual code exported from their index.js
+          this.mainModule[treeName] ||
+          // addon instance doesn't match its own prototype
+          (this.addonInstance.__proto__ && this.addonInstance[treeName] !== this.addonInstance.__proto__[treeName])
+        );
+      })
+    );
   }
 
   @Memoize()

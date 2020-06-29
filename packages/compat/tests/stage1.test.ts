@@ -310,6 +310,29 @@ describe('stage1 build', function() {
         },
       });
 
+      // Use one addon to patch the hook on another (yes, this happens in the
+      // wild...), and ensure we still detect the customized hook
+      let externallyCustomized = app.addAddon('externally-customized');
+      merge(externallyCustomized.files, {});
+      let troubleMaker = app.addAddon('trouble-maker');
+      merge(troubleMaker.files, {
+        injected: {
+          hello: { 'world.js': '// hello' },
+        },
+        'index.js': `
+          const { join } = require('path');
+          module.exports = {
+          name: 'trouble-maker',
+          included() {
+            let instance = this.project.addons.find(a => a.name === "externally-customized");
+            let root = this.root;
+            instance.treeForPublic = function() {
+              return join(root, 'injected');
+            }
+          }
+        }`,
+      });
+
       build = await BuildResult.build(app, { stage: 1, type: 'app' });
       expectFile = expectFilesAt(build.outputPath);
     });
@@ -332,6 +355,11 @@ describe('stage1 build', function() {
         .json()
         .get('ember-addon.fastboot-js')
         .equals(undefined);
+    });
+
+    test('custom tree hooks are detected when they have been patched into the addon instance', function() {
+      let assertFile = expectFile('node_modules/externally-customized/public/hello/world.js');
+      assertFile.exists();
     });
   });
 });

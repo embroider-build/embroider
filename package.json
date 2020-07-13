@@ -4,6 +4,7 @@
     "packages/*",
     "test-packages/*",
     "test-packages/@embroider/*",
+    "test-packages/sample-v2-addon/test-app",
     "types/babel-core",
     "types/@babel__traverse"
   ],

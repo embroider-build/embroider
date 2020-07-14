@@ -43,6 +43,18 @@ export function getOwnConfig<T>(): T {
   throw new Oops();
 }
 
+export function getGlobalConfig<T>(): T {
+  throw new Oops();
+}
+
+export function isDeveloping(): boolean {
+  throw new Oops();
+}
+
+export function isTesting(): boolean {
+  throw new Oops();
+}
+
 export function failBuild(message: string): void {
   throw new Oops(message);
 }

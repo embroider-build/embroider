@@ -187,7 +187,15 @@ export class AppBuilder<TreeNames> {
     private options: Required<Options>,
     private macrosConfig: MacrosConfig
   ) {
-    macrosConfig.setOwnConfig(__filename, { active: true });
+    // this uses globalConfig because it's a way for packages to ask "is
+    // Embroider doing this build?". So it's necessarily global, not scoped to
+    // any subgraph of dependencies.
+    macrosConfig.setGlobalConfig(__filename, `@embroider/core`, {
+      // this is hard-coded to true because it literally means "embroider is
+      // building this Ember app". You can see non-true when using the Embroider
+      // macros in a classic build.
+      active: true,
+    });
   }
 
   private scriptPriority(pkg: Package) {
@@ -716,7 +724,7 @@ export class AppBuilder<TreeNames> {
         var key = '_embroider_macros_runtime_config';
         if (!window[key]){ window[key] = [];}
         window[key].push(function(m) {
-          m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
+          m.setGlobalConfig('fastboot', Object.assign({}, m.getGlobalConfig().fastboot, { isRunning: true }));
         });
       }())`;
       assets.push({
@@ -731,11 +739,6 @@ export class AppBuilder<TreeNames> {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    // on the first build, we lock down the macros config. on subsequent builds,
-    // this doesn't do anything anyway because it's idempotent.
-    if (this.adapter.env !== 'production') {
-      this.macrosConfig.enableRuntimeMode();
-    }
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);

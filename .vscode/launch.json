@@ -10,7 +10,7 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/macros",
-      "args": ["--runInBand", "--testPathPattern", "tests/babel/get-config.test.js"]
+      "args": ["--runInBand", "--testPathPattern", "tests/babel/env-macros.test.js"]
     },
     {
       "type": "node",
@@ -95,10 +95,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Serve macro-tests app",
+      "name": "Build macro-tests app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/macro-tests",
-      "args": ["s"],
+      "args": ["b"],
       "env": {
         //"CLASSIC": "true",
         "JOBS": "1"

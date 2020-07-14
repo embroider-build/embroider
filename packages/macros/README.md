@@ -12,12 +12,7 @@ This package works in both Embroider builds and normal ember-cli builds, so that
 
 ## Examples
 
-```js
-import { dependencySatisfies, macroCondition, failBuild } from '@embroider/macros';
-
-if (macroCondition(dependencySatisfies('ember-data', '^3.0.0'))) {
-} else
-```
+TODO
 
 ## The Macros
 

@@ -28,8 +28,20 @@ export function config<T>(packageRoot: string): T | undefined {
   return runtimeConfig.packages[packageRoot] as T;
 }
 
-export function globalConfig(): unknown {
+export function getGlobalConfig(): unknown {
   return runtimeConfig.global;
+}
+
+export function isTesting(): boolean {
+  let g = runtimeConfig.global as any;
+  let e = g && g['@embroider/macros'];
+  return Boolean(e && e.isTesting);
+}
+
+export function isDeveloping(): boolean {
+  let g = runtimeConfig.global as any;
+  let e = g && g['@embroider/macros'];
+  return Boolean(e && e.isDeveloping);
 }
 
 const runtimeConfig: {
@@ -45,7 +57,7 @@ function initializeRuntimeMacrosConfig() {
 function updaterMethods() {
   return {
     config,
-    globalConfig,
+    getGlobalConfig,
     setConfig(packageRoot: string, value: unknown) {
       runtimeConfig.packages[packageRoot] = value;
     },

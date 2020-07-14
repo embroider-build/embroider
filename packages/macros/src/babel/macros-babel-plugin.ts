@@ -102,9 +102,13 @@ export default function main(context: unknown): unknown {
         let mode: GetConfigMode | false = callee.referencesImport('@embroider/macros', 'getOwnConfig')
           ? 'own'
           : callee.referencesImport('@embroider/macros', 'getGlobalConfig')
-          ? 'global'
+          ? 'getGlobalConfig'
           : callee.referencesImport('@embroider/macros', 'getConfig')
           ? 'package'
+          : callee.referencesImport('@embroider/macros', 'isDeveloping')
+          ? 'isDeveloping'
+          : callee.referencesImport('@embroider/macros', 'isTesting')
+          ? 'isTesting'
           : false;
         if (mode) {
           state.calledIdentifiers.add(callee.node);
@@ -127,6 +131,8 @@ export default function main(context: unknown): unknown {
         'getOwnConfig',
         'failBuild',
         'importSync',
+        'isDeveloping',
+        'isTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
           throw error(path, `You can only use ${candidate} as a function call`);

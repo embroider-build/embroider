@@ -12,9 +12,10 @@ import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 import assertNever from 'assert-never';
+import { isIdentifier } from '@babel/types';
 
 const packageCache = PackageCache.shared('embroider-stage3');
-export type Mode = 'own' | 'global' | 'package';
+export type Mode = 'own' | 'getGlobalConfig' | 'package' | 'isDeveloping' | 'isTesting';
 
 function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
   let packageName: string | undefined;
@@ -41,8 +42,14 @@ function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
 export default function getConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
   let config: unknown | undefined;
-  if (mode === 'global') {
-    return state.opts.globalConfig;
+  switch (mode) {
+    case 'getGlobalConfig':
+      return state.opts.globalConfig;
+    case 'isDeveloping':
+    case 'isTesting':
+      let g = state.opts.globalConfig as any;
+      let e = g && (g['@embroider/macros'] as any);
+      return Boolean(e && e[mode]);
   }
   let pkg = getPackage(path, state, mode);
   if (pkg) {
@@ -61,21 +68,25 @@ export function insertConfig(path: NodePath<CallExpression>, state: State, mode:
     let literalResult = buildLiterals(collapsed.config);
     collapsed.path.replaceWith(literalResult);
   } else {
-    if (mode === 'global') {
-      let name = unusedNameLike('globalConfig', path);
-      path.replaceWith(callExpression(identifier(name), []));
-      state.neededRuntimeImports.set(name, 'globalConfig');
-    } else {
-      let pkg = getPackage(path, state, mode);
-      let pkgRoot;
-      if (pkg) {
-        pkgRoot = stringLiteral(pkg.root);
-      } else {
-        pkgRoot = identifier('undefined');
+    switch (mode) {
+      case 'isDeveloping':
+      case 'isTesting':
+      case 'getGlobalConfig': {
+        state.neededRuntimeImports.set(calleeName(path), mode);
+        break;
       }
-      let name = unusedNameLike('config', path);
-      path.replaceWith(callExpression(identifier(name), [pkgRoot]));
-      state.neededRuntimeImports.set(name, 'config');
+      default: {
+        let pkg = getPackage(path, state, mode);
+        let pkgRoot;
+        if (pkg) {
+          pkgRoot = stringLiteral(pkg.root);
+        } else {
+          pkgRoot = identifier('undefined');
+        }
+        let name = unusedNameLike('config', path);
+        path.replaceWith(callExpression(identifier(name), [pkgRoot]));
+        state.neededRuntimeImports.set(name, 'config');
+      }
     }
   }
 }
@@ -112,4 +123,12 @@ export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: 
   path.get('body').node.body = [
     returnStatement(buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig })),
   ];
+}
+
+function calleeName(path: NodePath<CallExpression>): string {
+  let callee = path.node.callee;
+  if (isIdentifier(callee)) {
+    return callee.name;
+  }
+  throw new Error(`bug: our macros should only be invoked as identifiers`);
 }

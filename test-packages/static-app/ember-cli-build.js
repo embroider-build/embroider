@@ -10,6 +10,16 @@ module.exports = function(defaults) {
     isClassic: Boolean(process.env.CLASSIC),
   });
 
+  app.import('vendor/amd-file.js', {
+    outputFile: 'assets/add.js',
+    using: [{ transformation: 'amd', as: 'add' }],
+  });
+
+  app.import('node_modules/lodash/subtract.js', {
+    outputFile: 'assets/subtract.js',
+    using: [{ transformation: 'cjs', as: 'subtract' }],
+  });
+
   if (process.env.CLASSIC) {
     return app.toTree();
   }

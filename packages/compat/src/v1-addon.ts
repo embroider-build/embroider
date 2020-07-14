@@ -280,7 +280,16 @@ export default class V1Addon implements V1Package {
   }
 
   protected customizes(...treeNames: string[]) {
-    return Boolean(treeNames.find(treeName => this.addonInstance[treeName] !== this.baseImplementation(treeName)));
+    return Boolean(
+      treeNames.find(treeName => {
+        return (
+          // customized hook exists in actual code exported from their index.js
+          this.mainModule[treeName] ||
+          // addon instance doesn't match its own prototype
+          (this.addonInstance.__proto__ && this.addonInstance[treeName] !== this.addonInstance.__proto__[treeName])
+        );
+      })
+    );
   }
 
   @Memoize()
@@ -481,7 +490,13 @@ export default class V1Addon implements V1Package {
   }
 
   protected treeForAddon(built: IntermediateBuild): Tree | undefined {
-    if (this.customizes('treeForAddon', 'treeForAddonTemplates')) {
+    // the extra isEngine condition is because ember-engines injects a
+    // treeForAddon method into each engine addon that we really don't need or
+    // want to run. Unfortunately there's not a more localized place to patch it
+    // out, partly because ember-engines also uses a bogus inheritance strategy
+    // (instead of providing a prototype that engine addons can extend it
+    // patches things into their instance directly).
+    if (this.customizes('treeForAddon', 'treeForAddonTemplates') && !this.isEngine()) {
       let tree = this.invokeOriginalTreeFor('addon', { neuterPreprocessors: true });
       if (tree) {
         tree = modulesCompat(tree);
@@ -713,7 +728,10 @@ export default class V1Addon implements V1Package {
 
   private buildPublicTree(built: IntermediateBuild) {
     let publicTree;
-    if (this.customizes('treeForPublic')) {
+    // the extra isEngine condition is here because ember-engines injects a
+    // customized treeForPublic into every engine addon. We don't want or need
+    // it to run.
+    if (this.customizes('treeForPublic') && !this.isEngine()) {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
         publicTree = new Funnel(original, {
@@ -756,8 +774,12 @@ export default class V1Addon implements V1Package {
     }
   }
 
+  private isEngine() {
+    return typeof this.addonInstance.getEngineConfigContents === 'function';
+  }
+
   private buildEngineConfig(built: IntermediateBuild) {
-    if (typeof this.addonInstance.getEngineConfigContents !== 'function') {
+    if (!this.isEngine()) {
       return;
     }
     // this addon is an engine, so it needs its own config/environment.js.

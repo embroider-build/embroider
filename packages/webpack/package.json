@@ -37,7 +37,7 @@
     "fs-extra": "^7.0.0",
     "jsdom": "^12.0.0",
     "loader-utils": "^1.1.0",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.19",
     "mini-css-extract-plugin": "^0.4.3",
     "pkg-up": "^2.0.0",
     "source-map-url": "^0.4.0",

@@ -23,7 +23,7 @@
     "fixturify-project": "git+https://github.com/ef4/node-fixturify-project#e52e2e7724ae1da8dc57a231d74a8ccfdffc119a",
     "fs-extra": "^7.0.0",
     "loader.js": "^4.7.0",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.19",
     "qunit": "^2.8.0"
   },
   "volta": {

@@ -40,10 +40,10 @@ export = {
 
       // this powers the `isTesting` macro. It always starts out false here,
       // because:
-      //  - if this is a production build, we will resolve all macros at build
+      //  - if this is a production build, we will evaluate all macros at build
       //    time and isTesting will stay false, so test-only code will not be
       //    included.
-      //  - if this is a dev build, we resolve macros at runtime, which allows
+      //  - if this is a dev build, we evaluate macros at runtime, which allows
       //    both "I'm running my app in development" and "I'm running my test
       //    suite" to coexist within a single build. When you run the test
       //    suite, early in the runtime boot process we can flip isTesting to

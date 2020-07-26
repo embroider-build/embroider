@@ -10,7 +10,7 @@ describe(`env macros`, function() {
       return makeBabelConfig(version, macrosConfig);
     },
     includePresetsTests: true,
-    createTests: allModes(function(transform, { applyMode, runTimeTest }) {
+    createTests: allModes(function(transform, { applyMode }) {
       let run: ReturnType<typeof makeRunner>;
 
       describe(`true cases`, function() {

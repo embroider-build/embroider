@@ -15,7 +15,7 @@ import assertNever from 'assert-never';
 import { isIdentifier } from '@babel/types';
 
 const packageCache = PackageCache.shared('embroider-stage3');
-export type Mode = 'own' | 'getGlobalConfig' | 'package' | 'isDeveloping' | 'isTesting';
+export type Mode = 'own' | 'getGlobalConfig' | 'package';
 
 function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
   let packageName: string | undefined;
@@ -42,14 +42,8 @@ function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
 export default function getConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
   let config: unknown | undefined;
-  switch (mode) {
-    case 'getGlobalConfig':
-      return state.opts.globalConfig;
-    case 'isDeveloping':
-    case 'isTesting':
-      let g = state.opts.globalConfig as any;
-      let e = g && (g['@embroider/macros'] as any);
-      return Boolean(e && e[mode]);
+  if (mode === 'getGlobalConfig') {
+    return state.opts.globalConfig;
   }
   let pkg = getPackage(path, state, mode);
   if (pkg) {
@@ -68,25 +62,19 @@ export function insertConfig(path: NodePath<CallExpression>, state: State, mode:
     let literalResult = buildLiterals(collapsed.config);
     collapsed.path.replaceWith(literalResult);
   } else {
-    switch (mode) {
-      case 'isDeveloping':
-      case 'isTesting':
-      case 'getGlobalConfig': {
-        state.neededRuntimeImports.set(calleeName(path), mode);
-        break;
+    if (mode === 'getGlobalConfig') {
+      state.neededRuntimeImports.set(calleeName(path), 'getGlobalConfig');
+    } else {
+      let pkg = getPackage(path, state, mode);
+      let pkgRoot;
+      if (pkg) {
+        pkgRoot = stringLiteral(pkg.root);
+      } else {
+        pkgRoot = identifier('undefined');
       }
-      default: {
-        let pkg = getPackage(path, state, mode);
-        let pkgRoot;
-        if (pkg) {
-          pkgRoot = stringLiteral(pkg.root);
-        } else {
-          pkgRoot = identifier('undefined');
-        }
-        let name = unusedNameLike('config', path);
-        path.replaceWith(callExpression(identifier(name), [pkgRoot]));
-        state.neededRuntimeImports.set(name, 'config');
-      }
+      let name = unusedNameLike('config', path);
+      path.replaceWith(callExpression(identifier(name), [pkgRoot]));
+      state.neededRuntimeImports.set(name, 'config');
     }
   }
 }

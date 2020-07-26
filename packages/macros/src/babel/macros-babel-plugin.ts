@@ -105,10 +105,6 @@ export default function main(context: unknown): unknown {
           ? 'getGlobalConfig'
           : callee.referencesImport('@embroider/macros', 'getConfig')
           ? 'package'
-          : callee.referencesImport('@embroider/macros', 'isDeveloping')
-          ? 'isDeveloping'
-          : callee.referencesImport('@embroider/macros', 'isTesting')
-          ? 'isTesting'
           : false;
         if (mode) {
           state.calledIdentifiers.add(callee.node);

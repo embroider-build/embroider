@@ -80,16 +80,6 @@ describe(`env macros`, function() {
           run = makeRunner(transform);
         });
 
-        runTimeTest('isDeveloping: access value', () => {
-          let code = transform(`
-            import { isDeveloping } from '@embroider/macros';
-            export default function() {
-              return isDeveloping();
-            }
-          `);
-          expect(run(code)).toBe(false);
-        });
-
         test('isDeveloping: access value', () => {
           let code = transform(`
             import { isDeveloping } from '@embroider/macros';

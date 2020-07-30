@@ -1,8 +1,7 @@
 import V1Package from './v1-package';
 import { Memoize } from 'typescript-memoize';
-import { dirname, isAbsolute } from 'path';
+import { dirname, isAbsolute, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
-import { join } from 'path';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
@@ -294,7 +293,13 @@ export default class V1Addon implements V1Package {
 
   @Memoize()
   private hasStockTree(treeName: string) {
-    return this.addonInstance.treePaths && existsSync(join(this.root, this.addonInstance.treePaths[treeName]));
+    // we need to use this.addonInstance.root instead of this.root here because
+    // we're looking for the classic location of the stock tree, and that
+    // location is influenced by a customized ember-addon.main in package.json,
+    // which is reflected in addonInstance.root.
+    return (
+      this.addonInstance.treePaths && existsSync(join(this.addonInstance.root, this.addonInstance.treePaths[treeName]))
+    );
   }
 
   hasAnyTrees(): boolean {
@@ -336,12 +341,11 @@ export default class V1Addon implements V1Package {
 
   protected stockTree(treeName: string) {
     return this.throughTreeCache(treeName, 'stock', () => {
-      let opts = Object.assign(
-        {
-          srcDir: this.addonInstance.treePaths[treeName],
-        },
-        this.stockTreeFunnelOptions(treeName)
-      );
+      // adjust from the legacy "root" to our real root, because our rootTree
+      // uses our real root but the stock trees are defined in terms of the
+      // legacy root
+      let srcDir = relative(this.root, join(this.addonInstance.root, this.addonInstance.treePaths[treeName]));
+      let opts = Object.assign({ srcDir }, this.stockTreeFunnelOptions(treeName));
       return new Funnel(this.rootTree, opts);
     })!;
   }

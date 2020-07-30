@@ -15,7 +15,7 @@ import {
   stringLiteral,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
-import State, { sourceFile, relativePathToRuntime } from './state';
+import State, { sourceFile, pathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
@@ -127,7 +127,7 @@ export default function main(context: unknown): unknown {
         'getOwnConfig',
         'failBuild',
         'importSync',
-        'isDeveloping',
+        'isDevelopingApp',
         'isTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
@@ -212,7 +212,7 @@ function addRuntimeImports(path: NodePath<Program>, state: State) {
         [...state.neededRuntimeImports].map(([local, imported]) =>
           importSpecifier(identifier(local), identifier(imported))
         ),
-        stringLiteral(relativePathToRuntime(path, state))
+        stringLiteral(pathToRuntime(path, state))
       )
     );
   }

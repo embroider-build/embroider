@@ -5,6 +5,7 @@ export = {
   name: '@embroider/macros',
   included(this: any, parent: any) {
     this._super.included.apply(this, arguments);
+    this.options.babel = { plugins: [] };
     let parentOptions = (parent.options = parent.options || {});
     let ownOptions = (parentOptions['@embroider/macros'] = parentOptions['@embroider/macros'] || {});
 
@@ -23,43 +24,22 @@ export = {
       }
     }
 
-    // this uses setGlobalConfig instead of setOwnConfig because these things
-    // truly are global. Even if a package doesn't have a dep or peerDep on
-    // @embroider/macros, it's legit for them to want to know the answer to
-    // these questions, and there is only one answer throughout the whole
-    // dependency graph.
-    MacrosConfig.for(appInstance).setGlobalConfig(__filename, '@embroider/macros', {
-      // this powers the `isDeveloping` macro. Anything that is not production
-      // is development (so under the classic conventions of ember-cli, tests
-      // are also `isDeveloping() === true`. The point of `isDeveloping` is to
-      // ask: should I provide the optimal experience for developers (by
-      // including more assertions, for example) vs end users (by stripping away
-      // nicer assertions and errors in favor of the smallest fastest possible
-      // code).
-      isDeveloping: appInstance.env !== 'production',
-
-      // this powers the `isTesting` macro. It always starts out false here,
-      // because:
-      //  - if this is a production build, we will evaluate all macros at build
-      //    time and isTesting will stay false, so test-only code will not be
-      //    included.
-      //  - if this is a dev build, we evaluate macros at runtime, which allows
-      //    both "I'm running my app in development" and "I'm running my test
-      //    suite" to coexist within a single build. When you run the test
-      //    suite, early in the runtime boot process we can flip isTesting to
-      //    true to distinguish the two.
-      isTesting: false,
-    });
-
     if (appInstance.env !== 'production') {
+      MacrosConfig.for(appInstance).enableAppDevelopment();
       MacrosConfig.for(appInstance).enableRuntimeMode();
     }
 
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
+    debugger;
+    // add our babel plugin to our parent's babel
     babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
 
-    appInstance.import('vendor/embroider-macros-test.js', { type: 'test' });
+    // and to our own babel, because we may need to inline runtime config into
+    // our source code
+    this.options.babel.plugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(this.root));
+
+    appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
 
     // When we're used inside the traditional ember-cli build pipeline without
     // Embroider, we unfortunately need to hook into here uncleanly because we
@@ -95,4 +75,5 @@ export = {
       });
     }
   },
+  options: {},
 };

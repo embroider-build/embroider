@@ -9,12 +9,6 @@ interface RunDefaultOptions {
   dependencies?: { [name: string]: any };
 }
 
-export function toJS(code: string): string {
-  return transform7(code, {
-    plugins: ['@babel/plugin-transform-typescript'],
-  })!.code!;
-}
-
 export function toCJS(code: string): string {
   return transform7(code, {
     plugins: ['@babel/plugin-transform-modules-commonjs', '@babel/plugin-transform-typescript'],

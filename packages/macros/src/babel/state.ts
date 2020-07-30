@@ -1,7 +1,7 @@
 import { NodePath, Node } from '@babel/traverse';
 import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { explicitRelative } from '@embroider/core';
 
 export default interface State {
@@ -33,11 +33,18 @@ export default interface State {
   };
 }
 
-const runtimePath = join(__dirname, 'runtime');
+const runtimePath = resolve(join(__dirname, '..', 'addon', 'runtime'));
 
-export function relativePathToRuntime(path: NodePath, state: State): string {
-  let source = sourceFile(path, state);
-  return explicitRelative(dirname(source), runtimePath);
+export function pathToRuntime(path: NodePath, state: State): string {
+  if (!state.opts.owningPackageRoot) {
+    // running inside embroider, so make a relative path to the module
+    let source = sourceFile(path, state);
+    return explicitRelative(dirname(source), runtimePath);
+  } else {
+    // running inside a classic build, so use a classic-compatible runtime
+    // specifier
+    return '@embroider/macros/runtime';
+  }
 }
 
 export function sourceFile(path: NodePath, state: State): string {

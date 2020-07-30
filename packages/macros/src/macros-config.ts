@@ -57,10 +57,53 @@ export default class MacrosConfig {
   private globalConfig: { [key: string]: unknown } = {};
 
   enableRuntimeMode() {
-    this.mode = 'run-time';
+    if (this.mode !== 'run-time') {
+      if (!this._configWritable) {
+        throw new Error(`[Embroider:MacrosConfig] attempted to enableRuntimeMode after configs have been finalized`);
+      }
+      this.mode = 'run-time';
+    }
   }
 
-  private constructor() {}
+  enableAppDevelopment() {
+    // cast is safe because we initialized this in the constructor
+    let config = this.globalConfig['@embroider/macros'] as { isDevelopingApp: boolean };
+    if (!config.isDevelopingApp) {
+      if (!this._configWritable) {
+        throw new Error(`[Embroider:MacrosConfig] attempted to enableAppDevelopment after configs have been finalized`);
+      }
+      config.isDevelopingApp = true;
+    }
+  }
+
+  private constructor() {
+    // this uses globalConfig because these things truly are global. Even if a
+    // package doesn't have a dep or peerDep on @embroider/macros, it's legit
+    // for them to want to know the answer to these questions, and there is only
+    // one answer throughout the whole dependency graph.
+    this.globalConfig['@embroider/macros'] = {
+      // this powers the `isDevelopingApp` macro. Anything that is not
+      // production is development (so under the classic conventions of
+      // ember-cli, tests are also `isDevelopingApp() === true`. The point of
+      // `isDevelopingApp` is to ask: should I provide the optimal experience
+      // for developers (by including more assertions, for example) vs end users
+      // (by stripping away nicer assertions and errors in favor of the smallest
+      // fastest possible code).
+      isDevelopingApp: false,
+
+      // this powers the `isTesting` macro. It always starts out false here,
+      // because:
+      //  - if this is a production build, we will evaluate all macros at build
+      //    time and isTesting will stay false, so test-only code will not be
+      //    included.
+      //  - if this is a dev build, we evaluate macros at runtime, which allows
+      //    both "I'm running my app in development" and "I'm running my test
+      //    suite" to coexist within a single build. When you run the test
+      //    suite, early in the runtime boot process we can flip isTesting to
+      //    true to distinguish the two.
+      isTesting: false,
+    };
+  }
 
   private _configWritable = true;
   private configs: Map<string, unknown[]> = new Map();

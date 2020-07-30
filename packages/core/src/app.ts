@@ -739,6 +739,13 @@ export class AppBuilder<TreeNames> {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
+    if (this.adapter.env !== 'production') {
+      this.macrosConfig.enableAppDevelopment();
+      this.macrosConfig.enableRuntimeMode();
+    }
+
+    // on the first build, we lock down the macros config. on subsequent builds,
+    // this doesn't do anything anyway because it's idempotent.
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);

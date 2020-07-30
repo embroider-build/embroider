@@ -16,27 +16,27 @@ describe(`env macros`, function() {
       describe(`true cases`, function() {
         beforeEach(function() {
           macrosConfig = MacrosConfig.for({});
-          macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isDeveloping: true, isTesting: true });
+          macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isDevelopingApp: true, isTesting: true });
           applyMode(macrosConfig);
           macrosConfig.finalize();
           run = makeRunner(transform);
         });
 
-        test('isDeveloping: access value', () => {
+        test('isDevelopingApp: access value', () => {
           let code = transform(`
-            import { isDeveloping } from '@embroider/macros';
+            import { isDevelopingApp } from '@embroider/macros';
             export default function() {
-              return isDeveloping();
+              return isDevelopingApp();
             }
           `);
           expect(run(code)).toBe(true);
         });
 
-        test('isDeveloping: use within conditional', () => {
+        test('isDevelopingApp: use within conditional', () => {
           let code = transform(`
-            import { isDeveloping, macroCondition } from '@embroider/macros';
+            import { isDevelopingApp, macroCondition } from '@embroider/macros';
             export default function() {
-              if (macroCondition(isDeveloping())) {
+              if (macroCondition(isDevelopingApp())) {
                 return 'yes';
               } else {
                 return 'no';
@@ -74,27 +74,27 @@ describe(`env macros`, function() {
       describe(`false cases`, function() {
         beforeEach(function() {
           macrosConfig = MacrosConfig.for({});
-          macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isDeveloping: false, isTesting: false });
+          macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isDevelopingApp: false, isTesting: false });
           applyMode(macrosConfig);
           macrosConfig.finalize();
           run = makeRunner(transform);
         });
 
-        test('isDeveloping: access value', () => {
+        test('isDevelopingApp: access value', () => {
           let code = transform(`
-            import { isDeveloping } from '@embroider/macros';
+            import { isDevelopingApp } from '@embroider/macros';
             export default function() {
-              return isDeveloping();
+              return isDevelopingApp();
             }
           `);
           expect(run(code)).toBe(false);
         });
 
-        test('isDeveloping: use within conditional', () => {
+        test('isDevelopingApp: use within conditional', () => {
           let code = transform(`
-            import { isDeveloping, macroCondition } from '@embroider/macros';
+            import { isDevelopingApp, macroCondition } from '@embroider/macros';
             export default function() {
-              if (macroCondition(isDeveloping())) {
+              if (macroCondition(isDevelopingApp())) {
                 return 'yes';
               } else {
                 return 'no';

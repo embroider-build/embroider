@@ -312,8 +312,7 @@ describe('stage1 build', function() {
 
       // Use one addon to patch the hook on another (yes, this happens in the
       // wild...), and ensure we still detect the customized hook
-      let externallyCustomized = app.addAddon('externally-customized');
-      merge(externallyCustomized.files, {});
+      app.addAddon('externally-customized');
       let troubleMaker = app.addAddon('trouble-maker');
       merge(troubleMaker.files, {
         injected: {
@@ -332,6 +331,18 @@ describe('stage1 build', function() {
           }
         }`,
       });
+
+      // an addon that customizes packageJSON['ember-addon'].main and then uses
+      // stock trees. Setting the main actually changes the root for *all* stock
+      // trees.
+      let movedMain = app.addAddon('moved-main');
+      merge(movedMain.files, {
+        custom: {
+          'index.js': `module.exports = { name: 'moved-main'};`,
+          addon: { helpers: { 'hello.js': '// hello-world' } },
+        },
+      });
+      merge(movedMain.pkg, { 'ember-addon': { main: 'custom/index.js' } });
 
       build = await BuildResult.build(app, { stage: 1, type: 'app' });
       expectFile = expectFilesAt(build.outputPath);
@@ -360,6 +371,10 @@ describe('stage1 build', function() {
     test('custom tree hooks are detected when they have been patched into the addon instance', function() {
       let assertFile = expectFile('node_modules/externally-customized/public/hello/world.js');
       assertFile.exists();
+    });
+
+    test('addon with customized ember-addon.main can still use stock trees', function() {
+      expectFile('node_modules/moved-main/helpers/hello.js').matches(/hello-world/);
     });
   });
 });

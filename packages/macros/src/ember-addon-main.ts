@@ -31,7 +31,7 @@ export = {
 
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
-    debugger;
+
     // add our babel plugin to our parent's babel
     babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
 

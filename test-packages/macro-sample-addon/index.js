@@ -5,9 +5,9 @@ module.exports = {
   options: {
     '@embroider/macros': {
       setOwnConfig: {
-        hello: 'world'
-      }
-    }
+        hello: 'world',
+      },
+    },
   },
   included(app) {
     app.options.autoRun = false;
@@ -19,7 +19,7 @@ module.exports = {
       contents.splice(0, contents.length);
       contents.push(
         'let config = function() {' + originalContents + '}()',
-        'config.default.APP.fromConfigModule = \'hello new world\';',
+        "config.default.APP.fromConfigModule = 'hello new world';",
         'return config;'
       );
       return;
@@ -30,9 +30,14 @@ module.exports = {
       let prefix = config.modulePrefix;
       let configAppAsString = JSON.stringify(config.APP || {});
       return [
-        "require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
-        "window.LoadedFromCustomAppBoot = true",
-      ].join("\n").replace(/\{\{MODULE_PREFIX\}\}/g, prefix).replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
+        'if (!runningTests) {',
+        "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
+        '}',
+        'window.LoadedFromCustomAppBoot = true',
+      ]
+        .join('\n')
+        .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)
+        .replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
     }
-  }
+  },
 };

@@ -99,6 +99,11 @@ export default function main(context: unknown): unknown {
         // even though it also emits values via evaluateMacroCall when they're
         // needed recursively by other macros, it has its own insertion-handling
         // code that we invoke here.
+        //
+        // The things that are special include:
+        //  - automatic collapsing of chained properties, etc
+        //  - these macros have runtime implementations sometimes, which changes
+        //    how we rewrite them
         let mode: GetConfigMode | false = callee.referencesImport('@embroider/macros', 'getOwnConfig')
           ? 'own'
           : callee.referencesImport('@embroider/macros', 'getGlobalConfig')
@@ -109,6 +114,14 @@ export default function main(context: unknown): unknown {
         if (mode) {
           state.calledIdentifiers.add(callee.node);
           insertConfig(path, state, mode);
+          return;
+        }
+
+        // isTesting can have a runtime implementation. At compile time it
+        // instead falls through to evaluateMacroCall.
+        if (callee.referencesImport('@embroider/macros', 'isTesting') && state.opts.mode === 'run-time') {
+          state.calledIdentifiers.add(callee.node);
+          state.neededRuntimeImports.set(callee.node.name, 'isTesting');
           return;
         }
 

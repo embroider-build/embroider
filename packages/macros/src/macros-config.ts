@@ -55,6 +55,7 @@ export default class MacrosConfig {
 
   private mode: 'compile-time' | 'run-time' = 'compile-time';
   private globalConfig: { [key: string]: unknown } = {};
+  private isDevelopingApp = false;
 
   enableRuntimeMode() {
     if (this.mode !== 'run-time') {
@@ -66,13 +67,11 @@ export default class MacrosConfig {
   }
 
   enableAppDevelopment() {
-    // cast is safe because we initialized this in the constructor
-    let config = this.globalConfig['@embroider/macros'] as { isDevelopingApp: boolean };
-    if (!config.isDevelopingApp) {
+    if (!this.isDevelopingApp) {
       if (!this._configWritable) {
         throw new Error(`[Embroider:MacrosConfig] attempted to enableAppDevelopment after configs have been finalized`);
       }
-      config.isDevelopingApp = true;
+      this.isDevelopingApp = true;
     }
   }
 
@@ -82,15 +81,6 @@ export default class MacrosConfig {
     // for them to want to know the answer to these questions, and there is only
     // one answer throughout the whole dependency graph.
     this.globalConfig['@embroider/macros'] = {
-      // this powers the `isDevelopingApp` macro. Anything that is not
-      // production is development (so under the classic conventions of
-      // ember-cli, tests are also `isDevelopingApp() === true`. The point of
-      // `isDevelopingApp` is to ask: should I provide the optimal experience
-      // for developers (by including more assertions, for example) vs end users
-      // (by stripping away nicer assertions and errors in favor of the smallest
-      // fastest possible code).
-      isDevelopingApp: false,
-
       // this powers the `isTesting` macro. It always starts out false here,
       // because:
       //  - if this is a production build, we will evaluate all macros at build
@@ -219,6 +209,8 @@ export default class MacrosConfig {
         return self.globalConfig;
       },
       owningPackageRoot,
+
+      isDevelopingApp: this.isDevelopingApp,
 
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.

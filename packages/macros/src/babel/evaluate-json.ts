@@ -389,10 +389,7 @@ export class Evaluator {
       return { confident: true, value: getConfig(path, this.state, 'getGlobalConfig') };
     }
     if (callee.referencesImport('@embroider/macros', 'isDevelopingApp')) {
-      let g = getConfig(path, this.state, 'getGlobalConfig') as any;
-      let e = g && g['@embroider/macros'];
-      let value = Boolean(e && e.isDevelopingApp);
-      return { confident: true, value };
+      return { confident: true, value: this.state.opts.isDevelopingApp };
     }
     if (callee.referencesImport('@embroider/macros', 'isTesting')) {
       let g = getConfig(path, this.state, 'getGlobalConfig') as any;

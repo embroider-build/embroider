@@ -38,12 +38,6 @@ export function isTesting() {
   return Boolean(e && e.isTesting);
 }
 
-export function isDevelopingApp() {
-  let g = runtimeConfig.global;
-  let e = g && g['@embroider/macros'];
-  return Boolean(e && e.isDevelopingApp);
-}
-
 const runtimeConfig = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin

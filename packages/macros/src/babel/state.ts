@@ -27,6 +27,8 @@ export default interface State {
     // globally-relevant path.
     owningPackageRoot: string | undefined;
 
+    isDevelopingApp: boolean;
+
     embroiderMacrosConfigMarker: true;
 
     mode: 'compile-time' | 'run-time';

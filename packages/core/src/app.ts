@@ -794,7 +794,7 @@ export class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     if (this.adapter.env !== 'production') {
-      this.macrosConfig.enableAppDevelopment();
+      this.macrosConfig.enableAppDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
     }
 

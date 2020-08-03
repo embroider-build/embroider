@@ -141,6 +141,7 @@ export default function main(context: unknown): unknown {
         'failBuild',
         'importSync',
         'isDevelopingApp',
+        'isDevelopingThisPackage',
         'isTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {

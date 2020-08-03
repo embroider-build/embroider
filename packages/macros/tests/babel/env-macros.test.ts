@@ -1,5 +1,6 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
+import { PackageCache } from '@embroider/core';
 import { MacrosConfig } from '../..';
 
 describe(`env macros`, function() {
@@ -17,7 +18,7 @@ describe(`env macros`, function() {
         beforeEach(function() {
           macrosConfig = MacrosConfig.for({});
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: true });
-          macrosConfig.enableAppDevelopment();
+          macrosConfig.enableAppDevelopment(PackageCache.shared('embroider-stage3').ownerOfFile(__filename)!.root);
           applyMode(macrosConfig);
           macrosConfig.finalize();
           run = makeRunner(transform);
@@ -48,6 +49,17 @@ describe(`env macros`, function() {
           expect(run(code)).toBe('yes');
           expect(code).toMatch(/return 'yes'/);
           expect(code).not.toMatch(/return 'no'/);
+        });
+
+        test('isDevelopingThisPackage from within app', () => {
+          let code = transform(`
+            import { isDevelopingThisPackage } from '@embroider/macros';
+            export default function() {
+              return isDevelopingThisPackage();
+            }
+          `);
+          expect(run(code)).toBe(true);
+          expect(code).toMatch(/return true/);
         });
 
         buildTimeTest('isTesting: access value', () => {

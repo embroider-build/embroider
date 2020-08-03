@@ -30,28 +30,38 @@ const defaultParams = {
 };
 
 export default class BuildResult {
-  static async build(project: Project, params: Partial<BuildParams>) {
-    let paramsWithDefaults: BuildParams = Object.assign({}, params, defaultParams);
+  static async build(project: Project, rawParams: Partial<BuildParams>) {
+    let params: BuildParams = Object.assign({}, defaultParams, rawParams);
     project.writeSync();
-    let instance;
-    if (paramsWithDefaults.type === 'addon') {
-      instance = emberAddon(project.baseDir, params.emberAppOptions);
-    } else {
-      instance = emberApp(project.baseDir, params.emberAppOptions);
+
+    let origDir = process.cwd();
+    try {
+      // this is here because EmberAddon makes a bad assumption that the project
+      // root is always the current working directory
+      process.chdir(project.baseDir);
+
+      let instance;
+      if (params.type === 'addon') {
+        instance = emberAddon(project.baseDir, params.emberAppOptions);
+      } else {
+        instance = emberApp(project.baseDir, params.emberAppOptions);
+      }
+      let addons = new Addons(instance, params.embroiderOptions);
+      let tree;
+      if (params.stage === 1) {
+        tree = addons.tree;
+      } else {
+        let compatApp = new App(instance, addons, params.embroiderOptions);
+        tree = compatApp.tree;
+      }
+      let builder = new Builder(tree);
+      let builderPromise = builder.build();
+      let results = await Promise.all([builderPromise, addons.ready()]);
+      let basePath = results[1].outputPath;
+      return new BuildResult(project, basePath, builder);
+    } finally {
+      process.chdir(origDir);
     }
-    let addons = new Addons(instance, params.embroiderOptions);
-    let tree;
-    if (params.stage === 1) {
-      tree = addons.tree;
-    } else {
-      let compatApp = new App(instance, addons, params.embroiderOptions);
-      tree = compatApp.tree;
-    }
-    let builder = new Builder(tree);
-    let builderPromise = builder.build();
-    let results = await Promise.all([builderPromise, addons.ready()]);
-    let basePath = results[1].outputPath;
-    return new BuildResult(project, basePath, builder);
   }
   private constructor(private project: Project, public outputPath: string, private builder: Builder) {
     this.transpile = this.transpile.bind(this);

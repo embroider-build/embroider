@@ -578,4 +578,59 @@ describe('stage2 build', function() {
         .matches(/return import\(['"]some-library['"]\)/);
     });
   });
+
+  describe('addon dummy app', function() {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function() {
+      let app = Project.addonNew();
+      merge(app.files, {
+        addon: {
+          components: {
+            'hello-world.js': `
+              import { isDevelopingThisPackage } from '@embroider/macros';
+              console.log(isDevelopingThisPackage());`,
+          },
+        },
+        tests: {
+          dummy: {
+            app: {
+              components: {
+                'inside-dummy-app.js': `
+                  import { isDevelopingThisPackage } from '@embroider/macros';
+                  console.log(isDevelopingThisPackage());`,
+              },
+            },
+          },
+        },
+      });
+      build = await BuildResult.build(app, {
+        stage: 2,
+        type: 'addon',
+        emberAppOptions: {
+          tests: false,
+        },
+      });
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function() {
+      await build.cleanup();
+    });
+
+    test('dummy app sees that its being developed', function() {
+      let assertFile = expectFile('components/inside-dummy-app.js').transform(build.transpile);
+      assertFile.matches(/console\.log\(true\)/);
+    });
+
+    test('addon within dummy app sees that its being developed', function() {
+      let assertFile = expectFile(
+        resolve.sync('my-addon/components/hello-world', {
+          basedir: build.outputPath,
+        })
+      ).transform(build.transpile);
+      assertFile.matches(/console\.log\(true\)/);
+    });
+  });
 });

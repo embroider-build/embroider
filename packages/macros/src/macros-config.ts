@@ -55,7 +55,9 @@ export default class MacrosConfig {
 
   private mode: 'compile-time' | 'run-time' = 'compile-time';
   private globalConfig: { [key: string]: unknown } = {};
-  private isDevelopingApp = false;
+
+  private isDevelopingPackageRoots: Set<string> = new Set();
+  private appPackageRoot: string | undefined;
 
   enableRuntimeMode() {
     if (this.mode !== 'run-time') {
@@ -66,12 +68,28 @@ export default class MacrosConfig {
     }
   }
 
-  enableAppDevelopment() {
-    if (!this.isDevelopingApp) {
+  enableAppDevelopment(appPackageRoot: string) {
+    if (this.appPackageRoot) {
+      if (this.appPackageRoot !== appPackageRoot) {
+        throw new Error(`bug: conflicting appPackageRoots ${this.appPackageRoot} vs ${appPackageRoot}`);
+      }
+    } else {
       if (!this._configWritable) {
         throw new Error(`[Embroider:MacrosConfig] attempted to enableAppDevelopment after configs have been finalized`);
       }
-      this.isDevelopingApp = true;
+      this.appPackageRoot = appPackageRoot;
+      this.isDevelopingPackageRoots.add(appPackageRoot);
+    }
+  }
+
+  enablePackageDevelopment(packageRoot: string) {
+    if (!this.isDevelopingPackageRoots.has(packageRoot)) {
+      if (!this._configWritable) {
+        throw new Error(
+          `[Embroider:MacrosConfig] attempted to enablePackageDevelopment after configs have been finalized`
+        );
+      }
+      this.isDevelopingPackageRoots.add(packageRoot);
     }
   }
 
@@ -210,7 +228,8 @@ export default class MacrosConfig {
       },
       owningPackageRoot,
 
-      isDevelopingApp: this.isDevelopingApp,
+      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots],
+      appPackageRoot: this.appPackageRoot,
 
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.
@@ -273,7 +292,7 @@ export default class MacrosConfig {
     return this.userConfigs[this.resolvePackage(fromPath, undefined).root];
   }
 
-  resolvePackage(fromPath: string, packageName?: string | undefined) {
+  private resolvePackage(fromPath: string, packageName?: string | undefined) {
     let us = packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`[Embroider:MacrosConfig] unable to determine which npm package owns the file ${fromPath}`);

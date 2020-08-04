@@ -1,4 +1,3 @@
-import V1Package from './v1-package';
 import { Memoize } from 'typescript-memoize';
 import { dirname, isAbsolute, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -83,7 +82,7 @@ class V1AddonCompatResolver implements Resolver {
 
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
-export default class V1Addon implements V1Package {
+export default class V1Addon {
   constructor(
     protected addonInstance: any,
     protected addonOptions: Required<Options>,

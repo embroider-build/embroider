@@ -124,6 +124,10 @@ export interface AppAdapter<TreeNames> {
   // auto-upgraded behaviors that v1 addons also get.
   strictV2Format(): boolean;
 
+  // list of directories that point to the roots of addon packages that are
+  // under active development
+  developingAddons(): string[];
+
   // development, test, or production
   env: string;
 }
@@ -796,6 +800,9 @@ export class AppBuilder<TreeNames> {
     if (this.adapter.env !== 'production') {
       this.macrosConfig.enableAppDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
+    }
+    for (let pkgRoot of this.adapter.developingAddons()) {
+      this.macrosConfig.enablePackageDevelopment(pkgRoot);
     }
 
     // on the first build, we lock down the macros config. on subsequent builds,

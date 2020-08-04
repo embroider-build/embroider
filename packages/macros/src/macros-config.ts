@@ -228,8 +228,8 @@ export default class MacrosConfig {
       },
       owningPackageRoot,
 
-      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots],
-      appPackageRoot: this.appPackageRoot,
+      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots].map(root => this.moves.get(root) || root),
+      appPackageRoot: this.appPackageRoot ? this.moves.get(this.appPackageRoot) || this.appPackageRoot : undefined,
 
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.

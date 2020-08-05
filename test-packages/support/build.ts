@@ -22,16 +22,18 @@ export interface BuildParams {
   embroiderOptions: Options;
 }
 
-const defaultParams = {
+const defaultParams = Object.freeze({
   stage: 1,
   type: 'app',
-  emberAppOptions: {},
-  embroiderOptions: {},
-};
+  emberAppOptions: Object.freeze({}),
+  embroiderOptions: Object.freeze({}),
+});
 
 export default class BuildResult {
   static async build(project: Project, rawParams: Partial<BuildParams>) {
     let params: BuildParams = Object.assign({}, defaultParams, rawParams);
+    params.emberAppOptions = Object.assign({}, params.emberAppOptions);
+    params.embroiderOptions = Object.assign({}, params.embroiderOptions);
     project.writeSync();
 
     let origDir = process.cwd();

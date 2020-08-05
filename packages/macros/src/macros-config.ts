@@ -69,8 +69,11 @@ export default class MacrosConfig {
   }
 
   enableAppDevelopment(appPackageRoot: string) {
+    if (!appPackageRoot) {
+      throw new Error(`must provide appPackageRoot`);
+    }
     if (this.appPackageRoot) {
-      if (this.appPackageRoot !== appPackageRoot) {
+      if (this.appPackageRoot !== appPackageRoot && this.moves.get(this.appPackageRoot) !== appPackageRoot) {
         throw new Error(`bug: conflicting appPackageRoots ${this.appPackageRoot} vs ${appPackageRoot}`);
       }
     } else {

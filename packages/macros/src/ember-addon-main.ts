@@ -25,7 +25,7 @@ export = {
     }
 
     if (appInstance.env !== 'production') {
-      MacrosConfig.for(appInstance).enableAppDevelopment(appInstance.root);
+      MacrosConfig.for(appInstance).enableAppDevelopment(join(appInstance.project.configPath(), '..', '..'));
       MacrosConfig.for(appInstance).enableRuntimeMode();
     }
 

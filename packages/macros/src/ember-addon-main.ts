@@ -25,8 +25,15 @@ export = {
     }
 
     if (appInstance.env !== 'production') {
-      MacrosConfig.for(appInstance).enableAppDevelopment(join(appInstance.project.configPath(), '..', '..'));
-      MacrosConfig.for(appInstance).enableRuntimeMode();
+      let macros = MacrosConfig.for(appInstance);
+      // tell the macros where our app is
+      macros.enableAppDevelopment(join(appInstance.project.configPath(), '..', '..'));
+      // also tell them our root project is under development. This can be
+      // different, in the case where this is an addon and the app is the dummy
+      // app.
+      macros.enablePackageDevelopment(appInstance.project.root);
+      // keep the macros in runtime mode for development & testing
+      macros.enableRuntimeMode();
     }
 
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});

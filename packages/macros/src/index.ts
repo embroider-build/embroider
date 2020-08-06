@@ -8,7 +8,7 @@
 
   Some macros also have runtime implementations that are useful in development
   mode, in addition to their build-time implementations in babel. You can find
-  the runtime implementations in ./runtime.ts.
+  the runtime implementations in runtime.ts.
 
   Having a runtime mode lets us do things like produce a single build in
   development that works for both fastboot and browser, using the macros to
@@ -40,6 +40,18 @@ export function getConfig<T>(packageName: string): T {
 }
 
 export function getOwnConfig<T>(): T {
+  throw new Oops();
+}
+
+export function getGlobalConfig<T>(): T {
+  throw new Oops();
+}
+
+export function isDevelopingApp(): boolean {
+  throw new Oops();
+}
+
+export function isTesting(): boolean {
   throw new Oops();
 }
 

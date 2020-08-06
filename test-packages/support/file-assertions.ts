@@ -1,5 +1,5 @@
 import { pathExistsSync, readFileSync } from 'fs-extra';
-import { join } from 'path';
+import { resolve } from 'path';
 import get from 'lodash/get';
 import { Memoize } from 'typescript-memoize';
 
@@ -23,7 +23,7 @@ export class BoundExpectFile {
   get fullPath() {
     let path = this.path;
     if (this.basePath) {
-      path = join(this.basePath, path);
+      path = resolve(this.basePath, path);
     }
     return path;
   }

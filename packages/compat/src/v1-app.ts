@@ -5,7 +5,6 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
-import V1Package from './v1-package';
 import { Tree } from 'broccoli-plugin';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
@@ -52,7 +51,10 @@ interface Group {
   vendorOutputPath: 'string';
 }
 
-export default class V1App implements V1Package {
+export default class V1App {
+  // used to signal that this is a dummy app owned by a particular addon
+  owningAddon: Package | undefined;
+
   static create(app: EmberApp, packageCache: PackageCache): V1App {
     if (app.project.pkg.keywords && app.project.pkg.keywords.includes('ember-addon')) {
       // we are a dummy app, which is unfortunately weird and special
@@ -675,8 +677,6 @@ export default class V1App implements V1Package {
 }
 
 class V1DummyApp extends V1App {
-  private owningAddon!: Package;
-
   constructor(app: EmberApp, packageCache: PackageCache) {
     super(app, packageCache);
     this.owningAddon = this.packageCache.get(this.app.project.root);

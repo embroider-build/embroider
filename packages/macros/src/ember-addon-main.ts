@@ -5,6 +5,7 @@ export = {
   name: '@embroider/macros',
   included(this: any, parent: any) {
     this._super.included.apply(this, arguments);
+    this.options.babel = { plugins: [] };
     let parentOptions = (parent.options = parent.options || {});
     let ownOptions = (parentOptions['@embroider/macros'] = parentOptions['@embroider/macros'] || {});
 
@@ -23,9 +24,29 @@ export = {
       }
     }
 
+    if (appInstance.env !== 'production') {
+      let macros = MacrosConfig.for(appInstance);
+      // tell the macros where our app is
+      macros.enableAppDevelopment(join(appInstance.project.configPath(), '..', '..'));
+      // also tell them our root project is under development. This can be
+      // different, in the case where this is an addon and the app is the dummy
+      // app.
+      macros.enablePackageDevelopment(appInstance.project.root);
+      // keep the macros in runtime mode for development & testing
+      macros.enableRuntimeMode();
+    }
+
     let babelOptions = (parentOptions.babel = parentOptions.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
+
+    // add our babel plugin to our parent's babel
     babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
+
+    // and to our own babel, because we may need to inline runtime config into
+    // our source code
+    this.options.babel.plugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(this.root));
+
+    appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
 
     // When we're used inside the traditional ember-cli build pipeline without
     // Embroider, we unfortunately need to hook into here uncleanly because we
@@ -61,4 +82,5 @@ export = {
       });
     }
   },
+  options: {},
 };

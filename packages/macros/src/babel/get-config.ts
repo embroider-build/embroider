@@ -12,9 +12,10 @@ import { PackageCache, Package } from '@embroider/core';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 import assertNever from 'assert-never';
+import { isIdentifier } from '@babel/types';
 
 const packageCache = PackageCache.shared('embroider-stage3');
-export type Mode = 'own' | 'global' | 'package';
+export type Mode = 'own' | 'getGlobalConfig' | 'package';
 
 function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
   let packageName: string | undefined;
@@ -41,7 +42,7 @@ function getPackage(path: NodePath<CallExpression>, state: State, mode: 'own' | 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
 export default function getConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
   let config: unknown | undefined;
-  if (mode === 'global') {
+  if (mode === 'getGlobalConfig') {
     return state.opts.globalConfig;
   }
   let pkg = getPackage(path, state, mode);
@@ -61,10 +62,8 @@ export function insertConfig(path: NodePath<CallExpression>, state: State, mode:
     let literalResult = buildLiterals(collapsed.config);
     collapsed.path.replaceWith(literalResult);
   } else {
-    if (mode === 'global') {
-      let name = unusedNameLike('globalConfig', path);
-      path.replaceWith(callExpression(identifier(name), []));
-      state.neededRuntimeImports.set(name, 'globalConfig');
+    if (mode === 'getGlobalConfig') {
+      state.neededRuntimeImports.set(calleeName(path), 'getGlobalConfig');
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;
@@ -112,4 +111,12 @@ export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: 
   path.get('body').node.body = [
     returnStatement(buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig })),
   ];
+}
+
+function calleeName(path: NodePath<CallExpression>): string {
+  let callee = path.node.callee;
+  if (isIdentifier(callee)) {
+    return callee.name;
+  }
+  throw new Error(`bug: our macros should only be invoked as identifiers`);
 }

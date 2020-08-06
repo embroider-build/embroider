@@ -4,11 +4,11 @@
 import EmberRouter from '@ember/routing/router';
 import { registerWaiter, unregisterWaiter } from '@ember/test';
 import { DEBUG } from '@glimmer/env';
-import { macroCondition, getConfig } from '@embroider/macros';
+import { macroCondition, getGlobalConfig } from '@embroider/macros';
 
 let Router;
 
-if (macroCondition(getConfig('@embroider/core')?.active)) {
+if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
   let newSetup = true;
 
   const lazyBundle = function lazyBundle(routeName, engineInfoByRoute) {

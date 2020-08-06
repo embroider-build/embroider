@@ -2,7 +2,7 @@ import { module, test } from 'qunit';
 import { visit } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
 import ENV from 'dummy/config/environment';
-import { getConfig } from '@embroider/macros';
+import { getGlobalConfig } from '@embroider/macros';
 
 /* global requirejs */
 
@@ -50,7 +50,7 @@ module('Acceptance | lazy routes', function(hooks) {
   }
 
   test('can see @embroider/core config', async function(assert) {
-    let config = getConfig('@embroider/core');
+    let config = getGlobalConfig()['@embroider/core'];
     if (ENV.isClassic) {
       assert.equal(config, undefined, 'expected no embroider core config');
     } else {

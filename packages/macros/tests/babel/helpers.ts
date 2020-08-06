@@ -1,16 +1,16 @@
 import { MacrosConfig } from '../..';
 import { join, dirname } from 'path';
-import { allBabelVersions as allBabel, runDefault, Transform, toCJS, toJS } from '@embroider/test-support';
+import { allBabelVersions as allBabel, runDefault, Transform, toCJS } from '@embroider/test-support';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
 import { explicitRelative } from '@embroider/core';
 
 export { runDefault };
 
-const runtimeFilename = join(__dirname, '../../src/babel/runtime.ts');
+const runtimeFilename = join(__dirname, '../../src/addon/runtime.js');
 
 export function makeRunner(transform: Transform) {
-  let cachedMacrosPackage: typeof import('../../src/babel/runtime');
+  let cachedMacrosPackage: typeof import('../../src/index');
 
   return function run(code: string, opts?: { filename: string }) {
     let optsWithDefaults = Object.assign(
@@ -20,8 +20,7 @@ export function makeRunner(transform: Transform) {
       opts
     );
     if (!cachedMacrosPackage) {
-      let tsSrc = readFileSync(runtimeFilename, 'utf8');
-      let jsSrc = toJS(tsSrc);
+      let jsSrc = readFileSync(runtimeFilename, 'utf8');
       let withInlinedConfig = transform(jsSrc, { filename: runtimeFilename });
       let cjsSrc = toCJS(withInlinedConfig);
       let script = new Script(cjsSrc);

@@ -164,6 +164,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     }
   }
 
+  developingAddons(): string[] {
+    if (this.oldPackage.owningAddon) {
+      return [this.oldPackage.owningAddon.root];
+    }
+    return [];
+  }
+
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
     let result = pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[];

@@ -2,7 +2,7 @@
   These are the runtime implementations for the javascript macros that have
   runtime implementations.
 
-  Not every macro has a runtime implementations, some only make sense in the
+  Not every macro has a runtime implementation, some only make sense in the
   build and always run there.
 
   Even when we have runtime implementations, we are still careful to emit static
@@ -11,31 +11,34 @@
   mode.
 */
 
-export function each<T>(array: T[]): T[] {
+export function each(array) {
   if (!Array.isArray(array)) {
     throw new Error(`the argument to the each() macro must be an array`);
   }
   return array;
 }
 
-export function macroCondition(predicate: boolean): boolean {
+export function macroCondition(predicate) {
   return predicate;
 }
 
 // This is here as a compile target for `getConfig` and `getOwnConfig` when
 // we're in runtime mode. This is not public API to call from your own code.
-export function config<T>(packageRoot: string): T | undefined {
-  return runtimeConfig.packages[packageRoot] as T;
+export function config(packageRoot) {
+  return runtimeConfig.packages[packageRoot];
 }
 
-export function globalConfig(): unknown {
+export function getGlobalConfig() {
   return runtimeConfig.global;
 }
 
-const runtimeConfig: {
-  packages: { [packageRoot: string]: unknown };
-  global: { [key: string]: unknown };
-} = initializeRuntimeMacrosConfig();
+export function isTesting() {
+  let g = runtimeConfig.global;
+  let e = g && g['@embroider/macros'];
+  return Boolean(e && e.isTesting);
+}
+
+const runtimeConfig = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin
 function initializeRuntimeMacrosConfig() {
@@ -45,17 +48,15 @@ function initializeRuntimeMacrosConfig() {
 function updaterMethods() {
   return {
     config,
-    globalConfig,
-    setConfig(packageRoot: string, value: unknown) {
+    getGlobalConfig,
+    setConfig(packageRoot, value) {
       runtimeConfig.packages[packageRoot] = value;
     },
-    setGlobalConfig(key: string, value: unknown) {
+    setGlobalConfig(key, value) {
       runtimeConfig.global[key] = value;
     },
   };
 }
-
-type Updater = (methods: ReturnType<typeof updaterMethods>) => void;
 
 // this is how runtime config can get injected at boot. I'm not sure yet if this
 // should be public API, but we certainly need it internally to set things like
@@ -69,8 +70,7 @@ type Updater = (methods: ReturnType<typeof updaterMethods>) => void;
 //
 // For an example user of this API, see where we generate
 // embroider_macros_fastboot_init.js' in @embroider/core.
-let updaters: Updater[] | undefined =
-  typeof window !== 'undefined' ? (window as any)._embroider_macros_runtime_config : undefined;
+let updaters = typeof window !== 'undefined' ? window._embroider_macros_runtime_config : undefined;
 if (updaters) {
   let methods = updaterMethods();
   for (let updater of updaters) {

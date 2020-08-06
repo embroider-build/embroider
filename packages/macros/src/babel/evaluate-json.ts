@@ -11,7 +11,7 @@ import {
   OptionalMemberExpression,
 } from '@babel/types';
 import { parse } from '@babel/core';
-import State from './state';
+import State, { owningPackage } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
@@ -386,7 +386,28 @@ export class Evaluator {
       return { confident: true, value: getConfig(path, this.state, 'own') };
     }
     if (callee.referencesImport('@embroider/macros', 'getGlobalConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'global') };
+      return { confident: true, value: getConfig(path, this.state, 'getGlobalConfig') };
+    }
+    if (callee.referencesImport('@embroider/macros', 'isDevelopingApp')) {
+      return {
+        confident: true,
+        value: Boolean(
+          this.state.opts.appPackageRoot &&
+            this.state.opts.isDevelopingPackageRoots.includes(this.state.opts.appPackageRoot)
+        ),
+      };
+    }
+    if (callee.referencesImport('@embroider/macros', 'isDevelopingThisPackage')) {
+      return {
+        confident: true,
+        value: this.state.opts.isDevelopingPackageRoots.includes(owningPackage(path, this.state).root),
+      };
+    }
+    if (callee.referencesImport('@embroider/macros', 'isTesting')) {
+      let g = getConfig(path, this.state, 'getGlobalConfig') as any;
+      let e = g && g['@embroider/macros'];
+      let value = Boolean(e && e.isTesting);
+      return { confident: true, value };
     }
     return { confident: false };
   }

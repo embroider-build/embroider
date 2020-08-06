@@ -15,7 +15,7 @@ import {
   stringLiteral,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
-import State, { sourceFile, relativePathToRuntime } from './state';
+import State, { sourceFile, pathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
@@ -99,16 +99,29 @@ export default function main(context: unknown): unknown {
         // even though it also emits values via evaluateMacroCall when they're
         // needed recursively by other macros, it has its own insertion-handling
         // code that we invoke here.
+        //
+        // The things that are special include:
+        //  - automatic collapsing of chained properties, etc
+        //  - these macros have runtime implementations sometimes, which changes
+        //    how we rewrite them
         let mode: GetConfigMode | false = callee.referencesImport('@embroider/macros', 'getOwnConfig')
           ? 'own'
           : callee.referencesImport('@embroider/macros', 'getGlobalConfig')
-          ? 'global'
+          ? 'getGlobalConfig'
           : callee.referencesImport('@embroider/macros', 'getConfig')
           ? 'package'
           : false;
         if (mode) {
           state.calledIdentifiers.add(callee.node);
           insertConfig(path, state, mode);
+          return;
+        }
+
+        // isTesting can have a runtime implementation. At compile time it
+        // instead falls through to evaluateMacroCall.
+        if (callee.referencesImport('@embroider/macros', 'isTesting') && state.opts.mode === 'run-time') {
+          state.calledIdentifiers.add(callee.node);
+          state.neededRuntimeImports.set(callee.node.name, 'isTesting');
           return;
         }
 
@@ -127,6 +140,9 @@ export default function main(context: unknown): unknown {
         'getOwnConfig',
         'failBuild',
         'importSync',
+        'isDevelopingApp',
+        'isDevelopingThisPackage',
+        'isTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
           throw error(path, `You can only use ${candidate} as a function call`);
@@ -210,7 +226,7 @@ function addRuntimeImports(path: NodePath<Program>, state: State) {
         [...state.neededRuntimeImports].map(([local, imported]) =>
           importSpecifier(identifier(local), identifier(imported))
         ),
-        stringLiteral(relativePathToRuntime(path, state))
+        stringLiteral(pathToRuntime(path, state))
       )
     );
   }

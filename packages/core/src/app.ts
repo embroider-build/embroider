@@ -124,6 +124,10 @@ export interface AppAdapter<TreeNames> {
   // auto-upgraded behaviors that v1 addons also get.
   strictV2Format(): boolean;
 
+  // list of directories that point to the roots of addon packages that are
+  // under active development
+  developingAddons(): string[];
+
   // development, test, or production
   env: string;
 }
@@ -187,7 +191,15 @@ export class AppBuilder<TreeNames> {
     private options: Required<Options>,
     private macrosConfig: MacrosConfig
   ) {
-    macrosConfig.setOwnConfig(__filename, { active: true });
+    // this uses globalConfig because it's a way for packages to ask "is
+    // Embroider doing this build?". So it's necessarily global, not scoped to
+    // any subgraph of dependencies.
+    macrosConfig.setGlobalConfig(__filename, `@embroider/core`, {
+      // this is hard-coded to true because it literally means "embroider is
+      // building this Ember app". You can see non-true when using the Embroider
+      // macros in a classic build.
+      active: true,
+    });
   }
 
   private scriptPriority(pkg: Package) {
@@ -219,6 +231,7 @@ export class AppBuilder<TreeNames> {
         };
       }
     );
+
     if (type === 'implicit-scripts') {
       result.unshift({
         kind: 'in-memory',
@@ -232,6 +245,33 @@ export class AppBuilder<TreeNames> {
         source: `window.EmberENV=${JSON.stringify(emberENV, null, 2)};`,
       });
     }
+
+    if (type === 'implicit-test-scripts') {
+      // this is the traditional test-support-suffix.js
+      result.push({
+        kind: 'in-memory',
+        relativePath: '_testing_suffix_.js',
+        source: `
+        var runningTests=true;
+        if (window.Testem) {
+          window.Testem.hookIntoTestFramework();
+        }`,
+      });
+
+      // whether or not anybody was actually using @embroider/macros
+      // explicitly as an addon, we ensure its test-support file is always
+      // present.
+      if (!result.find(s => s.kind === 'on-disk' && s.sourcePath.endsWith('embroider-macros-test-support.js'))) {
+        result.unshift({
+          kind: 'on-disk',
+          sourcePath: require.resolve('@embroider/macros/src/vendor/embroider-macros-test-support'),
+          mtime: 0,
+          size: 0,
+          relativePath: 'embroider-macros-test-support.js',
+        });
+      }
+    }
+
     return result;
   }
 
@@ -386,10 +426,8 @@ export class AppBuilder<TreeNames> {
 
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
-    let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
-    if (implicitScripts.length > 0) {
-      let vendorJS = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
-      prepared.set(vendorJS.relativePath, vendorJS);
+    let vendorJS = this.implicitScriptsAsset(prepared, emberENV);
+    if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
 
@@ -402,53 +440,81 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    let implicitStyles = this.impliedAssets('implicit-styles');
-    if (implicitStyles.length > 0) {
-      let vendorCSS = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
-      prepared.set(vendorCSS.relativePath, vendorCSS);
-      html.insertStyleLink(html.implicitStyles, vendorCSS.relativePath);
+    let implicitStyles = this.implicitStylesAsset(prepared);
+    if (implicitStyles) {
+      html.insertStyleLink(html.implicitStyles, implicitStyles.relativePath);
     }
 
-    if (asset.fileAsset.includeTests) {
-      let testJS = prepared.get(`assets/test.js`);
-      if (!testJS) {
-        testJS = this.testJSEntrypoint(appFiles, prepared);
-        prepared.set(testJS.relativePath, testJS);
-      }
-      html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
+    if (!asset.fileAsset.includeTests) {
+      return;
+    }
 
+    // Test-related assets happen below this point
+
+    let testJS = this.testJSEntrypoint(appFiles, prepared);
+    html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
+
+    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared);
+    if (implicitTestScriptsAsset) {
+      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
+    }
+
+    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared);
+    if (implicitTestStylesAsset) {
+      html.insertStyleLink(html.implicitTestStyles, implicitTestStylesAsset.relativePath);
+    }
+  }
+
+  private implicitScriptsAsset(prepared: Map<string, InternalAsset>, emberENV: EmberENV): InternalAsset | undefined {
+    let asset = prepared.get('assets/vendor.js');
+    if (!asset) {
+      let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
+      if (implicitScripts.length > 0) {
+        asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
+        prepared.set(asset.relativePath, asset);
+      }
+    }
+    return asset;
+  }
+
+  private implicitStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+    let asset = prepared.get('assets/vendor.css');
+    if (!asset) {
+      let implicitStyles = this.impliedAssets('implicit-styles');
+      if (implicitStyles.length > 0) {
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
+        prepared.set(asset.relativePath, asset);
+      }
+    }
+    return asset;
+  }
+
+  private implicitTestScriptsAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+    let testSupportJS = prepared.get('assets/test-support.js');
+    if (!testSupportJS) {
       let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
       if (implicitTestScripts.length > 0) {
-        // this is the traditional test-support-suffix.js, it should go to test-support
-        implicitTestScripts.push({
-          kind: 'in-memory',
-          relativePath: '_testing_suffix_.js',
-          source: `
-          var runningTests=true;
-          if (window.Testem) {
-            window.Testem.hookIntoTestFramework();
-          }`,
-        });
-        let testSupportJS = new ConcatenatedAsset(
+        testSupportJS = new ConcatenatedAsset(
           'assets/test-support.js',
           implicitTestScripts,
           this.resolvableExtensionsPattern
         );
         prepared.set(testSupportJS.relativePath, testSupportJS);
-        html.insertScriptTag(html.implicitTestScripts, testSupportJS.relativePath);
-      }
-
-      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
-      if (implicitTestStyles.length > 0) {
-        let testSupportCSS = new ConcatenatedAsset(
-          'assets/test-support.css',
-          implicitTestStyles,
-          this.resolvableExtensionsPattern
-        );
-        prepared.set(testSupportCSS.relativePath, testSupportCSS);
-        html.insertStyleLink(html.implicitTestStyles, testSupportCSS.relativePath);
       }
     }
+    return testSupportJS;
+  }
+
+  private implicitTestStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+    let asset = prepared.get('assets/test-support.css');
+    if (!asset) {
+      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
+      if (implicitTestStyles.length > 0) {
+        asset = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles, this.resolvableExtensionsPattern);
+        prepared.set(asset.relativePath, asset);
+      }
+    }
+    return asset;
   }
 
   // recurse to find all active addons that don't cross an engine boundary.
@@ -716,7 +782,7 @@ export class AppBuilder<TreeNames> {
         var key = '_embroider_macros_runtime_config';
         if (!window[key]){ window[key] = [];}
         window[key].push(function(m) {
-          m.setGlobalConfig('fastboot', Object.assign({}, m.globalConfig().fastboot, { isRunning: true }));
+          m.setGlobalConfig('fastboot', Object.assign({}, m.getGlobalConfig().fastboot, { isRunning: true }));
         });
       }())`;
       assets.push({
@@ -731,11 +797,16 @@ export class AppBuilder<TreeNames> {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    // on the first build, we lock down the macros config. on subsequent builds,
-    // this doesn't do anything anyway because it's idempotent.
     if (this.adapter.env !== 'production') {
+      this.macrosConfig.enableAppDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
     }
+    for (let pkgRoot of this.adapter.developingAddons()) {
+      this.macrosConfig.enablePackageDevelopment(pkgRoot);
+    }
+
+    // on the first build, we lock down the macros config. on subsequent builds,
+    // this doesn't do anything anyway because it's idempotent.
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);
@@ -1036,6 +1107,11 @@ export class AppBuilder<TreeNames> {
   }
 
   private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+    let asset = prepared.get(`assets/test.js`);
+    if (asset) {
+      return asset;
+    }
+
     // We're only building tests from the first engine (the app). This is the
     // normal thing to do -- tests from engines don't automatically roll up into
     // the app.
@@ -1067,11 +1143,13 @@ export class AppBuilder<TreeNames> {
       testSuffix: true,
     });
 
-    return {
+    asset = {
       kind: 'in-memory',
       source,
       relativePath: myName,
     };
+    prepared.set(asset.relativePath, asset);
+    return asset;
   }
 
   private gatherImplicitModules(

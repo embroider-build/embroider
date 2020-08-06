@@ -56,11 +56,65 @@ export default class MacrosConfig {
   private mode: 'compile-time' | 'run-time' = 'compile-time';
   private globalConfig: { [key: string]: unknown } = {};
 
+  private isDevelopingPackageRoots: Set<string> = new Set();
+  private appPackageRoot: string | undefined;
+
   enableRuntimeMode() {
-    this.mode = 'run-time';
+    if (this.mode !== 'run-time') {
+      if (!this._configWritable) {
+        throw new Error(`[Embroider:MacrosConfig] attempted to enableRuntimeMode after configs have been finalized`);
+      }
+      this.mode = 'run-time';
+    }
   }
 
-  private constructor() {}
+  enableAppDevelopment(appPackageRoot: string) {
+    if (!appPackageRoot) {
+      throw new Error(`must provide appPackageRoot`);
+    }
+    if (this.appPackageRoot) {
+      if (this.appPackageRoot !== appPackageRoot && this.moves.get(this.appPackageRoot) !== appPackageRoot) {
+        throw new Error(`bug: conflicting appPackageRoots ${this.appPackageRoot} vs ${appPackageRoot}`);
+      }
+    } else {
+      if (!this._configWritable) {
+        throw new Error(`[Embroider:MacrosConfig] attempted to enableAppDevelopment after configs have been finalized`);
+      }
+      this.appPackageRoot = appPackageRoot;
+      this.isDevelopingPackageRoots.add(appPackageRoot);
+    }
+  }
+
+  enablePackageDevelopment(packageRoot: string) {
+    if (!this.isDevelopingPackageRoots.has(packageRoot)) {
+      if (!this._configWritable) {
+        throw new Error(
+          `[Embroider:MacrosConfig] attempted to enablePackageDevelopment after configs have been finalized`
+        );
+      }
+      this.isDevelopingPackageRoots.add(packageRoot);
+    }
+  }
+
+  private constructor() {
+    // this uses globalConfig because these things truly are global. Even if a
+    // package doesn't have a dep or peerDep on @embroider/macros, it's legit
+    // for them to want to know the answer to these questions, and there is only
+    // one answer throughout the whole dependency graph.
+    this.globalConfig['@embroider/macros'] = {
+      // this powers the `isTesting` macro. It always starts out false here,
+      // because:
+      //  - if this is a production build, we will evaluate all macros at build
+      //    time and isTesting will stay false, so test-only code will not be
+      //    included.
+      //  - if this is a dev build, we evaluate macros at runtime, which allows
+      //    both "I'm running my app in development" and "I'm running my test
+      //    suite" to coexist within a single build. When you run the test
+      //    suite, early in the runtime boot process we can flip isTesting to
+      //    true to distinguish the two.
+      isTesting: false,
+    };
+  }
 
   private _configWritable = true;
   private configs: Map<string, unknown[]> = new Map();
@@ -177,6 +231,9 @@ export default class MacrosConfig {
       },
       owningPackageRoot,
 
+      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots].map(root => this.moves.get(root) || root),
+      appPackageRoot: this.appPackageRoot ? this.moves.get(this.appPackageRoot) || this.appPackageRoot : undefined,
+
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.
       embroiderMacrosConfigMarker: true,
@@ -238,7 +295,7 @@ export default class MacrosConfig {
     return this.userConfigs[this.resolvePackage(fromPath, undefined).root];
   }
 
-  resolvePackage(fromPath: string, packageName?: string | undefined) {
+  private resolvePackage(fromPath: string, packageName?: string | undefined) {
     let us = packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`[Embroider:MacrosConfig] unable to determine which npm package owns the file ${fromPath}`);

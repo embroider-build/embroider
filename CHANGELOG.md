@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## 0.20.0
+
+- COMPAT: remote our adapter for ember-window-mock because upstream now has an embroider-compatible solution
+- ENHANCEMENT: added isTesting, isDevelopingApp, and isDevelopingThisPackage macros
+- BUGFIX: handle addons with a customized ember-addon.main that use stock trees
+- COMPAT: make customized tree detection robust enough to catch addons that mutate other addon instances
+- COMPAT: support customized treeForAddonStyles
+- BUGFIX: make our babel plugin order match classic builds by @thoov
+- HOUSEKEEPING: use volta extends within our monorepo by @thoov
+- BUGFIX: fix renamed-modules when used with languages that transpile to js
+- COMPAT: follow template compiler changes in ember 3.17+ by @GCheung55
+- DOCS: remove addon package publishing warning by @GavinJoyce
+
 ## 0.19.0
 
 - HOUSEKEEPING: Updating some babel-related deps to avoid upstream bugs

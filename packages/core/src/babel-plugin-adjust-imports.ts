@@ -151,7 +151,7 @@ function isResolvable(packageName: string, fromPkg: V2Package): boolean {
 
 const externalTemplate = compile(`
 {{#if (eq runtimeName "require")}}
-const m = window.require;
+const m = window.requirejs;
 {{else}}
 const m = window.require("{{{js-string-escape runtimeName}}}");
 {{/if}}

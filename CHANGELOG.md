@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+## 0.21.0
+
+- ENHANCEMENT: make it easier for addons to emit macros into their consuming packages in classic builds
+- COMPAT: patch a bug in ember-template-compiler so we can support all active LTS versions of ember-source
+- COMPAT: avoid interactions with addons that manipulate the value of `window.require` over time
+
 ## 0.20.0
 
 - COMPAT: remote our adapter for ember-window-mock because upstream now has an embroider-compatible solution

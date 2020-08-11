@@ -8,11 +8,10 @@ import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { compile } from './js-handlebars';
 import { join, sep, extname } from 'path';
-import { PluginItem, transform } from '@babel/core';
+import { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
-import { NodePath } from '@babel/traverse';
-import { VariableDeclarator } from '@babel/types';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
+import { patch } from './patch-template-compiler';
 
 export interface Plugins {
   ast?: unknown[];
@@ -77,9 +76,6 @@ const CACHE = new Map<string, TemplateCompilerCacheEntry>();
 // * glimmer/syntax's print
 // * ember-template-compiler/lib/system/compile-options's defaultOptions
 function getEmberExports(templateCompilerPath: string): EmbersExports {
-  let theExports: any;
-  let cacheKey: string;
-  let source;
   let entry = CACHE.get(templateCompilerPath);
 
   if (entry) {
@@ -95,53 +91,15 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
     }
   }
 
-  let replacedVar = false;
   let stat = statSync(templateCompilerPath);
 
-  source = readFileSync(templateCompilerPath, 'utf8');
-
-  // here we are stripping off the first `var Ember;`. That one small change
-  // lets us crack open the file and get access to its internal loader, because
-  // we can give it our own predefined `Ember` variable instead, which it will
-  // use and put `Ember.__loader` onto.
-  source = transform(source, {
-    plugins: [
-      function() {
-        return {
-          visitor: {
-            VariableDeclarator(path: NodePath<VariableDeclarator>) {
-              let id = path.node.id;
-              if (id.type === 'Identifier' && id.name === 'Ember' && !replacedVar) {
-                replacedVar = true;
-                path.remove();
-              }
-            },
-          },
-        };
-      },
-    ],
-  })!.code!;
-
-  if (!replacedVar) {
-    throw new Error(
-      `didn't find expected source in ${templateCompilerPath}. Maybe we don't support your ember-source version?`
-    );
-  }
+  let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
+  let theExports: any = new Function(source)();
 
   // cacheKey, theExports
-  cacheKey = createHash('md5')
+  let cacheKey = createHash('md5')
     .update(source)
     .digest('hex');
-
-  // evades the require cache, which we need because the template compiler
-  // shares internal module scoped state.
-  theExports = new Function(`
-  let module = { exports: {} };
-  let Ember = {};
-  ${source};
-  module.exports.Ember = Ember;
-  return module.exports
-  `)();
 
   entry = Object.freeze({
     value: {

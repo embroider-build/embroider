@@ -44,6 +44,7 @@ export type Resolution = ResolutionResult | ResolutionFail;
 const builtInHelpers = [
   '-get-dynamic-var',
   '-in-element',
+  'in-element',
   '-with-dynamic-vars',
   'action',
   'array',

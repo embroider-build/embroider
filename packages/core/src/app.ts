@@ -1117,29 +1117,30 @@ export class AppBuilder<TreeNames> {
     // the app.
     let engine = engines[0];
 
-    let { appFiles } = engine;
     const myName = 'assets/test.js';
-    let testModules = appFiles.tests
-      .map(relativePath => {
-        return `../${relativePath}`;
-      })
-      .filter(Boolean) as string[];
 
     // tests necessarily also include the app. This is where we account for
     // that. The classic solution was to always include the app's separate
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    testModules.unshift(explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath));
+    let eagerModules: string[] = [
+      explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
+    ];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
     this.gatherImplicitModules('implicit-test-modules', myName, engine, amdModules);
 
+    let { appFiles } = engine;
+    for (let relativePath of appFiles.tests) {
+      amdModules.push(this.importPaths(engine, relativePath, myName));
+    }
+
     let source = entryTemplate({
       amdModules,
-      eagerModules: testModules,
+      eagerModules,
       testSuffix: true,
     });
 

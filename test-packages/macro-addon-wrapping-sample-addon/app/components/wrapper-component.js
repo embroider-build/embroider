@@ -1,0 +1,1 @@
+export { default } from 'macro-addon-wrapping-sample-addon/components/wrapper-component';

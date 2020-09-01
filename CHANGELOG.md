@@ -1,5 +1,10 @@
 # Embroider Changelog
 
+## 0.22.0
+
+- COMPAT: add the newer public `in-element` helper to the built-in helpers list by @josemarluedke
+- COMPAT: use runtime loader for tests
+
 ## 0.21.0
 
 - ENHANCEMENT: make it easier for addons to emit macros into their consuming packages in classic builds

@@ -289,7 +289,19 @@ export default class CompatResolver implements Resolver {
   absPathToRuntimeName(absPath: string) {
     let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
-      return join(pkg.name, relative(pkg.root, absPath))
+      let moduleName = pkg.name;
+      if (pkg.isV2Addon()) {
+        let renamedMeta = pkg.meta['renamed-packages'];
+        if (renamedMeta) {
+          Object.entries(renamedMeta).forEach(([key, value]) => {
+            if (value === pkg!.name) {
+              moduleName = key;
+            }
+          });
+        }
+      }
+
+      return join(moduleName, relative(pkg.root, absPath))
         .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
         .join('/');

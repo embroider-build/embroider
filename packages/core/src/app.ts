@@ -1164,7 +1164,20 @@ export class AppBuilder<TreeNames> {
       if (implicitModules) {
         let renamedModules = inverseRenamedModules(addon.meta, this.resolvableExtensionsPattern);
         for (let name of implicitModules) {
-          let runtime = join(addon.name, name).replace(this.resolvableExtensionsPattern, '');
+          let packageName = addon.name;
+
+          if (addon.isV2Addon()) {
+            let renamedMeta = addon.meta['renamed-packages'];
+            if (renamedMeta) {
+              Object.entries(renamedMeta).forEach(([key, value]) => {
+                if (value === addon!.name) {
+                  packageName = key;
+                }
+              });
+            }
+          }
+
+          let runtime = join(packageName, name).replace(this.resolvableExtensionsPattern, '');
           if (renamedModules && renamedModules[runtime]) {
             runtime = renamedModules[runtime];
           }

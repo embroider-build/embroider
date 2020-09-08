@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+## 0.23.0
+
+- COMPAT: add compat adapter for ember-exam by @thoov
+- BUGFIX: use renamed-packages for module name definitions by @thoov
+- BUGFIX: use renamed-packages for template meta moduleName by @thoov
+
 ## 0.22.0
 
 - COMPAT: add the newer public `in-element` helper to the built-in helpers list by @josemarluedke

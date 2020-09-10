@@ -224,7 +224,13 @@ export default class CompatResolver implements Resolver {
     }
     if ((ast.type === 'Program' || ast.type === 'Template') && ast.body.length > 0) {
       let first = ast.body[0];
-      if (first.type === 'MustacheStatement' && first.path.type === 'PathExpression') {
+      const isMustachePath = first.type === 'MustacheStatement' && first.path.type === 'PathExpression';
+      const isComponent = isMustachePath && first.path.original === 'component';
+      const hasStringParam = isComponent && Array.isArray(first.params) && first.params[0].type === 'StringLiteral';
+      if (isMustachePath && isComponent && hasStringParam) {
+        return first.params[0].value;
+      }
+      if (isMustachePath) {
         return first.path.original;
       }
       if (first.type === 'ElementNode') {

@@ -3,6 +3,11 @@
   "version": "0.23.0",
   "private": false,
   "description": "Builds EmberJS apps with Webpack",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/webpack"
+  },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/ember-webpack.js",

@@ -5,7 +5,11 @@
   "keywords": [
     "ember-addon"
   ],
-  "repository": "https://github.com/embroider/build/embroider",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/router"
+  },
   "license": "MIT",
   "author": "Edward Faulkner <edward@eaf4.com>",
   "directories": {

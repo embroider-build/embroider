@@ -1,6 +1,11 @@
 {
   "name": "@embroider/babel-loader-7",
   "version": "0.23.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/babel-loader-7"
+  },
   "license": "MIT",
   "main": "index.js",
   "dependencies": {

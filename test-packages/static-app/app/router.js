@@ -10,6 +10,7 @@ Router.map(function() {
   this.route('helpers-example');
   this.route('components-example');
   this.route('static-component-rules-example');
+  this.route('macros-example');
 });
 
 export default Router;

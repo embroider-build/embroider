@@ -46,9 +46,9 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Build fastboot-app",
-      "program": "${workspaceFolder}/node_modules/.bin/ember",
-      "cwd": "${workspaceFolder}/test-packages/fastboot-app",
+      "name": "Build sample",
+      "program": "/Users/edward/hacking/sample/node_modules/.bin/ember",
+      "cwd": "/Users/edward/hacking/sample",
       "args": ["build"],
       "env": {
         "JOBS": "1"

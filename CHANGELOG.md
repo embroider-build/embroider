@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+## master
+
+- HOUSEKEEPING: add missing repository fields by @Turbo87
+- ENHANCEMENT: support the component helper in rule snippets by @patricklx
+- HOUSEKEEPING: sort package.json contents by @Turbo87
+- BUGFIX: avoid duplication of the macros babel plugin
+
 ## 0.23.0
 
 - COMPAT: add compat adapter for ember-exam by @thoov

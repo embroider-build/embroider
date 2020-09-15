@@ -1,11 +1,12 @@
 # Embroider Changelog
 
-## master
+## 0.24.0
 
 - HOUSEKEEPING: add missing repository fields by @Turbo87
 - ENHANCEMENT: support the component helper in rule snippets by @patricklx
 - HOUSEKEEPING: sort package.json contents by @Turbo87
 - BUGFIX: avoid duplication of the macros babel plugin
+- BUGFIX: avoid duplication of the nullish-coalescing and optional-chaining babel plugins
 
 ## 0.23.0
 

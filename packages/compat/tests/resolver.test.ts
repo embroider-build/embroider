@@ -321,6 +321,23 @@ describe('compat-resolver', function() {
     });
     expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
+
+  test('component rules can be expressed via component helper', function() {
+    let findDependencies = configure({
+      staticComponents: true,
+      staticHelpers: true,
+      packageRules: [
+        {
+          package: 'the-test-package',
+          components: {
+            '{{component "this-one"}}': { safeToIgnore: true },
+          },
+        },
+      ],
+    });
+    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
+  });
+
   test('optional component missing in mustache block', function() {
     let findDependencies = configure({
       staticComponents: true,

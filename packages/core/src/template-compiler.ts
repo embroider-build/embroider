@@ -285,19 +285,20 @@ export default class TemplateCompiler {
     }
 
     let opts = this.syntax.defaultOptions({ contents, moduleName });
-    if (this.params.resolver) {
-      let transform = this.params.resolver.astTransformer(this);
-      if (transform) {
-        this.params.plugins.ast!.push(transform);
-      }
-    }
-    opts.plugins!.ast = [...this.getReversedASTPlugins(this.params.plugins.ast!), ...opts.plugins!.ast!];
+    let plugins: Plugins = {
+      ...opts.plugins,
+      ast: [
+        ...this.getReversedASTPlugins(this.params.plugins.ast!),
+        this.params.resolver && this.params.resolver.astTransformer(this),
+        ...opts.plugins!.ast!,
+      ].filter(Boolean),
+    };
 
     let compiled = this.syntax.precompile(stripBom(contents), {
       contents,
       moduleName: runtimeName,
       filename: moduleName,
-      plugins: opts.plugins,
+      plugins,
     });
 
     if (this.params.resolver) {

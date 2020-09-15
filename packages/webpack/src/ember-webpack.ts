@@ -497,12 +497,22 @@ function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfi
     }
     // webpack uses acorn and acorn doesn't parse these features yet, so we
     // always tranpile them away regardless of what preset-env is doing
-    options.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
-    options.plugins.push(require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'));
+    if (!options.plugins.some(pluginMatches(/@babel\/plugin-proposal-optional-chaining/))) {
+      options.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
+    }
+    if (!options.plugins.some(pluginMatches(/@babel\/plugin-proposal-nullish-coalescing-operator/))) {
+      options.plugins.push(require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'));
+    }
   }
   return {
     loader: majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
     options,
+  };
+}
+
+function pluginMatches(pattern: RegExp) {
+  return function(plugin: string | [string] | undefined) {
+    return plugin && pattern.test(Array.isArray(plugin) ? plugin[0] : plugin);
   };
 }
 

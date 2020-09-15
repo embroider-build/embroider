@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { MacrosConfig } from '.';
+import { MacrosConfig, isEmbroiderMacrosPlugin } from '.';
 
 export = {
   name: '@embroider/macros',
@@ -41,7 +41,7 @@ export = {
 
     // and to our own babel, because we may need to inline runtime config into
     // our source code
-    this.options.babel.plugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(this.root));
+    this.installBabelPlugin(this);
 
     appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
 
@@ -64,11 +64,13 @@ export = {
   // available everywhere, we don't scope them so narrowly so this probably
   // doesn't come up.
   installBabelPlugin(this: any, appOrAddonInstance: any) {
-    let source = appOrAddonInstance.root || appOrAddonInstance.project.root;
     let babelOptions = (appOrAddonInstance.options.babel = appOrAddonInstance.options.babel || {});
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
-    let appInstance = this._findHost();
-    babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
+    if (!babelPlugins.some(isEmbroiderMacrosPlugin)) {
+      let appInstance = this._findHost();
+      let source = appOrAddonInstance.root || appOrAddonInstance.project.root;
+      babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
+    }
   },
 
   setupPreprocessorRegistry(this: any, type: 'parent' | 'self', registry: any) {

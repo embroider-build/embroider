@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.24.1
+
+- BUGFIX: the 0.24.0 release introduced an accidental dependency change
+
 ## 0.24.0
 
 - HOUSEKEEPING: add missing repository fields by @Turbo87

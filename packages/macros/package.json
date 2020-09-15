@@ -6,6 +6,11 @@
   "keywords": [
     "ember-addon"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/macros"
+  },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",

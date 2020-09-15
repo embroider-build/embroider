@@ -3,6 +3,11 @@
   "version": "0.23.0",
   "private": false,
   "description": "A build system for EmberJS applications.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/core"
+  },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",

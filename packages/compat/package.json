@@ -3,6 +3,11 @@
   "version": "0.23.0",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/compat"
+  },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",

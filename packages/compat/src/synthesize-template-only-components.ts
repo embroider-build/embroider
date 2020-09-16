@@ -57,8 +57,8 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
 }
 
 function crawl(dir: string) {
-  let needed = new Set();
-  let seen = new Set();
+  let needed = new Set<string>();
+  let seen = new Set<string>();
   if (pathExistsSync(dir)) {
     for (let file of walkSync(dir, { directories: false })) {
       if (file.endsWith(templateExtension)) {

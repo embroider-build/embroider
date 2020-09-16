@@ -145,8 +145,9 @@ export class PortablePluginConfig {
             return buildBroccoli(placeholder);
           case 'htmlbars-parallel':
             return buildHTMLBars(placeholder);
+          default:
+            assertNever(placeholder);
         }
-        assertNever(placeholder);
       } else {
         return mapValues(input, value => this.load(value));
       }

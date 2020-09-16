@@ -4,19 +4,19 @@ import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { writeFileSync, ensureDirSync, copySync, unlinkSync, statSync, readJSONSync } from 'fs-extra';
-import { join, dirname, sep, resolve as resolvePath } from 'path';
+import { copySync, ensureDirSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { dirname, join, resolve as resolvePath, sep } from 'path';
 import { debug, warn } from './messages';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import AppDiffer from './app-differ';
 import { PreparedEmberHTML } from './ember-html';
-import { Asset, EmberAsset, InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from './asset';
+import { Asset, EmberAsset, ImplicitAssetPaths, InMemoryAsset, OnDiskAsset } from './asset';
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
-import { TransformOptions, PluginItem } from '@babel/core';
+import { PluginItem, TransformOptions } from '@babel/core';
 import PortableBabelConfig from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
@@ -25,7 +25,7 @@ import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import { mangledEngineRoot } from './engine-mangler';
-import { AppFiles, RouteFiles, EngineSummary, Engine } from './app-files';
+import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
@@ -675,7 +675,6 @@ export class AppBuilder<TreeNames> {
           })
         );
     }
-    assertNever(asset);
   }
 
   private updateOnDiskAsset(asset: OnDiskAsset) {

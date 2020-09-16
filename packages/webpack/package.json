@@ -49,7 +49,7 @@
     "@types/mini-css-extract-plugin": "^0.2.0",
     "@types/node": "^10.5.2",
     "@types/webpack": "^4.4.17",
-    "typescript": "~3.4.0"
+    "typescript": "~4.0.0"
   },
   "peerDependencies": {
     "@embroider/core": "0.24.1"

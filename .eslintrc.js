@@ -4,7 +4,6 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: './tsconfig.json',
     ecmaVersion: 2017,
     sourceType: 'module',
   },
@@ -23,11 +22,18 @@ module.exports = {
     '@typescript-eslint/class-name-casing': 'error',
     '@typescript-eslint/no-angle-bracket-type-assertion': 'error',
     '@typescript-eslint/no-inferrable-types': 'error',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    // @todo re-enable when ESLint has been updated
+    // '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 
     'prettier/prettier': 'error',
   },
   overrides: [
+    {
+      files: ['**/*.ts'],
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+    },
     {
       files: ['packages/**/*.ts'],
       rules: {

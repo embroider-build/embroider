@@ -95,5 +95,5 @@ const defaults = Object.assign(coreWithDefaults(), {
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {
-  return Object.assign({}, defaults, options);
+  return Object.assign({}, defaults, options) as Required<Options>;
 }

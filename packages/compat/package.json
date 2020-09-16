@@ -73,7 +73,7 @@
     "@types/semver": "^5.5.0",
     "@types/strip-bom": "^3.0.0",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
-    "typescript": "~3.4.0"
+    "typescript": "~3.5.0"
   },
   "peerDependencies": {
     "@embroider/core": "0.24.1"

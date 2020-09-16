@@ -85,7 +85,7 @@ export default class Package {
   }
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
-    let pkgs = new Set();
+    let pkgs = new Set<Package>();
     let queue: Package[] = [this];
     while (true) {
       let pkg = queue.shift();

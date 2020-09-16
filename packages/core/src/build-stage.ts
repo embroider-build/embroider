@@ -75,5 +75,5 @@ interface BuilderInstance<NamedTrees> {
 }
 
 interface ExtraTree {
-  __prevStageTree: Tree;
+  __prevStageTree?: Tree;
 }

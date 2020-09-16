@@ -214,7 +214,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     // loading these lazily here so they never load in non-production builds.
     // The node cache will ensures we only load them once.
-    const [Terser, srcURL] = await Promise.all<any>([import('terser'), import('source-map-url')]);
+    const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
 
     let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
     let terserOpts: MinifyOptions = {};

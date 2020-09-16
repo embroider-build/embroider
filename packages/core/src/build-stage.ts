@@ -35,7 +35,7 @@ export default class BuildStage<NamedTrees> implements Stage {
         this.packageCache = packageCache;
         this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
       }
-      delete treePaths.__prevStageTree;
+      delete (treePaths as any).__prevStageTree;
       await this.active.build(this.deAugment(treePaths));
       this.deferReady.resolve();
     });
@@ -65,7 +65,7 @@ export default class BuildStage<NamedTrees> implements Stage {
   }
 
   private deAugment(treePaths: OutputPaths<NamedTrees & ExtraTree>): OutputPaths<NamedTrees> {
-    delete treePaths.__prevStageTree;
+    delete (treePaths as any).__prevStageTree;
     return treePaths;
   }
 }
@@ -75,5 +75,5 @@ interface BuilderInstance<NamedTrees> {
 }
 
 interface ExtraTree {
-  __prevStageTree?: Tree;
+  __prevStageTree: Tree;
 }

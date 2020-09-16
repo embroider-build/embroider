@@ -253,8 +253,8 @@ export class AppBuilder<TreeNames> {
         relativePath: '_testing_suffix_.js',
         source: `
         var runningTests=true;
-        if (window.Testem) {
-          window.Testem.hookIntoTestFramework();
+        if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
+          Testem.hookIntoTestFramework();
         }`,
       });
 

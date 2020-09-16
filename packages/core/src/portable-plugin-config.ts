@@ -1,6 +1,5 @@
 import { compile } from './js-handlebars';
 import mapValues from 'lodash/mapValues';
-import assertNever from 'assert-never';
 
 export const protocol = '__embroider_portable_plugin_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -146,7 +145,6 @@ export class PortablePluginConfig {
           case 'htmlbars-parallel':
             return buildHTMLBars(placeholder);
         }
-        assertNever(placeholder);
       } else {
         return mapValues(input, value => this.load(value));
       }

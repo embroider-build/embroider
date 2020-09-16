@@ -67,7 +67,7 @@
     "@types/tmp": "^0.1.0",
     "fixturify": "^1.2.0",
     "tmp": "^0.1.0",
-    "typescript": "~3.5.0"
+    "typescript": "~3.7.0"
   },
   "volta": {
     "extends": "../../package.json"

@@ -199,6 +199,18 @@ export default class V1Addon {
   }
 
   private needsCustomBabel() {
+    if (
+      this.addonInstance.addons.find(
+        (a: any) =>
+          a.name === 'ember-cli-typescript' &&
+          semver.satisfies(semver.coerce(a.pkg.version) || a.pkg.version, '>=4.0.0-alpha.1')
+      )
+    ) {
+      // This addon is using ember-cli-typescript 4, which relies on
+      // ember-cli-babel to add the TypeScript transform Babel plugin.
+      return true;
+    }
+
     let babelConfig = this.options.babel as TransformOptions | undefined;
     if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
       // this addon has custom babel plugins, so we need to run them here in

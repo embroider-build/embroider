@@ -1,5 +1,5 @@
-type filename = string;
-type appRelativeURL = string;
+type Filename = string;
+type AppRelativeURL = string;
 
 // This describes the ember-specific parts of package.json of an app after the
 // stage 2 build (the app that we hand off to a packager).
@@ -7,7 +7,7 @@ export interface AppMeta {
   type: 'app';
 
   'auto-upgraded'?: true;
-  assets: filename[];
+  assets: Filename[];
   babel: {
     filename: string;
     isParallelSafe: boolean;
@@ -31,17 +31,17 @@ export interface AddonMeta {
   'lazy-engine'?: boolean;
 
   'auto-upgraded'?: true;
-  'app-js'?: filename;
-  'fastboot-js'?: filename;
+  'app-js'?: Filename;
+  'fastboot-js'?: Filename;
   externals?: string[];
   'implicit-modules'?: string[];
-  'implicit-scripts'?: filename[];
-  'implicit-styles'?: filename[];
+  'implicit-scripts'?: Filename[];
+  'implicit-styles'?: Filename[];
   'implicit-test-modules'?: string[];
-  'implicit-test-scripts'?: filename[];
-  'implicit-test-styles'?: filename[];
+  'implicit-test-scripts'?: Filename[];
+  'implicit-test-styles'?: Filename[];
   'public-assets'?: {
-    [filename: string]: appRelativeURL;
+    [filename: string]: AppRelativeURL;
   };
   'renamed-packages'?: { [fromName: string]: string };
   'renamed-modules'?: { [fromName: string]: string };

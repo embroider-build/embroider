@@ -19,12 +19,6 @@ module.exports = {
 
     'import/no-extraneous-dependencies': ['error', { devDependencies: ['packages/*/tests/**/*.ts'] }],
 
-    '@typescript-eslint/class-name-casing': 'error',
-    '@typescript-eslint/no-angle-bracket-type-assertion': 'error',
-    '@typescript-eslint/no-inferrable-types': 'error',
-    // @todo re-enable when ESLint has been updated
-    // '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-
     'prettier/prettier': 'error',
   },
   overrides: [
@@ -32,6 +26,18 @@ module.exports = {
       files: ['**/*.ts'],
       parserOptions: {
         project: './tsconfig.json',
+      },
+      rules: {
+        '@typescript-eslint/naming-convention': [
+          'error',
+          {
+            selector: 'typeLike',
+            format: ['PascalCase'],
+          },
+        ],
+        '@typescript-eslint/consistent-type-assertions': 'error',
+        '@typescript-eslint/no-inferrable-types': 'error',
+        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       },
     },
     {

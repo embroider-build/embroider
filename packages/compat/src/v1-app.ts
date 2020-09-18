@@ -23,18 +23,18 @@ import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
 
-type filePath = string;
-type OutputFileToInputFileMap = { [filePath: string]: filePath[] };
+type FilePath = string;
+type OutputFileToInputFileMap = { [filePath: string]: FilePath[] };
 
 interface EmberApp {
   env: string;
   name: string;
   _scriptOutputFiles: OutputFileToInputFileMap;
   _styleOutputFiles: OutputFileToInputFileMap;
-  legacyTestFilesToAppend: filePath[];
-  vendorTestStaticStyles: filePath[];
+  legacyTestFilesToAppend: FilePath[];
+  vendorTestStaticStyles: FilePath[];
   _customTransformsMap: Map<string, any>;
-  _nodeModules: Map<string, { name: string; path: filePath }>;
+  _nodeModules: Map<string, { name: string; path: FilePath }>;
   options: any;
   tests: boolean;
   trees: any;

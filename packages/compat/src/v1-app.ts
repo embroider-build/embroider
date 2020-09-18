@@ -11,7 +11,7 @@ import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
-import DummyPackage from './dummy-package';
+import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros';
 import resolvePackagePath from 'resolve-package-path';
@@ -679,7 +679,8 @@ export default class V1App {
 class V1DummyApp extends V1App {
   constructor(app: EmberApp, packageCache: PackageCache) {
     super(app, packageCache);
-    this.owningAddon = this.packageCache.get(this.app.project.root);
+    this.owningAddon = new OwningAddon(this.app.project.root, packageCache);
+    this.packageCache.seed(this.owningAddon);
     this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
   }
 

@@ -4,7 +4,7 @@ import { ensureSymlinkSync } from 'fs-extra';
 import merge from 'lodash/merge';
 import Options from '../../packages/core/src/options';
 
-function cliBuildFile(emberAppOptions: string = '', embroiderOptions: Options = {}) {
+function cliBuildFile(emberAppOptions = '', embroiderOptions: Options = {}) {
   return `
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 module.exports = function(defaults) {

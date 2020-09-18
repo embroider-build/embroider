@@ -253,6 +253,7 @@ expect.extend({
 
 declare global {
   namespace jest {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface Matchers<R> {
       _fileAssertionsMatcher(state: { result: boolean; actual: any; expected: any; message: string }): void;
     }

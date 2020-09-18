@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "git clean -x -f",
     "compile": "tsc",
-    "lint": "eslint . --ext=js,ts --cache",
+    "lint": "eslint . --cache",
     "prepare": "tsc",
     "test": "jest"
   },

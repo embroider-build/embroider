@@ -211,6 +211,16 @@ export default class V1Addon {
       return true;
     }
 
+    if (
+      this.addonInstance.options &&
+      this.addonInstance.options['ember-cli-babel'] &&
+      this.addonInstance.options['ember-cli-babel'].enableTypeScriptTransform
+    ) {
+      // This addon has explicitly configured ember-cli-babel to add the
+      // TypeScript transform Babel plugin.
+      return true;
+    }
+
     let babelConfig = this.options.babel as TransformOptions | undefined;
     if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
       // this addon has custom babel plugins, so we need to run them here in

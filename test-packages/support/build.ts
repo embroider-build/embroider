@@ -86,7 +86,15 @@ export default class BuildResult {
   }
 
   async rebuild() {
-    await this.builder.build();
+    let origDir = process.cwd();
+    try {
+      // this is here because EmberAddon makes a bad assumption that the project
+      // root is always the current working directory
+      process.chdir(this.project.baseDir);
+      await this.builder.build();
+    } finally {
+      process.chdir(origDir);
+    }
   }
 
   shouldTranspile(relativePath: string) {

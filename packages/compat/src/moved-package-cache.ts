@@ -86,7 +86,7 @@ export class MovedPackageCache extends PackageCache {
 
   private movedPackage(originalPkg: Package): Package {
     let newRoot = this.localPath(originalPkg.root);
-    return getOrCreate(this.rootCache, newRoot, () => new Package(newRoot, this, false));
+    return getOrCreate(this.rootCache, newRoot, () => new (originalPkg.constructor as any)(newRoot, this, false));
   }
 
   private localPath(filename: string) {

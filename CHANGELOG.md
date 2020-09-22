@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## 0.25.0
+
+- BUGFIX: fix live rebuilding the owning addon when running a dummy app
+- HOUSEKEEPING: upgrades for eslint by @simonihmig
+- COMPAT: add packageRules for ember-element-helper by @simonihmig
+- COMPAT: support ember-cli-typescript 4.x by @jamescdavis
+- HOUSEKEEPING: upgrade typescript by @simonihmig
+- COMPAT: avoid Testem.hookIntoTestFramework by @rwjblue
+- BUGFIX: ensure macros package works in apps using staticComponents & staticHelpers
+
 ## 0.24.1
 
 - BUGFIX: the 0.24.0 release introduced an accidental dependency change

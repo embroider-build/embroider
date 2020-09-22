@@ -71,4 +71,43 @@ describe('package', () => {
       expect(nonResolvableDeps.get('good')).toBeTruthy();
     }
   });
+
+  test('it does not throw if the peerDependency is not resolvable', () => {
+    let { name: tmpLocation } = tmp.dirSync();
+    let projectJSON = {
+      'package.json': JSON.stringify({
+        name: 'foobar-web',
+        dependencies: {
+          good: '*',
+        },
+        peerDependencies: {
+          bad: '*',
+          'valid-peer': '*',
+        },
+      }),
+      node_modules: {
+        good: {
+          'package.json': JSON.stringify({
+            name: 'good',
+          }),
+        },
+        'valid-peer': {
+          'package.json': JSON.stringify({
+            name: 'valid-peer',
+          }),
+        },
+      },
+    };
+
+    fixturify.writeSync(tmpLocation, projectJSON);
+
+    let packageCache = new PackageCache();
+    let packageInstance = new Package(tmpLocation, packageCache);
+    let dependencies = packageInstance.dependencies;
+
+    expect(dependencies.length).toBe(2);
+    expect(dependencies.map(dep => dep.name)).toContain('good');
+    expect(dependencies.map(dep => dep.name)).toContain('valid-peer');
+    expect(dependencies.map(dep => dep.name)).not.toContain('bad');
+  });
 });

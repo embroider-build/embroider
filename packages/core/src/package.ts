@@ -168,15 +168,30 @@ export default class Package {
   @Memoize()
   get dependencies(): Package[] {
     let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
-    return names.map(name => {
-      if (this.nonResolvableDeps) {
-        let dep = this.nonResolvableDeps.get(name);
-        if (dep) {
-          return dep;
+    return names
+      .map(name => {
+        if (this.nonResolvableDeps) {
+          let dep = this.nonResolvableDeps.get(name);
+          if (dep) {
+            return dep;
+          }
         }
-      }
-      return this.packageCache.resolve(name, this);
-    });
+        try {
+          return this.packageCache.resolve(name, this);
+        } catch (error) {
+          // if the package was not found do not error out here. this is relevant
+          // for the case where a package might be an optional peerDependency and we dont
+          // want to error if it was not found. Additionally, erroring here is "far" away
+          // from the actual logical failure point and so not failing here will provide a better
+          // error message down the line
+          if (error.code === 'MODULE_NOT_FOUND') {
+            return false;
+          }
+
+          throw error;
+        }
+      })
+      .filter(Boolean) as Package[];
   }
 
   hasDependency(name: string): boolean {

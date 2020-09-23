@@ -343,6 +343,8 @@ export class AppBuilder<TreeNames> {
       )
     );
 
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
+
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
@@ -355,7 +357,6 @@ export class AppBuilder<TreeNames> {
       },
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
     return new PortableBabelConfig(babel, { basedir: this.root });
@@ -394,6 +395,7 @@ export class AppBuilder<TreeNames> {
       // up as a side-effect of babel transpilation, and babel is subject to
       // persistent caching.
       externalsDir: join(tmpdir(), 'embroider', 'externals'),
+      dynamicImports: [],
     };
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }

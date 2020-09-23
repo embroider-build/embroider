@@ -51,6 +51,7 @@ interface State {
     };
     relocatedFiles: { [relativePath: string]: string };
     resolvableExtensions: string[];
+    dynamicImports: string[];
   };
 }
 
@@ -63,6 +64,24 @@ type DefineExpressionPath = NodePath<CallExpression> & {
     arguments: [StringLiteral, ArrayExpression, Function];
   };
 };
+
+export function isImportSyncExpression(path: NodePath<any>) {
+  if (!path.isCallExpression() || path.node.callee.type !== 'Identifier' || path.node.callee.name !== 'importSync') {
+    return false;
+  }
+
+  const args = path.node.arguments;
+  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+}
+
+export function isDynamicImportExpression(path: NodePath<any>) {
+  if (!path.isCallExpression() || path.node.callee.type !== 'Import') {
+    return false;
+  }
+
+  const args = path.node.arguments;
+  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+}
 
 export function isDefineExpression(path: NodePath<any>): path is DefineExpressionPath {
   // should we allow nested defines, or stop at the top level?
@@ -149,6 +168,10 @@ function isResolvable(packageName: string, fromPkg: V2Package): boolean {
   return true;
 }
 
+const dynamicMissingModule = compile(`
+  throw new Error('Could not find module: {{{js-string-escape moduleName}}}.');
+`) as (params: { moduleName: string }) => string;
+
 const externalTemplate = compile(`
 {{#if (eq runtimeName "require")}}
 const m = window.requirejs;
@@ -218,9 +241,22 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
   if (opts.activeAddons[packageName]) {
     return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+  } else if (opts.dynamicImports.includes(packageName)) {
+    return makeMissingModule(specifier, sourceFile, opts);
   } else {
     return makeExternal(specifier, sourceFile, opts);
   }
+}
+
+function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+  let target = join(opts.externalsDir, specifier + '.js');
+  outputFileSync(
+    target,
+    dynamicMissingModule({
+      moduleName: specifier,
+    })
+  );
+  return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
@@ -261,6 +297,15 @@ export default function main() {
         },
       },
       CallExpression(path: NodePath<CallExpression>, state: State) {
+        if (isImportSyncExpression(path) || isDynamicImportExpression(path)) {
+          const [source] = path.get('arguments');
+          let { opts } = state;
+          opts.dynamicImports.push((source.node as any).value);
+          let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts);
+          source.replaceWith(stringLiteral(specifier));
+          return;
+        }
+
         // Should/can we make this early exit when the first define was found?
         if (!isDefineExpression(path)) {
           return;

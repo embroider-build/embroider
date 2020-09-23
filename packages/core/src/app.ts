@@ -343,11 +343,6 @@ export class AppBuilder<TreeNames> {
       )
     );
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
-
-    // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(this.macrosConfig.babelPluginConfig());
-
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
       join(__dirname, 'babel-plugin-inline-hbs.js'),
@@ -356,6 +351,11 @@ export class AppBuilder<TreeNames> {
         stage: 3,
       },
     ]);
+
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
+
+    // this is @embroider/macros configured for full stage3 resolution
+    babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 

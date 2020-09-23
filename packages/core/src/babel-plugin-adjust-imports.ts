@@ -169,7 +169,7 @@ function isResolvable(packageName: string, fromPkg: V2Package): boolean {
 }
 
 const dynamicMissingModule = compile(`
-  throw new Error('Could not find module: {{{js-string-escape moduleName}}}.');
+  throw new Error('Could not find module \`{{{js-string-escape moduleName}}}\`');
 `) as (params: { moduleName: string }) => string;
 
 const externalTemplate = compile(`

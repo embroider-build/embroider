@@ -7,6 +7,6 @@ module('Unit | missing-imports', function() {
 
     assert.throws(() => {
       importSync('missingModule');
-    }, /Error: Could not find module: missingModule./);
+    }, /Error: Could not find module `missingModule`/);
   });
 });

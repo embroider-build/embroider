@@ -51,7 +51,6 @@ interface State {
     };
     relocatedFiles: { [relativePath: string]: string };
     resolvableExtensions: string[];
-    dynamicImports: string[];
   };
 }
 
@@ -70,7 +69,7 @@ export function isImportSyncExpression(path: NodePath<any>) {
     !path ||
     !path.isCallExpression() ||
     path.node.callee.type !== 'Identifier' ||
-    path.node.callee.name !== 'importSync'
+    !path.get('callee').referencesImport('@embroider/macros', 'importSync')
   ) {
     return false;
   }
@@ -106,7 +105,7 @@ export function isDefineExpression(path: NodePath<any>): path is DefineExpressio
   );
 }
 
-function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
+function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options, isDynamic: boolean) {
   if (specifier === '@embroider/macros') {
     // the macros package is always handled directly within babel (not
     // necessarily as a real resolvable package), so we should not mess with it.
@@ -116,7 +115,7 @@ function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
   }
 
   specifier = handleRenaming(specifier, file, opts);
-  specifier = handleExternal(specifier, file, opts);
+  specifier = handleExternal(specifier, file, opts, isDynamic);
   if (file.isRelocated) {
     specifier = handleRelocation(specifier, file);
   }
@@ -208,7 +207,7 @@ if (m.default && !m.__esModule) {
 module.exports = m;
 `) as (params: { runtimeName: string }) => string;
 
-function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options, isDynamic: boolean): string {
   let pkg = sourceFile.owningPackage();
   if (!pkg || !pkg.isV2Ember()) {
     return specifier;
@@ -254,7 +253,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
   if (opts.activeAddons[packageName]) {
     return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-  } else if (opts.dynamicImports.includes(packageName)) {
+  } else if (isDynamic) {
     return makeMissingModule(specifier, sourceFile, opts);
   } else {
     return makeExternal(specifier, sourceFile, opts);
@@ -313,8 +312,7 @@ export default function main() {
         if (isImportSyncExpression(path) || isDynamicImportExpression(path)) {
           const [source] = path.get('arguments');
           let { opts } = state;
-          opts.dynamicImports.push((source.node as any).value);
-          let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts);
+          let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts, true);
           source.replaceWith(stringLiteral(specifier));
           return;
         }
@@ -354,7 +352,7 @@ export default function main() {
             continue;
           }
 
-          let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+          let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
 
           if (specifier !== source.value) {
             source.value = specifier;
@@ -371,7 +369,7 @@ export default function main() {
           return;
         }
 
-        let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+        let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

@@ -395,7 +395,6 @@ export class AppBuilder<TreeNames> {
       // up as a side-effect of babel transpilation, and babel is subject to
       // persistent caching.
       externalsDir: join(tmpdir(), 'embroider', 'externals'),
-      dynamicImports: [],
     };
     return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
   }

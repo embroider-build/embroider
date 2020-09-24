@@ -1,4 +1,9 @@
-import main, { isDefineExpression, Options as AdjustImportsOptions } from '../src/babel-plugin-adjust-imports';
+import main, {
+  isDefineExpression,
+  isDynamicImportExpression,
+  isImportSyncExpression,
+  Options as AdjustImportsOptions,
+} from '../src/babel-plugin-adjust-imports';
 import { transformSync } from '@babel/core';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
@@ -24,6 +29,13 @@ describe('babel-plugin-adjust-imports', function() {
     return isDefineExpression(getFirstCallExpresssionPath(source));
   }
 
+  function isImportSyncExpressionFromSource(source: string) {
+    return isImportSyncExpression(getFirstCallExpresssionPath(source));
+  }
+  function isDynamicImportExpressionFromSource(source: string) {
+    return isDynamicImportExpression(getFirstCallExpresssionPath(source));
+  }
+
   test('isDefineExpression works', function() {
     expect(isDefineExpressionFromSource(`apple()`)).toBe(false);
     expect(isDefineExpressionFromSource(`(apple())`)).toBe(false);
@@ -37,6 +49,17 @@ describe('babel-plugin-adjust-imports', function() {
     expect(isDefineExpressionFromSource(`define;define('b/a/c', ['a', 'b', 'c'], function() { });`)).toBe(true);
     expect(isDefineExpressionFromSource(`import foo from 'foo'; define('apple')`)).toBe(false);
     expect(isDefineExpressionFromSource(`define('apple'); import foo from 'foo'`)).toBe(false);
+  });
+
+  test('isImportSyncExpression works', function() {
+    expect(isImportSyncExpressionFromSource(`importSync('foo');`)).toBe(true);
+    expect(isImportSyncExpressionFromSource(`var t = "importSync";`)).toBe(false);
+  });
+
+  test('isDynamicImportExpression works', function() {
+    expect(isDynamicImportExpressionFromSource(`import('foo');`)).toBe(true);
+    expect(isDynamicImportExpressionFromSource(`async () => { await import('foo'); }`)).toBe(true);
+    expect(isDynamicImportExpressionFromSource(`import foo from 'foo';`)).toBe(false);
   });
 
   test('main', function() {

@@ -5,11 +5,6 @@ import { argv } from 'process';
 
 export async function transpile(appDir: string, fileLocalPath: string): Promise<string> {
   let pkg = readJSONSync(join(appDir, 'package.json'));
-  if (!pkg['ember-addon'].babel.isParallelSafe) {
-    throw new Error(
-      `can't use this babel config, it's not parallel safe so we can't load it outside its original prorcess`
-    );
-  }
   let config = (await import(join(appDir, pkg['ember-addon'].babel.filename))).default;
   let filename = join(appDir, fileLocalPath);
   let src = readFileSync(filename, 'utf8');

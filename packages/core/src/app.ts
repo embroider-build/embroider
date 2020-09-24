@@ -244,6 +244,12 @@ export class AppBuilder<TreeNames> {
         relativePath: '_ember_env_.js',
         source: `window.EmberENV=${JSON.stringify(emberENV, null, 2)};`,
       });
+
+      result.push({
+        kind: 'in-memory',
+        relativePath: '_loader_.js',
+        source: `loader.makeDefaultExport=false;`,
+      });
     }
 
     if (type === 'implicit-test-scripts') {

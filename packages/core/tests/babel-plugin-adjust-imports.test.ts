@@ -52,8 +52,30 @@ describe('babel-plugin-adjust-imports', function() {
   });
 
   test('isImportSyncExpression works', function() {
-    expect(isImportSyncExpressionFromSource(`importSync('foo');`)).toBe(true);
-    expect(isImportSyncExpressionFromSource(`var t = "importSync";`)).toBe(false);
+    expect(
+      isImportSyncExpressionFromSource(`
+      import { importSync } from '@embroider/macros';
+      importSync('foo');
+    `)
+    ).toBe(true);
+    expect(
+      isImportSyncExpressionFromSource(`
+      import { importSync as i } from '@embroider/macros';
+      i('foo');
+    `)
+    ).toBe(true);
+    expect(
+      isImportSyncExpressionFromSource(`
+      import { foo as importSync } from 'foobar';
+      importSync('foo');
+    `)
+    ).toBe(false);
+    expect(
+      isImportSyncExpressionFromSource(`
+      import { foo as i } from 'foobar';
+      i('foo');
+    `)
+    ).toBe(false);
   });
 
   test('isDynamicImportExpression works', function() {

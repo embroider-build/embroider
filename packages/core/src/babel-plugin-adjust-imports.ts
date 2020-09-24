@@ -289,25 +289,20 @@ function handleRelocation(specifier: string, sourceFile: AdjustFile) {
 }
 
 export default function main() {
-  //debugger;
   return {
     visitor: {
       Program: {
         enter(path: NodePath<Program>, state: State) {
-          debugger;
           state.emberCLIVanillaJobs = [];
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
           addExtraImports(path, state.opts.extraImports);
         },
         exit(_: any, state: State) {
-          debugger;
           state.emberCLIVanillaJobs.forEach(job => job());
         },
       },
       CallExpression(path: NodePath<CallExpression>, state: State) {
-        //debugger;
         if (isImportSyncExpression(path) || isDynamicImportExpression(path)) {
-          debugger;
           const [source] = path.get('arguments');
           let { opts } = state;
           opts.dynamicImports.push((source.node as any).value);
@@ -320,8 +315,6 @@ export default function main() {
         if (!isDefineExpression(path)) {
           return;
         }
-
-        //debugger;
 
         let pkg = state.adjustFile.owningPackage();
         if (pkg && pkg.isV2Ember() && !pkg.meta['auto-upgraded']) {
@@ -364,14 +357,11 @@ export default function main() {
         path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>,
         state: State
       ) {
-        //debugger;
         let { opts, emberCLIVanillaJobs } = state;
         const { source } = path.node;
         if (source === null) {
           return;
         }
-
-        //debugger;
 
         let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
         if (specifier !== source.value) {

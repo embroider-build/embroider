@@ -3,7 +3,7 @@ import { readJSONSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { argv } from 'process';
 
-async function run(appDir: string, fileLocalPath: string) {
+export async function transpile(appDir: string, fileLocalPath: string): Promise<string> {
   let pkg = readJSONSync(join(appDir, 'package.json'));
   if (!pkg['ember-addon'].babel.isParallelSafe) {
     throw new Error(
@@ -13,12 +13,13 @@ async function run(appDir: string, fileLocalPath: string) {
   let config = (await import(join(appDir, pkg['ember-addon'].babel.filename))).default;
   let filename = join(appDir, fileLocalPath);
   let src = readFileSync(filename, 'utf8');
-  process.stdout.write(transform(src, Object.assign({ filename }, config) as TransformOptions)!.code!);
+  return transform(src, Object.assign({ filename }, config) as TransformOptions)!.code!;
 }
 
-if (argv.length < 4) {
-  console.log(
-    `
+if (require.main === module) {
+  if (argv.length < 4) {
+    console.log(
+      `
     Usage:
       node babel-debug-util.js [pathToAppOutputDir] [localPathToFile]
 
@@ -26,11 +27,16 @@ if (argv.length < 4) {
       and the local path to a JS file within that app, run the app's babel
       config on that file and print the results.
   `
-  );
-  process.exit(-1);
-}
+    );
+    process.exit(-1);
+  }
 
-run(process.argv[2], process.argv[3]).catch(err => {
-  console.log(err);
-  process.exit(-1);
-});
+  transpile(process.argv[2], process.argv[3])
+    .then(src => {
+      console.log(src);
+    })
+    .catch(err => {
+      console.log(err);
+      process.exit(-1);
+    });
+}

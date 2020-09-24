@@ -107,6 +107,14 @@ export function isDefineExpression(path: NodePath<any>): path is DefineExpressio
 }
 
 function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
+  if (specifier === '@embroider/macros') {
+    // the macros package is always handled directly within babel (not
+    // necessarily as a real resolvable package), so we should not mess with it.
+    // It might not get compiled away until *after* our plugin has run, which is
+    // why we need to know about it.
+    return specifier;
+  }
+
   specifier = handleRenaming(specifier, file, opts);
   specifier = handleExternal(specifier, file, opts);
   if (file.isRelocated) {

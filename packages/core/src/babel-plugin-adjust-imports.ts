@@ -158,6 +158,17 @@ function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['
     let fullPath = specifier.replace(packageName, pkg.root);
     return explicitRelative(dirname(sourceFile.name), fullPath);
   }
+
+  let relocatedIntoPkg = sourceFile.relocatedIntoPackage();
+  if (relocatedIntoPkg && pkg.meta['auto-upgraded'] && relocatedIntoPkg.name === packageName) {
+    // a file that was relocated into a package does a self-import of that
+    // package's name. This can happen when an addon (like ember-cli-mirage)
+    // emits files from its own treeForApp that contain imports of the app's own
+    // fully qualified name.
+    let fullPath = specifier.replace(packageName, relocatedIntoPkg.root);
+    return explicitRelative(dirname(sourceFile.name), fullPath);
+  }
+
   return specifier;
 }
 
@@ -433,5 +444,12 @@ class AdjustFile {
   @Memoize()
   owningPackage(): Package | undefined {
     return packageCache.ownerOfFile(this.originalFile);
+  }
+
+  @Memoize()
+  relocatedIntoPackage(): Package | undefined {
+    if (this.isRelocated) {
+      return packageCache.ownerOfFile(this.name);
+    }
   }
 }

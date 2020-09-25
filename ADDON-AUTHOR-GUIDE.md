@@ -19,7 +19,65 @@ As of this writing, we **do not** recommend trying to jump all the way to the "E
 
 I expect the RFC to merge soon, and when it does that will remove the first blocker. At that point, adventurous souls are welcome to ignore the second blocker if they want to be on the bleeding edge, but unless you're excited to participate in making and testing the tooling itself you might want to wait for more stable tools.
 
-Also, if you want to maintain compatibility with both Embroider and non-Embroider builds (which you should), you should probably wait until we provide a shim library to help with that (or help us write the shim library!).
+Also, if you want to maintain compatibility with both Embroider and non-Embroider builds (which you should), we recommend making the following changes to your addon:
+
+##### ember-cli-build.js
+
+```js
+// Use embroider if it's present (it can get added by ember-try)
+if ('@embroider/core' in app.dependencies()) {
+  /* eslint-disable node/no-missing-require, node/no-extraneous-require */
+  const { Webpack } = require('@embroider/webpack');
+  const { compatBuild } = require('@embroider/compat');
+  /* eslint-enable node/no-missing-require, node/no-extraneous-require */
+  let config = {};
+  if (process.env.EMBER_TRY_SCENARIO === 'embroider-optimized') {
+    config = {
+      staticAddonTrees: true,
+      staticAddonTestSupportTrees: true,
+      staticHelpers: true,
+      staticComponents: true,
+    }
+  }
+  return compatBuild(app, Webpack, config);
+} else {
+  return app.toTree();
+}
+```
+
+##### config/ember-try.js
+
+```js
+{
+  name: 'embroider',
+  npm: {
+    devDependencies: {
+      '@embroider/core': '*',
+      '@embroider/webpack': '*',
+      '@embroider/compat': '*',
+    },
+  },
+},
+{
+  name: 'embroider-optimized',
+  npm: {
+    devDependencies: {
+      '@embroider/core': '*',
+      '@embroider/webpack': '*',
+      '@embroider/compat': '*',
+    },
+  }
+},
+```
+
+##### .travis.yml
+
+```yml
+- env: EMBER_TRY_SCENARIO=embroider
+- env: EMBER_TRY_SCENARIO=embroider-optimized
+```
+
+These changes will test your addon with embroider enabled (and also under the strictest compatiblity settings) which will help prevent any regressions from cropping up in the future. [Here is an example](https://github.com/ember-cli/ember-exam/pull/599) PR to ember-exam that enables these changes for your reference.
 
 ## Big Picture
 

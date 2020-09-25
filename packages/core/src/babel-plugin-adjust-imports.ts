@@ -64,6 +64,29 @@ type DefineExpressionPath = NodePath<CallExpression> & {
   };
 };
 
+export function isImportSyncExpression(path: NodePath<any>) {
+  if (
+    !path ||
+    !path.isCallExpression() ||
+    path.node.callee.type !== 'Identifier' ||
+    !path.get('callee').referencesImport('@embroider/macros', 'importSync')
+  ) {
+    return false;
+  }
+
+  const args = path.node.arguments;
+  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+}
+
+export function isDynamicImportExpression(path: NodePath<any>) {
+  if (!path || !path.isCallExpression() || path.node.callee.type !== 'Import') {
+    return false;
+  }
+
+  const args = path.node.arguments;
+  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+}
+
 export function isDefineExpression(path: NodePath<any>): path is DefineExpressionPath {
   // should we allow nested defines, or stop at the top level?
   if (!path.isCallExpression() || path.node.callee.type !== 'Identifier' || path.node.callee.name !== 'define') {
@@ -82,9 +105,17 @@ export function isDefineExpression(path: NodePath<any>): path is DefineExpressio
   );
 }
 
-function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options) {
+function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options, isDynamic: boolean) {
+  if (specifier === '@embroider/macros') {
+    // the macros package is always handled directly within babel (not
+    // necessarily as a real resolvable package), so we should not mess with it.
+    // It might not get compiled away until *after* our plugin has run, which is
+    // why we need to know about it.
+    return specifier;
+  }
+
   specifier = handleRenaming(specifier, file, opts);
-  specifier = handleExternal(specifier, file, opts);
+  specifier = handleExternal(specifier, file, opts, isDynamic);
   if (file.isRelocated) {
     specifier = handleRelocation(specifier, file);
   }
@@ -149,6 +180,10 @@ function isResolvable(packageName: string, fromPkg: V2Package): boolean {
   return true;
 }
 
+const dynamicMissingModule = compile(`
+  throw new Error('Could not find module \`{{{js-string-escape moduleName}}}\`');
+`) as (params: { moduleName: string }) => string;
+
 const externalTemplate = compile(`
 {{#if (eq runtimeName "require")}}
 const m = window.requirejs;
@@ -172,7 +207,7 @@ if (m.default && !m.__esModule) {
 module.exports = m;
 `) as (params: { runtimeName: string }) => string;
 
-function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options, isDynamic: boolean): string {
   let pkg = sourceFile.owningPackage();
   if (!pkg || !pkg.isV2Ember()) {
     return specifier;
@@ -210,17 +245,42 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return specifier;
   }
 
-  // we're being strict, packages authored in v2 need to list their own
-  // externals, we won't resolve for them.
-  if (!pkg.meta['auto-upgraded']) {
-    return specifier;
+  // auto-upgraded packages can fall back to the set of known active addons
+  if (pkg.meta['auto-upgraded'] && opts.activeAddons[packageName]) {
+    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
   }
 
-  if (opts.activeAddons[packageName]) {
-    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-  } else {
+  // auto-upgraded packages can fall back to attmpeting to find dependencies at
+  // runtime. Native v2 packages can only get this behavior in the
+  // isExplicitlyExternal case above because they need to explicitly ask for
+  // externals.
+  if (pkg.meta['auto-upgraded']) {
     return makeExternal(specifier, sourceFile, opts);
   }
+
+  // non-resolvable imports in dynamic positions become runtime errors, not
+  // build-time errors, so we emit the runtime error module here before the
+  // stage3 packager has a chance to see the missing module. (Maybe some stage3
+  // packagers will have this behavior by default, because it would make sense,
+  // but webpack at least does not.)
+  if (isDynamic) {
+    return makeMissingModule(specifier, sourceFile, opts);
+  }
+
+  // this is falling through with the original specifier which was
+  // non-resolvable, which will presumably cause a static build error in stage3.
+  return specifier;
+}
+
+function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+  let target = join(opts.externalsDir, specifier + '.js');
+  outputFileSync(
+    target,
+    dynamicMissingModule({
+      moduleName: specifier,
+    })
+  );
+  return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
@@ -261,6 +321,14 @@ export default function main() {
         },
       },
       CallExpression(path: NodePath<CallExpression>, state: State) {
+        if (isImportSyncExpression(path) || isDynamicImportExpression(path)) {
+          const [source] = path.get('arguments');
+          let { opts } = state;
+          let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts, true);
+          source.replaceWith(stringLiteral(specifier));
+          return;
+        }
+
         // Should/can we make this early exit when the first define was found?
         if (!isDefineExpression(path)) {
           return;
@@ -296,7 +364,7 @@ export default function main() {
             continue;
           }
 
-          let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+          let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
 
           if (specifier !== source.value) {
             source.value = specifier;
@@ -313,7 +381,7 @@ export default function main() {
           return;
         }
 
-        let specifier = adjustSpecifier(source.value, state.adjustFile, opts);
+        let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
         if (specifier !== source.value) {
           emberCLIVanillaJobs.push(() => (source.value = specifier));
         }

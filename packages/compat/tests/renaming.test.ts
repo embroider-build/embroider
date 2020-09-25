@@ -1,6 +1,7 @@
 import { Project, BuildResult, definesPattern, ExpectFile, expectFilesAt } from '@embroider/test-support';
 
 import { throwOnWarnings } from '@embroider/core';
+import merge from 'lodash/merge';
 
 describe('renaming tests', function() {
   jest.setTimeout(120000);
@@ -96,6 +97,18 @@ describe('renaming tests', function() {
     ] = `export { default } from 'has-app-tree-import';`;
     (secondAddonWithAppTreeImport.files.addon as Project['files'])['index.js'] = `export default "second-copy";`;
 
+    // an addon that emits code from its own app tree that is really authored as
+    // part of the app and therefore does thing like refer to the app's modules
+    // by the app's package name
+    let mirageLike = app.addAddon('mirage-like');
+    merge(mirageLike.files, {
+      app: {
+        mirage: {
+          'config.js': `import "my-app/components/import-lodash";`,
+        },
+      },
+    });
+
     build = await BuildResult.build(app, {
       stage: 2,
       type: 'app',
@@ -188,5 +201,9 @@ describe('renaming tests', function() {
     assertFile.matches(
       /export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import\/node_modules\/inner-dep['"]/
     );
+  });
+  test(`app-tree files from addons that import from the app get rewritten to relative imports`, function() {
+    let assertFile = expectFile('mirage/config.js').transform(build.transpile);
+    assertFile.matches(/import ['"]\.\.\/components\/import-lodash['"]/);
   });
 });

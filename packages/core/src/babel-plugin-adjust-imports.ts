@@ -245,19 +245,31 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return specifier;
   }
 
-  // we're being strict, packages authored in v2 need to list their own
-  // externals, we won't resolve for them.
-  if (!pkg.meta['auto-upgraded']) {
-    return specifier;
+  // auto-upgraded packages can fall back to the set of known active addons
+  if (pkg.meta['auto-upgraded'] && opts.activeAddons[packageName]) {
+    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
   }
 
-  if (opts.activeAddons[packageName]) {
-    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-  } else if (isDynamic) {
-    return makeMissingModule(specifier, sourceFile, opts);
-  } else {
+  // auto-upgraded packages can fall back to attmpeting to find dependencies at
+  // runtime. Native v2 packages can only get this behavior in the
+  // isExplicitlyExternal case above because they need to explicitly ask for
+  // externals.
+  if (pkg.meta['auto-upgraded']) {
     return makeExternal(specifier, sourceFile, opts);
   }
+
+  // non-resolvable imports in dynamic positions become runtime errors, not
+  // build-time errors, so we emit the runtime error module here before the
+  // stage3 packager has a chance to see the missing module. (Maybe some stage3
+  // packagers will have this behavior by default, because it would make sense,
+  // but webpack at least does not.)
+  if (isDynamic) {
+    return makeMissingModule(specifier, sourceFile, opts);
+  }
+
+  // this is falling through with the original specifier which was
+  // non-resolvable, which will presumably cause a static build error in stage3.
+  return specifier;
 }
 
 function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {

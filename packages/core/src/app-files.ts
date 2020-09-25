@@ -30,6 +30,12 @@ export class AppFiles {
         continue;
       }
 
+      if (/\.d\.ts$/.test(relativePath)) {
+        // .d.ts files are technically "*.ts" files but aren't really and we
+        // don't want to include them when we crawl through the app.
+        continue;
+      }
+
       if (relativePath.startsWith('tests/')) {
         if (/-test\.\w+$/.test(relativePath)) {
           tests.push(relativePath);

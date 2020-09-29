@@ -74,7 +74,7 @@ if (macroCondition(true)) {
 }
 
 // they can also be used as ternary expressions:
-let specialVariable = 'Hello ' + macroCondition(true) ? 'Bob' : 'Jane';
+let specialVariable = 'Hello ' + (macroCondition(true) ? 'Bob' : 'Jane');
 
 console.log(specialVariable); // will print "Hello Bob"
 ```

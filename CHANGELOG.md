@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## 0.26.0
+
+- BUGFIX: don't include d.ts files from the app into the actual build
+- COMPAT: support own-imports imports in code that came from treeForApp
+- HOUSEKEEPING: updating the versions of babel used in our own test suite
+- DOCS: add ember-try instructions to addon author guide by @thoov
+- ENHANCEMENT: unresolved dynamic imports are now runtime errors, not build time errors, by @thoov
+- COMPAT: fix loader.js compatibility issue by disabling its makeDefaultExport option by @simonihmig
+- ENHANCEMENT: prevent cryptic errors when a (potentially optional) dependency isn't present by @thoov
+
 ## 0.25.0
 
 - BUGFIX: fix live rebuilding the owning addon when running a dummy app

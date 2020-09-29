@@ -184,3 +184,4 @@ Below are a list of addons that have started using `@embroider/macros` so that y
 
 - [ember-exam](https://github.com/ember-cli/ember-exam)
 - [ember-bootstrap](https://github.com/kaliber5/ember-bootstrap)
+- [ember-stargate](https://github.com/kaliber5/ember-stargate)

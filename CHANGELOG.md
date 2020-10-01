@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+## 0.27.0
+
+- HOUSEKEEPING: linter upgrades
+- COMPAT: add compatAdapter for ember-cli-addon-docs by @thoov
+- ENHANCEMENT: created new `@embroider/test-setup` package to aid CI-testing of apps and addons
+
 ## 0.26.0
 
 - BUGFIX: don't include d.ts files from the app into the actual build

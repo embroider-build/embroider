@@ -1,0 +1,24 @@
+{
+  "name": "@embroider/test-setup",
+  "version": "0.26.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/test-setup"
+  },
+  "license": "MIT",
+  "main": "src/index.js",
+  "files": [
+    "src/index.js"
+  ],
+  "dependencies": {
+    "lodash": "^4.17.20",
+    "resolve": "^1.17.0"
+  },
+  "devDependencies": {
+    "@embroider/compat": "0.26.0"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

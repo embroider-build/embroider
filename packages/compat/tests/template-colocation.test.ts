@@ -4,7 +4,7 @@ import { throwOnWarnings } from '@embroider/core';
 import Options from '../src/options';
 import merge from 'lodash/merge';
 
-describe('template colocation', function() {
+describe('template colocation', function () {
   jest.setTimeout(120000);
   let expectFile: ExpectFile;
   let build: BuildResult;
@@ -12,7 +12,7 @@ describe('template colocation', function() {
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     app = Project.emberNew();
 
     merge(app.files, {
@@ -73,11 +73,11 @@ describe('template colocation', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test(`app's colocated template is associated with JS`, function() {
+  test(`app's colocated template is associated with JS`, function () {
     let assertFile = expectFile('components/has-colocated-template.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/has-colocated-template.hbs['"];/, 'imported template');
     assertFile.matches(
@@ -86,7 +86,7 @@ describe('template colocation', function() {
     );
   });
 
-  test(`app's template-only component JS is synthesized`, function() {
+  test(`app's template-only component JS is synthesized`, function () {
     let assertFile = expectFile('components/template-only-component.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/template-only-component.hbs['"];/, 'imported template');
     assertFile.matches(
@@ -95,7 +95,7 @@ describe('template colocation', function() {
     );
   });
 
-  test(`app's colocated components are implicitly included correctly`, function() {
+  test(`app's colocated components are implicitly included correctly`, function () {
     let assertFile = expectFile('assets/my-app.js');
     assertFile.matches(
       /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/has-colocated-template['"]\);\s*\}/
@@ -105,7 +105,7 @@ describe('template colocation', function() {
     );
   });
 
-  test(`addon's colocated template is associated with JS`, function() {
+  test(`addon's colocated template is associated with JS`, function () {
     let assertFile = expectFile('node_modules/my-addon/components/component-one.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
     assertFile.matches(
@@ -114,7 +114,7 @@ describe('template colocation', function() {
     );
   });
 
-  test(`addon's template-only component JS is synthesized`, function() {
+  test(`addon's template-only component JS is synthesized`, function () {
     let assertFile = expectFile('node_modules/my-addon/components/component-two.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
     assertFile.matches(
@@ -123,7 +123,7 @@ describe('template colocation', function() {
     );
   });
 
-  test(`addon's colocated components are correct in implicit-modules`, function() {
+  test(`addon's colocated components are correct in implicit-modules`, function () {
     let assertFile = expectFile('node_modules/my-addon/package.json').json();
     assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
     assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');

@@ -1,7 +1,7 @@
 import { explicitRelative } from '../src';
 
-describe('core path utils', function() {
-  test('explicit relative', function() {
+describe('core path utils', function () {
+  test('explicit relative', function () {
     // when there's no common parts, paths stay absolute
     expect(explicitRelative('/a/b/c', '/d/e/f')).toEqual('/d/e/f');
 

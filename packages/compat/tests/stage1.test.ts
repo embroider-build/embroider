@@ -3,14 +3,14 @@ import resolve from 'resolve';
 import { dirname } from 'path';
 import merge from 'lodash/merge';
 
-describe('stage1 build', function() {
+describe('stage1 build', function () {
   jest.setTimeout(120000);
 
-  describe('max compatibility', function() {
+  describe('max compatibility', function () {
     let build: BuildResult;
     let expectFile: ExpectFile;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       // A simple ember app with no tests
       let app = Project.emberNew();
 
@@ -106,15 +106,15 @@ describe('stage1 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('component in app tree', function() {
+    test('component in app tree', function () {
       expectFile('node_modules/my-addon/_app_/components/hello-world.js').exists();
     });
 
-    test('addon metadata', function() {
+    test('addon metadata', function () {
       let assertMeta = expectFile('node_modules/my-addon/package.json').json('ember-addon');
       assertMeta.get('app-js').equals('_app_'); // should have app-js metadata
       assertMeta
@@ -129,13 +129,13 @@ describe('stage1 build', function() {
       assertMeta.get('version').equals(2);
     });
 
-    test('component in addon tree', function() {
+    test('component in addon tree', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js');
       assertFile.matches(`getOwnConfig()`, `JS macros have not run yet`);
       assertFile.matches(`embroider-sample-transforms-result`, `custom babel plugins have run`);
     });
 
-    test('component template in addon tree', function() {
+    test('component template in addon tree', function () {
       let assertFile = expectFile('node_modules/my-addon/templates/components/hello-world.hbs');
       assertFile.matches(
         '<div class={{embroider-sample-transforms-result}}>hello world</div>',
@@ -147,7 +147,7 @@ describe('stage1 build', function() {
       );
     });
 
-    test('test module name added', function() {
+    test('test module name added', function () {
       let assertFile = expectFile('node_modules/my-addon/templates/components/module-name.hbs');
       assertFile.matches(
         '<div class={{embroider-sample-transforms-module "my-addon/templates/components/module-name.hbs"}}>hello world</div>',
@@ -155,7 +155,7 @@ describe('stage1 build', function() {
       );
     });
 
-    test('component with inline template', function() {
+    test('component with inline template', function () {
       let assertFile = expectFile('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
@@ -171,22 +171,22 @@ describe('stage1 build', function() {
       );
     });
 
-    test('in-repo-addon is available', function() {
+    test('in-repo-addon is available', function () {
       resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: build.outputPath });
     });
 
-    test('dynamic import is preserved', function() {
+    test('dynamic import is preserved', function () {
       expectFile('node_modules/my-addon/components/does-dynamic-import.js').matches(
         /return import\(['"]some-library['"]\)/
       );
     });
   });
 
-  describe('inline hbs, ember-cli-htmlbars@3', function() {
+  describe('inline hbs, ember-cli-htmlbars@3', function () {
     let build: BuildResult;
     let expectFile: ExpectFile;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       // A simple ember app with no tests
       let app = Project.emberNew();
 
@@ -218,11 +218,11 @@ describe('stage1 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('component with inline template', function() {
+    test('component with inline template', function () {
       let assertFile = expectFile('node_modules/my-addon/components/has-inline-template.js');
       assertFile.matches(
         'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
@@ -239,10 +239,10 @@ describe('stage1 build', function() {
     });
   });
 
-  describe('addon dummy app', function() {
+  describe('addon dummy app', function () {
     let build: BuildResult;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       let app = Project.addonNew();
       (app.files.addon as Project['files']).components = {
         'hello-world.js': '',
@@ -251,20 +251,20 @@ describe('stage1 build', function() {
       build = await BuildResult.build(app, { stage: 1, type: 'addon' });
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('dummy app can resolve own addon', function() {
+    test('dummy app can resolve own addon', function () {
       resolve.sync('my-addon/components/hello-world.js', { basedir: build.outputPath });
     });
   });
 
-  describe('problematic addon zoo', function() {
+  describe('problematic addon zoo', function () {
     let build: BuildResult;
     let expectFile: ExpectFile;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       let app = Project.emberNew();
 
       // an addon that emits a package.json file from its treeForAddon
@@ -348,32 +348,32 @@ describe('stage1 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('real package.json wins', function() {
+    test('real package.json wins', function () {
       expectFile('node_modules/alpha/package.json').matches(`alpha`);
     });
 
-    test('custom tree hooks are detected in addons that manually extend from Addon', function() {
+    test('custom tree hooks are detected in addons that manually extend from Addon', function () {
       let assertFile = expectFile('node_modules/has-custom-base/file.js');
       assertFile.matches(/weird-addon-path\/file\.js/);
     });
 
-    test('no fastboot-js is emitted', function() {
+    test('no fastboot-js is emitted', function () {
       expectFile('node_modules/undefined-fastboot/package.json')
         .json()
         .get('ember-addon.fastboot-js')
         .equals(undefined);
     });
 
-    test('custom tree hooks are detected when they have been patched into the addon instance', function() {
+    test('custom tree hooks are detected when they have been patched into the addon instance', function () {
       let assertFile = expectFile('node_modules/externally-customized/public/hello/world.js');
       assertFile.exists();
     });
 
-    test('addon with customized ember-addon.main can still use stock trees', function() {
+    test('addon with customized ember-addon.main can still use stock trees', function () {
       expectFile('node_modules/moved-main/helpers/hello.js').matches(/hello-world/);
     });
   });

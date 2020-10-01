@@ -501,7 +501,7 @@ export default class V1Addon {
       try {
         if (neuterPreprocessors) {
           original = this.addonInstance.preprocessJs;
-          this.addonInstance.preprocessJs = function(tree: Tree) {
+          this.addonInstance.preprocessJs = function (tree: Tree) {
             return tree;
           };
         }

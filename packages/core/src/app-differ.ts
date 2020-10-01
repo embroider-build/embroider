@@ -36,21 +36,19 @@ export default class AppDiffer {
     private babelParserConfig?: TransformOptions | undefined
   ) {
     let trees = activeAddonDescendants
-      .map(
-        (addon): InputTree | undefined => {
-          let dir = addon.meta['app-js'];
-          if (dir) {
-            let definitelyDir = join(addon.root, dir);
-            this.sourceDirs.push(definitelyDir);
-            return {
-              mayChange: addon.mayRebuild,
-              walk() {
-                return walkSync.entries(definitelyDir);
-              },
-            };
-          }
+      .map((addon): InputTree | undefined => {
+        let dir = addon.meta['app-js'];
+        if (dir) {
+          let definitelyDir = join(addon.root, dir);
+          this.sourceDirs.push(definitelyDir);
+          return {
+            mayChange: addon.mayRebuild,
+            walk() {
+              return walkSync.entries(definitelyDir);
+            },
+          };
         }
-      )
+      })
       .filter(Boolean) as InputTree[];
 
     trees.push({

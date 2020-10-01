@@ -2,7 +2,7 @@ import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
 import { MacrosConfig } from '../..';
 
-describe('each', function() {
+describe('each', function () {
   let macrosConfig: MacrosConfig;
 
   allBabelVersions({
@@ -10,10 +10,10 @@ describe('each', function() {
       return makeBabelConfig(version, macrosConfig);
     },
     includePresetsTests: true,
-    createTests: allModes(function(transform, { buildTimeTest, applyMode, runTimeTest }) {
+    createTests: allModes(function (transform, { buildTimeTest, applyMode, runTimeTest }) {
       let run = makeRunner(transform);
 
-      beforeEach(function() {
+      beforeEach(function () {
         macrosConfig = MacrosConfig.for({});
         macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
         applyMode(macrosConfig);

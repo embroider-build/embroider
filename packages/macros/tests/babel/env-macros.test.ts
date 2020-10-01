@@ -3,7 +3,7 @@ import { makeBabelConfig, allModes, makeRunner } from './helpers';
 import { PackageCache } from '@embroider/core';
 import { MacrosConfig } from '../..';
 
-describe(`env macros`, function() {
+describe(`env macros`, function () {
   let macrosConfig: MacrosConfig;
 
   allBabelVersions({
@@ -11,11 +11,11 @@ describe(`env macros`, function() {
       return makeBabelConfig(version, macrosConfig);
     },
     includePresetsTests: true,
-    createTests: allModes(function(transform, { applyMode, buildTimeTest, runTimeTest }) {
+    createTests: allModes(function (transform, { applyMode, buildTimeTest, runTimeTest }) {
       let run: ReturnType<typeof makeRunner>;
 
-      describe(`true cases`, function() {
-        beforeEach(function() {
+      describe(`true cases`, function () {
+        beforeEach(function () {
           macrosConfig = MacrosConfig.for({});
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: true });
           macrosConfig.enableAppDevelopment(PackageCache.shared('embroider-stage3').ownerOfFile(__filename)!.root);
@@ -119,8 +119,8 @@ describe(`env macros`, function() {
         });
       });
 
-      describe(`false cases`, function() {
-        beforeEach(function() {
+      describe(`false cases`, function () {
+        beforeEach(function () {
           macrosConfig = MacrosConfig.for({});
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: false });
           applyMode(macrosConfig);

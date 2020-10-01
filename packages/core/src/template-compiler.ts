@@ -97,9 +97,7 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
   let theExports: any = new Function(source)();
 
   // cacheKey, theExports
-  let cacheKey = createHash('md5')
-    .update(source)
-    .digest('hex');
+  let cacheKey = createHash('md5').update(source).digest('hex');
 
   entry = Object.freeze({
     value: {

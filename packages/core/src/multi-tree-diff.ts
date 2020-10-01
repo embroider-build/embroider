@@ -129,7 +129,7 @@ function compareByRelativePath(entryA: Entry, entryB: Entry) {
 }
 
 function isEqual(owners: WeakMap<Entry, number[]>) {
-  return function(a: Entry, b: Entry) {
+  return function (a: Entry, b: Entry) {
     return FSTree.defaultIsEqual(a, b) && lodashIsEqual(owners.get(a), owners.get(b));
   };
 }

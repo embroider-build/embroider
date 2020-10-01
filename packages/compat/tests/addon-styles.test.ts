@@ -1,7 +1,7 @@
 import { Project, BuildResult, expectFilesAt, ExpectFile } from '@embroider/test-support';
 import { throwOnWarnings } from '@embroider/core';
 
-describe('addon.styles tests', function() {
+describe('addon.styles tests', function () {
   jest.setTimeout(120000);
   let build: BuildResult;
   let app: Project;
@@ -9,7 +9,7 @@ describe('addon.styles tests', function() {
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     app = Project.emberNew();
 
     let addon1 = app.addAddon(
@@ -78,25 +78,23 @@ describe('addon.styles tests', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test('treeForStyles adds styles to build', function() {
+  test('treeForStyles adds styles to build', function () {
     expectFile('node_modules/@embroider/synthesized-styles/assets/third-party1.css').matches('.error { color: red; }');
   });
 
   // prevent regression of https://github.com/embroider-build/embroider/issues/164
-  test('treeForStyles not calling super adds styles to build', function() {
+  test('treeForStyles not calling super adds styles to build', function () {
     expectFile('node_modules/@embroider/synthesized-styles/assets/third-party2.css').matches(
       '.success { color: green }'
     );
   });
 
-  test(`all addon CSS gets convert to implicit-styles`, function() {
-    let implicitStyles = expectFile('node_modules/my-addon3/package.json')
-      .json()
-      .get('ember-addon.implicit-styles');
+  test(`all addon CSS gets convert to implicit-styles`, function () {
+    let implicitStyles = expectFile('node_modules/my-addon3/package.json').json().get('ember-addon.implicit-styles');
     implicitStyles.includes('./my-addon3.css');
     implicitStyles.includes('./outer.css');
     implicitStyles.includes('./nested/inner.css');

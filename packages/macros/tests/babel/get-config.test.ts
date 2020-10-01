@@ -3,7 +3,7 @@ import { makeBabelConfig, allModes, makeRunner } from './helpers';
 import { MacrosConfig } from '../../src';
 import { dirname } from 'path';
 
-describe(`getConfig`, function() {
+describe(`getConfig`, function () {
   let config: MacrosConfig;
   let filename: string;
   let run: ReturnType<typeof makeRunner>;
@@ -15,8 +15,8 @@ describe(`getConfig`, function() {
       return c;
     },
     includePresetsTests: true,
-    createTests: allModes(function(transform, { applyMode, buildTimeTest, runTimeTest }) {
-      beforeEach(function() {
+    createTests: allModes(function (transform, { applyMode, buildTimeTest, runTimeTest }) {
+      beforeEach(function () {
         // we have some tests that behave differently on files that appear to be
         // inside or outside of the macros package itself. Most tests don't care
         // and will default to "outside", with a notional path inside
@@ -29,7 +29,10 @@ describe(`getConfig`, function() {
           beverage: 'coffee',
         });
         config.setConfig(filename, '@babel/traverse', {
-          sizes: [{ name: 'small', oz: 4 }, { name: 'medium', oz: 8 }],
+          sizes: [
+            { name: 'small', oz: 4 },
+            { name: 'medium', oz: 8 },
+          ],
         });
         config.setConfig(filename, '@babel/core', [1, 2, 3]);
         config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });

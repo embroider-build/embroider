@@ -4,11 +4,11 @@ import jsStringEscape from 'js-string-escape';
 
 registerHelper('js-string-escape', jsStringEscape);
 
-registerHelper('json-stringify', function(input: any, indent?: number) {
+registerHelper('json-stringify', function (input: any, indent?: number) {
   return JSON.stringify(input, null, indent);
 });
 
-registerHelper('eq', function(a: any, b: any) {
+registerHelper('eq', function (a: any, b: any) {
   return a === b;
 });
 

@@ -51,7 +51,7 @@ export = {
     // forbidden and consuming it becomes allowed. There's no existing hook with
     // that timing.
     const originalToTree = appInstance.toTree;
-    appInstance.toTree = function() {
+    appInstance.toTree = function () {
       MacrosConfig.for(appInstance).finalize();
       return originalToTree.apply(appInstance, arguments);
     };

@@ -2,7 +2,7 @@ import { Project, BuildResult, expectFilesAt, ExpectFile } from '@embroider/test
 import { throwOnWarnings } from '@embroider/core';
 import { join } from 'path';
 
-describe('app.import tests', function() {
+describe('app.import tests', function () {
   jest.setTimeout(120000);
   let build: BuildResult;
   let app: Project;
@@ -10,7 +10,7 @@ describe('app.import tests', function() {
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     app = Project.emberNew();
 
     let addon = app.addAddon(
@@ -41,11 +41,11 @@ describe('app.import tests', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test('destDir puts vendor files into public assets', function() {
+  test('destDir puts vendor files into public assets', function () {
     expectFile('node_modules/@embroider/synthesized-vendor/package.json')
       .json()
       .get(['ember-addon', 'public-assets', './vendor/some-font.ttf'])
@@ -53,7 +53,7 @@ describe('app.import tests', function() {
     expectFile('node_modules/@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
   });
 
-  test('handle non-transformed node_module with explicit outputFile', function() {
+  test('handle non-transformed node_module with explicit outputFile', function () {
     expectFile('node_modules/@embroider/synthesized-vendor/package.json')
       .json()
       .get([

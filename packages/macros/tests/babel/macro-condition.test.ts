@@ -2,7 +2,7 @@ import { makeRunner, makeBabelConfig, allModes } from './helpers';
 import { allBabelVersions } from '@embroider/test-support';
 import { MacrosConfig } from '../..';
 
-describe('macroCondition', function() {
+describe('macroCondition', function () {
   let config: MacrosConfig;
 
   allBabelVersions({
@@ -12,7 +12,7 @@ describe('macroCondition', function() {
     includePresetsTests: true,
     createTests: allModes((transform, { applyMode, buildTimeTest, runTimeTest }) => {
       let run = makeRunner(transform);
-      beforeEach(function() {
+      beforeEach(function () {
         config = MacrosConfig.for({});
         config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
         applyMode(config);

@@ -11,43 +11,43 @@ import {
 
 const ERROR_REGEX = /this method is really implemented at compile time via a babel plugin. If you're seeing this exception, something went wrong/;
 
-describe(`type-only exports`, function() {
-  test('dependencySatisfies exists', function() {
+describe(`type-only exports`, function () {
+  test('dependencySatisfies exists', function () {
     expect(dependencySatisfies).toBeDefined();
     expect(dependencySatisfies).toThrow(ERROR_REGEX);
   });
 
-  test('macroCondition exists', function() {
+  test('macroCondition exists', function () {
     expect(macroCondition).toBeDefined();
     expect(macroCondition).toThrow(ERROR_REGEX);
   });
 
-  test('each exists', function() {
+  test('each exists', function () {
     expect(each).toBeDefined();
     expect(macroCondition).toThrow(ERROR_REGEX);
   });
 
-  test('importSync exists', function() {
+  test('importSync exists', function () {
     expect(importSync).toBeDefined();
     expect(importSync).toThrow(ERROR_REGEX);
   });
 
-  test('getConfig exists', function() {
+  test('getConfig exists', function () {
     expect(getConfig).toBeDefined();
     expect(importSync).toThrow(ERROR_REGEX);
   });
 
-  test('getOwnConfig exists', function() {
+  test('getOwnConfig exists', function () {
     expect(getOwnConfig).toBeDefined();
     expect(importSync).toThrow(ERROR_REGEX);
   });
 
-  test('failBuild exists', function() {
+  test('failBuild exists', function () {
     expect(failBuild).toBeDefined();
     expect(failBuild).toThrow(ERROR_REGEX);
   });
 
-  test('moduleExists exists', function() {
+  test('moduleExists exists', function () {
     expect(moduleExists).toBeDefined();
     expect(moduleExists).toThrow(ERROR_REGEX);
   });

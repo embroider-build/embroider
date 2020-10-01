@@ -32,7 +32,7 @@ describe('portable-template-config', () => {
       resolver: (resolver as unknown) as Resolver,
       plugins: {
         ast: [
-          function() {
+          function () {
             return 'hello world';
           },
         ],

@@ -98,3 +98,17 @@ const defaults = Object.assign(coreWithDefaults(), {
 export function optionsWithDefaults(options?: Options): Required<Options> {
   return Object.assign({}, defaults, options);
 }
+
+// These are recommended configurations for addons to test themselves under. By
+// keeping them here, it's easier to do ecosystem-wide compatibility testing.
+// See the `@embroider/test-setup` package which can help consume these to test
+// them in CI.
+export const recommendedOptions: { [name: string]: Options } = Object.freeze({
+  safe: Object.freeze({}),
+  optimized: Object.freeze({
+    staticAddonTrees: true,
+    staticAddonTestSupportTrees: true,
+    staticHelpers: true,
+    staticComponents: true,
+  }),
+});

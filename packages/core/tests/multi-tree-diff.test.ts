@@ -42,7 +42,11 @@ describe('tracked-merge-dirs', () => {
     let t = new MultiTreeDiff([a, c], lastOneWins);
     let { ops, sources } = t.update();
 
-    expect(fileOps(ops)).toEqual([['create', 'alpha'], ['create', 'charlie'], ['create', 'tomster']]);
+    expect(fileOps(ops)).toEqual([
+      ['create', 'alpha'],
+      ['create', 'charlie'],
+      ['create', 'tomster'],
+    ]);
 
     expect(sources.get('alpha')).toEqual([1]);
     expect(sources.get('charlie')).toEqual([1]);
@@ -139,7 +143,11 @@ describe('tracked-merge-dirs', () => {
     let t = new MultiTreeDiff([a, c], lastTwoMerge);
     let { ops, sources } = t.update();
 
-    expect(fileOps(ops)).toEqual([['create', 'alpha'], ['create', 'charlie'], ['create', 'tomster']]);
+    expect(fileOps(ops)).toEqual([
+      ['create', 'alpha'],
+      ['create', 'charlie'],
+      ['create', 'tomster'],
+    ]);
 
     expect(sources.get('alpha')).toEqual([0, 1]);
     expect(sources.get('charlie')).toEqual([1]);

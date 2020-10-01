@@ -8,7 +8,7 @@ import { transformSync } from '@babel/core';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
 
-describe('babel-plugin-adjust-imports', function() {
+describe('babel-plugin-adjust-imports', function () {
   function getFirstCallExpresssionPath(source: string) {
     const ast: any = parse(source, { sourceType: 'module' });
     let path: any;
@@ -36,7 +36,7 @@ describe('babel-plugin-adjust-imports', function() {
     return isDynamicImportExpression(getFirstCallExpresssionPath(source));
   }
 
-  test('isDefineExpression works', function() {
+  test('isDefineExpression works', function () {
     expect(isDefineExpressionFromSource(`apple()`)).toBe(false);
     expect(isDefineExpressionFromSource(`(apple())`)).toBe(false);
     expect(isDefineExpressionFromSource(`(define('module', [], function() { }))`)).toBe(true);
@@ -51,7 +51,7 @@ describe('babel-plugin-adjust-imports', function() {
     expect(isDefineExpressionFromSource(`define('apple'); import foo from 'foo'`)).toBe(false);
   });
 
-  test('isImportSyncExpression works', function() {
+  test('isImportSyncExpression works', function () {
     expect(
       isImportSyncExpressionFromSource(`
       import { importSync } from '@embroider/macros';
@@ -78,13 +78,13 @@ describe('babel-plugin-adjust-imports', function() {
     ).toBe(false);
   });
 
-  test('isDynamicImportExpression works', function() {
+  test('isDynamicImportExpression works', function () {
     expect(isDynamicImportExpressionFromSource(`import('foo');`)).toBe(true);
     expect(isDynamicImportExpressionFromSource(`async () => { await import('foo'); }`)).toBe(true);
     expect(isDynamicImportExpressionFromSource(`import foo from 'foo';`)).toBe(false);
   });
 
-  test('main', function() {
+  test('main', function () {
     const options: AdjustImportsOptions = {
       activeAddons: {},
       renameModules: { a: 'c' },

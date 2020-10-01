@@ -1,7 +1,7 @@
 import { allBabelVersions } from './helpers';
 import { MacrosConfig } from '../..';
 
-describe('importSync', function() {
+describe('importSync', function () {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
     config.finalize();

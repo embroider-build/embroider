@@ -3,7 +3,7 @@ import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import { VariableDeclarator, isIdentifier, Expression } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 
-describe('evaluation', function() {
+describe('evaluation', function () {
   allBabelVersions({
     babelConfig() {
       return {

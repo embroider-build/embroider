@@ -136,7 +136,7 @@ describe('portable-babel-config', () => {
   });
 
   test('passes through bare function', () => {
-    let func = function() {};
+    let func = function () {};
     let config = new PortableBabelConfig(
       {
         plugins: [func],
@@ -148,7 +148,7 @@ describe('portable-babel-config', () => {
   });
 
   test('passes through function with args', () => {
-    let func = function() {};
+    let func = function () {};
     let args = { theArgs: 'here' };
     let config = new PortableBabelConfig(
       {
@@ -232,7 +232,7 @@ describe('portable-babel-config', () => {
     });
   });
 
-  test('undefined is a serializable value', function() {
+  test('undefined is a serializable value', function () {
     let config = new PortableBabelConfig(
       {
         plugins: ['./x', { value: undefined }],

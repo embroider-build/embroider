@@ -96,7 +96,7 @@ inlineHBSTransform._parallelBabel = {
   requireFile: __filename,
 };
 
-inlineHBSTransform.baseDir = function() {
+inlineHBSTransform.baseDir = function () {
   return join(__dirname, '..');
 };
 

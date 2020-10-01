@@ -1,7 +1,7 @@
 import { Project, BuildResult, ExpectFile, expectFilesAt } from '@embroider/test-support';
 import { throwOnWarnings } from '@embroider/core';
 
-describe('dot files are excluded as modules from apps and addons', function() {
+describe('dot files are excluded as modules from apps and addons', function () {
   jest.setTimeout(120000);
   let build: BuildResult;
   let app: Project;
@@ -9,7 +9,7 @@ describe('dot files are excluded as modules from apps and addons', function() {
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     app = Project.emberNew();
     app.files.app = Object.assign({}, app.files.app, {
       '.foobar.js': `// foobar content`,
@@ -34,11 +34,11 @@ describe('dot files are excluded as modules from apps and addons', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test('dot files are not included as app modules', function() {
+  test('dot files are not included as app modules', function () {
     // dot files should exist on disk
     expectFile('.foobar.js').exists();
     expectFile('.barbaz.js').exists();
@@ -50,7 +50,7 @@ describe('dot files are excluded as modules from apps and addons', function() {
     expectFile('assets/my-app.js').matches('my-app/bizbiz');
   });
 
-  test('dot files are not included as addon implicit-modules', function() {
+  test('dot files are not included as addon implicit-modules', function () {
     // Dot files should exist on disk
     expectFile('node_modules/my-addon/.fooaddon.js').exists();
     expectFile('node_modules/my-addon/baraddon.js').exists();

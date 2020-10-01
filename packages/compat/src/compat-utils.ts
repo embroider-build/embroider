@@ -58,6 +58,6 @@ function stripBadReexportsTransform() {
     },
   };
 }
-(stripBadReexportsTransform as any).baseDir = function() {
+(stripBadReexportsTransform as any).baseDir = function () {
   return pathResolve(__dirname, '..');
 };

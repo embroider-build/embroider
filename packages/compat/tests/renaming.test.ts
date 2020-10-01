@@ -3,14 +3,14 @@ import { Project, BuildResult, definesPattern, ExpectFile, expectFilesAt } from 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 
-describe('renaming tests', function() {
+describe('renaming tests', function () {
   jest.setTimeout(120000);
   let expectFile: ExpectFile;
   let build: BuildResult;
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     let app = Project.emberNew();
 
     (app.files.app as Project['files']).components = {
@@ -119,26 +119,26 @@ describe('renaming tests', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test('whole package renaming works for top-level module', function() {
+  test('whole package renaming works for top-level module', function () {
     let assertFile = expectFile('components/import-lodash.js').transform(build.transpile);
     assertFile.matches(/import lodash from ["']ember-lodash["']/);
     expectFile('node_modules/ember-lodash/index.js').matches(/lodash index/);
   });
-  test('whole package renaming works for interior module', function() {
+  test('whole package renaming works for interior module', function () {
     let assertFile = expectFile('components/import-capitalize.js').transform(build.transpile);
     assertFile.matches(/import capitalize from ["']ember-lodash\/capitalize["']/);
     expectFile('node_modules/ember-lodash/capitalize.js').matches(/lodash capitalize/);
   });
-  test("modules in own namespace don't get renamed", function() {
+  test("modules in own namespace don't get renamed", function () {
     let assertFile = expectFile('components/import-own-thing.js').transform(build.transpile);
     assertFile.matches(/import ownThing from ["']emits-multiple-packages\/own-thing["']/);
     expectFile('node_modules/emits-multiple-packages/own-thing.js').matches(/own thing/);
   });
-  test('modules outside our namespace do get renamed', function() {
+  test('modules outside our namespace do get renamed', function () {
     let assertFile = expectFile('components/import-somebody-elses.js').transform(build.transpile);
     assertFile.matches(
       /import environment from ["']emits-multiple-packages\/somebody-elses-package\/environment(\.js)?["']/
@@ -147,7 +147,7 @@ describe('renaming tests', function() {
       /somebody elses environment/
     );
   });
-  test('modules outside our namespace do get renamed, with index.js', function() {
+  test('modules outside our namespace do get renamed, with index.js', function () {
     let assertFile = expectFile('components/import-somebody-elses-utils.js').transform(build.transpile);
     assertFile.matches(
       /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
@@ -156,19 +156,19 @@ describe('renaming tests', function() {
       /somebody elses utils/
     );
   });
-  test('modules outside our namespace do get renamed, with index', function() {
+  test('modules outside our namespace do get renamed, with index', function () {
     let assertFile = expectFile('components/import-somebody-elses-utils-index.js').transform(build.transpile);
     assertFile.matches(
       /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
     );
   });
-  test('modules outside our namespace do get renamed, with index with extension', function() {
+  test('modules outside our namespace do get renamed, with index with extension', function () {
     let assertFile = expectFile('components/import-somebody-elses-utils-index-explicit.js').transform(build.transpile);
     assertFile.matches(
       /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
     );
   });
-  test('renamed modules keep their classic runtime name when used as implicit-modules', function() {
+  test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
     let assertFile = expectFile('assets/my-app.js').transform(build.transpile);
     assertFile.matches(
       definesPattern(
@@ -177,17 +177,17 @@ describe('renaming tests', function() {
       )
     );
   });
-  test('rewriting one modules does not capture entire package namespace', function() {
+  test('rewriting one modules does not capture entire package namespace', function () {
     let assertFile = expectFile('components/import-somebody-elses-original.js').transform(build.transpile);
     assertFile.matches(/import topLevel from ["']somebody-elses-package["']/);
     assertFile.matches(/import deeper from ["']somebody-elses-package\/deeper["']/);
   });
-  test('single file package gets captured and renamed', function() {
+  test('single file package gets captured and renamed', function () {
     let assertFile = expectFile('components/import-single-file-package.js').transform(build.transpile);
     assertFile.matches(/import whatever from ["']emits-multiple-packages\/single-file-package\/index.js['"]/);
     expectFile('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(/single file package/);
   });
-  test('files copied into app from addons resolve their own original packages', function() {
+  test('files copied into app from addons resolve their own original packages', function () {
     let assertFile = expectFile('first.js').transform(build.transpile);
     assertFile.matches(/export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import['"]/);
 
@@ -196,13 +196,13 @@ describe('renaming tests', function() {
       /export \{ default \} from ['"]\.\/node_modules\/intermediate\/node_modules\/has-app-tree-import['"]/
     );
   });
-  test(`files copied into app from addons resolve the addon's deps`, function() {
+  test(`files copied into app from addons resolve the addon's deps`, function () {
     let assertFile = expectFile('imports-dep.js').transform(build.transpile);
     assertFile.matches(
       /export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import\/node_modules\/inner-dep['"]/
     );
   });
-  test(`app-tree files from addons that import from the app get rewritten to relative imports`, function() {
+  test(`app-tree files from addons that import from the app get rewritten to relative imports`, function () {
     let assertFile = expectFile('mirage/config.js').transform(build.transpile);
     assertFile.matches(/import ['"]\.\.\/components\/import-lodash['"]/);
   });

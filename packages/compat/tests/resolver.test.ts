@@ -10,7 +10,7 @@ import { PackageRules } from '../src';
 
 const compilerPath = emberTemplateCompilerPath();
 
-describe('compat-resolver', function() {
+describe('compat-resolver', function () {
   let appDir: string;
   let assertWarning: (pattern: RegExp, fn: () => void) => void;
 
@@ -29,7 +29,7 @@ describe('compat-resolver', function() {
       resolvableExtensions: ['.js', '.hbs'],
     });
     let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
-    return function(relativePath: string, contents: string) {
+    return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);
       return sortBy(dependencies, d => d.runtimeName).map(d => ({
@@ -41,8 +41,8 @@ describe('compat-resolver', function() {
 
   throwOnWarnings();
 
-  beforeEach(function() {
-    assertWarning = function(pattern: RegExp, fn: () => void) {
+  beforeEach(function () {
+    assertWarning = function (pattern: RegExp, fn: () => void) {
       try {
         expect(expectWarning(pattern, fn)).toBeTruthy();
       } catch (err) {
@@ -54,7 +54,7 @@ describe('compat-resolver', function() {
     };
   });
 
-  afterEach(function() {
+  afterEach(function () {
     if (appDir) {
       removeSync(appDir);
     }
@@ -67,13 +67,13 @@ describe('compat-resolver', function() {
     return target;
   }
 
-  test('emits no components when staticComponents is off', function() {
+  test('emits no components when staticComponents is off', function () {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}} <HelloWorld />`)).toEqual([]);
   });
 
-  test('bare dasherized component, js only', function() {
+  test('bare dasherized component, js only', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -84,7 +84,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('nested bare dasherized component, js only', function() {
+  test('nested bare dasherized component, js only', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{something/hello-world}}`)).toEqual([
@@ -95,8 +95,8 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  describe('bare namespaced', function() {
-    test('dasherized component, js only', function() {
+  describe('bare namespaced', function () {
+    test('dasherized component, js only', function () {
       let findDependencies = configure({ staticComponents: true });
       givenFile('components/hello-world/index.js');
       expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -107,7 +107,7 @@ describe('compat-resolver', function() {
       ]);
     });
 
-    test('dasherized component, js and hbs', function() {
+    test('dasherized component, js and hbs', function () {
       let findDependencies = configure({ staticComponents: true });
       givenFile('components/hello-world/index.js');
       givenFile('components/hello-world/index.hbs');
@@ -125,7 +125,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, js only', function() {
+  test('podded, dasherized component, with blank podModulePrefix, js only', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -136,7 +136,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, hbs only', function() {
+  test('podded, dasherized component, with blank podModulePrefix, hbs only', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -147,7 +147,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('podded, dasherized component, with blank podModulePrefix, js and hbs', function() {
+  test('podded, dasherized component, with blank podModulePrefix, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');
     givenFile('components/hello-world/template.hbs');
@@ -163,7 +163,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, js only', function() {
+  test('podded, dasherized component, with non-blank podModulePrefix, js only', function () {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/component.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -174,7 +174,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function() {
+  test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function () {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -185,7 +185,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function() {
+  test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
     givenFile('pods/components/hello-world/component.js');
     givenFile('pods/components/hello-world/template.hbs');
@@ -201,7 +201,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('bare dasherized component, hbs only', function() {
+  test('bare dasherized component, hbs only', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('templates/components/hello-world.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -211,7 +211,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('bare dasherized component, js and hbs', function() {
+  test('bare dasherized component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
@@ -226,7 +226,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('coalesces repeated components', function() {
+  test('coalesces repeated components', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`)).toEqual([
@@ -237,12 +237,12 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('tolerates non path mustaches', function() {
+  test('tolerates non path mustaches', function () {
     let findDependencies = configure({ staticComponents: false, staticHelpers: true });
     expect(findDependencies('templates/application.hbs', `<Thing @foo={{1}} />`)).toEqual([]);
   });
 
-  test('block form curly component', function() {
+  test('block form curly component', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`)).toEqual([
@@ -253,7 +253,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('block form angle component', function() {
+  test('block form angle component', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqual([
@@ -264,7 +264,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('curly contextual component', function() {
+  test('curly contextual component', function () {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });
     givenFile('components/hello-world.js');
     expect(
@@ -280,7 +280,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('angle contextual component, upper', function() {
+  test('angle contextual component, upper', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(
@@ -293,7 +293,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('angle contextual component, lower', function() {
+  test('angle contextual component, lower', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(
@@ -306,7 +306,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('optional component missing in mustache', function() {
+  test('optional component missing in mustache', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -322,7 +322,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
 
-  test('component rules can be expressed via component helper', function() {
+  test('component rules can be expressed via component helper', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -338,7 +338,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
 
-  test('optional component missing in mustache block', function() {
+  test('optional component missing in mustache block', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -353,7 +353,7 @@ describe('compat-resolver', function() {
     });
     expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
   });
-  test('optional component missing in mustache', function() {
+  test('optional component missing in mustache', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -368,7 +368,7 @@ describe('compat-resolver', function() {
     });
     expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
   });
-  test('optional component declared as element missing in mustache block', function() {
+  test('optional component declared as element missing in mustache block', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -383,7 +383,7 @@ describe('compat-resolver', function() {
     });
     expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
   });
-  test('optional component missing in element', function() {
+  test('optional component missing in element', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -398,14 +398,14 @@ describe('compat-resolver', function() {
     });
     expect(findDependencies('templates/application.hbs', `<ThisOne/>`)).toEqual([]);
   });
-  test('mustache missing, no args', function() {
+  test('mustache missing, no args', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
     });
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([]);
   });
-  test('mustache missing, with args', function() {
+  test('mustache missing, with args', function () {
     let findDependencies = configure({
       staticComponents: true,
       staticHelpers: true,
@@ -414,7 +414,7 @@ describe('compat-resolver', function() {
       findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
     }).toThrow(new RegExp(`Missing component or helper hello-world in ${appDir}/templates/application.hbs`));
   });
-  test('string literal passed to component helper in content position', function() {
+  test('string literal passed to component helper in content position', function () {
     let findDependencies = configure({
       staticComponents: true,
     });
@@ -426,7 +426,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('string literal passed to component helper with block', function() {
+  test('string literal passed to component helper with block', function () {
     let findDependencies = configure({
       staticComponents: true,
     });
@@ -438,7 +438,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('string literal passed to component helper in helper position', function() {
+  test('string literal passed to component helper in helper position', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('components/my-thing.js');
@@ -453,26 +453,26 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('string literal passed to component helper fails to resolve', function() {
+  test('string literal passed to component helper fails to resolve', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
     expect(() => {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component hello-world in templates/application.hbs`));
   });
-  test('string literal passed to component helper fails to resolve when staticComponents is off', function() {
+  test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
   });
-  test('dynamic component helper warning in content position', function() {
+  test('dynamic component helper warning in content position', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     assertWarning(/ignoring dynamic component this\.which/, () => {
       findDependencies('templates/application.hbs', `{{component this.which}}`);
     });
   });
-  test('angle component, js and hbs', function() {
+  test('angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
@@ -487,7 +487,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('nested angle component, js and hbs', function() {
+  test('nested angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
     givenFile('templates/components/something/hello-world.hbs');
@@ -502,13 +502,13 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('angle component missing', function() {
+  test('angle component missing', function () {
     let findDependencies = configure({ staticComponents: true });
     expect(() => {
       findDependencies('templates/application.hbs', `<HelloWorld />`);
     }).toThrow(new RegExp(`Missing component HelloWorld in ${appDir}/templates/application.hbs`));
   });
-  test('helper in subexpression', function() {
+  test('helper in subexpression', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
     expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
@@ -520,26 +520,26 @@ describe('compat-resolver', function() {
       ]
     );
   });
-  test('missing subexpression with args', function() {
+  test('missing subexpression with args', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
-  test('missing subexpression no args', function() {
+  test('missing subexpression no args', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
   });
-  test('emits no helpers when staticHelpers is off', function() {
+  test('emits no helpers when staticHelpers is off', function () {
     let findDependencies = configure({ staticHelpers: false });
     givenFile('helpers/array.js');
     expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
       []
     );
   });
-  test('helper as component argument', function() {
+  test('helper as component argument', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
     expect(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqual([
@@ -549,7 +549,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('helper as html attribute', function() {
+  test('helper as html attribute', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqual([
@@ -559,7 +559,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('helper in bare mustache, no args', function() {
+  test('helper in bare mustache, no args', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(findDependencies('templates/application.hbs', `{{capitalize}}`)).toEqual([
@@ -569,7 +569,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('helper in bare mustache, with args', function() {
+  test('helper in bare mustache, with args', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(findDependencies('templates/application.hbs', `{{capitalize name}}`)).toEqual([
@@ -579,28 +579,28 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('local binding takes precedence over helper in bare mustache', function() {
+  test('local binding takes precedence over helper in bare mustache', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(
       findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`)
     ).toEqual([]);
   });
-  test('local binding takes precedence over component in element position', function() {
+  test('local binding takes precedence over component in element position', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('components/the-thing.js');
     expect(
       findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
     ).toEqual([]);
   });
-  test('angle components can establish local bindings', function() {
+  test('angle components can establish local bindings', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqual(
       []
     );
   });
-  test('local binding only applies within block', function() {
+  test('local binding only applies within block', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(
@@ -615,7 +615,7 @@ describe('compat-resolver', function() {
       },
     ]);
   });
-  test('ignores builtins', function() {
+  test('ignores builtins', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
     expect(
       findDependencies(
@@ -630,7 +630,7 @@ describe('compat-resolver', function() {
       )
     ).toEqual([]);
   });
-  test('ignores dot-rule curly component invocation, inline', function() {
+  test('ignores dot-rule curly component invocation, inline', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
     expect(
       findDependencies(
@@ -641,7 +641,7 @@ describe('compat-resolver', function() {
       )
     ).toEqual([]);
   });
-  test('ignores dot-rule curly component invocation, block', function() {
+  test('ignores dot-rule curly component invocation, block', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
     expect(
       findDependencies(
@@ -654,7 +654,7 @@ describe('compat-resolver', function() {
     ).toEqual([]);
   });
 
-  test('respects yieldsSafeComponents rule, position 0', function() {
+  test('respects yieldsSafeComponents rule, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -677,7 +677,7 @@ describe('compat-resolver', function() {
     );
   });
 
-  test('respects yieldsSafeComponents rule on element, position 0', function() {
+  test('respects yieldsSafeComponents rule on element, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -700,7 +700,7 @@ describe('compat-resolver', function() {
     );
   });
 
-  test('respects yieldsSafeComponents rule, position 1', function() {
+  test('respects yieldsSafeComponents rule, position 1', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -736,7 +736,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('respects yieldsSafeComponents rule, position 0.field', function() {
+  test('respects yieldsSafeComponents rule, position 0.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -776,7 +776,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('respects yieldsSafeComponents rule, position 1.field', function() {
+  test('respects yieldsSafeComponents rule, position 1.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -814,7 +814,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('acceptsComponentArguments on mustache with valid literal', function() {
+  test('acceptsComponentArguments on mustache with valid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -840,7 +840,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments on mustache block with valid literal', function() {
+  test('acceptsComponentArguments on mustache block with valid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -868,7 +868,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments argument name may include optional @', function() {
+  test('acceptsComponentArguments argument name may include optional @', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -894,7 +894,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments on mustache with component subexpression', function() {
+  test('acceptsComponentArguments on mustache with component subexpression', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -920,7 +920,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments on element with component helper mustache', function() {
+  test('acceptsComponentArguments on element with component helper mustache', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -948,7 +948,7 @@ describe('compat-resolver', function() {
     );
   });
 
-  test(`element block params are not in scope for element's own attributes`, function() {
+  test(`element block params are not in scope for element's own attributes`, function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -974,7 +974,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('acceptsComponentArguments on mustache with invalid literal', function() {
+  test('acceptsComponentArguments on mustache with invalid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -992,7 +992,7 @@ describe('compat-resolver', function() {
     }).toThrow(/Missing component fancy-title in templates\/application\.hbs/);
   });
 
-  test('acceptsComponentArguments on element with valid literal', function() {
+  test('acceptsComponentArguments on element with valid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1018,7 +1018,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments on element with valid attribute', function() {
+  test('acceptsComponentArguments on element with valid attribute', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1044,7 +1044,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('acceptsComponentArguments interior usage of path generates no warning', function() {
+  test('acceptsComponentArguments interior usage of path generates no warning', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1059,7 +1059,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/components/form-builder.hbs', `{{component title}}`)).toEqual([]);
   });
 
-  test('acceptsComponentArguments interior usage of this.path generates no warning', function() {
+  test('acceptsComponentArguments interior usage of this.path generates no warning', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1079,7 +1079,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqual([]);
   });
 
-  test('acceptsComponentArguments interior usage of @path generates no warning', function() {
+  test('acceptsComponentArguments interior usage of @path generates no warning', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1094,7 +1094,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/components/form-builder.hbs', `{{component @title}}`)).toEqual([]);
   });
 
-  test('safeToIgnore a missing component', function() {
+  test('safeToIgnore a missing component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1109,7 +1109,7 @@ describe('compat-resolver', function() {
     expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([]);
   });
 
-  test('safeToIgnore a present component', function() {
+  test('safeToIgnore a present component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1130,7 +1130,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('respects yieldsArguments rule for positional block param, angle', function() {
+  test('respects yieldsArguments rule for positional block param, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1165,7 +1165,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('respects yieldsArguments rule for positional block param, curly', function() {
+  test('respects yieldsArguments rule for positional block param, curly', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1200,7 +1200,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('respects yieldsArguments rule for hash block param', function() {
+  test('respects yieldsArguments rule for hash block param', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1239,7 +1239,7 @@ describe('compat-resolver', function() {
     ]);
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, angle', function() {
+  test('yieldsArguments causes warning to propagate up lexically, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1271,7 +1271,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, curl', function() {
+  test('yieldsArguments causes warning to propagate up lexically, curl', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1303,7 +1303,7 @@ describe('compat-resolver', function() {
     });
   });
 
-  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function() {
+  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',

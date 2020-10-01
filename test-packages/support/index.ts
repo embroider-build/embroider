@@ -61,7 +61,7 @@ export function allBabelVersions(params: {
   includePresetsTests?: boolean;
 }) {
   function versions(usePresets: boolean) {
-    describe('babel6', function() {
+    describe('babel6', function () {
       function transform(code: string, opts?: { filename?: string }) {
         let options6: Options6 = params.babelConfig(6);
         if (!options6.filename) {
@@ -80,7 +80,7 @@ export function allBabelVersions(params: {
       params.createTests(transform);
     });
 
-    describe('babel7', function() {
+    describe('babel7', function () {
       function transform(code: string, opts?: { filename?: string }) {
         let options7: Options7 = params.babelConfig(7);
         if (!options7.filename) {
@@ -102,10 +102,10 @@ export function allBabelVersions(params: {
   }
 
   if (params.includePresetsTests) {
-    describe('with presets', function() {
+    describe('with presets', function () {
       versions(true);
     });
-    describe('without presets', function() {
+    describe('without presets', function () {
       versions(false);
     });
   } else {

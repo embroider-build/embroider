@@ -7,15 +7,15 @@ import { writeFileSync, unlinkSync } from 'fs';
 import merge from 'lodash/merge';
 import resolve from 'resolve';
 
-describe('stage2 build', function() {
+describe('stage2 build', function () {
   jest.setTimeout(120000);
   throwOnWarnings();
 
-  describe('in repo addons of addons works', function() {
+  describe('in repo addons of addons works', function () {
     let expectFile: ExpectFile;
     let build: BuildResult;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       let buildOptions: Partial<BuildParams> = {
         stage: 2,
         type: 'app',
@@ -82,24 +82,15 @@ describe('stage2 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    it('in repo addons are symlinked correctly', function() {
+    it('in repo addons are symlinked correctly', function () {
       // check that package json contains in repo dep
-      expectFile('./node_modules/dep-a/package.json')
-        .json()
-        .get('dependencies.in-repo-a')
-        .equals('0.0.0');
-      expectFile('./node_modules/dep-b/package.json')
-        .json()
-        .get('dependencies.in-repo-b')
-        .equals('0.0.0');
-      expectFile('./node_modules/dep-b/package.json')
-        .json()
-        .get('dependencies.in-repo-c')
-        .equals('0.0.0');
+      expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
+      expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
+      expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
 
       // check that symlinks are correct
       expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json').exists();
@@ -124,7 +115,7 @@ describe('stage2 build', function() {
       expectFile('./service/in-repo.js').matches(/in-repo-c/);
     });
 
-    it('incorporates in-repo-addons of in-repo-addons correctly', function() {
+    it('incorporates in-repo-addons of in-repo-addons correctly', function () {
       // secondary in-repo-addon was correctly detected and activated
       expectFile('./services/secondary.js').exists();
 
@@ -137,13 +128,13 @@ describe('stage2 build', function() {
     });
   });
 
-  describe('addon ordering is preserved from ember-cli with orderIdx', function() {
+  describe('addon ordering is preserved from ember-cli with orderIdx', function () {
     let expectFile: ExpectFile;
     let build: BuildResult;
 
     // these test attempt to describe the addon ordering behavior from ember-cli that was
     // introduced via: https://github.com/ember-cli/ember-cli/commit/098a9b304b551fe235bd42399ce6975af2a1bc48
-    beforeAll(async function() {
+    beforeAll(async function () {
       let buildOptions: Partial<BuildParams> = {
         stage: 2,
         type: 'app',
@@ -191,39 +182,39 @@ describe('stage2 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    it('verifies that the correct lexigraphically sorted addons win', function() {
+    it('verifies that the correct lexigraphically sorted addons win', function () {
       expectFile('./service/in-repo.js').matches(/in-repo-b/);
       expectFile('./service/addon.js').matches(/dep-b/);
       expectFile('./service/dev-addon.js').matches(/dev-c/);
     });
 
-    it('addons declared as dependencies should win over devDependencies', function() {
+    it('addons declared as dependencies should win over devDependencies', function () {
       expectFile('./service/dep-wins-over-dev.js').matches(/dep-b/);
     });
 
-    it('in repo addons declared win over dependencies', function() {
+    it('in repo addons declared win over dependencies', function () {
       expectFile('./service/in-repo-over-deps.js').matches(/in-repo-a/);
     });
 
-    it('ordering with before specified', function() {
+    it('ordering with before specified', function () {
       expectFile('./service/test-before.js').matches(/dev-d/);
     });
 
-    it('ordering with after specified', function() {
+    it('ordering with after specified', function () {
       expectFile('./service/test-after.js').matches(/dev-b/);
     });
   });
 
-  describe('static with rules', function() {
+  describe('static with rules', function () {
     let expectFile: ExpectFile;
     let build: BuildResult;
     let app: Project;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       app = Project.emberNew();
       app.addDependency('some-library', '1.0.0');
       app.linkPackage('ember-auto-import');
@@ -409,11 +400,11 @@ describe('stage2 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('index.hbs', function() {
+    test('index.hbs', function () {
       let assertFile = expectFile('templates/index.hbs').transform(build.transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
       assertFile.matches(
@@ -427,7 +418,7 @@ describe('stage2 build', function() {
       );
     });
 
-    test('curly.hbs', function() {
+    test('curly.hbs', function () {
       let assertFile = expectFile('templates/curly.hbs').transform(build.transpile);
       assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
       assertFile.matches(
@@ -437,7 +428,7 @@ describe('stage2 build', function() {
       assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
     });
 
-    test('hello-world.hbs', function() {
+    test('hello-world.hbs', function () {
       // the point of this test is to ensure that we can transpile with no
       // warning about the dynamicComponentName.
       let assertFile = expectFile('node_modules/my-addon/templates/components/hello-world.hbs').transform(
@@ -449,7 +440,7 @@ describe('stage2 build', function() {
       assertFile.matches(/dynamicComponentName/);
     });
 
-    test('addon/hello-world.js', function() {
+    test('addon/hello-world.js', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
       assertFile.matches(/import a. from ["']\.\.\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
@@ -461,7 +452,7 @@ describe('stage2 build', function() {
       );
     });
 
-    test('app/hello-world.js', function() {
+    test('app/hello-world.js', function () {
       let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
       assertFile.matches(/import a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
@@ -471,7 +462,7 @@ describe('stage2 build', function() {
       );
     });
 
-    test('app/templates/components/direct-template-reexport.js', function() {
+    test('app/templates/components/direct-template-reexport.js', function () {
       let assertFile = expectFile('./templates/components/direct-template-reexport.js').transform(build.transpile);
       assertFile.matches(
         /export \{ default \} from ['"]\.\.\/\.\.\/node_modules\/my-addon\/templates\/components\/hello-world['"]/,
@@ -479,112 +470,103 @@ describe('stage2 build', function() {
       );
     });
 
-    test('uses-inline-template.js', function() {
+    test('uses-inline-template.js', function () {
       let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
       assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
     });
 
-    test('component with relative import of arbitrarily placed template', function() {
+    test('component with relative import of arbitrarily placed template', function () {
       let assertFile = expectFile('node_modules/my-addon/components/has-relative-template.js').transform(
         build.transpile
       );
       assertFile.matches(/import layout from ["']\.\/t['"]/, 'arbitrary relative template remains the same');
     });
 
-    test('app can import a deep addon', function() {
+    test('app can import a deep addon', function () {
       let assertFile = expectFile('use-deep-addon.js').transform(build.transpile);
       assertFile.matches(/import thing from ["']\.\/node_modules\/my-addon\/node_modules\/deep-addon['"]/);
     });
 
-    test('amd require in an addon gets rewritten to window.require', function() {
+    test('amd require in an addon gets rewritten to window.require', function () {
       let assertFile = expectFile('node_modules/my-addon/components/uses-amd-require.js').transform(build.transpile);
       assertFile.matches(/window\.require\(['"]some-package['"]\)/, 'should find window.require');
     });
 
-    test('cjs require in non-ember package does not get rewritten to window.require', function() {
+    test('cjs require in non-ember package does not get rewritten to window.require', function () {
       let assertFile = expectFile('node_modules/babel-filter-test4/index.js').transform(build.transpile);
       assertFile.matches(/return require\(['"]some-package['"]\)/, 'should find plain cjs require');
     });
 
-    test('transpilation runs for ember addons', async function() {
+    test('transpilation runs for ember addons', async function () {
       expect(build.shouldTranspile('node_modules/my-addon/components/has-relative-template.js')).toBeTruthy();
     });
 
-    test('transpilation is skipped when package matches skipBabel', async function() {
+    test('transpilation is skipped when package matches skipBabel', async function () {
       expect(!build.shouldTranspile('node_modules/babel-filter-test1/index.js')).toBeTruthy();
     });
 
-    test('transpilation is skipped when package and version match skipBabel', async function() {
+    test('transpilation is skipped when package and version match skipBabel', async function () {
       expect(!build.shouldTranspile('node_modules/babel-filter-test2/index.js')).toBeTruthy();
     });
 
-    test('transpilation runs when package version does not match skipBabel', async function() {
+    test('transpilation runs when package version does not match skipBabel', async function () {
       expect(build.shouldTranspile('node_modules/babel-filter-test3/index.js')).toBeTruthy();
     });
 
-    test('transpilation runs for non-ember package that is not explicitly skipped', async function() {
+    test('transpilation runs for non-ember package that is not explicitly skipped', async function () {
       expect(build.shouldTranspile('node_modules/babel-filter-test4/index.js')).toBeTruthy();
     });
 
-    test(`app's babel plugins ran`, async function() {
+    test(`app's babel plugins ran`, async function () {
       let assertFile = expectFile('custom-babel-needed.js').transform(build.transpile);
       assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
     });
 
-    test(`changes in app.css are propagated at rebuild`, async function() {
+    test(`changes in app.css are propagated at rebuild`, async function () {
       expectFile('assets/my-app.css').doesNotMatch('newly-added-class');
       writeFileSync(join(app.baseDir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
       await build.rebuild();
       expectFile('assets/my-app.css').matches('newly-added-class');
     });
 
-    test(`public assets are included`, async function() {
+    test(`public assets are included`, async function () {
       expectFile('public-file-1.txt').matches(/initial state/);
-      expectFile('package.json')
-        .json()
-        .get('ember-addon.assets')
-        .includes('public-file-1.txt');
+      expectFile('package.json').json().get('ember-addon.assets').includes('public-file-1.txt');
     });
 
-    test(`updated public asset`, async function() {
+    test(`updated public asset`, async function () {
       writeFileSync(join(app.baseDir, 'public/public-file-1.txt'), `updated state`);
       await build.rebuild();
       expectFile('public-file-1.txt').matches(/updated state/);
     });
 
-    test(`added public asset`, async function() {
+    test(`added public asset`, async function () {
       writeFileSync(join(app.baseDir, 'public/public-file-2.txt'), `added`);
       await build.rebuild();
       expectFile('public-file-2.txt').matches(/added/);
-      expectFile('package.json')
-        .json()
-        .get('ember-addon.assets')
-        .includes('public-file-2.txt');
+      expectFile('package.json').json().get('ember-addon.assets').includes('public-file-2.txt');
     });
 
-    test(`removed public asset`, async function() {
+    test(`removed public asset`, async function () {
       unlinkSync(join(app.baseDir, 'public/public-file-1.txt'));
       await build.rebuild();
       expectFile('public-file-1.txt').doesNotExist();
-      expectFile('package.json')
-        .json()
-        .get('ember-addon.assets')
-        .doesNotInclude('public-file-1.txt');
+      expectFile('package.json').json().get('ember-addon.assets').doesNotInclude('public-file-1.txt');
     });
 
-    test('dynamic import is preserved', function() {
+    test('dynamic import is preserved', function () {
       expectFile('./does-dynamic-import.js')
         .transform(build.transpile)
         .matches(/return import\(['"]some-library['"]\)/);
     });
   });
 
-  describe('addon dummy app', function() {
+  describe('addon dummy app', function () {
     let build: BuildResult;
     let expectFile: ExpectFile;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
       let app = Project.addonNew();
       merge(app.files, {
         addon: {
@@ -616,16 +598,16 @@ describe('stage2 build', function() {
       expectFile = expectFilesAt(build.outputPath);
     });
 
-    afterAll(async function() {
+    afterAll(async function () {
       await build.cleanup();
     });
 
-    test('dummy app sees that its being developed', function() {
+    test('dummy app sees that its being developed', function () {
       let assertFile = expectFile('components/inside-dummy-app.js').transform(build.transpile);
       assertFile.matches(/console\.log\(true\)/);
     });
 
-    test('addon within dummy app sees that its being developed', function() {
+    test('addon within dummy app sees that its being developed', function () {
       let assertFile = expectFile(
         resolve.sync('my-addon/components/hello-world', {
           basedir: build.outputPath,

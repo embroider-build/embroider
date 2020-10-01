@@ -1,7 +1,7 @@
 import { allBabelVersions, runDefault } from './helpers';
 
-describe(`dependencySatisfies`, function() {
-  allBabelVersions(function(transform: (code: string) => string) {
+describe(`dependencySatisfies`, function () {
+  allBabelVersions(function (transform: (code: string) => string) {
     test('is satisfied', () => {
       let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';

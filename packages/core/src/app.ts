@@ -375,11 +375,7 @@ export class AppBuilder<TreeNames> {
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
     for (let { destPath, appFiles } of engines) {
       for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[
-          join(destPath, relativePath)
-            .split(sep)
-            .join('/')
-        ] = originalPath;
+        relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
       }
     }
 
@@ -1264,8 +1260,8 @@ if (!runningTests) {
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  amdModules: ({ runtime: string; buildtime: string })[];
-  fastbootOnlyAmdModules?: ({ runtime: string; buildtime: string })[];
+  amdModules: { runtime: string; buildtime: string }[];
+  fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;

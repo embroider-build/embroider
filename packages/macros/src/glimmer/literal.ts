@@ -15,7 +15,10 @@ export default function literal(value: any, builders: any): any {
     return builders.undefined();
   }
   if (Array.isArray(value)) {
-    return builders.sexpr('array', value.map(element => literal(element, builders)));
+    return builders.sexpr(
+      'array',
+      value.map(element => literal(element, builders))
+    );
   }
   if (typeof value === 'object') {
     return builders.sexpr(

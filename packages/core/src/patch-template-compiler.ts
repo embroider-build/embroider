@@ -34,7 +34,7 @@ export function patch(source: string, templateCompilerPath: string) {
   // active LTS versions of ember.
   let patchedSource = transform(source, {
     plugins: [
-      function() {
+      function () {
         return {
           visitor: {
             VariableDeclarator(path: NodePath<VariableDeclarator>) {

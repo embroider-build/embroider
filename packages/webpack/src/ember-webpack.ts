@@ -511,7 +511,7 @@ function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfi
 }
 
 function pluginMatches(pattern: RegExp) {
-  return function(plugin: string | [string] | undefined) {
+  return function (plugin: string | [string] | undefined) {
     return plugin && pattern.test(Array.isArray(plugin) ? plugin[0] : plugin);
   };
 }

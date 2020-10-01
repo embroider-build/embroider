@@ -25,7 +25,7 @@ describe('template-colocation-plugin', () => {
         writeFileSync(filename.replace(/\.js$/, '.hbs'), 'this is the template', 'utf8');
       }
 
-      beforeEach(function() {
+      beforeEach(function () {
         let name;
         ({ name, removeCallback } = tmp.dirSync());
         filename = join(name, 'sample.js');
@@ -40,7 +40,7 @@ describe('template-colocation-plugin', () => {
         });
       });
 
-      afterEach(function() {
+      afterEach(function () {
         removeCallback();
       });
 

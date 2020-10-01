@@ -5,7 +5,7 @@ export default class EmberCliFastbootTesting extends V1Addon {
     let tree = super.v2Tree;
     let originalOutputReady = this.addonInstance.outputReady;
     let projectRoot = this.addonInstance.project.root;
-    this.addonInstance.outputReady = function() {
+    this.addonInstance.outputReady = function () {
       return originalOutputReady.call(this, {
         directory: `${projectRoot}/dist`,
       });

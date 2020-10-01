@@ -175,9 +175,7 @@ export default class MacrosConfig {
     let other = this.mergers.get(targetPackage.root);
     if (other) {
       throw new Error(
-        `[Embroider:MacrosConfig] conflicting mergers registered for package ${targetPackage.name} at ${
-          targetPackage.root
-        }. See ${other.fromPath} and ${fromPath}.`
+        `[Embroider:MacrosConfig] conflicting mergers registered for package ${targetPackage.name} at ${targetPackage.root}. See ${other.fromPath} and ${fromPath}.`
       );
     }
     this.mergers.set(targetPackage.root, { merger, fromPath });

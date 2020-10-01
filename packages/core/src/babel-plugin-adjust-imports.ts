@@ -348,9 +348,7 @@ export default function main() {
         let pkg = state.adjustFile.owningPackage();
         if (pkg && pkg.isV2Ember() && !pkg.meta['auto-upgraded']) {
           throw new Error(
-            `The file ${state.adjustFile.originalFile} in package ${
-              pkg.name
-            } tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
+            `The file ${state.adjustFile.originalFile} in package ${pkg.name} tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
           );
         }
 
@@ -401,7 +399,7 @@ export default function main() {
   };
 }
 
-(main as any).baseDir = function() {
+(main as any).baseDir = function () {
   return join(__dirname, '..');
 };
 

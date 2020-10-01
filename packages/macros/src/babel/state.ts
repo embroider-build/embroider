@@ -72,7 +72,7 @@ export function owningPackage(path: NodePath, state: State): Package {
 }
 
 export function cloneDeep(node: Node, state: State): Node {
-  return cloneDeepWith(node, function(value: any) {
+  return cloneDeepWith(node, function (value: any) {
     if (state.generatedRequires.has(value)) {
       let cloned = lodashCloneDeep(value);
       state.generatedRequires.add(cloned);

@@ -1,8 +1,8 @@
 import { templateTests } from './helpers';
 import { MacrosConfig } from '../..';
 
-describe(`macroFailBuild`, function() {
-  templateTests(function(transform: (code: string) => string, config: MacrosConfig) {
+describe(`macroFailBuild`, function () {
+  templateTests(function (transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { failureMessage: 'I said so' });
     config.finalize();
 

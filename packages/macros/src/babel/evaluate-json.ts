@@ -19,72 +19,72 @@ import getConfig from './get-config';
 type OpValue = string | boolean | number;
 
 const binops: { [operator: string]: any } = {
-  '||': function(a: OpValue, b: OpValue) {
+  '||': function (a: OpValue, b: OpValue) {
     return a || b;
   },
-  '&&': function(a: OpValue, b: OpValue) {
+  '&&': function (a: OpValue, b: OpValue) {
     return a && b;
   },
-  '|': function(a: any, b: any) {
+  '|': function (a: any, b: any) {
     return a | b;
   },
-  '^': function(a: any, b: any) {
+  '^': function (a: any, b: any) {
     return a ^ b;
   },
-  '&': function(a: any, b: any) {
+  '&': function (a: any, b: any) {
     return a & b;
   },
-  '==': function(a: OpValue, b: OpValue) {
+  '==': function (a: OpValue, b: OpValue) {
     // eslint-disable-next-line eqeqeq
     return a == b;
   },
-  '!=': function(a: OpValue, b: OpValue) {
+  '!=': function (a: OpValue, b: OpValue) {
     // eslint-disable-next-line eqeqeq
     return a != b;
   },
-  '===': function(a: OpValue, b: OpValue) {
+  '===': function (a: OpValue, b: OpValue) {
     return a === b;
   },
-  '!==': function(a: OpValue, b: OpValue) {
+  '!==': function (a: OpValue, b: OpValue) {
     return a !== b;
   },
-  '<': function(a: OpValue, b: OpValue) {
+  '<': function (a: OpValue, b: OpValue) {
     return a < b;
   },
-  '>': function(a: OpValue, b: OpValue) {
+  '>': function (a: OpValue, b: OpValue) {
     return a > b;
   },
-  '<=': function(a: OpValue, b: OpValue) {
+  '<=': function (a: OpValue, b: OpValue) {
     return a <= b;
   },
-  '>=': function(a: OpValue, b: OpValue) {
+  '>=': function (a: OpValue, b: OpValue) {
     return a >= b;
   },
-  '<<': function(a: any, b: any) {
+  '<<': function (a: any, b: any) {
     return a << b;
   },
-  '>>': function(a: any, b: any) {
+  '>>': function (a: any, b: any) {
     return a >> b;
   },
-  '>>>': function(a: any, b: any) {
+  '>>>': function (a: any, b: any) {
     return a >>> b;
   },
-  '+': function(a: any, b: any) {
+  '+': function (a: any, b: any) {
     return a + b;
   },
-  '-': function(a: any, b: any) {
+  '-': function (a: any, b: any) {
     return a - b;
   },
-  '*': function(a: any, b: any) {
+  '*': function (a: any, b: any) {
     return a * b;
   },
-  '/': function(a: any, b: any) {
+  '/': function (a: any, b: any) {
     return a / b;
   },
-  '%': function(a: any, b: any) {
+  '%': function (a: any, b: any) {
     return a % b;
   },
-  '??': function(a: any, b: any) {
+  '??': function (a: any, b: any) {
     if (a === null || a === undefined) {
       return b;
     }
@@ -93,19 +93,19 @@ const binops: { [operator: string]: any } = {
 };
 
 const unops: { [operator: string]: any } = {
-  '-': function(a: OpValue) {
+  '-': function (a: OpValue) {
     return -a;
   },
-  '+': function(a: OpValue) {
+  '+': function (a: OpValue) {
     return +a;
   },
-  '~': function(a: OpValue) {
+  '~': function (a: OpValue) {
     return ~a;
   },
-  '!': function(a: OpValue) {
+  '!': function (a: OpValue) {
     return !a;
   },
-  void: function() {
+  void: function () {
     return undefined;
   },
 };

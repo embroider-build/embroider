@@ -4,7 +4,7 @@ import merge from 'lodash/merge';
 import { writeFileSync } from 'fs-extra';
 import { join } from 'path';
 
-describe('dummy app tests', function() {
+describe('dummy app tests', function () {
   jest.setTimeout(120000);
   let build: BuildResult;
   let project: Project;
@@ -12,7 +12,7 @@ describe('dummy app tests', function() {
 
   throwOnWarnings();
 
-  beforeAll(async function() {
+  beforeAll(async function () {
     project = Project.addonNew();
     merge(project.files, {
       'ember-cli-build.js': `'use strict';
@@ -113,11 +113,11 @@ describe('dummy app tests', function() {
     expectFile = expectFilesAt(build.outputPath);
   });
 
-  afterAll(async function() {
+  afterAll(async function () {
     await build.cleanup();
   });
 
-  test('rebuilds addon code', async function() {
+  test('rebuilds addon code', async function () {
     expectFile('../../components/example.hbs').matches(/hello/);
     writeFileSync(join(project.baseDir, 'addon/components/example.hbs'), 'goodbye');
     await build.rebuild();

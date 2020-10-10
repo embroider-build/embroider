@@ -7,7 +7,7 @@ import type { Options } from '@embroider/compat';
 
 */
 export function maybeEmbroider(app: any, opts: Options = {}) {
-  if (!('@embroider/core' in app.dependencies())) {
+  if (!shouldUseEmbroider(app)) {
     return app.toTree(opts?.extraPublicTrees);
   }
 
@@ -86,4 +86,14 @@ function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {
     return objValue.concat(srcValue);
   }
+}
+
+function shouldUseEmbroider(app: any): boolean {
+  if (process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic') {
+    return false;
+  }
+  if (process.env.EMBROIDER_TEST_SETUP_FORCE === 'embroider') {
+    return true;
+  }
+  return '@embroider/core' in app.dependencies();
 }

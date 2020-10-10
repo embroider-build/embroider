@@ -585,6 +585,9 @@ describe('stage2 build', function () {
                   console.log(isDevelopingThisPackage());`,
               },
             },
+            public: {
+              'robots.txt': '',
+            },
           },
         },
       });

@@ -347,22 +347,16 @@ export class Evaluator {
   // confidence without actually forcing the value.
   private maybeEvaluateRuntimeConfig(path: NodePath<CallExpression>): EvaluateResult {
     let callee = path.get('callee');
-    if (callee.isMemberExpression()) {
-      let prop = assertNotArray(callee.get('property'));
-      if (prop.isIdentifier() && prop.node.name === '_runtimeGet') {
-        let obj = callee.get('object');
-        if (
-          obj.isIdentifier() &&
-          (obj.referencesImport('@embroider/macros', 'getConfig') ||
-            obj.referencesImport('@embroider/macros', 'getOwnConfig'))
-        ) {
-          return {
-            confident: true,
-            get value() {
-              throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
-            },
-          };
-        }
+    if (callee.isIdentifier()) {
+      let { name } = callee.node;
+      // Does the identifier refer to our runtime config?
+      if (this.state?.neededRuntimeImports.get(name) === 'config') {
+        return {
+          confident: true,
+          get value() {
+            throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
+          },
+        };
       }
     }
     return { confident: false };

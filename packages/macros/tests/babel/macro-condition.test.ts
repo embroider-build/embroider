@@ -7,7 +7,11 @@ describe('macroCondition', function () {
 
   allBabelVersions({
     babelConfig(version: number) {
-      return makeBabelConfig(version, config);
+      let babelConfig = makeBabelConfig(version, config);
+      if (version === 7) {
+        babelConfig.plugins.push('@babel/plugin-proposal-class-properties');
+      }
+      return babelConfig;
     },
     includePresetsTests: true,
     createTests: allModes((transform, { applyMode, buildTimeTest, runTimeTest }) => {
@@ -362,6 +366,38 @@ describe('macroCondition', function () {
         expect(run(code)).toBe('beta');
         expect(code).toMatch(/alpha/);
       });
+
+      if (transform.babelMajorVersion === 7) {
+        buildTimeTest('can be used as class field initializer', () => {
+          let code = transform(`
+            import { macroCondition, getConfig } from '@embroider/macros';
+            class QUnitTest {
+              version = macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
+            }
+            let test = new QUnitTest();
+            export default function() {
+              return test.version;
+            }
+          `);
+          expect(run(code)).toBe('beta');
+          expect(code).not.toMatch(/alpha/);
+        });
+
+        runTimeTest('can be used as class field initializer', () => {
+          let code = transform(`
+            import { macroCondition, getConfig } from '@embroider/macros';
+            class QUnitTest {
+              version = macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
+            }
+            let test = new QUnitTest();
+            export default function() {
+              return test.version;
+            }
+          `);
+          expect(run(code)).toBe('beta');
+          expect(code).toMatch(/alpha/);
+        });
+      }
     }),
   });
 });

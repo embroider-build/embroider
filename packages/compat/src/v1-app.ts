@@ -86,12 +86,6 @@ export default class V1App {
   }
 
   @Memoize()
-  get isModuleUnification() {
-    let experiments = this.requireFromEmberCLI('./lib/experiments');
-    return experiments.MODULE_UNIFICATION && !!this.app.trees.src;
-  }
-
-  @Memoize()
   private get emberCLILocation() {
     const emberCLIPackage = resolvePackagePath('ember-cli', this.root);
 
@@ -176,7 +170,6 @@ export default class V1App {
       addons: this.app.project.addons,
       autoRun: this.autoRun,
       storeConfigInMeta: this.storeConfigInMeta,
-      isModuleUnification: this.isModuleUnification,
     });
   }
 
@@ -594,8 +587,8 @@ export default class V1App {
     }
   }
 
-  get vendorTree(): Tree {
-    return this.app.trees.vendor;
+  get vendorTree(): Tree | undefined {
+    return ensureTree(this.app.trees.vendor);
   }
 
   @Memoize()
@@ -603,8 +596,8 @@ export default class V1App {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  get publicTree(): Tree {
-    return this.app.trees.public;
+  get publicTree(): Tree | undefined {
+    return ensureTree(this.app.trees.public);
   }
 
   processAppJS(): { appJS: Tree } {
@@ -698,4 +691,11 @@ class V1DummyApp extends V1App {
 interface Preprocessors {
   preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
   preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
+}
+
+function ensureTree(maybeTree: string | Tree | undefined): Tree | undefined {
+  if (typeof maybeTree === 'string') {
+    return new WatchedDir(maybeTree);
+  }
+  return maybeTree;
 }

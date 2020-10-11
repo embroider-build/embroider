@@ -313,7 +313,11 @@ export default class V1Addon {
   }
 
   @Memoize()
-  private hasStockTree(treeName: string) {
+  private hasStockTree(treeName: string): boolean {
+    if (this.suppressesTree(treeName)) {
+      return false;
+    }
+
     // we need to use this.addonInstance.root instead of this.root here because
     // we're looking for the classic location of the stock tree, and that
     // location is influenced by a customized ember-addon.main in package.json,
@@ -360,7 +364,7 @@ export default class V1Addon {
     }
   }
 
-  protected stockTree(treeName: string) {
+  protected stockTree(treeName: string): Tree {
     return this.throughTreeCache(treeName, 'stock', () => {
       // adjust from the legacy "root" to our real root, because our rootTree
       // uses our real root but the stock trees are defined in terms of the
@@ -492,6 +496,40 @@ export default class V1Addon {
     return tree;
   }
 
+  // In general, we can't reliably run addons' custom `treeFor()` methods,
+  // because they recurse in a way that we absolutely don't want.
+  //
+  // But there is a very common use case that we *can* handle opportunisticaly,
+  // which is a treeFor() that's used purely to guard whether `_super` will be
+  // called or not.
+  private suppressesTree(name: string): boolean {
+    if (!this.customizes('treeFor')) {
+      return false;
+    }
+    let origSuper = this.addonInstance._super;
+    try {
+      this.addonInstance._super = returnMarkedEmptyTree;
+      let result = this.mainModule.treeFor?.call(this.addonInstance, name);
+      if (result === markedEmptyTree) {
+        // the method returns _super unchanged, so tree is not suppressed and we
+        // understand what's going on
+        return false;
+      }
+      if (result == null) {
+        // the method nulled out the tree, so we are definitely suppressing
+        return true;
+      }
+      // we can't tell what's really going on, don't suppress and hope for the
+      // best
+      unsupported(`${this.name} has a custom treeFor() method that is doing some arbitrary broccoli processing.`);
+      return false;
+    } finally {
+      if (this.addonInstance._super === returnMarkedEmptyTree) {
+        this.addonInstance._super = origSuper;
+      }
+    }
+  }
+
   protected invokeOriginalTreeFor(
     name: string,
     { neuterPreprocessors } = { neuterPreprocessors: false }
@@ -504,6 +542,9 @@ export default class V1Addon {
           this.addonInstance.preprocessJs = function (tree: Tree) {
             return tree;
           };
+        }
+        if (this.suppressesTree(name)) {
+          return undefined;
         }
         return this.addonInstance._treeFor(name);
       } finally {
@@ -856,10 +897,6 @@ export default class V1Addon {
       };
     }
 
-    if (this.customizes('treeFor')) {
-      unsupported(`${this.name} has customized treeFor`);
-    }
-
     this.buildTreeForAddon(built);
     this.buildAddonStyles(built);
     this.buildTreeForStyles(built);
@@ -919,3 +956,10 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
 function notColocatedTemplate(path: string) {
   return !/^\.\/components\/.*\.hbs$/.test(path);
 }
+
+const markedEmptyTree = new UnwatchedDir(process.cwd());
+const returnMarkedEmptyTree = {
+  treeFor() {
+    return markedEmptyTree;
+  },
+};

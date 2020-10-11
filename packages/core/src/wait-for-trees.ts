@@ -72,11 +72,15 @@ function isTree(x: any): x is Tree {
 function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string; single?: Tree; multi?: Tree[] }> {
   for (let [name, value] of Object.entries(trees)) {
     if (Array.isArray(value)) {
-      yield { name, multi: value.filter(isTree) };
-    } else {
-      if (isTree(value)) {
-        yield { name, single: value };
+      let stringTrees = value.filter(t => typeof t === 'string');
+      if (stringTrees.length > 0) {
+        throw new Error(`found strings instead of broccoli trees for ${name}: ${value}`);
       }
+      yield { name, multi: value.filter(isTree) };
+    } else if (isTree(value)) {
+      yield { name, single: value };
+    } else if (typeof value === 'string') {
+      throw new Error(`found a string when we expected a broccoli tree for ${name}: ${value}`);
     }
   }
 }

@@ -37,7 +37,7 @@ import { pathExistsSync } from 'fs-extra';
 interface TreeNames {
   appJS: Tree;
   htmlTree: Tree;
-  publicTree: Tree;
+  publicTree: Tree | undefined;
   configTree: Tree;
 }
 
@@ -54,7 +54,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let appBootTree = oldPackage.appBoot;
 
   if (options.extraPublicTrees.length > 0) {
-    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean));
+    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as Tree[]);
   }
 
   let inTrees = {
@@ -292,7 +292,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   mainModule(): string {
-    return this.oldPackage.isModuleUnification ? 'src/main' : 'app';
+    return 'app';
   }
 
   mainModuleConfig(): unknown {

@@ -9,7 +9,7 @@ import { Tree } from 'broccoli-plugin';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
@@ -83,12 +83,6 @@ export default class V1App {
   @Memoize()
   get root(): string {
     return dirname(pkgUpSync(this.app.project.root)!);
-  }
-
-  @Memoize()
-  get isModuleUnification() {
-    let experiments = this.requireFromEmberCLI('./lib/experiments');
-    return experiments.MODULE_UNIFICATION && !!this.app.trees.src;
   }
 
   @Memoize()
@@ -176,7 +170,6 @@ export default class V1App {
       addons: this.app.project.addons,
       autoRun: this.autoRun,
       storeConfigInMeta: this.storeConfigInMeta,
-      isModuleUnification: this.isModuleUnification,
     });
   }
 
@@ -594,8 +587,25 @@ export default class V1App {
     }
   }
 
-  get vendorTree(): Tree {
-    return this.app.trees.vendor;
+  get vendorTree(): Tree | undefined {
+    return this.ensureTree(this.app.trees.vendor);
+  }
+
+  private ensureTree(maybeTree: string | Tree | undefined): Tree | undefined {
+    if (typeof maybeTree === 'string') {
+      // this is deliberately mimicking how ember-cli does it. We don't use
+      // `this.root` on purpose, because that can differ from what ember-cli
+      // considers the project.root. And we don't use path.resolve even though
+      // that seems possibly more correct, because ember-cli always assumes the
+      // input is relative.
+      let resolvedPath = join(this.app.project.root, maybeTree);
+      if (existsSync(resolvedPath)) {
+        return new WatchedDir(maybeTree);
+      } else {
+        return undefined;
+      }
+    }
+    return maybeTree;
   }
 
   @Memoize()
@@ -603,8 +613,8 @@ export default class V1App {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  get publicTree(): Tree {
-    return this.app.trees.public;
+  get publicTree(): Tree | undefined {
+    return this.ensureTree(this.app.trees.public);
   }
 
   processAppJS(): { appJS: Tree } {

@@ -99,6 +99,9 @@ describe('dummy app tests', function () {
               return ENV;
             };`,
           },
+          public: {
+            'robots.txt': 'go away bots',
+          },
         },
       },
     });
@@ -122,5 +125,10 @@ describe('dummy app tests', function () {
     writeFileSync(join(project.baseDir, 'addon/components/example.hbs'), 'goodbye');
     await build.rebuild();
     expectFile('../../components/example.hbs').matches(/goodbye/);
+  });
+
+  test('contains public assets from dummy app', async function () {
+    expectFile('robots.txt').exists();
+    expectFile('package.json').json().get('ember-addon.assets').includes('robots.txt');
   });
 });

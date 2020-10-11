@@ -344,6 +344,58 @@ describe('stage1 build', function () {
       });
       merge(movedMain.pkg, { 'ember-addon': { main: 'custom/index.js' } });
 
+      // an addon that uses treeFor() to sometimes suppress its stock trees
+      let suppressed = app.addAddon(
+        'suppressed',
+        `
+        treeFor(name) {
+          if (name !== 'app') {
+            return this._super.treeFor(name);
+          } else {
+            return undefined;
+          }
+        }
+      `
+      );
+      merge(suppressed.files, {
+        addon: {
+          'addon-example.js': '// example',
+        },
+        app: {
+          'app-example.js': '// example',
+        },
+      });
+
+      // an addon that uses treeFor() to sometimes suppress its custom trees
+      let suppressedCustom = app.addAddon(
+        'suppressed-custom',
+        `
+        treeFor(name) {
+          if (name !== 'app') {
+            return this._super.treeFor(name);
+          } else {
+            return undefined;
+          }
+        },
+        treeForApp() {
+          return require('path').join(__dirname, 'app-custom');
+        },
+        treeForAddon() {
+          return require('path').join(__dirname, 'addon-custom');
+        },
+      `
+      );
+      merge(suppressedCustom.files, {
+        'addon-custom': {
+          'suppressed-custom': {
+            'addon-example.js': '// example',
+          },
+        },
+        'app-custom': {
+          'app-example.js': '// example',
+        },
+      });
+
       build = await BuildResult.build(app, { stage: 1, type: 'app' });
       expectFile = expectFilesAt(build.outputPath);
     });
@@ -375,6 +427,22 @@ describe('stage1 build', function () {
 
     test('addon with customized ember-addon.main can still use stock trees', function () {
       expectFile('node_modules/moved-main/helpers/hello.js').matches(/hello-world/);
+    });
+
+    test('addon with customized treeFor can suppress a stock tree', function () {
+      expectFile('node_modules/suppressed/_app_/app-example.js').doesNotExist();
+    });
+
+    test('addon with customized treeFor can pass through a stock tree', function () {
+      expectFile('node_modules/suppressed/addon-example.js').exists();
+    });
+
+    test('addon with customized treeFor can suppress a customized tree', function () {
+      expectFile('node_modules/suppressed-custom/_app_/app-example.js').doesNotExist();
+    });
+
+    test('addon with customized treeFor can pass through a customized tree', function () {
+      expectFile('node_modules/suppressed-custom/addon-example.js').exists();
     });
   });
 });

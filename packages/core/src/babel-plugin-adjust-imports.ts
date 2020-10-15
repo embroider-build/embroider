@@ -8,7 +8,6 @@ import {
   functionExpression,
   identifier,
   importDeclaration,
-  importDefaultSpecifier,
   memberExpression,
   Program,
   returnStatement,
@@ -22,6 +21,7 @@ import {
   ExportNamedDeclaration,
   ImportDeclaration,
   ExportAllDeclaration,
+  importNamespaceSpecifier,
 } from '@babel/types';
 import PackageCache from './package-cache';
 import Package, { V2Package } from './package';
@@ -410,7 +410,7 @@ function addExtraImports(path: NodePath<Program>, extraImports: Required<State['
       if (runtimeName) {
         path.node.body.unshift(amdDefine(runtimeName, counter));
         path.node.body.unshift(
-          importDeclaration([importDefaultSpecifier(identifier(`a${counter++}`))], stringLiteral(target))
+          importDeclaration([importNamespaceSpecifier(identifier(`a${counter++}`))], stringLiteral(target))
         );
       } else {
         path.node.body.unshift(importDeclaration([], stringLiteral(target)));

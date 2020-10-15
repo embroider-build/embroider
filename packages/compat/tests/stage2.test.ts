@@ -444,7 +444,7 @@ describe('stage2 build', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
       assertFile.matches(/import \* as a. from ["']\.\.\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
-      assertFile.matches(/import a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
+      assertFile.matches(/import \* as a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
       assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
       assertFile.matches(
         /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,

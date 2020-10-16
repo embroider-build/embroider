@@ -1,14 +1,20 @@
 import { deprecate } from '@ember/debug';
+import { getOwner } from '@ember/application';
+import { isCurriedComponentDefinition, lookupCurriedComponentDefinition } from './ember-private-api';
 
-export function ensureSafeComponent(value) {
+export function ensureSafeComponent(value, thingWithOwner) {
   if (typeof value === 'string') {
-    return handleString(value);
-  } else {
+    return handleString(value, thingWithOwner);
+  } else if (isCurriedComponentDefinition(value)) {
     return value;
+  } else if (value == null) {
+    return value;
+  } else {
+    return handleClass(value, thingWithOwner);
   }
 }
 
-function handleString(name) {
+function handleString(name, thingWithOwner) {
   deprecate(
     `You're trying to invoke the component "${name}" by passing its name as a string. This won't work under Embroider.`,
     false,
@@ -20,6 +26,25 @@ function handleString(name) {
     }
   );
 
-  // TODO: this will fail on latest beta because the bug was fixed
-  return name;
+  let owner = getOwner(thingWithOwner);
+  return lookupCurriedComponentDefinition(name, owner);
+}
+
+const classNonces = new WeakMap();
+let nonceCounter = 0;
+
+function ensureRegistered(klass, owner) {
+  let nonce = classNonces.get(klass);
+  if (nonce == null) {
+    nonce = `-ensure${nonceCounter++}`;
+    classNonces.set(klass, nonce);
+    owner.register(`component:${nonce}`, klass);
+  }
+  return nonce;
+}
+
+function handleClass(klass, thingWithOwner) {
+  let owner = getOwner(thingWithOwner);
+  let nonce = ensureRegistered(klass, owner);
+  return lookupCurriedComponentDefinition(nonce, owner);
 }

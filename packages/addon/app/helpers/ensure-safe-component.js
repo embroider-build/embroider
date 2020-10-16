@@ -1,5 +1,7 @@
 import { ensureSafeComponent } from '@embroider/addon';
-import { helper } from '@ember/component/helper';
-export default helper(function ([value]) {
-  return ensureSafeComponent(value);
-});
+import Helper from '@ember/component/helper';
+export default class extends Helper {
+  compute([value]) {
+    return ensureSafeComponent(value, this);
+  }
+}

@@ -3,16 +3,83 @@ import { setupRenderingTest } from 'ember-qunit';
 import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 import { setComponentTemplate } from '@ember/component';
+import Component from '@glimmer/component';
 import templateOnlyComponent from '@ember/component/template-only';
 import { setupDeprecationAssertions } from '../../deprecation-assertions';
-
-// import { ensureSafeComponent } from '@embroider/addon';
+import { ensureSafeComponent } from '@embroider/addon';
+import SomeComponent from 'dummy/components/some-component';
+import ColocatedExample from 'dummy/components/colocated-example';
+import { setOwner } from '@ember/application';
 
 module('Integration | Helper | ensure-safe-component', function (hooks) {
   setupRenderingTest(hooks);
   setupDeprecationAssertions(hooks);
 
-  test('template usage with curried component value', async function (assert) {
+  hooks.beforeEach(function () {
+    // we need to pass an object with an owner to ensureSafeComponent. The test
+    // context normally doesn't consider itself owned by `this.owner`!
+    setOwner(this, this.owner);
+  });
+
+  test('string value', async function (assert) {
+    await assert.expectDeprecation(async () => {
+      this.set('thing', ensureSafeComponent('some-component', this));
+    }, /You're trying to invoke the component "some-component" by passing its name as a string/);
+
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+  });
+
+  test('template-only component class value', async function (assert) {
+    this.set('thing', ensureSafeComponent(SomeComponent, this));
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+  });
+
+  test('co-located component class value', async function (assert) {
+    this.set('thing', ensureSafeComponent(ColocatedExample, this));
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(this.element.textContent.trim(), 'hello from colocated-example');
+  });
+
+  test('curried component value', async function (assert) {
+    this.owner.register(
+      'component:provider',
+      setComponentTemplate(
+        hbs`
+        {{yield (component "some-component") }}
+        `,
+        templateOnlyComponent()
+      )
+    );
+    this.owner.register(
+      'component:consumer',
+      setComponentTemplate(
+        hbs`
+        <this.custom />
+        `,
+        class extends Component {
+          get custom() {
+            return ensureSafeComponent(this.args.custom, this);
+          }
+        }
+      )
+    );
+    await render(hbs`
+      <Provider as |P|>
+        <Consumer @custom={{P}}/>
+      </Provider>
+    `);
+    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+  });
+
+  test('template helper with curried component value', async function (assert) {
     this.set('name', 'some-component');
     this.owner.register(
       'component:inner',
@@ -31,7 +98,7 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     assert.equal(this.element.textContent.trim(), 'hello from some-component');
   });
 
-  test('template usage with string value', async function (assert) {
+  test('template helper with string value', async function (assert) {
     this.set('name', 'some-component');
     await assert.expectDeprecation(async () => {
       await render(hbs`

@@ -8,6 +8,15 @@ module.exports = async function () {
     useYarn: true,
     scenarios: [
       {
+        // this is the first release with co-located templates.
+        name: 'ember-3.13',
+        npm: {
+          devDependencies: {
+            'ember-source': '~3.13.0',
+          },
+        },
+      },
+      {
         name: 'ember-lts-3.16',
         npm: {
           devDependencies: {

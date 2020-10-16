@@ -163,6 +163,8 @@ export default class extends Component {
 
 When `ensureSafeComponent` sees a component class, it converts it into a component definition so it can be safely invoked. In the future, we expect Ember to gain the ability to natively invoke component classes, at which point we can make `ensureSafeComponent` pass component classes through unchanged when it sees those Ember versions.
 
+**Caution**: old-style components that have their template in `app/templates/components` instead of co-located next to their Javascript in `app/components` can't work correctly when discovered via their component class, because there's no way to locate the template. They should either port to being co-located (which is a simple mechanical transformation and highly recommended) or should import their own template and set it as `layout` as was traditional in addons before co-location was available.
+
 ### When you're passing a component to someone else
 
 Here's an example `<Menu/>` component that accepts a `@titleBar=`. When the author of `<Menu/>` follows the steps from the previous section, if we try to call it like this:

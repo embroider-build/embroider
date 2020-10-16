@@ -49,17 +49,16 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
   });
 
   test('curried component value', async function (assert) {
-    this.owner.register(
-      'component:provider',
+    this.provider = ensureSafeComponent(
       setComponentTemplate(
         hbs`
         {{yield (component "some-component") }}
         `,
         templateOnlyComponent()
-      )
+      ),
+      this
     );
-    this.owner.register(
-      'component:consumer',
+    this.consumer = ensureSafeComponent(
       setComponentTemplate(
         hbs`
         <this.custom />
@@ -69,20 +68,20 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
             return ensureSafeComponent(this.args.custom, this);
           }
         }
-      )
+      ),
+      this
     );
     await render(hbs`
-      <Provider as |P|>
-        <Consumer @custom={{P}}/>
-      </Provider>
+      <this.provider as |P|>
+        <this.consumer @custom={{P}}/>
+      </this.provider>
     `);
     assert.equal(this.element.textContent.trim(), 'hello from some-component');
   });
 
   test('template helper with curried component value', async function (assert) {
     this.set('name', 'some-component');
-    this.owner.register(
-      'component:inner',
+    this.inner = ensureSafeComponent(
       setComponentTemplate(
         hbs`
         {{#let (ensure-safe-component @name) as |Thing|}}
@@ -90,10 +89,11 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
         {{/let}}
         `,
         templateOnlyComponent()
-      )
+      ),
+      this
     );
     await render(hbs`
-      <Inner @name={{component "some-component"}} />
+      <this.inner @name={{component "some-component"}} />
     `);
     assert.equal(this.element.textContent.trim(), 'hello from some-component');
   });

@@ -165,8 +165,6 @@ When `ensureSafeComponent` sees a component class, it converts it into a compone
 
 ### When you're passing a component to someone else
 
-The previous scenario was about _writing_ a component that accepts another component as an argument. This section is about _using_ such a component.
-
 Here's an example `<Menu/>` component that accepts a `@titleBar=`. When the author of `<Menu/>` follows the steps from the previous section, if we try to call it like this:
 
 ```hbs

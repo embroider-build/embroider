@@ -20,9 +20,11 @@ function handleString(name, thingWithOwner) {
     false,
     {
       id: 'ensure-safe-component.string',
-      url: 'https://example.com/TODO',
+      url:
+        'https://github.com/embroider-build/embroider/blob/master/ADDON-AUTHOR-GUIDE.md#when-youre-passing-a-component-to-someone-else',
       until: 'embroider',
       for: '@embroider/addon',
+      since: '0.27.0',
     }
   );
 

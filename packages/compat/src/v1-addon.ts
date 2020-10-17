@@ -508,7 +508,7 @@ export default class V1Addon {
     }
     let origSuper = this.addonInstance._super;
     try {
-      this.addonInstance._super = returnMarkedEmptyTree;
+      this.addonInstance._super = stubbedSuper;
       let result = this.mainModule.treeFor?.call(this.addonInstance, name);
       if (result === markedEmptyTree) {
         // the method returns _super unchanged, so tree is not suppressed and we
@@ -524,7 +524,7 @@ export default class V1Addon {
       unsupported(`${this.name} has a custom treeFor() method that is doing some arbitrary broccoli processing.`);
       return false;
     } finally {
-      if (this.addonInstance._super === returnMarkedEmptyTree) {
+      if (this.addonInstance._super === stubbedSuper) {
         this.addonInstance._super = origSuper;
       }
     }
@@ -958,8 +958,11 @@ function notColocatedTemplate(path: string) {
 }
 
 const markedEmptyTree = new UnwatchedDir(process.cwd());
-const returnMarkedEmptyTree = {
-  treeFor() {
-    return markedEmptyTree;
-  },
+
+const stubbedSuper = () => {
+  return markedEmptyTree;
+};
+
+stubbedSuper.treeFor = () => {
+  return markedEmptyTree;
 };

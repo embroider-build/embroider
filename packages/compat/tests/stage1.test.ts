@@ -372,7 +372,7 @@ describe('stage1 build', function () {
         `
         treeFor(name) {
           if (name !== 'app') {
-            return this._super.treeFor(name);
+            return this._super(name);
           } else {
             return undefined;
           }

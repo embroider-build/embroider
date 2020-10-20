@@ -27,6 +27,7 @@
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
     "@embroider/sample-lib": "0.0.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "@glimmer/component": "^1.0.0",
     "@glimmer/tracking": "^1.0.0",

@@ -23,6 +23,7 @@
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
     "@embroider/macros": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-ajax": "^5.0.0",

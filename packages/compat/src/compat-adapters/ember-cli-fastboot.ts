@@ -119,6 +119,7 @@ class RewriteManifest extends Plugin {
       schemaVersion: 5,
       htmlEntrypoint: 'index.html',
       moduleWhitelist: json.fastboot.moduleWhitelist,
+      hostWhitelist: json.fastboot.hostWhitelist,
     };
 
     // this is a message to Embroider stage2 (in app.ts), because we need it to

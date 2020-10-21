@@ -1,12 +1,6 @@
 import { parse, TransformOptions } from '@babel/core';
 import traverse, { NodePath } from '@babel/traverse';
-import {
-  ExportNamedDeclaration,
-  ExportDefaultDeclaration,
-  isVariableDeclaration,
-  isIdentifier,
-  Identifier,
-} from '@babel/types';
+import { ExportNamedDeclaration, ExportDefaultDeclaration, isVariableDeclaration, isIdentifier } from '@babel/types';
 import assertNever from 'assert-never';
 
 export function describeExports(
@@ -20,18 +14,18 @@ export function describeExports(
   let names: Set<string> = new Set();
   let hasDefaultExport = false;
 
-  // FIXME: the `any` cast here is only needed because of some NPM version
-  // shenanigans between the various babel packages and typings.
-  traverse(ast as any, {
+  traverse(ast, {
     ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {
       for (let spec of path.node.specifiers) {
         switch (spec.type) {
           case 'ExportSpecifier':
           case 'ExportNamespaceSpecifier':
-            if ((spec.exported as Identifier).name === 'default') {
+            const name = spec.exported.type === 'Identifier' ? spec.exported.name : spec.exported.value;
+
+            if (name === 'default') {
               hasDefaultExport = true;
             } else {
-              names.add((spec.exported as Identifier).name);
+              names.add(name);
             }
             break;
           case 'ExportDefaultSpecifier':

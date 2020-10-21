@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",
-    "ember-cli-babel": "^7.20.5"
+    "ember-cli-babel": "^7.23.0"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",

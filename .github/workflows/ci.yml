@@ -28,7 +28,7 @@ jobs:
 
   test:
     needs: discover_matrix
-    name: ${{ matrix.suite_name }}
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{fromJson(needs.discover_matrix.outputs.matrix)}}

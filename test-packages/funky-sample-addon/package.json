@@ -16,9 +16,7 @@
     "build": "ember build",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
-    "start": "ember serve",
-    "test": "ember test --test-port=0",
-    "test:all": "ember try:each"
+    "start": "ember serve"
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",

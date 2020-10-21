@@ -3,31 +3,49 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  test:
-    name: Test on node ${{ matrix.node_version }} and ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
+  discover_matrix:
+    runs-on: ubuntu-latest
+    outputs:
       matrix:
-        node_version: ['12.16.1']
-        os: [ubuntu-latest]
-
     steps:
       - uses: actions/checkout@v1
       - uses: rwjblue/setup-volta@v1
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: '12'
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v2
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
       - run: yarn
-      - run: yarn lint
-      - run: yarn test
-        env:
-          NODE_OPTIONS: '--max_old_space_size=8192'
+      - run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
+
+  test:
+    name: ${{ matrix.suite_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.discover_matrix.outputs.matrix)}}
+    steps:
+      - uses: actions/checkout@v1
+      - uses: rwjblue/setup-volta@v1
+        with:
+          node-version: '12'
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - run: yarn
+      - name: suite
+        run: ${{ matrix.command }}
+        working-directory: ${{ matrix.dir }}

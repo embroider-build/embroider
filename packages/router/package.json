@@ -18,10 +18,11 @@
   },
   "scripts": {
     "build": "ember build",
+    "lint": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
     "start": "ember serve",
-    "test": "ember test --test-port=0",
+    "test": "npm-run-all lint:* test:*",
     "test:all": "ember try:each"
   },
   "dependencies": {

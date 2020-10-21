@@ -17,8 +17,7 @@
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
     "start": "ember serve",
-    "test": "ember test --test-port=0",
-    "test:all": "ember try:each"
+    "test": "ember test --test-port=0"
   },
   "dependencies": {
     "ember-cli-babel": "^7.20.5"

@@ -18,7 +18,9 @@
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test --test-port=0",
-    "test:fastboot": "qunit fastboot-tests"
+    "test:ember-classic": "CLASSIC=true ember test --test-port=0",
+    "test:fastboot": "qunit fastboot-tests",
+    "test:fastboot-classic": "CLASSIC=true qunit fastboot-tests"
   },
   "devDependencies": {
     "@ember/jquery": "^0.6.0",

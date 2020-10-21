@@ -12,7 +12,8 @@
     "compile": "tsc",
     "lint": "eslint . --cache",
     "prepare": "tsc",
-    "test": "jest"
+    "test": "node ./test-packages/support/suite-setup-util.js --run-all",
+    "test:node": "jest"
   },
   "jest": {
     "projects": [
@@ -32,7 +33,6 @@
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "execa": "^1.0.0",
     "jest": "^24.5.0",
     "prettier": "2.1.2"
   },

@@ -1,7 +1,6 @@
 'use strict';
 
 const getChannelURL = require('ember-source-channel-url');
-const { embroiderOptimized } = require('@embroider/test-setup');
 
 module.exports = async function () {
   return {
@@ -84,7 +83,6 @@ module.exports = async function () {
           },
         },
       },
-      embroiderOptimized(),
     ],
   };
 };

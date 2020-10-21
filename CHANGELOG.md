@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## 0.28.0 (2020-10-21)
+
+- BUGFIX: fastboot hostWhiteList support by @simonihmig
+- ENHANCEMENT: new @embroider/addon utility package
+- HOUSEKEEPING: multiple dependency upgrades by @rwjblue
+- DOCS: updated macros examples by @thoov
+- DOCS: add timestamps to changelog by @sandstrom
+- COMPAT: declare node versions by @rwjblue
+- HOUSEKEEPING: faster and more reliable test suite infrastructure
+- COMPAT: support a different form of \_super call in treeFor, by @thoov
+- BUGFIX: rule-defined extra imports were getting module namespace vs default wrong, by @thoov
+- COMPAT: support the most common special-cases of customized treeFor
+- COMPAT: guard against stringly broccoli trees
+- ENHANCEMENT: `@embroider/test-setup` can now force either classic or embroider mode without altering the project's deps
+- BUGFIX: make runtime getConfig macro work as a class field initializer by @simonihmig
+
 ## 0.27.0 (2020-10-01)
 
 - HOUSEKEEPING: linter upgrades

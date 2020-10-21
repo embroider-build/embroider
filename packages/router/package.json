@@ -25,7 +25,7 @@
     "test": "npm-run-all lint:* test:*",
     "test:all": "ember try:each",
     "test:ember": "ember test --test-port=0",
-    "test:classic:": "CLASSIC=true ember test --test-port=0"
+    "test:classic": "CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",

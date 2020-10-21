@@ -113,27 +113,28 @@ export async function emitDynamicSuites() {
   // parallelized (they all mess with the monorepo-wide yarn state).
   let suites = await allSuites({ includeEmberTry: false });
 
-  // all the suites that share a directory go into a single jest suite, because
-  // they would otherwise conflict if we tried to run them in parallel
-  let suitesByDir = new Map<string, typeof suites>();
+  let jestSuites = new Map<string, typeof suites>();
   for (let suite of suites) {
-    let assignedDir = suite.dir;
-    let list = suitesByDir.get(assignedDir);
+    let assignedSuite = suite.name.replace(/^@[^/]+\//, '').replace(/[ /]/g, '_');
+    let list = jestSuites.get(assignedSuite);
     if (!list) {
       list = [];
-      suitesByDir.set(assignedDir, list);
+      jestSuites.set(assignedSuite, list);
     }
     list.push(suite);
   }
 
-  for (let [dir, list] of suitesByDir) {
-    let tests = [`const execa = require('execa');`];
+  for (let [dir, list] of jestSuites) {
+    let tests = [`const execa = require('execa');`, `const { separateTemp } = require('../suite-setup-util');`];
     for (let suite of list) {
       tests.push(`
     test("${suite.name}", async function() {
       jest.setTimeout(300000);
       await execa("${suite.command}", ${JSON.stringify(suite.args)}, {
-       cwd: "${suite.dir}"
+       cwd: "${suite.dir}",
+       env: {
+         TMPDIR: separateTemp()
+       }
       });
     });
     `);

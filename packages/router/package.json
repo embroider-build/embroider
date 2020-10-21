@@ -23,7 +23,9 @@
     "lint:js": "eslint .",
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
-    "test:all": "ember try:each"
+    "test:all": "ember try:each",
+    "test:ember": "ember test --test-port=0",
+    "test:classic:": "CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",
@@ -52,7 +54,7 @@
     "ember-maybe-import-regenerator": "^0.1.6",
     "ember-qunit": "^4.4.1",
     "ember-resolver": "^5.0.1",
-    "ember-source": "~3.10.0",
+    "ember-source": "~3.16.0",
     "ember-source-channel-url": "^1.1.0",
     "ember-try": "^1.0.0",
     "eslint-plugin-ember": "^7.0.0",

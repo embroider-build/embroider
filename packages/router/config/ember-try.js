@@ -39,15 +39,6 @@ module.exports = function () {
             },
           },
         },
-        {
-          name: 'default',
-        },
-        {
-          name: 'classic',
-          env: {
-            CLASSIC: true,
-          },
-        },
       ],
     };
   });

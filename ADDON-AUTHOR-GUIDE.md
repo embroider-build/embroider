@@ -55,7 +55,7 @@ The Embroider README [explains what the options are and which order you should t
 
 1. `staticAddonTrees` and `staticAddonTestSupportTrees` are relatively safe and easy. If these don't work, it's probably because you are consuming Javascript modules without importing them. If you can directly import them instead, you can probably enable these flags and keep your tests passing.
 2. `staticHelpers` is also relatively safe. The way most code uses helpers in their templates tends to be statically analyzable.
-3. `staticComponents` is harder, because addons tend to use the `{{component}}` helper frequently, and Embroider cannot always statically tell what this means. App authors are able to work around this problem by adding `packageRules`, but addons should actually solve the problem directly by making their code statically understandable.
+3. `staticComponents` is harder, because addons tend to use the `{{component}}` helper frequently, and Embroider cannot always statically tell what this means. App authors are able to work around this problem by adding `packageRules`, but addons should actually solve the problem directly by making their code statically understandable. See "Replacing the {{component}} helper" below.
 
 You can follow these steps in your addon's dummy app to see if your tests continue to pass even under the higher levels of optimization. If you can get all the way to `staticComponents: true`, your addon is achieves the Optimized Embroider Safe support level.
 
@@ -88,3 +88,130 @@ To avoid these limitations, you will want to have a build step that allows you t
 - When automatically upgrading addons to **v2**, `@embroider/compat` already has the full application available to examine, so any configuration-dependent transformations will run with the right configuration. For example, any polyfills that behave differently under different Ember versions will see the app's Ember version and do the right thing. But when publishing a native **v2** package, you _don't_ have that information available so if you want to emit different code for different Ember versions the polyfill needs to use `@embroider/macros`.
 
 While it's important that we ship good shared tooling, a nice thing about having a stable **v2** format standard is that the community is free to experiment with alternative addon build tooling, and it won't impact compatibility or stability.
+
+## Replacing the {{component}} helper
+
+Using the `{{component}}` helper (with one small exception which we'll get to) prevents an addon from achieving the **Optimized Embroider Safe** support level. So addons should stop using it. But how?
+
+Below we will go through several common scenarios.
+
+### When you're invoking a component you've been given
+
+Here's an example of a component that accepts an optional `@titleBar=` argument:
+
+```js
+import Component from '@glimmer/component';
+
+export default class extends Component {
+  get titleBar() {
+    return this.args.titleBar || 'default-title-bar';
+  }
+}
+```
+
+```hbs
+{{component this.titleBar}}
+```
+
+The first step is to switch to angle bracket invocation:
+
+```hbs
+<this.titleBar />
+```
+
+Now we eliminated the `{{component}}` helper. And this actually works, but with two big caveats:
+
+- it only works reliably on Ember versions before 3.23, because we might get passed a string, and invoking a string via angle brackets was an accidental behavior that was never intended, and it's fixed in that release (currently in beta).
+- and we haven't really solved the underlying problem, which is that we can sneakily convert strings into components in a way that lets them escape Embroider's analysis.
+
+So we need another step. Add `@embroider/addon` to your project, and use `ensureSafeComponent`:
+
+```js
+import Component from '@glimmer/component';
+import { ensureSafeComponent } from '@embroider/addon';
+
+export default class extends Component {
+  get titleBar() {
+    return ensureSafeComponent(this.args.titleBar || 'default-title-bar', this);
+  }
+}
+```
+
+```hbs
+<this.titleBar />
+```
+
+This now works even on newer Ember versions. If the user passes a string, it emits a deprecation warning while converting the value to an actual component definition so the angle bracket invocation works. This will help your users migrate away from passing strings to your component.
+
+Notice also that if the user doesn't provide a component, we will trigger the deprecation warning by passing our own string `"default-title-bar"` into `ensureSafeComponent`. So we need one more step to clear this deprecation (and make our addon truly understandable by embroider). Import the component class instead:
+
+```js
+import Component from '@glimmer/component';
+import { ensureSafeComponent } from '@embroider/addon';
+import DefaultTitleBar from './default-title-bar';
+
+export default class extends Component {
+  get titleBar() {
+    return ensureSafeComponent(this.args.titleBar || DefaultTitleBar, this);
+  }
+}
+```
+
+```hbs
+<this.titleBar />
+```
+
+When `ensureSafeComponent` sees a component class, it converts it into a component definition so it can be safely invoked. In the future, we expect Ember to gain the ability to natively invoke component classes, at which point we can make `ensureSafeComponent` pass component classes through unchanged when it sees those Ember versions.
+
+**Caution**: old-style components that have their template in `app/templates/components` instead of co-located next to their Javascript in `app/components` can't work correctly when discovered via their component class, because there's no way to locate the template. They should either port to being co-located (which is a simple mechanical transformation and highly recommended) or should import their own template and set it as `layout` as was traditional in addons before co-location was available.
+
+### When you're passing a component to someone else
+
+Here's an example `<Menu/>` component that accepts a `@titleBar=`. When the author of `<Menu/>` follows the steps from the previous section, if we try to call it like this:
+
+```hbs
+<Menu @titleBar="fancy-title-bar" />
+```
+
+we'll get a deprecation message like
+
+> You're trying to invoke the component "fancy-title-bar" by passing its name as a string...
+
+The simplest fix is to add the `{{component}}` helper:
+
+```hbs
+<Menu @titleBar={{component "fancy-title-bar"}} />
+```
+
+This is the one exceptional place where it's OK to use `{{component}}`, because we're passing it a **string literal**. String literals are safe because they are statically analyzable, so Embroider can tell exactly what component you're talking about.
+
+But if instead you need anything other than a string literal, you'll need a different solution. For example, this is not OK:
+
+```hbs
+<Menu @titleBar={{component (if this.fancy "fancy-title-bar" "plain-title-bar") }} />
+```
+
+You can refactor this example into two uses with only string literals inside `{{component}}`, and that makes it OK:
+
+```hbs
+<Menu @titleBar={{if this.fancy (component "fancy-title-bar") (component "plain-title-bar") }} />
+```
+
+But if your template is getting complicated, you can always move to Javascript and import the components and pass them through `ensureSafeComponent` before passing them onward:
+
+```js
+import Component from '@glimmer/component';
+import { ensureSafeComponent } from '@embroider/addon';
+import FancyTitleBar from './fancy-title-bar';
+import PlainTitleBar from './plain-title-bar';
+
+export default class extends Component {
+  get whichComponent() {
+    return ensureSafeComponent(this.fancy ? FancyTitleBar : PlainTitleBar);
+  }
+}
+```
+
+```hbs
+<Menu @titleBar={{ this.whichComponent }} />
+```

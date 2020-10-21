@@ -16,9 +16,7 @@
     "build": "ember build",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
-    "start": "ember serve",
-    "test": "ember test --test-port=0",
-    "test:all": "ember try:each"
+    "start": "ember serve"
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",
@@ -32,6 +30,7 @@
     "@ember/optional-features": "^0.7.0",
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-cli": "~3.10.1",

@@ -12,7 +12,7 @@
     "compile": "tsc",
     "lint": "eslint . --cache",
     "prepare": "tsc",
-    "test": "jest"
+    "test": "node ./test-packages/support/suite-setup-util.js --emit && jest"
   },
   "jest": {
     "projects": [
@@ -21,7 +21,8 @@
     ]
   },
   "resolutions": {
-    "**/fastboot": "^3.1.0"
+    "**/fastboot": "^3.1.0",
+    "**/browserslist": "^4.14.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
@@ -31,7 +32,6 @@
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "execa": "^1.0.0",
     "jest": "^24.5.0",
     "prettier": "2.1.2"
   },

@@ -19,6 +19,7 @@ import {
   isExportDefaultSpecifier,
   isExportSpecifier,
   importSpecifier,
+  Identifier,
 } from '@babel/types';
 import { dirname } from 'path';
 import { explicitRelative } from './paths';
@@ -146,7 +147,7 @@ export default function main() {
         for (let specifier of path.node.specifiers) {
           if (isExportDefaultSpecifier(specifier)) {
           } else if (isExportSpecifier(specifier)) {
-            if (specifier.exported.name === 'default') {
+            if ((specifier.exported as Identifier).name === 'default') {
               state.importTemplateAs = unusedNameLike('TEMPLATE', path);
               if (node.source) {
                 // our default export is a reexport from elsewhere. We will

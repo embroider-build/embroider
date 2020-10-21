@@ -1,6 +1,12 @@
 import { parse, TransformOptions } from '@babel/core';
 import traverse, { NodePath } from '@babel/traverse';
-import { ExportNamedDeclaration, ExportDefaultDeclaration, isVariableDeclaration, isIdentifier } from '@babel/types';
+import {
+  ExportNamedDeclaration,
+  ExportDefaultDeclaration,
+  isVariableDeclaration,
+  isIdentifier,
+  Identifier,
+} from '@babel/types';
 import assertNever from 'assert-never';
 
 export function describeExports(
@@ -22,10 +28,10 @@ export function describeExports(
         switch (spec.type) {
           case 'ExportSpecifier':
           case 'ExportNamespaceSpecifier':
-            if (spec.exported.name === 'default') {
+            if ((spec.exported as Identifier).name === 'default') {
               hasDefaultExport = true;
             } else {
-              names.add(spec.exported.name);
+              names.add((spec.exported as Identifier).name);
             }
             break;
           case 'ExportDefaultSpecifier':

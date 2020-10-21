@@ -235,7 +235,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       }
     }
     let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
-    writeFileSync(join(this.outputPath, script), outCode);
+    writeFileSync(join(this.outputPath, script), outCode!);
     written.add(script);
     if (appRelativeSourceMapURL && outMap) {
       writeFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);

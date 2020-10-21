@@ -14,11 +14,14 @@
   },
   "scripts": {
     "build": "ember build",
+    "lint": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
     "start": "ember serve",
-    "test": "ember test --test-port=0",
-    "test:all": "ember try:each"
+    "test": "npm-run-all lint:* test:*",
+    "test:all": "ember try:each",
+    "test:ember": "ember test --test-port=0",
+    "test:classic:": "CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
     "@embroider/macros": "0.27.0",
@@ -29,6 +32,7 @@
     "@ember/optional-features": "^0.7.0",
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-cli": "~3.10.1",

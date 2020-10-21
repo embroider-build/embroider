@@ -27,6 +27,7 @@ jobs:
         run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
 
   test:
+    needs: discover_matrix
     name: ${{ matrix.suite_name }}
     runs-on: ubuntu-latest
     strategy:

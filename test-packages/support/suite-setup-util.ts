@@ -1,12 +1,10 @@
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-let counter = 0;
-
 // we run our various Ember app's test suites in parallel, and unfortunately the
 // shared persistent caching underneath various broccoli plugins is not
 // parallel-safe. So we give each suite a separate TMPDIR to run within.
-export function separateTemp(name = `separate${counter++}`): string {
+export function separateTemp(name = `separate${Math.floor(Math.random() * 100000)}`): string {
   return join(tmpdir(), name);
 }
 

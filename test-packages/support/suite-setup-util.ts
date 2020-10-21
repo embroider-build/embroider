@@ -88,7 +88,7 @@ export async function githubMatrix() {
   suites.unshift({
     name: 'node',
     command: 'yarn',
-    args: ['jest'],
+    args: ['jest', '--forceExit'],
     dir: resolve(__dirname, '..', '..'),
   });
   return {

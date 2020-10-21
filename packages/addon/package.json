@@ -31,6 +31,7 @@
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
     "@embroider/test-setup": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "@glimmer/component": "^1.0.1",
     "@glimmer/tracking": "^1.0.1",
@@ -71,5 +72,8 @@
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }

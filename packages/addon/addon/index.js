@@ -1,6 +1,7 @@
 import { deprecate } from '@ember/debug';
 import { getOwner } from '@ember/application';
 import { isCurriedComponentDefinition, lookupCurriedComponentDefinition } from './ember-private-api';
+import Helper from '@ember/component/helper';
 
 export function ensureSafeComponent(value, thingWithOwner) {
   if (typeof value === 'string') {
@@ -11,6 +12,12 @@ export function ensureSafeComponent(value, thingWithOwner) {
     return value;
   } else {
     return handleClass(value, thingWithOwner);
+  }
+}
+
+export class EnsureSafeComponentHelper extends Helper {
+  compute([value]) {
+    return ensureSafeComponent(value, this);
   }
 }
 

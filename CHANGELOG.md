@@ -1,12 +1,12 @@
 # Embroider Changelog
 
-## 0.27.0
+## 0.27.0 (2020-10-01)
 
 - HOUSEKEEPING: linter upgrades
 - COMPAT: add compatAdapter for ember-cli-addon-docs by @thoov
 - ENHANCEMENT: created new `@embroider/test-setup` package to aid CI-testing of apps and addons
 
-## 0.26.0
+## 0.26.0 (2020-09-29)
 
 - BUGFIX: don't include d.ts files from the app into the actual build
 - COMPAT: support own-imports imports in code that came from treeForApp
@@ -16,7 +16,7 @@
 - COMPAT: fix loader.js compatibility issue by disabling its makeDefaultExport option by @simonihmig
 - ENHANCEMENT: prevent cryptic errors when a (potentially optional) dependency isn't present by @thoov
 
-## 0.25.0
+## 0.25.0 (2020-09-22)
 
 - BUGFIX: fix live rebuilding the owning addon when running a dummy app
 - HOUSEKEEPING: upgrades for eslint by @simonihmig

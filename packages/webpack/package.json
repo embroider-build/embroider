@@ -20,9 +20,9 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@babel/core": "^7.8.7",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
-    "@babel/plugin-proposal-optional-chaining": "^7.9.0",
+    "@babel/core": "^7.12.3",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.12.1",
+    "@babel/plugin-proposal-optional-chaining": "^7.12.1",
     "@embroider/babel-loader-7": "0.27.0",
     "@types/source-map": "^0.5.7",
     "babel-core": "^6.26.3",
@@ -53,6 +53,9 @@
   },
   "peerDependencies": {
     "@embroider/core": "0.27.0"
+  },
+  "engines": {
+    "node": "10.* || 12.* || >= 14"
   },
   "volta": {
     "extends": "../../package.json"

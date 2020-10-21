@@ -18,7 +18,9 @@
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test --test-port=0",
-    "test:fastboot": "qunit fastboot-tests"
+    "test:ember-classic": "CLASSIC=true ember test --test-port=0",
+    "test:fastboot": "qunit fastboot-tests",
+    "test:fastboot-classic": "CLASSIC=true qunit fastboot-tests"
   },
   "devDependencies": {
     "@ember/jquery": "^0.6.0",
@@ -26,6 +28,7 @@
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
     "@embroider/router": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "broccoli-asset-rev": "^3.0.0",
     "eager-engine": "0.0.0",

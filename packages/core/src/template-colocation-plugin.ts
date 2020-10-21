@@ -7,7 +7,6 @@ import {
   identifier,
   isClassDeclaration,
   classExpression,
-  Identifier,
   importDeclaration,
   stringLiteral,
   importDefaultSpecifier,
@@ -147,7 +146,9 @@ export default function main() {
         for (let specifier of path.node.specifiers) {
           if (isExportDefaultSpecifier(specifier)) {
           } else if (isExportSpecifier(specifier)) {
-            if ((specifier.exported as Identifier).name === 'default') {
+            const name = specifier.exported.type === 'Identifier' ? specifier.exported.name : specifier.exported.value;
+
+            if (name === 'default') {
               state.importTemplateAs = unusedNameLike('TEMPLATE', path);
               if (node.source) {
                 // our default export is a reexport from elsewhere. We will

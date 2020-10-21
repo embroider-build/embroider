@@ -12,10 +12,15 @@
   },
   "scripts": {
     "build": "ember build",
+    "lint": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint .",
     "start": "ember serve",
-    "test": "ember test --test-port=0"
+    "test": "npm-run-all lint:* test:*",
+    "test:ember": "ember test --test-port=0",
+    "test:ember-classic": "CLASSIC=true ember test --test-port=0",
+    "test:custom-root": "CUSTOM_ROOT_URL=/custom/ ember test --test-port=0",
+    "test:custom-relative-root": "CUSTOM_ROOT_URL=custom-relative-root-url/ ember test --test-port=0"
   },
   "devDependencies": {
     "@ember/jquery": "^0.5.2",
@@ -23,6 +28,7 @@
     "@embroider/compat": "0.27.0",
     "@embroider/core": "0.27.0",
     "@embroider/macros": "0.27.0",
+    "@embroider/test-support": "0.27.0",
     "@embroider/webpack": "0.27.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-ajax": "^5.0.0",

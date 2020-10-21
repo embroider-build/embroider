@@ -54,6 +54,9 @@
   "peerDependencies": {
     "@embroider/core": "0.27.0"
   },
+  "engines": {
+    "node": "10.* || 12.* || >= 14"
+  },
   "volta": {
     "extends": "../../package.json"
   }

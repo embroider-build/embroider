@@ -1,7 +1,19 @@
-import { templateTests } from './helpers';
+import { Project, templateTests } from './helpers';
+import * as path from 'path';
 
+const ROOT = process.cwd();
 describe('dependency satisfies', () => {
-  templateTests((transform: (code: string) => string) => {
+  let project: Project;
+
+  afterEach(() => {
+    if (project) {
+      project.dispose();
+    }
+
+    process.chdir(ROOT);
+  });
+
+  templateTests((transform: (code: string, options?: object) => string) => {
     test('in content position', () => {
       let result = transform(`{{macroDependencySatisfies 'qunit' '^2.8.0'}}`);
       expect(result).toEqual('{{true}}');
@@ -32,6 +44,19 @@ describe('dependency satisfies', () => {
       expect(() => {
         transform(`{{macroDependencySatisfies someDep "*"}}`);
       }).toThrow(/all arguments to macroDependencySatisfies must be string literals/);
+    });
+
+    test('it considers prereleases (otherwise within the range) as allowed', () => {
+      project = new Project('test-app', '1.0.0');
+      project.addDevDependency('foo', '1.1.0-beta.1');
+      project.writeSync();
+
+      process.chdir(project.baseDir);
+
+      let result = transform(`{{macroDependencySatisfies 'foo' '^1.0.0'}}`, {
+        filename: path.join(project.baseDir, 'foo.js'),
+      });
+      expect(result).toEqual('{{true}}');
     });
   });
 });

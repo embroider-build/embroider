@@ -30,8 +30,6 @@ export interface PackageRules {
   options?: {
     staticAddonTestSupportTrees?: boolean;
     staticAddonTrees?: boolean;
-    staticHelpers?: boolean;
-    staticComponents?: boolean;
   };
 }
 

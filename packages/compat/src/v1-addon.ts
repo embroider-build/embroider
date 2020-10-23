@@ -600,14 +600,7 @@ export default class V1Addon {
     }
   }
 
-  private buildTreeForAddon(built: IntermediateBuild) {
-    let tree = this.treeForAddon(built);
-    if (!tree) {
-      return;
-    }
-    let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
-
-    // TODO: this should be perf optimized
+  private get isStaticAddonTrees() {
     let rule = ruleForPackageName(
       this.addonOptions.packageRules.concat(defaultAddonPackageRules()),
       this.packageJSON.name,
@@ -615,7 +608,28 @@ export default class V1Addon {
     );
 
     let ruleStaticAddonTree = !rule?.options?.staticAddonTrees || true;
-    if (!this.addonOptions.staticAddonTrees || ruleStaticAddonTree) {
+    return !this.addonOptions.staticAddonTrees || ruleStaticAddonTree;
+  }
+
+  private get isStaticAddonTestSupportTrees() {
+    let rule = ruleForPackageName(
+      this.addonOptions.packageRules.concat(defaultAddonPackageRules()),
+      this.packageJSON.name,
+      this.packageJSON.version
+    );
+
+    let ruleStaticAddonTestSupportTrees = !rule?.options?.staticAddonTestSupportTrees || true;
+    return !this.addonOptions.staticAddonTestSupportTrees || ruleStaticAddonTestSupportTrees;
+  }
+
+  private buildTreeForAddon(built: IntermediateBuild) {
+    let tree = this.treeForAddon(built);
+    if (!tree) {
+      return;
+    }
+    let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
+
+    if (!this.isStaticAddonTrees) {
       let filenames: string[] = [];
       let templateOnlyComponentNames: string[] = [];
 
@@ -690,7 +704,7 @@ export default class V1Addon {
       addonTestSupportTree = this.transpile(this.stockTree('addon-test-support'));
     }
     if (addonTestSupportTree) {
-      if (!this.addonOptions.staticAddonTestSupportTrees) {
+      if (!this.isStaticAddonTestSupportTrees) {
         let filenames: string[] = [];
         addonTestSupportTree = new ObserveTree(addonTestSupportTree, outputPath => {
           filenames = walkSync(outputPath, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);

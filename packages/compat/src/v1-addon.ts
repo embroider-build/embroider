@@ -609,7 +609,7 @@ export default class V1Addon {
 
     // TODO: this should be perf optimized
     let rule = ruleForPackageName(
-      this.options.packageRules.concat(defaultAddonPackageRules()),
+      this.addonOptions.packageRules.concat(defaultAddonPackageRules()),
       this.packageJSON.name,
       this.packageJSON.version
     );

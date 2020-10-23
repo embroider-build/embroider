@@ -9,7 +9,7 @@ export interface PackageRules {
   package: string;
   semverRange?: string;
 
-  components: {
+  components?: {
     // I would prefer to write the key type here as `ComponentSnippet` to aid
     // documentation, but Typescript won't allow it. See ComponentSnippet below.
     [key: string]: ComponentRules;
@@ -25,6 +25,13 @@ export interface PackageRules {
     // `filename` is relative to the app's root, and it assumes v2 package
     // format. Like "templates/components/foo.hbs".
     [filename: string]: ModuleRules;
+  };
+
+  options?: {
+    staticAddonTestSupportTrees?: boolean;
+    staticAddonTrees?: boolean;
+    staticHelpers?: boolean;
+    staticComponents?: boolean;
   };
 }
 
@@ -163,6 +170,20 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
   };
+}
+
+export function ruleForPackageName(
+  packageRules: PackageRules[],
+  packageName: string,
+  packageVersion: string
+): PackageRules | undefined {
+  // rule order implies precedence. The first rule that matches a given package
+  // applies to that package, and no other rule does.
+  for (let rule of packageRules) {
+    if (rule.package === packageName && (!rule.semverRange || satisfies(packageVersion, rule.semverRange))) {
+      return rule;
+    }
+  }
 }
 
 export function activePackageRules(packageRules: PackageRules[], activePackages: Package[]): ActivePackageRules[] {

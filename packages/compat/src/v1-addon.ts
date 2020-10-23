@@ -1,7 +1,7 @@
 import { Memoize } from 'typescript-memoize';
 import { dirname, isAbsolute, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
-import { existsSync, pathExistsSync } from 'fs-extra';
+import { existsSync, pathExistsSync, readdirSync } from 'fs-extra';
 import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
@@ -24,6 +24,7 @@ import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import { ruleForPackageName, PackageRules } from './dependency-rules';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -605,7 +606,16 @@ export default class V1Addon {
       return;
     }
     let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
-    if (!this.addonOptions.staticAddonTrees) {
+
+    // TODO: this should be perf optimized
+    let rule = ruleForPackageName(
+      this.options.packageRules.concat(defaultAddonPackageRules()),
+      this.packageJSON.name,
+      this.packageJSON.version
+    );
+
+    let ruleStaticAddonTree = !rule?.options?.staticAddonTrees || true;
+    if (!this.addonOptions.staticAddonTrees || ruleStaticAddonTree) {
       let filenames: string[] = [];
       let templateOnlyComponentNames: string[] = [];
 
@@ -966,3 +976,15 @@ const stubbedSuper = () => {
 stubbedSuper.treeFor = () => {
   return markedEmptyTree;
 };
+
+function defaultAddonPackageRules(): PackageRules[] {
+  return readdirSync(join(__dirname, 'addon-dependency-rules'))
+    .map(filename => {
+      if (filename.endsWith('.js')) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
+      }
+    })
+    .filter(Boolean)
+    .reduce((a, b) => a.concat(b), []);
+}

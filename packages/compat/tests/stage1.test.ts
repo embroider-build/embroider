@@ -445,4 +445,79 @@ describe('stage1 build', function () {
       expectFile('node_modules/suppressed-custom/addon-example.js').exists();
     });
   });
+
+  describe('static addon tree', function () {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function () {
+      // A simple ember app with no tests
+      let app = Project.emberNew();
+      let addonNotStatic = app.addAddon('not-static');
+
+      merge(addonNotStatic.files, {
+        addon: {
+          components: {
+            'not-static.js': `
+            export default function() {
+              return 'hello';
+            }
+          `,
+          },
+        },
+      });
+
+      let addonStatic = app.addAddon('static');
+
+      merge(addonStatic.files, {
+        addon: {
+          components: {
+            'static.js': `
+            export default function() {
+              return 'hello';
+            }
+          `,
+          },
+        },
+      });
+
+      build = await BuildResult.build(app, {
+        stage: 1,
+        embroiderOptions: {
+          staticAddonTrees: true,
+          packageRules: [
+            {
+              package: 'not-static',
+              options: {
+                staticAddonTrees: false,
+              },
+            },
+          ],
+        },
+      });
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function () {
+      await build.cleanup();
+    });
+
+    test('static addon trees', function () {
+      let assertStaticMeta = expectFile('node_modules/static/package.json').json('ember-addon');
+      let assertNotStaticMeta = expectFile('node_modules/not-static/package.json').json('ember-addon');
+
+      assertNotStaticMeta.get('app-js').equals('_app_'); // should have app-js metadata
+      assertNotStaticMeta
+        .get('implicit-modules')
+        .includes('./components/not-static', 'staticAddonTrees is off so we should include the component implicitly');
+
+      assertStaticMeta.get('app-js').equals('_app_'); // should have app-js metadata
+      assertStaticMeta
+        .get('implicit-modules')
+        .doesNotInclude(
+          './components/hello-world',
+          'staticAddonTrees is on so we should not include the component implicitly'
+        );
+    });
+  });
 });

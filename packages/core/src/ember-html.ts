@@ -51,6 +51,7 @@ function immediatelyAfter(node: Node) {
 
 export class PreparedEmberHTML {
   dom: JSDOM;
+  origin: JSDOM;
   javascript: NodeRange;
   styles: NodeRange;
   implicitScripts: NodeRange;
@@ -60,7 +61,9 @@ export class PreparedEmberHTML {
   implicitTestStyles: NodeRange;
 
   constructor(private asset: EmberAsset) {
-    this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
+    let source = readFileSync(asset.sourcePath, 'utf8');
+    this.dom = new JSDOM(source);
+    this.origin = new JSDOM(source);
     let html = asset.prepare(this.dom);
     this.javascript = new NodeRange(html.javascript);
     this.styles = new NodeRange(html.styles);
@@ -97,7 +100,14 @@ export class PreparedEmberHTML {
   // root-relative via the configured rootURL
   insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string; tag?: string }) {
     let newTag = this.dom.window.document.createElement(opts && opts.tag ? opts.tag : 'script');
-    newTag.setAttribute('src', this.asset.rootURL + relativeSrc);
+    let src = this.asset.rootURL + relativeSrc;
+    let origin = this.origin.window.document.querySelector(`script[src="${src}"]`);    
+    if (origin) {
+      for (let { name, value } of [...origin.attributes]) {
+        newTag.setAttribute(name, value);
+      }
+    }
+    newTag.setAttribute('src', src);
     if (opts && opts.type) {
       newTag.setAttribute('type', opts.type);
     }
@@ -109,8 +119,15 @@ export class PreparedEmberHTML {
   // root-relative via the configured rootURL
   insertStyleLink(location: NodeRange, relativeHref: string) {
     let newTag = this.dom.window.document.createElement('link');
+    let href = this.asset.rootURL + relativeHref;
+    let origin = this.origin.window.document.querySelector(`link[href="${href}"][rel="stylesheet"]`);    
+    if (origin) {
+      for (let { name, value } of [...origin.attributes]) {
+        newTag.setAttribute(name, value);
+      }
+    }
     newTag.rel = 'stylesheet';
-    newTag.href = this.asset.rootURL + relativeHref;
+    newTag.href = href;
     location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);
   }

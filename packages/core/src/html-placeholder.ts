@@ -72,6 +72,9 @@ export default class Placeholder {
 
   insertStyleLink(href: string) {
     let newTag = this.end.ownerDocument.createElement('link');
+    for (let { name, value } of [...this.target.attributes]) {
+      newTag.setAttribute(name, value);
+    }
     newTag.href = href;
     newTag.rel = 'stylesheet';
 

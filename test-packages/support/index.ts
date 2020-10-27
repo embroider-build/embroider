@@ -11,7 +11,10 @@ interface RunDefaultOptions {
 
 export function toCJS(code: string): string {
   return transform7(code, {
-    plugins: ['@babel/plugin-transform-modules-commonjs', '@babel/plugin-transform-typescript'],
+    plugins: [
+      require.resolve('@babel/plugin-transform-modules-commonjs'),
+      require.resolve('@babel/plugin-transform-typescript'),
+    ],
   })!.code!;
 }
 

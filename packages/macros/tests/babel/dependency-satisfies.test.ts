@@ -1,7 +1,20 @@
-import { allBabelVersions, runDefault } from './helpers';
+import * as path from 'path';
+import { allBabelVersions, Project, runDefault } from './helpers';
+
+const ROOT = process.cwd();
 
 describe(`dependencySatisfies`, function () {
-  allBabelVersions(function (transform: (code: string) => string) {
+  let project: Project;
+
+  afterEach(() => {
+    if (project) {
+      project.dispose();
+    }
+
+    process.chdir(ROOT);
+  });
+
+  allBabelVersions(function (transform: (code: string, options?: object) => string) {
     test('is satisfied', () => {
       let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
@@ -90,6 +103,25 @@ describe(`dependencySatisfies`, function () {
           dependencySatisfies(name, '*');
         `);
       }).toThrow(/the first argument to dependencySatisfies must be a string literal/);
+    });
+
+    test('it considers prereleases (otherwise within the range) as allowed', () => {
+      project = new Project('test-app', '1.0.0');
+      project.addDevDependency('foo', '1.1.0-beta.1');
+      project.writeSync();
+
+      process.chdir(project.baseDir);
+
+      let code = transform(
+        `
+          import { dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return dependencySatisfies('foo', '^1.0.0');
+          }
+        `,
+        { filename: path.join(project.baseDir, 'foo.js') }
+      );
+      expect(runDefault(code)).toBe(true);
     });
   });
 });

@@ -51,7 +51,7 @@ function runCLI() {
     async options => {
       let results = await Audit.run(options);
       if (options.json) {
-        process.stdout.write(JSON.stringify(results.findings, null, 2) + '\n');
+        process.stdout.write(JSON.stringify(results, null, 2) + '\n');
       } else {
         process.stdout.write(results.humanReadable());
       }

@@ -39,7 +39,7 @@ const debug = makeDebug('embroider:debug');
 // This is a type-only import, so it gets compiled away. At runtime, we load
 // terser lazily so it's only loaded for production builds that use it. Don't
 // add any non-type-only imports here.
-import { MinifyOptions } from 'terser';
+import type { MinifyOptions } from 'terser';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];

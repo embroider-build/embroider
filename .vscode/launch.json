@@ -125,8 +125,16 @@
       "args": ["build"],
       "env": {
         "JOBS": "1"
-        //"CLASSIC": "true",
       },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Audit static-app",
+      "program": "${workspaceFolder}/node_modules/.bin/embroider-compat-audit",
+      "cwd": "${workspaceFolder}/test-packages/static-app",
+      "args": ["--reuse-build"],
       "outputCapture": "std"
     },
     {

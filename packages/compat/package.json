@@ -16,6 +16,9 @@
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ],
+  "bin": {
+    "embroider-compat-audit": "./src/audit-cli.js"
+  },
   "scripts": {
     "prepare": "tsc",
     "test": "jest"
@@ -27,6 +30,7 @@
     "@babel/traverse": "^7.12.1",
     "@babel/types": "^7.12.1",
     "@embroider/macros": "0.28.0",
+    "@types/yargs": "^15.0.9",
     "assert-never": "^1.1.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babylon": "^6.18.0",
@@ -39,9 +43,11 @@
     "broccoli-persistent-filter": "^2.3.1",
     "broccoli-plugin": "^1.3.0",
     "broccoli-source": "^1.1.0",
+    "chalk": "^4.1.0",
     "debug": "^3.1.0",
     "ember-cli-htmlbars": "^4.0.9",
     "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",
+    "execa": "^4.0.3",
     "fs-extra": "^7.0.0",
     "fs-tree-diff": "^2.0.0",
     "jsdom": "^16.4.0",
@@ -53,7 +59,8 @@
     "symlink-or-copy": "^1.2.0",
     "tree-sync": "^2.0.0",
     "typescript-memoize": "^1.0.0-alpha.3",
-    "walk-sync": "^1.1.3"
+    "walk-sync": "^1.1.3",
+    "yargs": "^16.1.0"
   },
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",

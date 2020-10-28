@@ -283,6 +283,7 @@ export class AppBuilder<TreeNames> {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result: Array<string> = [];
+
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
@@ -290,7 +291,9 @@ export class AppBuilder<TreeNames> {
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
-            styles.push(resolve.sync(mod, options));
+            if (!addon.isEngine()) {
+              styles.push(resolve.sync(mod, options));
+            }
           } else {
             result.push(resolve.sync(mod, options));
           }
@@ -426,8 +429,6 @@ export class AppBuilder<TreeNames> {
         html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
       }
     }
-
-    html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     let vendorJS = this.implicitScriptsAsset(prepared, emberENV);
     if (vendorJS) {
@@ -1015,6 +1016,17 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
+    let styles = [];
+    if (!engine.parent) {
+      styles.push({
+        path: `${engine.package.name}/assets/${engine.package.name}.css`,
+      });
+    } else {
+      styles.push({
+        path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
+      });
+    }
+
     let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
@@ -1063,7 +1075,7 @@ export class AppBuilder<TreeNames> {
     // modules.
     this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules };
+    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -1195,16 +1207,25 @@ export class AppBuilder<TreeNames> {
 }
 
 const entryTemplate = compile(`
-import { importSync as i } from '@embroider/macros';
+import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
 let w = window;
 let d = w.define;
+
+{{#if styles}}
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    console.log('todo');
+  } else {
+    {{#each styles as |stylePath| ~}}
+      i("{{stylePath.path}}");
+    {{/each}}
+  }
+{{/if}}
 
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}
-  import { macroCondition, getGlobalConfig } from '@embroider/macros';
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
@@ -1270,6 +1291,7 @@ if (!runningTests) {
   testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
+  styles?: { path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`

@@ -399,7 +399,9 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
   private makeCSSRule(variant: Variant) {
     return [
-      variant.optimizeForProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+      variant.optimizeForProduction
+        ? MiniCssExtractPlugin.loader
+        : { loader: 'style-loader', options: { injectType: 'styleTag' } },
       {
         loader: 'css-loader',
         options: {

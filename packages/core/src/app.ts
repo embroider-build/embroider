@@ -218,8 +218,12 @@ export class AppBuilder<TreeNames> {
     return extensionsPattern(this.adapter.resolvableExtensions());
   }
 
-  private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
-    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map(
+  private impliedAssets(
+    type: keyof ImplicitAssetPaths,
+    engine: Engine,
+    emberENV?: EmberENV
+  ): (OnDiskAsset | InMemoryAsset)[] {
+    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
         let stats = statSync(sourcePath);
         return {
@@ -281,18 +285,16 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths, engine: Engine): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
-            if (!addon.isEngine()) {
-              styles.push(resolve.sync(mod, options));
-            }
+            styles.push(resolve.sync(mod, options));
           } else {
             result.push(resolve.sync(mod, options));
           }
@@ -429,7 +431,10 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    let vendorJS = this.implicitScriptsAsset(prepared, emberENV);
+    html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
+
+    const parentEngine = this.getParentEngine(appFiles) as Engine;
+    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
@@ -443,7 +448,7 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    let implicitStyles = this.implicitStylesAsset(prepared);
+    let implicitStyles = this.implicitStylesAsset(prepared, parentEngine);
     if (implicitStyles) {
       html.insertStyleLink(html.implicitStyles, implicitStyles.relativePath);
     }
@@ -457,21 +462,29 @@ export class AppBuilder<TreeNames> {
     let testJS = this.testJSEntrypoint(appFiles, prepared);
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
-    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared);
+    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
     if (implicitTestScriptsAsset) {
       html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
     }
 
-    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared);
+    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
     if (implicitTestStylesAsset) {
       html.insertStyleLink(html.implicitTestStyles, implicitTestStylesAsset.relativePath);
     }
   }
 
-  private implicitScriptsAsset(prepared: Map<string, InternalAsset>, emberENV: EmberENV): InternalAsset | undefined {
+  private getParentEngine(engines: Engine[]) {
+    return engines.find(e => !e.parent);
+  }
+
+  private implicitScriptsAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine,
+    emberENV: EmberENV
+  ): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
     if (!asset) {
-      let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
+      let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -480,10 +493,10 @@ export class AppBuilder<TreeNames> {
     return asset;
   }
 
-  private implicitStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: Engine): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.css');
     if (!asset) {
-      let implicitStyles = this.impliedAssets('implicit-styles');
+      let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -492,10 +505,13 @@ export class AppBuilder<TreeNames> {
     return asset;
   }
 
-  private implicitTestScriptsAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitTestScriptsAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine
+  ): InternalAsset | undefined {
     let testSupportJS = prepared.get('assets/test-support.js');
     if (!testSupportJS) {
-      let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
+      let implicitTestScripts = this.impliedAssets('implicit-test-scripts', application);
       if (implicitTestScripts.length > 0) {
         testSupportJS = new ConcatenatedAsset(
           'assets/test-support.js',
@@ -508,10 +524,13 @@ export class AppBuilder<TreeNames> {
     return testSupportJS;
   }
 
-  private implicitTestStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitTestStylesAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine
+  ): InternalAsset | undefined {
     let asset = prepared.get('assets/test-support.css');
     if (!asset) {
-      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
+      let implicitTestStyles = this.impliedAssets('implicit-test-styles', application);
       if (implicitTestStyles.length > 0) {
         asset = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -1016,11 +1035,19 @@ export class AppBuilder<TreeNames> {
     }
 
     let styles = [];
-    if (!engine.parent) {
-      styles.push({
-        path: `${engine.package.name}/assets/${engine.package.name}.css`,
-      });
-    } else {
+    // if (!engine.parent) {
+    //   styles.push({
+    //     path: `${engine.package.name}/assets/${engine.package.name}.css`,
+    //   });
+    // } else {
+    //   styles.push({
+    //     path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
+    //   });
+    // }
+
+    // only import styles from engines with a parent (this excludeds the parent application) as their styles
+    // will be inserted via a direct <link> tag.
+    if (engine.parent) {
       styles.push({
         path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
       });

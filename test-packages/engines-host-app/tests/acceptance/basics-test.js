@@ -33,6 +33,12 @@ module('Acceptance | basics', function (hooks) {
       'lazy-engine styles are not present'
     );
 
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-color'],
+      'rgb(0, 0, 128)',
+      'lazy-engine vendor styles are not present'
+    );
+
     // TODO: uncomment once we fix this appearing too eagerly
     //assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
 
@@ -56,6 +62,12 @@ module('Acceptance | basics', function (hooks) {
       getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
       '2px',
       'now lazy-engine styles are present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-color'],
+      'rgb(0, 128, 0)',
+      'lazy-engine vendor styles are present'
     );
   });
 

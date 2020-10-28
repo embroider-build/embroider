@@ -40,12 +40,19 @@ export class AuditResults {
         output.push(indent(chalk.red(finding.message), 1));
         output.push(indent(finding.detail, 2));
       }
-      output.push(indent(chalk.blue(`file was included because:`), 1));
+      output.push(indent(chalk.blueBright(`file was included because:`), 1));
       let pointer: string | RootMarker = filename;
       while (!isRootMarker(pointer)) {
+        // the zero here means we only display the first path we found. I think
+        // that's a fine tradeoff to keep the output smaller.
         let nextPointer: string | RootMarker | undefined = this.modules.get(pointer)?.consumedFrom[0];
         if (!nextPointer) {
-          output.push(indent(chalk.red(`couldn't figure out why this was included`), 2));
+          output.push(
+            indent(
+              chalk.red(`couldn't figure out why this was included. Please file a bug against @embroider/compat.`),
+              2
+            )
+          );
           break;
         }
         if (!isRootMarker(nextPointer)) {

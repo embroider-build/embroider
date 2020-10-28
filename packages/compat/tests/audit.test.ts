@@ -97,6 +97,16 @@ describe('audit', function () {
     expect(result.findings[0]?.codeFrame).toBeDefined();
     expect(Object.keys(result.modules).length).toEqual(3);
   });
+
+  test(`tolerates CJS`, async function () {
+    merge(app.files, {
+      'app.js': `import thing from './uses-cjs'`,
+      'uses-cjs.js': `module.exports = function() {}`,
+    });
+    let result = await audit();
+    expect(result.findings).toEqual([]);
+    expect(Object.keys(result.modules).length).toBe(3);
+  });
 });
 
 function withoutCodeFrames(findings: Finding[]): Finding[] {

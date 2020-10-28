@@ -12,6 +12,7 @@ import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
 import {
   CallExpression,
   ExportDefaultDeclaration,
+  ExportSpecifier,
   Identifier,
   ImportDeclaration,
   ImportDefaultSpecifier,
@@ -356,6 +357,9 @@ export class Audit {
         },
         ExportDefaultDeclaration(_path: NodePath<ExportDefaultDeclaration>) {
           module.exports.add('default');
+        },
+        ExportSpecifier(path: NodePath<ExportSpecifier>) {
+          module.exports.add(name(path.node.exported));
         },
       });
     } catch (err) {

@@ -155,7 +155,7 @@ export default class CompatResolver implements Resolver {
     // keyed by their first resolved dependency's runtimeName.
     let components: Map<string, PreprocessedComponentRule> = new Map();
 
-    // keyed by our own dasherized interpretatino of the component's name.
+    // keyed by our own dasherized interpretation of the component's name.
     let ignoredComponents: string[] = [];
 
     // we're not responsible for filtering out rules for inactive packages here,

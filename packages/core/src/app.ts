@@ -431,7 +431,7 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
+    //html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
     const parentEngine = this.getParentEngine(appFiles) as Engine;
     let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
@@ -1035,23 +1035,31 @@ export class AppBuilder<TreeNames> {
     }
 
     let styles = [];
-    // if (!engine.parent) {
-    //   styles.push({
-    //     path: `${engine.package.name}/assets/${engine.package.name}.css`,
-    //   });
-    // } else {
-    //   styles.push({
-    //     path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
-    //   });
-    // }
+    if (!engine.parent) {
+      styles.push({
+        path: `${engine.package.name}/assets/${engine.package.name}.css`,
+      });
+    } else {
+      let implicitStyles = this.impliedAssets('implicit-styles', engine);
 
-    // only import styles from engines with a parent (this excludeds the parent application) as their styles
-    // will be inserted via a direct <link> tag.
-    if (engine.parent) {
+      for (let style of implicitStyles) {
+        styles.push({
+          path: '../../' + style.relativePath, // TODO: make better
+        });
+      }
+
       styles.push({
         path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
       });
     }
+
+    // only import styles from engines with a parent (this excludeds the parent application) as their styles
+    // will be inserted via a direct <link> tag.
+    // if (engine.parent) {
+    //   styles.push({
+    //     path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
+    //   });
+    // }
 
     let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {

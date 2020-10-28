@@ -283,7 +283,6 @@ export class AppBuilder<TreeNames> {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
     let result: Array<string> = [];
-
     for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
@@ -1212,9 +1211,8 @@ let w = window;
 let d = w.define;
 
 {{#if styles}}
-  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    console.log('todo');
-  } else {
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {}
+  else {
     {{#each styles as |stylePath| ~}}
       i("{{stylePath.path}}");
     {{/each}}

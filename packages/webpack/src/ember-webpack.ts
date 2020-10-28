@@ -407,7 +407,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         options: {
           url: true,
           import: true,
-          modules: true,
+          modules: 'global',
         },
       },
     ];

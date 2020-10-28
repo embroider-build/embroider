@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative } from '@embroider/core';
+import { applyVariantToTemplateCompiler, AppMeta, explicitRelative } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import execa from 'execa';
 import chalk from 'chalk';
@@ -9,6 +9,7 @@ import jsdom from 'jsdom';
 import { transformSync } from '@babel/core';
 import traverse, { NodePath } from '@babel/traverse';
 import { CallExpression, ImportDeclaration, isImport } from '@babel/types';
+import groupBy from 'lodash/groupBy';
 const { JSDOM } = jsdom;
 
 export interface AuditOptions {
@@ -23,30 +24,45 @@ export interface Finding {
   detail: string;
 }
 
-export class AuditResults {
-  findings: Finding[] = [];
+export interface Module {
+  consumedFrom: (string | RootMarker)[];
+}
 
-  constructor(public baseDir: string) {}
+export class AuditResults {
+  constructor(public baseDir: string, public findings: Finding[], public modules: Map<string, Module>) {}
 
   humanReadable(): string {
     let output = [] as string[];
-    for (let finding of this.findings) {
-      output.push(`${chalk.red(finding.message)} ${explicitRelative(this.baseDir, finding.filename)}`);
-      output.push(indent(finding.detail));
+    let findingsByFile = groupBy(this.findings, f => f.filename);
+    for (let [filename, findings] of Object.entries(findingsByFile)) {
+      output.push(`${chalk.yellow(explicitRelative(this.baseDir, filename))}`);
+      for (let finding of findings) {
+        output.push(indent(chalk.red(finding.message), 1));
+        output.push(indent(finding.detail, 2));
+      }
+      output.push(indent(chalk.blue(`file was included because:`), 1));
+      let pointer: string | RootMarker = filename;
+      while (!isRootMarker(pointer)) {
+        let nextPointer: string | RootMarker | undefined = this.modules.get(pointer)?.consumedFrom[0];
+        if (!nextPointer) {
+          output.push(indent(chalk.red(`couldn't figure out why this was included`), 2));
+          break;
+        }
+        if (!isRootMarker(nextPointer)) {
+          output.push(indent(explicitRelative(this.baseDir, nextPointer), 2));
+        }
+        pointer = nextPointer;
+      }
     }
+    output.push(''); // always end with a newline because `yarn run` can overwrite our last line otherwise
     return output.join('\n');
   }
 }
 
 export class Audit {
-  private modules = new Map<
-    string,
-    {
-      consumedFrom: string[];
-    }
-  >();
+  private modules = new Map<string, Module>();
   private moduleQueue = new Set<string>();
-  private results = new AuditResults(this.appDir);
+  private findings = [] as Finding[];
 
   static async run(options: AuditOptions): Promise<AuditResults> {
     let dir = await this.buildApp(options);
@@ -91,17 +107,45 @@ export class Audit {
     return config;
   }
 
+  @Memoize()
+  private get templateCompiler(): (filename: string, content: string) => string {
+    return applyVariantToTemplateCompiler(
+      { name: 'default', runtime: 'all', optimizeForProduction: false },
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require(join(this.appDir, this.meta['template-compiler'].filename)).compile
+    );
+  }
+
   private debug(message: string, ...args: any[]) {
     if (this.options.debug) {
       console.log(message, ...args);
     }
   }
 
+  private visitorFor(filename: string): (this: Audit, filename: string, content: Buffer | string) => Promise<string[]> {
+    if (filename.endsWith('.html')) {
+      return this.visitHTML;
+    } else if (filename.endsWith('.hbs')) {
+      return this.visitHBS;
+    } else {
+      return this.visitJS;
+    }
+  }
+
   private async drainQueue() {
     while (this.moduleQueue.size > 0) {
-      let modulePath = this.moduleQueue.values().next().value as string;
-      this.moduleQueue.delete(modulePath);
-      await this.crawlJSModule(modulePath);
+      let filename = this.moduleQueue.values().next().value as string;
+      this.moduleQueue.delete(filename);
+      this.debug('visit', filename);
+      let visitor = this.visitorFor(filename);
+      let content = readFileSync(filename);
+      let dependencies = await visitor.call(this, filename, content);
+      for (let dep of dependencies) {
+        let depFilename = await this.resolve(dep, filename);
+        if (depFilename) {
+          this.scheduleVisit(depFilename, filename);
+        }
+      }
     }
   }
 
@@ -109,29 +153,39 @@ export class Audit {
     this.debug(`meta`, this.meta);
     for (let asset of this.meta.assets) {
       if (asset.endsWith('.html')) {
-        await this.crawlHTML(join(this.appDir, asset));
+        this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
       }
     }
     await this.drainQueue();
-    return this.results;
+    return new AuditResults(this.appDir, this.findings, this.modules);
   }
 
-  private async crawlHTML(asset: string) {
-    this.debug(`crawlHTML`, asset);
-    let dom = new JSDOM(readFileSync(asset));
+  private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {
+    let dom = new JSDOM(content);
     let scripts = dom.window.document.querySelectorAll('script[type="module"]') as NodeListOf<HTMLScriptElement>;
+    let dependencies = [] as string[];
     for (let script of scripts) {
-      let src = resolvePath(this.appDir, script.src.replace(this.meta['root-url'], ''));
-      this.follow(asset, src);
+      let src = script.src;
+      if (!src) {
+        continue;
+      }
+      if (new URL(src, 'http://example.com:4321').origin !== 'http://example.com:4321') {
+        // src was absolute, we don't handle it
+        continue;
+      }
+      if (src.startsWith(this.meta['root-url'])) {
+        // root-relative URLs are actually relative to the appDir
+        src = explicitRelative(dirname(filename), resolvePath(this.appDir, src.replace(this.meta['root-url'], '')));
+      }
+      dependencies.push(src);
     }
+    return dependencies;
   }
 
-  private async crawlJSModule(modulePath: string) {
-    this.debug('crawlJSModule', modulePath);
+  private async visitJS(filename: string, content: Buffer | string): Promise<string[]> {
     let dependencies = [] as string[];
-    let raw = readFileSync(modulePath, 'utf8');
     try {
-      let result = transformSync(raw, Object.assign({ filename: modulePath }, this.babelConfig));
+      let result = transformSync(content.toString('utf8'), Object.assign({ filename: filename }, this.babelConfig));
       traverse(result!.ast!, {
         ImportDeclaration(path: NodePath<ImportDeclaration>) {
           dependencies.push(path.node.source.value);
@@ -151,7 +205,7 @@ export class Audit {
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {
         this.pushFinding({
-          filename: modulePath,
+          filename,
           message: `failed to parse`,
           detail: err.toString(),
         });
@@ -159,26 +213,38 @@ export class Audit {
         throw err;
       }
     }
-    for (let dep of dependencies) {
-      await this.resolveAndFollow(dep, modulePath);
-    }
+    return dependencies;
   }
 
-  private resolveAndFollow(specifier: string, fromPath: string) {
+  private async visitHBS(filename: string, content: Buffer | string): Promise<string[]> {
+    let js;
+    try {
+      js = this.templateCompiler(filename, content.toString('utf8'));
+    } catch (err) {
+      this.pushFinding({
+        filename,
+        message: `failed to compile template`,
+        detail: err.toString(),
+      });
+      return [];
+    }
+    return this.visitJS(filename, js);
+  }
+
+  private async resolve(specifier: string, fromPath: string): Promise<string | undefined> {
     if (specifier === '@embroider/macros') {
       return;
     }
     try {
-      let child = resolveModule.sync(specifier, {
+      return resolveModule.sync(specifier, {
         basedir: dirname(fromPath),
         extensions: this.meta['resolvable-extensions'],
       });
-      this.follow(fromPath, child);
     } catch (err) {
       if (err.code === 'MODULE_NOT_FOUND') {
         this.pushFinding({
           filename: fromPath,
-          message: `unable to resolve dependency`,
+          message: `unable to resolve dependency in`,
           detail: specifier,
         });
       } else {
@@ -188,18 +254,18 @@ export class Audit {
   }
 
   private pushFinding(finding: Finding) {
-    this.results.findings.push(finding);
+    this.findings.push(finding);
   }
 
-  private follow(parent: string, child: string) {
-    let record = this.modules.get(child);
+  private scheduleVisit(filename: string, parent: string | RootMarker) {
+    let record = this.modules.get(filename);
     if (!record) {
-      this.debug(`discovered`, child);
+      this.debug(`discovered`, filename);
       record = {
         consumedFrom: [parent],
       };
-      this.modules.set(child, record);
-      this.moduleQueue.add(child);
+      this.modules.set(filename, record);
+      this.moduleQueue.add(filename);
     } else {
       record.consumedFrom.push(parent);
     }
@@ -221,9 +287,23 @@ function isMacrosPlugin(p: any) {
   return Array.isArray(p) && p[1] && p[1].embroiderMacrosConfigMarker;
 }
 
-function indent(str: string, spaces = '  ') {
+function indent(str: string, level: number) {
+  const spacesPerLevel = 2;
+  let spaces = '';
+  for (let i = 0; i < level * spacesPerLevel; i++) {
+    spaces += ' ';
+  }
+
   return str
     .split('\n')
     .map(line => spaces + line)
     .join('\n');
+}
+
+export interface RootMarker {
+  isRoot: true;
+}
+
+export function isRootMarker(value: string | RootMarker | undefined): value is RootMarker {
+  return Boolean(value && typeof value !== 'string' && value.isRoot);
 }

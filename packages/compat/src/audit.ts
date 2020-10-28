@@ -7,13 +7,29 @@ import execa from 'execa';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
 import { transformSync } from '@babel/core';
-import traverse, { NodePath } from '@babel/traverse';
-import { CallExpression, ImportDeclaration, isImport } from '@babel/types';
+import traverse, { NodePath, Node } from '@babel/traverse';
+import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
+import {
+  CallExpression,
+  ExportDefaultDeclaration,
+  Identifier,
+  ImportDeclaration,
+  ImportDefaultSpecifier,
+  ImportNamespaceSpecifier,
+  ImportSpecifier,
+  isImport,
+  isStringLiteral,
+  StringLiteral,
+} from '@babel/types';
 import groupBy from 'lodash/groupBy';
+import fromPairs from 'lodash/fromPairs';
 const { JSDOM } = jsdom;
 
 export interface AuditOptions {
-  debug: boolean;
+  debug?: boolean;
+}
+
+export interface AuditBuildOptions extends AuditOptions {
   'reuse-build': boolean;
   app: string;
 }
@@ -22,30 +38,87 @@ export interface Finding {
   message: string;
   filename: string;
   detail: string;
+  codeFrame?: string;
 }
 
 export interface Module {
   consumedFrom: (string | RootMarker)[];
+  imports: Import[];
+  exports: string[];
+  resolutions: { [source: string]: string };
+}
+
+interface InternalModule {
+  consumedFrom: (string | RootMarker)[];
+  imports: InternalImport[];
+  exports: Set<string>;
+  resolutions: Map<string, string>;
+}
+
+export interface Import {
+  name: string | NamespaceMarker;
+  local: string;
+  source: string;
+}
+
+interface InternalImport extends Import {
+  codeFrameIndex: number | undefined;
+}
+
+export interface NamespaceMarker {
+  isNamespace: true;
 }
 
 export class AuditResults {
-  constructor(public baseDir: string, public findings: Finding[], public modules: Map<string, Module>) {}
+  modules: { [file: string]: Module } = {};
+  findings: Finding[] = [];
+
+  constructor(baseDir: string, findings: Finding[], modules: Map<string, InternalModule>) {
+    for (let [filename, module] of modules) {
+      let publicModule: Module = {
+        consumedFrom: module.consumedFrom.map(entry => {
+          if (isRootMarker(entry)) {
+            return entry;
+          } else {
+            return explicitRelative(baseDir, entry);
+          }
+        }),
+        resolutions: fromPairs(
+          [...module.resolutions].map(([source, target]) => [source, explicitRelative(baseDir, target)])
+        ),
+        imports: module.imports.map(i => ({
+          name: i.name,
+          local: i.local,
+          source: i.source,
+        })),
+        exports: [...module.exports],
+      };
+      this.modules[explicitRelative(baseDir, filename)] = publicModule;
+    }
+    for (let finding of findings) {
+      let relFinding = Object.assign({}, finding, { filename: explicitRelative(baseDir, finding.filename) });
+      this.findings.push(relFinding);
+    }
+  }
 
   humanReadable(): string {
     let output = [] as string[];
     let findingsByFile = groupBy(this.findings, f => f.filename);
     for (let [filename, findings] of Object.entries(findingsByFile)) {
-      output.push(`${chalk.yellow(explicitRelative(this.baseDir, filename))}`);
+      output.push(`${chalk.yellow(filename)}`);
       for (let finding of findings) {
         output.push(indent(chalk.red(finding.message), 1));
         output.push(indent(finding.detail, 2));
+        if (finding.codeFrame) {
+          output.push(indent(finding.codeFrame, 2));
+        }
       }
       output.push(indent(chalk.blueBright(`file was included because:`), 1));
       let pointer: string | RootMarker = filename;
       while (!isRootMarker(pointer)) {
         // the zero here means we only display the first path we found. I think
         // that's a fine tradeoff to keep the output smaller.
-        let nextPointer: string | RootMarker | undefined = this.modules.get(pointer)?.consumedFrom[0];
+        let nextPointer: string | RootMarker | undefined = this.modules[pointer]?.consumedFrom[0];
         if (!nextPointer) {
           output.push(
             indent(
@@ -55,8 +128,10 @@ export class AuditResults {
           );
           break;
         }
-        if (!isRootMarker(nextPointer)) {
-          output.push(indent(explicitRelative(this.baseDir, nextPointer), 2));
+        if (isRootMarker(nextPointer)) {
+          output.push(indent('packageJSON.ember-addon.assets', 2));
+        } else {
+          output.push(indent(nextPointer, 2));
         }
         pointer = nextPointer;
       }
@@ -67,16 +142,19 @@ export class AuditResults {
 }
 
 export class Audit {
-  private modules = new Map<string, Module>();
+  private modules: Map<string, InternalModule> = new Map();
   private moduleQueue = new Set<string>();
   private findings = [] as Finding[];
 
-  static async run(options: AuditOptions): Promise<AuditResults> {
+  private codeFrames = [] as { rawSourceIndex: number; loc: SourceLocation }[];
+  private rawSources = [] as string[];
+
+  static async run(options: AuditBuildOptions): Promise<AuditResults> {
     let dir = await this.buildApp(options);
     return new this(dir, options).run();
   }
 
-  private static async buildApp(options: AuditOptions): Promise<string> {
+  private static async buildApp(options: AuditBuildOptions): Promise<string> {
     if (!options['reuse-build']) {
       try {
         await execa('ember', ['build'], {
@@ -93,7 +171,7 @@ export class Audit {
     return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
   }
 
-  constructor(private appDir: string, private options: AuditOptions) {}
+  constructor(private appDir: string, private options: AuditOptions = {}) {}
 
   @Memoize()
   private get pkg() {
@@ -129,7 +207,9 @@ export class Audit {
     }
   }
 
-  private visitorFor(filename: string): (this: Audit, filename: string, content: Buffer | string) => Promise<string[]> {
+  private visitorFor(
+    filename: string
+  ): (this: Audit, filename: string, content: Buffer | string, module: InternalModule) => Promise<string[]> {
     if (filename.endsWith('.html')) {
       return this.visitHTML;
     } else if (filename.endsWith('.hbs')) {
@@ -146,10 +226,15 @@ export class Audit {
       this.debug('visit', filename);
       let visitor = this.visitorFor(filename);
       let content = readFileSync(filename);
-      let dependencies = await visitor.call(this, filename, content);
+      // cast is safe because the only way to get into the queue is to go
+      // through scheduleVisit, and scheduleVisit creates the entry in
+      // this.modules.
+      let module = this.modules.get(filename)!;
+      let dependencies = await visitor.call(this, filename, content, module);
       for (let dep of dependencies) {
         let depFilename = await this.resolve(dep, filename);
         if (depFilename) {
+          module.resolutions.set(dep, depFilename);
           this.scheduleVisit(depFilename, filename);
         }
       }
@@ -164,7 +249,30 @@ export class Audit {
       }
     }
     await this.drainQueue();
+    await this.inspectModules();
     return new AuditResults(this.appDir, this.findings, this.modules);
+  }
+
+  private async inspectModules() {
+    for (let [filename, module] of this.modules) {
+      for (let imp of module.imports) {
+        if (imp.name === 'default') {
+          let resolved = module.resolutions.get(imp.source);
+          if (resolved) {
+            let target = this.modules.get(resolved)!;
+            if (!target.exports.has('default')) {
+              let backtick = '`';
+              this.findings.push({
+                filename,
+                message: 'importing a non-existent default export',
+                detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${imp.local} from "${imp.source}"${backtick}?`,
+                codeFrame: this.renderCodeFrame(imp.codeFrameIndex),
+              });
+            }
+          }
+        }
+      }
+    }
   }
 
   private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {
@@ -189,13 +297,24 @@ export class Audit {
     return dependencies;
   }
 
-  private async visitJS(filename: string, content: Buffer | string): Promise<string[]> {
+  private async visitJS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
     let dependencies = [] as string[];
+    let rawSource = content.toString('utf8');
+    let saveCodeFrame = this.codeFrameMaker(rawSource);
     try {
-      let result = transformSync(content.toString('utf8'), Object.assign({ filename: filename }, this.babelConfig));
+      let result = transformSync(rawSource, Object.assign({ filename: filename }, this.babelConfig));
+
+      let currentImportDeclaration: ImportDeclaration | undefined;
+
       traverse(result!.ast!, {
-        ImportDeclaration(path: NodePath<ImportDeclaration>) {
-          dependencies.push(path.node.source.value);
+        ImportDeclaration: {
+          enter(path: NodePath<ImportDeclaration>) {
+            dependencies.push(path.node.source.value);
+            currentImportDeclaration = path.node;
+          },
+          exit() {
+            currentImportDeclaration = undefined;
+          },
         },
         CallExpression(path: NodePath<CallExpression>) {
           let callee = path.get('callee');
@@ -207,6 +326,36 @@ export class Audit {
               throw new Error(`unimplemented: non literal importSync`);
             }
           }
+        },
+        ImportDefaultSpecifier: (path: NodePath<ImportDefaultSpecifier>) => {
+          module.imports.push({
+            name: 'default',
+            local: path.node.local.name,
+            // cast is OK because ImportDefaultSpecifier can only be a child of ImportDeclaration
+            source: currentImportDeclaration!.source.value,
+            codeFrameIndex: saveCodeFrame(path.node),
+          });
+        },
+        ImportNamespaceSpecifier(path: NodePath<ImportNamespaceSpecifier>) {
+          module.imports.push({
+            name: { isNamespace: true },
+            local: path.node.local.name,
+            // cast is OK because ImportNamespaceSpecifier can only be a child of ImportDeclaration
+            source: currentImportDeclaration!.source.value,
+            codeFrameIndex: saveCodeFrame(path.node),
+          });
+        },
+        ImportSpecifier(path: NodePath<ImportSpecifier>) {
+          module.imports.push({
+            name: name(path.node.imported),
+            local: path.node.local.name,
+            // cast is OK because ImportSpecifier can only be a child of ImportDeclaration
+            source: currentImportDeclaration!.source.value,
+            codeFrameIndex: saveCodeFrame(path.node),
+          });
+        },
+        ExportDefaultDeclaration(_path: NodePath<ExportDefaultDeclaration>) {
+          module.exports.add('default');
         },
       });
     } catch (err) {
@@ -223,7 +372,7 @@ export class Audit {
     return dependencies;
   }
 
-  private async visitHBS(filename: string, content: Buffer | string): Promise<string[]> {
+  private async visitHBS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
     let js;
     try {
       js = this.templateCompiler(filename, content.toString('utf8'));
@@ -235,7 +384,34 @@ export class Audit {
       });
       return [];
     }
-    return this.visitJS(filename, js);
+    return this.visitJS(filename, js, module);
+  }
+
+  private codeFrameMaker(rawSource: string): (node: Node) => number | undefined {
+    let rawSourceIndex: number | undefined;
+    return (node: Node) => {
+      let loc = node.loc;
+      if (!loc) {
+        return;
+      }
+      if (rawSourceIndex == null) {
+        rawSourceIndex = this.rawSources.length;
+        this.rawSources.push(rawSource);
+      }
+      let codeFrameIndex = this.codeFrames.length;
+      this.codeFrames.push({
+        rawSourceIndex,
+        loc,
+      });
+      return codeFrameIndex;
+    };
+  }
+
+  private renderCodeFrame(codeFrameIndex: number | undefined): string | undefined {
+    if (codeFrameIndex != null) {
+      let { loc, rawSourceIndex } = this.codeFrames[codeFrameIndex];
+      return codeFrameColumns(this.rawSources[rawSourceIndex], loc, { highlightCode: true });
+    }
   }
 
   private async resolve(specifier: string, fromPath: string): Promise<string | undefined> {
@@ -251,7 +427,7 @@ export class Audit {
       if (err.code === 'MODULE_NOT_FOUND') {
         this.pushFinding({
           filename: fromPath,
-          message: `unable to resolve dependency in`,
+          message: `unable to resolve dependency`,
           detail: specifier,
         });
       } else {
@@ -270,6 +446,9 @@ export class Audit {
       this.debug(`discovered`, filename);
       record = {
         consumedFrom: [parent],
+        imports: [],
+        exports: new Set(),
+        resolutions: new Map(),
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);
@@ -313,4 +492,12 @@ export interface RootMarker {
 
 export function isRootMarker(value: string | RootMarker | undefined): value is RootMarker {
   return Boolean(value && typeof value !== 'string' && value.isRoot);
+}
+
+function name(node: StringLiteral | Identifier): string {
+  if (isStringLiteral(node)) {
+    return node.value;
+  } else {
+    return node.name;
+  }
 }

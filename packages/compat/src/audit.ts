@@ -39,6 +39,7 @@ interface InternalModule {
   imports: InternalImport[];
   exports: Set<string>;
   resolutions: Map<string, string>;
+  isCJS: boolean;
 }
 
 export interface Import {
@@ -237,7 +238,7 @@ export class Audit {
           let resolved = module.resolutions.get(imp.source);
           if (resolved) {
             let target = this.modules.get(resolved)!;
-            if (!target.exports.has('default')) {
+            if (!target.exports.has('default') && !target.isCJS) {
               let backtick = '`';
               this.findings.push({
                 filename,
@@ -280,6 +281,7 @@ export class Audit {
       let result = auditJS(rawSource, filename, this.babelConfig, this.frames);
       module.exports = result.exports;
       module.imports = result.imports;
+      module.isCJS = result.isCJS;
       return result.dependencies;
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {
@@ -345,6 +347,7 @@ export class Audit {
         imports: [],
         exports: new Set(),
         resolutions: new Map(),
+        isCJS: false,
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);

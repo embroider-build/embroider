@@ -34,10 +34,26 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
   let currentImportDeclaration: ImportDeclaration | undefined;
   let imports = [] as InternalImport[];
   let exports = new Set<string>();
+
+  /* eslint-disable @typescript-eslint/no-inferrable-types */
+  // These are not really inferrable. Without explicit declarations, TS thinks
+  // they're always false because it doesn't know the handler methods run
+  // synchronously
+  let sawModule: boolean = false;
+  let sawExports: boolean = false;
+  /* eslint-enable @typescript-eslint/no-inferrable-types */
+
   let ast = transformSync(rawSource, Object.assign({ filename: filename }, babelConfig))!.ast!;
   let saveCodeFrame = frames.forSource(rawSource);
 
   traverse(ast, {
+    Identifier(path: NodePath<Identifier>) {
+      if (path.node.name === 'module' && isFreeVariable(path)) {
+        sawModule = true;
+      } else if (path.node.name === 'exports' && isFreeVariable(path)) {
+        sawExports = true;
+      }
+    },
     ImportDeclaration: {
       enter(path: NodePath<ImportDeclaration>) {
         dependencies.push(path.node.source.value);
@@ -92,7 +108,9 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
       exports.add(name(path.node.exported));
     },
   });
-  return { dependencies, imports, exports };
+
+  let isCJS = imports.length === 0 && exports.size === 0 && (sawModule || sawExports);
+  return { dependencies, imports, exports, isCJS };
 }
 
 export class CodeFrameStorage {
@@ -133,4 +151,8 @@ function name(node: StringLiteral | Identifier): string {
   } else {
     return node.name;
   }
+}
+
+function isFreeVariable(path: NodePath<Identifier>) {
+  return !path.scope.hasBinding(path.node.name);
 }

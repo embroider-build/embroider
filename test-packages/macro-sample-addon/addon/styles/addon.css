@@ -1,4 +1,6 @@
 /* macro-sample-addon/addon/styles/addon.css */
 .shared-style-target {
-  border-right-color: green;
+  border-top-width: 2px;
+  border-top-style: solid;
+  border-top-color: green;
 }

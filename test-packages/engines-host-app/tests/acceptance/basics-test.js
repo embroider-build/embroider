@@ -30,12 +30,12 @@ module('Acceptance | basics', function (hooks) {
     assert.equal(
       getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
       '0px',
-      'lazy-engine styles are not present'
+      'lazy-engine addon styles are not present'
     );
 
     assert.equal(
-      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-color'],
-      'rgb(0, 0, 128)',
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
+      '0px',
       'lazy-engine vendor styles are not present'
     );
 
@@ -65,8 +65,8 @@ module('Acceptance | basics', function (hooks) {
     );
 
     assert.equal(
-      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-color'],
-      'rgb(0, 128, 0)',
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
+      '2px',
       'lazy-engine vendor styles are present'
     );
   });

@@ -294,7 +294,10 @@ export class AppBuilder<TreeNames> {
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
-            styles.push(resolve.sync(mod, options));
+            // exclude engines because they will handle their own css importation
+            if (!addon.isEngine()) {
+              styles.push(resolve.sync(mod, options));
+            }
           } else {
             result.push(resolve.sync(mod, options));
           }

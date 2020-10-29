@@ -6,24 +6,9 @@ import { Memoize } from 'typescript-memoize';
 import execa from 'execa';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
-import { transformSync } from '@babel/core';
-import traverse, { NodePath, Node } from '@babel/traverse';
-import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
-import {
-  CallExpression,
-  ExportDefaultDeclaration,
-  ExportSpecifier,
-  Identifier,
-  ImportDeclaration,
-  ImportDefaultSpecifier,
-  ImportNamespaceSpecifier,
-  ImportSpecifier,
-  isImport,
-  isStringLiteral,
-  StringLiteral,
-} from '@babel/types';
 import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
+import { auditJS, CodeFrameStorage, InternalImport, NamespaceMarker } from './audit/babel-visitor';
 const { JSDOM } = jsdom;
 
 export interface AuditOptions {
@@ -60,14 +45,6 @@ export interface Import {
   name: string | NamespaceMarker;
   local: string;
   source: string;
-}
-
-interface InternalImport extends Import {
-  codeFrameIndex: number | undefined;
-}
-
-export interface NamespaceMarker {
-  isNamespace: true;
 }
 
 export class AuditResults {
@@ -147,8 +124,7 @@ export class Audit {
   private moduleQueue = new Set<string>();
   private findings = [] as Finding[];
 
-  private codeFrames = [] as { rawSourceIndex: number; loc: SourceLocation }[];
-  private rawSources = [] as string[];
+  private frames = new CodeFrameStorage();
 
   static async run(options: AuditBuildOptions): Promise<AuditResults> {
     let dir = await this.buildApp(options);
@@ -267,7 +243,7 @@ export class Audit {
                 filename,
                 message: 'importing a non-existent default export',
                 detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${imp.local} from "${imp.source}"${backtick}?`,
-                codeFrame: this.renderCodeFrame(imp.codeFrameIndex),
+                codeFrame: this.frames.render(imp.codeFrameIndex),
               });
             }
           }
@@ -299,69 +275,12 @@ export class Audit {
   }
 
   private async visitJS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
-    let dependencies = [] as string[];
     let rawSource = content.toString('utf8');
-    let saveCodeFrame = this.codeFrameMaker(rawSource);
     try {
-      let result = transformSync(rawSource, Object.assign({ filename: filename }, this.babelConfig));
-
-      let currentImportDeclaration: ImportDeclaration | undefined;
-
-      traverse(result!.ast!, {
-        ImportDeclaration: {
-          enter(path: NodePath<ImportDeclaration>) {
-            dependencies.push(path.node.source.value);
-            currentImportDeclaration = path.node;
-          },
-          exit() {
-            currentImportDeclaration = undefined;
-          },
-        },
-        CallExpression(path: NodePath<CallExpression>) {
-          let callee = path.get('callee');
-          if (callee.referencesImport('@embroider/macros', 'importSync') || isImport(callee)) {
-            let arg = path.node.arguments[0];
-            if (arg.type === 'StringLiteral') {
-              dependencies.push(arg.value);
-            } else {
-              throw new Error(`unimplemented: non literal importSync`);
-            }
-          }
-        },
-        ImportDefaultSpecifier: (path: NodePath<ImportDefaultSpecifier>) => {
-          module.imports.push({
-            name: 'default',
-            local: path.node.local.name,
-            // cast is OK because ImportDefaultSpecifier can only be a child of ImportDeclaration
-            source: currentImportDeclaration!.source.value,
-            codeFrameIndex: saveCodeFrame(path.node),
-          });
-        },
-        ImportNamespaceSpecifier(path: NodePath<ImportNamespaceSpecifier>) {
-          module.imports.push({
-            name: { isNamespace: true },
-            local: path.node.local.name,
-            // cast is OK because ImportNamespaceSpecifier can only be a child of ImportDeclaration
-            source: currentImportDeclaration!.source.value,
-            codeFrameIndex: saveCodeFrame(path.node),
-          });
-        },
-        ImportSpecifier(path: NodePath<ImportSpecifier>) {
-          module.imports.push({
-            name: name(path.node.imported),
-            local: path.node.local.name,
-            // cast is OK because ImportSpecifier can only be a child of ImportDeclaration
-            source: currentImportDeclaration!.source.value,
-            codeFrameIndex: saveCodeFrame(path.node),
-          });
-        },
-        ExportDefaultDeclaration(_path: NodePath<ExportDefaultDeclaration>) {
-          module.exports.add('default');
-        },
-        ExportSpecifier(path: NodePath<ExportSpecifier>) {
-          module.exports.add(name(path.node.exported));
-        },
-      });
+      let result = auditJS(rawSource, filename, this.babelConfig, this.frames);
+      module.exports = result.exports;
+      module.imports = result.imports;
+      return result.dependencies;
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {
         this.pushFinding({
@@ -369,11 +288,11 @@ export class Audit {
           message: `failed to parse`,
           detail: err.toString(),
         });
+        return [];
       } else {
         throw err;
       }
     }
-    return dependencies;
   }
 
   private async visitHBS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
@@ -389,33 +308,6 @@ export class Audit {
       return [];
     }
     return this.visitJS(filename, js, module);
-  }
-
-  private codeFrameMaker(rawSource: string): (node: Node) => number | undefined {
-    let rawSourceIndex: number | undefined;
-    return (node: Node) => {
-      let loc = node.loc;
-      if (!loc) {
-        return;
-      }
-      if (rawSourceIndex == null) {
-        rawSourceIndex = this.rawSources.length;
-        this.rawSources.push(rawSource);
-      }
-      let codeFrameIndex = this.codeFrames.length;
-      this.codeFrames.push({
-        rawSourceIndex,
-        loc,
-      });
-      return codeFrameIndex;
-    };
-  }
-
-  private renderCodeFrame(codeFrameIndex: number | undefined): string | undefined {
-    if (codeFrameIndex != null) {
-      let { loc, rawSourceIndex } = this.codeFrames[codeFrameIndex];
-      return codeFrameColumns(this.rawSources[rawSourceIndex], loc, { highlightCode: true });
-    }
   }
 
   private async resolve(specifier: string, fromPath: string): Promise<string | undefined> {
@@ -496,12 +388,4 @@ export interface RootMarker {
 
 export function isRootMarker(value: string | RootMarker | undefined): value is RootMarker {
   return Boolean(value && typeof value !== 'string' && value.isRoot);
-}
-
-function name(node: StringLiteral | Identifier): string {
-  if (isStringLiteral(node)) {
-    return node.value;
-  } else {
-    return node.name;
-  }
 }

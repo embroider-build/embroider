@@ -129,7 +129,17 @@ export class Audit {
 
   static async run(options: AuditBuildOptions): Promise<AuditResults> {
     let dir = await this.buildApp(options);
-    return new this(dir, options).run();
+    let audit = new this(dir, options);
+    if (options['reuse-build']) {
+      if (!audit.meta.babel.isParallelSafe || !audit.meta['template-compiler'].isParallelSafe) {
+        throw new BuildError(
+          `You can't use the ${chalk.red(
+            '--reuse-build'
+          )} option because some of your babel or HBS plugins are non-serializable`
+        );
+      }
+    }
+    return audit.run();
   }
 
   private static async buildApp(options: AuditBuildOptions): Promise<string> {
@@ -143,10 +153,23 @@ export class Audit {
           },
         });
       } catch (err) {
-        throw new BuildError(err.all);
+        throw new BuildError(
+          `${chalk.yellow('Unable to begin audit')} because the build failed. Build output follows:\n${err.all}`
+        );
       }
     }
-    return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
+    try {
+      return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        throw new BuildError(
+          `${chalk.yellow(
+            'Your build'
+          )} did not produce expected Embroider stage2 output.\nMake sure you actually have Embroider configured.`
+        );
+      }
+      throw err;
+    }
   }
 
   constructor(private appDir: string, private options: AuditOptions = {}) {}

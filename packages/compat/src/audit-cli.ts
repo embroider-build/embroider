@@ -40,8 +40,7 @@ function runCLI() {
         })
         .fail(function (_, err, _yargs) {
           if (isBuildError(err)) {
-            process.stderr.write('Unable to begin audit because the build failed. Build output follows:\n');
-            process.stderr.write(err.message);
+            process.stderr.write(err.message + '\n');
           } else {
             console.error(err);
           }

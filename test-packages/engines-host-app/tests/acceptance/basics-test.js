@@ -2,6 +2,20 @@ import { module, test } from 'qunit';
 import { visit, currentURL } from '@ember/test-helpers';
 import { setupApplicationTest, skip } from 'ember-qunit';
 
+function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
+  let values = [];
+
+  for (let stylesheet of styleSheets) {
+    for (let cssRule of stylesheet.cssRules) {
+      if (cssRule.selectorText === cssSelector && cssRule.style[cssProperty]) {
+        values.push(cssRule.style[cssProperty].replaceAll('"', ''));
+      }
+    }
+  }
+
+  return values;
+}
+
 module('Acceptance | basics', function (hooks) {
   setupApplicationTest(hooks);
 
@@ -17,6 +31,13 @@ module('Acceptance | basics', function (hooks) {
   test('lazy-engine', async function (assert) {
     await visit('/');
     let entriesBefore = Object.entries(window.require.entries).length;
+    let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
+
+    assert.deepEqual(rules, [
+      'engines-host-app/vendor/styles.css',
+      'eager-engine/addon/styles/addon.css',
+      'engines-host-app/app/styles/app.css',
+    ]);
 
     await visit('/style-check');
     assert.dom('.shared-style-target').exists();
@@ -49,6 +70,16 @@ module('Acceptance | basics', function (hooks) {
     assert.equal(currentURL(), '/use-lazy-engine');
     assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
     assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
+
+    rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
+
+    assert.deepEqual(rules, [
+      'engines-host-app/vendor/styles.css',
+      'eager-engine/addon/styles/addon.css',
+      'engines-host-app/app/styles/app.css',
+      'macro-sample-addon/addon/styles/addon.css',
+      'lazy-engine/addon/styles/addon.css',
+    ]);
 
     await visit('/style-check');
 

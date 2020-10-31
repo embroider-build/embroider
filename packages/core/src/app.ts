@@ -1234,8 +1234,7 @@ let w = window;
 let d = w.define;
 
 {{#if styles}}
-  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {}
-  else {
+  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
     {{#each styles as |stylePath| ~}}
       i("{{stylePath.path}}");
     {{/each}}

@@ -98,6 +98,28 @@ describe('audit', function () {
     expect(Object.keys(result.modules).length).toEqual(3);
   });
 
+  test(`finds use of missing named export`, async function () {
+    merge(app.files, {
+      'app.js': `
+        import { goodbye } from './lib';
+        goodbye();
+      `,
+      'lib.js': `
+        export function hello() {}
+      `,
+    });
+    let result = await audit();
+    expect(withoutCodeFrames(result.findings)).toEqual([
+      {
+        filename: './app.js',
+        message: 'importing a non-existent named export',
+        detail: `"./lib" has no export named "goodbye".`,
+      },
+    ]);
+    expect(result.findings[0]?.codeFrame).toBeDefined();
+    expect(Object.keys(result.modules).length).toEqual(3);
+  });
+
   test(`tolerates CJS`, async function () {
     merge(app.files, {
       'app.js': `import thing from './uses-cjs'`,

@@ -28,6 +28,10 @@ export interface NamespaceMarker {
   isNamespace: true;
 }
 
+export function isNamespaceMarker(value: string | NamespaceMarker): value is NamespaceMarker {
+  return typeof value !== 'string';
+}
+
 // babelConfig must include { ast: true }
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
   let dependencies = [] as string[];

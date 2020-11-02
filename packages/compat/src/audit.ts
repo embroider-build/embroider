@@ -7,7 +7,7 @@ import chalk from 'chalk';
 import jsdom from 'jsdom';
 import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
-import { auditJS, CodeFrameStorage, InternalImport, NamespaceMarker } from './audit/babel-visitor';
+import { auditJS, CodeFrameStorage, InternalImport, isNamespaceMarker, NamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 const { JSDOM } = jsdom;
@@ -255,11 +255,17 @@ export class Audit {
   private async inspectModules() {
     for (let [filename, module] of this.modules) {
       for (let imp of module.imports) {
-        if (imp.name === 'default') {
-          let resolved = module.resolutions.get(imp.source);
-          if (resolved) {
-            let target = this.modules.get(resolved)!;
-            if (!target.exports.has('default') && !target.isCJS) {
+        if (isNamespaceMarker(imp.name)) {
+          // every module has a namespace, so it can't be missing
+          continue;
+        }
+        let resolved = module.resolutions.get(imp.source);
+        // we only handle the case where the import was successfully resolved.
+        // If it failed, that generated its own error already.
+        if (resolved) {
+          let target = this.modules.get(resolved)!;
+          if (!this.moduleProvidesName(target, imp.name)) {
+            if (imp.name === 'default') {
               let backtick = '`';
               this.findings.push({
                 filename,
@@ -267,11 +273,22 @@ export class Audit {
                 detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${imp.local} from "${imp.source}"${backtick}?`,
                 codeFrame: this.frames.render(imp.codeFrameIndex),
               });
+            } else {
+              this.findings.push({
+                filename,
+                message: 'importing a non-existent named export',
+                detail: `"${imp.source}" has no export named "${imp.name}".`,
+                codeFrame: this.frames.render(imp.codeFrameIndex),
+              });
             }
           }
         }
       }
     }
+  }
+
+  private moduleProvidesName(target: InternalModule, name: string) {
+    return target.exports.has(name) || (name === 'default' && target.isCJS);
   }
 
   private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {

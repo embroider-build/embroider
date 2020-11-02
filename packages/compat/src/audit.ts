@@ -3,22 +3,16 @@ import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
 import { applyVariantToTemplateCompiler, AppMeta, explicitRelative } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
-import execa from 'execa';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
 import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
 import { auditJS, CodeFrameStorage, InternalImport, NamespaceMarker } from './audit/babel-visitor';
+import { AuditBuildOptions, AuditOptions } from './audit/options';
+import { buildApp, BuildError, isBuildError } from './audit/build';
 const { JSDOM } = jsdom;
 
-export interface AuditOptions {
-  debug?: boolean;
-}
-
-export interface AuditBuildOptions extends AuditOptions {
-  'reuse-build': boolean;
-  app: string;
-}
+export { AuditOptions, AuditBuildOptions, BuildError, isBuildError };
 
 export interface Finding {
   message: string;
@@ -83,6 +77,7 @@ export class AuditResults {
   humanReadable(): string {
     let output = [] as string[];
     let findingsByFile = groupBy(this.findings, f => f.filename);
+    output.push(`=== Audit Results ===`);
     for (let [filename, findings] of Object.entries(findingsByFile)) {
       output.push(`${chalk.yellow(filename)}`);
       for (let finding of findings) {
@@ -115,8 +110,20 @@ export class AuditResults {
         pointer = nextPointer;
       }
     }
+    let summaryColor;
+    if (this.perfect) {
+      summaryColor = chalk.green;
+    } else {
+      summaryColor = chalk.yellow;
+    }
+    output.push(summaryColor(`${this.findings.length} issues found`));
+    output.push(`=== End Audit Results ===`);
     output.push(''); // always end with a newline because `yarn run` can overwrite our last line otherwise
     return output.join('\n');
+  }
+
+  get perfect() {
+    return this.findings.length === 0;
   }
 }
 
@@ -128,7 +135,11 @@ export class Audit {
   private frames = new CodeFrameStorage();
 
   static async run(options: AuditBuildOptions): Promise<AuditResults> {
-    let dir = await this.buildApp(options);
+    if (!options['reuse-build']) {
+      await buildApp(options);
+    }
+    let dir = await this.findStage2Output(options);
+
     let audit = new this(dir, options);
     if (options['reuse-build']) {
       if (!audit.meta.babel.isParallelSafe || !audit.meta['template-compiler'].isParallelSafe) {
@@ -142,22 +153,7 @@ export class Audit {
     return audit.run();
   }
 
-  private static async buildApp(options: AuditBuildOptions): Promise<string> {
-    if (!options['reuse-build']) {
-      try {
-        await execa('ember', ['build'], {
-          all: true,
-          cwd: options.app,
-          env: {
-            STAGE2_ONLY: 'true',
-          },
-        });
-      } catch (err) {
-        throw new BuildError(
-          `${chalk.yellow('Unable to begin audit')} because the build failed. Build output follows:\n${err.all}`
-        );
-      }
-    }
+  private static async findStage2Output(options: AuditBuildOptions): Promise<string> {
     try {
       return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
     } catch (err) {
@@ -215,6 +211,8 @@ export class Audit {
       return this.visitHTML;
     } else if (filename.endsWith('.hbs')) {
       return this.visitHBS;
+    } else if (filename.endsWith('.json')) {
+      return this.visitJSON;
     } else {
       return this.visitJS;
     }
@@ -335,6 +333,22 @@ export class Audit {
     return this.visitJS(filename, js, module);
   }
 
+  private async visitJSON(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
+    let js;
+    try {
+      let structure = JSON.parse(content.toString('utf8'));
+      js = `export default ${JSON.stringify(structure)}`;
+    } catch (err) {
+      this.pushFinding({
+        filename,
+        message: `failed to parse JSON`,
+        detail: err.toString(),
+      });
+      return [];
+    }
+    return this.visitJS(filename, js, module);
+  }
+
   private async resolve(specifier: string, fromPath: string): Promise<string | undefined> {
     if (specifier === '@embroider/macros') {
       return;
@@ -378,17 +392,6 @@ export class Audit {
       record.consumedFrom.push(parent);
     }
   }
-}
-
-export class BuildError extends Error {
-  isBuildError = true;
-  constructor(buildOutput: string) {
-    super(buildOutput);
-  }
-}
-
-export function isBuildError(err: any): err is BuildError {
-  return err?.isBuildError;
 }
 
 function isMacrosPlugin(p: any) {

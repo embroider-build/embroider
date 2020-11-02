@@ -54,6 +54,7 @@ function runCLI() {
       } else {
         process.stdout.write(results.humanReadable());
       }
+      process.exit(results.perfect ? 0 : 1);
     }
   ).argv;
 }

@@ -291,14 +291,14 @@ export class Audit {
                   filename,
                   message: 'importing a non-existent default export',
                   detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${specifier.local} from "${imp.source}"${backtick}?`,
-                  codeFrame: this.frames.render(imp.codeFrameIndex),
+                  codeFrame: this.frames.render(specifier.codeFrameIndex),
                 });
               } else {
                 this.findings.push({
                   filename,
                   message: 'importing a non-existent named export',
                   detail: `"${imp.source}" has no export named "${specifier.name}".`,
-                  codeFrame: this.frames.render(imp.codeFrameIndex),
+                  codeFrame: this.frames.render(specifier.codeFrameIndex),
                 });
               }
             }

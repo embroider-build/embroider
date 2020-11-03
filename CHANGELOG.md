@@ -1,5 +1,10 @@
 # Embroider Changelog
 
+## master
+
+- BREAKING: when using `staticComponents: true`, unsafe usage of the `{{component}}` helper has changed from a warning to an error. The warning was really not safe to ignore, because it's likely to cause runtime failures.
+- ENHANCEMENT: `@embroider/compat` provides a new `embroider-compat-audit` command. With your app configured to build with Embroider, run `yarn embroider-compat-audit` or `npm run embroider-compat-audit`.
+
 ## 0.29.0 (2020-10-27)
 
 - BUGFIX: dependencySatisfies macro fixes by @rwjblue

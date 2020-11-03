@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "The default blueprint for ember-cli addons.",
   "keywords": [
     "ember-addon"
@@ -28,11 +28,11 @@
   },
   "devDependencies": {
     "@ember/optional-features": "^2.0.0",
-    "@embroider/compat": "0.29.0",
-    "@embroider/core": "0.29.0",
-    "@embroider/test-setup": "0.29.0",
-    "@embroider/test-support": "0.29.0",
-    "@embroider/webpack": "0.29.0",
+    "@embroider/compat": "0.30.0",
+    "@embroider/core": "0.30.0",
+    "@embroider/test-setup": "0.30.0",
+    "@embroider/test-support": "0.30.0",
+    "@embroider/webpack": "0.30.0",
     "@glimmer/component": "^1.0.1",
     "@glimmer/tracking": "^1.0.1",
     "babel-eslint": "^10.1.0",

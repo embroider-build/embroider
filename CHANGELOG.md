@@ -1,7 +1,9 @@
 # Embroider Changelog
 
-## master
+## 0.30.0 (2020-11-03)
 
+- BUGFIX: fix unnecessary inclusion of co-located templates
+- COMPAT: support component helper invocations with '@'
 - BREAKING: when using `staticComponents: true`, unsafe usage of the `{{component}}` helper has changed from a warning to an error. The warning was really not safe to ignore, because it's likely to cause runtime failures.
 - ENHANCEMENT: `@embroider/compat` provides a new `embroider-compat-audit` command. With your app configured to build with Embroider, run `yarn embroider-compat-audit` or `npm run embroider-compat-audit`.
 

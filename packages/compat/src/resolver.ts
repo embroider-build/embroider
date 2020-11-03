@@ -1,4 +1,11 @@
-import { Resolver, TemplateCompiler, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
+import {
+  Resolver,
+  TemplateCompiler,
+  PackageCache,
+  explicitRelative,
+  extensionsPattern,
+  Package,
+} from '@embroider/core';
 import {
   ComponentRules,
   PackageRules,
@@ -14,6 +21,8 @@ import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
 import { Memoize } from 'typescript-memoize';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
+
 import resolve from 'resolve';
 
 export interface ComponentResolution {
@@ -106,7 +115,7 @@ interface RehydrationParams {
   podModulePrefix?: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
-  resolvableExtensions: string[];
+  adjustImportsOptions: AdjustImportsOptions;
 }
 
 export function rehydrate(params: RehydrationParams) {
@@ -301,7 +310,7 @@ export default class CompatResolver implements Resolver {
     try {
       absPath = resolve.sync(path, {
         basedir: dirname(from),
-        extensions: this.params.resolvableExtensions,
+        extensions: this.params.adjustImportsOptions.resolvableExtensions,
       });
     } catch (err) {
       return;
@@ -316,7 +325,7 @@ export default class CompatResolver implements Resolver {
 
   @Memoize()
   private get resolvableExtensionsPattern() {
-    return extensionsPattern(this.params.resolvableExtensions);
+    return extensionsPattern(this.params.adjustImportsOptions.resolvableExtensions);
   }
 
   absPathToRuntimeName(absPath: string) {
@@ -337,12 +346,16 @@ export default class CompatResolver implements Resolver {
       return join(moduleName, relative(pkg.root, absPath))
         .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
-        .join('/');
+        .join('/')
+        .replace(/\/index$/, '');
     } else if (absPath.startsWith(this.params.root)) {
       return join(this.params.modulePrefix, relative(this.params.root, absPath))
         .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
-        .join('/');
+        .join('/')
+        .replace(/\/index$/, '');
+    } else {
+      throw new Error(`bug: can't figure out the runtime name for ${absPath}`);
     }
   }
 
@@ -355,7 +368,7 @@ export default class CompatResolver implements Resolver {
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
-    for (let extension of this.params.resolvableExtensions) {
+    for (let extension of this.params.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(this.params.root, 'helpers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
@@ -373,46 +386,61 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
+  @Memoize()
+  private get appPackage(): AppPackagePlaceholder {
+    return { root: this.params.root };
+  }
+
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
+    let parts = path.split('@');
+    if (parts.length > 1 && parts[0].length > 0) {
+      let cache = PackageCache.shared('embroider-stage3');
+      return this._tryComponent(parts[1], from, withRuleLookup, cache.resolve(parts[0], cache.ownerOfFile(from)!));
+    } else {
+      return this._tryComponent(path, from, withRuleLookup, this.appPackage);
+    }
+  }
+
+  private _tryComponent(
+    path: string,
+    from: string,
+    withRuleLookup: boolean,
+    targetPackage: Package | AppPackagePlaceholder
+  ): Resolution | null {
     // The order here is important! We always put our .hbs paths first here, so
     // that if we have an hbs file of our own, that will be the first resolved
     // dependency. The first resolved dependency is special because we use that
     // as a key into the rules, and we want to be able to find our rules when
     // checking from our own template (among other times).
 
-    let extensions = ['.hbs', ...this.params.resolvableExtensions.filter(e => e !== '.hbs')];
+    let extensions = ['.hbs', ...this.params.adjustImportsOptions.resolvableExtensions.filter(e => e !== '.hbs')];
 
-    let componentModules = [];
+    let componentModules = [] as string[];
 
     // first, the various places our template might be
     for (let extension of extensions) {
-      let absPath = join(this.params.root, 'templates', 'components', path) + extension;
+      let absPath = join(targetPackage.root, 'templates', 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/templates/components/${path}`,
-          absPath,
-        });
+        componentModules.push(absPath);
         break;
       }
 
-      absPath = join(this.params.root, 'components', path, 'template') + extension;
+      absPath = join(targetPackage.root, 'components', path, 'template') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/components/${path}/template`,
-          absPath,
-        });
+        componentModules.push(absPath);
         break;
       }
 
-      if (typeof this.params.podModulePrefix !== 'undefined' && this.params.podModulePrefix !== '') {
+      if (
+        typeof this.params.podModulePrefix !== 'undefined' &&
+        this.params.podModulePrefix !== '' &&
+        targetPackage === this.appPackage
+      ) {
         let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
 
-        absPath = join(this.params.root, podPrefix, 'components', path, 'template') + extension;
+        absPath = join(targetPackage.root, podPrefix, 'components', path, 'template') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push({
-            runtimeName: `${this.params.podModulePrefix}/components/${path}/template`,
-            absPath,
-          });
+          componentModules.push(absPath);
           break;
         }
       }
@@ -424,42 +452,34 @@ export default class CompatResolver implements Resolver {
         continue;
       }
 
-      let absPath = join(this.params.root, 'components', path, 'index') + extension;
+      let absPath = join(targetPackage.root, 'components', path, 'index') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/components/${path}`,
-          absPath,
-        });
+        componentModules.push(absPath);
         break;
       }
 
-      absPath = join(this.params.root, 'components', path) + extension;
+      absPath = join(targetPackage.root, 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/components/${path}`,
-          absPath,
-        });
+        componentModules.push(absPath);
         break;
       }
 
-      absPath = join(this.params.root, 'components', path, 'component') + extension;
+      absPath = join(targetPackage.root, 'components', path, 'component') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push({
-          runtimeName: `${this.params.modulePrefix}/components/${path}/component`,
-          absPath,
-        });
+        componentModules.push(absPath);
         break;
       }
 
-      if (typeof this.params.podModulePrefix !== 'undefined' && this.params.podModulePrefix !== '') {
+      if (
+        typeof this.params.podModulePrefix !== 'undefined' &&
+        this.params.podModulePrefix !== '' &&
+        targetPackage === this.appPackage
+      ) {
         let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
 
-        absPath = join(this.params.root, podPrefix, 'components', path, 'component') + extension;
+        absPath = join(targetPackage.root, podPrefix, 'components', path, 'component') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push({
-            runtimeName: `${this.params.podModulePrefix}/components/${path}/component`,
-            absPath,
-          });
+          componentModules.push(absPath);
           break;
         }
       }
@@ -468,14 +488,14 @@ export default class CompatResolver implements Resolver {
     if (componentModules.length > 0) {
       let componentRules;
       if (withRuleLookup) {
-        componentRules = this.findComponentRules(componentModules[0].absPath);
+        componentRules = this.findComponentRules(componentModules[0]);
       }
       return {
         type: 'component',
-        modules: componentModules.map(p => ({
-          path: explicitRelative(dirname(from), p.absPath),
-          absPath: p.absPath,
-          runtimeName: p.runtimeName,
+        modules: componentModules.map(absPath => ({
+          path: explicitRelative(dirname(from), absPath),
+          absPath,
+          runtimeName: this.absPathToRuntimeName(absPath),
         })),
         yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
         yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
@@ -634,4 +654,11 @@ function humanReadableFile(root: string, file: string) {
     return file.slice(root.length);
   }
   return file;
+}
+
+// we don't have a real Package for the app itself because the resolver has work
+// to do before we have even written out the app's own package.json and
+// therefore made it into a fully functional Package.
+interface AppPackagePlaceholder {
+  root: string;
 }

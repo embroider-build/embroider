@@ -22,7 +22,6 @@ import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { tmpdir } from 'os';
 import { explicitRelative, extensionsPattern } from './paths';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
@@ -95,9 +94,9 @@ export interface AppAdapter<TreeNames> {
   // compilation.
   templateResolver(): Resolver;
 
-  // the list of file extensions that should be considered resolvable as modules
-  // within this app. For example: ['.js', '.ts'].
-  resolvableExtensions(): string[];
+  // describes the special module naming rules that we need to achieve
+  // compatibility
+  adjustImportsOptions(): AdjustImportsOptions;
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -108,10 +107,6 @@ export interface AppAdapter<TreeNames> {
 
   // the babel version that works with your babelConfig.
   babelMajorVersion(): 6 | 7;
-
-  // lets you add imports to javascript modules. We need this to implement
-  // things like our addon compatibility rules for static components.
-  extraImports(): { absPath: string; target: string; runtimeName?: string }[];
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -215,7 +210,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get resolvableExtensionsPattern(): RegExp {
-    return extensionsPattern(this.adapter.resolvableExtensions());
+    return extensionsPattern(this.adapter.adjustImportsOptions().resolvableExtensions);
   }
 
   private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
@@ -363,36 +358,16 @@ export class AppBuilder<TreeNames> {
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
-    let renamePackages = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-packages']));
-
-    let renameModules = Object.assign({}, ...this.adapter.allActiveAddons.map(dep => dep.meta['renamed-modules']));
-
-    let activeAddons: AdjustImportsOptions['activeAddons'] = {};
-    for (let addon of this.adapter.allActiveAddons) {
-      activeAddons[addon.name] = addon.root;
-    }
-
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
     for (let { destPath, appFiles } of engines) {
       for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
         relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
       }
     }
-
-    let adjustOptions: AdjustImportsOptions = {
-      activeAddons,
-      renameModules,
-      renamePackages,
-      extraImports: this.adapter.extraImports(),
-      relocatedFiles,
-      resolvableExtensions: this.adapter.resolvableExtensions(),
-
-      // it's important that this is a persistent location, because we fill it
-      // up as a side-effect of babel transpilation, and babel is subject to
-      // persistent caching.
-      externalsDir: join(tmpdir(), 'embroider', 'externals'),
-    };
-    return [require.resolve('./babel-plugin-adjust-imports'), adjustOptions];
+    return [
+      require.resolve('./babel-plugin-adjust-imports'),
+      Object.assign({}, this.adapter.adjustImportsOptions(), { relocatedFiles }),
+    ];
   }
 
   private insertEmberApp(
@@ -851,7 +826,7 @@ export class AppBuilder<TreeNames> {
         majorVersion: this.adapter.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
-      'resolvable-extensions': this.adapter.resolvableExtensions(),
+      'resolvable-extensions': this.adapter.adjustImportsOptions().resolvableExtensions,
       'root-url': this.adapter.rootURL(),
     };
 

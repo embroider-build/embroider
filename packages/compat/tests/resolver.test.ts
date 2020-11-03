@@ -1,4 +1,4 @@
-import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
+import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, realpathSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
@@ -16,7 +16,8 @@ describe('compat-resolver', function () {
   function configure(options: Options, podModulePrefix?: string) {
     let EmberENV = {};
     let plugins = { ast: [] };
-    appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
+    appDir = realpathSync(mkdtempSync(join(tmpdir(), 'embroider-compat-tests-')));
+    writeJSONSync(join(appDir, 'package.json'), { name: 'the-app' });
     let resolver = new Resolver({
       root: appDir,
       modulePrefix: 'the-app',
@@ -25,7 +26,15 @@ describe('compat-resolver', function () {
       activePackageRules: optionsWithDefaults(options).packageRules.map(rule => {
         return Object.assign({ roots: [appDir] }, rule);
       }),
-      resolvableExtensions: ['.js', '.hbs'],
+      adjustImportsOptions: {
+        renamePackages: {},
+        renameModules: {},
+        extraImports: [],
+        externalsDir: '/tmp/embroider-externals',
+        activeAddons: {},
+        relocatedFiles: {},
+        resolvableExtensions: ['.js', '.hbs'],
+      },
     });
     let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function (relativePath: string, contents: string) {
@@ -46,10 +55,10 @@ describe('compat-resolver', function () {
     }
   });
 
-  function givenFile(filename: string) {
+  function givenFile(filename: string, containing = '') {
     let target = join(appDir, filename);
     ensureDirSync(dirname(target));
-    writeFileSync(target, '');
+    writeFileSync(target, containing);
     return target;
   }
 
@@ -409,6 +418,19 @@ describe('compat-resolver', function () {
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
+      },
+    ]);
+  });
+  test('component helper with direct addon package reference', function () {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/components/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/components/thing.js',
+        runtimeName: 'my-addon/components/thing',
       },
     ]);
   });

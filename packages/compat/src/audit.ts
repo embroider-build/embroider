@@ -284,9 +284,6 @@ export class Audit {
         } else if (resolved) {
           let target = this.modules.get(resolved)!;
           for (let specifier of imp.specifiers) {
-            if (isNamespaceMarker(specifier.name)) {
-              continue;
-            }
             if (!this.moduleProvidesName(target, specifier.name)) {
               if (specifier.name === 'default') {
                 let backtick = '`';
@@ -311,9 +308,9 @@ export class Audit {
     }
   }
 
-  private moduleProvidesName(target: InternalModule, name: string) {
+  private moduleProvidesName(target: InternalModule, name: string | NamespaceMarker) {
     // we always allow a default export from CJS, and any export from AMD, because in general these formats aren't statically analyzable
-    return target.exports.has(name) || (name === 'default' && target.isCJS) || target.isAMD;
+    return isNamespaceMarker(name) || target.exports.has(name) || (name === 'default' && target.isCJS) || target.isAMD;
   }
 
   private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {

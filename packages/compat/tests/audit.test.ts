@@ -235,13 +235,14 @@ describe('audit', function () {
       'hello.hbs': `<NoSuchThing />`,
     });
     let result = await audit();
-    expect(result.findings).toEqual([
+    expect(withoutCodeFrames(result.findings)).toEqual([
       {
         message: 'Missing component',
         detail: 'NoSuchThing',
         filename: './hello.hbs',
       },
     ]);
+    expect(result.findings[0].codeFrame).toBeDefined();
     expect(Object.keys(result.modules).length).toBe(3);
   });
 
@@ -255,7 +256,7 @@ describe('audit', function () {
       },
     });
     let result = await audit();
-    expect(result.findings).toEqual([
+    expect(withoutCodeFrames(result.findings)).toEqual([
       {
         message: 'Missing component',
         detail: 'NoSuchThing',
@@ -263,6 +264,18 @@ describe('audit', function () {
       },
     ]);
     expect(Object.keys(result.modules).length).toBe(4);
+  });
+
+  test('failure to parse JS is reported and does not cause cascading errors', async function () {
+    merge(app.files, {
+      'app.js': `import thing from './has-parse-error'`,
+      'has-parse-error.js': `export default function() {`,
+    });
+    let result = await audit();
+    expect(result.findings.map(f => ({ filename: f.filename, message: f.message }))).toEqual([
+      { filename: './has-parse-error.js', message: 'failed to parse' },
+    ]);
+    expect(Object.keys(result.modules).length).toBe(3);
   });
 });
 

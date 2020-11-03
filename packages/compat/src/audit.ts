@@ -45,6 +45,7 @@ interface InternalModule {
   isCJS: boolean;
   isAMD: boolean;
   templateFindings: { message: string; detail: string; codeFrameIndex?: number }[];
+  failedToParse: boolean;
 }
 
 export interface Import {
@@ -305,7 +306,7 @@ export class Audit {
       } else if (resolved) {
         let target = this.modules.get(resolved)!;
         for (let specifier of imp.specifiers) {
-          if (!this.moduleProvidesName(target, specifier.name)) {
+          if (!target.failedToParse && !this.moduleProvidesName(target, specifier.name)) {
             if (specifier.name === 'default') {
               let backtick = '`';
               this.findings.push({
@@ -382,8 +383,9 @@ export class Audit {
         this.pushFinding({
           filename,
           message: `failed to parse`,
-          detail: err.toString(),
+          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
         });
+        module.failedToParse = true;
         return [];
       } else {
         throw err;
@@ -400,8 +402,9 @@ export class Audit {
       this.pushFinding({
         filename,
         message: `failed to compile template`,
-        detail: err.toString(),
+        detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
       });
+      module.failedToParse = true;
       return [];
     }
     module.templateFindings = this.templateResolver.errorsIn(filename).map(err => ({
@@ -421,8 +424,9 @@ export class Audit {
       this.pushFinding({
         filename,
         message: `failed to parse JSON`,
-        detail: err.toString(),
+        detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
       });
+      module.failedToParse = true;
       return [];
     }
     return this.visitJS(filename, js, module);
@@ -462,6 +466,7 @@ export class Audit {
         isCJS: false,
         isAMD: false,
         templateFindings: [],
+        failedToParse: false,
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);

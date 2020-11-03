@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.29.0 (2020-10-27)
+
+- BUGFIX: dependencySatisfies macro fixes by @rwjblue
+
 ## 0.28.0 (2020-10-21)
 
 - BUGFIX: fastboot hostWhiteList support by @simonihmig

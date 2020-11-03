@@ -1,6 +1,6 @@
 {
   "name": "@embroider/macros",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": false,
   "description": "Standardized build-time macros for ember apps.",
   "keywords": [
@@ -27,20 +27,21 @@
     "@babel/core": "^7.12.3",
     "@babel/traverse": "^7.12.1",
     "@babel/types": "^7.12.1",
-    "@embroider/core": "0.28.0",
+    "@embroider/core": "0.29.0",
     "assert-never": "^1.1.0",
     "ember-cli-babel": "^7.23.0",
     "lodash": "^4.17.10",
     "resolve": "^1.8.1",
-    "semver": "^5.6.0"
+    "semver": "^7.3.2"
   },
   "devDependencies": {
-    "@embroider/test-support": "0.28.0",
+    "@embroider/test-support": "0.29.0",
     "@types/babel__core": "^7.1.10",
     "@types/babel__generator": "^7.6.2",
     "@types/babel__template": "^7.0.3",
     "@types/node": "^10.5.2",
     "@types/resolve": "^0.0.8",
+    "@types/semver": "^7.3.4",
     "typescript": "~4.0.0"
   },
   "engines": {

@@ -32,7 +32,9 @@ export default function dependencySatisfies(path: NodePath<CallExpression>, stat
       return false;
     }
     let version = packageCache.resolve(packageName.value, us).version;
-    return satisfies(version, range.value);
+    return satisfies(version, range.value, {
+      includePrerelease: true,
+    });
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;

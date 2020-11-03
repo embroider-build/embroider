@@ -1,11 +1,17 @@
 import { TemplateCompiler } from '@embroider/core';
-import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
 import { MacrosConfig } from '../..';
 import { join } from 'path';
 const compilerPath = emberTemplateCompilerPath();
 
+export { Project };
+
 type CreateTestsWithConfig = (transform: (templateContents: string) => string, config: MacrosConfig) => void;
 type CreateTests = (transform: (templateContents: string) => string) => void;
+
+interface TemplateTransformOptions {
+  filename?: string;
+}
 
 export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
   let { plugins, setConfig } = MacrosConfig.astPlugins();
@@ -18,8 +24,10 @@ export function templateTests(createTests: CreateTestsWithConfig | CreateTests) 
       ast: plugins,
     },
   });
-  let transform = (templateContents: string) => {
-    return compiler.applyTransforms(join(__dirname, 'sample.hbs'), templateContents);
+  let transform = (templateContents: string, options: TemplateTransformOptions = {}) => {
+    let filename = options.filename ?? join(__dirname, 'sample.hbs');
+
+    return compiler.applyTransforms(filename, templateContents);
   };
   if (createTests.length === 2) {
     (createTests as CreateTestsWithConfig)(transform, config);

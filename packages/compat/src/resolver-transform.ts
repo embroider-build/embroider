@@ -41,7 +41,7 @@ export function makeResolverTransform(resolver: Resolver) {
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          const resolution = resolver.resolveMustache(node.path.original, hasArgs, filename);
+          const resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
           if (resolution && resolution.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
               for (let name of argumentsAreComponents) {
@@ -64,7 +64,7 @@ export function makeResolverTransform(resolver: Resolver) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
-          resolver.resolveSubExpression(node.path.original, filename);
+          resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -85,7 +85,7 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename);
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
           if (resolution && resolution.type === 'component') {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
@@ -98,7 +98,7 @@ export function makeResolverTransform(resolver: Resolver) {
         ElementNode: {
           enter(node: any) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
-              const resolution = resolver.resolveElement(node.tag, filename);
+              const resolution = resolver.resolveElement(node.tag, filename, node.loc);
               if (resolution && resolution.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
                   for (let name of argumentsAreComponents) {
@@ -258,7 +258,7 @@ function handleImpliedComponentHelper(
   }
 
   if (param.type === 'TextNode') {
-    resolver.resolveComponentHelper(param.chars, true, moduleName);
+    resolver.resolveComponentHelper(param.chars, true, moduleName, param.loc);
     return;
   }
 
@@ -267,17 +267,17 @@ function handleImpliedComponentHelper(
     return;
   }
 
-  resolver.unresolvableComponentArgument(componentName, argumentName, moduleName);
+  resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
 }
 
 function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
   switch (param.type) {
     case 'StringLiteral':
-      resolver.resolveComponentHelper(param.value, true, moduleName);
+      resolver.resolveComponentHelper(param.value, true, moduleName, param.loc);
       return true;
     case 'PathExpression':
       if (!scopeStack.safeComponentInScope(param.original)) {
-        resolver.resolveComponentHelper(param.original, false, moduleName);
+        resolver.resolveComponentHelper(param.original, false, moduleName, param.loc);
       }
       return true;
   }

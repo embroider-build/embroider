@@ -13,6 +13,7 @@ export default function hbsLoader(this: loader.LoaderContext, templateContent: s
   } catch (error) {
     error.type = 'Template Compiler Error';
     error.file = this.resourcePath;
-    throw error;
+    this.emitError(error);
+    return '';
   }
 }

@@ -1,6 +1,8 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
 import { toBroccoliPlugin, Packager, Variant } from '@embroider/core';
 import { Tree } from 'broccoli-plugin';
+import writeFile from 'broccoli-file-creator';
+import mergeTrees from 'broccoli-merge-trees';
 
 interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
@@ -13,6 +15,7 @@ export default function defaultPipeline<PackagerOptions>(
   packager: Packager<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Tree {
+  let outputPath: string;
   let addons;
   if (process.env.REUSE_WORKSPACE) {
     addons = new PrebuiltAddons(emberApp, options, process.env.REUSE_WORKSPACE);
@@ -30,17 +33,18 @@ export default function defaultPipeline<PackagerOptions>(
       } else {
         console.log(`Building into ${result.outputPath}`);
       }
+      outputPath = result.outputPath;
     });
   }
 
   if (process.env.STAGE1_ONLY) {
-    return addons.tree;
+    return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
   }
 
   let embroiderApp = new App(emberApp, addons, options);
 
   if (process.env.STAGE2_ONLY) {
-    return embroiderApp.tree;
+    return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => outputPath)]);
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);

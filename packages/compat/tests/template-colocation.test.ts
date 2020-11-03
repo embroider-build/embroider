@@ -131,3 +131,91 @@ describe('template colocation', function () {
     assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-two.hbs');
   });
 });
+
+describe('template colocation with staticComponents', function () {
+  jest.setTimeout(120000);
+  let expectFile: ExpectFile;
+  let build: BuildResult;
+  let app: Project;
+
+  throwOnWarnings();
+
+  beforeAll(async function () {
+    app = Project.emberNew();
+
+    merge(app.files, {
+      config: {
+        'targets.js': `module.exports = { browsers: ['last 1 Chrome versions'] }`,
+      },
+      app: {
+        templates: {
+          'index.hbs': `
+              <HasColocatedTemplate />
+              <TemplateOnlyComponent />
+            `,
+        },
+        components: {
+          'has-colocated-template.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {}
+            `,
+          'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
+          'template-only-component.hbs': `<div>I am template only</div>`,
+        },
+      },
+    });
+
+    let addon = app.addAddon('my-addon');
+    merge(addon.files, {
+      app: {
+        components: {
+          'component-one.js': `export { default } from 'my-addon/components/component-one';`,
+        },
+      },
+      addon: {
+        components: {
+          'component-one.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {}
+          `,
+          'component-one.hbs': `component one template`,
+          'component-two.hbs': `component two templates`,
+        },
+      },
+    });
+
+    let options: Options = {
+      staticComponents: true,
+      staticAddonTrees: true,
+    };
+
+    build = await BuildResult.build(app, {
+      stage: 2,
+      type: 'app',
+      emberAppOptions: {
+        tests: false,
+      },
+      embroiderOptions: options,
+    });
+    expectFile = expectFilesAt(build.outputPath);
+  });
+
+  afterAll(async function () {
+    await build.cleanup();
+  });
+
+  test(`app's colocated components are not implicitly included`, function () {
+    let assertFile = expectFile('assets/my-app.js');
+    assertFile.doesNotMatch(
+      /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/has-colocated-template['"]\);\s*\}/
+    );
+    assertFile.doesNotMatch(
+      /d\(["']my-app\/components\/template-only-component["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/template-only-component['"]\);\s*\}/
+    );
+  });
+
+  test(`addon's colocated components are not in implicit-modules`, function () {
+    let assertFile = expectFile('node_modules/my-addon/package.json').json();
+    assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
+  });
+});

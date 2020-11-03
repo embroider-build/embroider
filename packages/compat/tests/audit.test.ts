@@ -120,6 +120,60 @@ describe('audit', function () {
     expect(Object.keys(result.modules).length).toEqual(3);
   });
 
+  test(`finds all named exports`, async function () {
+    merge(app.files, {
+      'app.js': `
+        function a() {}
+        export { a }
+        export function b() {}
+        export class c {}
+        export { a as d };
+        export const e = 1;
+        let thing1 = 1;
+        export const {
+          f,
+          prop1: [g,, ...h],  // the double comma here is intentional
+          prop2: { i },
+          j2: j
+        } = foo(), k = 1;
+        export const l = (function(){
+          let { interior1 } = foo();
+          function interior2() {};
+          class interior3 {}
+          return interior;
+        })();
+        export const { m=thing1 } = foo();
+        export const [ n=(function(){
+          let { interior4 } = foo();
+          return interior4;
+        })() ] = foo();
+      `,
+    });
+    let result = await audit();
+    let exports = result.modules['./app.js'].exports;
+    expect(exports).toContain('a');
+    expect(exports).toContain('b');
+    expect(exports).toContain('c');
+    expect(exports).toContain('d');
+    expect(exports).toContain('e');
+    expect(exports).toContain('f');
+    expect(exports).toContain('g');
+    expect(exports).toContain('h');
+    expect(exports).toContain('i');
+    expect(exports).toContain('j');
+    expect(exports).toContain('k');
+    expect(exports).toContain('l');
+    expect(exports).toContain('m');
+    expect(exports).toContain('n');
+    expect(exports).not.toContain('prop1');
+    expect(exports).not.toContain('prop2');
+    expect(exports).not.toContain('j2');
+    expect(exports).not.toContain('interior1');
+    expect(exports).not.toContain('interior2');
+    expect(exports).not.toContain('interior3');
+    expect(exports).not.toContain('thing1');
+  });
+
   test(`tolerates CJS`, async function () {
     merge(app.files, {
       'app.js': `import thing from './uses-cjs'`,

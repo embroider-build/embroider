@@ -57,6 +57,9 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
       } else if (path.node.name === 'exports' && isFreeVariable(path)) {
         sawExports = true;
       }
+      if (inExportDeclarationContext(path)) {
+        exports.add(path.node.name);
+      }
     },
     ImportDeclaration: {
       enter(path: NodePath<ImportDeclaration>) {
@@ -159,4 +162,40 @@ function name(node: StringLiteral | Identifier): string {
 
 function isFreeVariable(path: NodePath<Identifier>) {
   return !path.scope.hasBinding(path.node.name);
+}
+
+const contextCache: WeakMap<Node, boolean> = new WeakMap();
+
+function inExportDeclarationContext(path: NodePath): boolean {
+  if (contextCache.has(path.node)) {
+    return contextCache.get(path.node)!;
+  } else {
+    let answer = _inExportDeclarationContext(path);
+    contextCache.set(path.node, answer);
+    return answer;
+  }
+}
+
+function _inExportDeclarationContext(path: NodePath): boolean {
+  let parent = path.parent;
+  switch (parent.type) {
+    case 'ExportNamedDeclaration':
+      return parent.declaration === path.node;
+    case 'VariableDeclaration':
+    case 'ObjectPattern':
+    case 'ArrayPattern':
+    case 'RestElement':
+      return inExportDeclarationContext(path.parentPath);
+    case 'VariableDeclarator':
+      return parent.id === path.node && inExportDeclarationContext(path.parentPath);
+    case 'ObjectProperty':
+      return parent.value === path.node && inExportDeclarationContext(path.parentPath);
+    case 'AssignmentPattern':
+      return parent.left === path.node && inExportDeclarationContext(path.parentPath);
+    case 'FunctionDeclaration':
+    case 'ClassDeclaration':
+      return parent.id === path.node && inExportDeclarationContext(path.parentPath);
+    default:
+      return false;
+  }
 }

@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
-import { TemplateCompiler, expectWarning, throwOnWarnings } from '@embroider/core';
+import { TemplateCompiler, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
@@ -12,7 +12,6 @@ const compilerPath = emberTemplateCompilerPath();
 
 describe('compat-resolver', function () {
   let appDir: string;
-  let assertWarning: (pattern: RegExp, fn: () => void) => void;
 
   function configure(options: Options, podModulePrefix?: string) {
     let EmberENV = {};
@@ -40,19 +39,6 @@ describe('compat-resolver', function () {
   }
 
   throwOnWarnings();
-
-  beforeEach(function () {
-    assertWarning = function (pattern: RegExp, fn: () => void) {
-      try {
-        expect(expectWarning(pattern, fn)).toBeTruthy();
-      } catch (err) {
-        if (err.matcherResult) {
-          err.message = `expected to get a warning matching ${pattern}`;
-        }
-        throw err;
-      }
-    };
-  });
 
   afterEach(function () {
     if (appDir) {

@@ -210,6 +210,14 @@ describe('audit', function () {
     expect(result.findings).toEqual([]);
     expect(Object.keys(result.modules).length).toBe(3);
   });
+  test(`tolerates @embroider/macros`, async function () {
+    merge(app.files, {
+      'app.js': `import { dependencySatisfies } from '@embroider/macros'`,
+    });
+    let result = await audit();
+    expect(result.findings).toEqual([]);
+    expect(Object.keys(result.modules).length).toBe(2);
+  });
 });
 
 function withoutCodeFrames(findings: Finding[]): Finding[] {

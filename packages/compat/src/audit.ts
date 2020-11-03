@@ -250,9 +250,9 @@ export class Audit {
         let depFilename = await this.resolve(dep, filename);
         if (depFilename) {
           module.resolutions.set(dep, depFilename);
-          this.scheduleVisit(depFilename, filename);
-        } else {
-          module.resolutions.set(dep, { isResolutionFailure: true });
+          if (!isResolutionFailure(depFilename)) {
+            this.scheduleVisit(depFilename, filename);
+          }
         }
       }
     }
@@ -389,7 +389,7 @@ export class Audit {
     return this.visitJS(filename, js, module);
   }
 
-  private async resolve(specifier: string, fromPath: string): Promise<string | undefined> {
+  private async resolve(specifier: string, fromPath: string): Promise<string | ResolutionFailure | undefined> {
     if (specifier === '@embroider/macros') {
       return;
     }
@@ -400,7 +400,7 @@ export class Audit {
       });
     } catch (err) {
       if (err.code === 'MODULE_NOT_FOUND') {
-        return undefined;
+        return { isResolutionFailure: true };
       } else {
         throw err;
       }

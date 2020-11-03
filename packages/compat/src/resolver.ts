@@ -34,6 +34,7 @@ export type ResolutionResult = ComponentResolution | HelperResolution;
 export interface ResolutionFail {
   type: 'error';
   message: string;
+  detail: string;
   loc: Loc;
 }
 
@@ -115,6 +116,7 @@ export function rehydrate(params: RehydrationParams) {
 export default class CompatResolver implements Resolver {
   private dependencies: Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
+  private auditMode = false;
 
   _parallelBabel: {
     requireFile: string;
@@ -247,8 +249,24 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
     this.templateCompiler = templateCompiler;
-    if (this.params.options.staticComponents || this.params.options.staticHelpers) {
+    if (this.staticComponentsEnabled || this.staticHelpersEnabled) {
       return makeResolverTransform(this);
+    }
+  }
+
+  // called by our audit tool. Forces staticComponents and staticHelpers to
+  // activate so we can audit their behavior, while making their errors silent
+  // until we can gather them up at the end of the build for the audit results.
+  enableAuditMode() {
+    this.auditMode = true;
+  }
+
+  errorsIn(moduleName: string): ResolutionFail[] {
+    let deps = this.dependencies.get(moduleName);
+    if (deps) {
+      return deps.filter(d => d.type === 'error') as ResolutionFail[];
+    } else {
+      return [];
     }
   }
 
@@ -258,11 +276,15 @@ export default class CompatResolver implements Resolver {
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
-          let e = new Error(dep.message) as any;
-          e.isTemplateResolverError = true;
-          e.loc = dep.loc;
-          e.moduleName = moduleName;
-          throw e;
+          if (!this.auditMode) {
+            let e = new Error(
+              `${dep.message} ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
+            ) as any;
+            e.isTemplateResolverError = true;
+            e.loc = dep.loc;
+            e.moduleName = moduleName;
+            throw e;
+          }
         } else {
           for (let entry of dep.modules) {
             let { runtimeName } = entry;
@@ -322,6 +344,14 @@ export default class CompatResolver implements Resolver {
         .split(sep)
         .join('/');
     }
+  }
+
+  private get staticComponentsEnabled(): boolean {
+    return this.params.options.staticComponents || this.auditMode;
+  }
+
+  private get staticHelpersEnabled(): boolean {
+    return this.params.options.staticHelpers || this.auditMode;
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
@@ -457,7 +487,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveSubExpression(path: string, from: string, loc: Loc): Resolution | null {
-    if (!this.params.options.staticHelpers) {
+    if (!this.staticHelpersEnabled) {
       return null;
     }
     let found = this.tryHelper(path, from);
@@ -470,7 +500,8 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        message: `Missing helper ${path} in ${from}`,
+        message: `Missing helper`,
+        detail: path,
         loc,
       },
       from
@@ -478,13 +509,13 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveMustache(path: string, hasArgs: boolean, from: string, loc: Loc): Resolution | null {
-    if (this.params.options.staticHelpers) {
+    if (this.staticHelpersEnabled) {
       let found = this.tryHelper(path, from);
       if (found) {
         return this.add(found, from);
       }
     }
-    if (this.params.options.staticComponents) {
+    if (this.staticComponentsEnabled) {
       let found = this.tryComponent(path, from);
       if (found) {
         return this.add(found, from);
@@ -492,15 +523,16 @@ export default class CompatResolver implements Resolver {
     }
     if (
       hasArgs &&
-      this.params.options.staticComponents &&
-      this.params.options.staticHelpers &&
+      this.staticComponentsEnabled &&
+      this.staticHelpersEnabled &&
       !builtInHelpers.includes(path) &&
       !this.isIgnoredComponent(path)
     ) {
       return this.add(
         {
           type: 'error',
-          message: `Missing component or helper ${path} in ${from}`,
+          message: `Missing component or helper`,
+          detail: path,
           loc,
         },
         from
@@ -511,7 +543,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveElement(tagName: string, from: string, loc: Loc): Resolution | null {
-    if (!this.params.options.staticComponents) {
+    if (!this.staticComponentsEnabled) {
       return null;
     }
 
@@ -539,7 +571,8 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        message: `Missing component ${tagName} in ${from}`,
+        message: `Missing component`,
+        detail: tagName,
         loc,
       },
       from
@@ -547,7 +580,7 @@ export default class CompatResolver implements Resolver {
   }
 
   resolveComponentHelper(path: string, isLiteral: boolean, from: string, loc: Loc): Resolution | null {
-    if (!this.params.options.staticComponents) {
+    if (!this.staticComponentsEnabled) {
       return null;
     }
     if (!isLiteral) {
@@ -558,7 +591,8 @@ export default class CompatResolver implements Resolver {
       return this.add(
         {
           type: 'error',
-          message: `ignoring dynamic component ${path} in ${humanReadableFile(this.params.root, from)}`,
+          message: `Unsafe dynamic component`,
+          detail: path,
           loc,
         },
         from
@@ -571,7 +605,8 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        message: `Missing component ${path} in ${humanReadableFile(this.params.root, from)}`,
+        message: `Missing component`,
+        detail: path,
         loc,
       },
       from
@@ -582,10 +617,8 @@ export default class CompatResolver implements Resolver {
     this.add(
       {
         type: 'error',
-        message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(
-          this.params.root,
-          from
-        )} is treated as a component, but the value you're passing is dynamic`,
+        message: 'Unsafe dynamic component',
+        detail: `argument "${argumentName}" to component "${componentName}" is treated as a component, but the value you're passing is dynamic`,
         loc,
       },
       from

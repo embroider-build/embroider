@@ -2,7 +2,7 @@ import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
 import { AppMeta, TemplateCompiler, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import { Audit, Finding } from '../src/audit';
-import { join } from 'path';
+import CompatResolver from '../src/resolver';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -11,17 +11,26 @@ describe('audit', function () {
 
   async function audit() {
     app.writeSync();
-    let audit = new Audit(join(app.root, 'audit-this-app'));
+    let audit = new Audit(app.baseDir);
     return await audit.run();
   }
 
   beforeEach(async function () {
     app = new Project('audit-this-app');
 
+    const resolvableExtensions = ['.js', '.hbs'];
+
     let templateCompiler = new TemplateCompiler({
       compilerPath: emberTemplateCompilerPath(),
       EmberENV: {},
       plugins: { ast: [] },
+      resolver: new CompatResolver({
+        root: app.baseDir,
+        modulePrefix: 'audit-this-app',
+        options: { staticComponents: false, staticHelpers: false },
+        activePackageRules: [],
+        resolvableExtensions,
+      }),
     });
 
     merge(app.files, {
@@ -44,7 +53,7 @@ describe('audit', function () {
         majorVersion: 7,
         fileFilter: 'babel_filter.js',
       },
-      'resolvable-extensions': ['.js', '.hbs'],
+      'resolvable-extensions': resolvableExtensions,
       'root-url': '/',
       'template-compiler': {
         filename: 'template_compiler.js',
@@ -201,6 +210,7 @@ describe('audit', function () {
     expect(result.findings).toEqual([]);
     expect(Object.keys(result.modules).length).toBe(3);
   });
+
   test(`tolerates AMD`, async function () {
     merge(app.files, {
       'app.js': `import thing from './uses-amd'`,
@@ -210,6 +220,7 @@ describe('audit', function () {
     expect(result.findings).toEqual([]);
     expect(Object.keys(result.modules).length).toBe(3);
   });
+
   test(`tolerates @embroider/macros`, async function () {
     merge(app.files, {
       'app.js': `import { dependencySatisfies } from '@embroider/macros'`,
@@ -217,6 +228,41 @@ describe('audit', function () {
     let result = await audit();
     expect(result.findings).toEqual([]);
     expect(Object.keys(result.modules).length).toBe(2);
+  });
+
+  test('finds missing component', async function () {
+    merge(app.files, {
+      'hello.hbs': `<NoSuchThing />`,
+    });
+    let result = await audit();
+    expect(result.findings).toEqual([
+      {
+        message: 'Missing component',
+        detail: 'NoSuchThing',
+        filename: './hello.hbs',
+      },
+    ]);
+    expect(Object.keys(result.modules).length).toBe(3);
+  });
+
+  test('traverse through template even when it has some errors', async function () {
+    merge(app.files, {
+      'hello.hbs': `<NoSuchThing /><Second />`,
+      components: {
+        'second.js': `
+          export default class {}
+        `,
+      },
+    });
+    let result = await audit();
+    expect(result.findings).toEqual([
+      {
+        message: 'Missing component',
+        detail: 'NoSuchThing',
+        filename: './hello.hbs',
+      },
+    ]);
+    expect(Object.keys(result.modules).length).toBe(4);
   });
 });
 

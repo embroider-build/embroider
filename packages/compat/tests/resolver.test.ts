@@ -398,7 +398,7 @@ describe('compat-resolver', function () {
     });
     expect(() => {
       findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
-    }).toThrow(new RegExp(`Missing component or helper hello-world in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing component or helper hello-world in templates/application.hbs`));
   });
   test('string literal passed to component helper in content position', function () {
     let findDependencies = configure({
@@ -456,7 +456,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(() => {
       findDependencies('templates/application.hbs', `{{component this.which}}`);
-    }).toThrow(/ignoring dynamic component this\.which/);
+    }).toThrow(/Unsafe dynamic component this\.which in templates\/application\.hbs/);
   });
   test('angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
@@ -492,7 +492,7 @@ describe('compat-resolver', function () {
     let findDependencies = configure({ staticComponents: true });
     expect(() => {
       findDependencies('templates/application.hbs', `<HelloWorld />`);
-    }).toThrow(new RegExp(`Missing component HelloWorld in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing component HelloWorld in templates/application.hbs`));
   });
   test('helper in subexpression', function () {
     let findDependencies = configure({ staticHelpers: true });
@@ -510,13 +510,13 @@ describe('compat-resolver', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
-    }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing helper things in templates/application.hbs`));
   });
   test('missing subexpression no args', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(() => {
       findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
-    }).toThrow(new RegExp(`Missing helper things in ${appDir}/templates/application.hbs`));
+    }).toThrow(new RegExp(`Missing helper things in templates/application.hbs`));
   });
   test('emits no helpers when staticHelpers is off', function () {
     let findDependencies = configure({ staticHelpers: false });
@@ -719,7 +719,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
       `
       );
-    }).toThrow(/ignoring dynamic component other/);
+    }).toThrow(/Unsafe dynamic component other in templates\/application\.hbs/);
   });
 
   test('respects yieldsSafeComponents rule, position 0.field', function () {
@@ -759,7 +759,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
       `
       );
-    }).toThrow(/ignoring dynamic component f.other/);
+    }).toThrow(/Unsafe dynamic component f.other/);
   });
 
   test('respects yieldsSafeComponents rule, position 1.field', function () {
@@ -797,7 +797,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
     `
       );
-    }).toThrow(/ignoring dynamic component f.other/);
+    }).toThrow(/Unsafe dynamic component f.other/);
   });
 
   test('acceptsComponentArguments on mustache with valid literal', function () {
@@ -957,7 +957,7 @@ describe('compat-resolver', function () {
           path: './components/form-builder.hbs',
         },
       ]);
-    }).toThrow(/ignoring dynamic component title/);
+    }).toThrow(/Unsafe dynamic component title/);
   });
 
   test('acceptsComponentArguments on mustache with invalid literal', function () {
@@ -1254,7 +1254,7 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    }).toThrow(/ignoring dynamic component this\.unknown/);
+    }).toThrow(/Unsafe dynamic component this\.unknown/);
   });
 
   test('yieldsArguments causes warning to propagate up lexically, curl', function () {
@@ -1286,7 +1286,7 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    }).toThrow(/ignoring dynamic component this\.unknown/);
+    }).toThrow(/Unsafe dynamic component this\.unknown/);
   });
 
   test('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
@@ -1320,6 +1320,6 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    }).toThrow(/ignoring dynamic component this\.unknown/);
+    }).toThrow(/Unsafe dynamic component this\.unknown/);
   });
 });

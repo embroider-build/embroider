@@ -10,6 +10,7 @@ import fromPairs from 'lodash/fromPairs';
 import { auditJS, CodeFrameStorage, InternalImport, isNamespaceMarker, NamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
+import CompatResolver from './resolver';
 const { JSDOM } = jsdom;
 
 export { AuditOptions, AuditBuildOptions, BuildError, isBuildError };
@@ -206,12 +207,26 @@ export class Audit {
   }
 
   @Memoize()
-  private get templateCompiler(): (filename: string, content: string) => string {
-    return applyVariantToTemplateCompiler(
+  private get templateSetup(): { compile: (filename: string, content: string) => string; resolver: CompatResolver } {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    let templateCompiler = require(join(this.appDir, this.meta['template-compiler'].filename));
+    let resolver = templateCompiler.params.resolver as CompatResolver;
+
+    resolver.enableAuditMode();
+
+    let compile = applyVariantToTemplateCompiler(
       { name: 'default', runtime: 'all', optimizeForProduction: false },
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require(join(this.appDir, this.meta['template-compiler'].filename)).compile
+      templateCompiler.compile
     );
+    return { compile, resolver };
+  }
+
+  private get templateCompiler(): (filename: string, content: string) => string {
+    return this.templateSetup.compile;
+  }
+
+  private get templateResolver(): CompatResolver {
+    return this.templateSetup.resolver;
   }
 
   private debug(message: string, ...args: any[]) {
@@ -266,45 +281,60 @@ export class Audit {
       }
     }
     await this.drainQueue();
-    await this.inspectModules();
+    this.inspectModules();
     return new AuditResults(this.appDir, this.findings, this.modules);
   }
 
-  private async inspectModules() {
+  private inspectModules() {
     for (let [filename, module] of this.modules) {
-      for (let imp of module.imports) {
-        let resolved = module.resolutions.get(imp.source);
-        if (isResolutionFailure(resolved)) {
-          this.findings.push({
-            filename,
-            message: 'unable to resolve dependency',
-            detail: imp.source,
-            codeFrame: this.frames.render(imp.codeFrameIndex),
-          });
-        } else if (resolved) {
-          let target = this.modules.get(resolved)!;
-          for (let specifier of imp.specifiers) {
-            if (!this.moduleProvidesName(target, specifier.name)) {
-              if (specifier.name === 'default') {
-                let backtick = '`';
-                this.findings.push({
-                  filename,
-                  message: 'importing a non-existent default export',
-                  detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${specifier.local} from "${imp.source}"${backtick}?`,
-                  codeFrame: this.frames.render(specifier.codeFrameIndex),
-                });
-              } else {
-                this.findings.push({
-                  filename,
-                  message: 'importing a non-existent named export',
-                  detail: `"${imp.source}" has no export named "${specifier.name}".`,
-                  codeFrame: this.frames.render(specifier.codeFrameIndex),
-                });
-              }
+      this.inspectImports(filename, module);
+      this.inspectTemplateResolution(filename);
+    }
+  }
+
+  private inspectImports(filename: string, module: InternalModule) {
+    for (let imp of module.imports) {
+      let resolved = module.resolutions.get(imp.source);
+      if (isResolutionFailure(resolved)) {
+        this.findings.push({
+          filename,
+          message: 'unable to resolve dependency',
+          detail: imp.source,
+          codeFrame: this.frames.render(imp.codeFrameIndex),
+        });
+      } else if (resolved) {
+        let target = this.modules.get(resolved)!;
+        for (let specifier of imp.specifiers) {
+          if (!this.moduleProvidesName(target, specifier.name)) {
+            if (specifier.name === 'default') {
+              let backtick = '`';
+              this.findings.push({
+                filename,
+                message: 'importing a non-existent default export',
+                detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${specifier.local} from "${imp.source}"${backtick}?`,
+                codeFrame: this.frames.render(specifier.codeFrameIndex),
+              });
+            } else {
+              this.findings.push({
+                filename,
+                message: 'importing a non-existent named export',
+                detail: `"${imp.source}" has no export named "${specifier.name}".`,
+                codeFrame: this.frames.render(specifier.codeFrameIndex),
+              });
             }
           }
         }
       }
+    }
+  }
+
+  private inspectTemplateResolution(filename: string) {
+    for (let error of this.templateResolver.errorsIn(filename)) {
+      this.findings.push({
+        filename,
+        message: error.message,
+        detail: error.detail,
+      });
     }
   }
 

@@ -331,19 +331,15 @@ export default class CompatResolver implements Resolver {
   absPathToRuntimeName(absPath: string) {
     let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
-      let moduleName = pkg.name;
-      if (pkg.isV2Addon()) {
-        let renamedMeta = pkg.meta['renamed-packages'];
-        if (renamedMeta) {
-          Object.entries(renamedMeta).forEach(([key, value]) => {
-            if (value === pkg!.name) {
-              moduleName = key;
-            }
-          });
+      let packageRuntimeName = pkg.name;
+      for (let [runtimeName, realName] of Object.entries(this.params.adjustImportsOptions.renamePackages)) {
+        if (realName === packageRuntimeName) {
+          packageRuntimeName = runtimeName;
+          break;
         }
       }
 
-      return join(moduleName, relative(pkg.root, absPath))
+      return join(packageRuntimeName, relative(pkg.root, absPath))
         .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
         .join('/')
@@ -395,7 +391,12 @@ export default class CompatResolver implements Resolver {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
       let cache = PackageCache.shared('embroider-stage3');
-      return this._tryComponent(parts[1], from, withRuleLookup, cache.resolve(parts[0], cache.ownerOfFile(from)!));
+      let packageName = parts[0];
+      let renamed = this.params.adjustImportsOptions.renamePackages[packageName];
+      if (renamed) {
+        packageName = renamed;
+      }
+      return this._tryComponent(parts[1], from, withRuleLookup, cache.resolve(packageName, cache.ownerOfFile(from)!));
     } else {
       return this._tryComponent(path, from, withRuleLookup, this.appPackage);
     }

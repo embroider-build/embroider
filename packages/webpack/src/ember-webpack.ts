@@ -412,28 +412,25 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private findBestError(errors: any[]) {
-    for (let error of errors) {
-      let file;
-      while (error) {
-        if (error.module && error.module.rawRequest) {
-          file = relative(this.pathToVanillaApp, error.module.userRequest);
-        }
-        if (error.codeFrame || error.loc) {
-          // this looks like a good error. Let's also make sure any location info
-          // is copied onto the root of the error because that's where broccoli
-          // looks for it.
-          if (!error.file) {
-            error.file = file || (error.loc ? error.loc.file : null) || (error.location ? error.location.file : null);
-          }
-          if (error.line == null) {
-            error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
-          }
-          return error;
-        }
-        error = error.error;
-      }
+    let error = errors[0];
+    let file;
+    if (error.module?.userRequest) {
+      file = relative(this.pathToVanillaApp, error.module.userRequest);
     }
-    return errors[0];
+
+    if (!error.file) {
+      error.file = file || (error.loc ? error.loc.file : null) || (error.location ? error.location.file : null);
+    }
+    if (error.line == null) {
+      error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
+    }
+    if (typeof error.message === 'string') {
+      // the tmpdir on OSX is horribly long and makes error messages hard to
+      // read. This is doing the same as String.prototype.replaceAll, which node
+      // doesn't have yet.
+      error.message = error.message.split(realpathSync(tmpdir())).join('$TMPDIR');
+    }
+    return error;
   }
 };
 

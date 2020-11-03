@@ -34,9 +34,15 @@ export type ResolutionResult = ComponentResolution | HelperResolution;
 export interface ResolutionFail {
   type: 'error';
   message: string;
+  loc: Loc;
 }
 
 export type Resolution = ResolutionResult | ResolutionFail;
+
+export interface Loc {
+  start: { line: number; column: number };
+  end: { line: number; column: number };
+}
 
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.
@@ -252,7 +258,11 @@ export default class CompatResolver implements Resolver {
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
-          throw new Error(dep.message);
+          let e = new Error(dep.message) as any;
+          e.isTemplateResolverError = true;
+          e.loc = dep.loc;
+          e.moduleName = moduleName;
+          throw e;
         } else {
           for (let entry of dep.modules) {
             let { runtimeName } = entry;
@@ -446,7 +456,7 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
-  resolveSubExpression(path: string, from: string): Resolution | null {
+  resolveSubExpression(path: string, from: string, loc: Loc): Resolution | null {
     if (!this.params.options.staticHelpers) {
       return null;
     }
@@ -461,12 +471,13 @@ export default class CompatResolver implements Resolver {
       {
         type: 'error',
         message: `Missing helper ${path} in ${from}`,
+        loc,
       },
       from
     );
   }
 
-  resolveMustache(path: string, hasArgs: boolean, from: string): Resolution | null {
+  resolveMustache(path: string, hasArgs: boolean, from: string, loc: Loc): Resolution | null {
     if (this.params.options.staticHelpers) {
       let found = this.tryHelper(path, from);
       if (found) {
@@ -490,6 +501,7 @@ export default class CompatResolver implements Resolver {
         {
           type: 'error',
           message: `Missing component or helper ${path} in ${from}`,
+          loc,
         },
         from
       );
@@ -498,7 +510,7 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  resolveElement(tagName: string, from: string): Resolution | null {
+  resolveElement(tagName: string, from: string, loc: Loc): Resolution | null {
     if (!this.params.options.staticComponents) {
       return null;
     }
@@ -528,12 +540,13 @@ export default class CompatResolver implements Resolver {
       {
         type: 'error',
         message: `Missing component ${tagName} in ${from}`,
+        loc,
       },
       from
     );
   }
 
-  resolveComponentHelper(path: string, isLiteral: boolean, from: string): Resolution | null {
+  resolveComponentHelper(path: string, isLiteral: boolean, from: string, loc: Loc): Resolution | null {
     if (!this.params.options.staticComponents) {
       return null;
     }
@@ -546,6 +559,7 @@ export default class CompatResolver implements Resolver {
         {
           type: 'error',
           message: `ignoring dynamic component ${path} in ${humanReadableFile(this.params.root, from)}`,
+          loc,
         },
         from
       );
@@ -558,12 +572,13 @@ export default class CompatResolver implements Resolver {
       {
         type: 'error',
         message: `Missing component ${path} in ${humanReadableFile(this.params.root, from)}`,
+        loc,
       },
       from
     );
   }
 
-  unresolvableComponentArgument(componentName: string, argumentName: string, from: string) {
+  unresolvableComponentArgument(componentName: string, argumentName: string, from: string, loc: Loc) {
     this.add(
       {
         type: 'error',
@@ -571,6 +586,7 @@ export default class CompatResolver implements Resolver {
           this.params.root,
           from
         )} is treated as a component, but the value you're passing is dynamic`,
+        loc,
       },
       from
     );

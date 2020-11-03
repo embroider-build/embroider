@@ -18,10 +18,13 @@ import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
 export class VisitorState {}
 
 export interface InternalImport {
-  name: string | NamespaceMarker;
-  local: string;
   source: string;
   codeFrameIndex: number | undefined;
+  specifiers: {
+    name: string | NamespaceMarker;
+    local: string;
+    codeFrameIndex: number | undefined;
+  }[];
 }
 
 export interface NamespaceMarker {
@@ -34,8 +37,6 @@ export function isNamespaceMarker(value: string | NamespaceMarker): value is Nam
 
 // babelConfig must include { ast: true }
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
-  let dependencies = [] as string[];
-  let currentImportDeclaration: ImportDeclaration | undefined;
   let imports = [] as InternalImport[];
   let exports = new Set<string>();
 
@@ -45,6 +46,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
   // synchronously
   let sawModule: boolean = false;
   let sawExports: boolean = false;
+  let sawDefine: boolean = false;
   /* eslint-enable @typescript-eslint/no-inferrable-types */
 
   let ast = transformSync(rawSource, Object.assign({ filename: filename }, babelConfig))!.ast!;
@@ -56,55 +58,53 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
         sawModule = true;
       } else if (path.node.name === 'exports' && isFreeVariable(path)) {
         sawExports = true;
+      } else if (path.node.name === 'define' && isFreeVariable(path)) {
+        sawDefine = true;
       }
       if (inExportDeclarationContext(path)) {
         exports.add(path.node.name);
       }
-    },
-    ImportDeclaration: {
-      enter(path: NodePath<ImportDeclaration>) {
-        dependencies.push(path.node.source.value);
-        currentImportDeclaration = path.node;
-      },
-      exit(_path: NodePath<ImportDeclaration>) {
-        currentImportDeclaration = undefined;
-      },
     },
     CallExpression(path: NodePath<CallExpression>) {
       let callee = path.get('callee');
       if (callee.referencesImport('@embroider/macros', 'importSync') || isImport(callee)) {
         let arg = path.node.arguments[0];
         if (arg.type === 'StringLiteral') {
-          dependencies.push(arg.value);
+          imports.push({
+            source: arg.value,
+            codeFrameIndex: saveCodeFrame(arg),
+            specifiers: [],
+          });
         } else {
           throw new Error(`unimplemented: non literal importSync`);
         }
       }
     },
-    ImportDefaultSpecifier: (path: NodePath<ImportDefaultSpecifier>) => {
+    ImportDeclaration(path: NodePath<ImportDeclaration>) {
       imports.push({
+        source: path.node.source.value,
+        codeFrameIndex: saveCodeFrame(path.node.source),
+        specifiers: [],
+      });
+    },
+    ImportDefaultSpecifier(path: NodePath<ImportDefaultSpecifier>) {
+      imports[imports.length - 1].specifiers.push({
         name: 'default',
         local: path.node.local.name,
-        // cast is OK because ImportDefaultSpecifier can only be a child of ImportDeclaration
-        source: currentImportDeclaration!.source.value,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
     ImportNamespaceSpecifier(path: NodePath<ImportNamespaceSpecifier>) {
-      imports.push({
+      imports[imports.length - 1].specifiers.push({
         name: { isNamespace: true },
         local: path.node.local.name,
-        // cast is OK because ImportNamespaceSpecifier can only be a child of ImportDeclaration
-        source: currentImportDeclaration!.source.value,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
     ImportSpecifier(path: NodePath<ImportSpecifier>) {
-      imports.push({
+      imports[imports.length - 1].specifiers.push({
         name: name(path.node.imported),
         local: path.node.local.name,
-        // cast is OK because ImportSpecifier can only be a child of ImportDeclaration
-        source: currentImportDeclaration!.source.value,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
@@ -117,7 +117,8 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
   });
 
   let isCJS = imports.length === 0 && exports.size === 0 && (sawModule || sawExports);
-  return { dependencies, imports, exports, isCJS };
+  let isAMD = imports.length === 0 && exports.size === 0 && sawDefine;
+  return { imports, exports, isCJS, isAMD };
 }
 
 export class CodeFrameStorage {

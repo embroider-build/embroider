@@ -66,6 +66,24 @@ describe('audit', function () {
     expect(Object.keys(result.modules).length).toBe(3);
   });
 
+  test(`reports resolution failures`, async function () {
+    merge(app.files, {
+      'app.js': `
+        import { a, b } from './unknown';
+      `,
+    });
+    let result = await audit();
+    expect(withoutCodeFrames(result.findings)).toEqual([
+      {
+        filename: './app.js',
+        message: 'unable to resolve dependency',
+        detail: './unknown',
+      },
+    ]);
+    expect(result.findings[0]?.codeFrame).toBeDefined();
+    expect(Object.keys(result.modules).length).toBe(2);
+  });
+
   test(`ignores absolute URLs in script tags`, async function () {
     merge(app.files, {
       'index.html': `<script type="module" src="https://example.com/foo.js"></script>`,
@@ -178,6 +196,15 @@ describe('audit', function () {
     merge(app.files, {
       'app.js': `import thing from './uses-cjs'`,
       'uses-cjs.js': `module.exports = function() {}`,
+    });
+    let result = await audit();
+    expect(result.findings).toEqual([]);
+    expect(Object.keys(result.modules).length).toBe(3);
+  });
+  test(`tolerates AMD`, async function () {
+    merge(app.files, {
+      'app.js': `import thing from './uses-amd'`,
+      'uses-amd.js': `define('myself', [], function() {})`,
     });
     let result = await audit();
     expect(result.findings).toEqual([]);

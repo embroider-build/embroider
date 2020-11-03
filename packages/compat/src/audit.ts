@@ -25,21 +25,32 @@ export interface Module {
   consumedFrom: (string | RootMarker)[];
   imports: Import[];
   exports: string[];
-  resolutions: { [source: string]: string };
+  resolutions: { [source: string]: string | null };
+}
+
+interface ResolutionFailure {
+  isResolutionFailure: true;
+}
+
+function isResolutionFailure(result: string | ResolutionFailure | undefined): result is ResolutionFailure {
+  return typeof result === 'object' && 'isResolutionFailure' in result;
 }
 
 interface InternalModule {
   consumedFrom: (string | RootMarker)[];
   imports: InternalImport[];
   exports: Set<string>;
-  resolutions: Map<string, string>;
+  resolutions: Map<string, string | ResolutionFailure>;
   isCJS: boolean;
+  isAMD: boolean;
 }
 
 export interface Import {
-  name: string | NamespaceMarker;
-  local: string;
   source: string;
+  specifiers: {
+    name: string | NamespaceMarker;
+    local: string;
+  }[];
 }
 
 export class AuditResults {
@@ -57,12 +68,17 @@ export class AuditResults {
           }
         }),
         resolutions: fromPairs(
-          [...module.resolutions].map(([source, target]) => [source, explicitRelative(baseDir, target)])
+          [...module.resolutions].map(([source, target]) => [
+            source,
+            isResolutionFailure(target) ? null : explicitRelative(baseDir, target),
+          ])
         ),
         imports: module.imports.map(i => ({
-          name: i.name,
-          local: i.local,
           source: i.source,
+          specifiers: i.specifiers.map(s => ({
+            name: s.name,
+            local: s.local,
+          })),
         })),
         exports: [...module.exports],
       };
@@ -235,6 +251,8 @@ export class Audit {
         if (depFilename) {
           module.resolutions.set(dep, depFilename);
           this.scheduleVisit(depFilename, filename);
+        } else {
+          module.resolutions.set(dep, { isResolutionFailure: true });
         }
       }
     }
@@ -255,31 +273,37 @@ export class Audit {
   private async inspectModules() {
     for (let [filename, module] of this.modules) {
       for (let imp of module.imports) {
-        if (isNamespaceMarker(imp.name)) {
-          // every module has a namespace, so it can't be missing
-          continue;
-        }
         let resolved = module.resolutions.get(imp.source);
-        // we only handle the case where the import was successfully resolved.
-        // If it failed, that generated its own error already.
-        if (resolved) {
+        if (isResolutionFailure(resolved)) {
+          this.findings.push({
+            filename,
+            message: 'unable to resolve dependency',
+            detail: imp.source,
+            codeFrame: this.frames.render(imp.codeFrameIndex),
+          });
+        } else if (resolved) {
           let target = this.modules.get(resolved)!;
-          if (!this.moduleProvidesName(target, imp.name)) {
-            if (imp.name === 'default') {
-              let backtick = '`';
-              this.findings.push({
-                filename,
-                message: 'importing a non-existent default export',
-                detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${imp.local} from "${imp.source}"${backtick}?`,
-                codeFrame: this.frames.render(imp.codeFrameIndex),
-              });
-            } else {
-              this.findings.push({
-                filename,
-                message: 'importing a non-existent named export',
-                detail: `"${imp.source}" has no export named "${imp.name}".`,
-                codeFrame: this.frames.render(imp.codeFrameIndex),
-              });
+          for (let specifier of imp.specifiers) {
+            if (isNamespaceMarker(specifier.name)) {
+              continue;
+            }
+            if (!this.moduleProvidesName(target, specifier.name)) {
+              if (specifier.name === 'default') {
+                let backtick = '`';
+                this.findings.push({
+                  filename,
+                  message: 'importing a non-existent default export',
+                  detail: `"${imp.source}" has no default export. Did you mean ${backtick}import * as ${specifier.local} from "${imp.source}"${backtick}?`,
+                  codeFrame: this.frames.render(imp.codeFrameIndex),
+                });
+              } else {
+                this.findings.push({
+                  filename,
+                  message: 'importing a non-existent named export',
+                  detail: `"${imp.source}" has no export named "${specifier.name}".`,
+                  codeFrame: this.frames.render(imp.codeFrameIndex),
+                });
+              }
             }
           }
         }
@@ -288,7 +312,8 @@ export class Audit {
   }
 
   private moduleProvidesName(target: InternalModule, name: string) {
-    return target.exports.has(name) || (name === 'default' && target.isCJS);
+    // we always allow a default export from CJS, and any export from AMD, because in general these formats aren't statically analyzable
+    return target.exports.has(name) || (name === 'default' && target.isCJS) || target.isAMD;
   }
 
   private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {
@@ -320,7 +345,8 @@ export class Audit {
       module.exports = result.exports;
       module.imports = result.imports;
       module.isCJS = result.isCJS;
-      return result.dependencies;
+      module.isAMD = result.isAMD;
+      return result.imports.map(i => i.source);
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {
         this.pushFinding({
@@ -377,11 +403,7 @@ export class Audit {
       });
     } catch (err) {
       if (err.code === 'MODULE_NOT_FOUND') {
-        this.pushFinding({
-          filename: fromPath,
-          message: `unable to resolve dependency`,
-          detail: specifier,
-        });
+        return undefined;
       } else {
         throw err;
       }
@@ -402,6 +424,7 @@ export class Audit {
         exports: new Set(),
         resolutions: new Map(),
         isCJS: false,
+        isAMD: false,
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);

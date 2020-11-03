@@ -465,12 +465,12 @@ describe('compat-resolver', function () {
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
   });
-  test('dynamic component helper warning in content position', function () {
+  test('dynamic component helper error in content position', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    assertWarning(/ignoring dynamic component this\.which/, () => {
+    expect(() => {
       findDependencies('templates/application.hbs', `{{component this.which}}`);
-    });
+    }).toThrow(/ignoring dynamic component this\.which/);
   });
   test('angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
@@ -724,7 +724,7 @@ describe('compat-resolver', function () {
       {{/form-builder}}
     `
     );
-    assertWarning(/ignoring dynamic component other/, () => {
+    expect(() => {
       findDependencies(
         'templates/application.hbs',
         `
@@ -733,7 +733,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
       `
       );
-    });
+    }).toThrow(/ignoring dynamic component other/);
   });
 
   test('respects yieldsSafeComponents rule, position 0.field', function () {
@@ -764,7 +764,7 @@ describe('compat-resolver', function () {
       {{/form-builder}}
     `
     );
-    assertWarning(/ignoring dynamic component f.other/, () => {
+    expect(() => {
       findDependencies(
         'templates/application.hbs',
         `
@@ -773,7 +773,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
       `
       );
-    });
+    }).toThrow(/ignoring dynamic component f.other/);
   });
 
   test('respects yieldsSafeComponents rule, position 1.field', function () {
@@ -802,7 +802,7 @@ describe('compat-resolver', function () {
       {{/form-builder}}
     `
     );
-    assertWarning(/ignoring dynamic component f.other/, () => {
+    expect(() => {
       findDependencies(
         'templates/application.hbs',
         `
@@ -811,7 +811,7 @@ describe('compat-resolver', function () {
         {{/form-builder}}
     `
       );
-    });
+    }).toThrow(/ignoring dynamic component f.other/);
   });
 
   test('acceptsComponentArguments on mustache with valid literal', function () {
@@ -962,7 +962,7 @@ describe('compat-resolver', function () {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    assertWarning(/ignoring dynamic component title/, () => {
+    expect(() => {
       expect(
         findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
       ).toEqual([
@@ -971,7 +971,7 @@ describe('compat-resolver', function () {
           path: './components/form-builder.hbs',
         },
       ]);
-    });
+    }).toThrow(/ignoring dynamic component title/);
   });
 
   test('acceptsComponentArguments on mustache with invalid literal', function () {
@@ -1252,7 +1252,7 @@ describe('compat-resolver', function () {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    assertWarning(/ignoring dynamic component this\.unknown/, () => {
+    expect(() => {
       expect(
         findDependencies(
           'templates/components/x.hbs',
@@ -1268,7 +1268,7 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    });
+    }).toThrow(/ignoring dynamic component this\.unknown/);
   });
 
   test('yieldsArguments causes warning to propagate up lexically, curl', function () {
@@ -1284,7 +1284,7 @@ describe('compat-resolver', function () {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    assertWarning(/ignoring dynamic component this\.unknown/, () => {
+    expect(() => {
       expect(
         findDependencies(
           'templates/components/x.hbs',
@@ -1300,7 +1300,7 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    });
+    }).toThrow(/ignoring dynamic component this\.unknown/);
   });
 
   test('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
@@ -1316,7 +1316,7 @@ describe('compat-resolver', function () {
     ];
     let findDependencies = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    assertWarning(/ignoring dynamic component this\.unknown/, () => {
+    expect(() => {
       expect(
         findDependencies(
           'templates/components/x.hbs',
@@ -1334,6 +1334,6 @@ describe('compat-resolver', function () {
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
-    });
+    }).toThrow(/ignoring dynamic component this\.unknown/);
   });
 });

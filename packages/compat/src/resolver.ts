@@ -1,4 +1,4 @@
-import { Resolver, warn, TemplateCompiler, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
+import { Resolver, TemplateCompiler, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
 import {
   ComponentRules,
   PackageRules,
@@ -33,7 +33,6 @@ export type ResolutionResult = ComponentResolution | HelperResolution;
 
 export interface ResolutionFail {
   type: 'error';
-  hardFail: boolean;
   message: string;
 }
 
@@ -253,11 +252,7 @@ export default class CompatResolver implements Resolver {
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
-          if (dep.hardFail) {
-            throw new Error(dep.message);
-          } else {
-            warn(dep.message);
-          }
+          throw new Error(dep.message);
         } else {
           for (let entry of dep.modules) {
             let { runtimeName } = entry;
@@ -465,7 +460,6 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        hardFail: true,
         message: `Missing helper ${path} in ${from}`,
       },
       from
@@ -495,7 +489,6 @@ export default class CompatResolver implements Resolver {
       return this.add(
         {
           type: 'error',
-          hardFail: true,
           message: `Missing component or helper ${path} in ${from}`,
         },
         from
@@ -534,7 +527,6 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        hardFail: true,
         message: `Missing component ${tagName} in ${from}`,
       },
       from
@@ -553,7 +545,6 @@ export default class CompatResolver implements Resolver {
       return this.add(
         {
           type: 'error',
-          hardFail: false,
           message: `ignoring dynamic component ${path} in ${humanReadableFile(this.params.root, from)}`,
         },
         from
@@ -566,7 +557,6 @@ export default class CompatResolver implements Resolver {
     return this.add(
       {
         type: 'error',
-        hardFail: true,
         message: `Missing component ${path} in ${humanReadableFile(this.params.root, from)}`,
       },
       from
@@ -577,7 +567,6 @@ export default class CompatResolver implements Resolver {
     this.add(
       {
         type: 'error',
-        hardFail: false,
         message: `argument "${argumentName}" to component "${componentName}" in ${humanReadableFile(
           this.params.root,
           from

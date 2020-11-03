@@ -44,6 +44,7 @@ interface InternalModule {
   resolutions: Map<string, string | ResolutionFailure>;
   isCJS: boolean;
   isAMD: boolean;
+  templateFindings: { message: string; detail: string; codeFrameIndex?: number }[];
 }
 
 export interface Import {
@@ -98,8 +99,7 @@ export class AuditResults {
     for (let [filename, findings] of Object.entries(findingsByFile)) {
       output.push(`${chalk.yellow(filename)}`);
       for (let finding of findings) {
-        output.push(indent(chalk.red(finding.message), 1));
-        output.push(indent(finding.detail, 2));
+        output.push(indent(chalk.red(finding.message) + ' ' + finding.detail, 1));
         if (finding.codeFrame) {
           output.push(indent(finding.codeFrame, 2));
         }
@@ -288,7 +288,7 @@ export class Audit {
   private inspectModules() {
     for (let [filename, module] of this.modules) {
       this.inspectImports(filename, module);
-      this.inspectTemplateResolution(filename);
+      this.inspectTemplateResolution(filename, module);
     }
   }
 
@@ -328,12 +328,13 @@ export class Audit {
     }
   }
 
-  private inspectTemplateResolution(filename: string) {
-    for (let error of this.templateResolver.errorsIn(filename)) {
+  private inspectTemplateResolution(filename: string, module: InternalModule) {
+    for (let finding of module.templateFindings) {
       this.findings.push({
         filename,
-        message: error.message,
-        detail: error.detail,
+        message: finding.message,
+        detail: finding.detail,
+        codeFrame: this.frames.render(finding.codeFrameIndex),
       });
     }
   }
@@ -391,9 +392,10 @@ export class Audit {
   }
 
   private async visitHBS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
+    let rawSource = content.toString('utf8');
     let js;
     try {
-      js = this.templateCompiler(filename, content.toString('utf8'));
+      js = this.templateCompiler(filename, rawSource);
     } catch (err) {
       this.pushFinding({
         filename,
@@ -402,6 +404,11 @@ export class Audit {
       });
       return [];
     }
+    module.templateFindings = this.templateResolver.errorsIn(filename).map(err => ({
+      message: err.message,
+      detail: err.detail,
+      codeFrameIndex: this.frames.forSource(rawSource)(err),
+    }));
     return this.visitJS(filename, js, module);
   }
 
@@ -454,6 +461,7 @@ export class Audit {
         resolutions: new Map(),
         isCJS: false,
         isAMD: false,
+        templateFindings: [],
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);

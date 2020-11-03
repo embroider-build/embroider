@@ -33,6 +33,8 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
+import { tmpdir } from 'os';
+import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 interface TreeNames {
   appJS: Tree;
@@ -212,7 +214,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  resolvableExtensions(): string[] {
+  private resolvableExtensions(): string[] {
     // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
     // subset in that order is sensible, since many third-party libraries will
     // expect it to work that way.
@@ -339,8 +341,40 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
-      resolvableExtensions: this.resolvableExtensions(),
+      adjustImportsOptions: this.adjustImportsOptions(),
     });
+  }
+
+  @Memoize()
+  adjustImportsOptions(): AdjustImportsOptions {
+    return this.makeAdjustImportOptions(true);
+  }
+
+  private makeAdjustImportOptions(outer: boolean): AdjustImportsOptions {
+    let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
+    let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
+
+    let activeAddons: AdjustImportsOptions['activeAddons'] = {};
+    for (let addon of this.allActiveAddons) {
+      activeAddons[addon.name] = addon.root;
+    }
+
+    return {
+      activeAddons,
+      renameModules,
+      renamePackages,
+      // "outer" here prevents uncontrolled recursion. We can't know our
+      // extraImports until after we have the internalTemplateResolver which in
+      // turn needs some adjustImportsOptions
+      extraImports: outer ? this.extraImports() : [],
+      relocatedFiles: {}, // this is the only part we can't completely fill out here. It needs to wait for the AppBuilder to finish smooshing together all appTrees
+      resolvableExtensions: this.resolvableExtensions(),
+
+      // it's important that this is a persistent location, because we fill it
+      // up as a side-effect of babel transpilation, and babel is subject to
+      // persistent caching.
+      externalsDir: join(tmpdir(), 'embroider', 'externals'),
+    };
   }
 
   // unlike `templateResolver`, this one brings its own simple TemplateCompiler
@@ -353,8 +387,9 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       modulePrefix: this.modulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
-      resolvableExtensions: this.resolvableExtensions(),
+      adjustImportsOptions: this.makeAdjustImportOptions(false),
     });
+
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
     resolver.astTransformer(
@@ -367,7 +402,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return resolver;
   }
 
-  extraImports() {
+  private extraImports() {
     let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
 
     for (let rule of this.activeRules()) {

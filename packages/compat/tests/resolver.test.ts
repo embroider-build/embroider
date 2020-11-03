@@ -1,10 +1,11 @@
-import { removeSync, mkdtempSync, writeFileSync, ensureDirSync } from 'fs-extra';
+import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, realpathSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
 import { TemplateCompiler, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
 
@@ -13,19 +14,34 @@ const compilerPath = emberTemplateCompilerPath();
 describe('compat-resolver', function () {
   let appDir: string;
 
-  function configure(options: Options, podModulePrefix?: string) {
+  function configure(
+    compatOptions: Options,
+    otherOptions: { podModulePrefix?: string; adjustImportsImports?: Partial<AdjustImportsOptions> } = {}
+  ) {
     let EmberENV = {};
     let plugins = { ast: [] };
-    appDir = mkdtempSync(join(tmpdir(), 'embroider-compat-tests-'));
+    appDir = realpathSync(mkdtempSync(join(tmpdir(), 'embroider-compat-tests-')));
+    writeJSONSync(join(appDir, 'package.json'), { name: 'the-app' });
     let resolver = new Resolver({
       root: appDir,
       modulePrefix: 'the-app',
-      podModulePrefix,
-      options: optionsWithDefaults(options),
-      activePackageRules: optionsWithDefaults(options).packageRules.map(rule => {
+      podModulePrefix: otherOptions.podModulePrefix,
+      options: optionsWithDefaults(compatOptions),
+      activePackageRules: optionsWithDefaults(compatOptions).packageRules.map(rule => {
         return Object.assign({ roots: [appDir] }, rule);
       }),
-      resolvableExtensions: ['.js', '.hbs'],
+      adjustImportsOptions: Object.assign(
+        {
+          renamePackages: {},
+          renameModules: {},
+          extraImports: [],
+          externalsDir: '/tmp/embroider-externals',
+          activeAddons: {},
+          relocatedFiles: {},
+          resolvableExtensions: ['.js', '.hbs'],
+        },
+        otherOptions.adjustImportsImports
+      ),
     });
     let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function (relativePath: string, contents: string) {
@@ -46,10 +62,10 @@ describe('compat-resolver', function () {
     }
   });
 
-  function givenFile(filename: string) {
+  function givenFile(filename: string, containing = '') {
     let target = join(appDir, filename);
     ensureDirSync(dirname(target));
-    writeFileSync(target, '');
+    writeFileSync(target, containing);
     return target;
   }
 
@@ -150,7 +166,7 @@ describe('compat-resolver', function () {
   });
 
   test('podded, dasherized component, with non-blank podModulePrefix, js only', function () {
-    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    let findDependencies = configure({ staticComponents: true }, { podModulePrefix: 'the-app/pods' });
     givenFile('pods/components/hello-world/component.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
@@ -161,7 +177,7 @@ describe('compat-resolver', function () {
   });
 
   test('podded, dasherized component, with non-blank podModulePrefix, hbs only', function () {
-    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    let findDependencies = configure({ staticComponents: true }, { podModulePrefix: 'the-app/pods' });
     givenFile('pods/components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
@@ -172,7 +188,7 @@ describe('compat-resolver', function () {
   });
 
   test('podded, dasherized component, with non-blank podModulePrefix, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true }, 'the-app/pods');
+    let findDependencies = configure({ staticComponents: true }, { podModulePrefix: 'the-app/pods' });
     givenFile('pods/components/hello-world/component.js');
     givenFile('pods/components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
@@ -409,6 +425,41 @@ describe('compat-resolver', function () {
       {
         path: '../components/hello-world.js',
         runtimeName: 'the-app/components/hello-world',
+      },
+    ]);
+  });
+  test('component helper with direct addon package reference', function () {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/components/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/components/thing.js',
+        runtimeName: 'my-addon/components/thing',
+      },
+    ]);
+  });
+  test('component helper with direct addon package reference to a renamed package', function () {
+    let findDependencies = configure(
+      {
+        staticComponents: true,
+      },
+      {
+        adjustImportsImports: {
+          renamePackages: {
+            'has-been-renamed': 'my-addon',
+          },
+        },
+      }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/components/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/components/thing.js',
+        runtimeName: 'has-been-renamed/components/thing',
       },
     ]);
   });

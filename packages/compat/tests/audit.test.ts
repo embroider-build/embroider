@@ -29,7 +29,15 @@ describe('audit', function () {
         modulePrefix: 'audit-this-app',
         options: { staticComponents: false, staticHelpers: false },
         activePackageRules: [],
-        resolvableExtensions,
+        adjustImportsOptions: {
+          renamePackages: {},
+          renameModules: {},
+          extraImports: [],
+          externalsDir: '/tmp/embroider-externals',
+          activeAddons: {},
+          relocatedFiles: {},
+          resolvableExtensions,
+        },
       }),
     });
 

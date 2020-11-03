@@ -309,8 +309,10 @@ export class Audit {
   }
 
   private moduleProvidesName(target: InternalModule, name: string | NamespaceMarker) {
-    // we always allow a default export from CJS, and any export from AMD, because in general these formats aren't statically analyzable
-    return isNamespaceMarker(name) || target.exports.has(name) || (name === 'default' && target.isCJS) || target.isAMD;
+    // any module can provide a namespace.
+    // CJS and AMD are too dynamic to be sure exactly what names are available,
+    // so they always get a pass
+    return isNamespaceMarker(name) || target.isCJS || target.isAMD || target.exports.has(name);
   }
 
   private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {

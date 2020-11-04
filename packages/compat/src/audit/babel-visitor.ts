@@ -78,7 +78,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
           });
         } else {
           problems.push({
-            message: `audit tool is unable to understand this usage of importSync`,
+            message: `audit tool is unable to understand this usage of ${isImport(callee) ? 'import' : 'importSync'}`,
             detail: arg.type,
             codeFrameIndex: saveCodeFrame(arg),
           });

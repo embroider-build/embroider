@@ -65,7 +65,9 @@ function runCLI() {
       yargs => yargs,
       async () => {
         let results = new AuditResults();
-        Object.assign(results, JSON.parse(readFileSync(process.stdin.fd, 'utf8')));
+        // process.stdin.fd is a documented public API. The Node typings don't
+        // seem to know about it.
+        Object.assign(results, JSON.parse(readFileSync((process.stdin as any).fd, 'utf8')));
         process.stdout.write(results.humanReadable());
         process.exit(0);
       }

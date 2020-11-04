@@ -295,7 +295,7 @@ export class AppBuilder<TreeNames> {
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
             // exclude engines because they will handle their own css importation
-            if (!addon.isEngine()) {
+            if (!addon.isLazyEngine()) {
               styles.push(resolve.sync(mod, options));
             }
           } else {
@@ -497,7 +497,8 @@ export class AppBuilder<TreeNames> {
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
+        // we reverse because we want the synthetic vendor style at the top
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }
@@ -1036,7 +1037,7 @@ export class AppBuilder<TreeNames> {
     let styles = [];
     // only import styles from engines with a parent (this excludeds the parent application) as their styles
     // will be inserted via a direct <link> tag.
-    if (engine.parent) {
+    if (engine.parent && engine.package.isLazyEngine()) {
       let implicitStyles = this.impliedAssets('implicit-styles', engine);
       for (let style of implicitStyles) {
         styles.push({

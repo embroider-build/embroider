@@ -7,10 +7,18 @@ import chalk from 'chalk';
 import jsdom from 'jsdom';
 import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
-import { auditJS, CodeFrameStorage, InternalImport, isNamespaceMarker, NamespaceMarker } from './audit/babel-visitor';
+import {
+  auditJS,
+  CodeFrameStorage,
+  ExportAll,
+  InternalImport,
+  isNamespaceMarker,
+  NamespaceMarker,
+} from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 import CompatResolver from './resolver';
+
 const { JSDOM } = jsdom;
 
 export { AuditOptions, AuditBuildOptions, BuildError, isBuildError };
@@ -39,13 +47,40 @@ function isResolutionFailure(result: string | ResolutionFailure | undefined): re
 
 interface InternalModule {
   consumedFrom: (string | RootMarker)[];
-  imports: InternalImport[];
-  exports: Set<string>;
-  resolutions: Map<string, string | ResolutionFailure>;
-  isCJS: boolean;
-  isAMD: boolean;
-  templateFindings: { message: string; detail: string; codeFrameIndex?: number }[];
-  failedToParse: boolean;
+
+  parsed?: {
+    imports: InternalImport[];
+    exports: Set<string | ExportAll>;
+    isCJS: boolean;
+    isAMD: boolean;
+    dependencies: string[];
+  };
+
+  resolved?: Map<string, string | ResolutionFailure>;
+
+  linked?: {
+    exports: Set<string>;
+  };
+}
+
+type ParsedInternalModule = Omit<InternalModule, 'parsed'> & {
+  parsed: NonNullable<InternalModule['parsed']>;
+};
+
+type ResolvedInternalModule = Omit<ParsedInternalModule, 'resolved'> & {
+  resolved: NonNullable<ParsedInternalModule['resolved']>;
+};
+
+function isResolved(module: InternalModule | undefined): module is ResolvedInternalModule {
+  return Boolean(module?.parsed && module.resolved);
+}
+
+type LinkedInternalModule = Omit<ResolvedInternalModule, 'linked'> & {
+  linked: NonNullable<ResolvedInternalModule['linked']>;
+};
+
+function isLinked(module: InternalModule | undefined): module is LinkedInternalModule {
+  return Boolean(module?.parsed && module.resolved && module.linked);
 }
 
 export interface Import {
@@ -71,20 +106,24 @@ export class AuditResults {
             return explicitRelative(baseDir, entry);
           }
         }),
-        resolutions: fromPairs(
-          [...module.resolutions].map(([source, target]) => [
-            source,
-            isResolutionFailure(target) ? null : explicitRelative(baseDir, target),
-          ])
-        ),
-        imports: module.imports.map(i => ({
-          source: i.source,
-          specifiers: i.specifiers.map(s => ({
-            name: s.name,
-            local: s.local,
-          })),
-        })),
-        exports: [...module.exports],
+        resolutions: module.resolved
+          ? fromPairs(
+              [...module.resolved].map(([source, target]) => [
+                source,
+                isResolutionFailure(target) ? null : explicitRelative(baseDir, target),
+              ])
+            )
+          : {},
+        imports: module.parsed?.imports
+          ? module.parsed.imports.map(i => ({
+              source: i.source,
+              specifiers: i.specifiers.map(s => ({
+                name: s.name,
+                local: s.local,
+              })),
+            }))
+          : [],
+        exports: module.linked?.exports ? [...module.linked.exports] : [],
       };
       results.modules[explicitRelative(baseDir, filename)] = publicModule;
     }
@@ -240,7 +279,11 @@ export class Audit {
 
   private visitorFor(
     filename: string
-  ): (this: Audit, filename: string, content: Buffer | string, module: InternalModule) => Promise<string[]> {
+  ): (
+    this: Audit,
+    filename: string,
+    content: Buffer | string
+  ) => Promise<NonNullable<InternalModule['parsed']> | Finding[]> {
     if (filename.endsWith('.html')) {
       return this.visitHTML;
     } else if (filename.endsWith('.hbs')) {
@@ -262,16 +305,27 @@ export class Audit {
       // cast is safe because the only way to get into the queue is to go
       // through scheduleVisit, and scheduleVisit creates the entry in
       // this.modules.
-      let module = this.modules.get(filename)!;
-      let dependencies = await visitor.call(this, filename, content, module);
-      for (let dep of dependencies) {
-        let depFilename = await this.resolve(dep, filename);
-        if (depFilename) {
-          module.resolutions.set(dep, depFilename);
-          if (!isResolutionFailure(depFilename)) {
-            this.scheduleVisit(depFilename, filename);
+      let module: InternalModule = this.modules.get(filename)!;
+      let visitResult = await visitor.call(this, filename, content);
+      if (Array.isArray(visitResult)) {
+        // the visitor was unable to figure out the ParseFields and returned
+        // some number of Findings to us to explain why.
+        for (let finding of visitResult) {
+          this.pushFinding(finding);
+        }
+      } else {
+        module.parsed = visitResult;
+        let resolved = new Map() as NonNullable<InternalModule['resolved']>;
+        for (let dep of visitResult.dependencies) {
+          let depFilename = await this.resolve(dep, filename);
+          if (depFilename) {
+            resolved.set(dep, depFilename);
+            if (!isResolutionFailure(depFilename)) {
+              this.scheduleVisit(depFilename, filename);
+            }
           }
         }
+        module.resolved = resolved;
       }
     }
   }
@@ -284,20 +338,55 @@ export class Audit {
       }
     }
     await this.drainQueue();
+    this.linkModules();
     this.inspectModules();
     return AuditResults.create(this.appDir, this.findings, this.modules);
   }
 
-  private inspectModules() {
-    for (let [filename, module] of this.modules) {
-      this.inspectImports(filename, module);
-      this.inspectTemplateResolution(filename, module);
+  private linkModules() {
+    for (let module of this.modules.values()) {
+      if (isResolved(module)) {
+        this.expandExports(module);
+      }
     }
   }
 
-  private inspectImports(filename: string, module: InternalModule) {
-    for (let imp of module.imports) {
-      let resolved = module.resolutions.get(imp.source);
+  private expandExports(module: ResolvedInternalModule) {
+    let exports = new Set<string>();
+    for (let exp of module.parsed.exports) {
+      if (typeof exp === 'string') {
+        exports.add(exp);
+      } else {
+        let moduleName = module.resolved.get(exp.all)!;
+        if (!isResolutionFailure(moduleName)) {
+          let target = this.modules.get(moduleName)!;
+          if (!isLinked(target) && isResolved(target)) {
+            this.expandExports(target);
+          }
+          if (isLinked(target)) {
+            for (let innerExp of target.linked.exports) {
+              exports.add(innerExp);
+            }
+          }
+        }
+      }
+    }
+    module.linked = {
+      exports,
+    };
+  }
+
+  private inspectModules() {
+    for (let [filename, module] of this.modules) {
+      if (isLinked(module)) {
+        this.inspectImports(filename, module);
+      }
+    }
+  }
+
+  private inspectImports(filename: string, module: LinkedInternalModule) {
+    for (let imp of module.parsed.imports) {
+      let resolved = module.resolved.get(imp.source);
       if (isResolutionFailure(resolved)) {
         this.findings.push({
           filename,
@@ -308,7 +397,7 @@ export class Audit {
       } else if (resolved) {
         let target = this.modules.get(resolved)!;
         for (let specifier of imp.specifiers) {
-          if (!target.failedToParse && !this.moduleProvidesName(target, specifier.name)) {
+          if (isLinked(target) && !this.moduleProvidesName(target, specifier.name)) {
             if (specifier.name === 'default') {
               let backtick = '`';
               this.findings.push({
@@ -331,25 +420,14 @@ export class Audit {
     }
   }
 
-  private inspectTemplateResolution(filename: string, module: InternalModule) {
-    for (let finding of module.templateFindings) {
-      this.findings.push({
-        filename,
-        message: finding.message,
-        detail: finding.detail,
-        codeFrame: this.frames.render(finding.codeFrameIndex),
-      });
-    }
-  }
-
-  private moduleProvidesName(target: InternalModule, name: string | NamespaceMarker) {
+  private moduleProvidesName(target: LinkedInternalModule, name: string | NamespaceMarker) {
     // any module can provide a namespace.
     // CJS and AMD are too dynamic to be sure exactly what names are available,
     // so they always get a pass
-    return isNamespaceMarker(name) || target.isCJS || target.isAMD || target.exports.has(name);
+    return isNamespaceMarker(name) || target.parsed.isCJS || target.parsed.isAMD || target.linked.exports.has(name);
   }
 
-  private async visitHTML(filename: string, content: Buffer | string): Promise<string[]> {
+  private async visitHTML(filename: string, content: Buffer | string): Promise<ParsedInternalModule['parsed']> {
     let dom = new JSDOM(content);
     let scripts = dom.window.document.querySelectorAll('script[type="module"]') as NodeListOf<HTMLScriptElement>;
     let dependencies = [] as string[];
@@ -368,17 +446,24 @@ export class Audit {
       }
       dependencies.push(src);
     }
-    return dependencies;
+
+    return {
+      imports: [],
+      exports: new Set(),
+      isCJS: false,
+      isAMD: false,
+      dependencies,
+    };
   }
 
-  private async visitJS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
+  private async visitJS(
+    filename: string,
+    content: Buffer | string
+  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let rawSource = content.toString('utf8');
     try {
       let result = auditJS(rawSource, filename, this.babelConfig, this.frames);
-      module.exports = result.exports;
-      module.imports = result.imports;
-      module.isCJS = result.isCJS;
-      module.isAMD = result.isAMD;
+
       for (let problem of result.problems) {
         this.pushFinding({
           filename,
@@ -387,59 +472,74 @@ export class Audit {
           codeFrame: this.frames.render(problem.codeFrameIndex),
         });
       }
-      return result.imports.map(i => i.source);
+      return {
+        exports: result.exports,
+        imports: result.imports,
+        isCJS: result.isCJS,
+        isAMD: result.isAMD,
+        dependencies: result.imports.map(i => i.source),
+      };
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {
-        this.pushFinding({
-          filename,
-          message: `failed to parse`,
-          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
-        });
-        module.failedToParse = true;
-        return [];
+        return [
+          {
+            filename,
+            message: `failed to parse`,
+            detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+          },
+        ];
       } else {
         throw err;
       }
     }
   }
 
-  private async visitHBS(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
+  private async visitHBS(
+    filename: string,
+    content: Buffer | string
+  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let rawSource = content.toString('utf8');
     let js;
     try {
       js = this.templateCompiler(filename, rawSource);
     } catch (err) {
+      return [
+        {
+          filename,
+          message: `failed to compile template`,
+          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+        },
+      ];
+    }
+    for (let err of this.templateResolver.errorsIn(filename)) {
       this.pushFinding({
         filename,
-        message: `failed to compile template`,
-        detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+        message: err.message,
+        detail: err.detail,
+        codeFrame: this.frames.render(this.frames.forSource(rawSource)(err)),
       });
-      module.failedToParse = true;
-      return [];
     }
-    module.templateFindings = this.templateResolver.errorsIn(filename).map(err => ({
-      message: err.message,
-      detail: err.detail,
-      codeFrameIndex: this.frames.forSource(rawSource)(err),
-    }));
-    return this.visitJS(filename, js, module);
+    return this.visitJS(filename, js);
   }
 
-  private async visitJSON(filename: string, content: Buffer | string, module: InternalModule): Promise<string[]> {
+  private async visitJSON(
+    filename: string,
+    content: Buffer | string
+  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let js;
     try {
       let structure = JSON.parse(content.toString('utf8'));
       js = `export default ${JSON.stringify(structure)}`;
     } catch (err) {
-      this.pushFinding({
-        filename,
-        message: `failed to parse JSON`,
-        detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
-      });
-      module.failedToParse = true;
-      return [];
+      return [
+        {
+          filename,
+          message: `failed to parse JSON`,
+          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+        },
+      ];
     }
-    return this.visitJS(filename, js, module);
+    return this.visitJS(filename, js);
   }
 
   private async resolve(specifier: string, fromPath: string): Promise<string | ResolutionFailure | undefined> {
@@ -470,13 +570,6 @@ export class Audit {
       this.debug(`discovered`, filename);
       record = {
         consumedFrom: [parent],
-        imports: [],
-        exports: new Set(),
-        resolutions: new Map(),
-        isCJS: false,
-        isAMD: false,
-        templateFindings: [],
-        failedToParse: false,
       };
       this.modules.set(filename, record);
       this.moduleQueue.add(filename);

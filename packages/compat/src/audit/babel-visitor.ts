@@ -1,7 +1,10 @@
 import traverse, { NodePath, Node } from '@babel/traverse';
 import {
   CallExpression,
+  ExportAllDeclaration,
   ExportDefaultDeclaration,
+  ExportNamedDeclaration,
+  ExportNamespaceSpecifier,
   ExportSpecifier,
   Identifier,
   ImportDeclaration,
@@ -35,10 +38,14 @@ export function isNamespaceMarker(value: string | NamespaceMarker): value is Nam
   return typeof value !== 'string';
 }
 
+export interface ExportAll {
+  all: string;
+}
+
 // babelConfig must include { ast: true }
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
   let imports = [] as InternalImport[];
-  let exports = new Set<string>();
+  let exports = new Set<string | ExportAll>();
   let problems = [] as { message: string; detail: string; codeFrameIndex: number | undefined }[];
 
   /* eslint-disable @typescript-eslint/no-inferrable-types */
@@ -118,6 +125,26 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
     },
     ExportSpecifier(path: NodePath<ExportSpecifier>) {
       exports.add(name(path.node.exported));
+    },
+    ExportNamespaceSpecifier(path: NodePath<ExportNamespaceSpecifier>) {
+      exports.add(name(path.node.exported));
+    },
+    ExportAllDeclaration(path: NodePath<ExportAllDeclaration>) {
+      exports.add({ all: path.node.source.value });
+      imports.push({
+        source: path.node.source.value,
+        codeFrameIndex: saveCodeFrame(path.node.source),
+        specifiers: [],
+      });
+    },
+    ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {
+      if (path.node.source) {
+        imports.push({
+          source: path.node.source.value,
+          codeFrameIndex: saveCodeFrame(path.node.source),
+          specifiers: [],
+        });
+      }
     },
   });
 

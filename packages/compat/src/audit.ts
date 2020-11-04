@@ -60,7 +60,8 @@ export class AuditResults {
   modules: { [file: string]: Module } = {};
   findings: Finding[] = [];
 
-  constructor(baseDir: string, findings: Finding[], modules: Map<string, InternalModule>) {
+  static create(baseDir: string, findings: Finding[], modules: Map<string, InternalModule>) {
+    let results = new this();
     for (let [filename, module] of modules) {
       let publicModule: Module = {
         consumedFrom: module.consumedFrom.map(entry => {
@@ -85,12 +86,13 @@ export class AuditResults {
         })),
         exports: [...module.exports],
       };
-      this.modules[explicitRelative(baseDir, filename)] = publicModule;
+      results.modules[explicitRelative(baseDir, filename)] = publicModule;
     }
     for (let finding of findings) {
       let relFinding = Object.assign({}, finding, { filename: explicitRelative(baseDir, finding.filename) });
-      this.findings.push(relFinding);
+      results.findings.push(relFinding);
     }
+    return results;
   }
 
   humanReadable(): string {
@@ -100,7 +102,7 @@ export class AuditResults {
     for (let [filename, findings] of Object.entries(findingsByFile)) {
       output.push(`${chalk.yellow(filename)}`);
       for (let finding of findings) {
-        output.push(indent(chalk.red(finding.message) + ' ' + finding.detail, 1));
+        output.push(indent(chalk.red(finding.message) + ': ' + finding.detail, 1));
         if (finding.codeFrame) {
           output.push(indent(finding.codeFrame, 2));
         }
@@ -283,7 +285,7 @@ export class Audit {
     }
     await this.drainQueue();
     this.inspectModules();
-    return new AuditResults(this.appDir, this.findings, this.modules);
+    return AuditResults.create(this.appDir, this.findings, this.modules);
   }
 
   private inspectModules() {

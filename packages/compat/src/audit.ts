@@ -377,6 +377,14 @@ export class Audit {
       module.imports = result.imports;
       module.isCJS = result.isCJS;
       module.isAMD = result.isAMD;
+      for (let problem of result.problems) {
+        this.pushFinding({
+          filename,
+          message: problem.message,
+          detail: problem.detail,
+          codeFrame: this.frames.render(problem.codeFrameIndex),
+        });
+      }
       return result.imports.map(i => i.source);
     } catch (err) {
       if (err.code === 'BABEL_PARSE_ERROR') {

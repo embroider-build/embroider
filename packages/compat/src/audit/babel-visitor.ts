@@ -39,6 +39,7 @@ export function isNamespaceMarker(value: string | NamespaceMarker): value is Nam
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
   let imports = [] as InternalImport[];
   let exports = new Set<string>();
+  let problems = [] as { message: string; detail: string; codeFrameIndex: number | undefined }[];
 
   /* eslint-disable @typescript-eslint/no-inferrable-types */
   // These are not really inferrable. Without explicit declarations, TS thinks
@@ -76,7 +77,11 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
             specifiers: [],
           });
         } else {
-          throw new Error(`unimplemented: non literal importSync`);
+          problems.push({
+            message: `audit tool is unable to understand this usage of importSync`,
+            detail: arg.type,
+            codeFrameIndex: saveCodeFrame(arg),
+          });
         }
       }
     },
@@ -118,7 +123,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
 
   let isCJS = imports.length === 0 && exports.size === 0 && (sawModule || sawExports);
   let isAMD = imports.length === 0 && exports.size === 0 && sawDefine;
-  return { imports, exports, isCJS, isAMD };
+  return { imports, exports, isCJS, isAMD, problems };
 }
 
 export class CodeFrameStorage {

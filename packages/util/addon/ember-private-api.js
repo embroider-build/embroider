@@ -14,7 +14,7 @@ function runtimeResolver(owner) {
     return entry[1].resolver.resolver;
   }
 
-  throw new Error(`@embroider/addon couldn't locate the runtime resolver on this ember version`);
+  throw new Error(`@embroider/util couldn't locate the runtime resolver on this ember version`);
 }
 
 export function lookupCurriedComponentDefinition(name, owner) {

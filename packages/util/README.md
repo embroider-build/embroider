@@ -1,6 +1,6 @@
-# @embroider/addon
+# @embroider/util
 
-Utilities to help addons with Embroider support.
+Utilities to help apps and addons with Embroider support.
 
 ## Compatibility
 
@@ -11,7 +11,7 @@ Utilities to help addons with Embroider support.
 ## Installation
 
 ```
-ember install @embroider/addon
+ember install @embroider/util
 ```
 
 ## The Utilities
@@ -23,7 +23,7 @@ This function aids you in eliminating un-analyzable usage of the `{{component}}`
 Example usage in Javascript:
 
 ```js
-import { ensureSafeComponent } from '@embroider/addon';
+import { ensureSafeComponent } from '@embroider/util';
 import Component from '@glimmer/component';
 import DefaultTitleComponent from './default-title';
 

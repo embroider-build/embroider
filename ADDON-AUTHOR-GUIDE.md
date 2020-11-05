@@ -124,11 +124,11 @@ Now we eliminated the `{{component}}` helper. And this actually works, but with 
 - it only works reliably on Ember versions before 3.23, because we might get passed a string, and invoking a string via angle brackets was an accidental behavior that was never intended, and it's fixed in that release (currently in beta).
 - and we haven't really solved the underlying problem, which is that we can sneakily convert strings into components in a way that lets them escape Embroider's analysis.
 
-So we need another step. Add `@embroider/addon` to your project, and use `ensureSafeComponent`:
+So we need another step. Add `@embroider/util` to your project, and use `ensureSafeComponent`:
 
 ```js
 import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/addon';
+import { ensureSafeComponent } from '@embroider/util';
 
 export default class extends Component {
   get titleBar() {
@@ -147,7 +147,7 @@ Notice also that if the user doesn't provide a component, we will trigger the de
 
 ```js
 import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/addon';
+import { ensureSafeComponent } from '@embroider/util';
 import DefaultTitleBar from './default-title-bar';
 
 export default class extends Component {
@@ -201,7 +201,7 @@ But if your template is getting complicated, you can always move to Javascript a
 
 ```js
 import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/addon';
+import { ensureSafeComponent } from '@embroider/util';
 import FancyTitleBar from './fancy-title-bar';
 import PlainTitleBar from './plain-title-bar';
 

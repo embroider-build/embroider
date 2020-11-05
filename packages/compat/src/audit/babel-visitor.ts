@@ -1,7 +1,10 @@
 import traverse, { NodePath, Node } from '@babel/traverse';
 import {
   CallExpression,
+  ExportAllDeclaration,
   ExportDefaultDeclaration,
+  ExportNamedDeclaration,
+  ExportNamespaceSpecifier,
   ExportSpecifier,
   Identifier,
   ImportDeclaration,
@@ -22,7 +25,7 @@ export interface InternalImport {
   codeFrameIndex: number | undefined;
   specifiers: {
     name: string | NamespaceMarker;
-    local: string;
+    local: string | null; // can be null when re-exporting, because in that case we import `name` from `source` but don't create any local binding for it
     codeFrameIndex: number | undefined;
   }[];
 }
@@ -35,10 +38,15 @@ export function isNamespaceMarker(value: string | NamespaceMarker): value is Nam
   return typeof value !== 'string';
 }
 
+export interface ExportAll {
+  all: string;
+}
+
 // babelConfig must include { ast: true }
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
   let imports = [] as InternalImport[];
-  let exports = new Set<string>();
+  let exports = new Set<string | ExportAll>();
+  let problems = [] as { message: string; detail: string; codeFrameIndex: number | undefined }[];
 
   /* eslint-disable @typescript-eslint/no-inferrable-types */
   // These are not really inferrable. Without explicit declarations, TS thinks
@@ -76,7 +84,11 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
             specifiers: [],
           });
         } else {
-          throw new Error(`unimplemented: non literal importSync`);
+          problems.push({
+            message: `audit tool is unable to understand this usage of ${isImport(callee) ? 'import' : 'importSync'}`,
+            detail: arg.type,
+            codeFrameIndex: saveCodeFrame(arg),
+          });
         }
       }
     },
@@ -113,12 +125,52 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
     },
     ExportSpecifier(path: NodePath<ExportSpecifier>) {
       exports.add(name(path.node.exported));
+      if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
+        imports[imports.length - 1].specifiers.push({
+          name: name(path.node.local),
+          local: null, // re-exports don't create local bindings
+          codeFrameIndex: saveCodeFrame(path.node),
+        });
+      }
+    },
+    ExportNamespaceSpecifier(path: NodePath<ExportNamespaceSpecifier>) {
+      exports.add(name(path.node.exported));
+      if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
+        imports[imports.length - 1].specifiers.push({
+          name: { isNamespace: true },
+          local: null, // re-exports don't create local bindings
+          codeFrameIndex: saveCodeFrame(path.node),
+        });
+      }
+    },
+    ExportAllDeclaration(path: NodePath<ExportAllDeclaration>) {
+      exports.add({ all: path.node.source.value });
+      imports.push({
+        source: path.node.source.value,
+        codeFrameIndex: saveCodeFrame(path.node.source),
+        specifiers: [
+          {
+            name: { isNamespace: true },
+            local: null,
+            codeFrameIndex: saveCodeFrame(path.node),
+          },
+        ],
+      });
+    },
+    ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {
+      if (path.node.source) {
+        imports.push({
+          source: path.node.source.value,
+          codeFrameIndex: saveCodeFrame(path.node.source),
+          specifiers: [],
+        });
+      }
     },
   });
 
   let isCJS = imports.length === 0 && exports.size === 0 && (sawModule || sawExports);
   let isAMD = imports.length === 0 && exports.size === 0 && sawDefine;
-  return { imports, exports, isCJS, isAMD };
+  return { imports, exports, isCJS, isAMD, problems };
 }
 
 export class CodeFrameStorage {

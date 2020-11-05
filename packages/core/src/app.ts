@@ -213,8 +213,12 @@ export class AppBuilder<TreeNames> {
     return extensionsPattern(this.adapter.adjustImportsOptions().resolvableExtensions);
   }
 
-  private impliedAssets(type: keyof ImplicitAssetPaths, emberENV?: EmberENV): (OnDiskAsset | InMemoryAsset)[] {
-    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type).map(
+  private impliedAssets(
+    type: keyof ImplicitAssetPaths,
+    engine: Engine,
+    emberENV?: EmberENV
+  ): (OnDiskAsset | InMemoryAsset)[] {
+    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
         let stats = statSync(sourcePath);
         return {
@@ -276,16 +280,19 @@ export class AppBuilder<TreeNames> {
     return result;
   }
 
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths): string[] {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths, engine: Engine): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(this.adapter.allActiveAddons, this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
-            styles.push(resolve.sync(mod, options));
+            // exclude engines because they will handle their own css importation
+            if (!addon.isLazyEngine()) {
+              styles.push(resolve.sync(mod, options));
+            }
           } else {
             result.push(resolve.sync(mod, options));
           }
@@ -404,7 +411,8 @@ export class AppBuilder<TreeNames> {
 
     html.insertStyleLink(html.styles, `assets/${this.app.name}.css`);
 
-    let vendorJS = this.implicitScriptsAsset(prepared, emberENV);
+    const parentEngine = appFiles.find(e => !e.parent) as Engine;
+    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
@@ -418,7 +426,7 @@ export class AppBuilder<TreeNames> {
       }
     }
 
-    let implicitStyles = this.implicitStylesAsset(prepared);
+    let implicitStyles = this.implicitStylesAsset(prepared, parentEngine);
     if (implicitStyles) {
       html.insertStyleLink(html.implicitStyles, implicitStyles.relativePath);
     }
@@ -432,21 +440,25 @@ export class AppBuilder<TreeNames> {
     let testJS = this.testJSEntrypoint(appFiles, prepared);
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
-    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared);
+    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
     if (implicitTestScriptsAsset) {
       html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
     }
 
-    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared);
+    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
     if (implicitTestStylesAsset) {
       html.insertStyleLink(html.implicitTestStyles, implicitTestStylesAsset.relativePath);
     }
   }
 
-  private implicitScriptsAsset(prepared: Map<string, InternalAsset>, emberENV: EmberENV): InternalAsset | undefined {
+  private implicitScriptsAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine,
+    emberENV: EmberENV
+  ): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
     if (!asset) {
-      let implicitScripts = this.impliedAssets('implicit-scripts', emberENV);
+      let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -455,22 +467,26 @@ export class AppBuilder<TreeNames> {
     return asset;
   }
 
-  private implicitStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: Engine): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.css');
     if (!asset) {
-      let implicitStyles = this.impliedAssets('implicit-styles');
+      let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
+        // we reverse because we want the synthetic vendor style at the top
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }
     return asset;
   }
 
-  private implicitTestScriptsAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitTestScriptsAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine
+  ): InternalAsset | undefined {
     let testSupportJS = prepared.get('assets/test-support.js');
     if (!testSupportJS) {
-      let implicitTestScripts = this.impliedAssets('implicit-test-scripts');
+      let implicitTestScripts = this.impliedAssets('implicit-test-scripts', application);
       if (implicitTestScripts.length > 0) {
         testSupportJS = new ConcatenatedAsset(
           'assets/test-support.js',
@@ -483,10 +499,13 @@ export class AppBuilder<TreeNames> {
     return testSupportJS;
   }
 
-  private implicitTestStylesAsset(prepared: Map<string, InternalAsset>): InternalAsset | undefined {
+  private implicitTestStylesAsset(
+    prepared: Map<string, InternalAsset>,
+    application: Engine
+  ): InternalAsset | undefined {
     let asset = prepared.get('assets/test-support.css');
     if (!asset) {
-      let implicitTestStyles = this.impliedAssets('implicit-test-styles');
+      let implicitTestStyles = this.impliedAssets('implicit-test-styles', application);
       if (implicitTestStyles.length > 0) {
         asset = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -990,6 +1009,22 @@ export class AppBuilder<TreeNames> {
       requiredAppFiles.push(appFiles.helpers);
     }
 
+    let styles = [];
+    // only import styles from engines with a parent (this excludeds the parent application) as their styles
+    // will be inserted via a direct <link> tag.
+    if (engine.parent && engine.package.isLazyEngine()) {
+      let implicitStyles = this.impliedAssets('implicit-styles', engine);
+      for (let style of implicitStyles) {
+        styles.push({
+          path: explicitRelative('assets/_engine_', style.relativePath),
+        });
+      }
+
+      styles.push({
+        path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
+      });
+    }
+
     let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
@@ -1038,7 +1073,7 @@ export class AppBuilder<TreeNames> {
     // modules.
     this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
 
-    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules };
+    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -1170,16 +1205,23 @@ export class AppBuilder<TreeNames> {
 }
 
 const entryTemplate = compile(`
-import { importSync as i } from '@embroider/macros';
+import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
 let w = window;
 let d = w.define;
+
+{{#if styles}}
+  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
+    {{#each styles as |stylePath| ~}}
+      i("{{stylePath.path}}");
+    {{/each}}
+  }
+{{/if}}
 
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}
-  import { macroCondition, getGlobalConfig } from '@embroider/macros';
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
       d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
@@ -1245,6 +1287,7 @@ if (!runningTests) {
   testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
+  styles?: { path: string }[];
 }) => string;
 
 const routeEntryTemplate = compile(`

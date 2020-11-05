@@ -2,4 +2,5 @@
   border-right-width: 2px;
   border-right-style: solid;
   border-right-color: blue;
+  content: 'lazy-engine/addon/styles/addon.css';
 }

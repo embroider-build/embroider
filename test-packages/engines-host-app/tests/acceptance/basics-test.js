@@ -2,10 +2,24 @@ import { module, test } from 'qunit';
 import { visit, currentURL } from '@ember/test-helpers';
 import { setupApplicationTest, skip } from 'ember-qunit';
 
-module('Acceptance | basics', function(hooks) {
+function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
+  let values = [];
+
+  for (let stylesheet of styleSheets) {
+    for (let cssRule of stylesheet.cssRules) {
+      if (cssRule.selectorText === cssSelector && cssRule.style[cssProperty]) {
+        values.push(cssRule.style[cssProperty].replaceAll('"', ''));
+      }
+    }
+  }
+
+  return values;
+}
+
+module('Acceptance | basics', function (hooks) {
   setupApplicationTest(hooks);
 
-  test('host-app', async function(assert) {
+  test('host-app', async function (assert) {
     await visit('/');
     assert.equal(currentURL(), '/');
     assert.dom('[data-test-duplicated-helper]').containsText('from-engines-host-app');
@@ -14,34 +28,17 @@ module('Acceptance | basics', function(hooks) {
   // this test must be the first test that loads the use-lazy-engine engine
   // as after it has loaded it will not "unload" and we are checking that these
   // modules are entering require.entries for the first time.
-  test('lazy-engine', async function(assert) {
+  test('lazy-engine', async function (assert) {
     await visit('/');
     let entriesBefore = Object.entries(window.require.entries).length;
+    let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
 
-    // TODO: uncomment once we fix this appearing too eagerly
-    // assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    assert.deepEqual(rules, [
+      'engines-host-app/vendor/styles.css',
+      'eager-engine/addon/styles/addon.css',
+      'engines-host-app/app/styles/app.css',
+    ]);
 
-    await visit('/use-lazy-engine');
-    let entriesAfter = Object.entries(window.require.entries).length;
-    assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
-    assert.ok(entriesAfter > entriesBefore);
-    assert.equal(currentURL(), '/use-lazy-engine');
-    assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
-    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
-  });
-
-  // See TODO comment in above test
-  skip('lazy engines own app tree is lazy', function() {});
-
-  test('eager-engine', async function(assert) {
-    await visit('/use-eager-engine');
-    assert.equal(currentURL(), '/use-eager-engine');
-    assert.dom('[data-test-eager-engine-main] > h1').containsText('Eager engine');
-    assert.dom('[data-test-truth-helpers-ok]').exists();
-    assert.dom('[data-test-duplicated-helper]').containsText('from-eager-engine-helper');
-  });
-
-  test('styles', async function(assert) {
     await visit('/style-check');
     assert.dom('.shared-style-target').exists();
 
@@ -51,16 +48,39 @@ module('Acceptance | basics', function(hooks) {
       'eager-engine styles are present'
     );
 
-    // TODO: uncomment this after implement lazy styles. See skipped test below
-    // that I left as a reminder.
-    //
-    // assert.equal(
-    //   getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
-    //   '0px',
-    //   'lazy-engine styles are not present'
-    // );
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
+      '0px',
+      'lazy-engine addon styles are not present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
+      '0px',
+      'lazy-engine vendor styles are not present'
+    );
+
+    // TODO: uncomment once we fix this appearing too eagerly
+    //assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
 
     await visit('/use-lazy-engine');
+    let entriesAfter = Object.entries(window.require.entries).length;
+    assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    assert.ok(entriesAfter > entriesBefore);
+    assert.equal(currentURL(), '/use-lazy-engine');
+    assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
+    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-engine');
+
+    rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
+
+    assert.deepEqual(rules, [
+      'engines-host-app/vendor/styles.css',
+      'eager-engine/addon/styles/addon.css',
+      'engines-host-app/app/styles/app.css',
+      'macro-sample-addon/addon/styles/addon.css',
+      'lazy-engine/addon/styles/addon.css',
+    ]);
+
     await visit('/style-check');
 
     assert.equal(
@@ -74,9 +94,22 @@ module('Acceptance | basics', function(hooks) {
       '2px',
       'now lazy-engine styles are present'
     );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
+      '2px',
+      'lazy-engine vendor styles are present'
+    );
   });
 
-  skip('lazy styles are not present until after lazy engine loads', function() {
-    // See commented assertion in previous test.
+  // See TODO comment in above test
+  skip('lazy engines own app tree is lazy', function () {});
+
+  test('eager-engine', async function (assert) {
+    await visit('/use-eager-engine');
+    assert.equal(currentURL(), '/use-eager-engine');
+    assert.dom('[data-test-eager-engine-main] > h1').containsText('Eager engine');
+    assert.dom('[data-test-truth-helpers-ok]').exists();
+    assert.dom('[data-test-duplicated-helper]').containsText('from-eager-engine-helper');
   });
 });

@@ -25,7 +25,7 @@ export interface InternalImport {
   codeFrameIndex: number | undefined;
   specifiers: {
     name: string | NamespaceMarker;
-    local: string;
+    local: string | null; // can be null when re-exporting, because in that case we import `name` from `source` but don't create any local binding for it
     codeFrameIndex: number | undefined;
   }[];
 }
@@ -125,16 +125,36 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
     },
     ExportSpecifier(path: NodePath<ExportSpecifier>) {
       exports.add(name(path.node.exported));
+      if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
+        imports[imports.length - 1].specifiers.push({
+          name: name(path.node.local),
+          local: null, // re-exports don't create local bindings
+          codeFrameIndex: saveCodeFrame(path.node),
+        });
+      }
     },
     ExportNamespaceSpecifier(path: NodePath<ExportNamespaceSpecifier>) {
       exports.add(name(path.node.exported));
+      if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
+        imports[imports.length - 1].specifiers.push({
+          name: { isNamespace: true },
+          local: null, // re-exports don't create local bindings
+          codeFrameIndex: saveCodeFrame(path.node),
+        });
+      }
     },
     ExportAllDeclaration(path: NodePath<ExportAllDeclaration>) {
       exports.add({ all: path.node.source.value });
       imports.push({
         source: path.node.source.value,
         codeFrameIndex: saveCodeFrame(path.node.source),
-        specifiers: [],
+        specifiers: [
+          {
+            name: { isNamespace: true },
+            local: null,
+            codeFrameIndex: saveCodeFrame(path.node),
+          },
+        ],
       });
     },
     ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {

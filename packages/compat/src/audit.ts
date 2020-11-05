@@ -87,7 +87,7 @@ export interface Import {
   source: string;
   specifiers: {
     name: string | NamespaceMarker;
-    local: string;
+    local: string | null; // can be null when re-exporting, because in that case we import `name` from `source` but don't create any local binding for it
   }[];
 }
 
@@ -346,12 +346,12 @@ export class Audit {
   private linkModules() {
     for (let module of this.modules.values()) {
       if (isResolved(module)) {
-        this.expandExports(module);
+        this.linkModule(module);
       }
     }
   }
 
-  private expandExports(module: ResolvedInternalModule) {
+  private linkModule(module: ResolvedInternalModule) {
     let exports = new Set<string>();
     for (let exp of module.parsed.exports) {
       if (typeof exp === 'string') {
@@ -361,12 +361,16 @@ export class Audit {
         if (!isResolutionFailure(moduleName)) {
           let target = this.modules.get(moduleName)!;
           if (!isLinked(target) && isResolved(target)) {
-            this.expandExports(target);
+            this.linkModule(target);
           }
           if (isLinked(target)) {
             for (let innerExp of target.linked.exports) {
               exports.add(innerExp);
             }
+          } else {
+            // our module doesn't successfully enter linked state because it
+            // depends on stuff that also couldn't
+            return;
           }
         }
       }

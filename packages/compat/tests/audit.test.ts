@@ -245,10 +245,15 @@ describe('audit', function () {
     expect(result.modules['./app.js'].imports.length).toBe(3);
     let imports = fromPairs(result.modules['./app.js'].imports.map(imp => [imp.source, imp.specifiers]));
     expect(imports).toEqual({
-      './lib-a': ['a', 'b', 'thing'],
-      './lib-b': [{ isNamespaceMarker: true }],
-      './lib-c': [{ isNamespaceMarker: true }],
+      './lib-a': [
+        { name: 'default', local: null },
+        { name: 'b', local: null },
+        { name: 'thing', local: null },
+      ],
+      './lib-b': [{ name: { isNamespace: true }, local: null }],
+      './lib-c': [{ name: { isNamespace: true }, local: null }],
     });
+    expect(Object.keys(result.modules).length).toBe(5);
   });
 
   test(`tolerates CJS`, async function () {
@@ -318,14 +323,15 @@ describe('audit', function () {
 
   test('failure to parse JS is reported and does not cause cascading errors', async function () {
     merge(app.files, {
-      'app.js': `import thing from './has-parse-error'`,
+      'app.js': `import { thing } from './intermediate'`,
+      'intermediate.js': `export * from './has-parse-error';`,
       'has-parse-error.js': `export default function() {`,
     });
     let result = await audit();
     expect(result.findings.map(f => ({ filename: f.filename, message: f.message }))).toEqual([
       { filename: './has-parse-error.js', message: 'failed to parse' },
     ]);
-    expect(Object.keys(result.modules).length).toBe(3);
+    expect(Object.keys(result.modules).length).toBe(4);
   });
 });
 

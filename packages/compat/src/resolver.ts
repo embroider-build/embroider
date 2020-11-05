@@ -328,8 +328,8 @@ export default class CompatResolver implements Resolver {
     return extensionsPattern(this.params.adjustImportsOptions.resolvableExtensions);
   }
 
-  absPathToRuntimeName(absPath: string) {
-    let pkg = PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
+  absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+    let pkg = owningPackage || PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
       for (let [runtimeName, realName] of Object.entries(this.params.adjustImportsOptions.renamePackages)) {
@@ -338,7 +338,6 @@ export default class CompatResolver implements Resolver {
           break;
         }
       }
-
       return join(packageRuntimeName, relative(pkg.root, absPath))
         .replace(this.resolvableExtensionsPattern, '')
         .split(sep)
@@ -384,7 +383,7 @@ export default class CompatResolver implements Resolver {
 
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
-    return { root: this.params.root };
+    return { root: this.params.root, name: this.params.modulePrefix };
   }
 
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
@@ -496,7 +495,7 @@ export default class CompatResolver implements Resolver {
         modules: componentModules.map(absPath => ({
           path: explicitRelative(dirname(from), absPath),
           absPath,
-          runtimeName: this.absPathToRuntimeName(absPath),
+          runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
         })),
         yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
         yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
@@ -662,4 +661,5 @@ function humanReadableFile(root: string, file: string) {
 // therefore made it into a fully functional Package.
 interface AppPackagePlaceholder {
   root: string;
+  name: string;
 }

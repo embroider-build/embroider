@@ -1373,4 +1373,32 @@ describe('compat-resolver', function () {
       ]);
     }).toThrow(/Unsafe dynamic component this\.unknown/);
   });
+
+  test('respects invokes rule on a component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            invokes: { 'this.which': ['<Alpha/>'] },
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/alpha.hbs');
+    givenFile('components/alpha.js');
+
+    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqual([
+      {
+        path: '../../components/alpha.js',
+        runtimeName: 'the-app/components/alpha',
+      },
+      {
+        path: './alpha.hbs',
+        runtimeName: 'the-app/templates/components/alpha',
+      },
+    ]);
+  });
 });

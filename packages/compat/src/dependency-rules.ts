@@ -93,6 +93,14 @@ export interface ComponentRules {
   // staticComponent Option enabled). But you can tell Embroider to ignore it by
   // setting this.
   safeToIgnore?: boolean;
+
+  // Tells embroider which list of components may be needed for a given path.
+  // For example, if your temlate says `{{component this.panel}}` and you know
+  // that `this.panel` can be either "light-panel" or "dark-panel", you would
+  // say: `invokes: { "this.panel": ["<LightPanel/>", "<DarkPanel/>"] }`
+  invokes?: {
+    [path: string]: ComponentSnippet[];
+  };
 }
 
 export interface ModuleRules {
@@ -132,6 +140,7 @@ type ComponentSnippet = string;
 export interface PreprocessedComponentRule {
   yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  dependsOnComponents: ComponentSnippet[];
   argumentsAreComponents: string[];
   safeInteriorPaths: string[];
 }
@@ -141,6 +150,7 @@ export interface PreprocessedComponentRule {
 export function preprocessComponentRule(componentRules: ComponentRules): PreprocessedComponentRule {
   let argumentsAreComponents = [];
   let safeInteriorPaths = [];
+  let dependsOnComponents = [];
   if (componentRules.acceptsComponentArguments) {
     for (let entry of componentRules.acceptsComponentArguments) {
       let name, interior;
@@ -157,9 +167,18 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
       safeInteriorPaths.push(interior);
     }
   }
+  if (componentRules.invokes) {
+    for (let [path, snippets] of Object.entries(componentRules.invokes)) {
+      safeInteriorPaths.push(path);
+      for (let snippet of snippets) {
+        dependsOnComponents.push(snippet);
+      }
+    }
+  }
   return {
     argumentsAreComponents,
     safeInteriorPaths,
+    dependsOnComponents,
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
   };

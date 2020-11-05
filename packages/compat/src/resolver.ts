@@ -143,7 +143,14 @@ export default class CompatResolver implements Resolver {
   }
 
   enter(moduleName: string) {
-    this.dependencies.set(moduleName, []);
+    let rules = this.findComponentRules(moduleName);
+    let deps: Resolution[];
+    if (rules?.dependsOnComponents) {
+      deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
+    } else {
+      deps = [];
+    }
+    this.dependencies.set(moduleName, deps);
   }
 
   private add(resolution: Resolution, from: string) {
@@ -216,12 +223,16 @@ export default class CompatResolver implements Resolver {
     return { components, ignoredComponents };
   }
 
-  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules): ResolutionResult & { type: 'component' } {
+  resolveComponentSnippet(
+    snippet: string,
+    rule: PackageRules | ModuleRules,
+    from = 'rule-snippet.hbs'
+  ): ResolutionResult & { type: 'component' } {
     if (!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
     let name = this.standardDasherize(snippet, rule);
-    let found = this.tryComponent(name, 'rule-snippet.hbs', false);
+    let found = this.tryComponent(name, from, false);
     if (found && found.type === 'component') {
       return found;
     }

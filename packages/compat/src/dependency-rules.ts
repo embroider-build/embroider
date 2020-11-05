@@ -9,7 +9,7 @@ export interface PackageRules {
   package: string;
   semverRange?: string;
 
-  components: {
+  components?: {
     // I would prefer to write the key type here as `ComponentSnippet` to aid
     // documentation, but Typescript won't allow it. See ComponentSnippet below.
     [key: string]: ComponentRules;
@@ -26,6 +26,18 @@ export interface PackageRules {
     // format. Like "templates/components/foo.hbs".
     [filename: string]: ModuleRules;
   };
+
+  addonTemplates?: {
+    // `filename` is relative to your package root, and it assumes v2 package
+    // format. Like "templates/foo.hbs".
+    [filename: string]: TemplateRules;
+  };
+
+  appTemplates?: {
+    // `filename` is relative to the app's root, and it assumes v2 package
+    // format. Like "templates/foo.hbs".
+    [filename: string]: TemplateRules;
+  };
 }
 
 export interface ActivePackageRules extends PackageRules {
@@ -33,7 +45,17 @@ export interface ActivePackageRules extends PackageRules {
   roots: string[];
 }
 
-export interface ComponentRules {
+export interface TemplateRules {
+  // Tells embroider which list of components may be needed for a given path.
+  // For example, if your temlate says `{{component this.panel}}` and you know
+  // that `this.panel` can be either "light-panel" or "dark-panel", you would
+  // say: `invokes: { "this.panel": ["<LightPanel/>", "<DarkPanel/>"] }`
+  invokes?: {
+    [path: string]: ComponentSnippet[];
+  };
+}
+
+export interface ComponentRules extends TemplateRules {
   // This declares that our component yields other components that are safe to
   // invoke with the {{component}} helper.
   //
@@ -132,6 +154,7 @@ type ComponentSnippet = string;
 export interface PreprocessedComponentRule {
   yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  dependsOnComponents: ComponentSnippet[];
   argumentsAreComponents: string[];
   safeInteriorPaths: string[];
 }
@@ -141,6 +164,7 @@ export interface PreprocessedComponentRule {
 export function preprocessComponentRule(componentRules: ComponentRules): PreprocessedComponentRule {
   let argumentsAreComponents = [];
   let safeInteriorPaths = [];
+  let dependsOnComponents = [];
   if (componentRules.acceptsComponentArguments) {
     for (let entry of componentRules.acceptsComponentArguments) {
       let name, interior;
@@ -157,9 +181,18 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
       safeInteriorPaths.push(interior);
     }
   }
+  if (componentRules.invokes) {
+    for (let [path, snippets] of Object.entries(componentRules.invokes)) {
+      safeInteriorPaths.push(path);
+      for (let snippet of snippets) {
+        dependsOnComponents.push(snippet);
+      }
+    }
+  }
   return {
     argumentsAreComponents,
     safeInteriorPaths,
+    dependsOnComponents,
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
   };

@@ -28,7 +28,8 @@ describe('compat-resolver', function () {
       podModulePrefix: otherOptions.podModulePrefix,
       options: optionsWithDefaults(compatOptions),
       activePackageRules: optionsWithDefaults(compatOptions).packageRules.map(rule => {
-        return Object.assign({ roots: [appDir] }, rule);
+        let root = rule.package === 'the-test-package' ? appDir : `${appDir}/node_modules/${rule.package}`;
+        return Object.assign({ roots: [root] }, rule);
       }),
       adjustImportsOptions: Object.assign(
         {
@@ -1372,5 +1373,90 @@ describe('compat-resolver', function () {
         },
       ]);
     }).toThrow(/Unsafe dynamic component this\.unknown/);
+  });
+
+  test('respects invokes rule on a component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            invokes: { 'this.which': ['<Alpha/>'] },
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    givenFile('templates/components/alpha.hbs');
+    givenFile('components/alpha.js');
+
+    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqual([
+      {
+        path: '../../components/alpha.js',
+        runtimeName: 'the-app/components/alpha',
+      },
+      {
+        path: './alpha.hbs',
+        runtimeName: 'the-app/templates/components/alpha',
+      },
+    ]);
+  });
+
+  test('respects invokes rule on a non-component app template', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        appTemplates: {
+          'templates/index.hbs': {
+            invokes: { 'this.which': ['<Alpha/>'] },
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/index.hbs');
+    givenFile('templates/components/alpha.hbs');
+    givenFile('components/alpha.js');
+
+    expect(findDependencies('templates/index.hbs', `{{component this.which}}`)).toEqual([
+      {
+        path: '../components/alpha.js',
+        runtimeName: 'the-app/components/alpha',
+      },
+      {
+        path: './components/alpha.hbs',
+        runtimeName: 'the-app/templates/components/alpha',
+      },
+    ]);
+  });
+
+  test('respects invokes rule on a non-component addon template', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'my-addon',
+        addonTemplates: {
+          'templates/index.hbs': {
+            invokes: { 'this.which': ['<Alpha/>'] },
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/templates/index.hbs');
+    givenFile('templates/components/alpha.hbs');
+    givenFile('components/alpha.js');
+
+    expect(findDependencies('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqual([
+      {
+        path: '../../../components/alpha.js',
+        runtimeName: 'the-app/components/alpha',
+      },
+      {
+        path: '../../../templates/components/alpha.hbs',
+        runtimeName: 'the-app/templates/components/alpha',
+      },
+    ]);
   });
 });

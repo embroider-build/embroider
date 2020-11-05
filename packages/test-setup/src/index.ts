@@ -1,5 +1,8 @@
 import type { Options } from '@embroider/compat';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const currentEmbroiderVersion = require('../package.json').version;
+
 /*
   Use this instead of `app.toTree()` in your ember-cli-build.js:
 
@@ -44,9 +47,9 @@ export function embroiderSafe(extension?: object) {
       name: 'embroider-safe',
       npm: {
         devDependencies: {
-          '@embroider/core': '*',
-          '@embroider/webpack': '*',
-          '@embroider/compat': '*',
+          '@embroider/core': currentEmbroiderVersion,
+          '@embroider/webpack': currentEmbroiderVersion,
+          '@embroider/compat': currentEmbroiderVersion,
         },
       },
       env: {
@@ -63,9 +66,9 @@ export function embroiderOptimized(extension?: object) {
       name: 'embroider-optimized',
       npm: {
         devDependencies: {
-          '@embroider/core': '*',
-          '@embroider/webpack': '*',
-          '@embroider/compat': '*',
+          '@embroider/core': currentEmbroiderVersion,
+          '@embroider/webpack': currentEmbroiderVersion,
+          '@embroider/compat': currentEmbroiderVersion,
         },
       },
       env: {

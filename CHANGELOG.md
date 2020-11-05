@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.31.0
+
+- BREAKING: renamed the new `@embroider/addon` package to `@embroider/util` because it was misleading: apps are encouraged use these utilities too.
+
 ## 0.30.0 (2020-11-03)
 
 - BUGFIX: fix unnecessary inclusion of co-located templates

@@ -219,6 +219,20 @@ export default class CompatResolver implements Resolver {
           }
         }
       }
+      if (rule.appTemplates) {
+        for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
+          let processedRules = preprocessComponentRule(templateRules);
+          components.set(join(this.params.root, path), processedRules);
+        }
+      }
+      if (rule.addonTemplates) {
+        for (let [path, templateRules] of Object.entries(rule.addonTemplates)) {
+          let processedRules = preprocessComponentRule(templateRules);
+          for (let root of rule.roots) {
+            components.set(join(root, path), processedRules);
+          }
+        }
+      }
     }
     return { components, ignoredComponents };
   }

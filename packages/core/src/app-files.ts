@@ -18,7 +18,7 @@ export class AppFiles {
   readonly relocatedFiles: Map<string, string>;
   readonly isFastbootOnly: Map<string, boolean>;
 
-  constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp) {
+  constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp, podModulePrefix?: string) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
@@ -62,7 +62,10 @@ export class AppFiles {
         continue;
       }
 
-      if (this.handleRouteFile(relativePath)) {
+      if (
+        this.handleClassicRouteFile(relativePath) ||
+        (podModulePrefix !== undefined && this.handlePodsRouteFile(relativePath, podModulePrefix))
+      ) {
         continue;
       }
 
@@ -83,7 +86,7 @@ export class AppFiles {
     this.isFastbootOnly = appDiffer.isFastbootOnly;
   }
 
-  private handleRouteFile(relativePath: string): boolean {
+  private handleClassicRouteFile(relativePath: string): boolean {
     let [prefix, ...rest] = relativePath.replace(/\.\w{1,3}$/, '').split('/');
     if (!['controllers', 'templates', 'routes'].includes(prefix)) {
       return false;
@@ -101,6 +104,37 @@ export class AppFiles {
       }
     }
     cursor[type] = relativePath;
+    return true;
+  }
+
+  private handlePodsRouteFile(relativePath: string, podModulePrefix: string): boolean {
+    let parts = relativePath.replace(/\.\w{1,3}$/, '').split('/');
+    let type = parts.pop();
+    if (!type || !['controller', 'template', 'route'].includes(type)) {
+      return false;
+    }
+    let podParts = podModulePrefix.split('/');
+    // The first part of podModulePrefix is the app's package name
+    podParts.shift();
+
+    for (let podPart of podParts) {
+      if (parts.shift() !== podPart) {
+        return false;
+      }
+    }
+
+    let cursor = this.perRoute;
+    for (let part of parts) {
+      let child = cursor.children.get(part);
+      if (child) {
+        cursor = child;
+      } else {
+        let newEntry = { children: new Map() };
+        cursor.children.set(part, newEntry);
+        cursor = newEntry;
+      }
+    }
+    cursor[type as 'controller' | 'template' | 'route'] = relativePath;
     return true;
   }
 

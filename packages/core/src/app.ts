@@ -84,6 +84,9 @@ export interface AppAdapter<TreeNames> {
   // their modulePrefix.)
   modulePrefix(): string;
 
+  // The module prefix when pods file layout is used
+  podModulePrefix(): string | undefined;
+
   // The public URL at which your app will be served.
   rootURL(): string;
 
@@ -620,7 +623,7 @@ export class AppBuilder<TreeNames> {
       .forEach(a => a.differ.update());
     return this.appDiffers.map(a => {
       return Object.assign({}, a.engine, {
-        appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern),
+        appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern, this.adapter.podModulePrefix()),
       });
     });
   }

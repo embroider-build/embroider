@@ -312,7 +312,7 @@ export default class CompatResolver implements Resolver {
         if (dep.type === 'error') {
           if (!this.auditMode) {
             let e = new Error(
-              `${dep.message} ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
+              `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
             ) as any;
             e.isTemplateResolverError = true;
             e.loc = dep.loc;
@@ -624,26 +624,50 @@ export default class CompatResolver implements Resolver {
     );
   }
 
-  resolveComponentHelper(path: string, isLiteral: boolean, from: string, loc: Loc): Resolution | null {
+  resolveComponentHelper(
+    component: ComponentLocator,
+    from: string,
+    loc: Loc,
+    impliedBecause?: { componentName: string; argumentName: string }
+  ): Resolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
-    if (!isLiteral) {
-      let ownComponentRules = this.findComponentRules(from);
-      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(path)) {
-        return null;
-      }
+
+    let message;
+    if (impliedBecause) {
+      message = `argument "${impliedBecause.argumentName}" to component "${impliedBecause.componentName}" is treated as a component, but the value you're passing is dynamic`;
+    } else {
+      message = `Unsafe dynamic component`;
+    }
+
+    if (component.type === 'other') {
       return this.add(
         {
           type: 'error',
-          message: `Unsafe dynamic component`,
-          detail: path,
+          message,
+          detail: `cannot statically analyze this expression`,
           loc,
         },
         from
       );
     }
-    let found = this.tryComponent(path, from);
+    if (component.type === 'path') {
+      let ownComponentRules = this.findComponentRules(from);
+      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
+        return null;
+      }
+      return this.add(
+        {
+          type: 'error',
+          message,
+          detail: component.path,
+          loc,
+        },
+        from
+      );
+    }
+    let found = this.tryComponent(component.path, from);
     if (found) {
       return this.add(found, from);
     }
@@ -651,19 +675,7 @@ export default class CompatResolver implements Resolver {
       {
         type: 'error',
         message: `Missing component`,
-        detail: path,
-        loc,
-      },
-      from
-    );
-  }
-
-  unresolvableComponentArgument(componentName: string, argumentName: string, from: string, loc: Loc) {
-    this.add(
-      {
-        type: 'error',
-        message: 'Unsafe dynamic component',
-        detail: `argument "${argumentName}" to component "${componentName}" is treated as a component, but the value you're passing is dynamic`,
+        detail: component.path,
         loc,
       },
       from
@@ -688,3 +700,16 @@ interface AppPackagePlaceholder {
   root: string;
   name: string;
 }
+
+export type ComponentLocator =
+  | {
+      type: 'literal';
+      path: string;
+    }
+  | {
+      type: 'path';
+      path: string;
+    }
+  | {
+      type: 'other';
+    };

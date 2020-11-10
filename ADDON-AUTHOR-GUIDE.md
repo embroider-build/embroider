@@ -91,9 +91,13 @@ While it's important that we ship good shared tooling, a nice thing about having
 
 ## Replacing the {{component}} helper
 
-Using the `{{component}}` helper (with one small exception which we'll get to) prevents an addon from achieving the **Optimized Embroider Safe** support level. So addons should stop using it. But how?
+Using the `{{component}}` helper can prevent an addon from achieving the **Optimized Embroider Safe** support level. The exact rules are:
 
-Below we will go through several common scenarios.
+- it's OK to pass a string literal component name like `{{component "my-title-bar"}}`
+- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`
+- any other syntax in the first argument to `{{component ...}}` is NOT OK
+
+The following sections explain what to do in the common scenarios where you might have unsafe usage of the `{{component}}` helper.
 
 ### When you're invoking a component you've been given
 
@@ -183,7 +187,7 @@ The simplest fix is to add the `{{component}}` helper:
 <Menu @titleBar={{component "fancy-title-bar"}} />
 ```
 
-This is the one exceptional place where it's OK to use `{{component}}`, because we're passing it a **string literal**. String literals are safe because they are statically analyzable, so Embroider can tell exactly what component you're talking about.
+This is one of the two safe ways to use `{{component}}`, because we're passing it a **string literal**. String literals are safe because they are statically analyzable, so Embroider can tell exactly what component you're talking about.
 
 But if instead you need anything other than a string literal, you'll need a different solution. For example, this is not OK:
 
@@ -215,3 +219,27 @@ export default class extends Component {
 ```hbs
 <Menu @titleBar={{ this.whichComponent }} />
 ```
+
+### When you need to curry arguments onto a component
+
+A common pattern is yielding a component with some curried arguments:
+
+```hbs
+{{yield (component "the-header" mode=this.mode) }}
+```
+
+In this particular example, we're using a **string literal** for the component name, which makes it OK, and you don't need to change it.
+
+But what if you need to curry arguments onto a component somebody else has passed you?
+
+```hbs
+{{yield (component this.args.header mode=this.mode) }}
+```
+
+Because we're only adding a `mode=` argument to this component and not invoking it, we can't switch to angle bracket invocation. Instead, we can wrap our component in the `ensure-safe-component` helper from the `@embroider/util` package:
+
+```hbs
+{{yield (component (ensure-safe-component this.args.header) mode=this.mode) }}
+```
+
+This works the same as the Javascript `ensureSafeComponent` function, and by appearing **directly** as the argument of the `{{component}}` helper, Embroider will trust that this spot can't unsafely resolve a string into a component.

@@ -458,7 +458,25 @@ export default class V1Addon {
   }
 
   get v2Tree(): Tree {
-    return this.throughTreeCache('addon', 'v2Tree', () => mergeTrees(this.v2Trees, { overwrite: true }));
+    return this.throughTreeCache(
+      // these are all the kinds of trees that ember-cli's tree cache
+      // understands. We need them all here because if *any* of these are
+      // uncacheable, we want our whole v2 tree to be treated as uncacheable.
+      [
+        'app',
+        'addon',
+        'addon-styles',
+        'addon-templates',
+        'addon-test-support',
+        'public',
+        'styles',
+        'templates',
+        'test-support',
+        'vendor',
+      ],
+      'v2Tree',
+      () => mergeTrees(this.v2Trees, { overwrite: true })
+    );
   }
 
   // this is split out so that compatibility shims can override it to add more
@@ -474,21 +492,37 @@ export default class V1Addon {
     return trees;
   }
 
-  protected throughTreeCache(name: string, category: string, fn: () => Tree): Tree;
-  protected throughTreeCache(name: string, category: string, fn: () => Tree | undefined): Tree | undefined {
-    let cacheKey;
+  protected throughTreeCache(nameOrNames: string | string[], category: string, fn: () => Tree): Tree;
+  protected throughTreeCache(
+    nameOrNames: string | string[],
+    category: string,
+    fn: () => Tree | undefined
+  ): Tree | undefined {
+    let cacheKey: string | undefined;
     if (typeof this.addonInstance.cacheKeyForTree === 'function') {
-      cacheKey = this.addonInstance.cacheKeyForTree(name);
+      let names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
+      cacheKey = names.reduce((accum: string | undefined, name) => {
+        if (accum == null) {
+          // a previous name was uncacheable, so we're entirely uncacheable
+          return undefined;
+        }
+        let key = this.addonInstance.cacheKeyForTree(name);
+        if (key) {
+          return accum + key;
+        } else {
+          return undefined;
+        }
+      }, '');
       if (cacheKey) {
         cacheKey = cacheKey + category;
         let cachedTree = this.app.addonTreeCache.get(cacheKey);
         if (cachedTree) {
-          debug('cache hit %s %s %s', this.name, name, category);
+          debug('cache hit %s %s %s', this.name, nameOrNames, category);
           return cachedTree;
         }
       }
     }
-    debug('cache miss %s %s %s', this.name, name, category);
+    debug('cache miss %s %s %s', this.name, nameOrNames, category);
     let tree = fn();
     if (tree && cacheKey) {
       this.app.addonTreeCache.set(cacheKey, tree);

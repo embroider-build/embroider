@@ -13,6 +13,10 @@ describe('renaming tests', function () {
   beforeAll(async function () {
     let app = Project.emberNew();
 
+    app.linkPackage('ember-auto-import');
+    let aLib = app.addDependency('a-library');
+    merge(aLib.files, { 'index.js': '' });
+
     (app.files.app as Project['files']).components = {
       'import-lodash.js': `
         import lodash from "lodash";
@@ -104,7 +108,10 @@ describe('renaming tests', function () {
     merge(mirageLike.files, {
       app: {
         mirage: {
-          'config.js': `import "my-app/components/import-lodash";`,
+          'config.js': `
+            import "my-app/components/import-lodash";
+            import "a-library";
+          `,
         },
       },
     });
@@ -205,5 +212,9 @@ describe('renaming tests', function () {
   test(`app-tree files from addons that import from the app get rewritten to relative imports`, function () {
     let assertFile = expectFile('mirage/config.js').transform(build.transpile);
     assertFile.matches(/import ['"]\.\.\/components\/import-lodash['"]/);
+  });
+  test(`files copied into app from addons can resolve the app's deps`, function () {
+    let assertFile = expectFile('mirage/config.js').transform(build.transpile);
+    assertFile.matches(/import ['"]a-library['"]/);
   });
 });

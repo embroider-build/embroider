@@ -1,4 +1,4 @@
-import { default as Resolver, ComponentResolution } from './resolver';
+import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
@@ -47,7 +47,10 @@ export function makeResolverTransform(resolver: Resolver) {
               for (let name of argumentsAreComponents) {
                 let pair = node.hash.pairs.find((pair: any) => pair.key === name);
                 if (pair) {
-                  handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, filename, scopeStack);
+                  handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                    componentName: node.path.original,
+                    argumentName: name,
+                  });
                 }
               }
             });
@@ -90,7 +93,10 @@ export function makeResolverTransform(resolver: Resolver) {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: any) => pair.key === name);
               if (pair) {
-                handleImpliedComponentHelper(node.path.original, name, pair.value, resolver, filename, scopeStack);
+                handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                  componentName: node.path.original,
+                  argumentName: name,
+                });
               }
             }
           }
@@ -104,7 +110,10 @@ export function makeResolverTransform(resolver: Resolver) {
                   for (let name of argumentsAreComponents) {
                     let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
                     if (attr) {
-                      handleImpliedComponentHelper(node.tag, name, attr.value, resolver, filename, scopeStack);
+                      handleComponentHelper(attr.value, resolver, filename, scopeStack, {
+                        componentName: node.tag,
+                        argumentName: name,
+                      });
                     }
                   }
                 });
@@ -227,59 +236,83 @@ class ScopeStack {
   }
 }
 
-function handleImpliedComponentHelper(
-  componentName: string,
-  argumentName: string,
+function handleComponentHelper(
   param: any,
   resolver: Resolver,
   moduleName: string,
-  scopeStack: ScopeStack
-) {
-  if (handleComponentHelper(param, resolver, moduleName, scopeStack)) {
-    return;
-  }
-
-  if (
-    param.type === 'MustacheStatement' &&
-    param.hash.pairs.length === 0 &&
-    param.params.length === 0 &&
-    handleComponentHelper(param.path, resolver, moduleName, scopeStack)
-  ) {
-    return;
-  }
-
-  if (
-    param.type === 'MustacheStatement' &&
-    param.path.type === 'PathExpression' &&
-    param.path.original === 'component'
-  ) {
-    // safe because we will handle this inner `{{component ...}}` mustache on its own
-    return;
-  }
-
-  if (param.type === 'TextNode') {
-    resolver.resolveComponentHelper(param.chars, true, moduleName, param.loc);
-    return;
-  }
-
-  if (param.type === 'SubExpression' && param.path.type === 'PathExpression' && param.path.original === 'component') {
-    // safe because we will handle this inner `(component ...)` subexpression on its own
-    return;
-  }
-
-  resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
-}
-
-function handleComponentHelper(param: any, resolver: Resolver, moduleName: string, scopeStack: ScopeStack) {
+  scopeStack: ScopeStack,
+  impliedBecause?: { componentName: string; argumentName: string }
+): void {
+  let locator: ComponentLocator;
   switch (param.type) {
     case 'StringLiteral':
-      resolver.resolveComponentHelper(param.value, true, moduleName, param.loc);
-      return true;
+      locator = { type: 'literal', path: param.value };
+      break;
     case 'PathExpression':
-      if (!scopeStack.safeComponentInScope(param.original)) {
-        resolver.resolveComponentHelper(param.original, false, moduleName, param.loc);
+      locator = { type: 'path', path: param.original };
+      break;
+    case 'MustacheStatement':
+      if (param.hash.pairs.length === 0 && param.params.length === 0) {
+        handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
+        return;
+      } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+        // safe because we will handle this inner `{{component ...}}` mustache on its own
+        return;
+      } else {
+        locator = { type: 'other' };
       }
-      return true;
+      break;
+    case 'TextNode':
+      locator = { type: 'literal', path: param.chars };
+      break;
+    case 'SubExpression':
+      if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+        // safe because we will handle this inner `(component ...)` subexpression on its own
+        return;
+      }
+      if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
+        // safe because we trust ensure-safe-component
+        return;
+      }
+      locator = { type: 'other' };
+      break;
+    default:
+      locator = { type: 'other' };
   }
-  return false;
+
+  if (locator.type === 'path' && scopeStack.safeComponentInScope(locator.path)) {
+    return;
+  }
+
+  resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
+
+  // if (
+  //   param.type === 'MustacheStatement' &&
+  //   param.hash.pairs.length === 0 &&
+  //   param.params.length === 0 &&
+  //   handleComponentHelper(param.path, resolver, moduleName, scopeStack)
+  // ) {
+  //   return;
+  // }
+
+  // if (
+  //   param.type === 'MustacheStatement' &&
+  //   param.path.type === 'PathExpression' &&
+  //   param.path.original === 'component'
+  // ) {
+  //   // safe because we will handle this inner `{{component ...}}` mustache on its own
+  //   return;
+  // }
+
+  // if (param.type === 'TextNode') {
+  //   resolver.resolveComponentHelper({ type: 'literal', path: param.chars }, moduleName, param.loc);
+  //   return;
+  // }
+
+  // if (param.type === 'SubExpression' && param.path.type === 'PathExpression' && param.path.original === 'component') {
+  //   // safe because we will handle this inner `(component ...)` subexpression on its own
+  //   return;
+  // }
+
+  // resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
 }

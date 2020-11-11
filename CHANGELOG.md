@@ -1,8 +1,18 @@
 # Embroider Changelog
 
-## 0.31.0
+## 0.31.0 (2020-11-11)
 
 - BREAKING: renamed the new `@embroider/addon` package to `@embroider/util` because it was misleading: apps are encouraged use these utilities too.
+- COMPAT: allow code in addon's treeForApp to resolve dependencies from both the app and the addon
+- ENHANCEMENT: respect the ensure-safe-component helper when statically analyzing templates
+- BUGFIX: don't accidentally cache addon broccoli tree output that is not cacheable
+- ENHANCEMENT: support pods layout for route-based code splitting by @simonihmig
+- ENHANCEMENT: added new `invokes` rule for annotating dynamic component behavior
+- BUGFIX: component snippet resolution had a regression in previous release
+- ENHANCEMENT: expose TS types for `@embroider/router` by @simonihmig
+- ENHANCEMENT: lazily load CSS from lazy engines by @thoov
+- ENHANCEMENT: improvements to thoroughness of the embroider-compat-audit command
+- BUGFIX: pin the embroider package versions added by @embroider/test-setup to newest by @simonihmig
 
 ## 0.30.0 (2020-11-03)
 

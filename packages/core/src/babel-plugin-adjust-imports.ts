@@ -116,9 +116,6 @@ function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options, isD
 
   specifier = handleRenaming(specifier, file, opts);
   specifier = handleExternal(specifier, file, opts, isDynamic);
-  if (file.isRelocated) {
-    specifier = handleRelocation(specifier, file);
-  }
   return specifier;
 }
 
@@ -176,19 +173,19 @@ function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
   return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
-function isResolvable(packageName: string, fromPkg: V2Package): boolean {
+function isResolvable(packageName: string, fromPkg: Package): false | Package {
   try {
     let dep = packageCache.resolve(packageName, fromPkg);
     if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
       return false;
     }
+    return dep;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;
     }
     return false;
   }
-  return true;
 }
 
 const dynamicMissingModule = compile(`
@@ -247,13 +244,40 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return makeExternal(specifier, sourceFile, opts);
   }
 
-  if (isResolvable(packageName, pkg)) {
-    if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
-      throw new Error(
-        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-      );
+  let relocatedPkg = sourceFile.relocatedIntoPackage();
+  if (relocatedPkg) {
+    // this file has been moved into another package (presumably the app).
+    // first try to resolve from the destination package
+    if (isResolvable(packageName, relocatedPkg)) {
+      if (!pkg.meta['auto-upgraded']) {
+        throw new Error(
+          `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
+        );
+      }
+      return specifier;
+    } else {
+      // second try to resolve from the source package
+      let targetPkg = isResolvable(packageName, pkg);
+      if (targetPkg) {
+        if (!pkg.meta['auto-upgraded']) {
+          throw new Error(
+            `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
+          );
+        }
+        // we found it, but we need to rewrite it because it's not really going to
+        // resolve from where its sitting
+        return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, targetPkg.root));
+      }
     }
-    return specifier;
+  } else {
+    if (isResolvable(packageName, pkg)) {
+      if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        );
+      }
+      return specifier;
+    }
   }
 
   // auto-upgraded packages can fall back to the set of known active addons
@@ -303,19 +327,6 @@ function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options):
     })
   );
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
-}
-
-function handleRelocation(specifier: string, sourceFile: AdjustFile) {
-  let packageName = getPackageName(specifier);
-  if (!packageName) {
-    return specifier;
-  }
-  let pkg = sourceFile.owningPackage();
-  if (!pkg || !pkg.isV2Ember()) {
-    return specifier;
-  }
-  let targetPkg = packageCache.resolve(packageName, pkg);
-  return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, targetPkg.root));
 }
 
 export default function main() {

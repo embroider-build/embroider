@@ -1,6 +1,7 @@
+import { macroCondition, dependencySatisfies } from '@embroider/macros';
+
 /* global Ember */
 const { isCurriedComponentDefinition, CurriedComponentDefinition } = Ember.__loader.require('@glimmer/runtime');
-
 export { isCurriedComponentDefinition };
 
 function runtimeResolver(owner) {
@@ -19,8 +20,16 @@ function runtimeResolver(owner) {
 
 export function lookupCurriedComponentDefinition(name, owner) {
   let resolver = runtimeResolver(owner);
-  let handle = resolver.lookupComponentHandle(name, { owner });
+  let handle = resolver.lookupComponentHandle(name, contextForLookup(owner));
   if (handle != null) {
     return new CurriedComponentDefinition(resolver.resolve(handle), null);
+  }
+}
+
+function contextForLookup(owner) {
+  if (macroCondition(dependencySatisfies('ember-source', '>=3.24.0-canary'))) {
+    return owner;
+  } else {
+    return { owner };
   }
 }

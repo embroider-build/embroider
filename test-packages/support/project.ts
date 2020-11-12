@@ -120,6 +120,9 @@ export default App;
 }
 
 export class Project extends FixturifyProject {
+  // FIXME: update fixturify-project to allow easier customization of `pkg`
+  declare pkg: any;
+
   static emberNew(name = 'my-app'): Project {
     let app = new Project(name);
     app.files = {

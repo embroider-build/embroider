@@ -31,6 +31,7 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix: ${{fromJson(needs.discover_matrix.outputs.matrix)}}
     steps:
       - uses: actions/checkout@v1

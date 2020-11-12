@@ -364,6 +364,12 @@ export class AppBuilder<TreeNames> {
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
+    // we can use globally shared babel runtime by default
+    babel.plugins.push([
+      require.resolve('@babel/plugin-transform-runtime'),
+      { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
+    ]);
+
     return new PortableBabelConfig(babel, { basedir: this.root });
   }
 

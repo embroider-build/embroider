@@ -353,7 +353,7 @@ export default class CompatResolver implements Resolver {
     return extensionsPattern(this.params.adjustImportsOptions.resolvableExtensions);
   }
 
-  absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+  absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
     let pkg = owningPackage || PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
@@ -363,20 +363,18 @@ export default class CompatResolver implements Resolver {
           break;
         }
       }
-      return join(packageRuntimeName, relative(pkg.root, absPath))
-        .replace(this.resolvableExtensionsPattern, '')
-        .split(sep)
-        .join('/')
-        .replace(/\/index$/, '');
+      return join(packageRuntimeName, relative(pkg.root, absPath)).split(sep).join('/');
     } else if (absPath.startsWith(this.params.root)) {
-      return join(this.params.modulePrefix, relative(this.params.root, absPath))
-        .replace(this.resolvableExtensionsPattern, '')
-        .split(sep)
-        .join('/')
-        .replace(/\/index$/, '');
+      return join(this.params.modulePrefix, relative(this.params.root, absPath)).split(sep).join('/');
     } else {
       throw new Error(`bug: can't figure out the runtime name for ${absPath}`);
     }
+  }
+
+  absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+    return this.absPathToRuntimePath(absPath, owningPackage)
+      .replace(this.resolvableExtensionsPattern, '')
+      .replace(/\/index$/, '');
   }
 
   private get staticComponentsEnabled(): boolean {

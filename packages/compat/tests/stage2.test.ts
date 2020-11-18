@@ -236,6 +236,7 @@ describe('stage2 build', function () {
               'first-choice.hbs': 'first',
               'second-choice.hbs': 'second',
               'third-choice.hbs': 'third',
+              'module-name.hbs': '<div class={{embroider-sample-transforms-module}}>hello world</div>',
             },
           },
           components: {
@@ -253,6 +254,9 @@ describe('stage2 build', function () {
             return import('some-library');
           }
         `,
+          helpers: {
+            'embroider-sample-transforms-module.js': 'export default function() {}',
+          },
         },
         public: {
           'public-file-1.txt': `initial state`,
@@ -559,6 +563,14 @@ describe('stage2 build', function () {
       expectFile('./does-dynamic-import.js')
         .transform(build.transpile)
         .matches(/return import\(['"]some-library['"]\)/);
+    });
+
+    test('hbs transform sees expected module name', function () {
+      let assertFile = expectFile('templates/components/module-name.hbs').transform(build.transpile);
+      assertFile.matches(
+        '"my-app/templates/components/module-name.hbs"',
+        'our sample transform injected the expected moduleName into the compiled template'
+      );
     });
   });
 

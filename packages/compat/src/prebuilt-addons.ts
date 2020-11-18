@@ -34,7 +34,7 @@ class RehomedPackageCache extends PackageCache {
   constructor(private appSrcDir: string, private appDestDir: string) {
     super();
   }
-  protected basedir(pkg: Package): string {
+  basedir(pkg: Package): string {
     if (pkg.root === this.appSrcDir) {
       return this.appDestDir;
     }

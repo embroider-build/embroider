@@ -27,7 +27,7 @@ export function lookupCurriedComponentDefinition(name, owner) {
 }
 
 function contextForLookup(owner) {
-  if (macroCondition(dependencySatisfies('ember-source', '>=3.24.0-canary'))) {
+  if (macroCondition(dependencySatisfies('ember-source', '>=3.24.0-canary || >=3.24.0-beta'))) {
     return owner;
   } else {
     return { owner };

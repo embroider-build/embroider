@@ -29,6 +29,7 @@
     "babel-loader": "8",
     "babel-preset-env": "^1.7.0",
     "css-loader": "^3.0.0",
+    "csso": "^4.1.0",
     "debug": "^3.1.0",
     "fs-extra": "^7.0.0",
     "jsdom": "^16.4.0",
@@ -43,6 +44,7 @@
     "webpack": "^4.43.0"
   },
   "devDependencies": {
+    "@types/csso": "^3.5.1",
     "@types/fs-extra": "^5.0.4",
     "@types/loader-utils": "^1.1.3",
     "@types/lodash": "^4.14.116",

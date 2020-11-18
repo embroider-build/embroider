@@ -244,8 +244,18 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return script;
   }
 
-  private async writeStyle(style: string, written: Set<string>) {
-    this.copyThrough(style);
+  private async writeStyle(style: string, written: Set<string>, variant: Variant) {
+    if (!variant.optimizeForProduction) {
+      this.copyThrough(style);
+      written.add(style);
+      return style;
+    }
+
+    const csso = await import('csso');
+    const cssContent = readFileSync(join(this.pathToVanillaApp, style), 'utf8');
+    const minifiedCss = csso.minify(cssContent).css;
+
+    writeFileSync(join(this.outputPath, style), minifiedCss);
     written.add(style);
     return style;
   }
@@ -299,7 +309,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             try {
               // zero here means we always attribute passthrough styles to the
               // first build variant
-              stats.entrypoints.set(style, new Map([[0, [await this.writeStyle(style, written)]]]));
+              stats.entrypoints.set(style, new Map([[0, [await this.writeStyle(style, written, this.variants[0])]]]));
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
                 this.consoleWrite(

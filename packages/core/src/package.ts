@@ -140,7 +140,7 @@ export default class Package {
             // stop you.
             let pkg;
             try {
-              pkg = this.packageCache.get(join(this.root, path));
+              pkg = this.packageCache.get(join(this.packageCache.basedir(this), path));
             } catch (err) {
               // package was missing or had invalid package.json
               return false;
@@ -153,7 +153,7 @@ export default class Package {
               main = `${main}.js`;
             }
 
-            let mainPath = join(this.root, path, main);
+            let mainPath = join(this.packageCache.basedir(this), path, main);
             if (!existsSync(mainPath)) {
               // package has no valid main
               return false;

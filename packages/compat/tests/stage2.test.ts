@@ -236,7 +236,9 @@ describe('stage2 build', function () {
               'first-choice.hbs': 'first',
               'second-choice.hbs': 'second',
               'third-choice.hbs': 'third',
-              'module-name.hbs': '<div class={{embroider-sample-transforms-module}}>hello world</div>',
+              'module-name-check': {
+                'index.hbs': '<div class={{embroider-sample-transforms-module}}>hello world</div>',
+              },
             },
           },
           components: {
@@ -566,9 +568,9 @@ describe('stage2 build', function () {
     });
 
     test('hbs transform sees expected module name', function () {
-      let assertFile = expectFile('templates/components/module-name.hbs').transform(build.transpile);
+      let assertFile = expectFile('templates/components/module-name-check/index.hbs').transform(build.transpile);
       assertFile.matches(
-        '"my-app/templates/components/module-name.hbs"',
+        '"my-app/templates/components/module-name-check/index.hbs"',
         'our sample transform injected the expected moduleName into the compiled template'
       );
     });

@@ -44,7 +44,7 @@ export default class PackageCache {
   protected rootCache: Map<string, Package> = new Map();
   protected resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
 
-  protected basedir(pkg: Package): string {
+  basedir(pkg: Package): string {
     return pkg.root;
   }
 

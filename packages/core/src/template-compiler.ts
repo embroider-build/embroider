@@ -7,7 +7,7 @@ import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { compile } from './js-handlebars';
-import { join, sep, extname } from 'path';
+import { join, sep } from 'path';
 import { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
@@ -277,7 +277,7 @@ export default class TemplateCompiler {
     let runtimeName: string;
 
     if (this.params.resolver) {
-      runtimeName = `${this.params.resolver.absPathToRuntimeName(moduleName)}${extname(moduleName)}` || moduleName;
+      runtimeName = this.params.resolver.absPathToRuntimePath(moduleName);
     } else {
       runtimeName = moduleName;
     }
@@ -343,7 +343,7 @@ export default class TemplateCompiler {
 
     opts.filename = moduleName;
     opts.moduleName = this.params.resolver
-      ? this.params.resolver.absPathToRuntimeName(moduleName) || moduleName
+      ? this.params.resolver.absPathToRuntimePath(moduleName) || moduleName
       : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
     return this.syntax.print(ast);

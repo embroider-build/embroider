@@ -11,7 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver } from '@embroider/core';
+import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -72,11 +72,16 @@ class V1AddonCompatResolver implements Resolver {
   dependenciesOf(_moduleName: string): ResolvedDep[] {
     return [];
   }
-  absPathToRuntimeName(moduleName: string) {
-    if (isAbsolute(moduleName)) {
-      return moduleName;
+  absPathToRuntimePath(absPath: string) {
+    if (isAbsolute(absPath)) {
+      return absPath;
     }
-    return join(this.params.modulePrefix, moduleName);
+    return join(this.params.modulePrefix, absPath);
+  }
+  absPathToRuntimeName(absPath: string) {
+    return this.absPathToRuntimePath(absPath)
+      .replace(extensionsPattern(['.js', '.hbs']), '')
+      .replace(/\/index$/, '');
   }
 }
 

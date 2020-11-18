@@ -13,7 +13,7 @@ function sampleTransform(env) {
             type: 'StringLiteral',
             value: env.moduleName,
             original: env.moduleName,
-            loc: {}
+            loc: node.path.loc,
           });
           return node;
         }

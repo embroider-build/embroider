@@ -208,7 +208,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private async writeScript(script: string, written: Set<string>, variant: Variant) {
-    if (!variant.optimizeForProduction) {
+    if (!variant.optimizeForProduction || script.match(/testem/)) {
       this.copyThrough(script);
       return script;
     }

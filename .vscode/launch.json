@@ -34,6 +34,18 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Serve sample-v2-addon test-app",
+      "program": "${workspaceFolder}/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/sample-v2-addon/test-app",
+      "args": ["serve"],
+      "env": {
+        "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Build engines-host-app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/engines-host-app",

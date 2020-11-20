@@ -7,12 +7,19 @@
   ],
   "repository": "",
   "license": "MIT",
-  "scripts": {},
-  "dependencies": {},
+  "scripts": {
+    "test:classic": "cd test-app && yarn test:classic",
+    "test:embroider": "cd test-app && yarn test:embroider"
+  },
+  "dependencies": {
+    "@embroider/util": "0.31.0"
+  },
   "devDependencies": {},
   "ember-addon": {
     "version": 2,
-    "type": "addon"
+    "type": "addon",
+    "main": "addon-main.js",
+    "app-js": "app"
   },
   "volta": {
     "extends": "../../package.json"

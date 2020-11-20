@@ -4,12 +4,15 @@
 /packages/compat/**/*.d.ts
 /packages/macros/**/*.js
 /packages/macros/**/*.d.ts
+/packages/util/src/**/*.js
+/packages/util/src/**/*.d.ts
 /packages/webpack/**/*.js
 /packages/webpack/**/*.d.ts
 /test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 /packages/test-setup/**/*.js
 /packages/test-setup/**/*.d.ts
+/test-packages/sample-v2-addon/test-app/dist
 
 # unconventional js
 /blueprints/*/files/

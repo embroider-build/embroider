@@ -12,7 +12,9 @@
     "doc": "doc",
     "test": "tests"
   },
+  "main": "src/index.js",
   "scripts": {
+    "prepare": "tsc",
     "build": "ember build --environment=production",
     "lint": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*",
     "lint:hbs": "ember-template-lint .",
@@ -36,6 +38,8 @@
     "@embroider/webpack": "0.31.0",
     "@glimmer/component": "^1.0.1",
     "@glimmer/tracking": "^1.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.1.1",
+    "@typescript-eslint/parser": "^4.1.1",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-auto-import": "^1.6.0",
@@ -72,7 +76,8 @@
     "edition": "octane"
   },
   "ember-addon": {
-    "configPath": "tests/dummy/config"
+    "configPath": "tests/dummy/config",
+    "main": "addon-main.js"
   },
   "volta": {
     "extends": "../../package.json"

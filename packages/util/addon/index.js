@@ -39,10 +39,15 @@ function handleString(name, thingWithOwner) {
   return lookupCurriedComponentDefinition(name, owner);
 }
 
-const classNonces = new WeakMap();
+const classNoncesForOwner = new WeakMap();
 let nonceCounter = 0;
 
 function ensureRegistered(klass, owner) {
+  let classNonces = classNoncesForOwner.get(owner);
+  if (!classNonces) {
+    classNonces = new WeakMap();
+    classNoncesForOwner.set(owner, classNonces);
+  }
   let nonce = classNonces.get(klass);
   if (nonce == null) {
     nonce = `-ensure${nonceCounter++}`;

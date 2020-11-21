@@ -1,6 +1,6 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
-import { render } from '@ember/test-helpers';
+import { render, settled } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 import { setComponentTemplate } from '@ember/component';
 import Component from '@glimmer/component';
@@ -108,5 +108,46 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
    `);
     }, /You're trying to invoke the component "some-component" by passing its name as a string/);
     assert.equal(this.element.textContent.trim(), 'hello from some-component');
+  });
+
+  test('rerender stability', async function (assert) {
+    let log = [];
+    this.target = setComponentTemplate(
+      hbs`first:{{@message}}`,
+      class extends Component {
+        constructor(...args) {
+          super(...args);
+          log.push('target instantiated');
+        }
+      }
+    );
+    this.set('message', 'hello');
+    await render(hbs`
+      {{#let (ensure-safe-component this.target) as |Thing|}}
+        <Thing @message={{this.message}} />
+      {{/let}}
+    `);
+    assert.equal(this.element.textContent.trim(), 'first:hello');
+    assert.deepEqual(log, ['target instantiated']);
+    this.set('message', 'goodbye');
+    await settled();
+    assert.equal(this.element.textContent.trim(), 'first:goodbye');
+    assert.deepEqual(log, ['target instantiated']);
+
+    this.set(
+      'target',
+      setComponentTemplate(
+        hbs`second:{{@message}}`,
+        class extends Component {
+          constructor(...args) {
+            super(...args);
+            log.push('new target instantiated');
+          }
+        }
+      )
+    );
+    await settled();
+    assert.equal(this.element.textContent.trim(), 'second:goodbye');
+    assert.deepEqual(log, ['target instantiated', 'new target instantiated']);
   });
 });

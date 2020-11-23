@@ -1,8 +1,8 @@
 declare module 'broccoli-merge-trees' {
-  import { Tree } from 'broccoli-plugin';
+  import { Node } from 'broccoli-node-api';
   export interface Options {
     overwrite?: boolean;
     annotation?: string;
   }
-  export default function(trees: Tree[], options?: Options): Tree;
+  export default function (trees: Node[], options?: Options): Node;
 }

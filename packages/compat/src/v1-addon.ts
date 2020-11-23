@@ -6,7 +6,7 @@ import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
@@ -147,7 +147,7 @@ export default class V1Addon {
       name: 'embroider-addon-templates',
       ext: 'hbs',
       _addon: this,
-      toTree(this: { _addon: V1Addon }, tree: Tree): Tree {
+      toTree(this: { _addon: V1Addon }, tree: Node): Node {
         if (this._addon.templateCompiler) {
           return this._addon.templateCompiler.applyTransformsToTree(tree);
         } else {
@@ -171,7 +171,7 @@ export default class V1Addon {
       registry.add('js', {
         name: 'embroider-babel-noop',
         ext: 'js',
-        toTree(tree: Tree) {
+        toTree(tree: Node) {
           return tree;
         },
       });
@@ -369,7 +369,7 @@ export default class V1Addon {
     }
   }
 
-  protected stockTree(treeName: string): Tree {
+  protected stockTree(treeName: string): Node {
     return this.throughTreeCache(treeName, 'stock', () => {
       // adjust from the legacy "root" to our real root, because our rootTree
       // uses our real root but the stock trees are defined in terms of the
@@ -381,7 +381,7 @@ export default class V1Addon {
   }
 
   @Memoize()
-  protected get rootTree() {
+  protected get rootTree(): Node {
     if (this.packageCache.get(this.root).mayRebuild) {
       return new WatchedDir(this.root);
     } else {
@@ -398,7 +398,7 @@ export default class V1Addon {
   }
 
   // applies preprocessors to JS and HBS
-  private transpile(tree: Tree) {
+  private transpile(tree: Node) {
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
@@ -462,7 +462,7 @@ export default class V1Addon {
     }
   }
 
-  get v2Tree(): Tree {
+  get v2Tree(): Node {
     return this.throughTreeCache(
       // these are all the kinds of trees that ember-cli's tree cache
       // understands. We need them all here because if *any* of these are
@@ -497,12 +497,12 @@ export default class V1Addon {
     return trees;
   }
 
-  protected throughTreeCache(nameOrNames: string | string[], category: string, fn: () => Tree): Tree;
+  protected throughTreeCache(nameOrNames: string | string[], category: string, fn: () => Node): Node;
   protected throughTreeCache(
     nameOrNames: string | string[],
     category: string,
-    fn: () => Tree | undefined
-  ): Tree | undefined {
+    fn: () => Node | undefined
+  ): Node | undefined {
     let cacheKey: string | undefined;
     if (typeof this.addonInstance.cacheKeyForTree === 'function') {
       let names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
@@ -572,13 +572,13 @@ export default class V1Addon {
   protected invokeOriginalTreeFor(
     name: string,
     { neuterPreprocessors } = { neuterPreprocessors: false }
-  ): Tree | undefined {
+  ): Node | undefined {
     return this.throughTreeCache(name, 'original', () => {
       let original;
       try {
         if (neuterPreprocessors) {
           original = this.addonInstance.preprocessJs;
-          this.addonInstance.preprocessJs = function (tree: Tree) {
+          this.addonInstance.preprocessJs = function (tree: Node) {
             return tree;
           };
         }
@@ -594,7 +594,7 @@ export default class V1Addon {
     });
   }
 
-  protected treeForAddon(built: IntermediateBuild): Tree | undefined {
+  protected treeForAddon(built: IntermediateBuild): Node | undefined {
     // the extra isEngine condition is because ember-engines injects a
     // treeForAddon method into each engine addon that we really don't need or
     // want to run. Unfortunately there's not a more localized place to patch it
@@ -617,7 +617,7 @@ export default class V1Addon {
     }
   }
 
-  protected addonStylesTree(): Tree | undefined {
+  protected addonStylesTree(): Node | undefined {
     if (this.customizes('treeForAddonStyles')) {
       return this.invokeOriginalTreeFor('addon-styles');
     } else if (this.hasStockTree('addon-styles')) {
@@ -625,7 +625,7 @@ export default class V1Addon {
     }
   }
 
-  protected treeForTestSupport(): Tree | undefined {
+  protected treeForTestSupport(): Node | undefined {
     if (this.customizes('treeForTestSupport')) {
       todo(`${this.name} has customized the test support tree`);
     } else if (this.hasStockTree('test-support')) {
@@ -643,7 +643,7 @@ export default class V1Addon {
     if (!tree) {
       return;
     }
-    let templateOnlyComponents: Tree = new SynthesizeTemplateOnlyComponents(tree, ['components']);
+    let templateOnlyComponents: Node = new SynthesizeTemplateOnlyComponents(tree, ['components']);
     if (!this.addonOptions.staticAddonTrees) {
       let filenames: string[] = [];
       let templateOnlyComponentNames: string[] = [];
@@ -732,7 +732,7 @@ export default class V1Addon {
     }
   }
 
-  private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Tree, localDir: string, key: keyof AddonMeta): Tree {
+  private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Node, localDir: string, key: keyof AddonMeta): Node {
     // unforunately Funnel doesn't create destDir if its input exists but is
     // empty. And we want to only put the app-js key in package.json if
     // there's really a directory for it to point to. So we need to monitor
@@ -962,7 +962,7 @@ export interface V1AddonConstructor {
 }
 
 class IntermediateBuild {
-  trees: Tree[] = [];
+  trees: Node[] = [];
   staticMeta: { [metaField: string]: any } = {};
   dynamicMeta: (() => Partial<AddonMeta>)[] = [];
 }

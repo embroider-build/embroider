@@ -2,7 +2,7 @@ import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
 import { PortablePluginConfig } from './portable-plugin-config';
 import fs, { readFileSync, statSync } from 'fs';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
@@ -356,7 +356,7 @@ export default class TemplateCompiler {
   }
 
   // Use applyTransforms on every file in a broccoli tree.
-  applyTransformsToTree(tree: Tree): Tree {
+  applyTransformsToTree(tree: Node): Node {
     return new TemplateCompileTree(tree, this, 1);
   }
 
@@ -391,7 +391,7 @@ export default class TemplateCompiler {
 }
 
 class TemplateCompileTree extends Filter {
-  constructor(inputTree: Tree, private templateCompiler: TemplateCompiler, private stage: 1 | 3) {
+  constructor(inputTree: Node, private templateCompiler: TemplateCompiler, private stage: 1 | 3) {
     super(inputTree, {
       name: `embroider-template-compile-stage${stage}`,
       persist: true,

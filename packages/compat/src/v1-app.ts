@@ -5,7 +5,7 @@ import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
@@ -40,8 +40,8 @@ interface EmberApp {
   trees: any;
   project: any;
   registry: any;
-  testIndex(): Tree;
-  getLintTests(): Tree;
+  testIndex(): Node;
+  getLintTests(): Node;
   otherAssetPaths: any[];
 }
 
@@ -114,7 +114,7 @@ export default class V1App {
   }
 
   @Memoize()
-  get addonTreeCache(): Map<string, Tree> {
+  get addonTreeCache(): Map<string, Node> {
     return new Map();
   }
 
@@ -320,7 +320,7 @@ export default class V1App {
     }
   }
 
-  private combinedVendor(addonTrees: Tree[]): Tree {
+  private combinedVendor(addonTrees: Node[]): Node {
     let trees = addonTrees.map(
       tree =>
         new Funnel(tree, {
@@ -404,7 +404,7 @@ export default class V1App {
     }
   }
 
-  private addNodeAssets(inputTree: Tree): Tree {
+  private addNodeAssets(inputTree: Node): Node {
     let transformedNodeFiles = this.transformedNodeFiles();
 
     return new AddToTree(inputTree, outputPath => {
@@ -435,19 +435,19 @@ export default class V1App {
     });
   }
 
-  synthesizeVendorPackage(addonTrees: Tree[]): Tree {
+  synthesizeVendorPackage(addonTrees: Node[]): Node {
     return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
   }
 
-  private combinedStyles(addonTrees: Tree[]): Tree {
-    let trees: Tree[] = addonTrees.map(
+  private combinedStyles(addonTrees: Node[]): Node {
+    let trees: Node[] = addonTrees.map(
       tree =>
         new Funnel(tree, {
           allowEmpty: true,
           srcDir: '_app_styles_',
         })
     );
-    let appStyles = this.app.trees.styles as Tree | undefined;
+    let appStyles = this.app.trees.styles as Node | undefined;
     if (appStyles) {
       // Workaround for https://github.com/ember-cli/ember-cli/issues/9020
       //
@@ -463,7 +463,7 @@ export default class V1App {
     return mergeTrees(trees, { overwrite: true, annotation: 'embroider-v1-app-combined-styles' });
   }
 
-  synthesizeStylesPackage(addonTrees: Tree[]): Tree {
+  synthesizeStylesPackage(addonTrees: Node[]): Node {
     let options = {
       // we're deliberately not allowing this to be customized. It's an
       // internal implementation detail, and respecting outputPaths here is
@@ -499,7 +499,7 @@ export default class V1App {
   }
 
   // this is taken nearly verbatim from ember-cli.
-  private applyCustomTransforms(externalTree: Tree) {
+  private applyCustomTransforms(externalTree: Node) {
     for (let customTransformEntry of this.app._customTransformsMap) {
       let transformName = customTransformEntry[0];
       let transformConfig = customTransformEntry[1];
@@ -537,7 +537,7 @@ export default class V1App {
     return './' + asset;
   }
 
-  private preprocessJS(tree: Tree): Tree {
+  private preprocessJS(tree: Node): Node {
     // we're saving all our babel compilation for the final stage packager
     this.app.registry.remove('js', 'ember-cli-babel');
 
@@ -563,7 +563,7 @@ export default class V1App {
 
   // our own appTree. Not to be confused with the one that combines the app js
   // from all addons too.
-  private get appTree(): Tree {
+  private get appTree(): Node {
     return this.preprocessJS(
       new Funnel(this.app.trees.app, {
         exclude: ['styles/**', '*.html'],
@@ -571,7 +571,7 @@ export default class V1App {
     );
   }
 
-  private get testsTree(): Tree | undefined {
+  private get testsTree(): Node | undefined {
     if (this.shouldBuildTests && this.app.trees.tests) {
       return this.preprocessJS(
         new Funnel(this.app.trees.tests, {
@@ -581,17 +581,17 @@ export default class V1App {
     }
   }
 
-  private get lintTree(): Tree | undefined {
+  private get lintTree(): Node | undefined {
     if (this.shouldBuildTests) {
       return this.app.getLintTests();
     }
   }
 
-  get vendorTree(): Tree | undefined {
+  get vendorTree(): Node | undefined {
     return this.ensureTree(this.app.trees.vendor);
   }
 
-  private ensureTree(maybeTree: string | Tree | undefined): Tree | undefined {
+  private ensureTree(maybeTree: string | Node | undefined): Node | undefined {
     if (typeof maybeTree === 'string') {
       // this is deliberately mimicking how ember-cli does it. We don't use
       // `this.root` on purpose, because that can differ from what ember-cli
@@ -613,11 +613,11 @@ export default class V1App {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  get publicTree(): Tree | undefined {
+  get publicTree(): Node | undefined {
     return this.ensureTree(this.app.trees.public);
   }
 
-  processAppJS(): { appJS: Tree } {
+  processAppJS(): { appJS: Node } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
@@ -629,7 +629,7 @@ export default class V1App {
       patterns,
     });
 
-    let trees: Tree[] = [];
+    let trees: Node[] = [];
     trees.push(appTree);
     trees.push(new SynthesizeTemplateOnlyComponents(appTree, ['components']));
 
@@ -706,6 +706,6 @@ class V1DummyApp extends V1App {
 }
 
 interface Preprocessors {
-  preprocessJs(tree: Tree, a: string, b: string, options: object): Tree;
-  preprocessCss(tree: Tree, a: string, b: string, options: object): Tree;
+  preprocessJs(tree: Node, a: string, b: string, options: object): Node;
+  preprocessCss(tree: Node, a: string, b: string, options: object): Node;
 }

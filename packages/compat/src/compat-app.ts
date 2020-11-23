@@ -1,4 +1,4 @@
-import { Tree } from 'broccoli-plugin';
+import { Node as BroccoliNode } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import {
   Stage,
@@ -37,10 +37,10 @@ import { tmpdir } from 'os';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 interface TreeNames {
-  appJS: Tree;
-  htmlTree: Tree;
-  publicTree: Tree | undefined;
-  configTree: Tree;
+  appJS: BroccoliNode;
+  htmlTree: BroccoliNode;
+  publicTree: BroccoliNode | undefined;
+  configTree: BroccoliNode;
 }
 
 // This runs at broccoli-pipeline-construction time, whereas our actual
@@ -56,7 +56,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let appBootTree = oldPackage.appBoot;
 
   if (options.extraPublicTrees.length > 0) {
-    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as Tree[]);
+    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
   }
 
   let inTrees = {

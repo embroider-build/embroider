@@ -1,4 +1,5 @@
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { join } from 'path';
 import { readFileSync, outputFileSync } from 'fs-extra';
 import { EmberENV } from '@embroider/core';
@@ -13,7 +14,7 @@ export interface ConfigContents {
 
 export class V1Config extends Plugin {
   private lastConfig: ConfigContents | undefined;
-  constructor(configTree: Tree, private env: string) {
+  constructor(configTree: Node, private env: string) {
     super([configTree], {});
   }
   build() {

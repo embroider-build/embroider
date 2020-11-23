@@ -1,7 +1,7 @@
 import WaitForTrees, { OutputPaths } from './wait-for-trees';
 import PackageCache from './package-cache';
 import Stage from './stage';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { Memoize } from 'typescript-memoize';
 
 // This is a utility class for defining new Stages. It aids in handling the
@@ -24,7 +24,7 @@ export default class BuildStage<NamedTrees> implements Stage {
   ) {}
 
   @Memoize()
-  get tree(): Tree {
+  get tree(): Node {
     return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
       if (!this.active) {
         let { outputPath, packageCache } = await this.prevStage.ready();
@@ -75,5 +75,5 @@ interface BuilderInstance<NamedTrees> {
 }
 
 interface ExtraTree {
-  __prevStageTree: Tree;
+  __prevStageTree: Node;
 }

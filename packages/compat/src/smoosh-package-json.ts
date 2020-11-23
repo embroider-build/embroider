@@ -1,10 +1,11 @@
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { mergeWithUniq } from './merges';
 
 export default class SmooshPackageJSON extends Plugin {
-  constructor(inputTrees: Tree[]) {
+  constructor(inputTrees: Node[]) {
     super(inputTrees, {
       annotation: 'embroider:core:smoosh-package-json',
     });

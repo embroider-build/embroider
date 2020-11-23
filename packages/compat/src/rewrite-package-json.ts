@@ -1,4 +1,5 @@
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { AddonMeta } from '@embroider/core';
@@ -6,7 +7,7 @@ import { AddonMeta } from '@embroider/core';
 type GetMeta = () => Partial<AddonMeta>;
 
 export default class RewritePackageJSON extends Plugin {
-  constructor(inputTree: Tree, private getMeta: GetMeta, private originalPackageJSON: any) {
+  constructor(inputTree: Node, private getMeta: GetMeta, private originalPackageJSON: any) {
     super([inputTree], {
       annotation: 'embroider:core:rewrite-package-json',
     });

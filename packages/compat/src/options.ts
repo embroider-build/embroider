@@ -1,5 +1,5 @@
 import { V1AddonConstructor } from './v1-addon';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from '@embroider/core';
 import { PackageRules } from './dependency-rules';
 
@@ -67,7 +67,7 @@ export default interface Options extends CoreOptions {
   // optional list of additional broccoli trees that should be incorporated into
   // the final build. This exists because the classic `app.toTree()` method
   // accepts an optional tree argument that has the same purpose.
-  extraPublicTrees?: Tree[];
+  extraPublicTrees?: Node[];
 
   // Allows you to tell Embroider about otherwise dynamic dependencies within
   // your app and addons that it can't figure out on its own. These are combined

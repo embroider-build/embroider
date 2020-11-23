@@ -1,6 +1,6 @@
-import PortableBabelConfig from '../src/portable-babel-config';
+import { TransformOptions } from '@babel/core';
+import { makePortable } from '../src/portable-babel-config';
 import { protocol } from '../src/portable-plugin-config';
-
 import { join, sep } from 'path';
 
 function resolvableNames(...names: string[]) {
@@ -22,23 +22,21 @@ function resolvableNames(...names: string[]) {
   };
 }
 
-function runParallelSafe(config: PortableBabelConfig): any {
-  if (!config.isParallelSafe) {
+function runParallelSafe({ config, isParallelSafe }: { config: TransformOptions; isParallelSafe: boolean }): any {
+  if (!isParallelSafe) {
     throw new Error(`not parallel safe`);
   }
   delete (global as any)[protocol];
-  return run(config);
+  return run({ config });
 }
 
-function run(config: PortableBabelConfig): any {
-  let module = { exports: {} } as any;
-  eval(config.serialize());
-  return module.exports;
+function run({ config }: { config: TransformOptions }): any {
+  return JSON.parse(JSON.stringify(config));
 }
 
 describe('portable-babel-config', () => {
   test('absolute path', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['/path/to/some/plugin.js'],
       },
@@ -48,7 +46,7 @@ describe('portable-babel-config', () => {
   });
 
   test('local path', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['./path/to/some/plugin.js'],
       },
@@ -58,7 +56,7 @@ describe('portable-babel-config', () => {
   });
 
   test('package name', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['my-package'],
       },
@@ -70,7 +68,7 @@ describe('portable-babel-config', () => {
   });
 
   test('package name shorthand', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['my-package'],
       },
@@ -82,7 +80,7 @@ describe('portable-babel-config', () => {
   });
 
   test('namespaced package name', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['@me/my-package'],
       },
@@ -94,7 +92,7 @@ describe('portable-babel-config', () => {
   });
 
   test('namespaced package name shorthand', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['@me/my-package'],
       },
@@ -106,7 +104,7 @@ describe('portable-babel-config', () => {
   });
 
   test('resolves name with json-safe config', () => {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [['my-package', { theOptions: 'cool' }]],
       },
@@ -123,7 +121,7 @@ describe('portable-babel-config', () => {
         return 'cool';
       },
     };
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [['my-package', options]],
       },
@@ -137,7 +135,7 @@ describe('portable-babel-config', () => {
 
   test('passes through bare function', () => {
     let func = function () {};
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [func],
       },
@@ -150,7 +148,7 @@ describe('portable-babel-config', () => {
   test('passes through function with args', () => {
     let func = function () {};
     let args = { theArgs: 'here' };
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [[func, args]],
       },
@@ -168,7 +166,7 @@ describe('portable-babel-config', () => {
         theParams: 'are here',
       },
     };
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [exampleFunction],
       },
@@ -184,7 +182,7 @@ describe('portable-babel-config', () => {
       requireFile: __filename,
       useMethod: 'exampleFunction',
     };
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [exampleFunction],
       },
@@ -199,7 +197,7 @@ describe('portable-babel-config', () => {
     (exampleFunction as any)._parallelBabel = {
       requireFile: __filename,
     };
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [exampleFunction],
       },
@@ -218,7 +216,7 @@ describe('portable-babel-config', () => {
       params: { theParams: 'reconstituted precompile' },
     };
 
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: [['my-plugin', { precompile }]],
       },
@@ -233,7 +231,7 @@ describe('portable-babel-config', () => {
   });
 
   test('undefined is a serializable value', function () {
-    let config = new PortableBabelConfig(
+    let config = makePortable(
       {
         plugins: ['./x', { value: undefined }],
       },

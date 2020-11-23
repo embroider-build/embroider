@@ -1,4 +1,4 @@
-import { deprecate } from '@ember/debug';
+import { assert, deprecate } from '@ember/debug';
 import { getOwner } from '@ember/application';
 import { isCurriedComponentDefinition, lookupCurriedComponentDefinition } from './ember-private-api';
 import Helper from '@ember/component/helper';
@@ -39,22 +39,11 @@ function handleString(name, thingWithOwner) {
   return lookupCurriedComponentDefinition(name, owner);
 }
 
-const classNoncesForOwner = new WeakMap();
-let nonceCounter = 0;
-
 function ensureRegistered(klass, owner) {
-  let classNonces = classNoncesForOwner.get(owner);
-  if (!classNonces) {
-    classNonces = new WeakMap();
-    classNoncesForOwner.set(owner, classNonces);
-  }
-  let nonce = classNonces.get(klass);
-  if (nonce == null) {
-    nonce = `-ensure${nonceCounter++}`;
-    classNonces.set(klass, nonce);
-    owner.register(`component:${nonce}`, klass);
-  }
-  return nonce;
+  let service = owner.lookup('service:-ensure-registered');
+  assert('Could not lookup private -ensure-registered service', service);
+
+  return service.register(klass, owner);
 }
 
 function handleClass(klass, thingWithOwner) {

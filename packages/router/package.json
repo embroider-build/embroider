@@ -42,6 +42,8 @@
     "ember-cli": "~3.10.1",
     "ember-cli-dependency-checker": "^3.1.0",
     "ember-cli-eslint": "^5.1.0",
+    "ember-cli-fastboot": "^2.2.3",
+    "ember-cli-fastboot-testing": "^0.4.0",
     "ember-cli-htmlbars": "^4.3.1",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
     "ember-cli-inject-live-reload": "^1.8.2",
@@ -78,5 +80,8 @@
   },
   "volta": {
     "extends": "../../package.json"
+  },
+  "resolutions": {
+    "**/fastboot": "^3.1.0"
   }
 }

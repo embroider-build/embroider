@@ -1247,6 +1247,7 @@ w._embroiderRouteBundles_ = [
   {{#each lazyRoutes as |route|}}
   {
     names: {{{json-stringify route.names}}},
+    path: "{{js-string-escape route.path}}",
     load: function() {
       return import("{{js-string-escape route.path}}");
     }
@@ -1260,6 +1261,7 @@ w._embroiderEngineBundles_ = [
   {{#each lazyEngines as |engine|}}
   {
     names: {{{json-stringify engine.names}}},
+    path: "{{js-string-escape engine.path}}",
     load: function() {
       return import("{{js-string-escape engine.path}}");
     }

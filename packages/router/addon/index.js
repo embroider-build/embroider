@@ -5,6 +5,7 @@ import EmberRouter from '@ember/routing/router';
 import { registerWaiter, unregisterWaiter } from '@ember/test';
 import { DEBUG } from '@glimmer/env';
 import { macroCondition, getGlobalConfig } from '@embroider/macros';
+import { getOwner } from '@ember/application';
 
 let Router;
 
@@ -30,6 +31,15 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
     }
 
     return false;
+  };
+
+  const preloadBundle = function preloadBundle(document, url) {
+    let link = document.createElement('link');
+    link.setAttribute('rel', 'preload');
+    link.setAttribute('href', url);
+    link.setAttribute('as', 'script');
+
+    document.head.appendChild(link);
   };
 
   Router = EmberRouter.extend({
@@ -84,17 +94,31 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
           return original(name);
         }
         this._inFlightLazyRoutes++;
-        return bundle.load().then(
-          () => {
-            this._inFlightLazyRoutes--;
-            bundle.loaded = true;
-            return original(name);
-          },
-          err => {
-            this._inFlightLazyRoutes--;
-            throw err;
-          }
-        );
+        return bundle
+          .load()
+          .then(
+            () => {
+              this._inFlightLazyRoutes--;
+              bundle.loaded = true;
+              return original(name);
+            },
+            err => {
+              this._inFlightLazyRoutes--;
+              throw err;
+            }
+          )
+          .then(() => {
+            try {
+              if (typeof FastBoot !== 'undefined') {
+                let doc = getOwner(this).lookup('service:-document');
+                if (doc && bundle.path) {
+                  preloadBundle(doc, bundle.path);
+                }
+              }
+            } catch (e) {
+              // if we fail to add the link tag, we just move on...
+            }
+          });
       };
     },
   });

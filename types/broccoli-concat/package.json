@@ -1,0 +1,7 @@
+{
+  "name": "@types/broccoli-concat",
+  "version": "0.0.0",
+  "dependencies": {
+    "broccoli-plugin": "^4.0.1"
+  }
+}

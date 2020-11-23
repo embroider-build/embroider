@@ -1,4 +1,4 @@
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import PackageCache from './package-cache';
 
 // A build Stage is _kinda_ like a Broccoli transform, and it interoperates with
@@ -15,7 +15,7 @@ export default interface Stage {
   // this is the broccoli tree that must get built for the Stage to be ready.
   // But! This tree's output path is _not_ necessarily where the Stage's output
   // will be, for that you must wait for `outputPath`.
-  readonly tree: Tree;
+  readonly tree: Node;
 
   // this is where our stage was reading from. Subsequent stages are also
   // allowed to read from here in addition to reading from our `outputPath`.

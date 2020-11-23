@@ -1,7 +1,7 @@
 import { Stage, Package, PackageCache } from '@embroider/core';
 import { realpathSync, readJSONSync } from 'fs-extra';
 import { UnwatchedDir } from 'broccoli-source';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { join } from 'path';
 import Options, { optionsWithDefaults } from './options';
 import V1InstanceCache from './v1-instance-cache';
@@ -10,7 +10,7 @@ export default class PrebuiltAddons implements Stage {
   private packageCache: PackageCache;
   private appDestDir: string;
   readonly inputPath: string;
-  readonly tree: Tree;
+  readonly tree: Node;
 
   constructor(legacyEmberAppInstance: object, maybeOptions: Options | undefined, workspaceDir: string) {
     let options = optionsWithDefaults(maybeOptions);

@@ -1,6 +1,6 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
 import { toBroccoliPlugin, Packager, Variant } from '@embroider/core';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
 
@@ -14,7 +14,7 @@ export default function defaultPipeline<PackagerOptions>(
   emberApp: object,
   packager: Packager<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
-): Tree {
+): Node {
   let outputPath: string;
   let addons;
   if (process.env.REUSE_WORKSPACE) {

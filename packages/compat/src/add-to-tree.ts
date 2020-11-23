@@ -1,8 +1,8 @@
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import Funnel from 'broccoli-funnel';
 
 export default class AddToTree extends Funnel {
-  constructor(combinedVendor: Tree, private hook: (outputPath: string) => Promise<void> | void) {
+  constructor(combinedVendor: Node, private hook: (outputPath: string) => Promise<void> | void) {
     super(combinedVendor, {
       annotation: '@embroider/compat/synthvendor',
     });

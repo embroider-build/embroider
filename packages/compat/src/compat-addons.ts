@@ -1,4 +1,4 @@
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { join, relative, dirname } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
@@ -40,7 +40,7 @@ export default class CompatAddons implements Stage {
     this.v1Cache = v1Cache;
   }
 
-  get tree(): Tree {
+  get tree(): Node {
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, this.v1Cache));
     let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
     return new WaitForTrees(
@@ -188,7 +188,7 @@ export default class CompatAddons implements Stage {
     }
   }
 
-  private getSyntheticPackages(v1App: V1App, movedAddons: Tree[]): { synthVendor: Tree; synthStyles: Tree } {
+  private getSyntheticPackages(v1App: V1App, movedAddons: Node[]): { synthVendor: Node; synthStyles: Node } {
     let index = 0;
     let upgradedAddonTrees = [];
     for (let [oldPkg] of this.packageCache.moved.entries()) {

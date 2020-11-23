@@ -1,5 +1,6 @@
 import V1Addon from '../v1-addon';
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { readJSONSync, outputJSONSync } from 'fs-extra';
 import { join } from 'path';
 import writeFile from 'broccoli-file-creator';
@@ -96,7 +97,7 @@ export default class EmberCliFastboot extends V1Addon {
 }
 
 class RewriteManifest extends Plugin {
-  constructor(tree: Tree, private scriptFilter: (file: string) => boolean, private extraAppFiles: string[]) {
+  constructor(tree: Node, private scriptFilter: (file: string) => boolean, private extraAppFiles: string[]) {
     super([tree], { annotation: 'embroider-compat-adapter-ember-cli-fastboot' });
   }
   build() {

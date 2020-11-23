@@ -1,17 +1,18 @@
-import BroccoliPlugin, { Tree } from 'broccoli-plugin';
+import BroccoliPlugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 
 /*
   Takes some named broccoli trees and/or lists of broccoli trees and gives you
   the resulting inputPaths once those trees are built. Example:
 
-    import { Tree } from 'broccoli-plugin';
+    import { Node } from 'broccoli-node-api';;
 
     interface MyInputs<T> {
       codeFromMyApp: T,
       codeFromMyAddons: T[]
     }
 
-    function(trees: MyInputs<Tree>): Tree {
+    function(trees: MyInputs<Node>): Node {
       return WaitForTrees(trees, build);
     }
 
@@ -35,7 +36,7 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
     });
   }
 
-  async build(detail: { changedNodes: boolean[] } | undefined) {
+  async build(detail?: { changedNodes: boolean[] }) {
     let result: { [treeName: string]: string | string[] } = {};
     let changedMap = new Map();
 
@@ -62,14 +63,14 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
 }
 
 export type OutputPaths<NamedTrees> = {
-  [P in keyof NamedTrees]: NamedTrees[P] extends Tree ? string : NamedTrees[P] extends Tree[] ? string[] : never;
+  [P in keyof NamedTrees]: NamedTrees[P] extends Node ? string : NamedTrees[P] extends Node[] ? string[] : never;
 };
 
-function isTree(x: any): x is Tree {
+function isTree(x: any): x is Node {
   return x && typeof x.__broccoliGetInfo__ === 'function';
 }
 
-function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string; single?: Tree; multi?: Tree[] }> {
+function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string; single?: Node; multi?: Node[] }> {
   for (let [name, value] of Object.entries(trees)) {
     if (Array.isArray(value)) {
       let stringTrees = value.filter(t => typeof t === 'string');
@@ -86,7 +87,7 @@ function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: str
 }
 
 function flatTrees<NamedTrees>(trees: NamedTrees) {
-  let output: Tree[] = [];
+  let output: Node[] = [];
   for (let value of findTrees(trees)) {
     if (value.multi) {
       output = output.concat(value.multi);

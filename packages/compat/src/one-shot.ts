@@ -1,4 +1,5 @@
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { Builder } from 'broccoli';
 import { copySync } from 'fs-extra';
 
@@ -8,7 +9,7 @@ export default class OneShot extends Plugin {
   private builder: Builder;
   private didBuild = false;
 
-  constructor(originalTree: Tree) {
+  constructor(originalTree: Node) {
     // from broccoli's perspective, we don't depend on any input trees!
     super([], {
       persistentOutput: true,

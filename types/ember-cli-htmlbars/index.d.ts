@@ -1,5 +1,6 @@
 declare module 'ember-cli-htmlbars' {
-  import Plugin, { Tree } from 'broccoli-plugin';
+  import Plugin from 'broccoli-plugin';
+  import { Node } from 'broccoli-node-api';
 
   export interface Options {
     templateCompilerPath: string;
@@ -10,7 +11,7 @@ declare module 'ember-cli-htmlbars' {
   }
 
   export default class HTMLBarsTransform extends Plugin {
-    constructor(inputTree: Tree, options: Options);
+    constructor(inputTree: Node, options: Options);
     build(): Promise<void>;
     protected cacheKeyProcessString(contents: string, relativePath: string): string;
     protected targetExtension: string | null;

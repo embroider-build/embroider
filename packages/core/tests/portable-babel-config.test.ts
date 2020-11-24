@@ -1,9 +1,8 @@
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from '../src/portable-babel-config';
-import { protocol } from '../src/portable-plugin-config';
 import { join, sep, resolve } from 'path';
 import exampleTarget from './example-target';
-import { Portable } from '../src/portable';
+import { Portable, protocol } from '../src/portable';
 
 function resolvableNames(...names: string[]) {
   return {

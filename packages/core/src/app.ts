@@ -19,7 +19,7 @@ import { MacrosConfig } from '@embroider/macros';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import TemplateCompiler from './template-compiler';
+import { templateCompilerModule, TemplateCompilerParams } from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { explicitRelative, extensionsPattern } from './paths';
@@ -331,7 +331,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompiler: TemplateCompiler, appFiles: Engine[]) {
+  private babelConfig(templateCompilerParams: TemplateCompilerParams, appFiles: Engine[]) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -352,7 +352,7 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push([
       join(__dirname, 'babel-plugin-inline-hbs.js'),
       {
-        templateCompiler,
+        templateCompiler: templateCompilerParams,
         stage: 3,
       },
     ]);
@@ -821,7 +821,7 @@ export class AppBuilder<TreeNames> {
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     let templateCompiler = this.templateCompiler(emberENV);
     let babelConfig = this.babelConfig(templateCompiler, appFiles);
-    this.addTemplateCompiler(templateCompiler);
+    let templateCompilerIsParallelSafe = this.addTemplateCompiler(templateCompiler);
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
@@ -846,7 +846,7 @@ export class AppBuilder<TreeNames> {
       assets: assetPaths,
       'template-compiler': {
         filename: '_template_compiler_.js',
-        isParallelSafe: templateCompiler.isParallelSafe,
+        isParallelSafe: templateCompilerIsParallelSafe,
       },
       babel: {
         filename: '_babel_config_.js',
@@ -875,7 +875,7 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private templateCompiler(config: EmberENV) {
+  private templateCompiler(config: EmberENV): TemplateCompilerParams {
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -886,16 +886,18 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    return new TemplateCompiler({
+    return {
       plugins,
       compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
-    });
+    };
   }
 
-  private addTemplateCompiler(templateCompiler: TemplateCompiler) {
-    writeFileSync(join(this.root, '_template_compiler_.js'), templateCompiler.serialize(), 'utf8');
+  private addTemplateCompiler(params: TemplateCompilerParams): boolean {
+    let mod = templateCompilerModule(params);
+    writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
+    return mod.isParallelSafe;
   }
 
   private addBabelConfig(pconfig: { config: TransformOptions; isParallelSafe: boolean }) {

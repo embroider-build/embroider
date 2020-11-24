@@ -1,7 +1,7 @@
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
 
-const protocol = '__embroider_portable_values__';
+export const protocol = '__embroider_portable_values__';
 const { globalValues, nonce } = setupGlobals();
 
 export interface PortableResult {
@@ -105,35 +105,6 @@ export class Portable {
     return input;
   }
 }
-
-/*
-
-  given that we can't control serialization of thread-loader, everything needs
-  to be json-clean anyway, so there's little point in also having our own
-  explicit serialize that's different from JSON.stringify.
-
-  how does parallel babel actually work right now behind thread loader anyway?
-   - whenever we are parallelSafe, all the plugins have been resolved to strings
-     already anyway
-   - the only exception is the TemplateCompiler argument to our inline-hbs babel
-     plugin, which we explicitly rehydrate ourselves at first point of use
-
-  our hbs loader controls its own loading, which can happen after thread-loader,
-  so that's not so bad
-
-  implications:
-   - we're making life unnecessarily hard by relying on PortablePluginConfig for
-     babel arguments. There is only one that matters -- the template compiler --
-     and we control both the provider and consumer of that argument.
-   - for hbs loader, a simple dehydrate / hydrate protocol is fine, because we
-     control both sides.
-   - for babel loader, we can ensure that isParallelSafe configs are truly
-     serializable with no rehydration needed, because babel "natively" supports
-     serial configs if you resolve their paths all the way down.
-   - we can bounce through a module of our own so we always use the native babel
-     format, even when it's really backed by our global placeholders
-
-*/
 
 interface GlobalPlaceholder {
   embroiderPlaceholder: true;

@@ -1,7 +1,12 @@
-import { Portable } from './portable';
+import { Portable, PortableHint } from './portable';
 
-export default function babelLauncher(this: any, babel: any, launch: { module: any; arg: any }, key: string) {
-  let p = new Portable();
+export default function babelLauncher(
+  this: any,
+  babel: any,
+  launch: { module: any; arg: any; hints: PortableHint[] },
+  key: string
+) {
+  let p = new Portable({ hints: launch.hints });
   let hydrated = p.hydrate(launch);
   let module;
   if (typeof hydrated.module === 'string') {

@@ -10,7 +10,7 @@ import { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
-import { Portable } from './portable';
+import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 
 export interface Plugins {
@@ -133,14 +133,14 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   };
 }
 
-export function templateCompilerModule(params: TemplateCompilerParams) {
-  let p = new Portable();
+export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
+  let p = new Portable({ hints });
   let result = p.dehydrate(params);
   return {
     src: [
       `const { TemplateCompiler } = require("${__filename}");`,
       `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
-      `let p = new Portable();`,
+      `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
       `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
     ].join('\n'),
     isParallelSafe: result.isParallelSafe,

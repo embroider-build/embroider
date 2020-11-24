@@ -29,6 +29,7 @@ import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { PortableHint } from './portable';
 
 export type EmberENV = unknown;
 
@@ -371,7 +372,7 @@ export class AppBuilder<TreeNames> {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    return makePortable(babel, { basedir: this.root });
+    return makePortable(babel, { basedir: this.root }, this.portableHints);
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
@@ -895,8 +896,19 @@ export class AppBuilder<TreeNames> {
     };
   }
 
+  @Memoize()
+  private get portableHints(): PortableHint[] {
+    return this.options.pluginHints.map(hint => {
+      let cursor = this.root;
+      for (let i = 0; i < hint.resolve.length; i++) {
+        cursor = resolve.sync(hint.resolve[i], { basedir: dirname(cursor) });
+      }
+      return { requireFile: cursor, useMethod: hint.useMethod };
+    });
+  }
+
   private addTemplateCompiler(params: TemplateCompilerParams): boolean {
-    let mod = templateCompilerModule(params);
+    let mod = templateCompilerModule(params, this.portableHints);
     writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
     return mod.isParallelSafe;
   }

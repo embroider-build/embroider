@@ -49,7 +49,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['/path/to/some/plugin.js'],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual(['/path/to/some/plugin.js']);
   });
@@ -59,7 +60,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['./path/to/some/plugin.js'],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       '/notional-base-dir/path/to/some/plugin.js'.split('/').join(sep),
@@ -71,7 +73,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['my-package'],
       },
-      resolvableNames('my-package')
+      resolvableNames('my-package'),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       '/notional-base-dir/node_modules/my-package/index.js'.split('/').join(sep),
@@ -83,7 +86,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['my-package'],
       },
-      resolvableNames('babel-plugin-my-package')
+      resolvableNames('babel-plugin-my-package'),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       '/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep),
@@ -95,7 +99,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['@me/my-package'],
       },
-      resolvableNames('@me/my-package')
+      resolvableNames('@me/my-package'),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       '/notional-base-dir/node_modules/@me/my-package/index.js'.split('/').join(sep),
@@ -107,7 +112,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['@me/my-package'],
       },
-      resolvableNames('@me/babel-plugin-my-package')
+      resolvableNames('@me/babel-plugin-my-package'),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       '/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js'.split('/').join(sep),
@@ -119,7 +125,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [['my-package', { theOptions: 'cool' }]],
       },
-      resolvableNames('babel-plugin-my-package')
+      resolvableNames('babel-plugin-my-package'),
+      []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
       ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep), { theOptions: 'cool' }],
@@ -136,7 +143,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [['my-package', options]],
       },
-      resolvableNames('babel-plugin-my-package')
+      resolvableNames('babel-plugin-my-package'),
+      []
     );
     expect(config.isParallelSafe).toBeFalsy();
     let { module, arg } = assertPortableBabelLauncher(load(config).plugins[0]);
@@ -150,7 +158,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [func],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeFalsy();
     let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
@@ -164,7 +173,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [[func, args]],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeFalsy();
     let { module, arg } = assertPortableBabelLauncher(load(config).plugins[0]);
@@ -184,7 +194,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [exampleFunction],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeTruthy();
     let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
@@ -200,7 +211,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [exampleFunction],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeTruthy();
     let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
@@ -215,7 +227,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [[exampleTarget, 'hi']],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeTruthy();
     let output = loadParallelSafe(config);
@@ -236,7 +249,8 @@ describe('portable-babel-config', () => {
       {
         plugins: [['my-plugin', { precompile }]],
       },
-      resolvableNames('my-plugin')
+      resolvableNames('my-plugin'),
+      []
     );
     expect(config.isParallelSafe).toBeTruthy();
     let output = loadParallelSafe(config);
@@ -250,7 +264,8 @@ describe('portable-babel-config', () => {
       {
         plugins: ['./x', { value: undefined }],
       },
-      resolvableNames()
+      resolvableNames(),
+      []
     );
     expect(config.isParallelSafe).toBeTruthy();
     let output = loadParallelSafe(config);

@@ -32,6 +32,19 @@ export default interface Options {
   // optimization if you've manually verified that a particular package doesn't
   // need transpilation to be safe in your target browsers.
   skipBabel?: { package: string; semverRange?: string }[];
+
+  // This is a performance optimization that can help you avoid the "Your build
+  // is slower because some babel plugins are non-serializable" penalty. If you
+  // provide the locations of known non-serializable objects, we can discover
+  // them and make them serializable.
+  //
+  // resolve is a list of paths to resolve, in a chain. This lets you resolve
+  // your dependencies' dependencies, like: resolve: ['your-dependency',
+  // 'inner-dependency/lib/transform']
+  //
+  // useMethod optionally lets you pick which property within the module to use.
+  // If not provided, we use the module.exports itself.
+  pluginHints?: { resolve: string[]; useMethod?: string }[];
 }
 
 export function optionsWithDefaults(options?: Options): Required<Options> {
@@ -43,6 +56,7 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
     splitControllers: false,
     splitRouteClasses: false,
     skipBabel: [],
+    pluginHints: [],
   };
   if (options) {
     return Object.assign(defaults, options);

@@ -83,6 +83,11 @@ export default interface Options extends CoreOptions {
   //
   // Follow to the definition of PackageRules for more info.
   packageRules?: PackageRules[];
+
+  // This turns build errors into runtime errors. It is not a good idea to keep
+  // it on in production. But it can be helpful when testing how much of your
+  // app is able to work with staticComponents enabled.
+  allowUnsafeDynamicComponents?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -93,6 +98,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   workspaceDir: null,
   optionalComponents: [],
   packageRules: [],
+  allowUnsafeDynamicComponents: false,
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {
@@ -110,5 +116,6 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
     staticAddonTestSupportTrees: true,
     staticHelpers: true,
     staticComponents: true,
+    allowUnsafeDynamicComponents: false,
   }),
 });

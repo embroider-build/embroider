@@ -61,10 +61,27 @@ interface ResolverParams {
   root: string;
   modulePrefix: string;
 }
+
+export function resolver(params: ResolverParams): V1AddonCompatResolver {
+  return new V1AddonCompatResolver(params);
+}
+
 class V1AddonCompatResolver implements Resolver {
   params: ResolverParams;
+
+  _parallelBabel: {
+    requireFile: string;
+    buildUsing: string;
+    params: ResolverParams;
+  };
+
   constructor(params: ResolverParams) {
     this.params = params;
+    this._parallelBabel = {
+      requireFile: __filename,
+      buildUsing: 'resolver',
+      params,
+    };
   }
   astTransformer(_templateCompiler: TemplateCompiler): unknown {
     return;
@@ -123,7 +140,7 @@ export default class V1Addon {
 
   @Memoize()
   templateResolver(): Resolver {
-    return new V1AddonCompatResolver({
+    return resolver({
       root: this.app.root,
       modulePrefix: this.moduleName,
     });

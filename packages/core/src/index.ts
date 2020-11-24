@@ -9,7 +9,12 @@ export { Resolver } from './resolver';
 export { AppMeta, AddonMeta } from './metadata';
 export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';
 export { default as Stage } from './stage';
-export { default as TemplateCompiler, Plugins as TemplateCompilerPlugins } from './template-compiler';
+export {
+  TemplateCompiler,
+  Plugins as TemplateCompilerPlugins,
+  TemplateCompilerParams,
+  templateCompilerModule,
+} from './template-compiler';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

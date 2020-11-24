@@ -1,17 +1,17 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
-import { PortablePluginConfig } from './portable-plugin-config';
 import fs, { readFileSync, statSync } from 'fs';
 import { Node } from 'broccoli-node-api';
 import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
-import { compile } from './js-handlebars';
-import { join, sep } from 'path';
+import { join, resolve, sep } from 'path';
 import { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
+import { Portable } from './portable';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 
 export interface Plugins {
   ast?: unknown[];
@@ -133,105 +133,32 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   };
 }
 
-interface SetupCompilerParams {
+export function templateCompilerModule(params: TemplateCompilerParams) {
+  let p = new Portable();
+  let result = p.dehydrate(params);
+  return {
+    src: [
+      `const { TemplateCompiler } = require("${__filename}");`,
+      `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
+      `let p = new Portable();`,
+      `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
+    ].join('\n'),
+    isParallelSafe: result.isParallelSafe,
+  };
+}
+
+export interface TemplateCompilerParams {
   compilerPath: string;
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
 }
 
-export function rehydrate(state: unknown) {
-  if (state instanceof TemplateCompiler && (state as any).params) {
-    return state;
-  }
-  if ((state as any).portableParams) {
-    return new TemplateCompiler(PortableTemplateCompilerConfig.load((state as any).portableParams));
-  }
-  throw new Error(`unable to rehydrate TemplateCompiler ${state}`);
-}
-
-class PortableTemplateCompilerConfig extends PortablePluginConfig {
-  private static template = compile(`
-  "use strict";
-  const { rehydrate } = require('{{{js-string-escape here}}}');
-  module.exports = rehydrate({{{json-stringify params 2 }}});
-  `) as (params: { params: { portableParams: unknown }; here: string }) => string;
-
-  protected here = __filename;
-
-  constructor(config: SetupCompilerParams) {
-    super(config);
-  }
-
-  serialize() {
-    return PortableTemplateCompilerConfig.template({
-      here: this.here,
-      params: { portableParams: this.portable },
-    });
-  }
-}
-
-export default class TemplateCompiler {
-  private portableParams!: object;
-  private params: SetupCompilerParams;
-  isParallelSafe!: boolean;
-
-  constructor(params: SetupCompilerParams) {
+export class TemplateCompiler {
+  constructor(public params: TemplateCompilerParams) {
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
-
-    // as a side effect of binding `this`, this.compile became enumerable. this
-    // puts it back to non-enumerable, because it doesn't participate in
-    // cloning, assigning, etc.
-    Object.defineProperty(this, 'compile', {
-      enumerable: false,
-    });
-
-    Object.defineProperty(this, 'portableParams', {
-      enumerable: true,
-      get() {
-        return this.portableConfig.portable;
-      },
-    });
-
-    this.params = params;
-    Object.defineProperty(this, 'params', {
-      enumerable: false,
-    });
-
-    Object.defineProperty(this, 'isParallelSafe', {
-      enumerable: true,
-      get() {
-        return this.portableConfig.isParallelSafe;
-      },
-    });
-  }
-
-  @Memoize()
-  private get portableConfig() {
-    return new PortableTemplateCompilerConfig(this.params);
-  }
-
-  // this supports the case where we are included as part of a larger config
-  // that's getting serialized. Specifically, we are passed as an argument into
-  // babel-plugin-inline-hbs, so when the whole babel config is being serialized
-  // this gets detected by PortablePluginConfig so we can represent ourself.
-  get _parallelBabel() {
-    if (this.isParallelSafe) {
-      return {
-        requireFile: __filename,
-        buildUsing: 'rehydrate',
-        params: { portableParams: this.portableParams },
-      };
-    }
-  }
-
-  // this supports the case where we want to create a standalone executable
-  // Javascript file that will re-create an equivalent TemplateCompiler
-  // instance.
-  serialize(): string {
-    return this.portableConfig.serialize();
   }
 
   private get syntax(): GlimmerSyntax {
@@ -239,15 +166,6 @@ export default class TemplateCompiler {
   }
 
   get cacheKey(): string {
-    // when we are inside a babel config, this can get called when we are in a
-    // partially serialized state due to somebody cloning us, etc.
-    //
-    // The rest of our methods don't get called until after passing us through
-    // `rehydrate`, but ember-cli-babel may call this directly and doesn't know
-    // how to rehydrate us.
-    if (!this.params) {
-      this.params = PortableTemplateCompilerConfig.load(this.portableParams);
-    }
     return this.setup().cacheKey;
   }
 
@@ -363,7 +281,13 @@ export default class TemplateCompiler {
   // Use applyTransforms on the contents of inline hbs template strings inside
   // Javascript.
   inlineTransformsBabelPlugin(): PluginItem {
-    return [join(__dirname, 'babel-plugin-inline-hbs.js'), { templateCompiler: this, stage: 1 }];
+    return [
+      join(__dirname, 'babel-plugin-inline-hbs.js'),
+      {
+        templateCompiler: Object.assign({ cacheKey: this.cacheKey, baseDir: this.baseDir }, this.params),
+        stage: 1,
+      } as InlineBabelParams,
+    ];
   }
 
   baseDir() {

@@ -13,7 +13,7 @@ import {
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import { join } from 'path';
-import TemplateCompiler, { rehydrate } from './template-compiler';
+import { TemplateCompiler, TemplateCompilerParams } from './template-compiler';
 import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
@@ -33,9 +33,7 @@ const modulePaths = [
 
 interface State {
   opts: {
-    // it can be unknown if somebody serialized our babel config on us, in
-    // which case we'll need to rehydrate it ourself
-    templateCompiler: unknown;
+    templateCompiler: TemplateCompilerParams;
 
     // the stages here correspond to the two places in the overall Embroider
     // architecture that this transform applies. In stage1 HBS stays as HBS, but
@@ -53,6 +51,8 @@ interface State {
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
 }
+
+export type Params = State['opts'];
 
 export default function inlineHBSTransform(): unknown {
   return {
@@ -166,7 +166,7 @@ function jsonLiteral(value: unknown | undefined) {
 
 function compiler(state: State) {
   if (!state.templateCompiler) {
-    state.templateCompiler = rehydrate(state.opts.templateCompiler);
+    state.templateCompiler = new TemplateCompiler(state.opts.templateCompiler);
   }
   return state.templateCompiler;
 }

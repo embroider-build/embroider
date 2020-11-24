@@ -17,9 +17,9 @@ import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
 import { PluginItem, TransformOptions } from '@babel/core';
-import PortableBabelConfig from './portable-babel-config';
+import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import TemplateCompiler from './template-compiler';
+import { templateCompilerModule, TemplateCompilerParams } from './template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { explicitRelative, extensionsPattern } from './paths';
@@ -28,6 +28,7 @@ import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 
 export type EmberENV = unknown;
 
@@ -331,7 +332,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompiler: TemplateCompiler, appFiles: Engine[]) {
+  private babelConfig(templateCompilerParams: TemplateCompilerParams, appFiles: Engine[]) {
     let babel = this.adapter.babelConfig();
 
     if (!babel.plugins) {
@@ -352,9 +353,9 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push([
       join(__dirname, 'babel-plugin-inline-hbs.js'),
       {
-        templateCompiler,
+        templateCompiler: templateCompilerParams,
         stage: 3,
-      },
+      } as InlineBabelParams,
     ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
@@ -370,7 +371,7 @@ export class AppBuilder<TreeNames> {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    return new PortableBabelConfig(babel, { basedir: this.root });
+    return makePortable(babel, { basedir: this.root });
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
@@ -821,7 +822,7 @@ export class AppBuilder<TreeNames> {
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     let templateCompiler = this.templateCompiler(emberENV);
     let babelConfig = this.babelConfig(templateCompiler, appFiles);
-    this.addTemplateCompiler(templateCompiler);
+    let templateCompilerIsParallelSafe = this.addTemplateCompiler(templateCompiler);
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
@@ -846,7 +847,7 @@ export class AppBuilder<TreeNames> {
       assets: assetPaths,
       'template-compiler': {
         filename: '_template_compiler_.js',
-        isParallelSafe: templateCompiler.isParallelSafe,
+        isParallelSafe: templateCompilerIsParallelSafe,
       },
       babel: {
         filename: '_babel_config_.js',
@@ -875,7 +876,7 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private templateCompiler(config: EmberENV) {
+  private templateCompiler(config: EmberENV): TemplateCompilerParams {
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -886,23 +887,29 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
-    return new TemplateCompiler({
+    return {
       plugins,
       compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
-    });
+    };
   }
 
-  private addTemplateCompiler(templateCompiler: TemplateCompiler) {
-    writeFileSync(join(this.root, '_template_compiler_.js'), templateCompiler.serialize(), 'utf8');
+  private addTemplateCompiler(params: TemplateCompilerParams): boolean {
+    let mod = templateCompilerModule(params);
+    writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
+    return mod.isParallelSafe;
   }
 
-  private addBabelConfig(babelConfig: PortableBabelConfig) {
-    if (!babelConfig.isParallelSafe) {
+  private addBabelConfig(pconfig: { config: TransformOptions; isParallelSafe: boolean }) {
+    if (!pconfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
-    writeFileSync(join(this.root, '_babel_config_.js'), babelConfig.serialize(), 'utf8');
+    writeFileSync(
+      join(this.root, '_babel_config_.js'),
+      `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
+      'utf8'
+    );
     writeFileSync(
       join(this.root, '_babel_filter_.js'),
       babelFilterTemplate({ skipBabel: this.options.skipBabel }),

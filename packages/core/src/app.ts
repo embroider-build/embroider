@@ -28,6 +28,7 @@ import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 
 export type EmberENV = unknown;
 
@@ -354,7 +355,7 @@ export class AppBuilder<TreeNames> {
       {
         templateCompiler: templateCompilerParams,
         stage: 3,
-      },
+      } as InlineBabelParams,
     ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));

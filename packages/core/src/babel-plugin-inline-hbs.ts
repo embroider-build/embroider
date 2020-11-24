@@ -52,6 +52,8 @@ interface State {
   templateCompiler: TemplateCompiler | undefined;
 }
 
+export type Params = State['opts'];
+
 export default function inlineHBSTransform(): unknown {
   return {
     visitor: {

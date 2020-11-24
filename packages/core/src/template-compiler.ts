@@ -11,6 +11,8 @@ import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
 import { Portable } from './portable';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { makePortable } from './portable-babel-config';
 
 export interface Plugins {
   ast?: unknown[];
@@ -280,7 +282,10 @@ export class TemplateCompiler {
   // Use applyTransforms on the contents of inline hbs template strings inside
   // Javascript.
   inlineTransformsBabelPlugin(): PluginItem {
-    return [join(__dirname, 'babel-plugin-inline-hbs.js'), { templateCompiler: this, stage: 1 }];
+    let config = {
+      plugins: [['./babel-plugin-inline-hbs.js', { templateCompiler: this.params, stage: 1 } as InlineBabelParams]],
+    };
+    return makePortable(config, { basedir: __dirname }).config.plugins![0];
   }
 
   baseDir() {

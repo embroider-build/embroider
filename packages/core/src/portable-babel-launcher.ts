@@ -1,6 +1,6 @@
 import { Portable } from './portable';
 
-export default function babelLauncher(this: any, babel: any, launch: { module: any; arg: any }, babelPath: string) {
+export default function babelLauncher(this: any, babel: any, launch: { module: any; arg: any }, key: string) {
   let p = new Portable();
   let hydrated = p.hydrate(launch);
   let module;
@@ -13,12 +13,65 @@ export default function babelLauncher(this: any, babel: any, launch: { module: a
   } else {
     module = hydrated.module;
   }
-  // our second argument ('launch') is the plugin options. But the real plugin
-  // will also  want to look at these options, and they get passed directly from
-  // babel to the various callbacks, without a chance for us to intercept. So we
-  // reuse our POJO.
-  delete launch.module;
-  delete launch.arg;
-  Object.assign(launch, hydrated.arg);
-  return module.call(this, babel, hydrated.arg, babelPath);
+
+  let plugin = module.call(this, babel, hydrated.arg, key);
+  let innerStates = new WeakMap();
+
+  function convertState(state: any) {
+    let innerState = innerStates.get(state);
+    if (!innerState) {
+      innerState = Object.assign({}, state, { opts: hydrated.arg });
+      innerStates.set(state, innerState);
+    }
+    return innerState;
+  }
+
+  function wrap1(original: any) {
+    if (typeof original === 'function') {
+      return function (this: any, state: any) {
+        return original.call(this, convertState(state));
+      };
+    }
+  }
+
+  function wrap2(original: Function) {
+    return function (this: any, path: any, state: any) {
+      return original.call(this, path, convertState(state));
+    };
+  }
+
+  let visitorProxy = {
+    get(target: any, prop: string) {
+      let original = target[prop];
+      if (typeof original === 'function') {
+        return wrap2(original);
+      }
+      if (original && typeof original === 'object') {
+        let wrapped: any = {};
+        if (typeof original.exit === 'function') {
+          wrapped.exit = wrap2(original.exit);
+        }
+        if (typeof original.enter === 'function') {
+          wrapped.enter = wrap2(original.enter);
+        }
+        return wrapped;
+      }
+      return original;
+    },
+  };
+
+  return new Proxy(plugin, {
+    get(target, prop) {
+      let original = target[prop];
+      switch (prop) {
+        case 'pre':
+        case 'post':
+          return wrap1(original);
+        case 'visitor':
+          return new Proxy(original, visitorProxy);
+        default:
+          return original;
+      }
+    },
+  });
 }

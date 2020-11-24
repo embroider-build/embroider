@@ -899,9 +899,13 @@ export class AppBuilder<TreeNames> {
   @Memoize()
   private get portableHints(): PortableHint[] {
     return this.options.pluginHints.map(hint => {
-      let cursor = this.root;
+      let cursor = join(this.app.root, 'package.json');
       for (let i = 0; i < hint.resolve.length; i++) {
-        cursor = resolve.sync(hint.resolve[i], { basedir: dirname(cursor) });
+        let target = hint.resolve[i];
+        if (i < hint.resolve.length - 1) {
+          target = join(target, 'package.json');
+        }
+        cursor = resolve.sync(target, { basedir: dirname(cursor) });
       }
       return { requireFile: cursor, useMethod: hint.useMethod };
     });

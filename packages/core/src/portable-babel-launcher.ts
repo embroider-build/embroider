@@ -15,7 +15,7 @@ export default function babelLauncher(this: any, babel: any, launch: { module: a
   }
   // our second argument ('launch') is the plugin options. But the real plugin
   // will also  want to look at these options, and they get passed directly from
-  // babel to the various callbacks, without a change for us to intercept. So we
+  // babel to the various callbacks, without a chance for us to intercept. So we
   // reuse our POJO.
   delete launch.module;
   delete launch.arg;

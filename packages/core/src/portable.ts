@@ -1,5 +1,6 @@
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
+import { Memoize } from 'typescript-memoize';
 
 export const protocol = '__embroider_portable_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -10,11 +11,17 @@ export interface PortableResult {
   needsHydrate: boolean;
 }
 
+export interface PortableHint {
+  requireFile: string;
+  useMethod?: string;
+}
+
 export class Portable {
   constructor(
     private opts: {
       dehydrate?: (value: any, accessPath: string[]) => PortableResult | undefined;
       hydrate?: (value: any, accessPath: string[]) => { value: any } | undefined;
+      hints?: PortableHint[];
     } = {}
   ) {}
 
@@ -69,6 +76,20 @@ export class Portable {
         }
     }
 
+    let found = this.foundHints.get(value);
+    if (found) {
+      return {
+        value: {
+          embroiderPlaceholder: true,
+          type: 'broccoli-parallel',
+          requireFile: found.requireFile,
+          useMethod: found.useMethod,
+        },
+        isParallelSafe: true,
+        needsHydrate: true,
+      };
+    }
+
     return globalPlaceholder(value);
   }
 
@@ -103,6 +124,22 @@ export class Portable {
       }
     }
     return input;
+  }
+
+  @Memoize()
+  get foundHints(): Map<any, PortableHint> {
+    let found = new Map();
+    if (this.opts.hints) {
+      for (let hint of this.opts.hints) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        let mod = require(hint.requireFile);
+        if (hint.useMethod) {
+          mod = mod[hint.useMethod];
+        }
+        found.set(mod, hint);
+      }
+    }
+    return found;
   }
 }
 

@@ -1,22 +1,23 @@
 import { TransformOptions } from '@babel/core';
 import { join } from 'path';
 import resolve from 'resolve';
-import { Portable } from './portable';
+import { Portable, PortableHint } from './portable';
 
 export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 
 export function makePortable(
   config: TransformOptions,
-  resolveOptions: ResolveOptions
+  resolveOptions: ResolveOptions,
+  hints: PortableHint[]
 ): { config: TransformOptions; isParallelSafe: boolean } {
-  return new PortableBabelConfig(resolveOptions).convert(config);
+  return new PortableBabelConfig(resolveOptions, hints).convert(config);
 }
 
 class PortableBabelConfig {
   private resolve: (name: string) => any;
   private basedir: string | undefined;
 
-  constructor(resolveOptions: ResolveOptions) {
+  constructor(resolveOptions: ResolveOptions, private hints: PortableHint[]) {
     if ('resolve' in resolveOptions) {
       this.resolve = resolveOptions.resolve;
     } else {
@@ -27,6 +28,7 @@ class PortableBabelConfig {
 
   convert(config: TransformOptions): { config: TransformOptions; isParallelSafe: boolean } {
     let portable: Portable = new Portable({
+      hints: this.hints,
       dehydrate: (value: any, accessPath: string[]) => {
         // this custom dehydrate hook handles babel plugins & presets. If we're
         // not looking at plugins or presets, continue with stock Portable
@@ -60,7 +62,7 @@ class PortableBabelConfig {
           return {
             value: [
               join(__dirname, 'portable-babel-launcher.js'),
-              { module: dehydrated.value[0], arg: dehydrated.value[1] },
+              { module: dehydrated.value[0], arg: dehydrated.value[1], hints: this.hints },
               dehydrated.value[2] || `portable-babel-launcher-${accessPath[1]}`,
             ],
             needsHydrate: false,

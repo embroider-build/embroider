@@ -21,26 +21,29 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
-    let templateCompiler = templateCompilerModule({
-      compilerPath: emberTemplateCompilerPath(),
-      EmberENV: {},
-      plugins: { ast: [] },
-      resolver: new CompatResolver({
-        root: app.baseDir,
-        modulePrefix: 'audit-this-app',
-        options: { staticComponents: false, staticHelpers: false },
-        activePackageRules: [],
-        adjustImportsOptions: {
-          renamePackages: {},
-          renameModules: {},
-          extraImports: [],
-          externalsDir: '/tmp/embroider-externals',
-          activeAddons: {},
-          relocatedFiles: {},
-          resolvableExtensions,
-        },
-      }),
-    });
+    let templateCompiler = templateCompilerModule(
+      {
+        compilerPath: emberTemplateCompilerPath(),
+        EmberENV: {},
+        plugins: { ast: [] },
+        resolver: new CompatResolver({
+          root: app.baseDir,
+          modulePrefix: 'audit-this-app',
+          options: { staticComponents: false, staticHelpers: false },
+          activePackageRules: [],
+          adjustImportsOptions: {
+            renamePackages: {},
+            renameModules: {},
+            extraImports: [],
+            externalsDir: '/tmp/embroider-externals',
+            activeAddons: {},
+            relocatedFiles: {},
+            resolvableExtensions,
+          },
+        }),
+      },
+      []
+    );
 
     merge(app.files, {
       'index.html': `<script type="module" src="./app.js"></script>`,

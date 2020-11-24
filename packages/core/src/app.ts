@@ -17,7 +17,7 @@ import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
 import { MacrosConfig } from '@embroider/macros';
 import { PluginItem, TransformOptions } from '@babel/core';
-import PortableBabelConfig from './portable-babel-config';
+import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import TemplateCompiler from './template-compiler';
 import { Resolver } from './resolver';
@@ -370,7 +370,7 @@ export class AppBuilder<TreeNames> {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    return new PortableBabelConfig(babel, { basedir: this.root });
+    return makePortable(babel, { basedir: this.root });
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
@@ -898,11 +898,15 @@ export class AppBuilder<TreeNames> {
     writeFileSync(join(this.root, '_template_compiler_.js'), templateCompiler.serialize(), 'utf8');
   }
 
-  private addBabelConfig(babelConfig: PortableBabelConfig) {
-    if (!babelConfig.isParallelSafe) {
+  private addBabelConfig(pconfig: { config: TransformOptions; isParallelSafe: boolean }) {
+    if (!pconfig.isParallelSafe) {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
-    writeFileSync(join(this.root, '_babel_config_.js'), babelConfig.serialize(), 'utf8');
+    writeFileSync(
+      join(this.root, '_babel_config_.js'),
+      `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
+      'utf8'
+    );
     writeFileSync(
       join(this.root, '_babel_filter_.js'),
       babelFilterTemplate({ skipBabel: this.options.skipBabel }),

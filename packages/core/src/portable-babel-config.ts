@@ -1,4 +1,5 @@
 import { TransformOptions } from '@babel/core';
+import { join } from 'path';
 import resolve from 'resolve';
 import { Portable } from './portable';
 
@@ -39,10 +40,7 @@ class PortableBabelConfig {
           value = [value];
         }
 
-        // there are three allowed parts, the plugin, the arguments, and
-        // babel's types show an optional string third argument (I've never
-        // seen it used, but the types allow it)
-        let [plugin, argument, optionalString] = value;
+        let [plugin, argument, asName] = value;
 
         // string plugins need to get resolved correctly into absolute paths,
         // so they will really be portable
@@ -54,15 +52,43 @@ class PortableBabelConfig {
         // understands the protocol used by ember-cli-babel to identify plugin
         // classes and get back to their serializable forms, so this will
         // handle that case.
-        let dehydrated = portable.dehydrate([plugin, argument, optionalString]);
+        let dehydrated = portable.dehydrate([plugin, argument, asName], accessPath.concat('_internal'));
 
         if (dehydrated.needsHydrate) {
-          //
+          // we can eliminate the need for rehydration by going through our own
+          // portable babel launcher
+          return {
+            value: [
+              join(__dirname, 'portable-babel-launcher.js'),
+              { module: dehydrated.value[0], arg: dehydrated.value[1] },
+              dehydrated.value[2] || `portable-babel-launcher-${accessPath[1]}`,
+            ],
+            needsHydrate: false,
+            isParallelSafe: dehydrated.isParallelSafe,
+          };
+        } else {
+          // trim back down our array, because trailing undefined will get
+          // converted into null via json.stringify, and babel will complain
+          // about that.
+          while (dehydrated.value[dehydrated.value.length - 1] == null) {
+            dehydrated.value.pop();
+          }
+          if (dehydrated.value.length === 1) {
+            dehydrated.value = dehydrated.value[0];
+          }
+          return {
+            value: dehydrated.value,
+            needsHydrate: dehydrated.needsHydrate,
+            isParallelSafe: dehydrated.isParallelSafe,
+          };
         }
       },
     });
     let result = portable.dehydrate(config);
-    return { config: result.value, isParallelSafe: !result.needsHydrate };
+    if (result.needsHydrate) {
+      throw new Error(`bug: portable babel configs aren't supposed to need hydration`);
+    }
+    return { config: result.value, isParallelSafe: result.isParallelSafe };
   }
 
   // babel lets you use relative paths, absolute paths, package names, and

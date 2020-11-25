@@ -96,7 +96,7 @@ export async function githubMatrix() {
   suites.unshift({
     name: 'lint',
     command: 'yarn',
-    args: ['list'],
+    args: ['lint'],
     dir: resolve(__dirname, '..', '..'),
   });
 

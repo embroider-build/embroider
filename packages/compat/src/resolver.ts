@@ -100,12 +100,13 @@ const builtInComponents = ['input', 'link-to', 'textarea'];
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<Required<Options>, 'staticHelpers' | 'staticComponents'>;
+type ResolverOptions = Pick<Required<Options>, 'staticHelpers' | 'staticComponents' | 'allowUnsafeDynamicComponents'>;
 
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
     staticHelpers: options.staticHelpers,
     staticComponents: options.staticComponents,
+    allowUnsafeDynamicComponents: options.allowUnsafeDynamicComponents,
   };
 }
 
@@ -310,7 +311,7 @@ export default class CompatResolver implements Resolver {
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
-          if (!this.auditMode) {
+          if (!this.auditMode && !this.params.options.allowUnsafeDynamicComponents) {
             let e = new Error(
               `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
             ) as any;

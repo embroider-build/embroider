@@ -1,5 +1,5 @@
 import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
-import { AppMeta, TemplateCompiler, throwOnWarnings } from '@embroider/core';
+import { AppMeta, templateCompilerModule, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
@@ -21,26 +21,29 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
-    let templateCompiler = new TemplateCompiler({
-      compilerPath: emberTemplateCompilerPath(),
-      EmberENV: {},
-      plugins: { ast: [] },
-      resolver: new CompatResolver({
-        root: app.baseDir,
-        modulePrefix: 'audit-this-app',
-        options: { staticComponents: false, staticHelpers: false },
-        activePackageRules: [],
-        adjustImportsOptions: {
-          renamePackages: {},
-          renameModules: {},
-          extraImports: [],
-          externalsDir: '/tmp/embroider-externals',
-          activeAddons: {},
-          relocatedFiles: {},
-          resolvableExtensions,
-        },
-      }),
-    });
+    let templateCompiler = templateCompilerModule(
+      {
+        compilerPath: emberTemplateCompilerPath(),
+        EmberENV: {},
+        plugins: { ast: [] },
+        resolver: new CompatResolver({
+          root: app.baseDir,
+          modulePrefix: 'audit-this-app',
+          options: { staticComponents: false, staticHelpers: false, allowUnsafeDynamicComponents: false },
+          activePackageRules: [],
+          adjustImportsOptions: {
+            renamePackages: {},
+            renameModules: {},
+            extraImports: [],
+            externalsDir: '/tmp/embroider-externals',
+            activeAddons: {},
+            relocatedFiles: {},
+            resolvableExtensions,
+          },
+        }),
+      },
+      []
+    );
 
     merge(app.files, {
       'index.html': `<script type="module" src="./app.js"></script>`,
@@ -50,7 +53,7 @@ describe('audit', function () {
         babelrc: false,
         plugins: [],
       }`,
-      'template_compiler.js': templateCompiler.serialize(),
+      'template_compiler.js': templateCompiler.src,
     });
     let appMeta: AppMeta = {
       type: 'app',

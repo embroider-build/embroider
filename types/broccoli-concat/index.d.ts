@@ -1,5 +1,6 @@
 declare module 'broccoli-concat' {
-  import Plugin, { Tree } from 'broccoli-plugin';
+  import Plugin from 'broccoli-plugin';
+  import { Node } from 'broccoli-node-api';
 
   export interface Options {
     outputFile: string;
@@ -15,7 +16,7 @@ declare module 'broccoli-concat' {
   }
 
   export default class Concat extends Plugin {
-    constructor(inputTree: Tree, options: Options);
+    constructor(inputTree: Node, options: Options);
     build(): Promise<void>;
     protected srcDir: string;
   }

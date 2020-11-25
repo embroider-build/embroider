@@ -1,5 +1,5 @@
 import { V1AddonConstructor } from './v1-addon';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { Options as CoreOptions, optionsWithDefaults as coreWithDefaults } from '@embroider/core';
 import { PackageRules } from './dependency-rules';
 
@@ -67,7 +67,7 @@ export default interface Options extends CoreOptions {
   // optional list of additional broccoli trees that should be incorporated into
   // the final build. This exists because the classic `app.toTree()` method
   // accepts an optional tree argument that has the same purpose.
-  extraPublicTrees?: Tree[];
+  extraPublicTrees?: Node[];
 
   // Allows you to tell Embroider about otherwise dynamic dependencies within
   // your app and addons that it can't figure out on its own. These are combined
@@ -83,6 +83,11 @@ export default interface Options extends CoreOptions {
   //
   // Follow to the definition of PackageRules for more info.
   packageRules?: PackageRules[];
+
+  // This turns build errors into runtime errors. It is not a good idea to keep
+  // it on in production. But it can be helpful when testing how much of your
+  // app is able to work with staticComponents enabled.
+  allowUnsafeDynamicComponents?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -93,6 +98,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   workspaceDir: null,
   optionalComponents: [],
   packageRules: [],
+  allowUnsafeDynamicComponents: false,
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {
@@ -110,5 +116,6 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
     staticAddonTestSupportTrees: true,
     staticHelpers: true,
     staticComponents: true,
+    allowUnsafeDynamicComponents: false,
   }),
 });

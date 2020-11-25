@@ -1,4 +1,5 @@
-import Plugin, { Tree } from 'broccoli-plugin';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { join } from 'path';
 import { readFileSync, outputFileSync } from 'fs-extra';
 
@@ -21,7 +22,7 @@ export class WriteV1AppBoot extends Plugin {
 
 export class ReadV1AppBoot extends Plugin {
   private appBoot: string | undefined;
-  constructor(appBootTree: Tree) {
+  constructor(appBootTree: Node) {
     super([appBootTree], {
       persistentOutput: true,
     });

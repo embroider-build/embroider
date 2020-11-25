@@ -1,6 +1,6 @@
 import V1Addon from '../v1-addon';
 import { join } from 'path';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { readdirSync, writeFileSync, readFileSync } from 'fs';
 import { pathExistsSync, removeSync } from 'fs-extra';
 import Funnel from 'broccoli-funnel';
@@ -8,7 +8,7 @@ import { transform } from '@babel/core';
 import { stripBadReexportsPlugin } from '../compat-utils';
 
 export default class extends V1Addon {
-  get v2Tree(): Tree {
+  get v2Tree(): Node {
     // workaround for https://github.com/DockYard/ember-composable-helpers/issues/308
     // and https://github.com/DockYard/ember-composable-helpers/pull/302
     // and https://github.com/DockYard/ember-composable-helpers/pull/307
@@ -17,7 +17,7 @@ export default class extends V1Addon {
 }
 
 class MatchHelpers extends Funnel {
-  constructor(inputTree: Tree) {
+  constructor(inputTree: Node) {
     super(inputTree, {});
   }
 

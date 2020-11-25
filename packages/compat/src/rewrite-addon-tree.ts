@@ -1,7 +1,7 @@
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { AddonMeta } from '@embroider/core';
 import AddToTree from './add-to-tree';
 import { moveSync, readdirSync, statSync } from 'fs-extra';
@@ -43,10 +43,10 @@ import { join, basename } from 'path';
 type GetMeta = () => Partial<AddonMeta>;
 
 export default function rewriteAddonTree(
-  tree: Tree,
+  tree: Node,
   name: string,
   moduleName: string
-): { tree: Tree; getMeta: GetMeta } {
+): { tree: Node; getMeta: GetMeta } {
   let renamed: { [name: string]: string } = {};
 
   tree = new AddToTree(tree, outputPath => {

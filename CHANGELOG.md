@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## 0.32.0 (2020-11-24)
+
+- ENHANCEMENT: added a new `allowUnsafeDynamicComponents` option to support testing of apps that are partially-working under `staticComponents` mode
+- BUGFIX: Fix `ensureSafeComponent` to not reuse registered component across owners by @simonihmig
+- ENHANCEMENT: added a new `pluginHints` option that lets you achieve parallel builds even if some of your babel or htmlbars plugins are misbehaved
+- HOUSEKEEPING: refactored plugin portability system to make `pluginHints` practical
+- HOUSEKEEPING: updated to use `broccoli-node-api` types
+- ENHANCEMENT: test coverage for `ensureSafeComponent` stability
+- ENHANCEMENT: minimize CSS in prod by @thoov
+- ENHANCEMENT: fix REUSE_WORKSPACE for in-repo-addons
+- COMPAT: update `@embroider/util` usage of private API for ember 3.24 compatibility
+- ENHANCEMENT: configure `@babel/plugin-transform-runtime` by default, making all apps smaller, especially if they support IE11.
+- HOUSEKEEPING: update to released version of `fixturify-project` by @rwjblue
+
 ## 0.31.0 (2020-11-11)
 
 - BREAKING: renamed the new `@embroider/addon` package to `@embroider/util` because it was misleading: apps are encouraged use these utilities too.

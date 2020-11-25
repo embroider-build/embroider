@@ -1,7 +1,8 @@
 import { allBabelVersions, emberTemplateCompilerPath } from '@embroider/test-support';
 import { join } from 'path';
-import TemplateCompiler from '../src/template-compiler';
+import { TemplateCompilerParams } from '../src/template-compiler';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
+import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -55,15 +56,17 @@ describe('inline-hbs', () => {
   describe('stage1', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler = new TemplateCompiler({
+        let templateCompiler: TemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
             ast: [sampleTransform],
           },
-        });
+        };
         return {
-          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 }]],
+          plugins: [
+            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 } as InlineBabelParams],
+          ],
         };
       },
       createTests: stage1Tests,
@@ -73,15 +76,17 @@ describe('inline-hbs', () => {
   describe('stage3 no presets', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler = new TemplateCompiler({
+        let templateCompiler: TemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
             ast: [],
           },
-        });
+        };
         return {
-          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]],
+          plugins: [
+            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 } as InlineBabelParams],
+          ],
         };
       },
       createTests: stage3Tests,
@@ -91,15 +96,17 @@ describe('inline-hbs', () => {
   describe('stage3 with presets', () => {
     allBabelVersions({
       babelConfig(major: number) {
-        let templateCompiler = new TemplateCompiler({
+        let templateCompiler: TemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
             ast: [],
           },
-        });
+        };
         return {
-          plugins: [[join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 }]],
+          plugins: [
+            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 } as InlineBabelParams],
+          ],
           presets: [
             [
               require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),

@@ -1,6 +1,6 @@
 import V1Addon from '../v1-addon';
 import AddToTree from '../add-to-tree';
-import { Tree } from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { removeSync } from 'fs-extra';
@@ -18,7 +18,7 @@ if (Ember.ENV.EXTEND_PROTOTYPES === true || Ember.ENV.EXTEND_PROTOTYPES.String) 
 const patch = `import './make-configurable';`;
 
 export default class extends V1Addon {
-  get v2Tree(): Tree {
+  get v2Tree(): Node {
     return new AddToTree(super.v2Tree, outputDir => {
       let target = join(outputDir, 'index.js');
       let source = readFileSync(target);

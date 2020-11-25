@@ -1,19 +1,21 @@
 {
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "test-packages/*",
-    "test-packages/@embroider/*",
-    "test-packages/sample-v2-addon/test-app",
-    "types/babel-core",
-    "types/@babel__traverse",
-    "types/broccoli-funnel",
-    "types/broccoli-concat",
-    "types/ember-cli-htmlbars"
-  ],
-  "nohoist": [
-    "**/@types/broccoli-plugin"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "test-packages/*",
+      "test-packages/@embroider/*",
+      "test-packages/sample-v2-addon/test-app",
+      "types/babel-core",
+      "types/@babel__traverse",
+      "types/broccoli-funnel",
+      "types/broccoli-concat",
+      "types/ember-cli-htmlbars"
+    ],
+    "nohoist": [
+      "**/@types/broccoli-plugin"
+    ]
+  },
   "scripts": {
     "clean": "git clean -x -f",
     "compile": "tsc",

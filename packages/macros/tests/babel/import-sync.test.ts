@@ -1,5 +1,5 @@
 import { allBabelVersions } from './helpers';
-import { MacrosConfig } from '../..';
+import { MacrosConfig } from '../../src/node';
 
 describe('importSync', function () {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {

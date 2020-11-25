@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { MacrosConfig, isEmbroiderMacrosPlugin } from '.';
+import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
 export = {
   name: '@embroider/macros',

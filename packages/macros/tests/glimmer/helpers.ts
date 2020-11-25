@@ -1,6 +1,6 @@
 import { TemplateCompiler } from '@embroider/core';
 import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
-import { MacrosConfig } from '../..';
+import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
 const compilerPath = emberTemplateCompilerPath();
 

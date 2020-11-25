@@ -13,7 +13,7 @@ import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, ex
 import AddToTree from './add-to-tree';
 import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
-import { isEmbroiderMacrosPlugin } from '@embroider/macros';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';

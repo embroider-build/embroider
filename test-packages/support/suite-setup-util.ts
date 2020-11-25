@@ -91,6 +91,15 @@ export async function githubMatrix() {
     args: ['jest', '--forceExit'],
     dir: resolve(__dirname, '..', '..'),
   });
+
+  // add our eslint
+  suites.unshift({
+    name: 'lint',
+    command: 'yarn',
+    args: ['list'],
+    dir: resolve(__dirname, '..', '..'),
+  });
+
   return {
     name: suites.map(s => s.name),
     include: suites.map(s => ({

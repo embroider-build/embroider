@@ -1,28 +1,28 @@
 import {
-  Resolver,
-  TemplateCompiler,
-  PackageCache,
-  explicitRelative,
-  extensionsPattern,
-  Package,
-} from '@embroider/core';
-import {
+  ActivePackageRules,
   ComponentRules,
+  ModuleRules,
   PackageRules,
   PreprocessedComponentRule,
   preprocessComponentRule,
-  ActivePackageRules,
-  ModuleRules,
 } from './dependency-rules';
+import {
+  Package,
+  PackageCache,
+  Resolver,
+  TemplateCompiler,
+  explicitRelative,
+  extensionsPattern,
+} from '@embroider/core';
+import { dirname, join, relative, sep } from 'path';
+
+import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
+import { Memoize } from 'typescript-memoize';
 import Options from './options';
-import { join, relative, dirname, sep } from 'path';
-import { pathExistsSync } from 'fs-extra';
+import { ResolvedDep } from '@embroider/core/src/resolver';
 import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
-import { Memoize } from 'typescript-memoize';
-import { ResolvedDep } from '@embroider/core/src/resolver';
-import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
-
+import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
 
 export interface ComponentResolution {
@@ -160,8 +160,29 @@ export default class CompatResolver implements Resolver {
     return resolution;
   }
 
-  private findComponentRules(absPath: string) {
-    return this.rules.components.get(absPath);
+  private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
+    let rules = this.rules.components.get(absPath);
+    if (rules) {
+      return rules;
+    }
+
+    // co-located templates aren't visible to the resolver, because they never
+    // get resolved from a template (they are always handled directly by the
+    // corresponding JS module, which the resolver *does* see). This means their
+    // paths won't ever be in `this.rules.components`. But we do want them to
+    // "inherit" the rules that are attached to their corresonding JS module.
+    if (absPath.endsWith('.hbs')) {
+      let stem = absPath.slice(0, -4);
+      for (let ext of this.params.adjustImportsOptions.resolvableExtensions) {
+        if (ext !== '.hbs') {
+          let rules = this.rules.components.get(stem + ext);
+          if (rules) {
+            return rules;
+          }
+        }
+      }
+    }
+    return undefined;
   }
 
   private isIgnoredComponent(dasherizedName: string) {

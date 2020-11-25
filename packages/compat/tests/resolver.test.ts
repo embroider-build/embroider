@@ -986,6 +986,22 @@ describe('compat-resolver', function () {
     );
   });
 
+  test('acceptsComponentArguments matches co-located template', function () {
+    let packageRules = [
+      {
+        package: 'the-app',
+        components: {
+          '<FormBuilder />': {
+            acceptsComponentArguments: ['title'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('components/form-builder.js');
+    expect(findDependencies('components/form-builder.hbs', `{{component title}}`)).toEqual([]);
+  });
+
   test(`element block params are not in scope for element's own attributes`, function () {
     let packageRules = [
       {

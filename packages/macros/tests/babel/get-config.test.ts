@@ -1,6 +1,6 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
-import { MacrosConfig } from '../../src';
+import { MacrosConfig } from '../../src/node';
 import { dirname } from 'path';
 
 describe(`getConfig`, function () {

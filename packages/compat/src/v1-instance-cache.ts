@@ -9,7 +9,7 @@ import { getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
 import Options from './options';
 import isEqual from 'lodash/isEqual';
-import { MacrosConfig } from '@embroider/macros';
+import { MacrosConfig } from '@embroider/macros/src/node';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();

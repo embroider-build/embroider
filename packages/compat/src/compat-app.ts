@@ -30,7 +30,7 @@ import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
 import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
-import { MacrosConfig } from '@embroider/macros';
+import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from 'os';

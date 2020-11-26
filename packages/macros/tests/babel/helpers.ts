@@ -1,4 +1,4 @@
-import { MacrosConfig } from '../..';
+import { MacrosConfig } from '../../src/node';
 import { join, dirname } from 'path';
 import { allBabelVersions as allBabel, Project, runDefault, Transform, toCJS } from '@embroider/test-support';
 import { readFileSync } from 'fs';

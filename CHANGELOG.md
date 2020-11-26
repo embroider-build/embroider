@@ -1,5 +1,14 @@
 # Embroider Changelog
 
+## master
+
+- ENHANCEMENT: fingerprint legacy scripts and styles in production by @simonihmig
+- COMPAT: added packageRules for several more popular addons
+- BUGFIX: don't include node-only types in @embroider/macros main entrypoint
+- BUGFIX: correctly apply packageRules inside co-located templates
+- ENHANCEMENT: add types for @embroider/util
+- HOUSEKEEPING: eslint update
+
 ## 0.32.0 (2020-11-24)
 
 - ENHANCEMENT: added a new `allowUnsafeDynamicComponents` option to support testing of apps that are partially-working under `staticComponents` mode

@@ -2,6 +2,7 @@
 
 ## master
 
+- ENHANCEMENT: new staticAppPaths option
 - ENHANCEMENT: fingerprint legacy scripts and styles in production by @simonihmig
 - COMPAT: added packageRules for several more popular addons
 - BUGFIX: don't include node-only types in @embroider/macros main entrypoint

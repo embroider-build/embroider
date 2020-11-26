@@ -1,6 +1,6 @@
 # Embroider Changelog
 
-## master
+## 0.33.0 (2020-11-25)
 
 - ENHANCEMENT: new staticAppPaths option
 - ENHANCEMENT: fingerprint legacy scripts and styles in production by @simonihmig

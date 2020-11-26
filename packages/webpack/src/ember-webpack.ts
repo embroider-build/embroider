@@ -33,6 +33,7 @@ import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
+import crypto from 'crypto';
 
 const debug = makeDebug('embroider:debug');
 
@@ -235,13 +236,14 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       }
     }
     let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
-    writeFileSync(join(this.outputPath, script), outCode!);
+    let finalFilename = this.getFingerprintedFilename(script, outCode!);
+    writeFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);
     if (appRelativeSourceMapURL && outMap) {
       writeFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
       written.add(appRelativeSourceMapURL);
     }
-    return script;
+    return finalFilename;
   }
 
   private async writeStyle(style: string, written: Set<string>, variant: Variant) {
@@ -255,9 +257,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     const cssContent = readFileSync(join(this.pathToVanillaApp, style), 'utf8');
     const minifiedCss = csso.minify(cssContent).css;
 
-    writeFileSync(join(this.outputPath, style), minifiedCss);
+    let finalFilename = this.getFingerprintedFilename(style, minifiedCss);
+    writeFileSync(join(this.outputPath, finalFilename), minifiedCss);
     written.add(style);
-    return style;
+    return finalFilename;
   }
 
   private async provideErrorContext(message: string, messageParams: any[], fn: () => Promise<void>) {
@@ -352,6 +355,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       copySync(sourcePath, join(this.outputPath, relativePath));
       this.passthroughCache.set(sourcePath, newStats);
     }
+  }
+
+  private getFingerprintedFilename(filename: string, content: string): string {
+    let md5 = crypto.createHash('md5');
+    md5.update(content);
+    let hash = md5.digest('hex');
+
+    let fileParts = filename.split('.');
+    fileParts.splice(fileParts.length - 1, 0, hash);
+    return fileParts.join('.');
   }
 
   private summarizeStats(multiStats: any): StatSummary {

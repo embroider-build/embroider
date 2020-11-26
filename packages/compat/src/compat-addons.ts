@@ -181,6 +181,13 @@ export default class CompatAddons implements Stage {
         if (moved) {
           dep = moved;
         }
+
+        // if an in-repo addon is disabled/excluded, it has no name here
+        // we can skip this addon in that case
+        if (!dep.name) {
+          continue;
+        }
+
         let target = join(this.appDestDir, 'node_modules', dep.name);
         ensureDirSync(dirname(target));
         ensureSymlinkSync(dep.root, target, 'dir');

@@ -37,6 +37,7 @@
     "@embroider/core": "0.32.0",
     "@embroider/test-support": "0.32.0",
     "@embroider/webpack": "0.32.0",
+    "@types/ember__routing": "^3.16.9",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-cli": "~3.10.1",
@@ -63,10 +64,14 @@
     "qunit-dom": "^0.8.4"
   },
   "peerDependencies": {
-    "@embroider/core": "*"
+    "@embroider/core": "*",
+    "@types/ember__routing": "*"
   },
   "peerDependenciesMeta": {
     "@embroider/core": {
+      "optional": true
+    },
+    "@types/ember__routing": {
       "optional": true
     }
   },

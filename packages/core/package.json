@@ -36,6 +36,7 @@
     "broccoli-plugin": "^4.0.1",
     "broccoli-source": "^3.0.0",
     "debug": "^3.1.0",
+    "escape-string-regexp": "^4.0.0",
     "fast-sourcemap-concat": "^1.4.0",
     "filesize": "^4.1.2",
     "fs-extra": "^7.0.1",

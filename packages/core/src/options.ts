@@ -25,6 +25,30 @@ export default interface Options {
   // README](https://github.com/embroider-build/embroider/blob/master/packages/router/README.md)
   splitAtRoutes?: (RegExp | string)[];
 
+  // Every file within your application's `app` directory is categorized as a
+  // component, helper, route, route template, controller, or "other".
+  //
+  // This option lets you decide which "other" files should be loaded
+  // statically. By default, all "other" files will be included in the build and
+  // registered with Ember's runtime loader, because we can't know if somebody
+  // is going to try to access them dynamically via Ember's resolver or AMD
+  // runtime `require`.
+  //
+  // If you know that your files are only ever imported, you can list them here
+  // and then they will only be included exactly where they're needed.
+  //
+  // Provide a list of directories or files relative to `/app`. For example
+  //
+  //     staticAppPaths: ['lib']
+  //
+  // means that everything under your-project/app/lib will be loaded statically.
+  //
+  // This option has no effect on components (which are governed by
+  // staticComponents), helpers (which are governed by staticHelpers), or the
+  // route-specific files (routes, route templates, and controllers which are
+  // governed by splitAtRoutes).
+  staticAppPaths?: string[];
+
   // By default, all modules that get imported into the app go through Babel, so
   // that all code will conform with your Babel targets. This option allows you
   // to turn Babel off for a particular package. You might need this to work
@@ -55,6 +79,7 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
     splitAtRoutes: [],
     splitControllers: false,
     splitRouteClasses: false,
+    staticAppPaths: [],
     skipBabel: [],
     pluginHints: [],
   };

@@ -1,5 +1,5 @@
 import { templateTests } from './helpers';
-import { MacrosConfig } from '../..';
+import { MacrosConfig } from '../../src/node';
 
 describe(`macroGetConfig`, function () {
   templateTests(function (transform: (code: string) => string, config: MacrosConfig) {

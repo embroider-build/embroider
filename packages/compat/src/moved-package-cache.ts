@@ -2,7 +2,7 @@ import { join, dirname, resolve, sep, isAbsolute } from 'path';
 import { ensureSymlinkSync, readdirSync, readlinkSync, realpathSync, lstatSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
-import { MacrosConfig } from '@embroider/macros';
+import { MacrosConfig } from '@embroider/macros/src/node';
 
 function assertNoTildeExpansion(source: string, target: string) {
   if (target.includes('~')) {

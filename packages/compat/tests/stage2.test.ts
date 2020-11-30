@@ -259,6 +259,16 @@ describe('stage2 build', function () {
           helpers: {
             'embroider-sample-transforms-module.js': 'export default function() {}',
           },
+          'static-dir': {
+            'my-library.js': '',
+          },
+          'static-dir-not-really': {
+            'something.js': '',
+          },
+          'non-static-dir': {
+            'another-library.js': '',
+          },
+          'top-level-static.js': '',
         },
         public: {
           'public-file-1.txt': `initial state`,
@@ -362,6 +372,7 @@ describe('stage2 build', function () {
             semverRange: '^2.0.0',
           },
         ],
+        staticAppPaths: ['static-dir', 'top-level-static.js'],
         packageRules: [
           {
             package: 'my-addon',
@@ -573,6 +584,22 @@ describe('stage2 build', function () {
         '"my-app/templates/components/module-name-check/index.hbs"',
         'our sample transform injected the expected moduleName into the compiled template'
       );
+    });
+
+    test('non-static other paths are included in the entrypoint', function () {
+      expectFile('assets/my-app.js').matches(/i\("..\/non-static-dir\/another-library"\)/);
+    });
+
+    test('static other paths are not included in the entrypoint', function () {
+      expectFile('assets/my-app.js').doesNotMatch(/i\("..\/static-dir\/my-library"\)/);
+    });
+
+    test('top-level static other paths are not included in the entrypoint', function () {
+      expectFile('assets/my-app.js').doesNotMatch(/i\("..\/top-level-static"\)/);
+    });
+
+    test('staticAppPaths do not match partial path segments', function () {
+      expectFile('assets/my-app.js').matches(/i\("..\/static-dir-not-really\/something"\)/);
     });
   });
 

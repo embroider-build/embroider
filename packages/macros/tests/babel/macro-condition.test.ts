@@ -1,6 +1,6 @@
 import { makeRunner, makeBabelConfig, allModes } from './helpers';
 import { allBabelVersions } from '@embroider/test-support';
-import { MacrosConfig } from '../..';
+import { MacrosConfig } from '../../src/node';
 
 describe('macroCondition', function () {
   let config: MacrosConfig;

@@ -15,7 +15,7 @@ import { Asset, EmberAsset, ImplicitAssetPaths, InMemoryAsset, OnDiskAsset } fro
 import assertNever from 'assert-never';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import Options from './options';
-import { MacrosConfig } from '@embroider/macros';
+import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
@@ -30,6 +30,7 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { PortableHint } from './portable';
+import escapeRegExp from 'escape-string-regexp';
 
 export type EmberENV = unknown;
 
@@ -1019,6 +1020,30 @@ export class AppBuilder<TreeNames> {
     });
   }
 
+  @Memoize()
+  private get staticAppPathsPattern(): RegExp | undefined {
+    if (this.options.staticAppPaths.length > 0) {
+      return new RegExp(
+        '^(?:' +
+          this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath.replace(/\//g, sep))).join('|') +
+          ')(?:$|' +
+          sep +
+          ')'
+      );
+    }
+  }
+
+  private requiredOtherFiles(appFiles: AppFiles): readonly string[] {
+    let pattern = this.staticAppPathsPattern;
+    if (pattern) {
+      return appFiles.otherAppFiles.filter(f => {
+        return !pattern!.test(f);
+      });
+    } else {
+      return appFiles.otherAppFiles;
+    }
+  }
+
   private appJSAsset(
     relativePath: string,
     engine: Engine,
@@ -1033,7 +1058,7 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
-    let requiredAppFiles = [appFiles.otherAppFiles];
+    let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }

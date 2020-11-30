@@ -114,17 +114,16 @@ You can refactor this example into two uses with only string literals inside `{{
 <Menu @titleBar={{if this.fancy (component "fancy-title-bar") (component "plain-title-bar") }} />
 ```
 
-But if your template is getting complicated, you can always move to Javascript and import the components and pass them through `ensureSafeComponent` before passing them onward:
+But if your template is getting complicated, you can always move to Javascript and import the components directly:
 
 ```js
 import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/util';
 import FancyTitleBar from './fancy-title-bar';
 import PlainTitleBar from './plain-title-bar';
 
 export default class extends Component {
   get whichComponent() {
-    return ensureSafeComponent(this.fancy ? FancyTitleBar : PlainTitleBar);
+    return this.fancy ? FancyTitleBar : PlainTitleBar;
   }
 }
 ```
@@ -132,6 +131,12 @@ export default class extends Component {
 ```hbs
 <Menu @titleBar={{ this.whichComponent }} />
 ```
+
+Note that we didn't use `ensureSafeComponent` here because we already stipulated
+that `<Menu/>` is itself using `ensureSafeComponent`, and so `<Menu/>`'s public
+API accepts component classes _or_ component definitions. But if you were unsure
+whether `<Menu/>` accepts classes, it's always safe to run them through
+`ensureSafeComponent` yourself first (`ensureSafeComponent` is idempotent).
 
 ## When you need to curry arguments onto a component
 

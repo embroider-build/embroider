@@ -12,7 +12,7 @@
     "test:embroider": "cd test-app && yarn test:embroider"
   },
   "dependencies": {
-    "@embroider/util": "0.31.0"
+    "@embroider/util": "0.33.0"
   },
   "devDependencies": {},
   "ember-addon": {

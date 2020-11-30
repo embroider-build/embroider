@@ -2,7 +2,7 @@ import Plugin from 'broccoli-plugin';
 import { writeJSONSync } from 'fs-extra';
 import { join } from 'path';
 
-export default class extends Plugin {
+export default class EmptyPackageTree extends Plugin {
   private built = false;
 
   constructor() {

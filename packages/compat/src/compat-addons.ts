@@ -11,6 +11,13 @@ import Options, { optionsWithDefaults } from './options';
 import V1App from './v1-app';
 import { createHash } from 'crypto';
 import TreeSync from 'tree-sync';
+import EmptyPackageTree from './empty-package-tree';
+
+interface MovedPackage {
+  oldPkg: Package;
+  newPkg: Package;
+  isDisabled: boolean;
+}
 
 export default class CompatAddons implements Stage {
   private didBuild = false;
@@ -41,12 +48,21 @@ export default class CompatAddons implements Stage {
   }
 
   get tree(): Node {
-    let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, this.v1Cache));
-    let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
+    let packages: MovedPackage[] = [];
+    let movedAddons = [];
+
+    for (let [oldPkg, newPkg] of this.packageCache.moved.entries()) {
+      let movedTree = buildCompatAddon(oldPkg, this.v1Cache);
+      movedAddons.push(movedTree);
+
+      packages.push({ oldPkg, newPkg, isDisabled: movedTree instanceof EmptyPackageTree });
+    }
+
+    let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, packages, movedAddons);
     return new WaitForTrees(
       { movedAddons, synthVendor, synthStyles },
       '@embroider/compat/addons',
-      this.build.bind(this)
+      this.build.bind(this, packages)
     );
   }
 
@@ -70,6 +86,7 @@ export default class CompatAddons implements Stage {
   }
 
   private async build(
+    packages: MovedPackage[],
     {
       movedAddons,
       synthVendor,
@@ -86,7 +103,7 @@ export default class CompatAddons implements Stage {
       emptyDirSync(this.destDir);
     }
 
-    [...this.packageCache.moved.entries()].forEach(([oldPkg, newPkg], index) => {
+    packages.forEach(({ oldPkg, newPkg }, index) => {
       let treeInstance = this.treeSyncMap.get(newPkg);
 
       // we need to pull metadata off the oldPkg, not the newPkg, because the
@@ -152,18 +169,19 @@ export default class CompatAddons implements Stage {
     }
 
     if (!this.didBuild) {
-      this.handleNonResolvableDeps();
+      this.handleNonResolvableDeps(packages);
     }
     this.didBuild = true;
     this.deferReady.resolve();
   }
 
-  private handleNonResolvableDeps() {
+  private handleNonResolvableDeps(packages: MovedPackage[]) {
     // non-resolvable deps in addons
-    for (let [oldPkg, newPkg] of this.packageCache.moved.entries()) {
+    packages.forEach(({ oldPkg, newPkg }) => {
       if (!oldPkg.nonResolvableDeps) {
-        continue;
+        return;
       }
+
       for (let dep of oldPkg.nonResolvableDeps.values()) {
         let moved = this.packageCache.moved.get(dep);
         if (moved) {
@@ -173,19 +191,21 @@ export default class CompatAddons implements Stage {
         ensureDirSync(dirname(target));
         ensureSymlinkSync(dep.root, target, 'dir');
       }
-    }
+    });
+
     // non-resolvable deps in app
     if (this.packageCache.app.nonResolvableDeps) {
       for (let dep of this.packageCache.app.nonResolvableDeps.values()) {
+        let pkg = packages.find(pkg => pkg.newPkg === dep);
+
+        // if an in-repo addon is disabled/excluded, we can skip it here
+        if (pkg?.isDisabled) {
+          continue;
+        }
+
         let moved = this.packageCache.moved.get(dep);
         if (moved) {
           dep = moved;
-        }
-
-        // if an in-repo addon is disabled/excluded, it has no name here
-        // we can skip this addon in that case
-        if (!dep.name) {
-          continue;
         }
 
         let target = join(this.appDestDir, 'node_modules', dep.name);
@@ -195,15 +215,19 @@ export default class CompatAddons implements Stage {
     }
   }
 
-  private getSyntheticPackages(v1App: V1App, movedAddons: Node[]): { synthVendor: Node; synthStyles: Node } {
-    let index = 0;
-    let upgradedAddonTrees = [];
-    for (let [oldPkg] of this.packageCache.moved.entries()) {
-      if (!oldPkg.isV2Ember()) {
+  private getSyntheticPackages(
+    v1App: V1App,
+    packages: MovedPackage[],
+    movedAddons: Node[]
+  ): { synthVendor: Node; synthStyles: Node } {
+    let upgradedAddonTrees: Node[] = [];
+
+    packages.forEach(({ oldPkg, isDisabled }, index) => {
+      if (!oldPkg.isV2Ember() && !isDisabled) {
         upgradedAddonTrees.push(movedAddons[index]);
       }
-      index++;
-    }
+    });
+
     return {
       synthVendor: v1App.synthesizeVendorPackage(upgradedAddonTrees),
       synthStyles: v1App.synthesizeStylesPackage(upgradedAddonTrees),

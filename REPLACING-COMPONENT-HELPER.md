@@ -192,6 +192,7 @@ In this case, we're refactoring existing synchronous code so we can use
 
 ```js
 import Component from '@glimmer/component';
+import { importSync } from '@embroider/macros';
 import { ensureSafeComponent } from '@embroider/util';
 
 export default class extends Component {

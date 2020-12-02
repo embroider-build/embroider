@@ -269,7 +269,7 @@ export default class V1Addon {
     // addonInstance.root gets modified by a customized "main" or
     // "ember-addon.main" in package.json. We want the real package root here
     // (the place where package.json lives).
-    return dirname(pkgUpSync(this.addonInstance.root)!);
+    return dirname(pkgUpSync({ cwd: this.addonInstance.root })!);
   }
 
   @Memoize()

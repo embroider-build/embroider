@@ -46,7 +46,7 @@
     "jsdom": "^16.4.0",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.10",
-    "pkg-up": "^2.0.0",
+    "pkg-up": "^3.1.0",
     "resolve": "^1.8.1",
     "resolve-package-path": "^1.2.2",
     "semver": "^7.3.2",

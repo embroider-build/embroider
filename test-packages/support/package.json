@@ -12,7 +12,7 @@
     "@types/node": "^10.5.2",
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
-    "broccoli": "^2.2.0",
+    "broccoli": "^3.4.2",
     "console-ui": "^3.0.0",
     "ember-auto-import": "^1.2.21",
     "ember-cli": "~3.15.1",

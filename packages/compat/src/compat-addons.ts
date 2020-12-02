@@ -1,5 +1,5 @@
 import { Node } from 'broccoli-node-api';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, isAbsolute } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -101,14 +101,21 @@ export default class CompatAddons implements Stage {
 
       if (!treeInstance) {
         let ignore = ['**/node_modules'];
-        if (join(destination, 'tests', 'dummy') === this.appDestDir) {
-          // special case: we're building the dummy app of this addon. Because
-          // the dummy app is nested underneath the addon, we need to tell our
-          // TreeSync to ignore it. Not because it's ever present at our input,
-          // but because stage2 will make it appear inside our output and we
-          // should leave that alone.
-          ignore.push('tests');
+
+        let rel = relative(destination, this.appDestDir);
+        if (!rel.startsWith('..') && !isAbsolute(rel)) {
+          // the app is inside our addon. We must not copy the app as part of
+          // the addon, because that would overwrite the real app build.
+          ignore.push(rel);
+
+          if (rel === 'tests/dummy') {
+            // special case: classic dummy apps are weird because they put the
+            // tests (which are truly part of the app, not the addon) inside the
+            // addon instead of inside the app.
+            ignore.push('tests');
+          }
         }
+
         treeInstance = new TreeSync(movedAddons[index], destination, {
           ignore,
         });

@@ -45,7 +45,8 @@
       "cwd": "${workspaceFolder}/test-packages/sample-v2-addon/test-app",
       "args": ["serve"],
       "env": {
-        "JOBS": "1"
+        "JOBS": "1",
+        "EMBROIDER_REBUILD_ADDONS": "@embroider/sample-v2-addon"
       },
       "outputCapture": "std"
     },
@@ -141,7 +142,7 @@
       "name": "Build static-app",
       "program": "${workspaceFolder}/node_modules/.bin/ember",
       "cwd": "${workspaceFolder}/test-packages/static-app",
-      "args": ["build"],
+      "args": ["serve"],
       "env": {
         "JOBS": "1"
       },

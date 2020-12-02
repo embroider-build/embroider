@@ -8,8 +8,9 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "test:classic": "cd test-app && yarn test:classic",
-    "test:embroider": "cd test-app && yarn test:embroider"
+    "test:classic": "cd test-app && EMBROIDER_TEST_SETUP_FORCE=classic ember test",
+    "test:embroider": "cd test-app && EMBROIDER_TEST_SETUP_FORCE=embroider ember test",
+    "start": "cd test-app && EMBROIDER_REBUILD_ADDONS=@embroider/sample-v2-addon ember s"
   },
   "dependencies": {
     "@embroider/util": "0.33.0"

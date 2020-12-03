@@ -73,7 +73,7 @@ export default class PackageCache {
       }
     }
 
-    let packageJSONPath = pkgUpSync(filename);
+    let packageJSONPath = pkgUpSync({ cwd: filename });
     if (packageJSONPath) {
       return this.get(dirname(packageJSONPath));
     }

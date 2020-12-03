@@ -82,7 +82,7 @@ export default class V1App {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync(this.app.project.root)!);
+    return dirname(pkgUpSync({ cwd: this.app.project.root })!);
   }
 
   @Memoize()

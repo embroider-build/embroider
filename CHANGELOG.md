@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+## 0.34.0 (2020-12-09)
+
+- ENHANCEMENT: add publicAssetURL option to `@embroider/webpack` to support CDN deploys (the built-in webpack options for this didn't let you manipulate your index.html, since we take care of that directly in `@embroider/webpack`).
+- COMPAT: update `@embroider/util` to follow internal refactoring on ember canary.
+- HOUSEKEEPING: broccoli-related dependency updates
+- DOCS: split the "Replacing the Component Helper" guide into its own document and expanded the use cases.
+
 ## 0.33.0 (2020-11-25)
 
 - ENHANCEMENT: new staticAppPaths option

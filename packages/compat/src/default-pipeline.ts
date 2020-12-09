@@ -74,7 +74,7 @@ function defaultVariants(emberApp: any): Variant[] {
   } else {
     variants.push({
       name: 'dev',
-      runtime: 'all',
+      runtime: hasFastboot(emberApp) ? 'all' : 'browser',
       optimizeForProduction: false,
     });
   }

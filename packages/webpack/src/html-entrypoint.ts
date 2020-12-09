@@ -14,7 +14,12 @@ export class HTMLEntrypoint {
   scripts: string[] = [];
   styles: string[] = [];
 
-  constructor(private pathToVanillaApp: string, private rootURL: string, public filename: string) {
+  constructor(
+    private pathToVanillaApp: string,
+    private rootURL: string,
+    private publicAssetURL: string,
+    public filename: string
+  ) {
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
     for (let tag of this.handledStyles()) {
@@ -72,9 +77,10 @@ export class HTMLEntrypoint {
   }
 
   // bundles maps from input asset to a per-variant map of output assets
-  render(stats: StatSummary, rootURL: string): string {
+  render(stats: StatSummary): string {
     let insertedLazy = false;
     let fastbootVariant = stats.variants.findIndex(v => Boolean(v.runtime === 'fastboot'));
+    let supportsFastboot = stats.variants.some(v => v.runtime === 'fastboot' || v.runtime === 'all');
 
     for (let [src, placeholders] of this.placeholders) {
       let match = stats.entrypoints.get(src);
@@ -84,24 +90,28 @@ export class HTMLEntrypoint {
         let matchingFastbootBundles = fastbootVariant >= 0 ? match.get(fastbootVariant) || [] : [];
 
         for (let placeholder of placeholders) {
-          insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, rootURL);
+          if (supportsFastboot) {
+            // if there is any fastboot involved, we will emit the lazy bundles
+            // right before our first script.
+            insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, this.publicAssetURL);
+          }
           for (let [base, fastboot] of zip(matchingBundles, matchingFastbootBundles)) {
             if (!base) {
               // this bundle only exists in the fastboot variant
               let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-              element.setAttribute('src', rootURL + fastboot);
+              element.setAttribute('src', this.publicAssetURL + fastboot);
               placeholder.insert(element);
               placeholder.insertNewline();
             } else if (!fastboot || base === fastboot) {
               // no specialized fastboot variant
-              let src = rootURL + base;
+              let src = this.publicAssetURL + base;
               placeholder.insertURL(src);
             } else {
               // we have both and they differ
-              let src = rootURL + base;
+              let src = this.publicAssetURL + base;
               let element = placeholder.insertURL(src);
               if (element) {
-                element.setAttribute('data-fastboot-src', rootURL + fastboot);
+                element.setAttribute('data-fastboot-src', this.publicAssetURL + fastboot);
               }
             }
           }
@@ -129,12 +139,12 @@ function maybeInsertLazyBundles(
   insertedLazy: boolean,
   lazyBundles: Set<string>,
   placeholder: Placeholder,
-  rootURL: string
+  publicAssetURL: string
 ): boolean {
   if (!insertedLazy && placeholder.isScript()) {
     for (let bundle of lazyBundles) {
       let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-      element.setAttribute('src', rootURL + bundle);
+      element.setAttribute('src', publicAssetURL + bundle);
       placeholder.insert(element);
       placeholder.insertNewline();
     }

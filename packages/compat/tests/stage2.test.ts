@@ -658,7 +658,7 @@ describe('stage2 build', function () {
     });
   });
 
-  describe('engines', function () {
+  describe('engines with css', function () {
     let build: BuildResult;
     let expectFile: ExpectFile;
 
@@ -725,6 +725,43 @@ i(\"../../../lazy-engine/lazy-engine.css\");
 
     test('eager engine css is merged with vendor.css', function () {
       expectFile('assets/vendor.css').matches(`.eager { background-color: blue; }`);
+    });
+  });
+
+  describe('lazy engines without css', function () {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function () {
+      let app = Project.emberNew();
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+
+      app.linkPackage('ember-engines');
+      app.addEngine('lazy-engine', true);
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function () {
+      await build.cleanup();
+    });
+
+    test('lazy engine css is not imported', function () {
+      expectFile('assets/_engine_/lazy-engine.js')
+        .doesNotMatch(`  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
+i(\"../../../lazy-engine/lazy-engine.css\");
+  }`);
     });
   });
 });

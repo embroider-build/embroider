@@ -11,6 +11,13 @@
   mode.
 */
 
+/*
+  CAUTION: in classic builds, this file gets shared by all present copies of
+  @embroider/macros. If you want to change its public API, you need to rename it
+  and update `pathToRuntime` in ../babel/state.ts to point at it, so that your
+  babel plugin and runtime will match.
+*/
+
 export function each(array) {
   if (!Array.isArray(array)) {
     throw new Error(`the argument to the each() macro must be an array`);

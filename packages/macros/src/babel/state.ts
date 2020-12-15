@@ -51,7 +51,13 @@ export function pathToRuntime(path: NodePath, state: State): string {
     return explicitRelative(dirname(source), runtimePath);
   } else {
     // running inside a classic build, so use a classic-compatible runtime
-    // specifier
+    // specifier.
+    //
+    // CAUTION: the module we're pointing at here gets merged between all
+    // present versions of @embroider/macros, and one will win. So if you are
+    // introducing incompatible changes to its API, you need to change this name
+    // (by tacking on a version number, etc) and rename the corresponding file
+    // in ../addon.
     return '@embroider/macros/runtime';
   }
 }

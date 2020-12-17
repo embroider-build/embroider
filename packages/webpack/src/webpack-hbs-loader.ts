@@ -1,6 +1,11 @@
 import { loader } from 'webpack';
 import { getOptions } from 'loader-utils';
-import { applyVariantToTemplateCompiler } from '@embroider/core';
+import { applyVariantToTemplateCompiler, Variant } from '@embroider/core';
+
+export interface HbsLoaderConfig {
+  templateCompilerFile: string;
+  variant: Variant;
+}
 
 export default function hbsLoader(this: loader.LoaderContext, templateContent: string) {
   let { templateCompilerFile, variant } = getOptions(this);

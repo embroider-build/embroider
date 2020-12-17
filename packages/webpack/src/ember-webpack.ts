@@ -41,6 +41,7 @@ const debug = makeDebug('embroider:debug');
 // terser lazily so it's only loaded for production builds that use it. Don't
 // add any non-type-only imports here.
 import type { MinifyOptions } from 'terser';
+import { HbsLoaderConfig } from './webpack-hbs-loader';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -136,6 +137,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       }
     }
 
+    let hbsOptions: HbsLoaderConfig = {
+      templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
+      variant,
+    };
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -153,10 +159,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
               maybeThreadLoader(templateCompiler.isParallelSafe),
               {
                 loader: join(__dirname, './webpack-hbs-loader'),
-                options: {
-                  templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
-                  variant,
-                },
+                options: hbsOptions,
               },
             ]),
           },

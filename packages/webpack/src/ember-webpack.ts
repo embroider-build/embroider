@@ -34,6 +34,7 @@ import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
+import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 
 const debug = makeDebug('embroider:debug');
 
@@ -41,7 +42,6 @@ const debug = makeDebug('embroider:debug');
 // terser lazily so it's only loaded for production builds that use it. Don't
 // add any non-type-only imports here.
 import type { MinifyOptions } from 'terser';
-import { HbsLoaderConfig } from './webpack-hbs-loader';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -158,7 +158,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             use: nonNullArray([
               maybeThreadLoader(templateCompiler.isParallelSafe),
               {
-                loader: join(__dirname, './webpack-hbs-loader'),
+                loader: require.resolve('@embroider/hbs-loader'),
                 options: hbsOptions,
               },
             ]),
@@ -484,7 +484,7 @@ const threadLoaderOptions = {
 
 function warmUp() {
   threadLoaderWarmup(threadLoaderOptions, [
-    join(__dirname, './webpack-hbs-loader'),
+    require.resolve('@embroider/hbs-loader'),
     require.resolve('babel-loader'),
     require.resolve('@embroider/babel-loader-7'),
   ]);

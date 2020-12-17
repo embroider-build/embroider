@@ -1,4 +1,4 @@
-import { loader } from 'webpack';
+import type { loader } from 'webpack';
 import { getOptions } from 'loader-utils';
 import { applyVariantToTemplateCompiler, Variant } from '@embroider/core';
 

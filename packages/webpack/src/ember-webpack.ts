@@ -48,6 +48,7 @@ interface AppInfo {
   templateCompiler: AppMeta['template-compiler'];
   babel: AppMeta['babel'];
   rootURL: AppMeta['root-url'];
+  publicAssetURL: string;
   resolvableExtensions: AppMeta['resolvable-extensions'];
 }
 
@@ -62,6 +63,13 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
 
 interface Options {
   webpackConfig: Configuration;
+
+  // the base public URL for your assets in production. Use this when you want
+  // to serve all your assets from a different origin (like a CDN) than your
+  // actual index.html will be served on.
+  //
+  // This should be a URL ending in "/".
+  publicAssetURL?: string;
 }
 
 // we want to ensure that not only does our instance conform to
@@ -74,6 +82,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
+  private publicAssetURL: string | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -83,7 +92,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
-    this.extraConfig = options && options.webpackConfig;
+    this.extraConfig = options?.webpackConfig;
+    this.publicAssetURL = options?.publicAssetURL;
     warmUp();
   }
 
@@ -102,19 +112,21 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     let resolvableExtensions = meta['resolvable-extensions'];
     let entrypoints = [];
     let otherAssets = [];
+    let publicAssetURL = this.publicAssetURL || rootURL;
 
     for (let relativePath of meta.assets) {
       if (/\.html/i.test(relativePath)) {
-        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, relativePath));
+        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, publicAssetURL, relativePath));
       } else {
         otherAssets.push(relativePath);
       }
     }
-    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions };
+
+    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicAssetURL };
   }
 
   private configureWebpack(
-    { entrypoints, templateCompiler, babel, rootURL, resolvableExtensions }: AppInfo,
+    { entrypoints, templateCompiler, babel, resolvableExtensions, publicAssetURL }: AppInfo,
     variant: Variant
   ): Configuration {
     let entry: { [name: string]: string } = {};
@@ -166,7 +178,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         path: join(this.outputPath, 'assets'),
         filename: `chunk.[chunkhash].js`,
         chunkFilename: `chunk.[chunkhash].js`,
-        publicPath: rootURL + 'assets/',
+        publicPath: publicAssetURL + 'assets/',
       },
       optimization: {
         splitChunks: {
@@ -273,7 +285,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
   }
 
-  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets, rootURL }: AppInfo) {
+  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
@@ -333,7 +345,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
 
     for (let entrypoint of entrypoints) {
       ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats, rootURL), 'utf8');
+      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
       written.add(entrypoint.filename);
     }
 

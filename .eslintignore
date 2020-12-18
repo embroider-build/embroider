@@ -6,6 +6,8 @@
 /packages/macros/**/*.d.ts
 /packages/webpack/**/*.js
 /packages/webpack/**/*.d.ts
+/packages/hbs-loader/**/*.js
+/packages/hbs-loader/**/*.d.ts
 /test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 /packages/test-setup/**/*.js

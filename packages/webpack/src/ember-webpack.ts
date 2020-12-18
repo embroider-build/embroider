@@ -34,6 +34,7 @@ import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
+import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 
 const debug = makeDebug('embroider:debug');
 
@@ -136,6 +137,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       }
     }
 
+    let hbsOptions: HbsLoaderConfig = {
+      templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
+      variant,
+    };
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -152,11 +158,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             use: nonNullArray([
               maybeThreadLoader(templateCompiler.isParallelSafe),
               {
-                loader: join(__dirname, './webpack-hbs-loader'),
-                options: {
-                  templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
-                  variant,
-                },
+                loader: require.resolve('@embroider/hbs-loader'),
+                options: hbsOptions,
               },
             ]),
           },
@@ -481,7 +484,7 @@ const threadLoaderOptions = {
 
 function warmUp() {
   threadLoaderWarmup(threadLoaderOptions, [
-    join(__dirname, './webpack-hbs-loader'),
+    require.resolve('@embroider/hbs-loader'),
     require.resolve('babel-loader'),
     require.resolve('@embroider/babel-loader-7'),
   ]);

@@ -24,6 +24,7 @@
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.12.1",
     "@babel/plugin-proposal-optional-chaining": "^7.12.1",
     "@embroider/babel-loader-7": "0.34.0",
+    "@embroider/hbs-loader": "0.34.0",
     "@types/source-map": "^0.5.7",
     "babel-core": "^6.26.3",
     "babel-loader": "8",
@@ -33,7 +34,6 @@
     "debug": "^3.1.0",
     "fs-extra": "^7.0.0",
     "jsdom": "^16.4.0",
-    "loader-utils": "^1.1.0",
     "lodash": "^4.17.10",
     "mini-css-extract-plugin": "^0.4.3",
     "pkg-up": "^3.1.0",
@@ -46,7 +46,6 @@
   "devDependencies": {
     "@types/csso": "^3.5.1",
     "@types/fs-extra": "^5.0.4",
-    "@types/loader-utils": "^1.1.3",
     "@types/lodash": "^4.14.116",
     "@types/mini-css-extract-plugin": "^0.2.0",
     "@types/node": "^10.5.2",

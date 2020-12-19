@@ -329,7 +329,7 @@ export class Project extends FixturifyProject {
     return addon;
   }
 
-  addInRepoAddon(name: string, additionalFiles?: {}) {
+  addInRepoAddon(name: string, indexContent = '', additionalFiles?: {}) {
     if (!this.pkg['ember-addon']) {
       this.pkg['ember-addon'] = {};
     }
@@ -344,7 +344,7 @@ export class Project extends FixturifyProject {
     merge(
       addon.files,
       {
-        'index.js': addonIndexFile(''),
+        'index.js': addonIndexFile(indexContent),
       },
       additionalFiles
     );

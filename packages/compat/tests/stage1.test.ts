@@ -396,7 +396,34 @@ describe('stage1 build', function () {
         },
       });
 
-      build = await BuildResult.build(app, { stage: 1, type: 'app' });
+      let blacklistedInRepoAddon = app.addInRepoAddon('blacklisted-in-repo-addon');
+      merge(blacklistedInRepoAddon.files, {
+        addon: {
+          'example.js': '',
+        },
+      });
+
+      let disabledInRepoAddon = app.addInRepoAddon(
+        'disabled-in-repo-addon',
+        `
+          isEnabled() { return false }
+        `
+      );
+      merge(disabledInRepoAddon.files, {
+        addon: {
+          'example.js': '',
+        },
+      });
+
+      build = await BuildResult.build(app, {
+        stage: 1,
+        type: 'app',
+        emberAppOptions: {
+          addons: {
+            blacklist: ['blacklisted-in-repo-addon'],
+          },
+        },
+      });
       expectFile = expectFilesAt(build.outputPath);
     });
 
@@ -443,6 +470,16 @@ describe('stage1 build', function () {
 
     test('addon with customized treeFor can pass through a customized tree', function () {
       expectFile('node_modules/suppressed-custom/addon-example.js').exists();
+    });
+
+    test('blacklisted in-repo addon is present but empty', function () {
+      expectFile('lib/blacklisted-in-repo-addon/package.json').exists();
+      expectFile('lib/blacklisted-in-repo-addon/example.js').doesNotExist();
+    });
+
+    test('disabled in-repo addon is present but empty', function () {
+      expectFile('lib/disabled-in-repo-addon/package.json').exists();
+      expectFile('lib/disabled-in-repo-addon/example.js').doesNotExist();
     });
   });
 });

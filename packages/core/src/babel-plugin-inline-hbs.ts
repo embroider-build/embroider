@@ -1,7 +1,6 @@
 import {
   TaggedTemplateExpression,
   CallExpression,
-  isStringLiteral,
   templateLiteral,
   templateElement,
   ExpressionStatement,
@@ -10,6 +9,8 @@ import {
   Program,
   functionExpression,
   blockStatement,
+  throwStatement,
+  newExpression,
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import { join } from 'path';
@@ -119,19 +120,44 @@ function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
 }
 
 function handleCalled(path: NodePath<CallExpression>, state: State) {
-  if (path.node.arguments.length !== 1) {
-    throw path.buildCodeFrameError('hbs accepts exactly one argument');
-  }
-  let arg = path.node.arguments[0];
-  if (!isStringLiteral(arg)) {
-    throw path.buildCodeFrameError('hbs accepts only a string literal argument');
-  }
-  let template = arg.value;
+  let { template, insertRuntimeErrors } = getCallArguments(path);
+  let compilerInstance = compiler(state);
+
   if (state.opts.stage === 1) {
-    let compiled = compiler(state).applyTransforms(state.file.opts.filename, template);
+    let compiled: string;
+    try {
+      compiled = compilerInstance.applyTransforms(state.file.opts.filename, template);
+    } catch (err) {
+      if (insertRuntimeErrors) {
+        // in stage 1 we just leave the bad template in place (we were only
+        // trying to run transforms and re-emit hbs), so that it will be handled
+        // at stage3 instead.
+        return;
+      }
+      throw err;
+    }
     (path.get('arguments')[0] as NodePath).replaceWith(stringLiteral(compiled));
   } else {
-    let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
+    let result: ReturnType<TemplateCompiler['precompile']>;
+    try {
+      result = compilerInstance.precompile(state.file.opts.filename, template);
+    } catch (err) {
+      if (insertRuntimeErrors) {
+        path.replaceWith(
+          callExpression(
+            functionExpression(
+              null,
+              [],
+              blockStatement([throwStatement(newExpression(identifier('Error'), [stringLiteral(err.message)]))])
+            ),
+            []
+          )
+        );
+        return;
+      }
+      throw err;
+    }
+    let { compiled, dependencies } = result;
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
@@ -178,4 +204,29 @@ function amdDefine(runtimeName: string, importCounter: number) {
       functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
     ])
   );
+}
+
+function getCallArguments(path: NodePath<CallExpression>): { template: string; insertRuntimeErrors: boolean } {
+  let [template, options] = path.node.arguments;
+
+  if (template?.type !== 'StringLiteral') {
+    throw path.buildCodeFrameError('hbs accepts only a string literal argument');
+  }
+
+  let insertRuntimeErrors =
+    options?.type === 'ObjectExpression' &&
+    options.properties.some(
+      prop =>
+        prop.type === 'ObjectProperty' &&
+        prop.computed === false &&
+        prop.key.type === 'Identifier' &&
+        prop.key.name === 'insertRuntimeErrors' &&
+        prop.value.type === 'BooleanLiteral' &&
+        prop.value.value
+    );
+
+  return {
+    template: template.value,
+    insertRuntimeErrors,
+  };
 }

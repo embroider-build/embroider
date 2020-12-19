@@ -1,4 +1,4 @@
-import { AppMeta } from './metadata';
+import { AddonMeta, AppMeta } from './metadata';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import Package, { V2AddonPackage } from './package';
@@ -1077,9 +1077,14 @@ export class AppBuilder<TreeNames> {
         });
       }
 
-      styles.push({
-        path: explicitRelative(relativePath, engine.package.name + '/' + engine.package.name + '.css'),
-      });
+      let engineMeta = engine.package.meta as AddonMeta;
+      if (engineMeta && engineMeta['implicit-styles']) {
+        for (let style of engineMeta['implicit-styles']) {
+          styles.push({
+            path: explicitRelative(relativePath, join(engine.package.name, style)),
+          });
+        }
+      }
     }
 
     let lazyEngines: { names: string[]; path: string }[] = [];

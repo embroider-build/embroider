@@ -36,17 +36,17 @@ describe('stage2 build', function () {
       depA.linkPackage('dep-c', depC.root);
       depB.linkPackage('dep-c', depC.root);
 
-      depC.addInRepoAddon('in-repo-d', {
+      depC.addInRepoAddon('in-repo-d', '', {
         app: { service: { 'in-repo.js': 'in-repo-d' } },
       });
 
-      depA.addInRepoAddon('in-repo-a', {
+      depA.addInRepoAddon('in-repo-a', '', {
         app: { service: { 'in-repo.js': 'in-repo-a' } },
       });
-      depB.addInRepoAddon('in-repo-b', {
+      depB.addInRepoAddon('in-repo-b', '', {
         app: { service: { 'in-repo.js': 'in-repo-b' } },
       });
-      depB.addInRepoAddon('in-repo-c', {
+      depB.addInRepoAddon('in-repo-c', '', {
         app: { service: { 'in-repo.js': 'in-repo-c' } },
       });
 
@@ -62,7 +62,7 @@ describe('stage2 build', function () {
 
       // critically, this in-repo addon gets removed from the app's actual
       // ember-addon.paths, so it's *only* consumed by primary-in-repo-addon.
-      app.addInRepoAddon('secondary-in-repo-addon', {
+      app.addInRepoAddon('secondary-in-repo-addon', '', {
         app: {
           services: {
             'secondary.js': '// secondary',
@@ -156,10 +156,10 @@ describe('stage2 build', function () {
       });
       merge(depA.files, { app: { service: { 'addon.js': 'dep-a' } } });
 
-      app.addInRepoAddon('in-repo-a', {
+      app.addInRepoAddon('in-repo-a', '', {
         app: { service: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
       });
-      app.addInRepoAddon('in-repo-b', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
+      app.addInRepoAddon('in-repo-b', '', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
 
       let devA = app.addDevAddon('dev-a');
       let devB = app.addDevAddon('dev-b');

@@ -5,7 +5,7 @@ import { join } from 'path';
 export default class extends Plugin {
   private built = false;
 
-  constructor() {
+  constructor(private name: string) {
     super([], {
       annotation: 'empty-package-tree',
       persistentOutput: true,
@@ -13,7 +13,9 @@ export default class extends Plugin {
   }
   build() {
     if (!this.built) {
-      writeJSONSync(join(this.outputPath, 'package.json'), {});
+      writeJSONSync(join(this.outputPath, 'package.json'), {
+        name: this.name,
+      });
     }
   }
 }

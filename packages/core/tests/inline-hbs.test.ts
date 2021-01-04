@@ -27,6 +27,17 @@ function stage1Tests(transform: (code: string) => string) {
     expect(code).toMatch(/return hbs\("<div/);
     expect(code).toMatch(/embroider-sample-transforms-result/);
   });
+
+  test('runtime errors are left in place in stage 1', () => {
+    let code = transform(`
+      import hbs from 'htmlbars-inline-precompile';
+      export default function() {
+        return hbs("<div>", { insertRuntimeErrors: true });
+      }
+      `);
+    expect(code).toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return hbs\("<div>",\s*\{\s*insertRuntimeErrors: true\s*\}\)/);
+  });
 }
 
 function stage3Tests(transform: (code: string) => string) {
@@ -49,6 +60,16 @@ function stage3Tests(transform: (code: string) => string) {
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
     expect(code).toMatch(/return Ember.HTMLBars.template\({/);
+  });
+  test('runtime errors become exceptions in stage 3', () => {
+    let code = transform(`
+      import hbs from 'htmlbars-inline-precompile';
+      export default function() {
+        return hbs("<div>", { insertRuntimeErrors: true });
+      }
+      `);
+    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/throw new Error\("Unclosed element `div`/);
   });
 }
 

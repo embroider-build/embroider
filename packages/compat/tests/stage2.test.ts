@@ -36,17 +36,17 @@ describe('stage2 build', function () {
       depA.linkPackage('dep-c', depC.root);
       depB.linkPackage('dep-c', depC.root);
 
-      depC.addInRepoAddon('in-repo-d', {
+      depC.addInRepoAddon('in-repo-d', '', {
         app: { service: { 'in-repo.js': 'in-repo-d' } },
       });
 
-      depA.addInRepoAddon('in-repo-a', {
+      depA.addInRepoAddon('in-repo-a', '', {
         app: { service: { 'in-repo.js': 'in-repo-a' } },
       });
-      depB.addInRepoAddon('in-repo-b', {
+      depB.addInRepoAddon('in-repo-b', '', {
         app: { service: { 'in-repo.js': 'in-repo-b' } },
       });
-      depB.addInRepoAddon('in-repo-c', {
+      depB.addInRepoAddon('in-repo-c', '', {
         app: { service: { 'in-repo.js': 'in-repo-c' } },
       });
 
@@ -62,7 +62,7 @@ describe('stage2 build', function () {
 
       // critically, this in-repo addon gets removed from the app's actual
       // ember-addon.paths, so it's *only* consumed by primary-in-repo-addon.
-      app.addInRepoAddon('secondary-in-repo-addon', {
+      app.addInRepoAddon('secondary-in-repo-addon', '', {
         app: {
           services: {
             'secondary.js': '// secondary',
@@ -156,10 +156,10 @@ describe('stage2 build', function () {
       });
       merge(depA.files, { app: { service: { 'addon.js': 'dep-a' } } });
 
-      app.addInRepoAddon('in-repo-a', {
+      app.addInRepoAddon('in-repo-a', '', {
         app: { service: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
       });
-      app.addInRepoAddon('in-repo-b', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
+      app.addInRepoAddon('in-repo-b', '', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
 
       let devA = app.addDevAddon('dev-a');
       let devB = app.addDevAddon('dev-b');
@@ -655,6 +655,113 @@ describe('stage2 build', function () {
         })
       ).transform(build.transpile);
       assertFile.matches(/console\.log\(true\)/);
+    });
+  });
+
+  describe('engines with css', function () {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function () {
+      let app = Project.emberNew();
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+
+      app.linkPackage('ember-engines');
+
+      let lazyEngine = app.addEngine('lazy-engine', true);
+      let eagerEngine = app.addEngine('eager-engine', false);
+
+      merge(lazyEngine.files, {
+        addon: {
+          styles: {
+            'addon.css': `.lazy { background-color: red; }`,
+          },
+        },
+      });
+
+      merge(eagerEngine.files, {
+        addon: {
+          styles: {
+            'addon.css': `.eager { background-color: blue; }`,
+          },
+        },
+      });
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function () {
+      await build.cleanup();
+    });
+
+    test('lazy engines appear in _embroiderEngineBundles_', function () {
+      expectFile('assets/my-app.js').matches(`w._embroiderEngineBundles_ = [
+  {
+    names: ["lazy-engine"],
+    load: function() {
+      return import("./_engine_/lazy-engine.js");
+    }
+  },
+]`);
+    });
+
+    test('lazy engine css is imported', function () {
+      expectFile('assets/_engine_/lazy-engine.js')
+        .matches(`  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
+i(\"../../../lazy-engine/lazy-engine.css\");
+  }`);
+    });
+
+    test('eager engine css is merged with vendor.css', function () {
+      expectFile('assets/vendor.css').matches(`.eager { background-color: blue; }`);
+    });
+  });
+
+  describe('lazy engines without css', function () {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function () {
+      let app = Project.emberNew();
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+
+      app.linkPackage('ember-engines');
+      app.addEngine('lazy-engine', true);
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function () {
+      await build.cleanup();
+    });
+
+    test('lazy engine css is not imported', function () {
+      expectFile('assets/_engine_/lazy-engine.js')
+        .doesNotMatch(`  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
+i(\"../../../lazy-engine/lazy-engine.css\");
+  }`);
     });
   });
 });

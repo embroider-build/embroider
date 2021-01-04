@@ -119,6 +119,50 @@ export default App;
 `;
 }
 
+function engineIndex(lazy = false) {
+  return `
+const EngineAddon = require('ember-engines/lib/engine-addon');
+
+module.exports = EngineAddon.extend({
+  name: require('./package').name,
+  lazyLoading: {
+    enabled: ${lazy},
+  },
+});
+`;
+}
+
+function engineConfig(name: string) {
+  return `
+module.exports = function(environment) {
+  const ENV = {
+    modulePrefix: '${name}',
+    environment: environment
+  }
+
+  return ENV;
+};
+  `;
+}
+
+function engineAddonFile() {
+  return `
+import Engine from '@ember/engine';
+import loadInitializers from 'ember-load-initializers';
+import Resolver from 'ember-resolver';
+import config from './config/environment';
+
+const { modulePrefix } = config;
+
+export default class YourEngine extends Engine {
+  modulePrefix = modulePrefix;
+  Resolver = Resolver;
+}
+
+loadInitializers(YourEngine, modulePrefix);
+  `;
+}
+
 export class Project extends FixturifyProject {
   // FIXME: update fixturify-project to allow easier customization of `pkg`
   declare pkg: any;
@@ -285,7 +329,7 @@ export class Project extends FixturifyProject {
     return addon;
   }
 
-  addInRepoAddon(name: string, additionalFiles?: {}) {
+  addInRepoAddon(name: string, indexContent = '', additionalFiles?: {}) {
     if (!this.pkg['ember-addon']) {
       this.pkg['ember-addon'] = {};
     }
@@ -300,13 +344,33 @@ export class Project extends FixturifyProject {
     merge(
       addon.files,
       {
-        'index.js': addonIndexFile(''),
+        'index.js': addonIndexFile(indexContent),
       },
       additionalFiles
     );
     addon.pkg['keywords'] = ['ember-addon'];
     this.inRepoAddons.add(addon);
     return addon;
+  }
+
+  addEngine(name: string, lazy: boolean): Project {
+    let addonProject = this.addAddon(name);
+
+    addonProject.pkg.keywords.push('ember-engine');
+
+    merge(addonProject.files, {
+      'index.js': engineIndex(lazy),
+      config: {
+        'environment.js': engineConfig(name),
+      },
+      addon: {
+        'engine.js': engineAddonFile(),
+      },
+    });
+
+    addonProject.linkDevPackage('ember-engines');
+
+    return addonProject;
   }
 
   toJSON(): Project['files'];

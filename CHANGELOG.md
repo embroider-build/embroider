@@ -1,5 +1,13 @@
 # Embroider Changelog
 
+## 0.35.0 (2020-12-20)
+
+- BUGFIX: support disabled in-repo addons.
+- COMPAT: implement `insertRuntimeErrors` option on the hbs inline compiler
+- BUGFIX: conditionally import lazy engine css by @thoov
+- HOUSEKEEPING: split hbs-loader into its own package (so ember-auto-import can also use it)
+- COMPAT: updates to @embroider/util to follow latest ember canary
+
 ## 0.34.0 (2020-12-09)
 
 - ENHANCEMENT: add publicAssetURL option to `@embroider/webpack` to support CDN deploys (the built-in webpack options for this didn't let you manipulate your index.html, since we take care of that directly in `@embroider/webpack`).

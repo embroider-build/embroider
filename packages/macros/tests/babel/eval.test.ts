@@ -110,7 +110,7 @@ describe('evaluation', function () {
   });
 });
 
-function nodePathNotNull(path: NodePath<Expression | null>): path is NodePath<Expression> {
+function nodePathNotNull(path: NodePath<Expression | null | undefined>): path is NodePath<Expression> {
   return path.node != null;
 }
 

@@ -5,9 +5,9 @@ import { join } from 'path';
 import { mergeWithUniq } from './merges';
 
 export default class SmooshPackageJSON extends Plugin {
-  constructor(inputTrees: Node[]) {
+  constructor(inputTrees: Node[], opts: { annotation?: string } = {}) {
     super(inputTrees, {
-      annotation: 'embroider:core:smoosh-package-json',
+      annotation: `embroider:core:smoosh-package-json:${opts?.annotation}`,
     });
   }
 

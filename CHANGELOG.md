@@ -1,5 +1,9 @@
 # Embroider Changelog
 
+## 0.35.1 (2021-01-11)
+
+- BUGFIX: don't try to read nonexistent package.json when combining multiple v1 package instances, by @mattmcmanus.
+
 ## 0.35.0 (2020-12-20)
 
 - BUGFIX: support disabled in-repo addons.

@@ -250,7 +250,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
     writeFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);

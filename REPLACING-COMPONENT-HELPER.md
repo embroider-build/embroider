@@ -198,7 +198,7 @@ import { ensureSafeComponent } from '@embroider/util';
 export default class extends Component {
   get whichComponent() {
     let module = importSync(`./feed-items/${this.args.model.type}`);
-    return ensureSafeComponent(module.default);
+    return ensureSafeComponent(module.default, this);
   }
 }
 ```

@@ -41,16 +41,13 @@ export default class Placeholder {
   }
 
   insertURL(url: string) {
-    switch (this.target.tagName) {
-      case 'SCRIPT':
-        return this.insertScriptTag(url);
-      case 'LINK':
-        if ((this.target as HTMLLinkElement).rel === 'stylesheet') {
-          return this.insertStyleLink(url);
-        }
-      default:
-        throw new Error(`don't know how to insertURL into this ${this.target}`);
+    if (url.endsWith('.js')) {
+      return this.insertScriptTag(url);
     }
+    if (url.endsWith('.css')) {
+      return this.insertStyleLink(url);
+    }
+    throw new Error(`don't know how to insertURL ${url}`);
   }
 
   insertScriptTag(src: string) {

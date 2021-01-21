@@ -1,6 +1,6 @@
 {
   "name": "@embroider/test-setup",
-  "version": "0.35.1",
+  "version": "0.36.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -16,7 +16,7 @@
     "resolve": "^1.17.0"
   },
   "devDependencies": {
-    "@embroider/compat": "0.35.1"
+    "@embroider/compat": "0.36.0"
   },
   "volta": {
     "extends": "../../package.json"

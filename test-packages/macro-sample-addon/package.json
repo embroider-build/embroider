@@ -24,16 +24,16 @@
     "test:classic:": "CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
-    "@embroider/macros": "0.35.1",
+    "@embroider/macros": "0.36.0",
     "ember-cli-babel": "^7.20.5",
     "ember-cli-htmlbars": "^4.3.1"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
-    "@embroider/compat": "0.35.1",
-    "@embroider/core": "0.35.1",
-    "@embroider/test-support": "0.35.1",
-    "@embroider/webpack": "0.35.1",
+    "@embroider/compat": "0.36.0",
+    "@embroider/core": "0.36.0",
+    "@embroider/test-support": "0.36.0",
+    "@embroider/webpack": "0.36.0",
     "broccoli-asset-rev": "^3.0.0",
     "ember-cli": "~3.10.1",
     "ember-cli-dependency-checker": "^3.1.0",

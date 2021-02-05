@@ -4,10 +4,14 @@ import { join, sep, resolve } from 'path';
 import exampleTarget from './example-target';
 import { Portable, protocol } from '../src/portable';
 
+function toSystemPath(filePath: string) {
+  return filePath.split('/').join(sep);
+}
+
 function resolvableNames(...names: string[]) {
   return {
     resolve(name: string) {
-      if (name.startsWith('/')) {
+      if (name.startsWith(sep)) {
         return name;
       }
       if (name.startsWith('.')) {
@@ -52,7 +56,7 @@ describe('portable-babel-config', () => {
       resolvableNames(),
       []
     );
-    expect(loadParallelSafe(config).plugins).toEqual(['/path/to/some/plugin.js']);
+    expect(loadParallelSafe(config).plugins).toEqual([toSystemPath('/path/to/some/plugin.js')]);
   });
 
   test('local path', () => {
@@ -63,9 +67,7 @@ describe('portable-babel-config', () => {
       resolvableNames(),
       []
     );
-    expect(loadParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/path/to/some/plugin.js'.split('/').join(sep),
-    ]);
+    expect(loadParallelSafe(config).plugins).toEqual([toSystemPath('/notional-base-dir/path/to/some/plugin.js')]);
   });
 
   test('package name', () => {
@@ -77,7 +79,7 @@ describe('portable-babel-config', () => {
       []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/my-package/index.js'.split('/').join(sep),
+      toSystemPath('/notional-base-dir/node_modules/my-package/index.js'),
     ]);
   });
 
@@ -90,7 +92,7 @@ describe('portable-babel-config', () => {
       []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep),
+      toSystemPath('/notional-base-dir/node_modules/babel-plugin-my-package/index.js'),
     ]);
   });
 
@@ -103,7 +105,7 @@ describe('portable-babel-config', () => {
       []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/@me/my-package/index.js'.split('/').join(sep),
+      toSystemPath('/notional-base-dir/node_modules/@me/my-package/index.js'),
     ]);
   });
 
@@ -116,7 +118,7 @@ describe('portable-babel-config', () => {
       []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
-      '/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js'.split('/').join(sep),
+      toSystemPath('/notional-base-dir/node_modules/@me/babel-plugin-my-package/index.js'),
     ]);
   });
 
@@ -129,7 +131,7 @@ describe('portable-babel-config', () => {
       []
     );
     expect(loadParallelSafe(config).plugins).toEqual([
-      ['/notional-base-dir/node_modules/babel-plugin-my-package/index.js'.split('/').join(sep), { theOptions: 'cool' }],
+      [toSystemPath('/notional-base-dir/node_modules/babel-plugin-my-package/index.js'), { theOptions: 'cool' }],
     ]);
   });
 
@@ -148,12 +150,12 @@ describe('portable-babel-config', () => {
     );
     expect(config.isParallelSafe).toBeFalsy();
     let { module, arg } = assertPortableBabelLauncher(load(config).plugins[0]);
-    expect(module).toBe('/notional-base-dir/node_modules/babel-plugin-my-package/index.js');
+    expect(module).toBe(toSystemPath('/notional-base-dir/node_modules/babel-plugin-my-package/index.js'));
     expect(arg).toEqual(options);
   });
 
   test('passes through bare function', () => {
-    let func = function () {};
+    let func = function() {};
     let config = makePortable(
       {
         plugins: [func],
@@ -167,7 +169,7 @@ describe('portable-babel-config', () => {
   });
 
   test('passes through function with args', () => {
-    let func = function () {};
+    let func = function() {};
     let args = { theArgs: 'here' };
     let config = makePortable(
       {
@@ -259,7 +261,7 @@ describe('portable-babel-config', () => {
     expect(arg).toEqual({ precompile: 'this is the example function with theParams=reconstituted precompile' });
   });
 
-  test('undefined is a serializable value', function () {
+  test('undefined is a serializable value', function() {
     let config = makePortable(
       {
         plugins: ['./x', { value: undefined }],

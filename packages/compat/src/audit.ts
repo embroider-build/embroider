@@ -1,5 +1,5 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
-import { dirname, join, resolve as resolvePath } from 'path';
+import { dirname, join, resolve as resolvePath, normalize } from 'path';
 import resolveModule from 'resolve';
 import { applyVariantToTemplateCompiler, AppMeta, explicitRelative } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
@@ -251,16 +251,34 @@ export class Audit {
   @Memoize()
   private get templateSetup(): { compile: (filename: string, content: string) => string; resolver: CompatResolver } {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let templateCompiler = require(join(this.appDir, this.meta['template-compiler'].filename));
-    let resolver = templateCompiler.params.resolver as CompatResolver;
+    let dbg = [
+      join(this.appDir, this.meta['template-compiler'].filename),
+      normalize(join(this.appDir, this.meta['template-compiler'].filename)),
+    ]
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      let templateCompiler = require(join(this.appDir, this.meta['template-compiler'].filename));
+      dbg.push('require');
 
-    resolver.enableAuditMode();
+      let resolver = templateCompiler.params.resolver as CompatResolver;
+      dbg.push('resolver');
 
-    let compile = applyVariantToTemplateCompiler(
-      { name: 'default', runtime: 'all', optimizeForProduction: false },
-      templateCompiler.compile
-    );
-    return { compile, resolver };
+
+      resolver.enableAuditMode();
+      dbg.push('enableAuditMode');
+
+
+      let compile = applyVariantToTemplateCompiler(
+        { name: 'default', runtime: 'all', optimizeForProduction: false },
+        templateCompiler.compile
+      );
+      dbg.push('applyVariantToTemplateCompiler');
+
+      return { compile, resolver };
+    } catch(e) {
+      throw new Error(dbg.toString());
+    }
+
   }
 
   private get templateCompiler(): (filename: string, content: string) => string {

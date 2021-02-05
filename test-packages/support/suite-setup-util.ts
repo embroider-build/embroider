@@ -1,6 +1,10 @@
 import { tmpdir } from 'os';
-import { basename, join, resolve } from 'path';
-import { readdirSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { basename, join, resolve, sep } from 'path';
+import { readdirSync, statSync, unlinkSync, writeFileSync, existsSync } from 'fs-extra';
+
+function toSystemPath(filePath: string) {
+  return filePath.split('/').join(sep);
+}
 
 // we sometimes run our various Ember app's test suites in parallel, and
 // unfortunately the shared persistent caching underneath various broccoli
@@ -48,7 +52,11 @@ export async function allSuites({ includeEmberTry } = { includeEmberTry: true })
   let packageDirs = [...expandDirs('..'), ...expandDirs('../../packages')];
   let suites = [];
   for (let dir of packageDirs) {
-    let pkg = require(join(dir, 'package.json'));
+    let packageJSONPath = join(dir, 'package.json');
+    if (!existsSync(packageJSONPath)) {
+      continue;
+    }
+    let pkg = require(packageJSONPath);
     if (pkg.scripts) {
       for (let [name, command] of Object.entries(pkg.scripts as { [k: string]: string })) {
         let m = /^test:(.*)/.exec(name);
@@ -140,7 +148,7 @@ export async function emitDynamicSuites() {
     test("${suite.name}", async function() {
       jest.setTimeout(300000);
       await execa("${suite.command}", ${JSON.stringify(suite.args)}, {
-       cwd: "${suite.dir}",
+       cwd: "${toSystemPath(suite.dir)}",
        env: {
          TMPDIR: separateTemp()
        }

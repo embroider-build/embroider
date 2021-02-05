@@ -5,6 +5,10 @@ import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 
+function toSystemPath(filePath: string) {
+  return filePath.split('/').join(sep);
+}
+
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map() as Map<string, Package | null>);
@@ -73,7 +77,7 @@ export default class PackageCache {
       }
     }
 
-    let packageJSONPath = pkgUpSync({ cwd: filename });
+    let packageJSONPath = pkgUpSync({ cwd: toSystemPath(filename) });
     if (packageJSONPath) {
       return this.get(dirname(packageJSONPath));
     }

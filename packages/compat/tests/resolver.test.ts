@@ -1,5 +1,5 @@
 import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, realpathSync } from 'fs-extra';
-import { join, dirname } from 'path';
+import { join, dirname, sep } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
@@ -8,6 +8,11 @@ import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
+
+function toSystemPath(filePath: string) {
+  return filePath.split('/').join(sep);
+}
+
 
 const compilerPath = emberTemplateCompilerPath();
 
@@ -49,7 +54,7 @@ describe('compat-resolver', function () {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);
       return sortBy(dependencies, d => d.runtimeName).map(d => ({
-        path: d.path,
+        path: toSystemPath(d.path),
         runtimeName: d.runtimeName,
       }));
     };
@@ -81,7 +86,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -92,7 +97,7 @@ describe('compat-resolver', function () {
     givenFile('components/something/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{something/hello-world}}`)).toEqual([
       {
-        path: '../components/something/hello-world.js',
+        path: toSystemPath('../components/something/hello-world.js'),
         runtimeName: 'the-app/components/something/hello-world',
       },
     ]);
@@ -104,7 +109,7 @@ describe('compat-resolver', function () {
       givenFile('components/hello-world/index.js');
       expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
         {
-          path: '../components/hello-world/index.js',
+          path: toSystemPath('../components/hello-world/index.js'),
           runtimeName: 'the-app/components/hello-world',
         },
       ]);
@@ -121,7 +126,7 @@ describe('compat-resolver', function () {
       // getting to the resolver.
       expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
         {
-          path: '../components/hello-world/index.js',
+          path: toSystemPath('../components/hello-world/index.js'),
           runtimeName: 'the-app/components/hello-world',
         },
       ]);
@@ -133,7 +138,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world/component.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world/component.js',
+        path: toSystemPath('../components/hello-world/component.js'),
         runtimeName: 'the-app/components/hello-world/component',
       },
     ]);
@@ -144,7 +149,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world/template.hbs',
+        path: toSystemPath('../components/hello-world/template.hbs'),
         runtimeName: 'the-app/components/hello-world/template',
       },
     ]);
@@ -156,11 +161,11 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world/component.js',
+        path: toSystemPath('../components/hello-world/component.js'),
         runtimeName: 'the-app/components/hello-world/component',
       },
       {
-        path: '../components/hello-world/template.hbs',
+        path: toSystemPath('../components/hello-world/template.hbs'),
         runtimeName: 'the-app/components/hello-world/template',
       },
     ]);
@@ -171,7 +176,7 @@ describe('compat-resolver', function () {
     givenFile('pods/components/hello-world/component.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../pods/components/hello-world/component.js',
+        path: toSystemPath('../pods/components/hello-world/component.js'),
         runtimeName: 'the-app/pods/components/hello-world/component',
       },
     ]);
@@ -182,7 +187,7 @@ describe('compat-resolver', function () {
     givenFile('pods/components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../pods/components/hello-world/template.hbs',
+        path: toSystemPath('../pods/components/hello-world/template.hbs'),
         runtimeName: 'the-app/pods/components/hello-world/template',
       },
     ]);
@@ -194,11 +199,11 @@ describe('compat-resolver', function () {
     givenFile('pods/components/hello-world/template.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../pods/components/hello-world/component.js',
+        path: toSystemPath('../pods/components/hello-world/component.js'),
         runtimeName: 'the-app/pods/components/hello-world/component',
       },
       {
-        path: '../pods/components/hello-world/template.hbs',
+        path: toSystemPath('../pods/components/hello-world/template.hbs'),
         runtimeName: 'the-app/pods/components/hello-world/template',
       },
     ]);
@@ -209,7 +214,7 @@ describe('compat-resolver', function () {
     givenFile('templates/components/hello-world.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: './components/hello-world.hbs',
+        path: toSystemPath('./components/hello-world.hbs'),
         runtimeName: 'the-app/templates/components/hello-world',
       },
     ]);
@@ -220,11 +225,11 @@ describe('compat-resolver', function () {
     givenFile('templates/components/hello-world.hbs');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
       {
-        path: './components/hello-world.hbs',
+        path: toSystemPath('./components/hello-world.hbs'),
         runtimeName: 'the-app/templates/components/hello-world',
       },
     ]);
@@ -234,7 +239,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -250,7 +255,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -261,7 +266,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -277,7 +282,7 @@ describe('compat-resolver', function () {
       )
     ).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -290,7 +295,7 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`)
     ).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -303,7 +308,7 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`)
     ).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -424,7 +429,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{component "hello-world"}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -437,7 +442,7 @@ describe('compat-resolver', function () {
     givenFile('node_modules/my-addon/components/thing.js');
     expect(findDependencies('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqual([
       {
-        path: '../node_modules/my-addon/components/thing.js',
+        path: toSystemPath('../node_modules/my-addon/components/thing.js'),
         runtimeName: 'my-addon/components/thing',
       },
     ]);
@@ -459,7 +464,7 @@ describe('compat-resolver', function () {
     givenFile('node_modules/my-addon/components/thing.js');
     expect(findDependencies('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqual([
       {
-        path: '../node_modules/my-addon/components/thing.js',
+        path: toSystemPath('../node_modules/my-addon/components/thing.js'),
         runtimeName: 'has-been-renamed/components/thing',
       },
     ]);
@@ -471,7 +476,7 @@ describe('compat-resolver', function () {
     givenFile('components/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{#component "hello-world"}} {{/component}}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
@@ -482,11 +487,11 @@ describe('compat-resolver', function () {
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
       {
-        path: '../components/my-thing.js',
+        path: toSystemPath('../components/my-thing.js'),
         runtimeName: 'the-app/components/my-thing',
       },
     ]);
@@ -516,11 +521,11 @@ describe('compat-resolver', function () {
     givenFile('templates/components/hello-world.hbs');
     expect(findDependencies('templates/application.hbs', `<HelloWorld />`)).toEqual([
       {
-        path: '../components/hello-world.js',
+        path: toSystemPath('../components/hello-world.js'),
         runtimeName: 'the-app/components/hello-world',
       },
       {
-        path: './components/hello-world.hbs',
+        path: toSystemPath('./components/hello-world.hbs'),
         runtimeName: 'the-app/templates/components/hello-world',
       },
     ]);
@@ -531,11 +536,11 @@ describe('compat-resolver', function () {
     givenFile('templates/components/something/hello-world.hbs');
     expect(findDependencies('templates/application.hbs', `<Something::HelloWorld />`)).toEqual([
       {
-        path: '../components/something/hello-world.js',
+        path: toSystemPath('../components/something/hello-world.js'),
         runtimeName: 'the-app/components/something/hello-world',
       },
       {
-        path: './components/something/hello-world.hbs',
+        path: toSystemPath('./components/something/hello-world.hbs'),
         runtimeName: 'the-app/templates/components/something/hello-world',
       },
     ]);
@@ -553,7 +558,7 @@ describe('compat-resolver', function () {
       [
         {
           runtimeName: 'the-app/helpers/array',
-          path: '../helpers/array.js',
+          path: toSystemPath('../helpers/array.js'),
         },
       ]
     );
@@ -583,7 +588,7 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/array',
-        path: '../helpers/array.js',
+        path: toSystemPath('../helpers/array.js'),
       },
     ]);
   });
@@ -593,7 +598,7 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
+        path: toSystemPath('../helpers/capitalize.js'),
       },
     ]);
   });
@@ -603,7 +608,7 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{capitalize}}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
+        path: toSystemPath('../helpers/capitalize.js'),
       },
     ]);
   });
@@ -613,7 +618,7 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{capitalize name}}`)).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
+        path: toSystemPath('../helpers/capitalize.js'),
       },
     ]);
   });
@@ -649,7 +654,7 @@ describe('compat-resolver', function () {
     ).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
+        path: toSystemPath('../helpers/capitalize.js'),
       },
     ]);
   });
@@ -869,11 +874,11 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -897,11 +902,11 @@ describe('compat-resolver', function () {
     ).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -923,11 +928,11 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -949,11 +954,11 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -976,11 +981,11 @@ describe('compat-resolver', function () {
       [
         {
           runtimeName: 'the-app/templates/components/fancy-title',
-          path: './components/fancy-title.hbs',
+          path: toSystemPath('./components/fancy-title.hbs'),
         },
         {
           runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
+          path: toSystemPath('./components/form-builder.hbs'),
         },
       ]
     );
@@ -1022,7 +1027,7 @@ describe('compat-resolver', function () {
       ).toEqual([
         {
           runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
+          path: toSystemPath('./components/form-builder.hbs'),
         },
       ]);
     }).toThrow(
@@ -1065,11 +1070,11 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -1091,11 +1096,11 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `<FormBuilder @title="fancy-title" />`)).toEqual([
       {
         runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
+        path: toSystemPath('./components/fancy-title.hbs'),
       },
       {
         runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
+        path: toSystemPath('./components/form-builder.hbs'),
       },
     ]);
   });
@@ -1180,7 +1185,7 @@ describe('compat-resolver', function () {
     givenFile('templates/components/form-builder.hbs');
     expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([
       {
-        path: './form-builder.hbs',
+        path: toSystemPath('./form-builder.hbs'),
         runtimeName: 'the-app/templates/components/form-builder',
       },
     ]);
@@ -1211,11 +1216,11 @@ describe('compat-resolver', function () {
       )
     ).toEqual([
       {
-        path: './fancy-navbar.hbs',
+        path: toSystemPath('./fancy-navbar.hbs'),
         runtimeName: 'the-app/templates/components/fancy-navbar',
       },
       {
-        path: './form-builder.hbs',
+        path: toSystemPath('./form-builder.hbs'),
         runtimeName: 'the-app/templates/components/form-builder',
       },
     ]);
@@ -1246,11 +1251,11 @@ describe('compat-resolver', function () {
       )
     ).toEqual([
       {
-        path: './fancy-navbar.hbs',
+        path: toSystemPath('./fancy-navbar.hbs'),
         runtimeName: 'the-app/templates/components/fancy-navbar',
       },
       {
-        path: './form-builder.hbs',
+        path: toSystemPath('./form-builder.hbs'),
         runtimeName: 'the-app/templates/components/form-builder',
       },
     ]);
@@ -1285,11 +1290,11 @@ describe('compat-resolver', function () {
       )
     ).toEqual([
       {
-        path: './fancy-navbar.hbs',
+        path: toSystemPath('./fancy-navbar.hbs'),
         runtimeName: 'the-app/templates/components/fancy-navbar',
       },
       {
-        path: './form-builder.hbs',
+        path: toSystemPath('./form-builder.hbs'),
         runtimeName: 'the-app/templates/components/form-builder',
       },
     ]);
@@ -1320,7 +1325,7 @@ describe('compat-resolver', function () {
         )
       ).toEqual([
         {
-          path: './form-builder.hbs',
+          path: toSystemPath('./form-builder.hbs'),
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
@@ -1354,7 +1359,7 @@ describe('compat-resolver', function () {
         )
       ).toEqual([
         {
-          path: './form-builder.hbs',
+          path: toSystemPath('./form-builder.hbs'),
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
@@ -1390,7 +1395,7 @@ describe('compat-resolver', function () {
         )
       ).toEqual([
         {
-          path: './form-builder.hbs',
+          path: toSystemPath('./form-builder.hbs'),
           runtimeName: 'the-app/templates/components/form-builder',
         },
       ]);
@@ -1417,11 +1422,11 @@ describe('compat-resolver', function () {
 
     expect(findDependencies('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqual([
       {
-        path: '../../components/alpha.js',
+        path: toSystemPath('../../components/alpha.js'),
         runtimeName: 'the-app/components/alpha',
       },
       {
-        path: './alpha.hbs',
+        path: toSystemPath('./alpha.hbs'),
         runtimeName: 'the-app/templates/components/alpha',
       },
     ]);
@@ -1445,11 +1450,11 @@ describe('compat-resolver', function () {
 
     expect(findDependencies('templates/index.hbs', `{{component this.which}}`)).toEqual([
       {
-        path: '../components/alpha.js',
+        path: toSystemPath('../components/alpha.js'),
         runtimeName: 'the-app/components/alpha',
       },
       {
-        path: './components/alpha.hbs',
+        path: toSystemPath('./components/alpha.hbs'),
         runtimeName: 'the-app/templates/components/alpha',
       },
     ]);
@@ -1474,11 +1479,11 @@ describe('compat-resolver', function () {
 
     expect(findDependencies('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqual([
       {
-        path: '../../../components/alpha.js',
+        path: toSystemPath('../../../components/alpha.js'),
         runtimeName: 'the-app/components/alpha',
       },
       {
-        path: '../../../templates/components/alpha.hbs',
+        path: toSystemPath('../../../templates/components/alpha.hbs'),
         runtimeName: 'the-app/templates/components/alpha',
       },
     ]);

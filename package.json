@@ -17,9 +17,9 @@
   },
   "scripts": {
     "clean": "git clean -x -f",
-    "compile": "tsc",
+    "compile": "./node_modules/.bin/tsc",
     "lint": "eslint . --cache",
-    "prepare": "tsc",
+    "prepare": "./node_modules/.bin/tsc",
     "test": "node ./test-packages/support/suite-setup-util.js --emit && jest"
   },
   "jest": {

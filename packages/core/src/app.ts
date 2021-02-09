@@ -335,7 +335,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private babelConfig(templateCompilerParams: TemplateCompilerParams, appFiles: Engine[]) {
-    let babel = this.adapter.babelConfig();
+    let babel = cloneDeep(this.adapter.babelConfig());
 
     if (!babel.plugins) {
       babel.plugins = [];

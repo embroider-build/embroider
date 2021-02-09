@@ -26,6 +26,13 @@ export default class RewritePackageJSON extends Plugin {
       this.getMeta()
     );
     pkg['ember-addon'] = meta;
+
+    // classic addons don't get to customize their entrypoints like this. We
+    // always rewrite them so their entrypoint is index.js, so whatever was here
+    // is just misleading to stage3 packagers that might look (rollup does).
+    delete pkg.main;
+    delete pkg.module;
+
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 }

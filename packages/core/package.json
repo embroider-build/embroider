@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -28,7 +28,7 @@
     "@babel/runtime": "^7.12.5",
     "@babel/traverse": "^7.12.1",
     "@babel/types": "^7.12.1",
-    "@embroider/macros": "0.35.0",
+    "@embroider/macros": "0.36.0",
     "assert-never": "^1.1.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "broccoli-node-api": "^1.7.0",
@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",
-    "@embroider/test-support": "0.35.0",
+    "@embroider/test-support": "0.36.0",
     "@types/babel__core": "^7.1.10",
     "@types/debug": "^0.0.31",
     "@types/filesize": "^4.1.0",

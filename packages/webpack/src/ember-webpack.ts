@@ -12,16 +12,7 @@
 import { getOrCreate, Variant, applyVariantToBabelConfig } from '@embroider/core';
 import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
-import {
-  readFileSync,
-  writeFileSync,
-  copySync,
-  realpathSync,
-  ensureDirSync,
-  Stats,
-  statSync,
-  readJsonSync,
-} from 'fs-extra';
+import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -149,7 +140,12 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       performance: {
         hints: false,
       },
-      plugins: [new MiniCssExtractPlugin()],
+      plugins: [
+        new MiniCssExtractPlugin({
+          filename: `chunk.[chunkhash].css`,
+          chunkFilename: `chunk.[chunkhash].css`,
+        }),
+      ],
       node: false,
       module: {
         rules: [
@@ -250,12 +246,12 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
-    writeFileSync(join(this.outputPath, finalFilename), outCode!);
+    outputFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);
     if (appRelativeSourceMapURL && outMap) {
-      writeFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
+      outputFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
       written.add(appRelativeSourceMapURL);
     }
     return finalFilename;
@@ -273,7 +269,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     const minifiedCss = csso.minify(cssContent).css;
 
     let finalFilename = this.getFingerprintedFilename(style, minifiedCss);
-    writeFileSync(join(this.outputPath, finalFilename), minifiedCss);
+    outputFileSync(join(this.outputPath, finalFilename), minifiedCss);
     written.add(style);
     return finalFilename;
   }
@@ -347,8 +343,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
 
     for (let entrypoint of entrypoints) {
-      ensureDirSync(dirname(join(this.outputPath, entrypoint.filename)));
-      writeFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
+      outputFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
       written.add(entrypoint.filename);
     }
 

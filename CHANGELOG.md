@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## 0.36.0 (2021-01-21)
+
+- BUGFIX: fix non-legacy CSS handling in production builds when using `@embroider/webpack`
+- DOCS: fix a bug in ensureSafeComponent docs, by @patocallaghan
+- HOUSEKEEPING: upgrade terser by @GCheung55
+
+## 0.35.1 (2021-01-11)
+
+- BUGFIX: don't try to read nonexistent package.json when combining multiple v1 package instances, by @mattmcmanus.
+
 ## 0.35.0 (2020-12-20)
 
 - BUGFIX: support disabled in-repo addons.

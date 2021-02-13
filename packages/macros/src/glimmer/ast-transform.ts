@@ -4,6 +4,7 @@ import dependencySatisfies from './dependency-satisfies';
 import { maybeAttrs } from './macro-maybe-attrs';
 import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
 import { failBuild } from './fail-build';
+import { maybeModifier } from './macro-maybe-modifier';
 
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
   function embroiderFirstMacrosTransform(env: {
@@ -140,19 +141,24 @@ export function makeSecondTransform() {
           }
         },
         ElementNode(node: any) {
-          node.modifiers = node.modifiers.filter((modifier: any) => {
-            if (modifier.path.type !== 'PathExpression') {
-              return true;
-            }
-            if (inScope(scopeStack, modifier.path.parts[0])) {
-              return true;
-            }
-            if (modifier.path.original === 'macroMaybeAttrs') {
-              maybeAttrs(node, modifier, env.syntax.builders);
-            } else {
-              return true;
-            }
-          });
+          node.modifiers = node.modifiers
+            .map((modifier: any) => {
+              if (modifier.path.type !== 'PathExpression') {
+                return modifier;
+              }
+              if (inScope(scopeStack, modifier.path.parts[0])) {
+                return modifier;
+              }
+              if (modifier.path.original === 'macroMaybeAttrs') {
+                maybeAttrs(node, modifier, env.syntax.builders);
+                return false;
+              }
+              if (modifier.path.original === 'macroMaybeModifier') {
+                return maybeModifier(modifier, env.syntax.builders);
+              }
+              return modifier;
+            })
+            .filter(Boolean);
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {

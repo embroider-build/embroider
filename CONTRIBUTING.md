@@ -31,4 +31,4 @@ When we run the combined suite in GitHub, we emit separate jobs for each separat
 1. Clone this repo.
 2. Run `yarn compile` (or `yarn compile --watch`).
 3. In each of the `./packages/*` directories, run `yarn link`.
-4. In your app, `yarn link @embroider/core` and the other packages you need.
+4. In your app, `yarn link @embroider/core` and any other embroider packages that appear in your package.json.

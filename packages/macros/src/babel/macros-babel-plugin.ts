@@ -13,6 +13,7 @@ import {
   importDeclaration,
   Program,
   stringLiteral,
+  importNamespaceSpecifier,
 } from '@babel/types';
 import { PackageCache } from '@embroider/core';
 import State, { sourceFile, pathToRuntime } from './state';
@@ -35,10 +36,12 @@ export default function main(context: unknown): unknown {
         state.removed = new Set();
         state.calledIdentifiers = new Set();
         state.neededRuntimeImports = new Map();
+        state.neededEagerImports = new Map();
       },
       exit(path: NodePath<Program>, state: State) {
         pruneMacroImports(path);
         addRuntimeImports(path, state);
+        addEagerImports(path, state);
         for (let handler of state.jobs) {
           handler();
         }
@@ -87,7 +90,23 @@ export default function main(context: unknown): unknown {
         }
 
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          // we handle importSync in the exit hook
+          if (state.opts.importSyncImplementation === 'eager') {
+            let specifier = path.node.arguments[0];
+            if (specifier?.type !== 'StringLiteral') {
+              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
+            }
+            let replacePaths = state.neededEagerImports.get(specifier.value);
+            if (!replacePaths) {
+              replacePaths = [];
+              state.neededEagerImports.set(specifier.value, replacePaths);
+            }
+            replacePaths.push(path);
+            state.calledIdentifiers.add(callee.node);
+          } else {
+            let r = identifier('require');
+            state.generatedRequires.add(r);
+            callee.replaceWith(r);
+          }
           return;
         }
 
@@ -246,8 +265,29 @@ function addRuntimeImports(path: NodePath<Program>, state: State) {
   }
 }
 
+function addEagerImports(path: NodePath<Program>, state: State) {
+  let createdNames = new Set<string>();
+  for (let [specifier, replacePaths] of state.neededEagerImports.entries()) {
+    let local = unusedNameLike('a', replacePaths, createdNames);
+    createdNames.add(local);
+    path.node.body.push(importDeclaration([importNamespaceSpecifier(identifier(local))], stringLiteral(specifier)));
+    for (let nodePath of replacePaths) {
+      nodePath.replaceWith(identifier(local));
+    }
+  }
+}
+
 function ownedByEmberPackage(path: NodePath, state: State) {
   let filename = sourceFile(path, state);
   let pkg = packageCache.ownerOfFile(filename);
   return pkg && pkg.isEmberPackage();
+}
+
+function unusedNameLike(name: string, paths: NodePath<unknown>[], banned: Set<string>) {
+  let candidate = name;
+  let counter = 0;
+  while (banned.has(candidate) || paths.some(path => path.scope.getBinding(candidate))) {
+    candidate = `${name}${counter++}`;
+  }
+  return candidate;
 }

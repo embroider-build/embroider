@@ -34,7 +34,6 @@ import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from 'os';
-import { dirname } from 'path';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 interface TreeNames {
@@ -318,10 +317,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().rootURL;
   }
 
-  private templateCompilerPath(): string {
-    return 'ember-source/vendor/ember/ember-template-compiler';
-  }
-
   strictV2Format() {
     return false;
   }
@@ -380,15 +375,9 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   resolveTemplateCompilerPath() {
-    // we cannot assume this will be resolvable from the project root as it might be
-    // symlinked. Instead we should the package location and grab the template
-    // compiler from it.
-    let emberSourcePkg = this.allActiveAddons.find(p => p.name === 'ember-source');
-    if (emberSourcePkg) {
-      return resolveSync(this.templateCompilerPath(), { basedir: dirname(dirname(emberSourcePkg.root)) });
-    }
-
-    return resolveSync(this.templateCompilerPath(), { basedir: this.root });
+    let emberSource = this.oldPackage.app.project.findAddonByName('ember-source');
+    let templateCompilerPath = emberSource.absolutePaths.templateCompiler;
+    return templateCompilerPath;
   }
 
   // unlike `templateResolver`, this one brings its own simple TemplateCompiler

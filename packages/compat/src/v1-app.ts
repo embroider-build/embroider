@@ -68,7 +68,7 @@ export default class V1App {
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
-  protected constructor(protected app: EmberApp, protected packageCache: PackageCache) {}
+  protected constructor(public app: EmberApp, protected packageCache: PackageCache) {}
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.

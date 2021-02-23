@@ -94,7 +94,7 @@ export interface AppAdapter<TreeNames> {
   rootURL(): string;
 
   // The path to ember's template compiler source
-  templateCompilerPath(): string;
+  resolveTemplateCompilerPath(): string;
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
@@ -891,7 +891,7 @@ export class AppBuilder<TreeNames> {
 
     return {
       plugins,
-      compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
+      compilerPath: this.adapter.resolveTemplateCompilerPath(),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
     };

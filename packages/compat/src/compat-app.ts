@@ -317,7 +317,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.configTree.readConfig().rootURL;
   }
 
-  templateCompilerPath(): string {
+  private templateCompilerPath(): string {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
@@ -377,6 +377,20 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     };
   }
 
+  @Memoize()
+  resolveTemplateCompilerPath() {
+    // we cannot assume this will be resolvable from the project root as it might be
+    // symlinked. Instead we should the package location and grab the template
+    // compiler from it.
+    let emberSourcePkg = this.allActiveAddons.find(p => p.name === 'ember-source');
+
+    if (emberSourcePkg) {
+      return join(emberSourcePkg.root, this.templateCompilerPath());
+    }
+
+    return resolveSync(this.templateCompilerPath(), { basedir: this.root });
+  }
+
   // unlike `templateResolver`, this one brings its own simple TemplateCompiler
   // along so it's capable of parsing component snippets in people's module
   // rules.
@@ -392,9 +406,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
+
     resolver.astTransformer(
       new TemplateCompiler({
-        compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
+        compilerPath: this.resolveTemplateCompilerPath(),
         EmberENV: {},
         plugins: {},
       })

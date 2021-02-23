@@ -384,9 +384,8 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // symlinked. Instead we should the package location and grab the template
     // compiler from it.
     let emberSourcePkg = this.allActiveAddons.find(p => p.name === 'ember-source');
-
     if (emberSourcePkg) {
-      return join(dirname(emberSourcePkg.root), this.templateCompilerPath());
+      return resolveSync(this.templateCompilerPath(), { basedir: dirname(dirname(emberSourcePkg.root)) });
     }
 
     return resolveSync(this.templateCompilerPath(), { basedir: this.root });

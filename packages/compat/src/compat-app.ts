@@ -34,6 +34,7 @@ import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from 'os';
+import { dirname } from 'path';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 
 interface TreeNames {
@@ -385,7 +386,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     let emberSourcePkg = this.allActiveAddons.find(p => p.name === 'ember-source');
 
     if (emberSourcePkg) {
-      return join(emberSourcePkg.root, this.templateCompilerPath());
+      return join(dirname(emberSourcePkg.root), this.templateCompilerPath());
     }
 
     return resolveSync(this.templateCompilerPath(), { basedir: this.root });

@@ -44,6 +44,11 @@ function emberVersionGte(templateCompilerPath: string, source: string, major: nu
 }
 
 export function patch(source: string, templateCompilerPath: string): string {
+  if (emberVersionGte(templateCompilerPath, source, 3, 27)) {
+    // no modifications are needed after https://github.com/emberjs/ember.js/pull/19426
+    return source;
+  }
+
   let replacedVar = false;
   let patchedSource;
 

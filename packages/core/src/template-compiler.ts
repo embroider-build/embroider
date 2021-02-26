@@ -68,14 +68,6 @@ type TemplateCompilerCacheEntry = {
 
 const CACHE = new Map<string, TemplateCompilerCacheEntry>();
 
-// Today the template compiler seems to not expose a public way to to source 2 source compilation of templates.
-// because of this, we must resort to some hackery.
-//
-// TODO: expose a way to accomplish this via purely public API's.
-// Today we use the following API's
-// * glimmer/syntax's preprocess
-// * glimmer/syntax's print
-// * ember-template-compiler/lib/system/compile-options's defaultOptions
 function getEmberExports(templateCompilerPath: string): EmbersExports {
   let entry = CACHE.get(templateCompilerPath);
 
@@ -138,19 +130,40 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
 function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   let { theExports, cacheKey } = getEmberExports(templateCompilerPath);
 
-  // TODO: we should work to make this, or what it intends to accomplish, public API
-  let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
-  let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
+  // detect if we are using an Ember version with the exports we need
+  // (from https://github.com/emberjs/ember.js/pull/19426)
+  if (theExports._preprocess !== undefined) {
+    return {
+      print: theExports._print,
+      preprocess: theExports._preprocess,
+      defaultOptions: theExports.compileOptions,
+      registerPlugin: theExports.registerPlugin,
+      precompile: theExports.precompile,
+      _Ember: theExports._Ember,
+      cacheKey,
+    };
+  } else {
+    // Older Ember versions (prior to 3.27) do not expose a public way to to source 2 source compilation of templates.
+    // because of this, we must resort to some hackery.
+    //
+    // We use the following API's (that we grab from Ember.__loader):
+    //
+    // * glimmer/syntax's preprocess
+    // * glimmer/syntax's print
+    // * ember-template-compiler/lib/system/compile-options's defaultOptions
+    let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
+    let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
 
-  return {
-    print: syntax.print,
-    preprocess: syntax.preprocess,
-    defaultOptions: compilerOptions.default,
-    registerPlugin: compilerOptions.registerPlugin,
-    precompile: theExports.precompile,
-    _Ember: theExports._Ember,
-    cacheKey,
-  };
+    return {
+      print: syntax.print,
+      preprocess: syntax.preprocess,
+      defaultOptions: compilerOptions.default,
+      registerPlugin: compilerOptions.registerPlugin,
+      precompile: theExports.precompile,
+      _Ember: theExports._Ember,
+      cacheKey,
+    };
+  }
 }
 
 export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {

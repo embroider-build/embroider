@@ -27,6 +27,22 @@ interface PreprocessOptions {
   moduleName: string;
   plugins?: Plugins;
   filename?: string;
+
+  parseOptions?: {
+    srcName?: string;
+    ignoreStandalone?: boolean;
+  };
+
+  // added in Ember 3.17 (@glimmer/syntax@0.40.2)
+  mode?: 'codemod' | 'precompile';
+
+  // added in Ember 3.25
+  strictMode?: boolean;
+  locals?: string[];
+}
+
+interface PrinterOptions {
+  entityEncoding?: 'transformed' | 'raw';
 }
 
 // This just reflects the API we're extracting from ember-template-compiler.js,
@@ -34,7 +50,7 @@ interface PreprocessOptions {
 // stable.
 interface GlimmerSyntax {
   preprocess(html: string, options?: PreprocessOptions): AST;
-  print(ast: AST): string;
+  print(ast: AST, options?: PrinterOptions): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
   precompile(
     templateContents: string,
@@ -289,12 +305,16 @@ export class TemplateCompiler {
       });
     }
 
+    // instructs glimmer-vm to preserve entity encodings (e.g. don't parse &nbsp; -> ' ')
+    opts.mode = 'codemod';
+
     opts.filename = moduleName;
     opts.moduleName = this.params.resolver
       ? this.params.resolver.absPathToRuntimePath(moduleName) || moduleName
       : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
-    return this.syntax.print(ast);
+
+    return this.syntax.print(ast, { entityEncoding: 'raw' });
   }
 
   parse(moduleName: string, contents: string): AST {

@@ -151,7 +151,7 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
     return {
       print: theExports._print,
       preprocess: theExports._preprocess,
-      defaultOptions: theExports.compileOptions,
+      defaultOptions: theExports._buildCompileOptions,
       precompile: theExports.precompile,
       _Ember: theExports._Ember,
       cacheKey,
@@ -248,11 +248,14 @@ export class TemplateCompiler {
 
     let opts = this.syntax.defaultOptions({ contents, moduleName });
     let plugins: Plugins = {
-      ...opts.plugins,
+      ...opts?.plugins,
+
       ast: [
         ...this.getReversedASTPlugins(this.params.plugins.ast!),
         this.params.resolver && this.params.resolver.astTransformer(this),
-        ...opts.plugins!.ast!,
+
+        // Ember 3.27+ uses _buildCompileOptions will not add AST plugins to its result
+        ...(opts?.plugins?.ast ?? []),
       ].filter(Boolean),
     };
 
@@ -287,23 +290,23 @@ export class TemplateCompiler {
 
   // Applies all custom AST transforms and emits the results still as
   // handlebars.
-  applyTransforms(moduleName: string, contents: string) {
+  applyTransforms(moduleName: string, contents: string): string {
     let opts = this.syntax.defaultOptions({ contents, moduleName });
-    if (opts.plugins && opts.plugins.ast) {
-      // the user-provided plugins come first in the list, and those are the
-      // only ones we want to run. The built-in plugins don't need to run here
-      // in stage1, it's better that they run in stage3 when the appropriate
-      // ember version is in charge.
-      //
-      // rather than slicing them off, we could choose instead to not call
-      // syntax.defaultOptions, but then we lose some of the compatibility
-      // normalization that it does on the user-provided plugins.
-      opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
-        // Although the precompile API does, this direct glimmer syntax api
-        // does not support these legacy plugins, so we must wrap them.
-        return wrapLegacyHbsPluginIfNeeded(plugin as any);
-      });
-    }
+
+    // the user-provided plugins come first in the list, and those are the
+    // only ones we want to run. The built-in plugins don't need to run here
+    // in stage1, it's better that they run in stage3 when the appropriate
+    // ember version is in charge.
+    //
+    // rather than slicing them off, we could choose instead to not call
+    // syntax.defaultOptions, but then we lose some of the compatibility
+    // normalization that it does on the user-provided plugins.
+    opts.plugins = opts.plugins || {}; // Ember 3.27+ won't add opts.plugins
+    opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
+      // Although the precompile API does, this direct glimmer syntax api
+      // does not support these legacy plugins, so we must wrap them.
+      return wrapLegacyHbsPluginIfNeeded(plugin as any);
+    });
 
     // instructs glimmer-vm to preserve entity encodings (e.g. don't parse &nbsp; -> ' ')
     opts.mode = 'codemod';

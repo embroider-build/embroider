@@ -36,7 +36,6 @@ interface GlimmerSyntax {
   preprocess(html: string, options?: PreprocessOptions): AST;
   print(ast: AST): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
-  registerPlugin(type: string, plugin: unknown): void;
   precompile(
     templateContents: string,
     options: {
@@ -137,7 +136,6 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
       print: theExports._print,
       preprocess: theExports._preprocess,
       defaultOptions: theExports.compileOptions,
-      registerPlugin: theExports.registerPlugin,
       precompile: theExports.precompile,
       _Ember: theExports._Ember,
       cacheKey,
@@ -158,7 +156,6 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
       print: syntax.print,
       preprocess: syntax.preprocess,
       defaultOptions: compilerOptions.default,
-      registerPlugin: compilerOptions.registerPlugin,
       precompile: theExports.precompile,
       _Ember: theExports._Ember,
       cacheKey,

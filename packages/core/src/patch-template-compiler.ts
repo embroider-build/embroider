@@ -182,11 +182,9 @@ export function patch(source: string, templateCompilerPath: string): string {
   }
 
   return `
-      let module = { exports: {} };
       let Ember = {};
       ${patchedSource};
       module.exports.Ember = Ember;
-      return module.exports
   `;
 }
 

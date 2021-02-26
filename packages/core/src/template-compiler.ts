@@ -12,6 +12,7 @@ import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
 import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { createContext, Script } from 'vm';
 
 export interface Plugins {
   ast?: unknown[];
@@ -94,7 +95,26 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
   let stat = statSync(templateCompilerPath);
 
   let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
-  let theExports: any = new Function(source)();
+
+  // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
+  let sandbox = {
+    module: { require, exports: {} },
+    require,
+  };
+  if (typeof globalThis === 'undefined') {
+    // for Node 10 usage with Ember 3.27+ we have to define the `global` global
+    // in order for ember-template-compiler.js to evaluate properly
+    // due to this code https://git.io/Jtb7s
+    (sandbox as any).global = sandbox;
+  }
+
+  // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
+  // so that any global mutation done within ember-template-compiler.js does not leak out
+  let context = createContext(sandbox);
+  let script = new Script(source, { filename: templateCompilerPath });
+
+  script.runInContext(context);
+  let theExports: any = context.module.exports;
 
   // cacheKey, theExports
   let cacheKey = createHash('md5').update(source).digest('hex');
@@ -349,6 +369,7 @@ function hasProperties(item: any) {
   return item && (typeof item === 'object' || typeof item === 'function');
 }
 
+// this matches the setup done by ember-cli-htmlbars: https://git.io/JtbN6
 function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {
   if (!EmberENV) {
     return;

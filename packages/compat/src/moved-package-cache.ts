@@ -1,5 +1,5 @@
 import { join, dirname, resolve, sep, isAbsolute } from 'path';
-import { ensureSymlinkSync, readdirSync, readlinkSync, realpathSync, lstatSync } from 'fs-extra';
+import { ensureSymlinkSync, readdirSync, realpathSync, lstatSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
@@ -154,29 +154,54 @@ function maybeReaddirSync(path: string) {
   }
 }
 
+function isSymlink(path: string): boolean {
+  try {
+    let stat = lstatSync(path);
+    return stat.isSymbolicLink();
+  } catch (err) {
+    if (err.code !== 'ENOTDIR' && err.code !== 'ENOENT') {
+      throw err;
+    }
+
+    return false;
+  }
+}
+
 function symlinksInNodeModules(path: string): { source: string; target: string }[] {
   let results: { source: string; target: string }[] = [];
+
+  // handles the full `node_modules` being symlinked (this is uncommon, but sometimes
+  // be useful for test harnesses to avoid multiple `npm install` invocations)
+  let parentIsSymlink = isSymlink(path);
+
   let names = maybeReaddirSync(path);
+
   names.map(name => {
     let source = join(path, name);
     let stats = lstatSync(source);
-    if (stats.isSymbolicLink()) {
-      let target = readlinkSync(source);
+    if (parentIsSymlink || stats.isSymbolicLink()) {
+      let target = realpathSync(source);
       assertNoTildeExpansion(source, target);
+
       results.push({ source, target });
     } else if (stats.isDirectory() && name.startsWith('@')) {
+      // handle symlinked scope names (e.g. symlinking `@myorghere` to a shared location)
+      let isSourceSymlink = isSymlink(source);
       let innerNames = maybeReaddirSync(source);
+
       innerNames.map(innerName => {
         let innerSource = join(source, innerName);
         let innerStats = lstatSync(innerSource);
-        if (innerStats.isSymbolicLink()) {
-          let target = readlinkSync(innerSource);
+        if (parentIsSymlink || isSourceSymlink || innerStats.isSymbolicLink()) {
+          let target = realpathSync(innerSource);
           assertNoTildeExpansion(innerSource, target);
+
           results.push({ source: innerSource, target });
         }
       });
     }
   });
+
   return results;
 }
 

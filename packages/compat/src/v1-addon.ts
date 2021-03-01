@@ -23,6 +23,7 @@ import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
+import { isCompactReexports } from './detect-compact-reexports';
 import { ResolvedDep } from '@embroider/core/src/resolver';
 
 const stockTreeNames = Object.freeze([
@@ -1003,6 +1004,12 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
   if (isEmberAutoImportDynamic(plugin)) {
     // We replace ember-auto-import's implementation of dynamic import(), so we
     // need to stop its plugin from rewriting those.
+    return false;
+  }
+
+  if (isCompactReexports(plugin)) {
+    // We don't want to replace re-exports at this stage, since that will turn
+    // an `export` statement into a `define`, which is handled in Stage 3
     return false;
   }
 

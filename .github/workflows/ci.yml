@@ -1,6 +1,14 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - 'v*' # prior release branches (e.g. `v0.30.x` branch)
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
 
 jobs:
   discover_matrix:

@@ -44,8 +44,10 @@ function emberVersionGte(templateCompilerPath: string, source: string, major: nu
 }
 
 export function patch(source: string, templateCompilerPath: string): string {
-  if (emberVersionGte(templateCompilerPath, source, 3, 27)) {
-    // no modifications are needed after https://github.com/emberjs/ember.js/pull/19426
+  if (emberVersionGte(templateCompilerPath, source, 3, 26)) {
+    // no modifications are needed after
+    // https://github.com/emberjs/ember.js/pull/19426 and backported to 3.26 in
+    // https://github.com/emberjs/ember.js/commit/9121bcfa4f5ab3d2b49fc0a46a65aa62646b2b10
     return source;
   }
 

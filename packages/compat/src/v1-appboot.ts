@@ -32,9 +32,8 @@ export class ReadV1AppBoot extends Plugin {
   }
 
   readAppBoot() {
-    if (!this.appBoot) {
-      throw new Error(`AppBoot not available until after the build`);
+    if (this.appBoot) {
+      return this.appBoot;
     }
-    return this.appBoot;
   }
 }

@@ -6,7 +6,8 @@
   ],
   "dependencies": {
     "ember-cli-htmlbars": "*",
-    "ember-cli-babel": "*"
+    "ember-cli-babel": "*",
+    "ember-engines": "*"
   },
   "volta": {
     "extends": "../../package.json"

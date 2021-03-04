@@ -110,7 +110,7 @@ describe('evaluation', function () {
   });
 });
 
-function nodePathNotNull(path: NodePath<Expression | null>): path is NodePath<Expression> {
+function isNodePathPresent(path: NodePath<Expression | null | undefined>): path is NodePath<Expression> {
   return path.node != null;
 }
 
@@ -120,7 +120,7 @@ function testEval() {
       exit(path: NodePath<VariableDeclarator>) {
         let id = path.get('id').node;
         let value = path.get('init');
-        if (isIdentifier(id) && id.name === 'result' && nodePathNotNull(value)) {
+        if (isIdentifier(id) && id.name === 'result' && isNodePathPresent(value)) {
           let evaluator = new Evaluator({
             locals: {
               knownValue: 2,

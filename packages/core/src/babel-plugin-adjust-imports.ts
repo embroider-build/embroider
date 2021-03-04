@@ -397,7 +397,7 @@ export default function main() {
       ) {
         let { opts, emberCLIVanillaJobs } = state;
         const { source } = path.node;
-        if (source === null) {
+        if (source === null || source === undefined) {
           return;
         }
 

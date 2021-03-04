@@ -63,5 +63,10 @@
   },
   "volta": {
     "extends": "../../package.json"
+  },
+  "ember-addon": {
+    "paths": [
+      "lib/lazy-in-repo-engine"
+    ]
   }
 }

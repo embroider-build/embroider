@@ -474,7 +474,8 @@ export default class V1App {
       minifyCSS: this.app.options.minifyCSS.options,
     };
 
-    let styles = this.preprocessors.preprocessCss(this.combinedStyles(addonTrees), '.', '/assets', options);
+    let nestedInput = new Funnel(this.combinedStyles(addonTrees), { destDir: 'app/styles' });
+    let styles = this.preprocessors.preprocessCss(nestedInput, 'app/styles', '/assets', options);
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {

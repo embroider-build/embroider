@@ -1,0 +1,6 @@
+.shared-style-target {
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  border-bottom-color: blue;
+  content: 'lazy-in-repo-engine/addon/styles/addon.css';
+}

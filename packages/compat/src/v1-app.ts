@@ -486,7 +486,7 @@ export default class V1App {
       let assetPath = join(outputPath, 'assets');
       if (pathExistsSync(assetPath)) {
         for (let file of readdirSync(assetPath)) {
-          addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+          addonMeta['public-assets']![`./assets/${file}`] = `/public/assets/${file}`;
         }
       }
       let meta = {

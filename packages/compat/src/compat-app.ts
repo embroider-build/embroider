@@ -124,7 +124,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         .forEach(entry => {
           assets.push({
             kind: 'on-disk',
-            relativePath: entry.relativePath,
+            relativePath: 'public/' + entry.relativePath,
             sourcePath: entry.fullPath,
             mtime: (entry.mtime as unknown) as number, // https://github.com/joliss/node-walk-sync/pull/38
             size: entry.size,
@@ -145,6 +145,16 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       assets.push(asset);
     }
 
+    let viteConfig = join(this.oldPackage.root, 'vite.config.js');
+    let viteConfigStat = statSync(viteConfig);
+    assets.push({
+      kind: 'on-disk',
+      relativePath: 'vite.config.js',
+      sourcePath: viteConfig,
+      mtime: viteConfigStat.mtime.getTime(),
+      size: viteConfigStat.size,
+    });
+
     return assets;
   }
 
@@ -158,7 +168,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       let stat = statSync(sourcePath);
       return {
         kind: 'on-disk',
-        relativePath: 'testem.js',
+        relativePath: 'public/testem.js',
         sourcePath,
         mtime: stat.mtime.getTime(),
         size: stat.size,

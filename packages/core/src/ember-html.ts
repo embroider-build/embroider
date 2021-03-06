@@ -97,6 +97,7 @@ export class PreparedEmberHTML {
   // root-relative via the configured rootURL
   insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string; tag?: string }) {
     let newTag = this.dom.window.document.createElement(opts && opts.tag ? opts.tag : 'script');
+    relativeSrc = relativeSrc.replace(/^public\//, '');
     newTag.setAttribute('src', this.asset.rootURL + relativeSrc);
     if (opts && opts.type) {
       newTag.setAttribute('type', opts.type);
@@ -110,6 +111,8 @@ export class PreparedEmberHTML {
   insertStyleLink(location: NodeRange, relativeHref: string) {
     let newTag = this.dom.window.document.createElement('link');
     newTag.rel = 'stylesheet';
+    relativeHref = relativeHref.replace(/^public\//, '');
+
     newTag.href = this.asset.rootURL + relativeHref;
     location.insert(this.dom.window.document.createTextNode('\n'));
     location.insert(newTag);

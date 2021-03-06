@@ -468,11 +468,11 @@ export class AppBuilder<TreeNames> {
     application: Engine,
     emberENV: EmberENV
   ): InternalAsset | undefined {
-    let asset = prepared.get('assets/vendor.js');
+    let asset = prepared.get('public/assets/vendor.js');
     if (!asset) {
       let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
-        asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
+        asset = new ConcatenatedAsset('public/assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }
@@ -480,12 +480,16 @@ export class AppBuilder<TreeNames> {
   }
 
   private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: Engine): InternalAsset | undefined {
-    let asset = prepared.get('assets/vendor.css');
+    let asset = prepared.get('public/assets/vendor.css');
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
         // we reverse because we want the synthetic vendor style at the top
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
+        asset = new ConcatenatedAsset(
+          'public/assets/vendor.css',
+          implicitStyles.reverse(),
+          this.resolvableExtensionsPattern
+        );
         prepared.set(asset.relativePath, asset);
       }
     }
@@ -496,12 +500,12 @@ export class AppBuilder<TreeNames> {
     prepared: Map<string, InternalAsset>,
     application: Engine
   ): InternalAsset | undefined {
-    let testSupportJS = prepared.get('assets/test-support.js');
+    let testSupportJS = prepared.get('public/assets/test-support.js');
     if (!testSupportJS) {
       let implicitTestScripts = this.impliedAssets('implicit-test-scripts', application);
       if (implicitTestScripts.length > 0) {
         testSupportJS = new ConcatenatedAsset(
-          'assets/test-support.js',
+          'public/assets/test-support.js',
           implicitTestScripts,
           this.resolvableExtensionsPattern
         );
@@ -515,11 +519,15 @@ export class AppBuilder<TreeNames> {
     prepared: Map<string, InternalAsset>,
     application: Engine
   ): InternalAsset | undefined {
-    let asset = prepared.get('assets/test-support.css');
+    let asset = prepared.get('public/assets/test-support.css');
     if (!asset) {
       let implicitTestStyles = this.impliedAssets('implicit-test-styles', application);
       if (implicitTestStyles.length > 0) {
-        asset = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles, this.resolvableExtensionsPattern);
+        asset = new ConcatenatedAsset(
+          'public/assets/test-support.css',
+          implicitTestStyles,
+          this.resolvableExtensionsPattern
+        );
         prepared.set(asset.relativePath, asset);
       }
     }
@@ -1011,7 +1019,7 @@ export class AppBuilder<TreeNames> {
 
   private topAppJSAsset(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
     let [app, ...childEngines] = engines;
-    let relativePath = `assets/${this.app.name}.js`;
+    let relativePath = `_entry_/${this.app.name}.js`;
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
       autoRun: this.adapter.autoRun(),
       appBoot: !this.adapter.autoRun() ? this.adapter.appBoot() : '',
@@ -1073,7 +1081,7 @@ export class AppBuilder<TreeNames> {
       let implicitStyles = this.impliedAssets('implicit-styles', engine);
       for (let style of implicitStyles) {
         styles.push({
-          path: explicitRelative('assets/_engine_', style.relativePath),
+          path: explicitRelative('_entry_/engine', style.relativePath),
         });
       }
 
@@ -1090,7 +1098,7 @@ export class AppBuilder<TreeNames> {
     let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
-        `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
+        `_entry_/engine/${encodeURIComponent(childEngine.package.name)}.js`,
         childEngine,
         [],
         prepared
@@ -1113,7 +1121,7 @@ export class AppBuilder<TreeNames> {
           requiredAppFiles.push([filename]);
         },
         (routeNames: string[], files: string[]) => {
-          let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
+          let routeEntrypoint = `_entry_/route/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {
             prepared.set(routeEntrypoint, this.routeEntrypoint(engine, routeEntrypoint, files));
           }
@@ -1181,7 +1189,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
-    let asset = prepared.get(`assets/test.js`);
+    let asset = prepared.get(`_entry_/test.js`);
     if (asset) {
       return asset;
     }
@@ -1191,7 +1199,7 @@ export class AppBuilder<TreeNames> {
     // the app.
     let engine = engines[0];
 
-    const myName = 'assets/test.js';
+    const myName = '_entry_/test.js';
 
     // tests necessarily also include the app. This is where we account for
     // that. The classic solution was to always include the app's separate

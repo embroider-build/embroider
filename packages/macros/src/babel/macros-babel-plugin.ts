@@ -89,26 +89,8 @@ export default function main(context: unknown): unknown {
           return;
         }
 
-        // importSync doesn't evaluate to a static value, so it's implemented
-        // directly here, not in evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          if (state.opts.importSyncImplementation === 'eager') {
-            let specifier = path.node.arguments[0];
-            if (specifier?.type !== 'StringLiteral') {
-              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
-            }
-            let replacePaths = state.neededEagerImports.get(specifier.value);
-            if (!replacePaths) {
-              replacePaths = [];
-              state.neededEagerImports.set(specifier.value, replacePaths);
-            }
-            replacePaths.push(path);
-            state.calledIdentifiers.add(callee.node);
-          } else {
-            let r = identifier('require');
-            state.generatedRequires.add(r);
-            callee.replaceWith(r);
-          }
+          // we handle importSync in the exit hook
           return;
         }
 
@@ -148,6 +130,37 @@ export default function main(context: unknown): unknown {
           path.replaceWith(buildLiterals(result.value));
         }
       },
+      exit(path: NodePath<CallExpression>, state: State) {
+        let callee = path.get('callee');
+        if (!callee.isIdentifier()) {
+          return;
+        }
+        // importSync doesn't evaluate to a static value, so it's implemented
+        // directly here, not in evaluateMacroCall.
+        // We intentionally do this on exit here, to allow other transforms to handle importSync before we do
+        // For example ember-auto-import needs to do some custom transforms to enable use of dynamic template strings,
+        // so its babel plugin needs to see and handle the importSync call first!
+        if (callee.referencesImport('@embroider/macros', 'importSync')) {
+          if (state.opts.importSyncImplementation === 'eager') {
+            let specifier = path.node.arguments[0];
+            if (specifier?.type !== 'StringLiteral') {
+              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
+            }
+            let replacePaths = state.neededEagerImports.get(specifier.value);
+            if (!replacePaths) {
+              replacePaths = [];
+              state.neededEagerImports.set(specifier.value, replacePaths);
+            }
+            replacePaths.push(path);
+            state.calledIdentifiers.add(callee.node);
+          } else {
+            let r = identifier('require');
+            state.generatedRequires.add(r);
+            callee.replaceWith(r);
+          }
+          return;
+        }
+      },
     },
     ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
       for (let candidate of [
@@ -156,7 +169,8 @@ export default function main(context: unknown): unknown {
         'getConfig',
         'getOwnConfig',
         'failBuild',
-        'importSync',
+        // we cannot check importSync, as the babel transform runs on exit, so *after* this check
+        // 'importSync',
         'isDevelopingApp',
         'isDevelopingThisPackage',
         'isTesting',

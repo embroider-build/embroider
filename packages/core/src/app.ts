@@ -1081,7 +1081,7 @@ export class AppBuilder<TreeNames> {
       if (engineMeta && engineMeta['implicit-styles']) {
         for (let style of engineMeta['implicit-styles']) {
           styles.push({
-            path: explicitRelative(relativePath, join(engine.package.name, style)),
+            path: explicitRelative(dirname(relativePath), join(engine.appRelativePath, style)),
           });
         }
       }

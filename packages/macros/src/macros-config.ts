@@ -239,6 +239,8 @@ export default class MacrosConfig {
       get mode() {
         return self.mode;
       },
+
+      importSyncImplementation: 'eager',
     };
     return [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts];
   }

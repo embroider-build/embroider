@@ -24,7 +24,8 @@ import {
   importNamespaceSpecifier,
 } from '@babel/types';
 import PackageCache from './package-cache';
-import Package, { V2Package } from './package';
+import type Package from './package';
+import type { V2Package } from './package';
 import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';

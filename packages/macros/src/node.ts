@@ -2,10 +2,11 @@
 // which is our browser-visible public entrypoint
 
 // Entrypoint for managing the macro config within Node.
-export { default as MacrosConfig, Merger } from './macros-config';
+export { default as MacrosConfig } from './macros-config';
+export type { Merger } from './macros-config';
 
 // Utility for detecting our babel and AST plugins.
-import { PluginItem } from '@babel/core';
+import type { PluginItem } from '@babel/core';
 export function isEmbroiderMacrosPlugin(item: PluginItem) {
   return (
     (Array.isArray(item) &&

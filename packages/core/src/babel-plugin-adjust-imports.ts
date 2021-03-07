@@ -29,6 +29,7 @@ import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { explicitRelative } from './paths';
+import { existsSync } from 'fs';
 
 interface State {
   emberCLIVanillaJobs: Function[];
@@ -309,23 +310,27 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
 function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
   let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
-    target,
-    dynamicMissingModule({
-      moduleName: specifier,
-    })
-  );
+  if (!existsSync(target)) {
+    outputFileSync(
+      target,
+      dynamicMissingModule({
+        moduleName: specifier,
+      })
+    );
+  }
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
-    target,
-    externalTemplate({
-      runtimeName: specifier,
-    })
-  );
+  let target = join(opts.externalsDir, specifier + '__missing.js');
+  if (!existsSync(target)) {
+    outputFileSync(
+      target,
+      externalTemplate({
+        runtimeName: specifier,
+      })
+    );
+  }
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 

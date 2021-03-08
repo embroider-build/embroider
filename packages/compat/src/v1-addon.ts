@@ -15,7 +15,7 @@ import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, extensionsP
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
-import { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
+import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
 import { TransformOptions, PluginItem } from '@babel/core';
 import V1App from './v1-app';

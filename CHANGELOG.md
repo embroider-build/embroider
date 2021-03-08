@@ -1,5 +1,48 @@
 # Embroider Changelog
 
+## v0.37.0 (2021-03-08)
+
+#### :rocket: Enhancement
+* `core`
+  * [#713](https://github.com/embroider-build/embroider/pull/713) Avoid monkey patching template compiler for 3.24.3 and 3.25.2+. ([@rwjblue](https://github.com/rwjblue))
+  * [#705](https://github.com/embroider-build/embroider/pull/705) Avoid patching the template compiler on Ember 3.26. ([@rwjblue](https://github.com/rwjblue))
+  * [#700](https://github.com/embroider-build/embroider/pull/700) TemplateCompiler fixes / improvements (avoid monkey patch for Ember 3.27+) ([@rwjblue](https://github.com/rwjblue))
+* `macros`
+  * [#712](https://github.com/embroider-build/embroider/pull/712) Allow macroCondition inside modifier ([@simonihmig](https://github.com/simonihmig))
+  * [#694](https://github.com/embroider-build/embroider/pull/694) Run importSync transform later, so ember-auto-import can support importSync ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#710](https://github.com/embroider-build/embroider/pull/710) Fix case where `autoRun` is `false` but no other addon set content into the `{{content-for 'app-boot'}}` ([@thoov](https://github.com/thoov))
+  * [#674](https://github.com/embroider-build/embroider/pull/674) adjust paths seen by css preprocessors ([@ef4](https://github.com/ef4))
+  * [#702](https://github.com/embroider-build/embroider/pull/702) Handle case where node_modules are symlinked ([@thoov](https://github.com/thoov))
+  * [#690](https://github.com/embroider-build/embroider/pull/690) Exclude 'babel-plugin-compact-reexports' during Stage 1 build ([@charlespierce](https://github.com/charlespierce))
+  * [#687](https://github.com/embroider-build/embroider/pull/687) Strip `main` field from v1 addons' `package.json` once they are rewritten as V2 ([@ef4](https://github.com/ef4))
+* `compat`, `core`
+  * [#709](https://github.com/embroider-build/embroider/pull/709) Fix the path to the on-disk styles file for in-repo engines ([@charlespierce](https://github.com/charlespierce))
+* `core`
+  * [#686](https://github.com/embroider-build/embroider/pull/686) Prevent accidental duplication of babel plugin during rebuilds ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `compat`
+  * [#706](https://github.com/embroider-build/embroider/pull/706) Remove `ember-cli-htmlbars` dependency in `@embroider/compat`. ([@rwjblue](https://github.com/rwjblue))
+* Other
+  * [#711](https://github.com/embroider-build/embroider/pull/711) Add release automation setup. ([@rwjblue](https://github.com/rwjblue))
+  * [#704](https://github.com/embroider-build/embroider/pull/704) Avoid running CI jobs on both push and pull_request events. ([@rwjblue](https://github.com/rwjblue))
+  * [#697](https://github.com/embroider-build/embroider/pull/697) Refactor suite-setup-util to avoid knock on errors. ([@rwjblue](https://github.com/rwjblue))
+* `core`, `macros`
+  * [#707](https://github.com/embroider-build/embroider/pull/707) Fixup types for newer @babel/types. ([@rwjblue](https://github.com/rwjblue))
+* `router`, `util`
+  * [#703](https://github.com/embroider-build/embroider/pull/703) Add 3.20 and 3.24 to list of matrix tests. ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 5
+- Charles Pierce ([@charlespierce](https://github.com/charlespierce))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## 0.36.0 (2021-01-21)
 
 - BUGFIX: fix non-legacy CSS handling in production builds when using `@embroider/webpack`

@@ -25,6 +25,7 @@ import SynthesizeTemplateOnlyComponents from './synthesize-template-only-compone
 import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
 import { isCompactReexports } from './detect-compact-reexports';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -167,7 +168,7 @@ export default class V1Addon {
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Node): Node {
         if (this._addon.templateCompiler) {
-          return this._addon.templateCompiler.applyTransformsToTree(tree);
+          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler, 1);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.

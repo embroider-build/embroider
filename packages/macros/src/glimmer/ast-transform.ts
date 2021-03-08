@@ -141,6 +141,16 @@ export function makeSecondTransform() {
         },
         ElementNode(node: any) {
           node.modifiers = node.modifiers.filter((modifier: any) => {
+            if (
+              modifier.path.type === 'SubExpression' &&
+              modifier.path.path.type === 'PathExpression' &&
+              modifier.path.path.original === 'if'
+            ) {
+              modifier.path = macroIfExpression(modifier.path, env.syntax.builders);
+              if (modifier.path.type === 'UndefinedLiteral') {
+                return false;
+              }
+            }
             if (modifier.path.type !== 'PathExpression') {
               return true;
             }

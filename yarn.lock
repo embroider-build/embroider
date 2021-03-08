@@ -1477,6 +1477,13 @@
   resolved "https://registry.yarnpkg.com/@glimmer/validator/-/validator-0.44.0.tgz#03d127097dc9cb23052cdb7fcae59d0a9dca53e1"
   integrity sha512-i01plR0EgFVz69GDrEuFgq1NheIjZcyTy3c7q+w7d096ddPVeVcRzU3LKaqCfovvLJ+6lJx40j45ecycASUUyw==
 
+"@glimmer/vm-babel-plugins@0.74.2":
+  version "0.74.2"
+  resolved "https://registry.yarnpkg.com/@glimmer/vm-babel-plugins/-/vm-babel-plugins-0.74.2.tgz#479774d5885201538245f4cba76cabd4b0dee3a5"
+  integrity sha512-DLIKzim7Fg3o54EPgz/wsEiLOUcg24P4WJ9AAv4xsXfBmFndkEDzq1oJ3SPhB167Vp1m+GKOlfKzFm9mxX5rdA==
+  dependencies:
+    babel-plugin-debug-macros "^0.3.4"
+
 "@glimmer/vm@^0.42.2":
   version "0.42.2"
   resolved "https://registry.yarnpkg.com/@glimmer/vm/-/vm-0.42.2.tgz#492a4f05eac587c3a37371b3c62593f20bef553d"
@@ -3677,6 +3684,13 @@ babel-plugin-debug-macros@^0.3.3:
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/babel-plugin-debug-macros/-/babel-plugin-debug-macros-0.3.3.tgz#29c3449d663f61c7385f5b8c72d8015b069a5cb7"
   integrity sha512-E+NI8TKpxJDBbVkdWkwHrKgJi696mnRL8XYrOPYw82veNHPDORM9WIQifl6TpIo8PNy2tU2skPqbfkmHXrHKQA==
+  dependencies:
+    semver "^5.3.0"
+
+babel-plugin-debug-macros@^0.3.4:
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/babel-plugin-debug-macros/-/babel-plugin-debug-macros-0.3.4.tgz#22961d0cb851a80654cece807a8b4b73d85c6075"
+  integrity sha512-wfel/vb3pXfwIDZUrkoDrn5FHmlWI96PCJ3UCDv2a86poJ3EQrnArNW5KfHSVJ9IOgxHbo748cQt7sDU+0KCEw==
   dependencies:
     semver "^5.3.0"
 
@@ -8566,6 +8580,37 @@ ember-source@~3.21.1:
     broccoli-merge-trees "^4.2.0"
     chalk "^4.0.0"
     ember-cli-babel "^7.19.0"
+    ember-cli-get-component-path-option "^1.0.0"
+    ember-cli-is-package-missing "^1.0.0"
+    ember-cli-normalize-entity-name "^1.0.0"
+    ember-cli-path-utils "^1.0.0"
+    ember-cli-string-utils "^1.1.0"
+    ember-cli-version-checker "^5.1.1"
+    ember-router-generator "^2.0.0"
+    inflection "^1.12.0"
+    jquery "^3.5.0"
+    resolve "^1.17.0"
+    semver "^6.1.1"
+    silent-error "^1.1.1"
+
+ember-source@~3.25.0:
+  version "3.25.1"
+  resolved "https://registry.yarnpkg.com/ember-source/-/ember-source-3.25.1.tgz#7621fe7d471d08045b95c79fc760c3ca44efce4f"
+  integrity sha512-WCQV3FqbXRkYAwrwLZ6QcHZcTjT9ESa9H8Il+5H0QmDxLPiFnaj/UW4YLgZZ64X9PBT9WCUzLeLcccIFoFFm7w==
+  dependencies:
+    "@babel/helper-module-imports" "^7.8.3"
+    "@babel/plugin-transform-block-scoping" "^7.8.3"
+    "@babel/plugin-transform-object-assign" "^7.8.3"
+    "@ember/edition-utils" "^1.2.0"
+    "@glimmer/vm-babel-plugins" "0.74.2"
+    babel-plugin-debug-macros "^0.3.3"
+    babel-plugin-filter-imports "^4.0.0"
+    broccoli-concat "^4.2.4"
+    broccoli-debug "^0.6.4"
+    broccoli-funnel "^2.0.2"
+    broccoli-merge-trees "^4.2.0"
+    chalk "^4.0.0"
+    ember-cli-babel "^7.23.0"
     ember-cli-get-component-path-option "^1.0.0"
     ember-cli-is-package-missing "^1.0.0"
     ember-cli-normalize-entity-name "^1.0.0"

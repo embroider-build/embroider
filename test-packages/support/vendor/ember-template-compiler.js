@@ -1,21 +1,24 @@
 (function() {
 /*!
  * @overview  Ember - JavaScript Application Framework
- * @copyright Copyright 2011-2018 Tilde Inc. and contributors
+ * @copyright Copyright 2011-2020 Tilde Inc. and contributors
  *            Portions Copyright 2006-2011 Strobe Inc.
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   3.8.0
+ * @version   3.25.0
  */
 
 /*globals process */
-var enifed, requireModule, Ember;
+let define, require, Ember;
 
 // Used in @ember/-internals/environment/lib/global.js
 mainContext = this; // eslint-disable-line no-undef
 
-(function() {
+(function () {
+  let registry;
+  let seen;
+
   function missingModule(name, referrerName) {
     if (referrerName) {
       throw new Error('Could not find module ' + name + ' required by: ' + referrerName);
@@ -25,15 +28,15 @@ mainContext = this; // eslint-disable-line no-undef
   }
 
   function internalRequire(_name, referrerName) {
-    var name = _name;
-    var mod = registry[name];
+    let name = _name;
+    let mod = registry[name];
 
     if (!mod) {
       name = name + '/index';
       mod = registry[name];
     }
 
-    var exports = seen[name];
+    let exports = seen[name];
 
     if (exports !== undefined) {
       return exports;
@@ -45,15 +48,15 @@ mainContext = this; // eslint-disable-line no-undef
       missingModule(_name, referrerName);
     }
 
-    var deps = mod.deps;
-    var callback = mod.callback;
-    var reified = new Array(deps.length);
+    let deps = mod.deps;
+    let callback = mod.callback;
+    let reified = new Array(deps.length);
 
-    for (var i = 0; i < deps.length; i++) {
+    for (let i = 0; i < deps.length; i++) {
       if (deps[i] === 'exports') {
         reified[i] = exports;
       } else if (deps[i] === 'require') {
-        reified[i] = requireModule;
+        reified[i] = require;
       } else {
         reified[i] = internalRequire(deps[i], name);
       }
@@ -64,7 +67,7 @@ mainContext = this; // eslint-disable-line no-undef
     return exports;
   }
 
-  var isNode =
+  let isNode =
     typeof window === 'undefined' &&
     typeof process !== 'undefined' &&
     {}.toString.call(process) === '[object process]';
@@ -78,11 +81,11 @@ mainContext = this; // eslint-disable-line no-undef
   }
 
   if (typeof Ember.__loader === 'undefined') {
-    var registry = Object.create(null);
-    var seen = Object.create(null);
+    registry = Object.create(null);
+    seen = Object.create(null);
 
-    enifed = function(name, deps, callback) {
-      var value = {};
+    define = function (name, deps, callback) {
+      let value = {};
 
       if (!callback) {
         value.deps = [];
@@ -95,53 +98,59 @@ mainContext = this; // eslint-disable-line no-undef
       registry[name] = value;
     };
 
-    requireModule = function(name) {
+    require = function (name) {
       return internalRequire(name, null);
     };
 
     // setup `require` module
-    requireModule['default'] = requireModule;
+    require['default'] = require;
 
-    requireModule.has = function registryHas(moduleName) {
+    require.has = function registryHas(moduleName) {
       return Boolean(registry[moduleName]) || Boolean(registry[moduleName + '/index']);
     };
 
-    requireModule._eak_seen = registry;
+    require._eak_seen = registry;
 
     Ember.__loader = {
-      define: enifed,
-      require: requireModule,
+      define: define,
+      require: require,
       registry: registry,
     };
   } else {
-    enifed = Ember.__loader.define;
-    requireModule = Ember.__loader.require;
+    define = Ember.__loader.define;
+    require = Ember.__loader.require;
   }
 })();
 
-enifed("@ember/-internals/browser-environment", ["exports"], function (_exports) {
+define("@ember/-internals/browser-environment/index", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.hasDOM = _exports.isFirefox = _exports.isChrome = _exports.userAgent = _exports.history = _exports.location = _exports.window = void 0;
   // check if window exists and actually is the global
   var hasDom = typeof self === 'object' && self !== null && self.Object === Object && typeof Window !== 'undefined' && self.constructor === Window && typeof document === 'object' && document !== null && self.document === document && typeof location === 'object' && location !== null && self.location === location && typeof history === 'object' && history !== null && self.history === history && typeof navigator === 'object' && navigator !== null && self.navigator === navigator && typeof navigator.userAgent === 'string';
   _exports.hasDOM = hasDom;
-  const window = hasDom ? self : null;
+  var window = hasDom ? self : null;
   _exports.window = window;
-  const location$1 = hasDom ? self.location : null;
+  var location$1 = hasDom ? self.location : null;
   _exports.location = location$1;
-  const history$1 = hasDom ? self.history : null;
+  var history$1 = hasDom ? self.history : null;
   _exports.history = history$1;
-  const userAgent = hasDom ? self.navigator.userAgent : 'Lynx (textmode)';
+  var userAgent = hasDom ? self.navigator.userAgent : 'Lynx (textmode)';
   _exports.userAgent = userAgent;
-  const isChrome = hasDom ? Boolean(window.chrome) && !window.opera : false;
+  var isChrome = hasDom ? typeof chrome === 'object' && !(typeof opera === 'object') : false;
   _exports.isChrome = isChrome;
-  const isFirefox = hasDom ? typeof InstallTrigger !== 'undefined' : false;
+  var isFirefox = hasDom ? typeof InstallTrigger !== 'undefined' : false;
   _exports.isFirefox = isFirefox;
 });
-enifed("@ember/-internals/environment", ["exports"], function (_exports) {
+define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-features"], function (_exports, _deprecatedFeatures) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.getLookup = getLookup;
   _exports.setLookup = setLookup;
   _exports.getENV = getENV;
@@ -160,11 +169,10 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
 
   var global$1 = checkGlobal(checkElementIdShadowing(typeof global === 'object' && global)) || checkGlobal(typeof self === 'object' && self) || checkGlobal(typeof window === 'object' && window) || typeof mainContext !== 'undefined' && mainContext || // set before strict mode in Ember loader/wrapper
   new Function('return this')(); // eval outside of strict mode
-  // legacy imports/exports/lookup stuff (should we keep this??)
 
   _exports.global = global$1;
 
-  const context = function (global, Ember) {
+  var context = function (global, Ember) {
     return Ember === undefined ? {
       imports: global,
       exports: global,
@@ -194,14 +202,14 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
     desired properties to a global hash named `EmberENV` (or `ENV` for
     backwards compatibility with earlier versions of Ember). The `EmberENV`
     hash must be created before loading Ember.
-
+  
     @class EmberENV
     @type Object
     @public
   */
 
 
-  const ENV = {
+  var ENV = {
     ENABLE_OPTIONAL_FEATURES: false,
 
     /**
@@ -277,6 +285,33 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
     _TEMPLATE_ONLY_GLIMMER_COMPONENTS: false,
 
     /**
+      Whether to perform extra bookkeeping needed to make the `captureRenderTree`
+      API work.
+         This has to be set before the ember JavaScript code is evaluated. This is
+      usually done by setting `window.EmberENV = { _DEBUG_RENDER_TREE: true };`
+      before the "vendor" `<script>` tag in `index.html`.
+         Setting the flag after Ember is already loaded will not work correctly. It
+      may appear to work somewhat, but fundamentally broken.
+         This is not intended to be set directly. Ember Inspector will enable the
+      flag on behalf of the user as needed.
+         This flag is always on in development mode.
+         The flag is off by default in production mode, due to the cost associated
+      with the the bookkeeping work.
+         The expected flow is that Ember Inspector will ask the user to refresh the
+      page after enabling the feature. It could also offer a feature where the
+      user add some domains to the "always on" list. In either case, Ember
+      Inspector will inject the code on the page to set the flag if needed.
+         @property _DEBUG_RENDER_TREE
+      @for EmberENV
+      @type Boolean
+      @default false
+      @private
+    */
+    _DEBUG_RENDER_TREE: true
+    /* DEBUG */
+    ,
+
+    /**
       Whether the app is using jQuery. See RFC #294.
          This is not intended to be set directly, as the implementation may change in
       the future. Use `@ember/optional-features` instead.
@@ -287,17 +322,41 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
       @private
     */
     _JQUERY_INTEGRATION: true,
+
+    /**
+      Whether the app defaults to using async observers.
+         This is not intended to be set directly, as the implementation may change in
+      the future. Use `@ember/optional-features` instead.
+         @property _DEFAULT_ASYNC_OBSERVERS
+      @for EmberENV
+      @type Boolean
+      @default false
+      @private
+    */
+    _DEFAULT_ASYNC_OBSERVERS: false,
+
+    /**
+      Controls the maximum number of scheduled rerenders without "settling". In general,
+      applications should not need to modify this environment variable, but please
+      open an issue so that we can determine if a better default value is needed.
+         @property _RERENDER_LOOP_LIMIT
+      @for EmberENV
+      @type number
+      @default 1000
+      @private
+     */
+    _RERENDER_LOOP_LIMIT: 1000,
     EMBER_LOAD_HOOKS: {},
     FEATURES: {}
   };
   _exports.ENV = ENV;
 
-  (EmberENV => {
+  (function (EmberENV) {
     if (typeof EmberENV !== 'object' || EmberENV === null) return;
 
-    for (let flag in EmberENV) {
-      if (!EmberENV.hasOwnProperty(flag) || flag === 'EXTEND_PROTOTYPES' || flag === 'EMBER_LOAD_HOOKS') continue;
-      let defaultValue = ENV[flag];
+    for (var flag in EmberENV) {
+      if (!Object.prototype.hasOwnProperty.call(EmberENV, flag) || flag === 'EXTEND_PROTOTYPES' || flag === 'EMBER_LOAD_HOOKS') continue;
+      var defaultValue = ENV[flag];
 
       if (defaultValue === true) {
         ENV[flag] = EmberENV[flag] !== false;
@@ -306,60 +365,73 @@ enifed("@ember/-internals/environment", ["exports"], function (_exports) {
       }
     }
 
-    let {
-      EXTEND_PROTOTYPES
-    } = EmberENV;
+    var EXTEND_PROTOTYPES = EmberENV.EXTEND_PROTOTYPES;
 
     if (EXTEND_PROTOTYPES !== undefined) {
       if (typeof EXTEND_PROTOTYPES === 'object' && EXTEND_PROTOTYPES !== null) {
         ENV.EXTEND_PROTOTYPES.String = EXTEND_PROTOTYPES.String !== false;
-        ENV.EXTEND_PROTOTYPES.Function = EXTEND_PROTOTYPES.Function !== false;
+
+        if (_deprecatedFeatures.FUNCTION_PROTOTYPE_EXTENSIONS) {
+          ENV.EXTEND_PROTOTYPES.Function = EXTEND_PROTOTYPES.Function !== false;
+        }
+
         ENV.EXTEND_PROTOTYPES.Array = EXTEND_PROTOTYPES.Array !== false;
       } else {
-        let isEnabled = EXTEND_PROTOTYPES !== false;
+        var isEnabled = EXTEND_PROTOTYPES !== false;
         ENV.EXTEND_PROTOTYPES.String = isEnabled;
-        ENV.EXTEND_PROTOTYPES.Function = isEnabled;
+
+        if (_deprecatedFeatures.FUNCTION_PROTOTYPE_EXTENSIONS) {
+          ENV.EXTEND_PROTOTYPES.Function = isEnabled;
+        }
+
         ENV.EXTEND_PROTOTYPES.Array = isEnabled;
       }
     } // TODO this does not seem to be used by anything,
     //      can we remove it? do we need to deprecate it?
 
 
-    let {
-      EMBER_LOAD_HOOKS
-    } = EmberENV;
+    var EMBER_LOAD_HOOKS = EmberENV.EMBER_LOAD_HOOKS;
 
     if (typeof EMBER_LOAD_HOOKS === 'object' && EMBER_LOAD_HOOKS !== null) {
-      for (let hookName in EMBER_LOAD_HOOKS) {
-        if (!EMBER_LOAD_HOOKS.hasOwnProperty(hookName)) continue;
-        let hooks = EMBER_LOAD_HOOKS[hookName];
+      for (var hookName in EMBER_LOAD_HOOKS) {
+        if (!Object.prototype.hasOwnProperty.call(EMBER_LOAD_HOOKS, hookName)) continue;
+        var hooks = EMBER_LOAD_HOOKS[hookName];
 
         if (Array.isArray(hooks)) {
-          ENV.EMBER_LOAD_HOOKS[hookName] = hooks.filter(hook => typeof hook === 'function');
+          ENV.EMBER_LOAD_HOOKS[hookName] = hooks.filter(function (hook) {
+            return typeof hook === 'function';
+          });
         }
       }
     }
 
-    let {
-      FEATURES
-    } = EmberENV;
+    var FEATURES = EmberENV.FEATURES;
 
     if (typeof FEATURES === 'object' && FEATURES !== null) {
-      for (let feature in FEATURES) {
-        if (!FEATURES.hasOwnProperty(feature)) continue;
+      for (var feature in FEATURES) {
+        if (!Object.prototype.hasOwnProperty.call(FEATURES, feature)) continue;
         ENV.FEATURES[feature] = FEATURES[feature] === true;
       }
     }
-  })(global$1.EmberENV || global$1.ENV);
+
+    if (true
+    /* DEBUG */
+    ) {
+      ENV._DEBUG_RENDER_TREE = true;
+    }
+  })(global$1.EmberENV);
 
   function getENV() {
     return ENV;
   }
 });
-enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_exports, _polyfills) {
+define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/debug"], function (_exports, _util, _debug) {
   "use strict";
 
-  _exports.symbol = symbol;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.enumerableSymbol = enumerableSymbol;
   _exports.isInternalSymbol = isInternalSymbol;
   _exports.dictionary = makeDictionary;
   _exports.uuid = uuid;
@@ -367,8 +439,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   _exports.guidFor = guidFor;
   _exports.intern = intern;
   _exports.wrap = wrap;
-  _exports.getObservers = getObservers;
-  _exports.getListeners = getListeners;
+  _exports.observerListenerMetaFor = observerListenerMetaFor;
   _exports.setObservers = setObservers;
   _exports.setListeners = setListeners;
   _exports.inspect = inspect;
@@ -379,54 +450,57 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   _exports.getName = getName;
   _exports.setName = setName;
   _exports.toString = toString;
+  _exports.isObject = isObject;
   _exports.isProxy = isProxy;
   _exports.setProxy = setProxy;
-  _exports.Cache = _exports.HAS_NATIVE_PROXY = _exports.HAS_NATIVE_SYMBOL = _exports.ROOT = _exports.checkHasSuper = _exports.GUID_KEY = _exports.NAME_KEY = void 0;
+  _exports.setEmberArray = setEmberArray;
+  _exports.isEmberArray = isEmberArray;
+  _exports.setWithMandatorySetter = _exports.teardownMandatorySetter = _exports.setupMandatorySetter = _exports.Cache = _exports.HAS_NATIVE_PROXY = _exports.HAS_NATIVE_SYMBOL = _exports.ROOT = _exports.checkHasSuper = _exports.GUID_KEY = _exports.getDebugName = _exports.symbol = void 0;
 
   /**
     Strongly hint runtimes to intern the provided string.
-
+  
     When do I need to use this function?
-
+  
     For the most part, never. Pre-mature optimization is bad, and often the
     runtime does exactly what you need it to, and more often the trade-off isn't
     worth it.
-
+  
     Why?
-
+  
     Runtimes store strings in at least 2 different representations:
     Ropes and Symbols (interned strings). The Rope provides a memory efficient
     data-structure for strings created from concatenation or some other string
     manipulation like splitting.
-
+  
     Unfortunately checking equality of different ropes can be quite costly as
     runtimes must resort to clever string comparison algorithms. These
     algorithms typically cost in proportion to the length of the string.
     Luckily, this is where the Symbols (interned strings) shine. As Symbols are
     unique by their string content, equality checks can be done by pointer
     comparison.
-
+  
     How do I know if my string is a rope or symbol?
-
+  
     Typically (warning general sweeping statement, but truthy in runtimes at
     present) static strings created as part of the JS source are interned.
     Strings often used for comparisons can be interned at runtime if some
     criteria are met.  One of these criteria can be the size of the entire rope.
     For example, in chrome 38 a rope longer then 12 characters will not
     intern, nor will segments of that rope.
-
+  
     Some numbers: http://jsperf.com/eval-vs-keys/8
-
+  
     Known Trick™
-
+  
     @private
     @return {String} interned version of the provided string
   */
   function intern(str) {
-    let obj = {};
+    var obj = {};
     obj[str] = 1;
 
-    for (let key in obj) {
+    for (var key in obj) {
       if (key === str) {
         return key;
       }
@@ -436,12 +510,12 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
   /**
     Returns whether Type(value) is Object.
-
+  
     Useful for checking whether a value is a valid WeakMap key.
-
+  
     Refs: https://tc39.github.io/ecma262/#sec-typeof-operator-runtime-semantics-evaluation
           https://tc39.github.io/ecma262/#sec-weakmap.prototype.set
-
+  
     @private
     @function isObject
   */
@@ -457,18 +531,18 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
    Previously we used `Ember.$.uuid`, however `$.uuid` has been removed from
    jQuery master. We'll just bootstrap our own uuid now.
-
+  
    @private
    @return {Number} the uuid
    */
 
 
-  let _uuid = 0;
+  var _uuid = 0;
   /**
    Generates a universally unique identifier. This method
    is used internally by Ember for assisting with
    the generation of GUID's and other unique identifiers.
-
+  
    @public
    @return {Number} [description]
    */
@@ -486,18 +560,18 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
    */
 
 
-  const GUID_PREFIX = 'ember'; // Used for guid generation...
+  var GUID_PREFIX = 'ember'; // Used for guid generation...
 
-  const OBJECT_GUIDS = new WeakMap();
-  const NON_OBJECT_GUIDS = new Map();
+  var OBJECT_GUIDS = new WeakMap();
+  var NON_OBJECT_GUIDS = new Map();
   /**
     A unique key used to assign guids and other private metadata to objects.
     If you inspect an object in your browser debugger you will often see these.
     They can be safely ignored.
-
+  
     On browsers that support it, these properties are added with enumeration
     disabled so they won't show up when you iterate over your properties.
-
+  
     @private
     @property GUID_KEY
     @for Ember
@@ -505,12 +579,12 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     @final
   */
 
-  const GUID_KEY = intern(`__ember${Number(new Date())}`);
+  var GUID_KEY = intern("__ember" + Date.now());
   /**
     Generates a new guid, optionally saving the guid to the object that you
     pass in. You will rarely need to use this method. Instead you should
     call `guidFor(obj)`, which return an existing guid if available.
-
+  
     @private
     @method generateGuid
     @static
@@ -518,7 +592,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     @param {Object} [obj] Object the guid will be used for. If passed in, the guid will
       be saved on the object and reused whenever you pass the same object
       again.
-
+  
       If no object is passed, just generate a new guid.
     @param {String} [prefix] Prefix to place in front of the guid. Useful when you want to
       separate the guid into separate namespaces.
@@ -527,8 +601,12 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
 
   _exports.GUID_KEY = GUID_KEY;
 
-  function generateGuid(obj, prefix = GUID_PREFIX) {
-    let guid = prefix + uuid();
+  function generateGuid(obj, prefix) {
+    if (prefix === void 0) {
+      prefix = GUID_PREFIX;
+    }
+
+    var guid = prefix + uuid();
 
     if (isObject(obj)) {
       OBJECT_GUIDS.set(obj, guid);
@@ -540,9 +618,9 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     Returns a unique id for the object. If the object does not yet have a guid,
     one will be assigned to it. You can call this on any object,
     `EmberObject`-based or not.
-
+  
     You can also use this method on DOM Element objects.
-
+  
     @public
     @static
     @method guidFor
@@ -553,7 +631,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
 
 
   function guidFor(value) {
-    let guid;
+    var guid;
 
     if (isObject(value)) {
       guid = OBJECT_GUIDS.get(value);
@@ -566,7 +644,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
       guid = NON_OBJECT_GUIDS.get(value);
 
       if (guid === undefined) {
-        let type = typeof value;
+        var type = typeof value;
 
         if (type === 'string') {
           guid = 'st' + uuid();
@@ -585,39 +663,116 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return guid;
   }
 
-  const GENERATED_SYMBOLS = [];
+  var HAS_NATIVE_SYMBOL = function () {
+    if (typeof Symbol !== 'function') {
+      return false;
+    }
+
+    return typeof Symbol() === 'symbol';
+  }();
+
+  _exports.HAS_NATIVE_SYMBOL = HAS_NATIVE_SYMBOL;
+  var GENERATED_SYMBOLS = [];
 
   function isInternalSymbol(possibleSymbol) {
     return GENERATED_SYMBOLS.indexOf(possibleSymbol) !== -1;
-  }
+  } // Some legacy symbols still need to be enumerable for a variety of reasons.
+  // This code exists for that, and as a fallback in IE11. In general, prefer
+  // `symbol` below when creating a new symbol.
 
-  function symbol(debugName) {
+
+  function enumerableSymbol(debugName) {
     // TODO: Investigate using platform symbols, but we do not
     // want to require non-enumerability for this API, which
     // would introduce a large cost.
-    let id = GUID_KEY + Math.floor(Math.random() * Number(new Date()));
-    let symbol = intern(`__${debugName}${id}__`);
-    GENERATED_SYMBOLS.push(symbol);
+    var id = GUID_KEY + Math.floor(Math.random() * Date.now());
+    var symbol = intern("__" + debugName + id + "__");
+
+    if (true
+    /* DEBUG */
+    ) {
+      GENERATED_SYMBOLS.push(symbol);
+    }
+
     return symbol;
-  } // the delete is meant to hint at runtimes that this object should remain in
+  }
+
+  var symbol = HAS_NATIVE_SYMBOL ? Symbol : enumerableSymbol; // the delete is meant to hint at runtimes that this object should remain in
   // dictionary mode. This is clearly a runtime specific hack, but currently it
   // appears worthwhile in some usecases. Please note, these deletes do increase
   // the cost of creation dramatically over a plain Object.create. And as this
   // only makes sense for long-lived dictionaries that aren't instantiated often.
 
+  _exports.symbol = symbol;
 
   function makeDictionary(parent) {
-    let dict = Object.create(parent);
+    var dict = Object.create(parent);
     dict['_dict'] = null;
     delete dict['_dict'];
     return dict;
   }
 
-  const HAS_SUPER_PATTERN = /\.(_super|call\(this|apply\(this)/;
-  const fnToString = Function.prototype.toString;
+  var getDebugName;
 
-  const checkHasSuper = (() => {
-    let sourceAvailable = fnToString.call(function () {
+  if (true
+  /* DEBUG */
+  ) {
+    var getFunctionName = function getFunctionName(fn) {
+      var functionName = fn.name;
+
+      if (functionName === undefined) {
+        var match = Function.prototype.toString.call(fn).match(/function (\w+)\s*\(/);
+        functionName = match && match[1] || '';
+      }
+
+      return functionName.replace(/^bound /, '');
+    };
+
+    var getObjectName = function getObjectName(obj) {
+      var name;
+      var className;
+
+      if (obj.constructor && obj.constructor !== Object) {
+        className = getFunctionName(obj.constructor);
+      }
+
+      if ('toString' in obj && obj.toString !== Object.prototype.toString && obj.toString !== Function.prototype.toString) {
+        name = obj.toString();
+      } // If the class has a decent looking name, and the `toString` is one of the
+      // default Ember toStrings, replace the constructor portion of the toString
+      // with the class name. We check the length of the class name to prevent doing
+      // this when the value is minified.
+
+
+      if (name && name.match(/<.*:ember\d+>/) && className && className[0] !== '_' && className.length > 2 && className !== 'Class') {
+        return name.replace(/<.*:/, "<" + className + ":");
+      }
+
+      return name || className;
+    };
+
+    var getPrimitiveName = function getPrimitiveName(value) {
+      return String(value);
+    };
+
+    getDebugName = function getDebugName(value) {
+      if (typeof value === 'function') {
+        return getFunctionName(value) || "(unknown function)";
+      } else if (typeof value === 'object' && value !== null) {
+        return getObjectName(value) || "(unknown object)";
+      } else {
+        return getPrimitiveName(value);
+      }
+    };
+  }
+
+  var getDebugName$1 = getDebugName;
+  _exports.getDebugName = getDebugName$1;
+  var HAS_SUPER_PATTERN = /\.(_super|call\(this|apply\(this)/;
+  var fnToString = Function.prototype.toString;
+
+  var checkHasSuper = function () {
+    var sourceAvailable = fnToString.call(function () {
       return this;
     }).indexOf('return this') > -1;
 
@@ -630,16 +785,16 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return function checkHasSuper() {
       return true;
     };
-  })();
+  }();
 
   _exports.checkHasSuper = checkHasSuper;
-  const HAS_SUPER_MAP = new WeakMap();
-  const ROOT = Object.freeze(function () {});
+  var HAS_SUPER_MAP = new WeakMap();
+  var ROOT = Object.freeze(function () {});
   _exports.ROOT = ROOT;
   HAS_SUPER_MAP.set(ROOT, false);
 
   function hasSuper(func) {
-    let hasSuper = HAS_SUPER_MAP.get(func);
+    var hasSuper = HAS_SUPER_MAP.get(func);
 
     if (hasSuper === undefined) {
       hasSuper = checkHasSuper(func);
@@ -649,36 +804,44 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return hasSuper;
   }
 
-  const OBSERVERS_MAP = new WeakMap();
+  var ObserverListenerMeta = function ObserverListenerMeta() {
+    this.listeners = undefined;
+    this.observers = undefined;
+  };
+
+  var OBSERVERS_LISTENERS_MAP = new WeakMap();
+
+  function createObserverListenerMetaFor(fn) {
+    var meta = OBSERVERS_LISTENERS_MAP.get(fn);
+
+    if (meta === undefined) {
+      meta = new ObserverListenerMeta();
+      OBSERVERS_LISTENERS_MAP.set(fn, meta);
+    }
+
+    return meta;
+  }
+
+  function observerListenerMetaFor(fn) {
+    return OBSERVERS_LISTENERS_MAP.get(fn);
+  }
 
   function setObservers(func, observers) {
-    if (observers) {
-      OBSERVERS_MAP.set(func, observers);
-    }
+    var meta = createObserverListenerMetaFor(func);
+    meta.observers = observers;
   }
-
-  function getObservers(func) {
-    return OBSERVERS_MAP.get(func);
-  }
-
-  const LISTENERS_MAP = new WeakMap();
 
   function setListeners(func, listeners) {
-    if (listeners) {
-      LISTENERS_MAP.set(func, listeners);
-    }
+    var meta = createObserverListenerMetaFor(func);
+    meta.listeners = listeners;
   }
 
-  function getListeners(func) {
-    return LISTENERS_MAP.get(func);
-  }
-
-  const IS_WRAPPED_FUNCTION_SET = new _polyfills._WeakSet();
+  var IS_WRAPPED_FUNCTION_SET = new _util._WeakSet();
   /**
     Wraps the passed function so that `this._super` will point to the superFunc
     when the function is invoked. This is the primitive we use to implement
     calls to super.
-
+  
     @private
     @method wrap
     @for Ember
@@ -702,37 +865,31 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
 
   function _wrap(func, superFunc) {
     function superWrapper() {
-      let orig = this._super;
+      var orig = this._super;
       this._super = superFunc;
-      let ret = func.apply(this, arguments);
+      var ret = func.apply(this, arguments);
       this._super = orig;
       return ret;
     }
 
     IS_WRAPPED_FUNCTION_SET.add(superWrapper);
-    setObservers(superWrapper, getObservers(func));
-    setListeners(superWrapper, getListeners(func));
+    var meta = OBSERVERS_LISTENERS_MAP.get(func);
+
+    if (meta !== undefined) {
+      OBSERVERS_LISTENERS_MAP.set(superWrapper, meta);
+    }
+
     return superWrapper;
   }
 
-  const {
-    toString: objectToString
-  } = Object.prototype;
-  const {
-    toString: functionToString
-  } = Function.prototype;
-  const {
-    isArray
-  } = Array;
-  const {
-    keys: objectKeys
-  } = Object;
-  const {
-    stringify
-  } = JSON;
-  const LIST_LIMIT = 100;
-  const DEPTH_LIMIT = 4;
-  const SAFE_KEY = /^[\w$]+$/;
+  var objectToString = Object.prototype.toString;
+  var functionToString = Function.prototype.toString;
+  var isArray = Array.isArray;
+  var objectKeys = Object.keys;
+  var stringify = JSON.stringify;
+  var LIST_LIMIT = 100;
+  var DEPTH_LIMIT = 4;
+  var SAFE_KEY = /^[\w$]+$/;
   /**
    @module @ember/debug
   */
@@ -740,10 +897,10 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
     Convenience method to inspect an object. This method will attempt to
     convert the object into a useful string description.
-
+  
     It is a pretty simple implementation. If you want something more robust,
     use something like JSDump: https://github.com/NV/jsDump
-
+  
     @method inspect
     @static
     @param {Object} obj The object you want to inspect.
@@ -762,7 +919,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
 
   function inspectValue(value, depth, seen) {
-    let valueIsArray = false;
+    var valueIsArray = false;
 
     switch (typeof value) {
       case 'undefined':
@@ -785,7 +942,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
         return value.toString();
 
       case 'function':
-        return value.toString === functionToString ? value.name ? `[Function:${value.name}]` : `[Function]` : value.toString();
+        return value.toString === functionToString ? value.name ? "[Function:" + value.name + "]" : "[Function]" : value.toString();
 
       case 'string':
         return stringify(value);
@@ -798,9 +955,9 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     }
 
     if (seen === undefined) {
-      seen = new _polyfills._WeakSet();
+      seen = new _util._WeakSet();
     } else {
-      if (seen.has(value)) return `[Circular]`;
+      if (seen.has(value)) return "[Circular]";
     }
 
     seen.add(value);
@@ -816,18 +973,18 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
       return '[Object]';
     }
 
-    let s = '{';
-    let keys = objectKeys(obj);
+    var s = '{';
+    var keys = objectKeys(obj);
 
-    for (let i = 0; i < keys.length; i++) {
+    for (var i = 0; i < keys.length; i++) {
       s += i === 0 ? ' ' : ', ';
 
       if (i >= LIST_LIMIT) {
-        s += `... ${keys.length - LIST_LIMIT} more keys`;
+        s += "... " + (keys.length - LIST_LIMIT) + " more keys";
         break;
       }
 
-      let key = keys[i];
+      var key = keys[i];
       s += inspectKey(key) + ': ' + inspectValue(obj[key], depth, seen);
     }
 
@@ -840,13 +997,13 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
       return '[Array]';
     }
 
-    let s = '[';
+    var s = '[';
 
-    for (let i = 0; i < arr.length; i++) {
+    for (var i = 0; i < arr.length; i++) {
       s += i === 0 ? ' ' : ', ';
 
       if (i >= LIST_LIMIT) {
-        s += `... ${arr.length - LIST_LIMIT} more items`;
+        s += "... " + (arr.length - LIST_LIMIT) + " more items";
         break;
       }
 
@@ -858,10 +1015,10 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
 
   function lookupDescriptor(obj, keyName) {
-    let current = obj;
+    var current = obj;
 
     do {
-      let descriptor = Object.getOwnPropertyDescriptor(current, keyName);
+      var descriptor = Object.getOwnPropertyDescriptor(current, keyName);
 
       if (descriptor !== undefined) {
         return descriptor;
@@ -874,15 +1031,15 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   }
   /**
     Checks to see if the `methodName` exists on the `obj`.
-
+  
     ```javascript
     let foo = { bar: function() { return 'bar'; }, baz: null };
-
+  
     Ember.canInvoke(foo, 'bar'); // true
     Ember.canInvoke(foo, 'baz'); // false
     Ember.canInvoke(foo, 'bat'); // false
     ```
-
+  
     @method canInvoke
     @for Ember
     @param {Object} obj The object to check for the method
@@ -902,17 +1059,17 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
   /**
     Checks to see if the `methodName` exists on the `obj`,
     and if it does, invokes it with the arguments passed.
-
+  
     ```javascript
     import { tryInvoke } from '@ember/utils';
-
+  
     let d = new Date('03/15/2013');
-
+  
     tryInvoke(d, 'getTime');              // 1363320000000
     tryInvoke(d, 'setFullYear', [2014]);  // 1394856000000
     tryInvoke(d, 'noSuchMethod', [2014]); // undefined
     ```
-
+  
     @method tryInvoke
     @for @ember/utils
     @static
@@ -921,19 +1078,28 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     @param {Array} [args] The arguments to pass to the method
     @return {*} the return value of the invoked method or undefined if it cannot be invoked
     @public
+    @deprecated Use Javascript's optional chaining instead.
   */
 
 
   function tryInvoke(obj, methodName, args) {
+    (true && !(false) && (0, _debug.deprecate)("Use of tryInvoke is deprecated. Instead, consider using JavaScript's optional chaining.", false, {
+      id: 'ember-utils.try-invoke',
+      until: '4.0.0',
+      for: 'ember-source',
+      since: {
+        enabled: '3.24.0'
+      },
+      url: 'https://deprecations.emberjs.com/v3.x#toc_ember-utils-try-invoke'
+    }));
+
     if (canInvoke(obj, methodName)) {
-      let method = obj[methodName];
+      var method = obj[methodName];
       return method.apply(obj, args);
     }
   }
 
-  const {
-    isArray: isArray$1
-  } = Array;
+  var isArray$1 = Array.isArray;
 
   function makeArray(obj) {
     if (obj === null || obj === undefined) {
@@ -943,7 +1109,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return isArray$1(obj) ? obj : [obj];
   }
 
-  const NAMES = new WeakMap();
+  var NAMES = new WeakMap();
 
   function setName(obj, name) {
     if (isObject(obj)) NAMES.set(obj, name);
@@ -953,7 +1119,7 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return NAMES.get(obj);
   }
 
-  const objectToString$1 = Object.prototype.toString;
+  var objectToString$1 = Object.prototype.toString;
 
   function isNone(obj) {
     return obj === null || obj === undefined;
@@ -975,9 +1141,9 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     if (Array.isArray(obj)) {
       // Reimplement Array.prototype.join according to spec (22.1.3.13)
       // Changing ToString(element) with this safe version of ToString.
-      let r = '';
+      var r = '';
 
-      for (let k = 0; k < obj.length; k++) {
+      for (var k = 0; k < obj.length; k++) {
         if (k > 0) {
           r += ',';
         }
@@ -997,24 +1163,13 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     return objectToString$1.call(obj);
   }
 
-  const HAS_NATIVE_SYMBOL = function () {
-    if (typeof Symbol !== 'function') {
-      return false;
-    } // use `Object`'s `.toString` directly to prevent us from detecting
-    // polyfills as native
-
-
-    return Object.prototype.toString.call(Symbol()) === '[object Symbol]';
-  }();
-
-  _exports.HAS_NATIVE_SYMBOL = HAS_NATIVE_SYMBOL;
-  const HAS_NATIVE_PROXY = typeof Proxy === 'function';
+  var HAS_NATIVE_PROXY = typeof Proxy === 'function';
   _exports.HAS_NATIVE_PROXY = HAS_NATIVE_PROXY;
-  const PROXIES = new _polyfills._WeakSet();
+  var PROXIES = new _util._WeakSet();
 
-  function isProxy(object) {
-    if (isObject(object)) {
-      return PROXIES.has(object);
+  function isProxy(value) {
+    if (isObject(value)) {
+      return PROXIES.has(value);
     }
 
     return false;
@@ -1026,8 +1181,8 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
     }
   }
 
-  class Cache {
-    constructor(limit, func, store) {
+  var Cache = /*#__PURE__*/function () {
+    function Cache(limit, func, store) {
       this.limit = limit;
       this.func = func;
       this.store = store;
@@ -1037,7 +1192,9 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
       this.store = store || new Map();
     }
 
-    get(key) {
+    var _proto = Cache.prototype;
+
+    _proto.get = function get(key) {
       if (this.store.has(key)) {
         this.hits++;
         return this.store.get(key);
@@ -1045,75 +1202,196 @@ enifed("@ember/-internals/utils", ["exports", "@ember/polyfills"], function (_ex
         this.misses++;
         return this.set(key, this.func(key));
       }
-    }
+    };
 
-    set(key, value) {
+    _proto.set = function set(key, value) {
       if (this.limit > this.size) {
         this.size++;
         this.store.set(key, value);
       }
 
       return value;
-    }
+    };
 
-    purge() {
+    _proto.purge = function purge() {
       this.store.clear();
       this.size = 0;
       this.hits = 0;
       this.misses = 0;
-    }
+    };
 
+    return Cache;
+  }();
+
+  _exports.Cache = Cache;
+  var EMBER_ARRAYS = new _util._WeakSet();
+
+  function setEmberArray(obj) {
+    EMBER_ARRAYS.add(obj);
+  }
+
+  function isEmberArray(obj) {
+    return EMBER_ARRAYS.has(obj);
+  }
+
+  var setupMandatorySetter;
+  _exports.setupMandatorySetter = setupMandatorySetter;
+  var teardownMandatorySetter;
+  _exports.teardownMandatorySetter = teardownMandatorySetter;
+  var setWithMandatorySetter;
+  _exports.setWithMandatorySetter = setWithMandatorySetter;
+
+  function isElementKey(key) {
+    return typeof key === 'number' ? isPositiveInt(key) : isStringInt(key);
+  }
+
+  function isStringInt(str) {
+    var num = parseInt(str, 10);
+    return isPositiveInt(num) && str === String(num);
+  }
+
+  function isPositiveInt(num) {
+    return num >= 0 && num % 1 === 0;
+  }
+
+  if (true
+  /* DEBUG */
+  ) {
+    var SEEN_TAGS = new _util._WeakSet();
+    var MANDATORY_SETTERS = new WeakMap();
+
+    var _propertyIsEnumerable = function _propertyIsEnumerable(obj, key) {
+      return Object.prototype.propertyIsEnumerable.call(obj, key);
+    };
+
+    _exports.setupMandatorySetter = setupMandatorySetter = function setupMandatorySetter(tag, obj, keyName) {
+      if (SEEN_TAGS.has(tag)) {
+        return;
+      }
+
+      SEEN_TAGS.add(tag);
+
+      if (Array.isArray(obj) && isElementKey(keyName)) {
+        return;
+      }
+
+      var desc = lookupDescriptor(obj, keyName) || {};
+
+      if (desc.get || desc.set) {
+        // if it has a getter or setter, we can't install the mandatory setter.
+        // native setters are allowed, we have to assume that they will resolve
+        // to tracked properties.
+        return;
+      }
+
+      if (desc && (!desc.configurable || !desc.writable)) {
+        // if it isn't writable anyways, so we shouldn't provide the setter.
+        // if it isn't configurable, we can't overwrite it anyways.
+        return;
+      }
+
+      var setters = MANDATORY_SETTERS.get(obj);
+
+      if (setters === undefined) {
+        setters = {};
+        MANDATORY_SETTERS.set(obj, setters);
+      }
+
+      desc.hadOwnProperty = Object.hasOwnProperty.call(obj, keyName);
+      setters[keyName] = desc;
+      Object.defineProperty(obj, keyName, {
+        configurable: true,
+        enumerable: _propertyIsEnumerable(obj, keyName),
+        get: function get() {
+          if (desc.get) {
+            return desc.get.call(this);
+          } else {
+            return desc.value;
+          }
+        },
+        set: function set(value) {
+          (true && !(false) && (0, _debug.assert)("You attempted to update " + this + "." + String(keyName) + " to \"" + String(value) + "\", but it is being tracked by a tracking context, such as a template, computed property, or observer. In order to make sure the context updates properly, you must invalidate the property when updating it. You can mark the property as `@tracked`, or use `@ember/object#set` to do this."));
+        }
+      });
+    };
+
+    _exports.teardownMandatorySetter = teardownMandatorySetter = function teardownMandatorySetter(obj, keyName) {
+      var setters = MANDATORY_SETTERS.get(obj);
+
+      if (setters !== undefined && setters[keyName] !== undefined) {
+        Object.defineProperty(obj, keyName, setters[keyName]);
+        setters[keyName] = undefined;
+      }
+    };
+
+    _exports.setWithMandatorySetter = setWithMandatorySetter = function setWithMandatorySetter(obj, keyName, value) {
+      var setters = MANDATORY_SETTERS.get(obj);
+
+      if (setters !== undefined && setters[keyName] !== undefined) {
+        var setter = setters[keyName];
+
+        if (setter.set) {
+          setter.set.call(obj, value);
+        } else {
+          setter.value = value; // If the object didn't have own property before, it would have changed
+          // the enumerability after setting the value the first time.
+
+          if (!setter.hadOwnProperty) {
+            var desc = lookupDescriptor(obj, keyName);
+            desc.enumerable = true;
+            Object.defineProperty(obj, keyName, desc);
+          }
+        }
+      } else {
+        obj[keyName] = value;
+      }
+    };
   }
   /*
    This package will be eagerly parsed and should have no dependencies on external
    packages.
-
+  
    It is intended to be used to share utility methods that will be needed
    by every Ember application (and is **not** a dumping ground of useful utilities).
-
+  
    Utility methods that are needed in < 80% of cases should be placed
    elsewhere (so they can be lazily evaluated / parsed).
   */
 
-
-  _exports.Cache = Cache;
-  const NAME_KEY = symbol('NAME_KEY');
-  _exports.NAME_KEY = NAME_KEY;
 });
-enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environment", "@ember/polyfills"], function (_exports, _environment, _polyfills) {
+define("@ember/canary-features/index", ["exports", "@ember/-internals/environment", "@ember/polyfills"], function (_exports, _environment, _polyfills) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.isEnabled = isEnabled;
-  _exports.EMBER_ROUTING_BUILD_ROUTEINFO_METADATA = _exports.EMBER_GLIMMER_ARRAY_HELPER = _exports.GLIMMER_MODIFIER_MANAGER = _exports.EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION = _exports.GLIMMER_CUSTOM_COMPONENT_MANAGER = _exports.EMBER_METAL_TRACKED_PROPERTIES = _exports.EMBER_MODULE_UNIFICATION = _exports.EMBER_ENGINES_MOUNT_PARAMS = _exports.EMBER_ROUTING_ROUTER_SERVICE = _exports.EMBER_GLIMMER_NAMED_ARGUMENTS = _exports.EMBER_IMPROVED_INSTRUMENTATION = _exports.EMBER_LIBRARIES_ISREGISTERED = _exports.FEATURES = _exports.DEFAULT_FEATURES = void 0;
+  _exports.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = _exports.EMBER_STRICT_MODE = _exports.EMBER_MODERNIZED_BUILT_IN_COMPONENTS = _exports.EMBER_GLIMMER_INVOKE_HELPER = _exports.EMBER_GLIMMER_HELPER_MANAGER = _exports.EMBER_NAMED_BLOCKS = _exports.EMBER_IMPROVED_INSTRUMENTATION = _exports.EMBER_LIBRARIES_ISREGISTERED = _exports.FEATURES = _exports.DEFAULT_FEATURES = void 0;
 
   /**
     Set `EmberENV.FEATURES` in your application's `config/environment.js` file
     to enable canary features in your application.
-
+  
     See the [feature flag guide](https://guides.emberjs.com/release/configuring-ember/feature-flags/)
     for more details.
-
+  
     @module @ember/canary-features
     @public
   */
-  const DEFAULT_FEATURES = {
+  var DEFAULT_FEATURES = {
     EMBER_LIBRARIES_ISREGISTERED: false,
     EMBER_IMPROVED_INSTRUMENTATION: false,
-    EMBER_GLIMMER_NAMED_ARGUMENTS: true,
-    EMBER_ROUTING_ROUTER_SERVICE: true,
-    EMBER_ENGINES_MOUNT_PARAMS: true,
-    EMBER_MODULE_UNIFICATION: false,
-    GLIMMER_CUSTOM_COMPONENT_MANAGER: true,
-    GLIMMER_MODIFIER_MANAGER: true,
-    EMBER_METAL_TRACKED_PROPERTIES: false,
-    EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION: true,
-    EMBER_GLIMMER_ARRAY_HELPER: true,
-    EMBER_ROUTING_BUILD_ROUTEINFO_METADATA: false
+    EMBER_NAMED_BLOCKS: true,
+    EMBER_GLIMMER_HELPER_MANAGER: true,
+    EMBER_GLIMMER_INVOKE_HELPER: true,
+    EMBER_MODERNIZED_BUILT_IN_COMPONENTS: false,
+    EMBER_STRICT_MODE: true,
+    EMBER_DYNAMIC_HELPERS_AND_MODIFIERS: false
   };
   /**
     The hash of enabled Canary features. Add to this, any canary features
     before creating your application.
-
+  
     @class FEATURES
     @static
     @since 1.1.0
@@ -1121,16 +1399,16 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   */
 
   _exports.DEFAULT_FEATURES = DEFAULT_FEATURES;
-  const FEATURES = (0, _polyfills.assign)(DEFAULT_FEATURES, _environment.ENV.FEATURES);
+  var FEATURES = (0, _polyfills.assign)(DEFAULT_FEATURES, _environment.ENV.FEATURES);
   /**
     Determine whether the specified `feature` is enabled. Used by Ember's
     build tools to exclude experimental features from beta/stable builds.
-
+  
     You can define the following configuration options:
-
+  
     * `EmberENV.ENABLE_OPTIONAL_FEATURES` - enable any features that have not been explicitly
       enabled/disabled.
-
+  
     @method isEnabled
     @param {String} feature The feature to check
     @return {Boolean}
@@ -1141,10 +1419,10 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   _exports.FEATURES = FEATURES;
 
   function isEnabled(feature) {
-    let featureValue = FEATURES[feature];
+    var value = FEATURES[feature];
 
-    if (featureValue === true || featureValue === false) {
-      return featureValue;
+    if (value === true || value === false) {
+      return value;
     } else if (_environment.ENV.ENABLE_OPTIONAL_FEATURES) {
       return true;
     } else {
@@ -1160,85 +1438,86 @@ enifed("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
     return value;
   }
 
-  const EMBER_LIBRARIES_ISREGISTERED = featureValue(FEATURES.EMBER_LIBRARIES_ISREGISTERED);
+  var EMBER_LIBRARIES_ISREGISTERED = featureValue(FEATURES.EMBER_LIBRARIES_ISREGISTERED);
   _exports.EMBER_LIBRARIES_ISREGISTERED = EMBER_LIBRARIES_ISREGISTERED;
-  const EMBER_IMPROVED_INSTRUMENTATION = featureValue(FEATURES.EMBER_IMPROVED_INSTRUMENTATION);
+  var EMBER_IMPROVED_INSTRUMENTATION = featureValue(FEATURES.EMBER_IMPROVED_INSTRUMENTATION);
   _exports.EMBER_IMPROVED_INSTRUMENTATION = EMBER_IMPROVED_INSTRUMENTATION;
-  const EMBER_GLIMMER_NAMED_ARGUMENTS = featureValue(FEATURES.EMBER_GLIMMER_NAMED_ARGUMENTS);
-  _exports.EMBER_GLIMMER_NAMED_ARGUMENTS = EMBER_GLIMMER_NAMED_ARGUMENTS;
-  const EMBER_ROUTING_ROUTER_SERVICE = featureValue(FEATURES.EMBER_ROUTING_ROUTER_SERVICE);
-  _exports.EMBER_ROUTING_ROUTER_SERVICE = EMBER_ROUTING_ROUTER_SERVICE;
-  const EMBER_ENGINES_MOUNT_PARAMS = featureValue(FEATURES.EMBER_ENGINES_MOUNT_PARAMS);
-  _exports.EMBER_ENGINES_MOUNT_PARAMS = EMBER_ENGINES_MOUNT_PARAMS;
-  const EMBER_MODULE_UNIFICATION = featureValue(FEATURES.EMBER_MODULE_UNIFICATION);
-  _exports.EMBER_MODULE_UNIFICATION = EMBER_MODULE_UNIFICATION;
-  const EMBER_METAL_TRACKED_PROPERTIES = featureValue(FEATURES.EMBER_METAL_TRACKED_PROPERTIES);
-  _exports.EMBER_METAL_TRACKED_PROPERTIES = EMBER_METAL_TRACKED_PROPERTIES;
-  const GLIMMER_CUSTOM_COMPONENT_MANAGER = featureValue(FEATURES.GLIMMER_CUSTOM_COMPONENT_MANAGER);
-  _exports.GLIMMER_CUSTOM_COMPONENT_MANAGER = GLIMMER_CUSTOM_COMPONENT_MANAGER;
-  const EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION = featureValue(FEATURES.EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION);
-  _exports.EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION = EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION;
-  const GLIMMER_MODIFIER_MANAGER = featureValue(FEATURES.GLIMMER_MODIFIER_MANAGER);
-  _exports.GLIMMER_MODIFIER_MANAGER = GLIMMER_MODIFIER_MANAGER;
-  const EMBER_GLIMMER_ARRAY_HELPER = featureValue(FEATURES.EMBER_GLIMMER_ARRAY_HELPER);
-  _exports.EMBER_GLIMMER_ARRAY_HELPER = EMBER_GLIMMER_ARRAY_HELPER;
-  const EMBER_ROUTING_BUILD_ROUTEINFO_METADATA = featureValue(FEATURES.EMBER_ROUTING_BUILD_ROUTEINFO_METADATA);
-  _exports.EMBER_ROUTING_BUILD_ROUTEINFO_METADATA = EMBER_ROUTING_BUILD_ROUTEINFO_METADATA;
+  var EMBER_NAMED_BLOCKS = featureValue(FEATURES.EMBER_NAMED_BLOCKS);
+  _exports.EMBER_NAMED_BLOCKS = EMBER_NAMED_BLOCKS;
+  var EMBER_GLIMMER_HELPER_MANAGER = featureValue(FEATURES.EMBER_GLIMMER_HELPER_MANAGER);
+  _exports.EMBER_GLIMMER_HELPER_MANAGER = EMBER_GLIMMER_HELPER_MANAGER;
+  var EMBER_GLIMMER_INVOKE_HELPER = featureValue(FEATURES.EMBER_GLIMMER_INVOKE_HELPER);
+  _exports.EMBER_GLIMMER_INVOKE_HELPER = EMBER_GLIMMER_INVOKE_HELPER;
+  var EMBER_MODERNIZED_BUILT_IN_COMPONENTS = featureValue(FEATURES.EMBER_MODERNIZED_BUILT_IN_COMPONENTS);
+  _exports.EMBER_MODERNIZED_BUILT_IN_COMPONENTS = EMBER_MODERNIZED_BUILT_IN_COMPONENTS;
+  var EMBER_STRICT_MODE = featureValue(FEATURES.EMBER_STRICT_MODE);
+  _exports.EMBER_STRICT_MODE = EMBER_STRICT_MODE;
+  var EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = featureValue(FEATURES.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS);
+  _exports.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = EMBER_DYNAMIC_HELPERS_AND_MODIFIERS;
 });
-enifed("@ember/debug/index", ["exports", "@ember/-internals/browser-environment", "@ember/error", "@ember/debug/lib/deprecate", "@ember/debug/lib/testing", "@ember/debug/lib/warn"], function (_exports, _browserEnvironment, _error, _deprecate2, _testing, _warn2) {
+define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment", "@ember/error", "@ember/debug/lib/deprecate", "@ember/debug/lib/testing", "@ember/debug/lib/warn", "@ember/debug/lib/capture-render-tree"], function (_exports, _browserEnvironment, _error, _deprecate2, _testing, _warn2, _captureRenderTree) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   Object.defineProperty(_exports, "registerDeprecationHandler", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _deprecate2.registerHandler;
     }
   });
   Object.defineProperty(_exports, "isTesting", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _testing.isTesting;
     }
   });
   Object.defineProperty(_exports, "setTesting", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _testing.setTesting;
     }
   });
   Object.defineProperty(_exports, "registerWarnHandler", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _warn2.registerHandler;
+    }
+  });
+  Object.defineProperty(_exports, "captureRenderTree", {
+    enumerable: true,
+    get: function get() {
+      return _captureRenderTree.default;
     }
   });
   _exports._warnIfUsingStrippedFeatureFlags = _exports.getDebugFunction = _exports.setDebugFunction = _exports.deprecateFunc = _exports.runInDebug = _exports.debugFreeze = _exports.debugSeal = _exports.deprecate = _exports.debug = _exports.warn = _exports.info = _exports.assert = void 0;
 
   // These are the default production build versions:
-  const noop = () => {};
+  var noop = function noop() {};
 
-  let assert = noop;
+  var assert = noop;
   _exports.assert = assert;
-  let info = noop;
+  var info = noop;
   _exports.info = info;
-  let warn = noop;
+  var warn = noop;
   _exports.warn = warn;
-  let debug = noop;
+  var debug = noop;
   _exports.debug = debug;
-  let deprecate = noop;
+  var deprecate = noop;
   _exports.deprecate = deprecate;
-  let debugSeal = noop;
+  var debugSeal = noop;
   _exports.debugSeal = debugSeal;
-  let debugFreeze = noop;
+  var debugFreeze = noop;
   _exports.debugFreeze = debugFreeze;
-  let runInDebug = noop;
+  var runInDebug = noop;
   _exports.runInDebug = runInDebug;
-  let setDebugFunction = noop;
+  var setDebugFunction = noop;
   _exports.setDebugFunction = setDebugFunction;
-  let getDebugFunction = noop;
+  var getDebugFunction = noop;
   _exports.getDebugFunction = getDebugFunction;
 
-  let deprecateFunc = function () {
+  var deprecateFunc = function deprecateFunc() {
     return arguments[arguments.length - 1];
   };
 
@@ -1247,68 +1526,68 @@ enifed("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   if (true
   /* DEBUG */
   ) {
-      _exports.setDebugFunction = setDebugFunction = function (type, callback) {
-        switch (type) {
-          case 'assert':
-            return _exports.assert = assert = callback;
+    _exports.setDebugFunction = setDebugFunction = function setDebugFunction(type, callback) {
+      switch (type) {
+        case 'assert':
+          return _exports.assert = assert = callback;
 
-          case 'info':
-            return _exports.info = info = callback;
+        case 'info':
+          return _exports.info = info = callback;
 
-          case 'warn':
-            return _exports.warn = warn = callback;
+        case 'warn':
+          return _exports.warn = warn = callback;
 
-          case 'debug':
-            return _exports.debug = debug = callback;
+        case 'debug':
+          return _exports.debug = debug = callback;
 
-          case 'deprecate':
-            return _exports.deprecate = deprecate = callback;
+        case 'deprecate':
+          return _exports.deprecate = deprecate = callback;
 
-          case 'debugSeal':
-            return _exports.debugSeal = debugSeal = callback;
+        case 'debugSeal':
+          return _exports.debugSeal = debugSeal = callback;
 
-          case 'debugFreeze':
-            return _exports.debugFreeze = debugFreeze = callback;
+        case 'debugFreeze':
+          return _exports.debugFreeze = debugFreeze = callback;
 
-          case 'runInDebug':
-            return _exports.runInDebug = runInDebug = callback;
+        case 'runInDebug':
+          return _exports.runInDebug = runInDebug = callback;
 
-          case 'deprecateFunc':
-            return _exports.deprecateFunc = deprecateFunc = callback;
-        }
-      };
+        case 'deprecateFunc':
+          return _exports.deprecateFunc = deprecateFunc = callback;
+      }
+    };
 
-      _exports.getDebugFunction = getDebugFunction = function (type) {
-        switch (type) {
-          case 'assert':
-            return assert;
+    _exports.getDebugFunction = getDebugFunction = function getDebugFunction(type) {
+      switch (type) {
+        case 'assert':
+          return assert;
 
-          case 'info':
-            return info;
+        case 'info':
+          return info;
 
-          case 'warn':
-            return warn;
+        case 'warn':
+          return warn;
 
-          case 'debug':
-            return debug;
+        case 'debug':
+          return debug;
 
-          case 'deprecate':
-            return deprecate;
+        case 'deprecate':
+          return deprecate;
 
-          case 'debugSeal':
-            return debugSeal;
+        case 'debugSeal':
+          return debugSeal;
 
-          case 'debugFreeze':
-            return debugFreeze;
+        case 'debugFreeze':
+          return debugFreeze;
 
-          case 'runInDebug':
-            return runInDebug;
+        case 'runInDebug':
+          return runInDebug;
 
-          case 'deprecateFunc':
-            return deprecateFunc;
-        }
-      };
-    }
+        case 'deprecateFunc':
+          return deprecateFunc;
+      }
+    };
+  }
   /**
   @module @ember/debug
   */
@@ -1317,162 +1596,181 @@ enifed("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   if (true
   /* DEBUG */
   ) {
-      /**
-        Verify that a certain expectation is met, or throw a exception otherwise.
-           This is useful for communicating assumptions in the code to other human
-        readers as well as catching bugs that accidentally violates these
-        expectations.
-           Assertions are removed from production builds, so they can be freely added
-        for documentation and debugging purposes without worries of incuring any
-        performance penalty. However, because of that, they should not be used for
-        checks that could reasonably fail during normal usage. Furthermore, care
-        should be taken to avoid accidentally relying on side-effects produced from
-        evaluating the condition itself, since the code will not run in production.
-           ```javascript
-        import { assert } from '@ember/debug';
-           // Test for truthiness
-        assert('Must pass a string', typeof str === 'string');
-           // Fail unconditionally
-        assert('This code path should never be run');
-        ```
-           @method assert
-        @static
-        @for @ember/debug
-        @param {String} description Describes the expectation. This will become the
-          text of the Error thrown if the assertion fails.
-        @param {Boolean} condition Must be truthy for the assertion to pass. If
-          falsy, an exception will be thrown.
-        @public
-        @since 1.0.0
-      */
-      setDebugFunction('assert', function assert(desc, test) {
-        if (!test) {
-          throw new _error.default(`Assertion Failed: ${desc}`);
-        }
-      });
-      /**
-        Display a debug notice.
-           Calls to this function are removed from production builds, so they can be
-        freely added for documentation and debugging purposes without worries of
-        incuring any performance penalty.
-           ```javascript
-        import { debug } from '@ember/debug';
-           debug('I\'m a debug notice!');
-        ```
-           @method debug
-        @for @ember/debug
-        @static
-        @param {String} message A debug message to display.
-        @public
-      */
+    /**
+      Verify that a certain expectation is met, or throw a exception otherwise.
+         This is useful for communicating assumptions in the code to other human
+      readers as well as catching bugs that accidentally violates these
+      expectations.
+         Assertions are removed from production builds, so they can be freely added
+      for documentation and debugging purposes without worries of incuring any
+      performance penalty. However, because of that, they should not be used for
+      checks that could reasonably fail during normal usage. Furthermore, care
+      should be taken to avoid accidentally relying on side-effects produced from
+      evaluating the condition itself, since the code will not run in production.
+         ```javascript
+      import { assert } from '@ember/debug';
+         // Test for truthiness
+      assert('Must pass a string', typeof str === 'string');
+         // Fail unconditionally
+      assert('This code path should never be run');
+      ```
+         @method assert
+      @static
+      @for @ember/debug
+      @param {String} description Describes the expectation. This will become the
+        text of the Error thrown if the assertion fails.
+      @param {any} condition Must be truthy for the assertion to pass. If
+        falsy, an exception will be thrown.
+      @public
+      @since 1.0.0
+    */
+    setDebugFunction('assert', function assert(desc, test) {
+      if (!test) {
+        throw new _error.default("Assertion Failed: " + desc);
+      }
+    });
+    /**
+      Display a debug notice.
+         Calls to this function are not invoked in production builds.
+         ```javascript
+      import { debug } from '@ember/debug';
+         debug('I\'m a debug notice!');
+      ```
+         @method debug
+      @for @ember/debug
+      @static
+      @param {String} message A debug message to display.
+      @public
+    */
 
-      setDebugFunction('debug', function debug(message) {
-        /* eslint-disable no-console */
-        if (console.debug) {
-          console.debug(`DEBUG: ${message}`);
-        } else {
-          console.log(`DEBUG: ${message}`);
-        }
-        /* eslint-ensable no-console */
+    setDebugFunction('debug', function debug(message) {
+      /* eslint-disable no-console */
+      if (console.debug) {
+        console.debug("DEBUG: " + message);
+      } else {
+        console.log("DEBUG: " + message);
+      }
+      /* eslint-ensable no-console */
 
-      });
-      /**
-        Display an info notice.
-           Calls to this function are removed from production builds, so they can be
-        freely added for documentation and debugging purposes without worries of
-        incuring any performance penalty.
-           @method info
-        @private
-      */
+    });
+    /**
+      Display an info notice.
+         Calls to this function are removed from production builds, so they can be
+      freely added for documentation and debugging purposes without worries of
+      incuring any performance penalty.
+         @method info
+      @private
+    */
 
-      setDebugFunction('info', function info() {
-        console.info(...arguments);
-        /* eslint-disable-line no-console */
-      });
-      /**
-       @module @ember/application
-       @public
-      */
+    setDebugFunction('info', function info() {
+      var _console;
 
-      /**
-        Alias an old, deprecated method with its new counterpart.
-           Display a deprecation warning with the provided message and a stack trace
-        (Chrome and Firefox only) when the assigned method is called.
-           Calls to this function are removed from production builds, so they can be
-        freely added for documentation and debugging purposes without worries of
-        incuring any performance penalty.
-           ```javascript
-        import { deprecateFunc } from '@ember/application/deprecations';
-           Ember.oldMethod = deprecateFunc('Please use the new, updated method', options, Ember.newMethod);
-        ```
-           @method deprecateFunc
-        @static
-        @for @ember/application/deprecations
-        @param {String} message A description of the deprecation.
-        @param {Object} [options] The options object for `deprecate`.
-        @param {Function} func The new function called to replace its deprecated counterpart.
-        @return {Function} A new function that wraps the original function with a deprecation warning
-        @private
-      */
+      (_console = console).info.apply(_console, arguments);
+      /* eslint-disable-line no-console */
 
-      setDebugFunction('deprecateFunc', function deprecateFunc(...args) {
-        if (args.length === 3) {
-          let [message, options, func] = args;
-          return function () {
-            deprecate(message, false, options);
-            return func.apply(this, arguments);
-          };
-        } else {
-          let [message, func] = args;
-          return function () {
-            deprecate(message);
-            return func.apply(this, arguments);
-          };
-        }
-      });
-      /**
-       @module @ember/debug
-       @public
-      */
+    });
+    /**
+     @module @ember/debug
+     @public
+    */
 
-      /**
-        Run a function meant for debugging.
-           Calls to this function are removed from production builds, so they can be
-        freely added for documentation and debugging purposes without worries of
-        incuring any performance penalty.
-           ```javascript
-        import Component from '@ember/component';
-        import { runInDebug } from '@ember/debug';
-           runInDebug(() => {
-          Component.reopen({
-            didInsertElement() {
-              console.log("I'm happy");
-            }
-          });
+    /**
+      Alias an old, deprecated method with its new counterpart.
+         Display a deprecation warning with the provided message and a stack trace
+      (Chrome and Firefox only) when the assigned method is called.
+         Calls to this function are removed from production builds, so they can be
+      freely added for documentation and debugging purposes without worries of
+      incuring any performance penalty.
+         ```javascript
+      import { deprecateFunc } from '@ember/debug';
+         Ember.oldMethod = deprecateFunc('Please use the new, updated method', options, Ember.newMethod);
+      ```
+         @method deprecateFunc
+      @static
+      @for @ember/debug
+      @param {String} message A description of the deprecation.
+      @param {Object} [options] The options object for `deprecate`.
+      @param {Function} func The new function called to replace its deprecated counterpart.
+      @return {Function} A new function that wraps the original function with a deprecation warning
+      @private
+    */
+
+    setDebugFunction('deprecateFunc', function deprecateFunc() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (args.length === 3) {
+        var message = args[0],
+            options = args[1],
+            func = args[2];
+        return function () {
+          deprecate(message, false, options);
+
+          for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            args[_key2] = arguments[_key2];
+          }
+
+          return func.apply(this, args);
+        };
+      } else {
+        var _message = args[0],
+            _func = args[1];
+        return function () {
+          deprecate(_message);
+          return _func.apply(this, arguments);
+        };
+      }
+    });
+    /**
+     @module @ember/debug
+     @public
+    */
+
+    /**
+      Run a function meant for debugging.
+         Calls to this function are removed from production builds, so they can be
+      freely added for documentation and debugging purposes without worries of
+      incuring any performance penalty.
+         ```javascript
+      import Component from '@ember/component';
+      import { runInDebug } from '@ember/debug';
+         runInDebug(() => {
+        Component.reopen({
+          didInsertElement() {
+            console.log("I'm happy");
+          }
         });
-        ```
-           @method runInDebug
-        @for @ember/debug
-        @static
-        @param {Function} func The function to be executed.
-        @since 1.5.0
-        @public
-      */
+      });
+      ```
+         @method runInDebug
+      @for @ember/debug
+      @static
+      @param {Function} func The function to be executed.
+      @since 1.5.0
+      @public
+    */
 
-      setDebugFunction('runInDebug', function runInDebug(func) {
-        func();
-      });
-      setDebugFunction('debugSeal', function debugSeal(obj) {
-        Object.seal(obj);
-      });
-      setDebugFunction('debugFreeze', function debugFreeze(obj) {
+    setDebugFunction('runInDebug', function runInDebug(func) {
+      func();
+    });
+    setDebugFunction('debugSeal', function debugSeal(obj) {
+      Object.seal(obj);
+    });
+    setDebugFunction('debugFreeze', function debugFreeze(obj) {
+      // re-freezing an already frozen object introduces a significant
+      // performance penalty on Chrome (tested through 59).
+      //
+      // See: https://bugs.chromium.org/p/v8/issues/detail?id=6450
+      if (!Object.isFrozen(obj)) {
         Object.freeze(obj);
-      });
-      setDebugFunction('deprecate', _deprecate2.default);
-      setDebugFunction('warn', _warn2.default);
-    }
+      }
+    });
+    setDebugFunction('deprecate', _deprecate2.default);
+    setDebugFunction('warn', _warn2.default);
+  }
 
-  let _warnIfUsingStrippedFeatureFlags;
+  var _warnIfUsingStrippedFeatureFlags;
 
   _exports._warnIfUsingStrippedFeatureFlags = _warnIfUsingStrippedFeatureFlags;
 
@@ -1480,9 +1778,9 @@ enifed("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   /* DEBUG */
   && !(0, _testing.isTesting)()) {
     if (typeof window !== 'undefined' && (_browserEnvironment.isFirefox || _browserEnvironment.isChrome) && window.addEventListener) {
-      window.addEventListener('load', () => {
+      window.addEventListener('load', function () {
         if (document.documentElement && document.documentElement.dataset && !document.documentElement.dataset.emberExtension) {
-          let downloadURL;
+          var downloadURL;
 
           if (_browserEnvironment.isChrome) {
             downloadURL = 'https://chrome.google.com/webstore/detail/ember-inspector/bmdblncegkenkacieihfhpjfppoconhi';
@@ -1490,16 +1788,49 @@ enifed("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
             downloadURL = 'https://addons.mozilla.org/en-US/firefox/addon/ember-inspector/';
           }
 
-          debug(`For more advanced debugging, install the Ember Inspector from ${downloadURL}`);
+          debug("For more advanced debugging, install the Ember Inspector from " + downloadURL);
         }
       }, false);
     }
   }
 });
-enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment", "@ember/debug/index", "@ember/debug/lib/handlers"], function (_exports, _environment, _index, _handlers) {
+define("@ember/debug/lib/capture-render-tree", ["exports", "@glimmer/util"], function (_exports, _util) {
   "use strict";
 
-  _exports.missingOptionsUntilDeprecation = _exports.missingOptionsIdDeprecation = _exports.missingOptionsDeprecation = _exports.registerHandler = _exports.default = void 0;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = captureRenderTree;
+
+  /**
+    @module @ember/debug
+  */
+
+  /**
+    Ember Inspector calls this function to capture the current render tree.
+  
+    In production mode, this requires turning on `ENV._DEBUG_RENDER_TREE`
+    before loading Ember.
+  
+    @private
+    @static
+    @method captureRenderTree
+    @for @ember/debug
+    @param app {ApplicationInstance} An `ApplicationInstance`.
+    @since 3.14.0
+  */
+  function captureRenderTree(app) {
+    var renderer = (0, _util.expect)(app.lookup('renderer:-dom'), "BUG: owner is missing renderer");
+    return renderer.debugRenderTree.capture();
+  }
+});
+define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment", "@ember/debug/index", "@ember/debug/lib/handlers"], function (_exports, _environment, _index, _handlers) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.SINCE_MISSING_DEPRECATIONS = _exports.FOR_MISSING_DEPRECATIONS = _exports.missingOptionsSinceDeprecation = _exports.missingOptionsForDeprecation = _exports.missingOptionsUntilDeprecation = _exports.missingOptionsIdDeprecation = _exports.missingOptionsDeprecation = _exports.registerHandler = _exports.default = void 0;
 
   /**
    @module @ember/debug
@@ -1508,13 +1839,13 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
 
   /**
     Allows for runtime registration of handler functions that override the default deprecation behavior.
-    Deprecations are invoked by calls to [@ember/application/deprecations/deprecate](https://emberjs.com/api/ember/release/classes/@ember%2Fapplication%2Fdeprecations/methods/deprecate?anchor=deprecate).
+    Deprecations are invoked by calls to [@ember/debug/deprecate](/ember/release/classes/@ember%2Fdebug/methods/deprecate?anchor=deprecate).
     The following example demonstrates its usage by registering a handler that throws an error if the
     message contains the word "should", otherwise defers to the default handler.
-
+  
     ```javascript
     import { registerDeprecationHandler } from '@ember/debug';
-
+  
     registerDeprecationHandler((message, options, next) => {
       if (message.indexOf('should') !== -1) {
         throw new Error(`Deprecation message with should: ${message}`);
@@ -1524,9 +1855,9 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
       }
     });
     ```
-
+  
     The handler function takes the following arguments:
-
+  
     <ul>
       <li> <code>message</code> - The message received from the deprecation call.</li>
       <li> <code>options</code> - An object passed in with the deprecation call containing additional information including:</li>
@@ -1536,7 +1867,7 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
         </ul>
       <li> <code>next</code> - A function that calls into the previously registered handler.</li>
     </ul>
-
+  
     @public
     @static
     @method registerDeprecationHandler
@@ -1544,177 +1875,238 @@ enifed("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     @param handler {Function} A function to handle deprecation calls.
     @since 2.1.0
   */
-  let registerHandler = () => {};
+  var registerHandler = function registerHandler() {};
 
   _exports.registerHandler = registerHandler;
-  let missingOptionsDeprecation;
+  var missingOptionsDeprecation;
   _exports.missingOptionsDeprecation = missingOptionsDeprecation;
-  let missingOptionsIdDeprecation;
+  var missingOptionsIdDeprecation;
   _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation;
-  let missingOptionsUntilDeprecation;
+  var missingOptionsUntilDeprecation;
   _exports.missingOptionsUntilDeprecation = missingOptionsUntilDeprecation;
 
-  let deprecate = () => {};
+  var missingOptionsForDeprecation = function missingOptionsForDeprecation() {
+    return '';
+  };
+
+  _exports.missingOptionsForDeprecation = missingOptionsForDeprecation;
+
+  var missingOptionsSinceDeprecation = function missingOptionsSinceDeprecation() {
+    return '';
+  };
+
+  _exports.missingOptionsSinceDeprecation = missingOptionsSinceDeprecation;
+
+  var deprecate = function deprecate() {};
+
+  var FOR_MISSING_DEPRECATIONS = new Set();
+  _exports.FOR_MISSING_DEPRECATIONS = FOR_MISSING_DEPRECATIONS;
+  var SINCE_MISSING_DEPRECATIONS = new Set();
+  _exports.SINCE_MISSING_DEPRECATIONS = SINCE_MISSING_DEPRECATIONS;
 
   if (true
   /* DEBUG */
   ) {
-      _exports.registerHandler = registerHandler = function registerHandler(handler) {
-        (0, _handlers.registerHandler)('deprecate', handler);
-      };
+    _exports.registerHandler = registerHandler = function registerHandler(handler) {
+      (0, _handlers.registerHandler)('deprecate', handler);
+    };
 
-      let formatMessage = function formatMessage(_message, options) {
-        let message = _message;
+    var formatMessage = function formatMessage(_message, options) {
+      var message = _message;
 
-        if (options && options.id) {
-          message = message + ` [deprecation id: ${options.id}]`;
-        }
-
-        if (options && options.url) {
-          message += ` See ${options.url} for more details.`;
-        }
-
-        return message;
-      };
-
-      registerHandler(function logDeprecationToConsole(message, options) {
-        let updatedMessage = formatMessage(message, options);
-        console.warn(`DEPRECATION: ${updatedMessage}`); // eslint-disable-line no-console
-      });
-      let captureErrorForStack;
-
-      if (new Error().stack) {
-        captureErrorForStack = () => new Error();
-      } else {
-        captureErrorForStack = () => {
-          try {
-            __fail__.fail();
-          } catch (e) {
-            return e;
-          }
-        };
+      if (options && options.id) {
+        message = message + (" [deprecation id: " + options.id + "]");
       }
 
-      registerHandler(function logDeprecationStackTrace(message, options, next) {
-        if (_environment.ENV.LOG_STACKTRACE_ON_DEPRECATION) {
-          let stackStr = '';
-          let error = captureErrorForStack();
-          let stack;
+      if (options && options.url) {
+        message += " See " + options.url + " for more details.";
+      }
 
-          if (error.stack) {
-            if (error['arguments']) {
-              // Chrome
-              stack = error.stack.replace(/^\s+at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}($1)').split('\n');
-              stack.shift();
-            } else {
-              // Firefox
-              stack = error.stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^\(/gm, '{anonymous}(').split('\n');
-            }
+      return message;
+    };
 
-            stackStr = `\n    ${stack.slice(2).join('\n    ')}`;
-          }
+    registerHandler(function logDeprecationToConsole(message, options) {
+      var updatedMessage = formatMessage(message, options);
+      console.warn("DEPRECATION: " + updatedMessage); // eslint-disable-line no-console
+    });
+    var captureErrorForStack;
 
-          let updatedMessage = formatMessage(message, options);
-          console.warn(`DEPRECATION: ${updatedMessage}${stackStr}`); // eslint-disable-line no-console
-        } else {
-          next(message, options);
+    if (new Error().stack) {
+      captureErrorForStack = function captureErrorForStack() {
+        return new Error();
+      };
+    } else {
+      captureErrorForStack = function captureErrorForStack() {
+        try {
+          __fail__.fail();
+        } catch (e) {
+          return e;
         }
-      });
-      registerHandler(function raiseOnDeprecation(message, options, next) {
-        if (_environment.ENV.RAISE_ON_DEPRECATION) {
-          let updatedMessage = formatMessage(message);
-          throw new Error(updatedMessage);
-        } else {
-          next(message, options);
-        }
-      });
-      _exports.missingOptionsDeprecation = missingOptionsDeprecation = 'When calling `deprecate` you ' + 'must provide an `options` hash as the third parameter.  ' + '`options` should include `id` and `until` properties.';
-      _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation = 'When calling `deprecate` you must provide `id` in options.';
-      _exports.missingOptionsUntilDeprecation = missingOptionsUntilDeprecation = 'When calling `deprecate` you must provide `until` in options.';
-      /**
-       @module @ember/application
-       @public
-       */
-
-      /**
-        Display a deprecation warning with the provided message and a stack trace
-        (Chrome and Firefox only).
-           * In a production build, this method is defined as an empty function (NOP).
-        Uses of this method in Ember itself are stripped from the ember.prod.js build.
-           @method deprecate
-        @for @ember/application/deprecations
-        @param {String} message A description of the deprecation.
-        @param {Boolean} test A boolean. If falsy, the deprecation will be displayed.
-        @param {Object} options
-        @param {String} options.id A unique id for this deprecation. The id can be
-          used by Ember debugging tools to change the behavior (raise, log or silence)
-          for that specific deprecation. The id should be namespaced by dots, e.g.
-          "view.helper.select".
-        @param {string} options.until The version of Ember when this deprecation
-          warning will be removed.
-        @param {String} [options.url] An optional url to the transition guide on the
-          emberjs.com website.
-        @static
-        @public
-        @since 1.0.0
-      */
-
-      deprecate = function deprecate(message, test, options) {
-        (0, _index.assert)(missingOptionsDeprecation, Boolean(options && (options.id || options.until)));
-        (0, _index.assert)(missingOptionsIdDeprecation, Boolean(options.id));
-        (0, _index.assert)(missingOptionsUntilDeprecation, Boolean(options.until));
-        (0, _handlers.invoke)('deprecate', message, test, options);
       };
     }
+
+    registerHandler(function logDeprecationStackTrace(message, options, next) {
+      if (_environment.ENV.LOG_STACKTRACE_ON_DEPRECATION) {
+        var stackStr = '';
+        var error = captureErrorForStack();
+        var stack;
+
+        if (error.stack) {
+          if (error['arguments']) {
+            // Chrome
+            stack = error.stack.replace(/^\s+at\s+/gm, '').replace(/^([^(]+?)([\n$])/gm, '{anonymous}($1)$2').replace(/^Object.<anonymous>\s*\(([^)]+)\)/gm, '{anonymous}($1)').split('\n');
+            stack.shift();
+          } else {
+            // Firefox
+            stack = error.stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^\(/gm, '{anonymous}(').split('\n');
+          }
+
+          stackStr = "\n    " + stack.slice(2).join('\n    ');
+        }
+
+        var updatedMessage = formatMessage(message, options);
+        console.warn("DEPRECATION: " + updatedMessage + stackStr); // eslint-disable-line no-console
+      } else {
+        next(message, options);
+      }
+    });
+    registerHandler(function raiseOnDeprecation(message, options, next) {
+      if (_environment.ENV.RAISE_ON_DEPRECATION) {
+        var updatedMessage = formatMessage(message);
+        throw new Error(updatedMessage);
+      } else {
+        next(message, options);
+      }
+    });
+    _exports.missingOptionsDeprecation = missingOptionsDeprecation = 'When calling `deprecate` you ' + 'must provide an `options` hash as the third parameter.  ' + '`options` should include `id` and `until` properties.';
+    _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation = 'When calling `deprecate` you must provide `id` in options.';
+    _exports.missingOptionsUntilDeprecation = missingOptionsUntilDeprecation = 'When calling `deprecate` you must provide `until` in options.';
+
+    _exports.missingOptionsForDeprecation = missingOptionsForDeprecation = function missingOptionsForDeprecation(id) {
+      return "When calling `deprecate` you must provide `for` in options. Missing options.for in \"" + id + "\" deprecation";
+    };
+
+    _exports.missingOptionsSinceDeprecation = missingOptionsSinceDeprecation = function missingOptionsSinceDeprecation(id) {
+      return "When calling `deprecate` you must provide `since` in options. Missing options.since in \"" + id + "\" deprecation";
+    };
+    /**
+     @module @ember/debug
+     @public
+     */
+
+    /**
+      Display a deprecation warning with the provided message and a stack trace
+      (Chrome and Firefox only).
+         * In a production build, this method is defined as an empty function (NOP).
+      Uses of this method in Ember itself are stripped from the ember.prod.js build.
+         @method deprecate
+      @for @ember/debug
+      @param {String} message A description of the deprecation.
+      @param {Boolean} test A boolean. If falsy, the deprecation will be displayed.
+      @param {Object} options
+      @param {String} options.id A unique id for this deprecation. The id can be
+        used by Ember debugging tools to change the behavior (raise, log or silence)
+        for that specific deprecation. The id should be namespaced by dots, e.g.
+        "view.helper.select".
+      @param {string} options.until The version of Ember when this deprecation
+        warning will be removed.
+      @param {String} options.for A namespace for the deprecation, usually the package name
+      @param {Object} options.since Describes when the deprecation became available and enabled.
+      @param {String} [options.url] An optional url to the transition guide on the
+            emberjs.com website.
+      @static
+      @public
+      @since 1.0.0
+    */
+
+
+    deprecate = function deprecate(message, test, options) {
+      (0, _index.assert)(missingOptionsDeprecation, Boolean(options && (options.id || options.until)));
+      (0, _index.assert)(missingOptionsIdDeprecation, Boolean(options.id));
+      (0, _index.assert)(missingOptionsUntilDeprecation, Boolean(options.until));
+
+      if (!options.for && !FOR_MISSING_DEPRECATIONS.has(options.id)) {
+        FOR_MISSING_DEPRECATIONS.add(options.id);
+        deprecate(missingOptionsForDeprecation(options.id), Boolean(options.for), {
+          id: 'ember-source.deprecation-without-for',
+          until: '4.0.0',
+          for: 'ember-source',
+          since: {
+            enabled: '3.24.0'
+          }
+        });
+      }
+
+      if (!options.since && !SINCE_MISSING_DEPRECATIONS.has(options.id)) {
+        SINCE_MISSING_DEPRECATIONS.add(options.id);
+        deprecate(missingOptionsSinceDeprecation(options.id), Boolean(options.since), {
+          id: 'ember-source.deprecation-without-since',
+          until: '4.0.0',
+          for: 'ember-source',
+          since: {
+            enabled: '3.24.0'
+          }
+        });
+      }
+
+      (0, _handlers.invoke)('deprecate', message, test, options);
+    };
+  }
 
   var _default = deprecate;
   _exports.default = _default;
 });
-enifed("@ember/debug/lib/handlers", ["exports"], function (_exports) {
+define("@ember/debug/lib/handlers", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.invoke = _exports.registerHandler = _exports.HANDLERS = void 0;
-  let HANDLERS = {};
+  var HANDLERS = {};
   _exports.HANDLERS = HANDLERS;
 
-  let registerHandler = () => {};
+  var registerHandler = function registerHandler() {};
 
   _exports.registerHandler = registerHandler;
 
-  let invoke = () => {};
+  var invoke = function invoke() {};
 
   _exports.invoke = invoke;
 
   if (true
   /* DEBUG */
   ) {
-      _exports.registerHandler = registerHandler = function registerHandler(type, callback) {
-        let nextHandler = HANDLERS[type] || (() => {});
+    _exports.registerHandler = registerHandler = function registerHandler(type, callback) {
+      var nextHandler = HANDLERS[type] || function () {};
 
-        HANDLERS[type] = (message, options) => {
-          callback(message, options, nextHandler);
-        };
+      HANDLERS[type] = function (message, options) {
+        callback(message, options, nextHandler);
       };
+    };
 
-      _exports.invoke = invoke = function invoke(type, message, test, options) {
-        if (test) {
-          return;
-        }
+    _exports.invoke = invoke = function invoke(type, message, test, options) {
+      if (test) {
+        return;
+      }
 
-        let handlerForType = HANDLERS[type];
+      var handlerForType = HANDLERS[type];
 
-        if (handlerForType) {
-          handlerForType(message, options);
-        }
-      };
-    }
+      if (handlerForType) {
+        handlerForType(message, options);
+      }
+    };
+  }
 });
-enifed("@ember/debug/lib/testing", ["exports"], function (_exports) {
+define("@ember/debug/lib/testing", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.isTesting = isTesting;
   _exports.setTesting = setTesting;
-  let testing = false;
+  var testing = false;
 
   function isTesting() {
     return testing;
@@ -1724,20 +2116,23 @@ enifed("@ember/debug/lib/testing", ["exports"], function (_exports) {
     testing = Boolean(value);
   }
 });
-enifed("@ember/debug/lib/warn", ["exports", "@ember/debug/index", "@ember/debug/lib/handlers"], function (_exports, _index, _handlers) {
+define("@ember/debug/lib/warn", ["exports", "@ember/debug/index", "@ember/debug/lib/handlers"], function (_exports, _index, _handlers) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.missingOptionsDeprecation = _exports.missingOptionsIdDeprecation = _exports.registerHandler = _exports.default = void 0;
 
-  let registerHandler = () => {};
+  var registerHandler = function registerHandler() {};
 
   _exports.registerHandler = registerHandler;
 
-  let warn = () => {};
+  var warn = function warn() {};
 
-  let missingOptionsDeprecation;
+  var missingOptionsDeprecation;
   _exports.missingOptionsDeprecation = missingOptionsDeprecation;
-  let missingOptionsIdDeprecation;
+  var missingOptionsIdDeprecation;
   /**
   @module @ember/debug
   */
@@ -1747,112 +2142,130 @@ enifed("@ember/debug/lib/warn", ["exports", "@ember/debug/index", "@ember/debug/
   if (true
   /* DEBUG */
   ) {
-      /**
-        Allows for runtime registration of handler functions that override the default warning behavior.
-        Warnings are invoked by calls made to [@ember/debug/warn](https://emberjs.com/api/ember/release/classes/@ember%2Fdebug/methods/warn?anchor=warn).
-        The following example demonstrates its usage by registering a handler that does nothing overriding Ember's
-        default warning behavior.
-           ```javascript
-        import { registerWarnHandler } from '@ember/debug';
-           // next is not called, so no warnings get the default behavior
-        registerWarnHandler(() => {});
-        ```
-           The handler function takes the following arguments:
-           <ul>
-          <li> <code>message</code> - The message received from the warn call. </li>
-          <li> <code>options</code> - An object passed in with the warn call containing additional information including:</li>
-            <ul>
-              <li> <code>id</code> - An id of the warning in the form of <code>package-name.specific-warning</code>.</li>
-            </ul>
-          <li> <code>next</code> - A function that calls into the previously registered handler.</li>
-        </ul>
-           @public
-        @static
-        @method registerWarnHandler
-        @for @ember/debug
-        @param handler {Function} A function to handle warnings.
-        @since 2.1.0
-      */
-      _exports.registerHandler = registerHandler = function registerHandler(handler) {
-        (0, _handlers.registerHandler)('warn', handler);
-      };
+    /**
+      Allows for runtime registration of handler functions that override the default warning behavior.
+      Warnings are invoked by calls made to [@ember/debug/warn](/ember/release/classes/@ember%2Fdebug/methods/warn?anchor=warn).
+      The following example demonstrates its usage by registering a handler that does nothing overriding Ember's
+      default warning behavior.
+         ```javascript
+      import { registerWarnHandler } from '@ember/debug';
+         // next is not called, so no warnings get the default behavior
+      registerWarnHandler(() => {});
+      ```
+         The handler function takes the following arguments:
+         <ul>
+        <li> <code>message</code> - The message received from the warn call. </li>
+        <li> <code>options</code> - An object passed in with the warn call containing additional information including:</li>
+          <ul>
+            <li> <code>id</code> - An id of the warning in the form of <code>package-name.specific-warning</code>.</li>
+          </ul>
+        <li> <code>next</code> - A function that calls into the previously registered handler.</li>
+      </ul>
+         @public
+      @static
+      @method registerWarnHandler
+      @for @ember/debug
+      @param handler {Function} A function to handle warnings.
+      @since 2.1.0
+    */
+    _exports.registerHandler = registerHandler = function registerHandler(handler) {
+      (0, _handlers.registerHandler)('warn', handler);
+    };
 
-      registerHandler(function logWarning(message) {
-        /* eslint-disable no-console */
-        console.warn(`WARNING: ${message}`);
-        /* eslint-enable no-console */
+    registerHandler(function logWarning(message) {
+      /* eslint-disable no-console */
+      console.warn("WARNING: " + message);
+      /* eslint-enable no-console */
+    });
+    _exports.missingOptionsDeprecation = missingOptionsDeprecation = 'When calling `warn` you ' + 'must provide an `options` hash as the third parameter.  ' + '`options` should include an `id` property.';
+    _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation = 'When calling `warn` you must provide `id` in options.';
+    /**
+      Display a warning with the provided message.
+         * In a production build, this method is defined as an empty function (NOP).
+      Uses of this method in Ember itself are stripped from the ember.prod.js build.
+         ```javascript
+      import { warn } from '@ember/debug';
+      import tomsterCount from './tomster-counter'; // a module in my project
+         // Log a warning if we have more than 3 tomsters
+      warn('Too many tomsters!', tomsterCount <= 3, {
+        id: 'ember-debug.too-many-tomsters'
       });
-      _exports.missingOptionsDeprecation = missingOptionsDeprecation = 'When calling `warn` you ' + 'must provide an `options` hash as the third parameter.  ' + '`options` should include an `id` property.';
-      _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation = 'When calling `warn` you must provide `id` in options.';
-      /**
-        Display a warning with the provided message.
-           * In a production build, this method is defined as an empty function (NOP).
-        Uses of this method in Ember itself are stripped from the ember.prod.js build.
-           ```javascript
-        import { warn } from '@ember/debug';
-        import tomsterCount from './tomster-counter'; // a module in my project
-           // Log a warning if we have more than 3 tomsters
-        warn('Too many tomsters!', tomsterCount <= 3, {
-          id: 'ember-debug.too-many-tomsters'
-        });
-        ```
-           @method warn
-        @for @ember/debug
-        @static
-        @param {String} message A warning to display.
-        @param {Boolean} test An optional boolean. If falsy, the warning
-          will be displayed.
-        @param {Object} options An object that can be used to pass a unique
-          `id` for this warning.  The `id` can be used by Ember debugging tools
-          to change the behavior (raise, log, or silence) for that specific warning.
-          The `id` should be namespaced by dots, e.g. "ember-debug.feature-flag-with-features-stripped"
-        @public
-        @since 1.0.0
-      */
+      ```
+         @method warn
+      @for @ember/debug
+      @static
+      @param {String} message A warning to display.
+      @param {Boolean} test An optional boolean. If falsy, the warning
+        will be displayed.
+      @param {Object} options An object that can be used to pass a unique
+        `id` for this warning.  The `id` can be used by Ember debugging tools
+        to change the behavior (raise, log, or silence) for that specific warning.
+        The `id` should be namespaced by dots, e.g. "ember-debug.feature-flag-with-features-stripped"
+      @public
+      @since 1.0.0
+    */
 
-      warn = function warn(message, test, options) {
-        if (arguments.length === 2 && typeof test === 'object') {
-          options = test;
-          test = false;
-        }
+    warn = function warn(message, test, options) {
+      if (arguments.length === 2 && typeof test === 'object') {
+        options = test;
+        test = false;
+      }
 
-        (0, _index.assert)(missingOptionsDeprecation, Boolean(options));
-        (0, _index.assert)(missingOptionsIdDeprecation, Boolean(options && options.id));
-        (0, _handlers.invoke)('warn', message, test, options);
-      };
-    }
+      (0, _index.assert)(missingOptionsDeprecation, Boolean(options));
+      (0, _index.assert)(missingOptionsIdDeprecation, Boolean(options && options.id));
+      (0, _handlers.invoke)('warn', message, test, options);
+    };
+  }
 
   var _default = warn;
   _exports.default = _default;
 });
-enifed("@ember/deprecated-features/index", ["exports"], function (_exports) {
+define("@ember/deprecated-features/index", ["exports"], function (_exports) {
   "use strict";
 
-  _exports.COMPONENT_MANAGER_STRING_LOOKUP = _exports.TRANSITION_STATE = _exports.ROUTER_EVENTS = _exports.HANDLER_INFOS = _exports.MERGE = _exports.LOGGER = _exports.RUN_SYNC = _exports.EMBER_EXTEND_PROTOTYPES = _exports.SEND_ACTION = void 0;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.GLOBALS_RESOLVER = _exports.PARTIALS = _exports.EMBER_COMPONENT_IS_VISIBLE = _exports.MOUSE_ENTER_LEAVE_MOVE_EVENTS = _exports.FUNCTION_PROTOTYPE_EXTENSIONS = _exports.APP_CTRL_ROUTER_PROPS = _exports.ALIAS_METHOD = _exports.JQUERY_INTEGRATION = _exports.COMPONENT_MANAGER_STRING_LOOKUP = _exports.ROUTER_EVENTS = _exports.MERGE = _exports.LOGGER = _exports.EMBER_EXTEND_PROTOTYPES = _exports.SEND_ACTION = void 0;
 
   /* eslint-disable no-implicit-coercion */
-  const SEND_ACTION = !!'3.4.0';
+  // These versions should be the version that the deprecation was _introduced_,
+  // not the version that the feature will be removed.
+  var SEND_ACTION = !!'3.4.0';
   _exports.SEND_ACTION = SEND_ACTION;
-  const EMBER_EXTEND_PROTOTYPES = !!'3.2.0-beta.5';
+  var EMBER_EXTEND_PROTOTYPES = !!'3.2.0-beta.5';
   _exports.EMBER_EXTEND_PROTOTYPES = EMBER_EXTEND_PROTOTYPES;
-  const RUN_SYNC = !!'3.0.0-beta.4';
-  _exports.RUN_SYNC = RUN_SYNC;
-  const LOGGER = !!'3.2.0-beta.1';
+  var LOGGER = !!'3.2.0-beta.1';
   _exports.LOGGER = LOGGER;
-  const MERGE = !!'3.6.0-beta.1';
+  var MERGE = !!'3.6.0-beta.1';
   _exports.MERGE = MERGE;
-  const HANDLER_INFOS = !!'3.9.0';
-  _exports.HANDLER_INFOS = HANDLER_INFOS;
-  const ROUTER_EVENTS = !!'3.9.0';
+  var ROUTER_EVENTS = !!'4.0.0';
   _exports.ROUTER_EVENTS = ROUTER_EVENTS;
-  const TRANSITION_STATE = !!'3.9.0';
-  _exports.TRANSITION_STATE = TRANSITION_STATE;
-  const COMPONENT_MANAGER_STRING_LOOKUP = !!'4.0.0';
+  var COMPONENT_MANAGER_STRING_LOOKUP = !!'3.8.0';
   _exports.COMPONENT_MANAGER_STRING_LOOKUP = COMPONENT_MANAGER_STRING_LOOKUP;
+  var JQUERY_INTEGRATION = !!'3.9.0';
+  _exports.JQUERY_INTEGRATION = JQUERY_INTEGRATION;
+  var ALIAS_METHOD = !!'3.9.0';
+  _exports.ALIAS_METHOD = ALIAS_METHOD;
+  var APP_CTRL_ROUTER_PROPS = !!'3.10.0-beta.1';
+  _exports.APP_CTRL_ROUTER_PROPS = APP_CTRL_ROUTER_PROPS;
+  var FUNCTION_PROTOTYPE_EXTENSIONS = !!'3.11.0-beta.1';
+  _exports.FUNCTION_PROTOTYPE_EXTENSIONS = FUNCTION_PROTOTYPE_EXTENSIONS;
+  var MOUSE_ENTER_LEAVE_MOVE_EVENTS = !!'3.13.0-beta.1';
+  _exports.MOUSE_ENTER_LEAVE_MOVE_EVENTS = MOUSE_ENTER_LEAVE_MOVE_EVENTS;
+  var EMBER_COMPONENT_IS_VISIBLE = !!'3.15.0-beta.1';
+  _exports.EMBER_COMPONENT_IS_VISIBLE = EMBER_COMPONENT_IS_VISIBLE;
+  var PARTIALS = !!'3.15.0-beta.1';
+  _exports.PARTIALS = PARTIALS;
+  var GLOBALS_RESOLVER = !!'3.16.0-beta.1';
+  _exports.GLOBALS_RESOLVER = GLOBALS_RESOLVER;
 });
-enifed("@ember/error/index", ["exports"], function (_exports) {
+define("@ember/error/index", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = void 0;
 
   /**
@@ -1861,7 +2274,7 @@ enifed("@ember/error/index", ["exports"], function (_exports) {
 
   /**
     The JavaScript Error object used by Ember.assert.
-
+  
     @class Error
     @namespace Ember
     @extends Error
@@ -1871,35 +2284,35 @@ enifed("@ember/error/index", ["exports"], function (_exports) {
   var _default = Error;
   _exports.default = _default;
 });
-enifed("@ember/polyfills/index", ["exports", "@ember/deprecated-features", "@ember/polyfills/lib/merge", "@ember/polyfills/lib/assign", "@ember/polyfills/lib/weak_set"], function (_exports, _deprecatedFeatures, _merge, _assign, _weak_set) {
+define("@ember/polyfills/index", ["exports", "@ember/deprecated-features", "@ember/polyfills/lib/merge", "@ember/polyfills/lib/assign"], function (_exports, _deprecatedFeatures, _merge, _assign) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   Object.defineProperty(_exports, "assign", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _assign.default;
     }
   });
   Object.defineProperty(_exports, "assignPolyfill", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _assign.assign;
     }
   });
-  Object.defineProperty(_exports, "_WeakSet", {
-    enumerable: true,
-    get: function () {
-      return _weak_set.default;
-    }
-  });
   _exports.merge = void 0;
-  let merge = _deprecatedFeatures.MERGE ? _merge.default : undefined; // Export `assignPolyfill` for testing
+  var merge = _deprecatedFeatures.MERGE ? _merge.default : undefined; // Export `assignPolyfill` for testing
 
   _exports.merge = merge;
 });
-enifed("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
+define("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.assign = assign;
   _exports.default = void 0;
 
@@ -1909,17 +2322,17 @@ enifed("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
 
   /**
     Copy properties from a source object to a target object. Source arguments remain unchanged.
-
+  
     ```javascript
     import { assign } from '@ember/polyfills';
-
+  
     var a = { first: 'Yehuda' };
     var b = { last: 'Katz' };
     var c = { company: 'Other Company' };
     var d = { company: 'Tilde Inc.' };
     assign(a, b, c, d); // a === { first: 'Yehuda', last: 'Katz', company: 'Tilde Inc.' };
     ```
-
+  
     @method assign
     @for @ember/polyfills
     @param {Object} target The object to assign into
@@ -1929,17 +2342,17 @@ enifed("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
     @static
   */
   function assign(target) {
-    for (let i = 1; i < arguments.length; i++) {
-      let arg = arguments[i];
+    for (var i = 1; i < arguments.length; i++) {
+      var arg = arguments[i];
 
       if (!arg) {
         continue;
       }
 
-      let updates = Object.keys(arg);
+      var updates = Object.keys(arg);
 
-      for (let i = 0; i < updates.length; i++) {
-        let prop = updates[i];
+      for (var _i = 0; _i < updates.length; _i++) {
+        var prop = updates[_i];
         target[prop] = arg[prop];
       }
     }
@@ -1951,31 +2364,32 @@ enifed("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
   // https://www.npmjs.com/package/babel-plugin-transform-object-assign
 
 
-  const {
-    assign: _assign
-  } = Object;
+  var _assign = Object.assign;
 
   var _default = _assign || assign;
 
   _exports.default = _default;
 });
-enifed("@ember/polyfills/lib/merge", ["exports", "@ember/debug"], function (_exports, _debug) {
+define("@ember/polyfills/lib/merge", ["exports", "@ember/debug"], function (_exports, _debug) {
   "use strict";
 
-  _exports.default = merge;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
 
   /**
     Merge the contents of two objects together into the first object.
-
+  
     ```javascript
     import { merge } from '@ember/polyfills';
-
+  
     merge({ first: 'Tom' }, { last: 'Dale' }); // { first: 'Tom', last: 'Dale' }
     var a = { first: 'Yehuda' };
     var b = { last: 'Katz' };
     merge(a, b); // a == { first: 'Yehuda', last: 'Katz' }, b == { last: 'Katz' }
     ```
-
+  
     @method merge
     @static
     @for @ember/polyfills
@@ -1986,782 +2400,2054 @@ enifed("@ember/polyfills/lib/merge", ["exports", "@ember/debug"], function (_exp
     @public
   */
   function merge(original, updates) {
-    true && !false && (0, _debug.deprecate)('Use of `merge` has been deprecated. Please use `assign` instead.', false, {
+    (true && !(false) && (0, _debug.deprecate)('Use of `merge` has been deprecated. Please use `assign` instead.', false, {
       id: 'ember-polyfills.deprecate-merge',
       until: '4.0.0',
-      url: 'https://emberjs.com/deprecations/v3.x/#toc_ember-polyfills-deprecate-merge'
-    });
+      url: 'https://emberjs.com/deprecations/v3.x/#toc_ember-polyfills-deprecate-merge',
+      for: 'ember-source',
+      since: {
+        enabled: '3.6.0-beta.1'
+      }
+    }));
 
     if (updates === null || typeof updates !== 'object') {
       return original;
     }
 
-    let props = Object.keys(updates);
-    let prop;
+    var props = Object.keys(updates);
+    var prop;
 
-    for (let i = 0; i < props.length; i++) {
+    for (var i = 0; i < props.length; i++) {
       prop = props[i];
       original[prop] = updates[prop];
     }
 
     return original;
   }
-});
-enifed("@ember/polyfills/lib/weak_set", ["exports"], function (_exports) {
-  "use strict";
 
-  _exports.default = void 0;
-
-  /* globals WeakSet */
-  var _default = typeof WeakSet === 'function' ? WeakSet : class WeakSetPolyFill {
-    constructor() {
-      this._map = new WeakMap();
-    }
-
-    add(val) {
-      this._map.set(val, true);
-
-      return this;
-    }
-
-    delete(val) {
-      return this._map.delete(val);
-    }
-
-    has(val) {
-      return this._map.has(val);
-    }
-
-  };
-
+  var _default = merge;
   _exports.default = _default;
 });
-enifed("@glimmer/compiler", ["exports", "node-module", "@glimmer/util", "@glimmer/wire-format", "@glimmer/syntax"], function (_exports, _nodeModule, _util, _wireFormat, _syntax) {
+define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/syntax", "@glimmer/util"], function (_exports, _emberBabel, _nodeModule, _syntax, _util) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.precompile = precompile;
-  _exports.TemplateVisitor = _exports.TemplateCompiler = _exports.defaultId = void 0;
+  _exports.precompileJSON = precompileJSON;
+  _exports.buildStatement = buildStatement;
+  _exports.buildStatements = buildStatements;
+  _exports.s = s;
+  _exports.c = c;
+  _exports.unicode = unicode;
+  _exports.WireFormatDebugger = _exports.NEWLINE = _exports.ProgramSymbols = _exports.defaultId = void 0;
 
-  class SymbolTable {
-    static top() {
-      return new ProgramSymbolTable();
+  var _CurriedTypeToReadabl;
+
+  var Template = /*#__PURE__*/function (_node$fields) {
+    (0, _emberBabel.inheritsLoose)(Template, _node$fields);
+
+    function Template() {
+      return _node$fields.apply(this, arguments) || this;
     }
 
-    child(locals) {
-      let symbols = locals.map(name => this.allocate(name));
-      return new BlockSymbolTable(this, locals, symbols);
+    return Template;
+  }((0, _syntax.node)('Template').fields());
+
+  var InElement = /*#__PURE__*/function (_node$fields2) {
+    (0, _emberBabel.inheritsLoose)(InElement, _node$fields2);
+
+    function InElement() {
+      return _node$fields2.apply(this, arguments) || this;
     }
 
-  }
+    return InElement;
+  }((0, _syntax.node)('InElement').fields());
 
-  class ProgramSymbolTable extends SymbolTable {
-    constructor() {
-      super(...arguments);
-      this.symbols = [];
-      this.size = 1;
-      this.named = (0, _util.dict)();
-      this.blocks = (0, _util.dict)();
+  var Not = /*#__PURE__*/function (_node$fields3) {
+    (0, _emberBabel.inheritsLoose)(Not, _node$fields3);
+
+    function Not() {
+      return _node$fields3.apply(this, arguments) || this;
     }
 
-    has(_name) {
-      return false;
+    return Not;
+  }((0, _syntax.node)('Not').fields());
+
+  var If = /*#__PURE__*/function (_node$fields4) {
+    (0, _emberBabel.inheritsLoose)(If, _node$fields4);
+
+    function If() {
+      return _node$fields4.apply(this, arguments) || this;
     }
 
-    get(_name) {
-      throw (0, _util.unreachable)();
+    return If;
+  }((0, _syntax.node)('If').fields());
+
+  var IfInline = /*#__PURE__*/function (_node$fields5) {
+    (0, _emberBabel.inheritsLoose)(IfInline, _node$fields5);
+
+    function IfInline() {
+      return _node$fields5.apply(this, arguments) || this;
     }
 
-    getLocalsMap() {
-      return {};
+    return IfInline;
+  }((0, _syntax.node)('IfInline').fields());
+
+  var Each = /*#__PURE__*/function (_node$fields6) {
+    (0, _emberBabel.inheritsLoose)(Each, _node$fields6);
+
+    function Each() {
+      return _node$fields6.apply(this, arguments) || this;
     }
 
-    getEvalInfo() {
-      return [];
+    return Each;
+  }((0, _syntax.node)('Each').fields());
+
+  var With = /*#__PURE__*/function (_node$fields7) {
+    (0, _emberBabel.inheritsLoose)(With, _node$fields7);
+
+    function With() {
+      return _node$fields7.apply(this, arguments) || this;
     }
 
-    allocateNamed(name) {
-      let named = this.named[name];
+    return With;
+  }((0, _syntax.node)('With').fields());
 
-      if (!named) {
-        named = this.named[name] = this.allocate(name);
+  var Let = /*#__PURE__*/function (_node$fields8) {
+    (0, _emberBabel.inheritsLoose)(Let, _node$fields8);
+
+    function Let() {
+      return _node$fields8.apply(this, arguments) || this;
+    }
+
+    return Let;
+  }((0, _syntax.node)('Let').fields());
+
+  var WithDynamicVars = /*#__PURE__*/function (_node$fields9) {
+    (0, _emberBabel.inheritsLoose)(WithDynamicVars, _node$fields9);
+
+    function WithDynamicVars() {
+      return _node$fields9.apply(this, arguments) || this;
+    }
+
+    return WithDynamicVars;
+  }((0, _syntax.node)('WithDynamicVars').fields());
+
+  var GetDynamicVar = /*#__PURE__*/function (_node$fields10) {
+    (0, _emberBabel.inheritsLoose)(GetDynamicVar, _node$fields10);
+
+    function GetDynamicVar() {
+      return _node$fields10.apply(this, arguments) || this;
+    }
+
+    return GetDynamicVar;
+  }((0, _syntax.node)('GetDynamicVar').fields());
+
+  var Log = /*#__PURE__*/function (_node$fields11) {
+    (0, _emberBabel.inheritsLoose)(Log, _node$fields11);
+
+    function Log() {
+      return _node$fields11.apply(this, arguments) || this;
+    }
+
+    return Log;
+  }((0, _syntax.node)('Log').fields());
+
+  var InvokeComponent = /*#__PURE__*/function (_node$fields12) {
+    (0, _emberBabel.inheritsLoose)(InvokeComponent, _node$fields12);
+
+    function InvokeComponent() {
+      return _node$fields12.apply(this, arguments) || this;
+    }
+
+    return InvokeComponent;
+  }((0, _syntax.node)('InvokeComponent').fields());
+
+  var _NamedBlocks = /*#__PURE__*/function (_node$fields13) {
+    (0, _emberBabel.inheritsLoose)(NamedBlocks, _node$fields13);
+
+    function NamedBlocks() {
+      return _node$fields13.apply(this, arguments) || this;
+    }
+
+    return NamedBlocks;
+  }((0, _syntax.node)('NamedBlocks').fields());
+
+  var _NamedBlock = /*#__PURE__*/function (_node$fields14) {
+    (0, _emberBabel.inheritsLoose)(NamedBlock, _node$fields14);
+
+    function NamedBlock() {
+      return _node$fields14.apply(this, arguments) || this;
+    }
+
+    return NamedBlock;
+  }((0, _syntax.node)('NamedBlock').fields());
+
+  var EndBlock = /*#__PURE__*/function (_node$fields15) {
+    (0, _emberBabel.inheritsLoose)(EndBlock, _node$fields15);
+
+    function EndBlock() {
+      return _node$fields15.apply(this, arguments) || this;
+    }
+
+    return EndBlock;
+  }((0, _syntax.node)('EndBlock').fields());
+
+  var AppendTrustedHTML = /*#__PURE__*/function (_node$fields16) {
+    (0, _emberBabel.inheritsLoose)(AppendTrustedHTML, _node$fields16);
+
+    function AppendTrustedHTML() {
+      return _node$fields16.apply(this, arguments) || this;
+    }
+
+    return AppendTrustedHTML;
+  }((0, _syntax.node)('AppendTrustedHTML').fields());
+
+  var AppendTextNode = /*#__PURE__*/function (_node$fields17) {
+    (0, _emberBabel.inheritsLoose)(AppendTextNode, _node$fields17);
+
+    function AppendTextNode() {
+      return _node$fields17.apply(this, arguments) || this;
+    }
+
+    return AppendTextNode;
+  }((0, _syntax.node)('AppendTextNode').fields());
+
+  var AppendComment = /*#__PURE__*/function (_node$fields18) {
+    (0, _emberBabel.inheritsLoose)(AppendComment, _node$fields18);
+
+    function AppendComment() {
+      return _node$fields18.apply(this, arguments) || this;
+    }
+
+    return AppendComment;
+  }((0, _syntax.node)('AppendComment').fields());
+
+  var Component = /*#__PURE__*/function (_node$fields19) {
+    (0, _emberBabel.inheritsLoose)(Component, _node$fields19);
+
+    function Component() {
+      return _node$fields19.apply(this, arguments) || this;
+    }
+
+    return Component;
+  }((0, _syntax.node)('Component').fields());
+
+  var StaticAttr = /*#__PURE__*/function (_node$fields20) {
+    (0, _emberBabel.inheritsLoose)(StaticAttr, _node$fields20);
+
+    function StaticAttr() {
+      return _node$fields20.apply(this, arguments) || this;
+    }
+
+    return StaticAttr;
+  }((0, _syntax.node)('StaticAttr').fields());
+
+  var DynamicAttr = /*#__PURE__*/function (_node$fields21) {
+    (0, _emberBabel.inheritsLoose)(DynamicAttr, _node$fields21);
+
+    function DynamicAttr() {
+      return _node$fields21.apply(this, arguments) || this;
+    }
+
+    return DynamicAttr;
+  }((0, _syntax.node)('DynamicAttr').fields());
+
+  var SimpleElement = /*#__PURE__*/function (_node$fields22) {
+    (0, _emberBabel.inheritsLoose)(SimpleElement, _node$fields22);
+
+    function SimpleElement() {
+      return _node$fields22.apply(this, arguments) || this;
+    }
+
+    return SimpleElement;
+  }((0, _syntax.node)('SimpleElement').fields());
+
+  var ElementParameters = /*#__PURE__*/function (_node$fields23) {
+    (0, _emberBabel.inheritsLoose)(ElementParameters, _node$fields23);
+
+    function ElementParameters() {
+      return _node$fields23.apply(this, arguments) || this;
+    }
+
+    return ElementParameters;
+  }((0, _syntax.node)('ElementParameters').fields());
+
+  var Yield = /*#__PURE__*/function (_node$fields24) {
+    (0, _emberBabel.inheritsLoose)(Yield, _node$fields24);
+
+    function Yield() {
+      return _node$fields24.apply(this, arguments) || this;
+    }
+
+    return Yield;
+  }((0, _syntax.node)('Yield').fields());
+
+  var Partial = /*#__PURE__*/function (_node$fields25) {
+    (0, _emberBabel.inheritsLoose)(Partial, _node$fields25);
+
+    function Partial() {
+      return _node$fields25.apply(this, arguments) || this;
+    }
+
+    return Partial;
+  }((0, _syntax.node)('Partial').fields());
+
+  var Debugger = /*#__PURE__*/function (_node$fields26) {
+    (0, _emberBabel.inheritsLoose)(Debugger, _node$fields26);
+
+    function Debugger() {
+      return _node$fields26.apply(this, arguments) || this;
+    }
+
+    return Debugger;
+  }((0, _syntax.node)('Debugger').fields());
+
+  var _CallExpression = /*#__PURE__*/function (_node$fields27) {
+    (0, _emberBabel.inheritsLoose)(CallExpression, _node$fields27);
+
+    function CallExpression() {
+      return _node$fields27.apply(this, arguments) || this;
+    }
+
+    return CallExpression;
+  }((0, _syntax.node)('CallExpression').fields());
+
+  var Modifier = /*#__PURE__*/function (_node$fields28) {
+    (0, _emberBabel.inheritsLoose)(Modifier, _node$fields28);
+
+    function Modifier() {
+      return _node$fields28.apply(this, arguments) || this;
+    }
+
+    return Modifier;
+  }((0, _syntax.node)('Modifier').fields());
+
+  var _InvokeBlock = /*#__PURE__*/function (_node$fields29) {
+    (0, _emberBabel.inheritsLoose)(InvokeBlock, _node$fields29);
+
+    function InvokeBlock() {
+      return _node$fields29.apply(this, arguments) || this;
+    }
+
+    return InvokeBlock;
+  }((0, _syntax.node)('InvokeBlock').fields());
+
+  var SplatAttr = /*#__PURE__*/function (_node$fields30) {
+    (0, _emberBabel.inheritsLoose)(SplatAttr, _node$fields30);
+
+    function SplatAttr() {
+      return _node$fields30.apply(this, arguments) || this;
+    }
+
+    return SplatAttr;
+  }((0, _syntax.node)('SplatAttr').fields());
+
+  var _PathExpression = /*#__PURE__*/function (_node$fields31) {
+    (0, _emberBabel.inheritsLoose)(PathExpression, _node$fields31);
+
+    function PathExpression() {
+      return _node$fields31.apply(this, arguments) || this;
+    }
+
+    return PathExpression;
+  }((0, _syntax.node)('PathExpression').fields());
+
+  var GetWithResolver = /*#__PURE__*/function (_node$fields32) {
+    (0, _emberBabel.inheritsLoose)(GetWithResolver, _node$fields32);
+
+    function GetWithResolver() {
+      return _node$fields32.apply(this, arguments) || this;
+    }
+
+    return GetWithResolver;
+  }((0, _syntax.node)('GetWithResolver').fields());
+
+  var GetSymbol = /*#__PURE__*/function (_node$fields33) {
+    (0, _emberBabel.inheritsLoose)(GetSymbol, _node$fields33);
+
+    function GetSymbol() {
+      return _node$fields33.apply(this, arguments) || this;
+    }
+
+    return GetSymbol;
+  }((0, _syntax.node)('GetSymbol').fields());
+
+  var GetFreeWithContext = /*#__PURE__*/function (_node$fields34) {
+    (0, _emberBabel.inheritsLoose)(GetFreeWithContext, _node$fields34);
+
+    function GetFreeWithContext() {
+      return _node$fields34.apply(this, arguments) || this;
+    }
+
+    return GetFreeWithContext;
+  }((0, _syntax.node)('GetFreeWithContext').fields());
+  /** strict mode */
+
+
+  var GetFree = /*#__PURE__*/function (_node$fields35) {
+    (0, _emberBabel.inheritsLoose)(GetFree, _node$fields35);
+
+    function GetFree() {
+      return _node$fields35.apply(this, arguments) || this;
+    }
+
+    return GetFree;
+  }((0, _syntax.node)('GetFree').fields());
+
+  var Missing = /*#__PURE__*/function (_node$fields36) {
+    (0, _emberBabel.inheritsLoose)(Missing, _node$fields36);
+
+    function Missing() {
+      return _node$fields36.apply(this, arguments) || this;
+    }
+
+    return Missing;
+  }((0, _syntax.node)('Missing').fields());
+
+  var InterpolateExpression = /*#__PURE__*/function (_node$fields37) {
+    (0, _emberBabel.inheritsLoose)(InterpolateExpression, _node$fields37);
+
+    function InterpolateExpression() {
+      return _node$fields37.apply(this, arguments) || this;
+    }
+
+    return InterpolateExpression;
+  }((0, _syntax.node)('InterpolateExpression').fields());
+
+  var HasBlock = /*#__PURE__*/function (_node$fields38) {
+    (0, _emberBabel.inheritsLoose)(HasBlock, _node$fields38);
+
+    function HasBlock() {
+      return _node$fields38.apply(this, arguments) || this;
+    }
+
+    return HasBlock;
+  }((0, _syntax.node)('HasBlock').fields());
+
+  var HasBlockParams = /*#__PURE__*/function (_node$fields39) {
+    (0, _emberBabel.inheritsLoose)(HasBlockParams, _node$fields39);
+
+    function HasBlockParams() {
+      return _node$fields39.apply(this, arguments) || this;
+    }
+
+    return HasBlockParams;
+  }((0, _syntax.node)('HasBlockParams').fields());
+
+  var Curry = /*#__PURE__*/function (_node$fields40) {
+    (0, _emberBabel.inheritsLoose)(Curry, _node$fields40);
+
+    function Curry() {
+      return _node$fields40.apply(this, arguments) || this;
+    }
+
+    return Curry;
+  }((0, _syntax.node)('Curry').fields());
+
+  var _Positional = /*#__PURE__*/function (_node$fields41) {
+    (0, _emberBabel.inheritsLoose)(Positional, _node$fields41);
+
+    function Positional() {
+      return _node$fields41.apply(this, arguments) || this;
+    }
+
+    return Positional;
+  }((0, _syntax.node)('Positional').fields());
+
+  var _NamedArguments = /*#__PURE__*/function (_node$fields42) {
+    (0, _emberBabel.inheritsLoose)(NamedArguments, _node$fields42);
+
+    function NamedArguments() {
+      return _node$fields42.apply(this, arguments) || this;
+    }
+
+    return NamedArguments;
+  }((0, _syntax.node)('NamedArguments').fields());
+
+  var NamedArgument = /*#__PURE__*/function (_node$fields43) {
+    (0, _emberBabel.inheritsLoose)(NamedArgument, _node$fields43);
+
+    function NamedArgument() {
+      return _node$fields43.apply(this, arguments) || this;
+    }
+
+    return NamedArgument;
+  }((0, _syntax.node)('NamedArgument').fields());
+
+  var _Args = /*#__PURE__*/function (_node$fields44) {
+    (0, _emberBabel.inheritsLoose)(Args, _node$fields44);
+
+    function Args() {
+      return _node$fields44.apply(this, arguments) || this;
+    }
+
+    return Args;
+  }((0, _syntax.node)('Args').fields());
+
+  var Tail = /*#__PURE__*/function (_node$fields45) {
+    (0, _emberBabel.inheritsLoose)(Tail, _node$fields45);
+
+    function Tail() {
+      return _node$fields45.apply(this, arguments) || this;
+    }
+
+    return Tail;
+  }((0, _syntax.node)('Tail').fields());
+
+  var PresentList = /*#__PURE__*/function () {
+    function PresentList(list) {
+      this.list = list;
+    }
+
+    var _proto = PresentList.prototype;
+
+    _proto.toArray = function toArray() {
+      return this.list;
+    };
+
+    _proto.map = function map(callback) {
+      var result = (0, _util.mapPresent)(this.list, callback);
+      return new PresentList(result);
+    };
+
+    _proto.filter = function filter(predicate) {
+      var out = [];
+
+      for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(this.list), _step; !(_step = _iterator()).done;) {
+        var _item = _step.value;
+
+        if (predicate(_item)) {
+          out.push(_item);
+        }
       }
 
-      return named;
+      return OptionalList(out);
+    };
+
+    _proto.toPresentArray = function toPresentArray() {
+      return this.list;
+    };
+
+    _proto.into = function into(_ref) {
+      var ifPresent = _ref.ifPresent;
+      return ifPresent(this);
+    };
+
+    return PresentList;
+  }();
+
+  var EmptyList = /*#__PURE__*/function () {
+    function EmptyList() {
+      this.list = [];
     }
 
-    allocateBlock(name) {
-      let block = this.blocks[name];
+    var _proto2 = EmptyList.prototype;
 
-      if (!block) {
-        block = this.blocks[name] = this.allocate(`&${name}`);
-      }
+    _proto2.map = function map(_callback) {
+      return new EmptyList();
+    };
 
-      return block;
+    _proto2.filter = function filter(_predicate) {
+      return new EmptyList();
+    };
+
+    _proto2.toArray = function toArray() {
+      return this.list;
+    };
+
+    _proto2.toPresentArray = function toPresentArray() {
+      return null;
+    };
+
+    _proto2.into = function into(_ref2) {
+      var ifEmpty = _ref2.ifEmpty;
+      return ifEmpty();
+    };
+
+    return EmptyList;
+  }(); // export type OptionalList<T> = PresentList<T> | EmptyList<T>;
+
+
+  function OptionalList(value) {
+    if ((0, _util.isPresent)(value)) {
+      return new PresentList(value);
+    } else {
+      return new EmptyList();
     }
-
-    allocate(identifier) {
-      this.symbols.push(identifier);
-      return this.size++;
-    }
-
   }
 
-  class BlockSymbolTable extends SymbolTable {
-    constructor(parent, symbols, slots) {
-      super();
-      this.parent = parent;
-      this.symbols = symbols;
-      this.slots = slots;
+  var ResultImpl = /*#__PURE__*/function () {
+    function ResultImpl() {}
+
+    ResultImpl.all = function all() {
+      var out = [];
+
+      for (var _len = arguments.length, results = new Array(_len), _key = 0; _key < _len; _key++) {
+        results[_key] = arguments[_key];
+      }
+
+      for (var _i = 0, _results = results; _i < _results.length; _i++) {
+        var _result = _results[_i];
+
+        if (_result.isErr) {
+          return _result.cast();
+        } else {
+          out.push(_result.value);
+        }
+      }
+
+      return Ok(out);
+    };
+
+    return ResultImpl;
+  }();
+
+  var Result = ResultImpl;
+
+  var OkImpl = /*#__PURE__*/function (_ResultImpl) {
+    (0, _emberBabel.inheritsLoose)(OkImpl, _ResultImpl);
+
+    function OkImpl(value) {
+      var _this;
+
+      _this = _ResultImpl.call(this) || this;
+      _this.value = value;
+      _this.isOk = true;
+      _this.isErr = false;
+      return _this;
     }
 
-    has(name) {
-      return this.symbols.indexOf(name) !== -1 || this.parent.has(name);
+    var _proto3 = OkImpl.prototype;
+
+    _proto3.expect = function expect(_message) {
+      return this.value;
+    };
+
+    _proto3.ifOk = function ifOk(callback) {
+      callback(this.value);
+      return this;
+    };
+
+    _proto3.andThen = function andThen(callback) {
+      return callback(this.value);
+    };
+
+    _proto3.mapOk = function mapOk(callback) {
+      return Ok(callback(this.value));
+    };
+
+    _proto3.ifErr = function ifErr(_callback) {
+      return this;
+    };
+
+    _proto3.mapErr = function mapErr(_callback) {
+      return this;
+    };
+
+    return OkImpl;
+  }(ResultImpl);
+
+  var ErrImpl = /*#__PURE__*/function (_ResultImpl2) {
+    (0, _emberBabel.inheritsLoose)(ErrImpl, _ResultImpl2);
+
+    function ErrImpl(reason) {
+      var _this2;
+
+      _this2 = _ResultImpl2.call(this) || this;
+      _this2.reason = reason;
+      _this2.isOk = false;
+      _this2.isErr = true;
+      return _this2;
     }
 
-    get(name) {
-      let slot = this.symbols.indexOf(name);
-      return slot === -1 ? this.parent.get(name) : this.slots[slot];
+    var _proto4 = ErrImpl.prototype;
+
+    _proto4.expect = function expect(message) {
+      throw new Error(message || 'expected an Ok, got Err');
+    };
+
+    _proto4.andThen = function andThen(_callback) {
+      return this.cast();
+    };
+
+    _proto4.mapOk = function mapOk(_callback) {
+      return this.cast();
+    };
+
+    _proto4.ifOk = function ifOk(_callback) {
+      return this;
+    };
+
+    _proto4.mapErr = function mapErr(callback) {
+      return Err(callback(this.reason));
+    };
+
+    _proto4.ifErr = function ifErr(callback) {
+      callback(this.reason);
+      return this;
+    };
+
+    _proto4.cast = function cast() {
+      return this;
+    };
+
+    return ErrImpl;
+  }(ResultImpl);
+
+  function Ok(value) {
+    return new OkImpl(value);
+  }
+
+  function Err(reason) {
+    return new ErrImpl(reason);
+  }
+
+  var ResultArray = /*#__PURE__*/function () {
+    function ResultArray(items) {
+      if (items === void 0) {
+        items = [];
+      }
+
+      this.items = items;
     }
 
-    getLocalsMap() {
-      let dict$$1 = this.parent.getLocalsMap();
-      this.symbols.forEach(symbol => dict$$1[symbol] = this.get(symbol));
-      return dict$$1;
+    var _proto5 = ResultArray.prototype;
+
+    _proto5.add = function add(item) {
+      this.items.push(item);
+    };
+
+    _proto5.toArray = function toArray() {
+      var err = this.items.filter(function (item) {
+        return item instanceof ErrImpl;
+      })[0];
+
+      if (err !== undefined) {
+        return err.cast();
+      } else {
+        return Ok(this.items.map(function (item) {
+          return item.value;
+        }));
+      }
+    };
+
+    _proto5.toOptionalList = function toOptionalList() {
+      return this.toArray().mapOk(function (arr) {
+        return OptionalList(arr);
+      });
+    };
+
+    return ResultArray;
+  }();
+
+  var __classPrivateFieldSet = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
     }
 
-    getEvalInfo() {
-      let locals = this.getLocalsMap();
-      return Object.keys(locals).map(symbol => locals[symbol]);
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var __classPrivateFieldGet = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
     }
 
-    allocateNamed(name) {
-      return this.parent.allocateNamed(name);
+    return privateMap.get(receiver);
+  };
+
+  var _keywords, _type;
+
+  var KeywordImpl = /*#__PURE__*/function () {
+    function KeywordImpl(keyword, type, delegate) {
+      this.keyword = keyword;
+      this.delegate = delegate;
+      var nodes = new Set();
+
+      for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(KEYWORD_NODES[type]), _step2; !(_step2 = _iterator2()).done;) {
+        var _nodeType = _step2.value;
+        nodes.add(_nodeType);
+      }
+
+      this.types = nodes;
     }
 
-    allocateBlock(name) {
-      return this.parent.allocateBlock(name);
+    var _proto6 = KeywordImpl.prototype;
+
+    _proto6.match = function match(node$$1) {
+      if (!this.types.has(node$$1.type)) {
+        return false;
+      }
+
+      var path = getPathExpression(node$$1);
+
+      if (path !== null && path.ref.type === 'Free') {
+        if (path.tail.length > 0) {
+          if (path.ref.resolution.serialize() === 'Loose') {
+            // cannot be a keyword reference, keywords do not allow paths (must be
+            // relying on implicit this fallback)
+            return false;
+          }
+        }
+
+        return path.ref.name === this.keyword;
+      } else {
+        return false;
+      }
+    };
+
+    _proto6.translate = function translate(node$$1, state) {
+      var _this3 = this;
+
+      if (this.match(node$$1)) {
+        var path = getPathExpression(node$$1);
+
+        if (path !== null && path.tail.length > 0) {
+          return Err((0, _syntax.generateSyntaxError)("The `" + this.keyword + "` keyword was used incorrectly. It was used as `" + path.loc.asString() + "`, but it cannot be used with additional path segments. \n\nError caused by", node$$1.loc));
+        }
+
+        var param = this.delegate.assert(node$$1, state);
+        return param.andThen(function (param) {
+          return _this3.delegate.translate({
+            node: node$$1,
+            state: state
+          }, param);
+        });
+      } else {
+        return null;
+      }
+    };
+
+    return KeywordImpl;
+  }();
+
+  var KEYWORD_NODES = {
+    Call: ['Call'],
+    Block: ['InvokeBlock'],
+    Append: ['AppendContent'],
+    Modifier: ['ElementModifier']
+  };
+
+  function keyword(keyword, type, delegate) {
+    return new KeywordImpl(keyword, type, delegate);
+  }
+
+  function getPathExpression(node$$1) {
+    switch (node$$1.type) {
+      // This covers the inside of attributes and expressions, as well as the callee
+      // of call nodes
+      case 'Path':
+        return node$$1;
+
+      case 'AppendContent':
+        return getPathExpression(node$$1.value);
+
+      case 'Call':
+      case 'InvokeBlock':
+      case 'ElementModifier':
+        return getPathExpression(node$$1.callee);
+
+      default:
+        return null;
+    }
+  }
+
+  var Keywords = /*#__PURE__*/function () {
+    function Keywords(type) {
+      _keywords.set(this, []);
+
+      _type.set(this, void 0);
+
+      __classPrivateFieldSet(this, _type, type);
     }
 
-    allocate(identifier) {
-      return this.parent.allocate(identifier);
-    }
+    var _proto7 = Keywords.prototype;
 
+    _proto7.kw = function kw(name, delegate) {
+      __classPrivateFieldGet(this, _keywords).push(keyword(name, __classPrivateFieldGet(this, _type), delegate));
+
+      return this;
+    };
+
+    _proto7.translate = function translate(node$$1, state) {
+      for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(__classPrivateFieldGet(this, _keywords)), _step3; !(_step3 = _iterator3()).done;) {
+        var _keyword2 = _step3.value;
+
+        var _result2 = _keyword2.translate(node$$1, state);
+
+        if (_result2 !== null) {
+          return _result2;
+        }
+      }
+
+      var path = getPathExpression(node$$1);
+
+      if (path && path.ref.type === 'Free' && (0, _syntax.isKeyword)(path.ref.name)) {
+        var name = path.ref.name;
+
+        var usedType = __classPrivateFieldGet(this, _type);
+
+        var validTypes = _syntax.KEYWORDS_TYPES[name];
+
+        if (validTypes.indexOf(usedType) === -1) {
+          return Err((0, _syntax.generateSyntaxError)("The `" + name + "` keyword was used incorrectly. It was used as " + typesToReadableName[usedType] + ", but its valid usages are:\n\n" + generateTypesMessage(name, validTypes) + "\n\nError caused by", node$$1.loc));
+        }
+      }
+
+      return null;
+    };
+
+    return Keywords;
+  }();
+
+  _keywords = new WeakMap(), _type = new WeakMap();
+  var typesToReadableName = {
+    Append: 'an append statement',
+    Block: 'a block statement',
+    Call: 'a call expression',
+    Modifier: 'a modifier'
+  };
+
+  function generateTypesMessage(name, types) {
+    return types.map(function (type) {
+      switch (type) {
+        case 'Append':
+          return "- As an append statement, as in: {{" + name + "}}";
+
+        case 'Block':
+          return "- As a block statement, as in: {{#" + name + "}}{{/" + name + "}}";
+
+        case 'Call':
+          return "- As an expression, as in: (" + name + ")";
+
+        case 'Modifier':
+          return "- As a modifier, as in: <div {{" + name + "}}></div>";
+
+        default:
+          return (0, _util.exhausted)(type);
+      }
+    }).join('\n\n');
   }
   /**
-   * Takes in an AST and outputs a list of actions to be consumed
-   * by a compiler. For example, the template
+   * This function builds keyword definitions for a particular type of AST node (`KeywordType`).
    *
-   *     foo{{bar}}<div>baz</div>
+   * You can build keyword definitions for:
    *
-   * produces the actions
+   * - `Expr`: A `SubExpression` or `PathExpression`
+   * - `Block`: A `BlockStatement`
+   *   - A `BlockStatement` is a keyword candidate if its head is a
+   *     `PathExpression`
+   * - `Append`: An `AppendStatement`
    *
-   *     [['startProgram', [programNode, 0]],
-   *      ['text', [textNode, 0, 3]],
-   *      ['mustache', [mustacheNode, 1, 3]],
-   *      ['openElement', [elementNode, 2, 3, 0]],
-   *      ['text', [textNode, 0, 1]],
-   *      ['closeElement', [elementNode, 2, 3],
-   *      ['endProgram', [programNode]]]
+   * A node is a keyword candidate if:
    *
-   * This visitor walks the AST depth first and backwards. As
-   * a result the bottom-most child template will appear at the
-   * top of the actions list whereas the root template will appear
-   * at the bottom of the list. For example,
+   * - A `PathExpression` is a keyword candidate if it has no tail, and its
+   *   head expression is a `LocalVarHead` or `FreeVarHead` whose name is
+   *   the keyword's name.
+   * - A `SubExpression`, `AppendStatement`, or `BlockStatement` is a keyword
+   *   candidate if its head is a keyword candidate.
    *
-   *     <div>{{#if}}foo{{else}}bar<b></b>{{/if}}</div>
+   * The keyword infrastructure guarantees that:
    *
-   * produces the actions
+   * - If a node is not a keyword candidate, it is never passed to any keyword's
+   *   `assert` method.
+   * - If a node is not the `KeywordType` for a particular keyword, it will not
+   *   be passed to the keyword's `assert` method.
    *
-   *     [['startProgram', [programNode, 0]],
-   *      ['text', [textNode, 0, 2, 0]],
-   *      ['openElement', [elementNode, 1, 2, 0]],
-   *      ['closeElement', [elementNode, 1, 2]],
-   *      ['endProgram', [programNode]],
-   *      ['startProgram', [programNode, 0]],
-   *      ['text', [textNode, 0, 1]],
-   *      ['endProgram', [programNode]],
-   *      ['startProgram', [programNode, 2]],
-   *      ['openElement', [elementNode, 0, 1, 1]],
-   *      ['block', [blockNode, 0, 1]],
-   *      ['closeElement', [elementNode, 0, 1]],
-   *      ['endProgram', [programNode]]]
+   * `Expr` keywords are used in expression positions and should return HIR
+   * expressions. `Block` and `Append` keywords are used in statement
+   * positions and should return HIR statements.
    *
-   * The state of the traversal is maintained by a stack of frames.
-   * Whenever a node with children is entered (either a ProgramNode
-   * or an ElementNode) a frame is pushed onto the stack. The frame
-   * contains information about the state of the traversal of that
-   * node. For example,
+   * A keyword definition has two parts:
    *
-   *   - index of the current child node being visited
-   *   - the number of mustaches contained within its child nodes
-   *   - the list of actions generated by its child nodes
+   * - `match`, which determines whether an AST node matches the keyword, and can
+   *   optionally return some information extracted from the AST node.
+   * - `translate`, which takes a matching AST node as well as the extracted
+   *   information and returns an appropriate HIR instruction.
+   *
+   * # Example
+   *
+   * This keyword:
+   *
+   * - turns `(hello)` into `"hello"`
+   *   - as long as `hello` is not in scope
+   * - makes it an error to pass any arguments (such as `(hello world)`)
+   *
+   * ```ts
+   * keywords('SubExpr').kw('hello', {
+   *   assert(node: ExprKeywordNode): Result<void> | false {
+   *     // we don't want to transform `hello` as a `PathExpression`
+   *     if (node.type !== 'SubExpression') {
+   *       return false;
+   *     }
+   *
+   *     // node.head would be `LocalVarHead` if `hello` was in scope
+   *     if (node.head.type !== 'FreeVarHead') {
+   *       return false;
+   *     }
+   *
+   *     if (node.params.length || node.hash) {
+   *       return Err(generateSyntaxError(`(hello) does not take any arguments`), node.loc);
+   *     } else {
+   *       return Ok();
+   *     }
+   *   },
+   *
+   *   translate(node: ASTv2.SubExpression): hir.Expression {
+   *     return ASTv2.builders.literal("hello", node.loc)
+   *   }
+   * })
+   * ```
+   *
+   * The keyword infrastructure checks to make sure that the node is the right
+   * type before calling `assert`, so you only need to consider `SubExpression`
+   * and `PathExpression` here. It also checks to make sure that the node passed
+   * to `assert` has the keyword name in the right place.
+   *
+   * Note the important difference between returning `false` from `assert`,
+   * which just means that the node didn't match, and returning `Err`, which
+   * means that the node matched, but there was a keyword-specific syntax
+   * error.
    */
 
 
-  class Frame {
-    constructor() {
-      this.parentNode = null;
-      this.children = null;
-      this.childIndex = null;
-      this.childCount = null;
-      this.childTemplateCount = 0;
-      this.mustacheCount = 0;
-      this.actions = [];
-      this.blankChildTextNodes = null;
-      this.symbols = null;
-    }
-
+  function keywords(type) {
+    return new Keywords(type);
   }
 
-  class TemplateVisitor {
-    constructor() {
-      this.frameStack = [];
-      this.actions = [];
-      this.programDepth = -1;
-    }
-
-    visit(node) {
-      this[node.type](node);
-    } // Traversal methods
-
-
-    Program(program) {
-      this.programDepth++;
-      let parentFrame = this.getCurrentFrame();
-      let programFrame = this.pushFrame();
-
-      if (!parentFrame) {
-        program['symbols'] = SymbolTable.top();
-      } else {
-        program['symbols'] = parentFrame.symbols.child(program.blockParams);
-      }
-
-      let startType, endType;
-
-      if (this.programDepth === 0) {
-        startType = 'startProgram';
-        endType = 'endProgram';
-      } else {
-        startType = 'startBlock';
-        endType = 'endBlock';
-      }
-
-      programFrame.parentNode = program;
-      programFrame.children = program.body;
-      programFrame.childCount = program.body.length;
-      programFrame.blankChildTextNodes = [];
-      programFrame.actions.push([endType, [program, this.programDepth]]);
-      programFrame.symbols = program['symbols'];
-
-      for (let i = program.body.length - 1; i >= 0; i--) {
-        programFrame.childIndex = i;
-        this.visit(program.body[i]);
-      }
-
-      programFrame.actions.push([startType, [program, programFrame.childTemplateCount, programFrame.blankChildTextNodes.reverse()]]);
-      this.popFrame();
-      this.programDepth--; // Push the completed template into the global actions list
-
-      if (parentFrame) {
-        parentFrame.childTemplateCount++;
-      }
-
-      this.actions.push(...programFrame.actions.reverse());
-    }
-
-    ElementNode(element) {
-      let parentFrame = this.currentFrame;
-      let elementFrame = this.pushFrame();
-      elementFrame.parentNode = element;
-      elementFrame.children = element.children;
-      elementFrame.childCount = element.children.length;
-      elementFrame.mustacheCount += element.modifiers.length;
-      elementFrame.blankChildTextNodes = [];
-      elementFrame.symbols = element['symbols'] = parentFrame.symbols.child(element.blockParams);
-      let actionArgs = [element, parentFrame.childIndex, parentFrame.childCount];
-      elementFrame.actions.push(['closeElement', actionArgs]);
-
-      for (let i = element.attributes.length - 1; i >= 0; i--) {
-        this.visit(element.attributes[i]);
-      }
-
-      for (let i = element.children.length - 1; i >= 0; i--) {
-        elementFrame.childIndex = i;
-        this.visit(element.children[i]);
-      }
-
-      let open = ['openElement', [...actionArgs, elementFrame.mustacheCount, elementFrame.blankChildTextNodes.reverse()]];
-      elementFrame.actions.push(open);
-      this.popFrame(); // Propagate the element's frame state to the parent frame
-
-      if (elementFrame.mustacheCount > 0) {
-        parentFrame.mustacheCount++;
-      }
-
-      parentFrame.childTemplateCount += elementFrame.childTemplateCount;
-      parentFrame.actions.push(...elementFrame.actions);
-    }
-
-    AttrNode(attr) {
-      if (attr.value.type !== 'TextNode') {
-        this.currentFrame.mustacheCount++;
-      }
-    }
-
-    TextNode(text) {
-      let frame = this.currentFrame;
-
-      if (text.chars === '') {
-        frame.blankChildTextNodes.push(domIndexOf(frame.children, text));
-      }
-
-      frame.actions.push(['text', [text, frame.childIndex, frame.childCount]]);
-    }
-
-    BlockStatement(node) {
-      let frame = this.currentFrame;
-      frame.mustacheCount++;
-      frame.actions.push(['block', [node, frame.childIndex, frame.childCount]]);
-
-      if (node.inverse) {
-        this.visit(node.inverse);
-      }
-
-      if (node.program) {
-        this.visit(node.program);
-      }
-    }
-
-    PartialStatement(node) {
-      let frame = this.currentFrame;
-      frame.mustacheCount++;
-      frame.actions.push(['mustache', [node, frame.childIndex, frame.childCount]]);
-    }
-
-    CommentStatement(text) {
-      let frame = this.currentFrame;
-      frame.actions.push(['comment', [text, frame.childIndex, frame.childCount]]);
-    }
-
-    MustacheCommentStatement() {// Intentional empty: Handlebars comments should not affect output.
-    }
-
-    MustacheStatement(mustache) {
-      let frame = this.currentFrame;
-      frame.mustacheCount++;
-      frame.actions.push(['mustache', [mustache, frame.childIndex, frame.childCount]]);
-    } // Frame helpers
-
-
-    get currentFrame() {
-      return this.getCurrentFrame();
-    }
-
-    getCurrentFrame() {
-      return this.frameStack[this.frameStack.length - 1];
-    }
-
-    pushFrame() {
-      let frame = new Frame();
-      this.frameStack.push(frame);
-      return frame;
-    }
-
-    popFrame() {
-      return this.frameStack.pop();
-    }
-
-  } // Returns the index of `domNode` in the `nodes` array, skipping
-  // over any nodes which do not represent DOM nodes.
-
-
-  _exports.TemplateVisitor = TemplateVisitor;
-
-  function domIndexOf(nodes, domNode) {
-    let index = -1;
-
-    for (let i = 0; i < nodes.length; i++) {
-      let node = nodes[i];
-
-      if (node.type !== 'TextNode' && node.type !== 'ElementNode') {
-        continue;
-      } else {
-        index++;
-      }
-
-      if (node === domNode) {
-        return index;
-      }
-    }
-
-    return -1;
+  function hasPath(node$$1) {
+    return node$$1.callee.type === 'Path';
   }
 
-  class Block {
-    constructor() {
-      this.statements = [];
+  function isHelperInvocation(node$$1) {
+    if (!hasPath(node$$1)) {
+      return false;
     }
 
-    push(statement) {
-      this.statements.push(statement);
-    }
-
+    return !node$$1.args.isEmpty();
   }
 
-  class InlineBlock extends Block {
-    constructor(table) {
-      super();
-      this.table = table;
+  function isSimplePath(path) {
+    if (path.type === 'Path') {
+      var head = path.ref,
+          parts = path.tail;
+      return head.type === 'Free' && head.resolution !== _syntax.ASTv2.STRICT_RESOLUTION && parts.length === 0;
+    } else {
+      return false;
     }
-
-    toJSON() {
-      return {
-        statements: this.statements,
-        parameters: this.table.slots
-      };
-    }
-
   }
 
-  class TemplateBlock extends Block {
-    constructor(symbolTable) {
-      super();
-      this.symbolTable = symbolTable;
-      this.type = 'template';
-      this.yields = new _util.DictSet();
-      this.named = new _util.DictSet();
-      this.blocks = [];
-      this.hasEval = false;
+  function isStrictHelper(expr) {
+    if (expr.callee.type !== 'Path') {
+      return true;
     }
 
-    push(statement) {
-      this.statements.push(statement);
+    if (expr.callee.ref.type !== 'Free') {
+      return true;
     }
 
-    toJSON() {
-      return {
-        symbols: this.symbolTable.symbols,
-        statements: this.statements,
-        hasEval: this.hasEval
-      };
-    }
-
+    return expr.callee.ref.resolution === _syntax.ASTv2.STRICT_RESOLUTION;
   }
 
-  class ComponentBlock extends Block {
-    constructor(tag, table, selfClosing) {
-      super();
-      this.tag = tag;
-      this.table = table;
-      this.selfClosing = selfClosing;
-      this.attributes = [];
-      this.arguments = [];
-      this.inParams = true;
-      this.positionals = [];
+  function assertIsValidModifier(helper) {
+    if (isStrictHelper(helper) || isSimplePath(helper.callee)) {
+      return;
     }
 
-    push(statement) {
-      if (this.inParams) {
-        if ((0, _wireFormat.isFlushElement)(statement)) {
-          this.inParams = false;
-        } else if ((0, _wireFormat.isArgument)(statement)) {
-          this.arguments.push(statement);
-        } else if ((0, _wireFormat.isAttribute)(statement)) {
-          this.attributes.push(statement);
-        } else if ((0, _wireFormat.isAttrSplat)(statement)) {
-          this.attributes.push(statement);
-        } else {
-          throw new Error('Compile Error: only parameters allowed before flush-element');
-        }
-      } else {
-        this.statements.push(statement);
-      }
-    }
-
-    toJSON() {
-      let args = this.arguments;
-      let keys = args.map(arg => arg[1]);
-      let values = args.map(arg => arg[2]);
-      let block = this.selfClosing ? null : {
-        statements: this.statements,
-        parameters: this.table.slots
-      };
-      return [this.tag, this.attributes, [keys, values], block];
-    }
-
+    throw (0, _syntax.generateSyntaxError)("`" + printPath(helper.callee) + "` is not a valid name for a modifier", helper.loc);
   }
 
-  class Template {
-    constructor(symbols) {
-      this.block = new TemplateBlock(symbols);
-    }
+  function printPath(path) {
+    switch (path.type) {
+      case 'Literal':
+        return JSON.stringify(path.value);
 
-    toJSON() {
-      return this.block.toJSON();
-    }
-
-  }
-
-  class JavaScriptCompiler {
-    constructor(opcodes, symbols, options) {
-      this.blocks = new _util.Stack();
-      this.values = [];
-      this.opcodes = opcodes;
-      this.template = new Template(symbols);
-      this.options = options;
-    }
-
-    static process(opcodes, symbols, options) {
-      let compiler = new JavaScriptCompiler(opcodes, symbols, options);
-      return compiler.process();
-    }
-
-    get currentBlock() {
-      return this.blocks.current;
-    }
-
-    process() {
-      this.opcodes.forEach(op => {
-        let opcode = op[0];
-        let arg = op[1];
-
-        if (!this[opcode]) {
-          throw new Error(`unimplemented ${opcode} on JavaScriptCompiler`);
+      case 'Path':
+        {
+          var printedPath = [printPathHead(path.ref)];
+          printedPath.push.apply(printedPath, path.tail.map(function (t) {
+            return t.chars;
+          }));
+          return printedPath.join('.');
         }
 
-        this[opcode](arg);
+      case 'Call':
+        return "(" + printPath(path.callee) + " ...)";
+
+      case 'Interpolate':
+        throw (0, _util.unreachable)('a concat statement cannot appear as the head of an expression');
+    }
+  }
+
+  function printPathHead(head) {
+    switch (head.type) {
+      case 'Arg':
+        return head.name.chars;
+
+      case 'Free':
+      case 'Local':
+        return head.name;
+
+      case 'This':
+        return 'this';
+    }
+  }
+
+  var NormalizeExpressions = /*#__PURE__*/function () {
+    function NormalizeExpressions() {}
+
+    var _proto8 = NormalizeExpressions.prototype;
+
+    _proto8.visit = function visit(node$$1, state) {
+      switch (node$$1.type) {
+        case 'Literal':
+          return Ok(this.Literal(node$$1));
+
+        case 'Interpolate':
+          return this.Interpolate(node$$1, state);
+
+        case 'Path':
+          return this.PathExpression(node$$1);
+
+        case 'Call':
+          var translated = CALL_KEYWORDS.translate(node$$1, state);
+
+          if (translated !== null) {
+            return translated;
+          }
+
+          return this.CallExpression(node$$1, state);
+      }
+    };
+
+    _proto8.visitList = function visitList(nodes, state) {
+      return new ResultArray(nodes.map(function (e) {
+        return VISIT_EXPRS.visit(e, state);
+      })).toOptionalList();
+    }
+    /**
+     * Normalize paths into `hir.Path` or a `hir.Expr` that corresponds to the ref.
+     *
+     * TODO since keywords don't support tails anyway, distinguish PathExpression from
+     * VariableReference in ASTv2.
+     */
+    ;
+
+    _proto8.PathExpression = function PathExpression(path) {
+      var ref = this.VariableReference(path.ref);
+      var tail = path.tail;
+
+      if ((0, _util.isPresent)(tail)) {
+        var tailLoc = tail[0].loc.extend(tail[tail.length - 1].loc);
+        return Ok(new _PathExpression({
+          loc: path.loc,
+          head: ref,
+          tail: new Tail({
+            loc: tailLoc,
+            members: tail
+          })
+        }));
+      } else {
+        return Ok(ref);
+      }
+    };
+
+    _proto8.VariableReference = function VariableReference(ref) {
+      return ref;
+    };
+
+    _proto8.Literal = function Literal(literal) {
+      return literal;
+    };
+
+    _proto8.Interpolate = function Interpolate(expr, state) {
+      var parts = expr.parts.map(convertPathToCallIfKeyword);
+      return VISIT_EXPRS.visitList(parts, state).mapOk(function (parts) {
+        return new InterpolateExpression({
+          loc: expr.loc,
+          parts: parts
+        });
       });
-      return this.template;
-    } /// Nesting
+    };
 
-
-    startBlock(program) {
-      let block = new InlineBlock(program['symbols']);
-      this.blocks.push(block);
-    }
-
-    endBlock() {
-      let {
-        template,
-        blocks
-      } = this;
-      let block = blocks.pop();
-      template.block.blocks.push(block.toJSON());
-    }
-
-    startProgram() {
-      this.blocks.push(this.template.block);
-    }
-
-    endProgram() {} /// Statements
-
-
-    text(content) {
-      this.push([_wireFormat.Ops.Text, content]);
-    }
-
-    append(trusted) {
-      this.push([_wireFormat.Ops.Append, this.popValue(), trusted]);
-    }
-
-    comment(value) {
-      this.push([_wireFormat.Ops.Comment, value]);
-    }
-
-    modifier(name) {
-      let params = this.popValue();
-      let hash = this.popValue();
-      this.push([_wireFormat.Ops.Modifier, name, params, hash]);
-    }
-
-    block([name, template, inverse]) {
-      let params = this.popValue();
-      let hash = this.popValue();
-      let blocks = this.template.block.blocks;
-      this.push([_wireFormat.Ops.Block, name, params, hash, blocks[template], blocks[inverse]]);
-    }
-
-    openComponent(element) {
-      let tag = this.options && this.options.customizeComponentName ? this.options.customizeComponentName(element.tag) : element.tag;
-      let component = new ComponentBlock(tag, element['symbols'], element.selfClosing);
-      this.blocks.push(component);
-    }
-
-    openSplattedElement(element) {
-      let tag = element.tag;
-
-      if (element.blockParams.length > 0) {
-        throw new Error(`Compile Error: <${element.tag}> is not a component and doesn't support block parameters`);
+    _proto8.CallExpression = function CallExpression(expr, state) {
+      if (!hasPath(expr)) {
+        throw new Error("unimplemented subexpression at the head of a subexpression");
       } else {
-        this.push([_wireFormat.Ops.OpenSplattedElement, tag]);
+        return Result.all(VISIT_EXPRS.visit(expr.callee, state), VISIT_EXPRS.Args(expr.args, state)).mapOk(function (_ref3) {
+          var callee = _ref3[0],
+              args = _ref3[1];
+          return new _CallExpression({
+            loc: expr.loc,
+            callee: callee,
+            args: args
+          });
+        });
       }
+    };
+
+    _proto8.Args = function Args(_ref4, state) {
+      var positional = _ref4.positional,
+          named = _ref4.named,
+          loc = _ref4.loc;
+      return Result.all(this.Positional(positional, state), this.NamedArguments(named, state)).mapOk(function (_ref5) {
+        var positional = _ref5[0],
+            named = _ref5[1];
+        return new _Args({
+          loc: loc,
+          positional: positional,
+          named: named
+        });
+      });
+    };
+
+    _proto8.Positional = function Positional(positional, state) {
+      return VISIT_EXPRS.visitList(positional.exprs, state).mapOk(function (list) {
+        return new _Positional({
+          loc: positional.loc,
+          list: list
+        });
+      });
+    };
+
+    _proto8.NamedArguments = function NamedArguments(named, state) {
+      var pairs = named.entries.map(function (arg) {
+        var value = convertPathToCallIfKeyword(arg.value);
+        return VISIT_EXPRS.visit(value, state).mapOk(function (value) {
+          return new NamedArgument({
+            loc: arg.loc,
+            key: arg.name,
+            value: value
+          });
+        });
+      });
+      return new ResultArray(pairs).toOptionalList().mapOk(function (pairs) {
+        return new _NamedArguments({
+          loc: named.loc,
+          entries: pairs
+        });
+      });
+    };
+
+    return NormalizeExpressions;
+  }();
+
+  function convertPathToCallIfKeyword(path) {
+    if (path.type === 'Path' && path.ref.type === 'Free' && path.ref.name in _syntax.KEYWORDS_TYPES) {
+      return new _syntax.ASTv2.CallExpression({
+        callee: path,
+        args: _syntax.ASTv2.Args.empty(path.loc),
+        loc: path.loc
+      });
     }
 
-    openElement(element) {
-      let tag = element.tag;
+    return path;
+  }
 
-      if (element.blockParams.length > 0) {
-        throw new Error(`Compile Error: <${element.tag}> is not a component and doesn't support block parameters`);
+  var VISIT_EXPRS = new NormalizeExpressions();
+  var CurriedTypeToReadableType = (_CurriedTypeToReadabl = {}, _CurriedTypeToReadabl[0
+  /* Component */
+  ] = 'component', _CurriedTypeToReadabl[1
+  /* Helper */
+  ] = 'helper', _CurriedTypeToReadabl[2
+  /* Modifier */
+  ] = 'modifier', _CurriedTypeToReadabl);
+
+  function assertCurryKeyword(curriedType) {
+    return function (node$$1, state) {
+      var readableType = CurriedTypeToReadableType[curriedType];
+      var stringsAllowed = curriedType === 0
+      /* Component */
+      ;
+      var args = node$$1.args;
+      var definition = args.nth(0);
+
+      if (definition === null) {
+        return Err((0, _syntax.generateSyntaxError)("(" + readableType + ") requires a " + readableType + " definition or identifier as its first positional parameter, did not receive any parameters.", args.loc));
+      }
+
+      if (definition.type === 'Literal') {
+        if (stringsAllowed && state.isStrict) {
+          return Err((0, _syntax.generateSyntaxError)("(" + readableType + ") cannot resolve string values in strict mode templates", node$$1.loc));
+        } else if (!stringsAllowed) {
+          return Err((0, _syntax.generateSyntaxError)("(" + readableType + ") cannot resolve string values, you must pass a " + readableType + " definition directly", node$$1.loc));
+        }
+      }
+
+      args = new _syntax.ASTv2.Args({
+        positional: new _syntax.ASTv2.PositionalArguments({
+          exprs: args.positional.exprs.slice(1),
+          loc: args.positional.loc
+        }),
+        named: args.named,
+        loc: args.loc
+      });
+      return Ok({
+        definition: definition,
+        args: args
+      });
+    };
+  }
+
+  function translateCurryKeyword(curriedType) {
+    return function (_ref6, _ref7) {
+      var node$$1 = _ref6.node,
+          state = _ref6.state;
+      var definition = _ref7.definition,
+          args = _ref7.args;
+      var definitionResult = VISIT_EXPRS.visit(definition, state);
+      var argsResult = VISIT_EXPRS.Args(args, state);
+      return Result.all(definitionResult, argsResult).mapOk(function (_ref8) {
+        var definition = _ref8[0],
+            args = _ref8[1];
+        return new Curry({
+          loc: node$$1.loc,
+          curriedType: curriedType,
+          definition: definition,
+          args: args
+        });
+      });
+    };
+  }
+
+  function curryKeyword(curriedType) {
+    return {
+      assert: assertCurryKeyword(curriedType),
+      translate: translateCurryKeyword(curriedType)
+    };
+  }
+
+  function assertGetDynamicVarKeyword(node$$1) {
+    var call = node$$1.type === 'AppendContent' ? node$$1.value : node$$1;
+    var named = call.type === 'Call' ? call.args.named : null;
+    var positionals = call.type === 'Call' ? call.args.positional : null;
+
+    if (named && !named.isEmpty()) {
+      return Err((0, _syntax.generateSyntaxError)("(-get-dynamic-vars) does not take any named arguments", node$$1.loc));
+    }
+
+    var varName = positionals === null || positionals === void 0 ? void 0 : positionals.nth(0);
+
+    if (!varName) {
+      return Err((0, _syntax.generateSyntaxError)("(-get-dynamic-vars) requires a var name to get", node$$1.loc));
+    }
+
+    if (positionals && positionals.size > 1) {
+      return Err((0, _syntax.generateSyntaxError)("(-get-dynamic-vars) only receives one positional arg", node$$1.loc));
+    }
+
+    return Ok(varName);
+  }
+
+  function translateGetDynamicVarKeyword(_ref9, name) {
+    var node$$1 = _ref9.node,
+        state = _ref9.state;
+    return VISIT_EXPRS.visit(name, state).mapOk(function (name) {
+      return new GetDynamicVar({
+        name: name,
+        loc: node$$1.loc
+      });
+    });
+  }
+
+  var getDynamicVarKeyword = {
+    assert: assertGetDynamicVarKeyword,
+    translate: translateGetDynamicVarKeyword
+  };
+
+  function assertHasBlockKeyword(type) {
+    return function (node$$1) {
+      var call = node$$1.type === 'AppendContent' ? node$$1.value : node$$1;
+      var named = call.type === 'Call' ? call.args.named : null;
+      var positionals = call.type === 'Call' ? call.args.positional : null;
+
+      if (named && !named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("(" + type + ") does not take any named arguments", call.loc));
+      }
+
+      if (!positionals || positionals.isEmpty()) {
+        return Ok(_syntax.SourceSlice.synthetic('default'));
+      } else if (positionals.exprs.length === 1) {
+        var positional = positionals.exprs[0];
+
+        if (_syntax.ASTv2.isLiteral(positional, 'string')) {
+          return Ok(positional.toSlice());
+        } else {
+          return Err((0, _syntax.generateSyntaxError)("(" + type + ") can only receive a string literal as its first argument", call.loc));
+        }
       } else {
-        this.push([_wireFormat.Ops.OpenElement, tag]);
+        return Err((0, _syntax.generateSyntaxError)("(" + type + ") only takes a single positional argument", call.loc));
       }
-    }
+    };
+  }
 
-    flushElement() {
-      this.push([_wireFormat.Ops.FlushElement]);
-    }
+  function translateHasBlockKeyword(type) {
+    return function (_ref10, target) {
+      var node$$1 = _ref10.node,
+          scope = _ref10.state.scope;
+      var block = type === 'has-block' ? new HasBlock({
+        loc: node$$1.loc,
+        target: target,
+        symbol: scope.allocateBlock(target.chars)
+      }) : new HasBlockParams({
+        loc: node$$1.loc,
+        target: target,
+        symbol: scope.allocateBlock(target.chars)
+      });
+      return Ok(block);
+    };
+  }
 
-    closeComponent(_element) {
-      if (_element.modifiers.length > 0) {
-        throw new Error('Compile Error: Element modifiers are not allowed in components');
+  function hasBlockKeyword(type) {
+    return {
+      assert: assertHasBlockKeyword(type),
+      translate: translateHasBlockKeyword(type)
+    };
+  }
+
+  function assertIfUnlessInlineKeyword(type) {
+    return function (originalNode) {
+      var _a;
+
+      var inverted = type === 'unless';
+      var node$$1 = originalNode.type === 'AppendContent' ? originalNode.value : originalNode;
+      var named = node$$1.type === 'Call' ? node$$1.args.named : null;
+      var positional = node$$1.type === 'Call' ? node$$1.args.positional : null;
+
+      if (named && !named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("(" + type + ") cannot receive named parameters, received " + named.entries.map(function (e) {
+          return e.name.chars;
+        }).join(', '), originalNode.loc));
       }
 
-      let [tag, attrs, args, block] = this.endComponent();
-      this.push([_wireFormat.Ops.Component, tag, attrs, args, block]);
+      var condition = positional === null || positional === void 0 ? void 0 : positional.nth(0);
+
+      if (!positional || !condition) {
+        return Err((0, _syntax.generateSyntaxError)("When used inline, (" + type + ") requires at least two parameters 1. the condition that determines the state of the (" + type + "), and 2. the value to return if the condition is " + (inverted ? 'false' : 'true') + ". Did not receive any parameters", originalNode.loc));
+      }
+
+      var truthy = positional.nth(1);
+      var falsy = positional.nth(2);
+
+      if (truthy === null) {
+        return Err((0, _syntax.generateSyntaxError)("When used inline, (" + type + ") requires at least two parameters 1. the condition that determines the state of the (" + type + "), and 2. the value to return if the condition is " + (inverted ? 'false' : 'true') + ". Received only one parameter, the condition", originalNode.loc));
+      }
+
+      if (positional.size > 3) {
+        return Err((0, _syntax.generateSyntaxError)("When used inline, (" + type + ") can receive a maximum of three positional parameters 1. the condition that determines the state of the (" + type + "), 2. the value to return if the condition is " + (inverted ? 'false' : 'true') + ", and 3. the value to return if the condition is " + (inverted ? 'true' : 'false') + ". Received " + ((_a = positional === null || positional === void 0 ? void 0 : positional.size) !== null && _a !== void 0 ? _a : 0) + " parameters", originalNode.loc));
+      }
+
+      return Ok({
+        condition: condition,
+        truthy: truthy,
+        falsy: falsy
+      });
+    };
+  }
+
+  function translateIfUnlessInlineKeyword(type) {
+    var inverted = type === 'unless';
+    return function (_ref11, _ref12) {
+      var node$$1 = _ref11.node,
+          state = _ref11.state;
+      var condition = _ref12.condition,
+          truthy = _ref12.truthy,
+          falsy = _ref12.falsy;
+      var conditionResult = VISIT_EXPRS.visit(condition, state);
+      var truthyResult = VISIT_EXPRS.visit(truthy, state);
+      var falsyResult = falsy ? VISIT_EXPRS.visit(falsy, state) : Ok(null);
+      return Result.all(conditionResult, truthyResult, falsyResult).mapOk(function (_ref13) {
+        var condition = _ref13[0],
+            truthy = _ref13[1],
+            falsy = _ref13[2];
+
+        if (inverted) {
+          condition = new Not({
+            value: condition,
+            loc: node$$1.loc
+          });
+        }
+
+        return new IfInline({
+          loc: node$$1.loc,
+          condition: condition,
+          truthy: truthy,
+          falsy: falsy
+        });
+      });
+    };
+  }
+
+  function ifUnlessInlineKeyword(type) {
+    return {
+      assert: assertIfUnlessInlineKeyword(type),
+      translate: translateIfUnlessInlineKeyword(type)
+    };
+  }
+
+  function assertLogKeyword(node$$1) {
+    var _node$$1$args = node$$1.args,
+        named = _node$$1$args.named,
+        positional = _node$$1$args.positional;
+
+    if (named && !named.isEmpty()) {
+      return Err((0, _syntax.generateSyntaxError)("(log) does not take any named arguments", node$$1.loc));
     }
 
-    closeDynamicComponent(_element) {
-      let [, attrs, args, block] = this.endComponent();
-      this.push([_wireFormat.Ops.DynamicComponent, this.popValue(), attrs, args, block]);
-    }
+    return Ok(positional);
+  }
 
-    closeElement(_element) {
-      this.push([_wireFormat.Ops.CloseElement]);
-    }
+  function translateLogKeyword(_ref14, positional) {
+    var node$$1 = _ref14.node,
+        state = _ref14.state;
+    return VISIT_EXPRS.Positional(positional, state).mapOk(function (positional) {
+      return new Log({
+        positional: positional,
+        loc: node$$1.loc
+      });
+    });
+  }
 
-    staticAttr([name, namespace]) {
-      let value = this.popValue();
-      this.push([_wireFormat.Ops.StaticAttr, name, value, namespace]);
-    }
+  var logKeyword = {
+    assert: assertLogKeyword,
+    translate: translateLogKeyword
+  };
+  var CALL_KEYWORDS = keywords('Call').kw('has-block', hasBlockKeyword('has-block')).kw('has-block-params', hasBlockKeyword('has-block-params')).kw('-get-dynamic-var', getDynamicVarKeyword).kw('log', logKeyword).kw('if', ifUnlessInlineKeyword('if')).kw('unless', ifUnlessInlineKeyword('unless')).kw('component', curryKeyword(0
+  /* Component */
+  )).kw('helper', curryKeyword(1
+  /* Helper */
+  )).kw('modifier', curryKeyword(2
+  /* Modifier */
+  ));
 
-    dynamicAttr([name, namespace]) {
-      let value = this.popValue();
-      this.push([_wireFormat.Ops.DynamicAttr, name, value, namespace]);
-    }
+  function toAppend(_ref15) {
+    var assert = _ref15.assert,
+        _translate = _ref15.translate;
+    return {
+      assert: assert,
+      translate: function translate(_ref16, value) {
+        var node$$1 = _ref16.node,
+            state = _ref16.state;
 
-    trustingAttr([name, namespace]) {
-      let value = this.popValue();
-      this.push([_wireFormat.Ops.TrustingAttr, name, value, namespace]);
-    }
+        var result = _translate({
+          node: node$$1,
+          state: state
+        }, value);
 
-    staticArg(name) {
-      let value = this.popValue();
-      this.push([_wireFormat.Ops.StaticArg, name, value]);
-    }
+        return result.mapOk(function (text) {
+          return new AppendTextNode({
+            text: text,
+            loc: node$$1.loc
+          });
+        });
+      }
+    };
+  }
 
-    dynamicArg(name) {
-      let value = this.popValue();
-      this.push([_wireFormat.Ops.DynamicArg, name, value]);
-    }
+  var APPEND_KEYWORDS = keywords('Append').kw('has-block', toAppend(hasBlockKeyword('has-block'))).kw('has-block-params', toAppend(hasBlockKeyword('has-block-params'))).kw('-get-dynamic-var', toAppend(getDynamicVarKeyword)).kw('log', toAppend(logKeyword)).kw('if', toAppend(ifUnlessInlineKeyword('if'))).kw('unless', toAppend(ifUnlessInlineKeyword('unless'))).kw('yield', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
 
-    yield(to) {
-      let params = this.popValue();
-      this.push([_wireFormat.Ops.Yield, to, params]);
-    }
-
-    attrSplat(to) {
-      // consume (and disregard) the value pushed for the
-      // ...attributes attribute
-      this.popValue();
-      this.push([_wireFormat.Ops.AttrSplat, to]);
-    }
-
-    debugger(evalInfo) {
-      this.push([_wireFormat.Ops.Debugger, evalInfo]);
-      this.template.block.hasEval = true;
-    }
-
-    hasBlock(name) {
-      this.pushValue([_wireFormat.Ops.HasBlock, name]);
-    }
-
-    hasBlockParams(name) {
-      this.pushValue([_wireFormat.Ops.HasBlockParams, name]);
-    }
-
-    partial(evalInfo) {
-      let params = this.popValue();
-      this.push([_wireFormat.Ops.Partial, params[0], evalInfo]);
-      this.template.block.hasEval = true;
-    } /// Expressions
-
-
-    literal(value) {
-      if (value === undefined) {
-        this.pushValue([_wireFormat.Ops.Undefined]);
+      if (args.named.isEmpty()) {
+        return Ok({
+          target: _syntax.SourceSpan.synthetic('default').toSlice(),
+          positional: args.positional
+        });
       } else {
-        this.pushValue(value);
+        var target = args.named.get('to');
+
+        if (args.named.size > 1 || target === null) {
+          return Err((0, _syntax.generateSyntaxError)("yield only takes a single named argument: 'to'", args.named.loc));
+        }
+
+        if (_syntax.ASTv2.isLiteral(target, 'string')) {
+          return Ok({
+            target: target.toSlice(),
+            positional: args.positional
+          });
+        } else {
+          return Err((0, _syntax.generateSyntaxError)("you can only yield to a literal string value", target.loc));
+        }
       }
+    },
+    translate: function translate(_ref17, _ref18) {
+      var node$$1 = _ref17.node,
+          state = _ref17.state;
+      var target = _ref18.target,
+          positional = _ref18.positional;
+      return VISIT_EXPRS.Positional(positional, state).mapOk(function (positional) {
+        return new Yield({
+          loc: node$$1.loc,
+          target: target,
+          to: state.scope.allocateBlock(target.chars),
+          positional: positional
+        });
+      });
     }
-
-    unknown(name) {
-      this.pushValue([_wireFormat.Ops.Unknown, name]);
-    }
-
-    get([head, path]) {
-      this.pushValue([_wireFormat.Ops.Get, head, path]);
-    }
-
-    maybeLocal(path) {
-      this.pushValue([_wireFormat.Ops.MaybeLocal, path]);
-    }
-
-    concat() {
-      this.pushValue([_wireFormat.Ops.Concat, this.popValue()]);
-    }
-
-    helper(name) {
-      let params = this.popValue();
-      let hash = this.popValue();
-      this.pushValue([_wireFormat.Ops.Helper, name, params, hash]);
-    } /// Stack Management Opcodes
-
-
-    prepareArray(size) {
-      let values = [];
-
-      for (let i = 0; i < size; i++) {
-        values.push(this.popValue());
-      }
-
-      this.pushValue(values);
-    }
-
-    prepareObject(size) {
-      let keys = new Array(size);
-      let values = new Array(size);
-
-      for (let i = 0; i < size; i++) {
-        keys[i] = this.popValue();
-        values[i] = this.popValue();
+  }).kw('partial', {
+    assert: function assert(node$$1, state) {
+      if (state.isStrict) {
+        return Err((0, _syntax.generateSyntaxError)('{{partial}} is not allowed in strict mode templates', node$$1.loc));
       }
 
-      this.pushValue([keys, values]);
-    } /// Utilities
+      var _node$$1$args2 = node$$1.args,
+          positional = _node$$1$args2.positional,
+          named = _node$$1$args2.named;
+      var trusting = node$$1.trusting;
 
-
-    endComponent() {
-      let component = this.blocks.pop();
-      return component.toJSON();
-    }
-
-    push(args) {
-      while (args[args.length - 1] === null) {
-        args.pop();
+      if (positional.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("Partial found with no arguments. You must specify a template name", node$$1.loc));
+      } else if (positional.size !== 1) {
+        return Err((0, _syntax.generateSyntaxError)("Partial found with " + positional.exprs.length + " arguments. You must specify a template name", node$$1.loc));
       }
 
-      this.currentBlock.push(args);
-    }
+      if (named.isEmpty()) {
+        if (trusting) {
+          return Err((0, _syntax.generateSyntaxError)("{{{partial ...}}} is not supported, please use {{partial ...}} instead", node$$1.loc));
+        }
 
-    pushValue(val) {
-      this.values.push(val);
+        return Ok(positional.nth(0));
+      } else {
+        return Err((0, _syntax.generateSyntaxError)("Partial does not take any named argument", node$$1.loc));
+      }
+    },
+    translate: function translate(_ref19, expr) {
+      var node$$1 = _ref19.node,
+          state = _ref19.state;
+      state.scope.setHasEval();
+      var visited = expr === undefined ? Ok(new _syntax.ASTv2.LiteralExpression({
+        loc: _syntax.SourceSpan.synthetic('undefined'),
+        value: undefined
+      })) : VISIT_EXPRS.visit(expr, state);
+      return visited.mapOk(function (target) {
+        return new Partial({
+          loc: node$$1.loc,
+          scope: state.scope,
+          target: target
+        });
+      });
     }
+  }).kw('debugger', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+      var positional = args.positional;
 
-    popValue() {
-      return this.values.pop();
+      if (args.isEmpty()) {
+        return Ok(undefined);
+      } else {
+        if (positional.isEmpty()) {
+          return Err((0, _syntax.generateSyntaxError)("debugger does not take any named arguments", node$$1.loc));
+        } else {
+          return Err((0, _syntax.generateSyntaxError)("debugger does not take any positional arguments", node$$1.loc));
+        }
+      }
+    },
+    translate: function translate(_ref20) {
+      var node$$1 = _ref20.node,
+          scope = _ref20.state.scope;
+      scope.setHasEval();
+      return Ok(new Debugger({
+        loc: node$$1.loc,
+        scope: scope
+      }));
     }
+  }).kw('component', {
+    assert: assertCurryKeyword(0
+    /* Component */
+    ),
+    translate: function translate(_ref21, _ref22) {
+      var node$$1 = _ref21.node,
+          state = _ref21.state;
+      var definition = _ref22.definition,
+          args = _ref22.args;
+      var definitionResult = VISIT_EXPRS.visit(definition, state);
+      var argsResult = VISIT_EXPRS.Args(args, state);
+      return Result.all(definitionResult, argsResult).mapOk(function (_ref23) {
+        var definition = _ref23[0],
+            args = _ref23[1];
+        return new InvokeComponent({
+          loc: node$$1.loc,
+          definition: definition,
+          args: args,
+          blocks: null
+        });
+      });
+    }
+  }).kw('helper', {
+    assert: assertCurryKeyword(1
+    /* Helper */
+    ),
+    translate: function translate(_ref24, _ref25) {
+      var node$$1 = _ref24.node,
+          state = _ref24.state;
+      var definition = _ref25.definition,
+          args = _ref25.args;
+      var definitionResult = VISIT_EXPRS.visit(definition, state);
+      var argsResult = VISIT_EXPRS.Args(args, state);
+      return Result.all(definitionResult, argsResult).mapOk(function (_ref26) {
+        var definition = _ref26[0],
+            args = _ref26[1];
+        var text = new _CallExpression({
+          callee: definition,
+          args: args,
+          loc: node$$1.loc
+        });
+        return new AppendTextNode({
+          loc: node$$1.loc,
+          text: text
+        });
+      });
+    }
+  });
+  var BLOCK_KEYWORDS = keywords('Block').kw('in-element', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+      var guid = args.get('guid');
 
-  } // There is a small whitelist of namespaced attributes specially
+      if (guid) {
+        return Err((0, _syntax.generateSyntaxError)("Cannot pass `guid` to `{{#in-element}}`", guid.loc));
+      }
+
+      var insertBefore = args.get('insertBefore');
+      var destination = args.nth(0);
+
+      if (destination === null) {
+        return Err((0, _syntax.generateSyntaxError)("{{#in-element}} requires a target element as its first positional parameter", args.loc));
+      } // TODO Better syntax checks
+
+
+      return Ok({
+        insertBefore: insertBefore,
+        destination: destination
+      });
+    },
+    translate: function translate(_ref27, _ref28) {
+      var node$$1 = _ref27.node,
+          state = _ref27.state;
+      var insertBefore = _ref28.insertBefore,
+          destination = _ref28.destination;
+      var named = node$$1.blocks.get('default');
+      var body = VISIT_STMTS.NamedBlock(named, state);
+      var destinationResult = VISIT_EXPRS.visit(destination, state);
+      return Result.all(body, destinationResult).andThen(function (_ref29) {
+        var body = _ref29[0],
+            destination = _ref29[1];
+
+        if (insertBefore) {
+          return VISIT_EXPRS.visit(insertBefore, state).mapOk(function (insertBefore) {
+            return {
+              body: body,
+              destination: destination,
+              insertBefore: insertBefore
+            };
+          });
+        } else {
+          return Ok({
+            body: body,
+            destination: destination,
+            insertBefore: new Missing({
+              loc: node$$1.callee.loc.collapse('end')
+            })
+          });
+        }
+      }).mapOk(function (_ref30) {
+        var body = _ref30.body,
+            destination = _ref30.destination,
+            insertBefore = _ref30.insertBefore;
+        return new InElement({
+          loc: node$$1.loc,
+          block: body,
+          insertBefore: insertBefore,
+          guid: state.generateUniqueCursor(),
+          destination: destination
+        });
+      });
+    }
+  }).kw('if', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+
+      if (!args.named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("{{#if}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
+          return e.name.chars;
+        }).join(', '), node$$1.loc));
+      }
+
+      if (args.positional.size > 1) {
+        return Err((0, _syntax.generateSyntaxError)("{{#if}} can only receive one positional parameter in block form, the conditional value. Received " + args.positional.size + " parameters", node$$1.loc));
+      }
+
+      var condition = args.nth(0);
+
+      if (condition === null) {
+        return Err((0, _syntax.generateSyntaxError)("{{#if}} requires a condition as its first positional parameter, did not receive any parameters", node$$1.loc));
+      }
+
+      return Ok({
+        condition: condition
+      });
+    },
+    translate: function translate(_ref31, _ref32) {
+      var node$$1 = _ref31.node,
+          state = _ref31.state;
+      var condition = _ref32.condition;
+      var block = node$$1.blocks.get('default');
+      var inverse = node$$1.blocks.get('else');
+      var conditionResult = VISIT_EXPRS.visit(condition, state);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
+      return Result.all(conditionResult, blockResult, inverseResult).mapOk(function (_ref33) {
+        var condition = _ref33[0],
+            block = _ref33[1],
+            inverse = _ref33[2];
+        return new If({
+          loc: node$$1.loc,
+          condition: condition,
+          block: block,
+          inverse: inverse
+        });
+      });
+    }
+  }).kw('unless', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+
+      if (!args.named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("{{#unless}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
+          return e.name.chars;
+        }).join(', '), node$$1.loc));
+      }
+
+      if (args.positional.size > 1) {
+        return Err((0, _syntax.generateSyntaxError)("{{#unless}} can only receive one positional parameter in block form, the conditional value. Received " + args.positional.size + " parameters", node$$1.loc));
+      }
+
+      var condition = args.nth(0);
+
+      if (condition === null) {
+        return Err((0, _syntax.generateSyntaxError)("{{#unless}} requires a condition as its first positional parameter, did not receive any parameters", node$$1.loc));
+      }
+
+      return Ok({
+        condition: condition
+      });
+    },
+    translate: function translate(_ref34, _ref35) {
+      var node$$1 = _ref34.node,
+          state = _ref34.state;
+      var condition = _ref35.condition;
+      var block = node$$1.blocks.get('default');
+      var inverse = node$$1.blocks.get('else');
+      var conditionResult = VISIT_EXPRS.visit(condition, state);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
+      return Result.all(conditionResult, blockResult, inverseResult).mapOk(function (_ref36) {
+        var condition = _ref36[0],
+            block = _ref36[1],
+            inverse = _ref36[2];
+        return new If({
+          loc: node$$1.loc,
+          condition: new Not({
+            value: condition,
+            loc: node$$1.loc
+          }),
+          block: block,
+          inverse: inverse
+        });
+      });
+    }
+  }).kw('each', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+
+      if (!args.named.entries.every(function (e) {
+        return e.name.chars === 'key';
+      })) {
+        return Err((0, _syntax.generateSyntaxError)("{{#each}} can only receive the 'key' named parameter, received " + args.named.entries.filter(function (e) {
+          return e.name.chars !== 'key';
+        }).map(function (e) {
+          return e.name.chars;
+        }).join(', '), args.named.loc));
+      }
+
+      if (args.positional.size > 1) {
+        return Err((0, _syntax.generateSyntaxError)("{{#each}} can only receive one positional parameter, the collection being iterated. Received " + args.positional.size + " parameters", args.positional.loc));
+      }
+
+      var value = args.nth(0);
+      var key = args.get('key');
+
+      if (value === null) {
+        return Err((0, _syntax.generateSyntaxError)("{{#each}} requires an iterable value to be passed as its first positional parameter, did not receive any parameters", args.loc));
+      }
+
+      return Ok({
+        value: value,
+        key: key
+      });
+    },
+    translate: function translate(_ref37, _ref38) {
+      var node$$1 = _ref37.node,
+          state = _ref37.state;
+      var value = _ref38.value,
+          key = _ref38.key;
+      var block = node$$1.blocks.get('default');
+      var inverse = node$$1.blocks.get('else');
+      var valueResult = VISIT_EXPRS.visit(value, state);
+      var keyResult = key ? VISIT_EXPRS.visit(key, state) : Ok(null);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
+      return Result.all(valueResult, keyResult, blockResult, inverseResult).mapOk(function (_ref39) {
+        var value = _ref39[0],
+            key = _ref39[1],
+            block = _ref39[2],
+            inverse = _ref39[3];
+        return new Each({
+          loc: node$$1.loc,
+          value: value,
+          key: key,
+          block: block,
+          inverse: inverse
+        });
+      });
+    }
+  }).kw('with', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+
+      if (!args.named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("{{#with}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
+          return e.name.chars;
+        }).join(', '), args.named.loc));
+      }
+
+      if (args.positional.size > 1) {
+        return Err((0, _syntax.generateSyntaxError)("{{#with}} can only receive one positional parameter. Received " + args.positional.size + " parameters", args.positional.loc));
+      }
+
+      var value = args.nth(0);
+
+      if (value === null) {
+        return Err((0, _syntax.generateSyntaxError)("{{#with}} requires a value as its first positional parameter, did not receive any parameters", args.loc));
+      }
+
+      return Ok({
+        value: value
+      });
+    },
+    translate: function translate(_ref40, _ref41) {
+      var node$$1 = _ref40.node,
+          state = _ref40.state;
+      var value = _ref41.value;
+      var block = node$$1.blocks.get('default');
+      var inverse = node$$1.blocks.get('else');
+      var valueResult = VISIT_EXPRS.visit(value, state);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
+      return Result.all(valueResult, blockResult, inverseResult).mapOk(function (_ref42) {
+        var value = _ref42[0],
+            block = _ref42[1],
+            inverse = _ref42[2];
+        return new With({
+          loc: node$$1.loc,
+          value: value,
+          block: block,
+          inverse: inverse
+        });
+      });
+    }
+  }).kw('let', {
+    assert: function assert(node$$1) {
+      var args = node$$1.args;
+
+      if (!args.named.isEmpty()) {
+        return Err((0, _syntax.generateSyntaxError)("{{#let}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
+          return e.name.chars;
+        }).join(', '), args.named.loc));
+      }
+
+      if (args.positional.size === 0) {
+        return Err((0, _syntax.generateSyntaxError)("{{#let}} requires at least one value as its first positional parameter, did not receive any parameters", args.positional.loc));
+      }
+
+      if (node$$1.blocks.get('else')) {
+        return Err((0, _syntax.generateSyntaxError)("{{#let}} cannot receive an {{else}} block", args.positional.loc));
+      }
+
+      return Ok({
+        positional: args.positional
+      });
+    },
+    translate: function translate(_ref43, _ref44) {
+      var node$$1 = _ref43.node,
+          state = _ref43.state;
+      var positional = _ref44.positional;
+      var block = node$$1.blocks.get('default');
+      var positionalResult = VISIT_EXPRS.Positional(positional, state);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      return Result.all(positionalResult, blockResult).mapOk(function (_ref45) {
+        var positional = _ref45[0],
+            block = _ref45[1];
+        return new Let({
+          loc: node$$1.loc,
+          positional: positional,
+          block: block
+        });
+      });
+    }
+  }).kw('-with-dynamic-vars', {
+    assert: function assert(node$$1) {
+      return Ok({
+        named: node$$1.args.named
+      });
+    },
+    translate: function translate(_ref46, _ref47) {
+      var node$$1 = _ref46.node,
+          state = _ref46.state;
+      var named = _ref47.named;
+      var block = node$$1.blocks.get('default');
+      var namedResult = VISIT_EXPRS.NamedArguments(named, state);
+      var blockResult = VISIT_STMTS.NamedBlock(block, state);
+      return Result.all(namedResult, blockResult).mapOk(function (_ref48) {
+        var named = _ref48[0],
+            block = _ref48[1];
+        return new WithDynamicVars({
+          loc: node$$1.loc,
+          named: named,
+          block: block
+        });
+      });
+    }
+  }).kw('component', {
+    assert: assertCurryKeyword(0
+    /* Component */
+    ),
+    translate: function translate(_ref49, _ref50) {
+      var node$$1 = _ref49.node,
+          state = _ref49.state;
+      var definition = _ref50.definition,
+          args = _ref50.args;
+      var definitionResult = VISIT_EXPRS.visit(definition, state);
+      var argsResult = VISIT_EXPRS.Args(args, state);
+      var blocksResult = VISIT_STMTS.NamedBlocks(node$$1.blocks, state);
+      return Result.all(definitionResult, argsResult, blocksResult).mapOk(function (_ref51) {
+        var definition = _ref51[0],
+            args = _ref51[1],
+            blocks = _ref51[2];
+        return new InvokeComponent({
+          loc: node$$1.loc,
+          definition: definition,
+          args: args,
+          blocks: blocks
+        });
+      });
+    }
+  });
+  var MODIFIER_KEYWORDS = keywords('Modifier'); // There is a small whitelist of namespaced attributes specially
   // enumerated in
   // https://www.w3.org/TR/html/syntax.html#attributes-0
   //
@@ -2775,11 +4461,10 @@ enifed("@glimmer/compiler", ["exports", "node-module", "@glimmer/util", "@glimme
   //
   // > No other namespaced attribute can be expressed in the HTML syntax.
 
-
-  const XLINK = 'http://www.w3.org/1999/xlink';
-  const XML = 'http://www.w3.org/XML/1998/namespace';
-  const XMLNS = 'http://www.w3.org/2000/xmlns/';
-  const WHITELIST = {
+  var XLINK = 'http://www.w3.org/1999/xlink';
+  var XML = 'http://www.w3.org/XML/1998/namespace';
+  var XMLNS = 'http://www.w3.org/2000/xmlns/';
+  var WHITELIST = {
     'xlink:actuate': XLINK,
     'xlink:arcrole': XLINK,
     'xlink:href': XLINK,
@@ -2795,773 +4480,1550 @@ enifed("@glimmer/compiler", ["exports", "node-module", "@glimmer/util", "@glimme
   };
 
   function getAttrNamespace(attrName) {
-    return WHITELIST[attrName] || null;
+    return WHITELIST[attrName];
   }
 
-  class SymbolAllocator {
-    constructor(ops) {
-      this.ops = ops;
-      this.symbolStack = new _util.Stack();
+  var DEFLATE_TAG_TABLE = {
+    div: 0
+    /* div */
+    ,
+    span: 1
+    /* span */
+    ,
+    p: 2
+    /* p */
+    ,
+    a: 3
+    /* a */
+
+  };
+  var INFLATE_TAG_TABLE = ['div', 'span', 'p', 'a'];
+
+  function deflateTagName(tagName) {
+    var _a;
+
+    return (_a = DEFLATE_TAG_TABLE[tagName]) !== null && _a !== void 0 ? _a : tagName;
+  }
+
+  function inflateTagName(tagName) {
+    return typeof tagName === 'string' ? tagName : INFLATE_TAG_TABLE[tagName];
+  }
+
+  var DEFLATE_ATTR_TABLE = {
+    class: 0
+    /* class */
+    ,
+    id: 1
+    /* id */
+    ,
+    value: 2
+    /* value */
+    ,
+    name: 3
+    /* name */
+    ,
+    type: 4
+    /* type */
+    ,
+    style: 5
+    /* style */
+    ,
+    href: 6
+    /* href */
+
+  };
+  var INFLATE_ATTR_TABLE = ['class', 'id', 'value', 'name', 'type', 'style', 'href'];
+
+  function deflateAttrName(attrName) {
+    var _a;
+
+    return (_a = DEFLATE_ATTR_TABLE[attrName]) !== null && _a !== void 0 ? _a : attrName;
+  }
+
+  function inflateAttrName(attrName) {
+    return typeof attrName === 'string' ? attrName : INFLATE_ATTR_TABLE[attrName];
+  }
+
+  var ClassifiedElement = /*#__PURE__*/function () {
+    function ClassifiedElement(element, delegate, state) {
+      this.element = element;
+      this.state = state;
+      this.delegate = delegate;
     }
 
-    process() {
-      let out = [];
-      let {
-        ops
-      } = this;
+    var _proto9 = ClassifiedElement.prototype;
 
-      for (let i = 0; i < ops.length; i++) {
-        let op = ops[i];
-        let result = this.dispatch(op);
+    _proto9.toStatement = function toStatement() {
+      var _this4 = this;
 
-        if (result === undefined) {
-          out.push(op);
+      return this.prepare().andThen(function (prepared) {
+        return _this4.delegate.toStatement(_this4, prepared);
+      });
+    };
+
+    _proto9.attr = function attr(_attr) {
+      var _this5 = this;
+
+      var name = _attr.name;
+      var rawValue = _attr.value;
+      var namespace = getAttrNamespace(name.chars) || undefined;
+
+      if (_syntax.ASTv2.isLiteral(rawValue, 'string')) {
+        return Ok(new StaticAttr({
+          loc: _attr.loc,
+          name: name,
+          value: rawValue.toSlice(),
+          namespace: namespace,
+          kind: {
+            component: this.delegate.dynamicFeatures
+          }
+        }));
+      }
+
+      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(rawValue), this.state).mapOk(function (value) {
+        var isTrusting = _attr.trusting;
+        return new DynamicAttr({
+          loc: _attr.loc,
+          name: name,
+          value: value,
+          namespace: namespace,
+          kind: {
+            trusting: isTrusting,
+            component: _this5.delegate.dynamicFeatures
+          }
+        });
+      });
+    };
+
+    _proto9.modifier = function modifier(_modifier) {
+      if (isHelperInvocation(_modifier)) {
+        assertIsValidModifier(_modifier);
+      }
+
+      var translated = MODIFIER_KEYWORDS.translate(_modifier, this.state);
+
+      if (translated !== null) {
+        return translated;
+      }
+
+      var head = VISIT_EXPRS.visit(_modifier.callee, this.state);
+      var args = VISIT_EXPRS.Args(_modifier.args, this.state);
+      return Result.all(head, args).mapOk(function (_ref52) {
+        var head = _ref52[0],
+            args = _ref52[1];
+        return new Modifier({
+          loc: _modifier.loc,
+          callee: head,
+          args: args
+        });
+      });
+    };
+
+    _proto9.attrs = function attrs() {
+      var attrs = new ResultArray();
+      var args = new ResultArray(); // Unlike most attributes, the `type` attribute can change how
+      // subsequent attributes are interpreted by the browser. To address
+      // this, in simple cases, we special case the `type` attribute to be set
+      // last. For elements with splattributes, where attribute order affects
+      // precedence, this re-ordering happens at runtime instead.
+      // See https://github.com/glimmerjs/glimmer-vm/pull/726
+
+      var typeAttr = null;
+      var simple = this.element.attrs.filter(function (attr) {
+        return attr.type === 'SplatAttr';
+      }).length === 0;
+
+      for (var _iterator4 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.element.attrs), _step4; !(_step4 = _iterator4()).done;) {
+        var _attr2 = _step4.value;
+
+        if (_attr2.type === 'SplatAttr') {
+          attrs.add(Ok(new SplatAttr({
+            loc: _attr2.loc,
+            symbol: this.state.scope.allocateBlock('attrs')
+          })));
+        } else if (_attr2.name.chars === 'type' && simple) {
+          typeAttr = _attr2;
         } else {
-          out.push(result);
+          attrs.add(this.attr(_attr2));
+        }
+      }
+
+      for (var _iterator5 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.element.componentArgs), _step5; !(_step5 = _iterator5()).done;) {
+        var _arg = _step5.value;
+        args.add(this.delegate.arg(_arg, this));
+      }
+
+      if (typeAttr) {
+        attrs.add(this.attr(typeAttr));
+      }
+
+      return Result.all(args.toArray(), attrs.toArray()).mapOk(function (_ref53) {
+        var args = _ref53[0],
+            attrs = _ref53[1];
+        return {
+          attrs: attrs,
+          args: new _NamedArguments({
+            loc: (0, _syntax.maybeLoc)(args, _syntax.SourceSpan.NON_EXISTENT),
+            entries: OptionalList(args)
+          })
+        };
+      });
+    };
+
+    _proto9.prepare = function prepare() {
+      var _this6 = this;
+
+      var attrs = this.attrs();
+      var modifiers = new ResultArray(this.element.modifiers.map(function (m) {
+        return _this6.modifier(m);
+      })).toArray();
+      return Result.all(attrs, modifiers).mapOk(function (_ref54) {
+        var result = _ref54[0],
+            modifiers = _ref54[1];
+        var attrs = result.attrs,
+            args = result.args;
+        var elementParams = [].concat(attrs, modifiers);
+        var params = new ElementParameters({
+          loc: (0, _syntax.maybeLoc)(elementParams, _syntax.SourceSpan.NON_EXISTENT),
+          body: OptionalList(elementParams)
+        });
+        return {
+          args: args,
+          params: params
+        };
+      });
+    };
+
+    return ClassifiedElement;
+  }();
+
+  function hasDynamicFeatures(_ref55) {
+    var attrs = _ref55.attrs,
+        modifiers = _ref55.modifiers;
+
+    // ElementModifier needs the special ComponentOperations
+    if (modifiers.length > 0) {
+      return true;
+    } // Splattributes need the special ComponentOperations to merge into
+
+
+    return !!attrs.filter(function (attr) {
+      return attr.type === 'SplatAttr';
+    })[0];
+  }
+
+  var ClassifiedComponent = /*#__PURE__*/function () {
+    function ClassifiedComponent(tag, element) {
+      this.tag = tag;
+      this.element = element;
+      this.dynamicFeatures = true;
+    }
+
+    var _proto10 = ClassifiedComponent.prototype;
+
+    _proto10.arg = function arg(attr, _ref56) {
+      var state = _ref56.state;
+      var name = attr.name;
+      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(attr.value), state).mapOk(function (value) {
+        return new NamedArgument({
+          loc: attr.loc,
+          key: name,
+          value: value
+        });
+      });
+    };
+
+    _proto10.toStatement = function toStatement(component, _ref57) {
+      var _this7 = this;
+
+      var args = _ref57.args,
+          params = _ref57.params;
+      var element = component.element,
+          state = component.state;
+      return this.blocks(state).mapOk(function (blocks) {
+        return new Component({
+          loc: element.loc,
+          tag: _this7.tag,
+          params: params,
+          args: args,
+          blocks: blocks
+        });
+      });
+    };
+
+    _proto10.blocks = function blocks(state) {
+      return VISIT_STMTS.NamedBlocks(this.element.blocks, state);
+    };
+
+    return ClassifiedComponent;
+  }();
+
+  var ClassifiedSimpleElement = /*#__PURE__*/function () {
+    function ClassifiedSimpleElement(tag, element, dynamicFeatures) {
+      this.tag = tag;
+      this.element = element;
+      this.dynamicFeatures = dynamicFeatures;
+      this.isComponent = false;
+    }
+
+    var _proto11 = ClassifiedSimpleElement.prototype;
+
+    _proto11.arg = function arg(attr) {
+      return Err((0, _syntax.generateSyntaxError)(attr.name.chars + " is not a valid attribute name. @arguments are only allowed on components, but the tag for this element (`" + this.tag.chars + "`) is a regular, non-component HTML element.", attr.loc));
+    };
+
+    _proto11.toStatement = function toStatement(classified, _ref58) {
+      var _this8 = this;
+
+      var params = _ref58.params;
+      var state = classified.state,
+          element = classified.element;
+      var body = VISIT_STMTS.visitList(this.element.body, state);
+      return body.mapOk(function (body) {
+        return new SimpleElement({
+          loc: element.loc,
+          tag: _this8.tag,
+          params: params,
+          body: body.toArray(),
+          dynamicFeatures: _this8.dynamicFeatures
+        });
+      });
+    };
+
+    return ClassifiedSimpleElement;
+  }();
+
+  var NormalizationStatements = /*#__PURE__*/function () {
+    function NormalizationStatements() {}
+
+    var _proto12 = NormalizationStatements.prototype;
+
+    _proto12.visitList = function visitList(nodes, state) {
+      return new ResultArray(nodes.map(function (e) {
+        return VISIT_STMTS.visit(e, state);
+      })).toOptionalList().mapOk(function (list) {
+        return list.filter(function (s) {
+          return s !== null;
+        });
+      });
+    };
+
+    _proto12.visit = function visit(node$$1, state) {
+      switch (node$$1.type) {
+        case 'GlimmerComment':
+          return Ok(null);
+
+        case 'AppendContent':
+          return this.AppendContent(node$$1, state);
+
+        case 'HtmlText':
+          return Ok(this.TextNode(node$$1));
+
+        case 'HtmlComment':
+          return Ok(this.HtmlComment(node$$1));
+
+        case 'InvokeBlock':
+          return this.InvokeBlock(node$$1, state);
+
+        case 'InvokeComponent':
+          return this.Component(node$$1, state);
+
+        case 'SimpleElement':
+          return this.SimpleElement(node$$1, state);
+      }
+    };
+
+    _proto12.InvokeBlock = function InvokeBlock(node$$1, state) {
+      var _this9 = this;
+
+      var translated = BLOCK_KEYWORDS.translate(node$$1, state);
+
+      if (translated !== null) {
+        return translated;
+      }
+
+      var head = VISIT_EXPRS.visit(node$$1.callee, state);
+      var args = VISIT_EXPRS.Args(node$$1.args, state);
+      return Result.all(head, args).andThen(function (_ref59) {
+        var head = _ref59[0],
+            args = _ref59[1];
+        return _this9.NamedBlocks(node$$1.blocks, state).mapOk(function (blocks) {
+          return new _InvokeBlock({
+            loc: node$$1.loc,
+            head: head,
+            args: args,
+            blocks: blocks
+          });
+        });
+      });
+    };
+
+    _proto12.NamedBlocks = function NamedBlocks(blocks, state) {
+      var _this10 = this;
+
+      var list = new ResultArray(blocks.blocks.map(function (b) {
+        return _this10.NamedBlock(b, state);
+      }));
+      return list.toArray().mapOk(function (list) {
+        return new _NamedBlocks({
+          loc: blocks.loc,
+          blocks: OptionalList(list)
+        });
+      });
+    };
+
+    _proto12.NamedBlock = function NamedBlock(named, state) {
+      var body = state.visitBlock(named.block);
+      return body.mapOk(function (body) {
+        return new _NamedBlock({
+          loc: named.loc,
+          name: named.name,
+          body: body.toArray(),
+          scope: named.block.scope
+        });
+      });
+    };
+
+    _proto12.SimpleElement = function SimpleElement(element, state) {
+      return new ClassifiedElement(element, new ClassifiedSimpleElement(element.tag, element, hasDynamicFeatures(element)), state).toStatement();
+    };
+
+    _proto12.Component = function Component(component, state) {
+      return VISIT_EXPRS.visit(component.callee, state).andThen(function (callee) {
+        return new ClassifiedElement(component, new ClassifiedComponent(callee, component), state).toStatement();
+      });
+    };
+
+    _proto12.AppendContent = function AppendContent(append, state) {
+      var translated = APPEND_KEYWORDS.translate(append, state);
+
+      if (translated !== null) {
+        return translated;
+      }
+
+      var value = VISIT_EXPRS.visit(append.value, state);
+      return value.mapOk(function (value) {
+        if (append.trusting) {
+          return new AppendTrustedHTML({
+            loc: append.loc,
+            html: value
+          });
+        } else {
+          return new AppendTextNode({
+            loc: append.loc,
+            text: value
+          });
+        }
+      });
+    };
+
+    _proto12.TextNode = function TextNode(text) {
+      return new AppendTextNode({
+        loc: text.loc,
+        text: new _syntax.ASTv2.LiteralExpression({
+          loc: text.loc,
+          value: text.chars
+        })
+      });
+    };
+
+    _proto12.HtmlComment = function HtmlComment(comment) {
+      return new AppendComment({
+        loc: comment.loc,
+        value: comment.text
+      });
+    };
+
+    return NormalizationStatements;
+  }();
+
+  var VISIT_STMTS = new NormalizationStatements();
+
+  var __classPrivateFieldSet$1 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var __classPrivateFieldGet$1 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    return privateMap.get(receiver);
+  };
+
+  var _currentScope, _cursorCount;
+  /**
+   * This is the mutable state for this compiler pass.
+   */
+
+
+  var NormalizationState = /*#__PURE__*/function () {
+    function NormalizationState(block, isStrict) {
+      this.isStrict = isStrict;
+
+      _currentScope.set(this, void 0);
+
+      _cursorCount.set(this, 0);
+
+      __classPrivateFieldSet$1(this, _currentScope, block);
+    }
+
+    var _proto13 = NormalizationState.prototype;
+
+    _proto13.generateUniqueCursor = function generateUniqueCursor() {
+      var _a;
+
+      return "%cursor:" + (__classPrivateFieldSet$1(this, _cursorCount, (_a = +__classPrivateFieldGet$1(this, _cursorCount)) + 1), _a) + "%";
+    };
+
+    _proto13.visitBlock = function visitBlock(block) {
+      var oldBlock = __classPrivateFieldGet$1(this, _currentScope);
+
+      __classPrivateFieldSet$1(this, _currentScope, block.scope);
+
+      try {
+        return VISIT_STMTS.visitList(block.body, this);
+      } finally {
+        __classPrivateFieldSet$1(this, _currentScope, oldBlock);
+      }
+    };
+
+    (0, _emberBabel.createClass)(NormalizationState, [{
+      key: "scope",
+      get: function get() {
+        return __classPrivateFieldGet$1(this, _currentScope);
+      }
+    }]);
+    return NormalizationState;
+  }();
+
+  _currentScope = new WeakMap(), _cursorCount = new WeakMap();
+  /**
+   * Normalize the AST from @glimmer/syntax into the HIR. The HIR has special
+   * instructions for keywords like `{{yield}}`, `(has-block)` and
+   * `{{#in-element}}`.
+   *
+   * Most importantly, it also classifies HTML element syntax into:
+   *
+   * 1. simple HTML element (with optional splattributes)
+   * 2. component invocation
+   *
+   * Because the @glimmer/syntax AST gives us a string for an element's tag,
+   * this pass also normalizes that string into an expression.
+   *
+   * ```
+   * // normalized into a path expression whose head is `this` and tail is
+   * // `["x"]`
+   * <this.x />
+   *
+   * {{#let expr as |t|}}
+   *   // `"t"` is normalized into a variable lookup.
+   *   <t />
+   *
+   *   // normalized into a path expression whose head is the variable lookup
+   *   // `t` and tail is `["input"]`.
+   *   <t.input />
+   * {{/let}}
+   *
+   * // normalized into a free variable lookup for `SomeComponent` (with the
+   * // context `ComponentHead`).
+   * <SomeComponent />
+   *
+   * // normalized into a path expression whose head is the free variable
+   * // `notInScope` (with the context `Expression`), and whose tail is
+   * // `["SomeComponent"]`. In resolver mode, this path will be rejected later,
+   * // since it cannot serve as an input to the resolver.
+   * <notInScope.SomeComponent />
+   * ```
+   */
+
+  function normalize$1(source, root, isStrict) {
+    // create a new context for the normalization pass
+    var state = new NormalizationState(root.table, isStrict);
+    var body = VISIT_STMTS.visitList(root.body, state);
+    return body.mapOk(function (body) {
+      return new Template({
+        loc: root.loc,
+        scope: root.table,
+        body: body.toArray()
+      });
+    });
+  }
+
+  var WireFormatDebugger = /*#__PURE__*/function () {
+    function WireFormatDebugger(_ref60) {
+      var _statements = _ref60[0],
+          symbols = _ref60[1],
+          _hasEval = _ref60[2],
+          upvars = _ref60[3];
+      this.upvars = upvars;
+      this.symbols = symbols;
+    }
+
+    var _proto14 = WireFormatDebugger.prototype;
+
+    _proto14.format = function format(program) {
+      var out = [];
+
+      for (var _iterator6 = (0, _emberBabel.createForOfIteratorHelperLoose)(program[0]), _step6; !(_step6 = _iterator6()).done;) {
+        var _statement = _step6.value;
+        out.push(this.formatOpcode(_statement));
+      }
+
+      return out;
+    };
+
+    _proto14.formatOpcode = function formatOpcode(opcode) {
+      if (Array.isArray(opcode)) {
+        switch (opcode[0]) {
+          case 1
+          /* Append */
+          :
+            return ['append', this.formatOpcode(opcode[1])];
+
+          case 2
+          /* TrustingAppend */
+          :
+            return ['trusting-append', this.formatOpcode(opcode[1])];
+
+          case 6
+          /* Block */
+          :
+            return ['block', this.formatOpcode(opcode[1]), this.formatParams(opcode[2]), this.formatHash(opcode[3]), this.formatBlocks(opcode[4])];
+
+          case 40
+          /* InElement */
+          :
+            return ['in-element', opcode[1], this.formatOpcode(opcode[2]), opcode[3] ? this.formatOpcode(opcode[3]) : undefined];
+
+          case 10
+          /* OpenElement */
+          :
+            return ['open-element', inflateTagName(opcode[1])];
+
+          case 11
+          /* OpenElementWithSplat */
+          :
+            return ['open-element-with-splat', inflateTagName(opcode[1])];
+
+          case 13
+          /* CloseElement */
+          :
+            return ['close-element'];
+
+          case 12
+          /* FlushElement */
+          :
+            return ['flush-element'];
+
+          case 14
+          /* StaticAttr */
+          :
+            return ['static-attr', inflateAttrName(opcode[1]), opcode[2], opcode[3]];
+
+          case 24
+          /* StaticComponentAttr */
+          :
+            return ['static-component-attr', inflateAttrName(opcode[1]), opcode[2], opcode[3]];
+
+          case 15
+          /* DynamicAttr */
+          :
+            return ['dynamic-attr', inflateAttrName(opcode[1]), this.formatOpcode(opcode[2]), opcode[3]];
+
+          case 16
+          /* ComponentAttr */
+          :
+            return ['component-attr', inflateAttrName(opcode[1]), this.formatOpcode(opcode[2]), opcode[3]];
+
+          case 17
+          /* AttrSplat */
+          :
+            return ['attr-splat'];
+
+          case 18
+          /* Yield */
+          :
+            return ['yield', opcode[1], this.formatParams(opcode[2])];
+
+          case 19
+          /* Partial */
+          :
+            return ['partial', this.formatOpcode(opcode[1]), opcode[2]];
+
+          case 20
+          /* DynamicArg */
+          :
+            return ['dynamic-arg', opcode[1], this.formatOpcode(opcode[2])];
+
+          case 21
+          /* StaticArg */
+          :
+            return ['static-arg', opcode[1], this.formatOpcode(opcode[2])];
+
+          case 22
+          /* TrustingDynamicAttr */
+          :
+            return ['trusting-dynamic-attr', inflateAttrName(opcode[1]), this.formatOpcode(opcode[2]), opcode[3]];
+
+          case 23
+          /* TrustingComponentAttr */
+          :
+            return ['trusting-component-attr', inflateAttrName(opcode[1]), this.formatOpcode(opcode[2]), opcode[3]];
+
+          case 26
+          /* Debugger */
+          :
+            return ['debugger', opcode[1]];
+
+          case 3
+          /* Comment */
+          :
+            return ['comment', opcode[1]];
+
+          case 4
+          /* Modifier */
+          :
+            return ['modifier', this.formatOpcode(opcode[1]), this.formatParams(opcode[2]), this.formatHash(opcode[3])];
+
+          case 8
+          /* Component */
+          :
+            return ['component', this.formatOpcode(opcode[1]), this.formatElementParams(opcode[2]), this.formatHash(opcode[3]), this.formatBlocks(opcode[4])];
+
+          case 48
+          /* HasBlock */
+          :
+            return ['has-block', this.formatOpcode(opcode[1])];
+
+          case 49
+          /* HasBlockParams */
+          :
+            return ['has-block-params', this.formatOpcode(opcode[1])];
+
+          case 50
+          /* Curry */
+          :
+            return ['curry', this.formatOpcode(opcode[1]), this.formatCurryType(opcode[2]), this.formatParams(opcode[3]), this.formatHash(opcode[4])];
+
+          case 27
+          /* Undefined */
+          :
+            return ['undefined'];
+
+          case 28
+          /* Call */
+          :
+            return ['call', this.formatOpcode(opcode[1]), this.formatParams(opcode[2]), this.formatHash(opcode[3])];
+
+          case 29
+          /* Concat */
+          :
+            return ['concat', this.formatParams(opcode[1])];
+
+          case 31
+          /* GetStrictFree */
+          :
+            return ['get-strict-free', this.upvars[opcode[1]], opcode[2]];
+
+          case 33
+          /* GetFreeAsFallback */
+          :
+            return ['GetFreeAsFallback', this.upvars[opcode[1]], opcode[2]];
+
+          case 34
+          /* GetFreeAsComponentOrHelperHeadOrThisFallback */
+          :
+            return ['GetFreeAsComponentOrHelperHeadOrThisFallback', this.upvars[opcode[1]], opcode[2]];
+
+          case 35
+          /* GetFreeAsComponentOrHelperHead */
+          :
+            return ['GetFreeAsComponentOrHelperHead', this.upvars[opcode[1]], opcode[2]];
+
+          case 36
+          /* GetFreeAsHelperHeadOrThisFallback */
+          :
+            return ['GetFreeAsHelperHeadOrThisFallback', this.upvars[opcode[1]], opcode[2]];
+
+          case 37
+          /* GetFreeAsHelperHead */
+          :
+            return ['GetFreeAsHelperHead', this.upvars[opcode[1]], opcode[2]];
+
+          case 39
+          /* GetFreeAsComponentHead */
+          :
+            return ['GetFreeAsComponentHead', this.upvars[opcode[1]], opcode[2]];
+
+          case 38
+          /* GetFreeAsModifierHead */
+          :
+            return ['GetFreeAsModifierHead', this.upvars[opcode[1]], opcode[2]];
+
+          case 30
+          /* GetSymbol */
+          :
+            {
+              if (opcode[1] === 0) {
+                return ['get-symbol', 'this', opcode[2]];
+              } else {
+                return ['get-symbol', this.symbols[opcode[1] - 1], opcode[2]];
+              }
+            }
+
+          case 32
+          /* GetTemplateSymbol */
+          :
+            {
+              return ['get-template-symbol', opcode[1], opcode[2]];
+            }
+
+          case 41
+          /* If */
+          :
+            return ['if', this.formatOpcode(opcode[1]), this.formatBlock(opcode[2]), opcode[3] ? this.formatBlock(opcode[3]) : null];
+
+          case 52
+          /* IfInline */
+          :
+            return ['if-inline'];
+
+          case 51
+          /* Not */
+          :
+            return ['not'];
+
+          case 42
+          /* Each */
+          :
+            return ['each', this.formatOpcode(opcode[1]), opcode[2] ? this.formatOpcode(opcode[2]) : null, this.formatBlock(opcode[3]), opcode[4] ? this.formatBlock(opcode[4]) : null];
+
+          case 43
+          /* With */
+          :
+            return ['with', this.formatOpcode(opcode[1]), this.formatBlock(opcode[2]), opcode[3] ? this.formatBlock(opcode[3]) : null];
+
+          case 44
+          /* Let */
+          :
+            return ['let', this.formatParams(opcode[1]), this.formatBlock(opcode[2])];
+
+          case 54
+          /* Log */
+          :
+            return ['log', this.formatParams(opcode[1])];
+
+          case 45
+          /* WithDynamicVars */
+          :
+            return ['-with-dynamic-vars', this.formatHash(opcode[1]), this.formatBlock(opcode[2])];
+
+          case 53
+          /* GetDynamicVar */
+          :
+            return ['-get-dynamic-vars', this.formatOpcode(opcode[1])];
+
+          case 46
+          /* InvokeComponent */
+          :
+            return ['component', this.formatOpcode(opcode[1]), this.formatParams(opcode[2]), this.formatHash(opcode[3]), this.formatBlocks(opcode[4])];
+        }
+      } else {
+        return opcode;
+      }
+    };
+
+    _proto14.formatCurryType = function formatCurryType(value) {
+      switch (value) {
+        case 0
+        /* Component */
+        :
+          return 'component';
+
+        case 1
+        /* Helper */
+        :
+          return 'helper';
+
+        case 2
+        /* Modifier */
+        :
+          return 'modifier';
+
+        default:
+          throw (0, _util.exhausted)(value);
+      }
+    };
+
+    _proto14.formatElementParams = function formatElementParams(opcodes) {
+      var _this11 = this;
+
+      if (opcodes === null) return null;
+      return opcodes.map(function (o) {
+        return _this11.formatOpcode(o);
+      });
+    };
+
+    _proto14.formatParams = function formatParams(opcodes) {
+      var _this12 = this;
+
+      if (opcodes === null) return null;
+      return opcodes.map(function (o) {
+        return _this12.formatOpcode(o);
+      });
+    };
+
+    _proto14.formatHash = function formatHash(hash) {
+      var _this13 = this;
+
+      if (hash === null) return null;
+      return hash[0].reduce(function (accum, key, index) {
+        accum[key] = _this13.formatOpcode(hash[1][index]);
+        return accum;
+      }, (0, _util.dict)());
+    };
+
+    _proto14.formatBlocks = function formatBlocks(blocks) {
+      var _this14 = this;
+
+      if (blocks === null) return null;
+      return blocks[0].reduce(function (accum, key, index) {
+        accum[key] = _this14.formatBlock(blocks[1][index]);
+        return accum;
+      }, (0, _util.dict)());
+    };
+
+    _proto14.formatBlock = function formatBlock(block) {
+      var _this15 = this;
+
+      return {
+        statements: block[0].map(function (s) {
+          return _this15.formatOpcode(s);
+        }),
+        parameters: block[1]
+      };
+    };
+
+    return WireFormatDebugger;
+  }();
+
+  _exports.WireFormatDebugger = WireFormatDebugger;
+
+  var ExpressionEncoder = /*#__PURE__*/function () {
+    function ExpressionEncoder() {}
+
+    var _proto15 = ExpressionEncoder.prototype;
+
+    _proto15.expr = function expr(_expr) {
+      switch (_expr.type) {
+        case 'Missing':
+          return undefined;
+
+        case 'Literal':
+          return this.Literal(_expr);
+
+        case 'CallExpression':
+          return this.CallExpression(_expr);
+
+        case 'PathExpression':
+          return this.PathExpression(_expr);
+
+        case 'Arg':
+          return [30
+          /* GetSymbol */
+          , _expr.symbol];
+
+        case 'Local':
+          return this.Local(_expr);
+
+        case 'This':
+          return [30
+          /* GetSymbol */
+          , 0];
+
+        case 'Free':
+          return [_expr.resolution.resolution(), _expr.symbol];
+
+        case 'HasBlock':
+          return this.HasBlock(_expr);
+
+        case 'HasBlockParams':
+          return this.HasBlockParams(_expr);
+
+        case 'Curry':
+          return this.Curry(_expr);
+
+        case 'Not':
+          return this.Not(_expr);
+
+        case 'IfInline':
+          return this.IfInline(_expr);
+
+        case 'InterpolateExpression':
+          return this.InterpolateExpression(_expr);
+
+        case 'GetDynamicVar':
+          return this.GetDynamicVar(_expr);
+
+        case 'Log':
+          return this.Log(_expr);
+      }
+    };
+
+    _proto15.Literal = function Literal(_ref61) {
+      var value = _ref61.value;
+
+      if (value === undefined) {
+        return [27
+        /* Undefined */
+        ];
+      } else {
+        return value;
+      }
+    };
+
+    _proto15.Missing = function Missing() {
+      return undefined;
+    };
+
+    _proto15.HasBlock = function HasBlock(_ref62) {
+      var symbol = _ref62.symbol;
+      return [48
+      /* HasBlock */
+      , [30
+      /* GetSymbol */
+      , symbol]];
+    };
+
+    _proto15.HasBlockParams = function HasBlockParams(_ref63) {
+      var symbol = _ref63.symbol;
+      return [49
+      /* HasBlockParams */
+      , [30
+      /* GetSymbol */
+      , symbol]];
+    };
+
+    _proto15.Curry = function Curry(_ref64) {
+      var definition = _ref64.definition,
+          curriedType = _ref64.curriedType,
+          args = _ref64.args;
+      return [50
+      /* Curry */
+      , EXPR.expr(definition), curriedType, EXPR.Positional(args.positional), EXPR.NamedArguments(args.named)];
+    };
+
+    _proto15.Local = function Local(_ref65) {
+      var isTemplateLocal = _ref65.isTemplateLocal,
+          symbol = _ref65.symbol;
+      return [isTemplateLocal ? 32
+      /* GetTemplateSymbol */
+      : 30
+      /* GetSymbol */
+      , symbol];
+    };
+
+    _proto15.GetWithResolver = function GetWithResolver(_ref66) {
+      var symbol = _ref66.symbol;
+      return [34
+      /* GetFreeAsComponentOrHelperHeadOrThisFallback */
+      , symbol];
+    };
+
+    _proto15.PathExpression = function PathExpression(_ref67) {
+      var head = _ref67.head,
+          tail = _ref67.tail;
+      var getOp = EXPR.expr(head);
+      return [].concat(getOp, [EXPR.Tail(tail)]);
+    };
+
+    _proto15.InterpolateExpression = function InterpolateExpression(_ref68) {
+      var parts = _ref68.parts;
+      return [29
+      /* Concat */
+      , parts.map(function (e) {
+        return EXPR.expr(e);
+      }).toArray()];
+    };
+
+    _proto15.CallExpression = function CallExpression(_ref69) {
+      var callee = _ref69.callee,
+          args = _ref69.args;
+      return [28
+      /* Call */
+      , EXPR.expr(callee)].concat(EXPR.Args(args));
+    };
+
+    _proto15.Tail = function Tail(_ref70) {
+      var members = _ref70.members;
+      return (0, _util.mapPresent)(members, function (member) {
+        return member.chars;
+      });
+    };
+
+    _proto15.Args = function Args(_ref71) {
+      var positional = _ref71.positional,
+          named = _ref71.named;
+      return [this.Positional(positional), this.NamedArguments(named)];
+    };
+
+    _proto15.Positional = function Positional(_ref72) {
+      var list = _ref72.list;
+      return list.map(function (l) {
+        return EXPR.expr(l);
+      }).toPresentArray();
+    };
+
+    _proto15.NamedArgument = function NamedArgument(_ref73) {
+      var key = _ref73.key,
+          value = _ref73.value;
+      return [key.chars, EXPR.expr(value)];
+    };
+
+    _proto15.NamedArguments = function NamedArguments(_ref74) {
+      var pairs = _ref74.entries;
+      var list = pairs.toArray();
+
+      if ((0, _util.isPresent)(list)) {
+        var names = [];
+        var values$$1 = [];
+
+        for (var _iterator7 = (0, _emberBabel.createForOfIteratorHelperLoose)(list), _step7; !(_step7 = _iterator7()).done;) {
+          var _pair = _step7.value;
+
+          var _EXPR$NamedArgument = EXPR.NamedArgument(_pair),
+              _name2 = _EXPR$NamedArgument[0],
+              _value = _EXPR$NamedArgument[1];
+
+          names.push(_name2);
+          values$$1.push(_value);
+        }
+
+        (0, _util.assertPresent)(names);
+        (0, _util.assertPresent)(values$$1);
+        return [names, values$$1];
+      } else {
+        return null;
+      }
+    };
+
+    _proto15.Not = function Not(_ref75) {
+      var value = _ref75.value;
+      return [51
+      /* Not */
+      , EXPR.expr(value)];
+    };
+
+    _proto15.IfInline = function IfInline(_ref76) {
+      var condition = _ref76.condition,
+          truthy = _ref76.truthy,
+          falsy = _ref76.falsy;
+      return [52
+      /* IfInline */
+      , EXPR.expr(condition), EXPR.expr(truthy), falsy ? EXPR.expr(falsy) : null];
+    };
+
+    _proto15.GetDynamicVar = function GetDynamicVar(_ref77) {
+      var name = _ref77.name;
+      return [53
+      /* GetDynamicVar */
+      , EXPR.expr(name)];
+    };
+
+    _proto15.Log = function Log(_ref78) {
+      var positional = _ref78.positional;
+      return [54
+      /* Log */
+      , this.Positional(positional)];
+    };
+
+    return ExpressionEncoder;
+  }();
+
+  var EXPR = new ExpressionEncoder();
+
+  var WireStatements = /*#__PURE__*/function () {
+    function WireStatements(statements) {
+      this.statements = statements;
+    }
+
+    var _proto16 = WireStatements.prototype;
+
+    _proto16.toArray = function toArray() {
+      return this.statements;
+    };
+
+    return WireStatements;
+  }();
+
+  var ContentEncoder = /*#__PURE__*/function () {
+    function ContentEncoder() {}
+
+    var _proto17 = ContentEncoder.prototype;
+
+    _proto17.list = function list(statements) {
+      var out = [];
+
+      for (var _iterator8 = (0, _emberBabel.createForOfIteratorHelperLoose)(statements), _step8; !(_step8 = _iterator8()).done;) {
+        var _statement2 = _step8.value;
+
+        var _result3 = CONTENT.content(_statement2);
+
+        if (_result3 && _result3 instanceof WireStatements) {
+          out.push.apply(out, _result3.toArray());
+        } else {
+          out.push(_result3);
         }
       }
 
       return out;
-    }
+    };
 
-    dispatch(op) {
-      let name = op[0];
-      let operand = op[1];
-      return this[name](operand);
-    }
+    _proto17.content = function content(stmt) {
+      return this.visitContent(stmt);
+    };
 
-    get symbols() {
-      return this.symbolStack.current;
-    }
+    _proto17.visitContent = function visitContent(stmt) {
+      switch (stmt.type) {
+        case 'Debugger':
+          return [26
+          /* Debugger */
+          , stmt.scope.getEvalInfo()];
 
-    startProgram(op) {
-      this.symbolStack.push(op['symbols']);
-    }
+        case 'Partial':
+          return this.Partial(stmt);
 
-    endProgram(_op) {
-      this.symbolStack.pop();
-    }
+        case 'AppendComment':
+          return this.AppendComment(stmt);
 
-    startBlock(op) {
-      this.symbolStack.push(op['symbols']);
-    }
+        case 'AppendTextNode':
+          return this.AppendTextNode(stmt);
 
-    endBlock(_op) {
-      this.symbolStack.pop();
-    }
+        case 'AppendTrustedHTML':
+          return this.AppendTrustedHTML(stmt);
 
-    flushElement(op) {
-      this.symbolStack.push(op['symbols']);
-    }
+        case 'Yield':
+          return this.Yield(stmt);
 
-    closeElement(_op) {
-      this.symbolStack.pop();
-    }
+        case 'Component':
+          return this.Component(stmt);
 
-    closeComponent(_op) {
-      this.symbolStack.pop();
-    }
+        case 'SimpleElement':
+          return this.SimpleElement(stmt);
 
-    closeDynamicComponent(_op) {
-      this.symbolStack.pop();
-    }
+        case 'InElement':
+          return this.InElement(stmt);
 
-    attrSplat(_op) {
-      return ['attrSplat', this.symbols.allocateBlock('attrs')];
-    }
+        case 'InvokeBlock':
+          return this.InvokeBlock(stmt);
 
-    get(op) {
-      let [name, rest] = op;
+        case 'If':
+          return this.If(stmt);
 
-      if (name === 0) {
-        return ['get', [0, rest]];
+        case 'Each':
+          return this.Each(stmt);
+
+        case 'With':
+          return this.With(stmt);
+
+        case 'Let':
+          return this.Let(stmt);
+
+        case 'WithDynamicVars':
+          return this.WithDynamicVars(stmt);
+
+        case 'InvokeComponent':
+          return this.InvokeComponent(stmt);
+
+        default:
+          return (0, _util.exhausted)(stmt);
       }
+    };
 
-      if (isLocal(name, this.symbols)) {
-        let head = this.symbols.get(name);
-        return ['get', [head, rest]];
-      } else if (name[0] === '@') {
-        let head = this.symbols.allocateNamed(name);
-        return ['get', [head, rest]];
+    _proto17.Partial = function Partial(_ref79) {
+      var target = _ref79.target,
+          scope = _ref79.scope;
+      return [19
+      /* Partial */
+      , EXPR.expr(target), scope.getEvalInfo()];
+    };
+
+    _proto17.Yield = function Yield(_ref80) {
+      var to = _ref80.to,
+          positional = _ref80.positional;
+      return [18
+      /* Yield */
+      , to, EXPR.Positional(positional)];
+    };
+
+    _proto17.InElement = function InElement(_ref81) {
+      var guid = _ref81.guid,
+          insertBefore = _ref81.insertBefore,
+          destination = _ref81.destination,
+          block = _ref81.block;
+      var wireBlock = CONTENT.NamedBlock(block)[1]; // let guid = args.guid;
+
+      var wireDestination = EXPR.expr(destination);
+      var wireInsertBefore = EXPR.expr(insertBefore);
+
+      if (wireInsertBefore === undefined) {
+        return [40
+        /* InElement */
+        , wireBlock, guid, wireDestination];
       } else {
-        return ['maybeLocal', [name, ...rest]];
+        return [40
+        /* InElement */
+        , wireBlock, guid, wireDestination, wireInsertBefore];
       }
-    }
+    };
 
-    maybeGet(op) {
-      let [name, rest] = op;
+    _proto17.InvokeBlock = function InvokeBlock(_ref82) {
+      var head = _ref82.head,
+          args = _ref82.args,
+          blocks = _ref82.blocks;
+      return [6
+      /* Block */
+      , EXPR.expr(head)].concat(EXPR.Args(args), [CONTENT.NamedBlocks(blocks)]);
+    };
 
-      if (name === 0) {
-        return ['get', [0, rest]];
-      }
+    _proto17.AppendTrustedHTML = function AppendTrustedHTML(_ref83) {
+      var html = _ref83.html;
+      return [2
+      /* TrustingAppend */
+      , EXPR.expr(html)];
+    };
 
-      if (isLocal(name, this.symbols)) {
-        let head = this.symbols.get(name);
-        return ['get', [head, rest]];
-      } else if (name[0] === '@') {
-        let head = this.symbols.allocateNamed(name);
-        return ['get', [head, rest]];
-      } else if (rest.length === 0) {
-        return ['unknown', name];
-      } else {
-        return ['maybeLocal', [name, ...rest]];
-      }
-    }
+    _proto17.AppendTextNode = function AppendTextNode(_ref84) {
+      var text = _ref84.text;
+      return [1
+      /* Append */
+      , EXPR.expr(text)];
+    };
 
-    yield(op) {
-      if (op === 0) {
-        throw new Error('Cannot yield to this');
-      }
+    _proto17.AppendComment = function AppendComment(_ref85) {
+      var value = _ref85.value;
+      return [3
+      /* Comment */
+      , value.chars];
+    };
 
-      return ['yield', this.symbols.allocateBlock(op)];
-    }
+    _proto17.SimpleElement = function SimpleElement(_ref86) {
+      var tag = _ref86.tag,
+          params = _ref86.params,
+          body = _ref86.body,
+          dynamicFeatures = _ref86.dynamicFeatures;
+      var op = dynamicFeatures ? 11
+      /* OpenElementWithSplat */
+      : 10
+      /* OpenElement */
+      ;
+      return new WireStatements([[op, deflateTagName(tag.chars)]].concat(CONTENT.ElementParameters(params).toArray(), [[12
+      /* FlushElement */
+      ]], CONTENT.list(body), [[13
+      /* CloseElement */
+      ]]));
+    };
 
-    debugger(_op) {
-      return ['debugger', this.symbols.getEvalInfo()];
-    }
+    _proto17.Component = function Component(_ref87) {
+      var tag = _ref87.tag,
+          params = _ref87.params,
+          args = _ref87.args,
+          blocks = _ref87.blocks;
+      var wireTag = EXPR.expr(tag);
+      var wirePositional = CONTENT.ElementParameters(params);
+      var wireNamed = EXPR.NamedArguments(args);
+      var wireNamedBlocks = CONTENT.NamedBlocks(blocks);
+      return [8
+      /* Component */
+      , wireTag, wirePositional.toPresentArray(), wireNamed, wireNamedBlocks];
+    };
 
-    hasBlock(op) {
-      if (op === 0) {
-        throw new Error('Cannot hasBlock this');
-      }
-
-      return ['hasBlock', this.symbols.allocateBlock(op)];
-    }
-
-    hasBlockParams(op) {
-      if (op === 0) {
-        throw new Error('Cannot hasBlockParams this');
-      }
-
-      return ['hasBlockParams', this.symbols.allocateBlock(op)];
-    }
-
-    partial(_op) {
-      return ['partial', this.symbols.getEvalInfo()];
-    }
-
-    text(_op) {}
-
-    comment(_op) {}
-
-    openComponent(_op) {}
-
-    openElement(_op) {}
-
-    openSplattedElement(_op) {}
-
-    staticArg(_op) {}
-
-    dynamicArg(_op) {}
-
-    staticAttr(_op) {}
-
-    trustingAttr(_op) {}
-
-    dynamicAttr(_op) {}
-
-    modifier(_op) {}
-
-    append(_op) {}
-
-    block(_op) {}
-
-    literal(_op) {}
-
-    helper(_op) {}
-
-    unknown(_op) {}
-
-    maybeLocal(_op) {}
-
-    prepareArray(_op) {}
-
-    prepareObject(_op) {}
-
-    concat(_op) {}
-
-  }
-
-  function isLocal(name, symbols) {
-    return symbols && symbols.has(name);
-  }
-
-  function isTrustedValue(value) {
-    return value.escaped !== undefined && !value.escaped;
-  }
-
-  class TemplateCompiler {
-    constructor() {
-      this.templateId = 0;
-      this.templateIds = [];
-      this.opcodes = [];
-      this.includeMeta = false;
-    }
-
-    static compile(ast, options) {
-      let templateVisitor = new TemplateVisitor();
-      templateVisitor.visit(ast);
-      let compiler = new TemplateCompiler();
-      let opcodes = compiler.process(templateVisitor.actions);
-      let symbols = new SymbolAllocator(opcodes).process();
-      return JavaScriptCompiler.process(symbols, ast['symbols'], options);
-    }
-
-    process(actions) {
-      actions.forEach(([name, ...args]) => {
-        if (!this[name]) {
-          throw new Error(`Unimplemented ${name} on TemplateCompiler`);
-        }
-
-        this[name](...args);
+    _proto17.ElementParameters = function ElementParameters(_ref88) {
+      var body = _ref88.body;
+      return body.map(function (p) {
+        return CONTENT.ElementParameter(p);
       });
-      return this.opcodes;
-    }
+    };
 
-    startProgram([program]) {
-      this.opcode(['startProgram', program], program);
-    }
+    _proto17.ElementParameter = function ElementParameter(param) {
+      switch (param.type) {
+        case 'SplatAttr':
+          return [17
+          /* AttrSplat */
+          , param.symbol];
 
-    endProgram() {
-      this.opcode(['endProgram', null], null);
-    }
+        case 'DynamicAttr':
+          return [dynamicAttrOp(param.kind)].concat(dynamicAttr(param));
 
-    startBlock([program]) {
-      this.templateId++;
-      this.opcode(['startBlock', program], program);
-    }
+        case 'StaticAttr':
+          return [staticAttrOp(param.kind)].concat(staticAttr(param));
 
-    endBlock() {
-      this.templateIds.push(this.templateId - 1);
-      this.opcode(['endBlock', null], null);
-    }
+        case 'Modifier':
+          return [4
+          /* Modifier */
+          , EXPR.expr(param.callee)].concat(EXPR.Args(param.args));
+      }
+    };
 
-    text([action]) {
-      this.opcode(['text', action.chars], action);
-    }
+    _proto17.NamedBlocks = function NamedBlocks(_ref89) {
+      var blocks = _ref89.blocks;
+      var names = [];
+      var serializedBlocks = [];
 
-    comment([action]) {
-      this.opcode(['comment', action.value], action);
-    }
+      for (var _iterator9 = (0, _emberBabel.createForOfIteratorHelperLoose)(blocks.toArray()), _step9; !(_step9 = _iterator9()).done;) {
+        var _block = _step9.value;
 
-    openElement([action]) {
-      let attributes = action.attributes;
-      let hasSplat;
+        var _CONTENT$NamedBlock = CONTENT.NamedBlock(_block),
+            _name3 = _CONTENT$NamedBlock[0],
+            _serializedBlock = _CONTENT$NamedBlock[1];
 
-      for (let i = 0; i < attributes.length; i++) {
-        let attr = attributes[i];
-
-        if (attr.name === '...attributes') {
-          hasSplat = attr;
-          break;
-        }
+        names.push(_name3);
+        serializedBlocks.push(_serializedBlock);
       }
 
-      if (isDynamicComponent(action)) {
-        let head, rest;
-        [head, ...rest] = action.tag.split('.');
+      return names.length > 0 ? [names, serializedBlocks] : null;
+    };
 
-        if (head === 'this') {
-          head = 0;
-        }
+    _proto17.NamedBlock = function NamedBlock(_ref90) {
+      var name = _ref90.name,
+          body = _ref90.body,
+          scope = _ref90.scope;
+      return [name.chars, [CONTENT.list(body), scope.slots]];
+    };
 
-        this.opcode(['get', [head, rest]]);
-        this.opcode(['openComponent', action], action);
-      } else if (isComponent(action)) {
-        this.opcode(['openComponent', action], action);
-      } else if (hasSplat) {
-        this.opcode(['openSplattedElement', action], action);
-      } else {
-        this.opcode(['openElement', action], action);
-      }
+    _proto17.If = function If(_ref91) {
+      var condition = _ref91.condition,
+          block = _ref91.block,
+          inverse = _ref91.inverse;
+      return [41
+      /* If */
+      , EXPR.expr(condition), CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
+    };
 
-      let typeAttr = null;
-      let attrs = action.attributes;
+    _proto17.Each = function Each(_ref92) {
+      var value = _ref92.value,
+          key = _ref92.key,
+          block = _ref92.block,
+          inverse = _ref92.inverse;
+      return [42
+      /* Each */
+      , EXPR.expr(value), key ? EXPR.expr(key) : null, CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
+    };
 
-      for (let i = 0; i < attrs.length; i++) {
-        if (attrs[i].name === 'type') {
-          typeAttr = attrs[i];
-          continue;
-        }
+    _proto17.With = function With(_ref93) {
+      var value = _ref93.value,
+          block = _ref93.block,
+          inverse = _ref93.inverse;
+      return [43
+      /* With */
+      , EXPR.expr(value), CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
+    };
 
-        this.attribute([attrs[i]]);
-      }
+    _proto17.Let = function Let(_ref94) {
+      var positional = _ref94.positional,
+          block = _ref94.block;
+      return [44
+      /* Let */
+      , EXPR.Positional(positional), CONTENT.NamedBlock(block)[1]];
+    };
 
-      if (typeAttr) {
-        this.attribute([typeAttr]);
-      }
+    _proto17.WithDynamicVars = function WithDynamicVars(_ref95) {
+      var named = _ref95.named,
+          block = _ref95.block;
+      return [45
+      /* WithDynamicVars */
+      , EXPR.NamedArguments(named), CONTENT.NamedBlock(block)[1]];
+    };
 
-      this.opcode(['flushElement', action], null);
+    _proto17.InvokeComponent = function InvokeComponent(_ref96) {
+      var definition = _ref96.definition,
+          args = _ref96.args,
+          blocks = _ref96.blocks;
+      return [46
+      /* InvokeComponent */
+      , EXPR.expr(definition), EXPR.Positional(args.positional), EXPR.NamedArguments(args.named), blocks ? CONTENT.NamedBlocks(blocks) : null];
+    };
+
+    return ContentEncoder;
+  }();
+
+  var CONTENT = new ContentEncoder();
+
+  function staticAttr(_ref97) {
+    var name = _ref97.name,
+        value = _ref97.value,
+        namespace = _ref97.namespace;
+    var out = [deflateAttrName(name.chars), value.chars];
+
+    if (namespace) {
+      out.push(namespace);
     }
 
-    closeElement([action]) {
-      if (isDynamicComponent(action)) {
-        this.opcode(['closeDynamicComponent', action], action);
-      } else if (isComponent(action)) {
-        this.opcode(['closeComponent', action], action);
-      } else if (action.modifiers.length > 0) {
-        for (let i = 0; i < action.modifiers.length; i++) {
-          this.modifier([action.modifiers[i]]);
-        }
-
-        this.opcode(['closeElement', action], action);
-      } else {
-        this.opcode(['closeElement', action], action);
-      }
-    }
-
-    attribute([action]) {
-      let {
-        name,
-        value
-      } = action;
-      let namespace = getAttrNamespace(name);
-      let isStatic = this.prepareAttributeValue(value);
-
-      if (name.charAt(0) === '@') {
-        // Arguments
-        if (isStatic) {
-          this.opcode(['staticArg', name], action);
-        } else if (action.value.type === 'MustacheStatement') {
-          this.opcode(['dynamicArg', name], action);
-        } else {
-          this.opcode(['dynamicArg', name], action);
-        }
-      } else {
-        let isTrusting = isTrustedValue(value);
-
-        if (isStatic && name === '...attributes') {
-          this.opcode(['attrSplat', null], action);
-        } else if (isStatic) {
-          this.opcode(['staticAttr', [name, namespace]], action);
-        } else if (isTrusting) {
-          this.opcode(['trustingAttr', [name, namespace]], action);
-        } else if (action.value.type === 'MustacheStatement') {
-          this.opcode(['dynamicAttr', [name, null]], action);
-        } else {
-          this.opcode(['dynamicAttr', [name, namespace]], action);
-        }
-      }
-    }
-
-    modifier([action]) {
-      assertIsSimplePath(action.path, action.loc, 'modifier');
-      let {
-        path: {
-          parts
-        }
-      } = action;
-      this.prepareHelper(action);
-      this.opcode(['modifier', parts[0]], action);
-    }
-
-    mustache([action]) {
-      let {
-        path
-      } = action;
-
-      if ((0, _syntax.isLiteral)(path)) {
-        this.mustacheExpression(action);
-        this.opcode(['append', !action.escaped], action);
-      } else if (isYield(path)) {
-        let to = assertValidYield(action);
-        this.yield(to, action);
-      } else if (isPartial(path)) {
-        let params = assertValidPartial(action);
-        this.partial(params, action);
-      } else if (isDebugger(path)) {
-        assertValidDebuggerUsage(action);
-        this.debugger('debugger', action);
-      } else {
-        this.mustacheExpression(action);
-        this.opcode(['append', !action.escaped], action);
-      }
-    }
-
-    block([action
-    /*, index, count*/
-    ]) {
-      this.prepareHelper(action);
-      let templateId = this.templateIds.pop();
-      let inverseId = action.inverse === null ? null : this.templateIds.pop();
-      this.opcode(['block', [action.path.parts[0], templateId, inverseId]], action);
-    } /// Internal actions, not found in the original processed actions
-
-
-    arg([path]) {
-      let {
-        parts: [head, ...rest]
-      } = path;
-      this.opcode(['get', [`@${head}`, rest]], path);
-    }
-
-    mustacheExpression(expr) {
-      let {
-        path
-      } = expr;
-
-      if ((0, _syntax.isLiteral)(path)) {
-        this.opcode(['literal', path.value], expr);
-      } else if (isBuiltInHelper(path)) {
-        this.builtInHelper(expr);
-      } else if (isArg(path)) {
-        this.arg([path]);
-      } else if (isHelperInvocation(expr)) {
-        this.prepareHelper(expr);
-        this.opcode(['helper', path.parts[0]], expr);
-      } else if (path.this) {
-        this.opcode(['get', [0, path.parts]], expr);
-      } else {
-        let [head, ...parts] = path.parts;
-        this.opcode(['maybeGet', [head, parts]], expr);
-      } // } else if (isLocal(path, this.symbols)) {
-      //   let [head, ...parts] = path.parts;
-      //   this.opcode(['get', [head, parts]], expr);
-      // } else if (isSimplePath(path)) {
-      //   this.opcode(['unknown', path.parts[0]], expr);
-      // } else {
-      //   this.opcode(['maybeLocal', path.parts], expr);
-      // }
-
-    } /// Internal Syntax
-
-
-    yield(to, action) {
-      this.prepareParams(action.params);
-      this.opcode(['yield', to], action);
-    }
-
-    debugger(_name, action) {
-      this.opcode(['debugger', null], action);
-    }
-
-    hasBlock(name, action) {
-      this.opcode(['hasBlock', name], action);
-    }
-
-    hasBlockParams(name, action) {
-      this.opcode(['hasBlockParams', name], action);
-    }
-
-    partial(_params, action) {
-      this.prepareParams(action.params);
-      this.opcode(['partial', null], action);
-    }
-
-    builtInHelper(expr) {
-      let {
-        path
-      } = expr;
-
-      if (isHasBlock(path)) {
-        let name = assertValidHasBlockUsage(expr.path.original, expr);
-        this.hasBlock(name, expr);
-      } else if (isHasBlockParams(path)) {
-        let name = assertValidHasBlockUsage(expr.path.original, expr);
-        this.hasBlockParams(name, expr);
-      }
-    } /// Expressions, invoked recursively from prepareParams and prepareHash
-
-
-    SubExpression(expr) {
-      if (isBuiltInHelper(expr.path)) {
-        this.builtInHelper(expr);
-      } else {
-        this.prepareHelper(expr);
-        this.opcode(['helper', expr.path.parts[0]], expr);
-      }
-    }
-
-    PathExpression(expr) {
-      if (expr.data) {
-        this.arg([expr]);
-      } else {
-        let [head, ...rest] = expr.parts;
-
-        if (expr.this) {
-          this.opcode(['get', [0, expr.parts]], expr);
-        } else {
-          this.opcode(['get', [head, rest]], expr);
-        }
-      }
-    }
-
-    StringLiteral(action) {
-      this.opcode(['literal', action.value], action);
-    }
-
-    BooleanLiteral(action) {
-      this.opcode(['literal', action.value], action);
-    }
-
-    NumberLiteral(action) {
-      this.opcode(['literal', action.value], action);
-    }
-
-    NullLiteral(action) {
-      this.opcode(['literal', action.value], action);
-    }
-
-    UndefinedLiteral(action) {
-      this.opcode(['literal', action.value], action);
-    } /// Utilities
-
-
-    opcode(opcode, action = null) {
-      // TODO: This doesn't really work
-      if (this.includeMeta && action) {
-        opcode.push(this.meta(action));
-      }
-
-      this.opcodes.push(opcode);
-    }
-
-    prepareHelper(expr) {
-      assertIsSimplePath(expr.path, expr.loc, 'helper');
-      let {
-        params,
-        hash
-      } = expr;
-      this.prepareHash(hash);
-      this.prepareParams(params);
-    }
-
-    prepareParams(params) {
-      if (!params.length) {
-        this.opcode(['literal', null], null);
-        return;
-      }
-
-      for (let i = params.length - 1; i >= 0; i--) {
-        let param = params[i];
-        this[param.type](param);
-      }
-
-      this.opcode(['prepareArray', params.length], null);
-    }
-
-    prepareHash(hash) {
-      let pairs = hash.pairs;
-
-      if (!pairs.length) {
-        this.opcode(['literal', null], null);
-        return;
-      }
-
-      for (let i = pairs.length - 1; i >= 0; i--) {
-        let {
-          key,
-          value
-        } = pairs[i];
-        this[value.type](value);
-        this.opcode(['literal', key], null);
-      }
-
-      this.opcode(['prepareObject', pairs.length], null);
-    }
-
-    prepareAttributeValue(value) {
-      // returns the static value if the value is static
-      switch (value.type) {
-        case 'TextNode':
-          this.opcode(['literal', value.chars], value);
-          return true;
-
-        case 'MustacheStatement':
-          this.attributeMustache([value]);
-          return false;
-
-        case 'ConcatStatement':
-          this.prepareConcatParts(value.parts);
-          this.opcode(['concat', null], value);
-          return false;
-      }
-    }
-
-    prepareConcatParts(parts) {
-      for (let i = parts.length - 1; i >= 0; i--) {
-        let part = parts[i];
-
-        if (part.type === 'MustacheStatement') {
-          this.attributeMustache([part]);
-        } else if (part.type === 'TextNode') {
-          this.opcode(['literal', part.chars], null);
-        }
-      }
-
-      this.opcode(['prepareArray', parts.length], null);
-    }
-
-    attributeMustache([action]) {
-      this.mustacheExpression(action);
-    }
-
-    meta(node) {
-      let loc = node.loc;
-
-      if (!loc) {
-        return [];
-      }
-
-      let {
-        source,
-        start,
-        end
-      } = loc;
-      return ['loc', [source || null, [start.line, start.column], [end.line, end.column]]];
-    }
-
+    return out;
   }
 
-  _exports.TemplateCompiler = TemplateCompiler;
+  function dynamicAttr(_ref98) {
+    var name = _ref98.name,
+        value = _ref98.value,
+        namespace = _ref98.namespace;
+    var out = [deflateAttrName(name.chars), EXPR.expr(value)];
 
-  function isHelperInvocation(mustache) {
-    return mustache.params && mustache.params.length > 0 || mustache.hash && mustache.hash.pairs.length > 0;
-  }
-
-  function isSimplePath({
-    parts
-  }) {
-    return parts.length === 1;
-  }
-
-  function isYield(path) {
-    return path.original === 'yield';
-  }
-
-  function isPartial(path) {
-    return path.original === 'partial';
-  }
-
-  function isDebugger(path) {
-    return path.original === 'debugger';
-  }
-
-  function isHasBlock(path) {
-    return path.original === 'has-block';
-  }
-
-  function isHasBlockParams(path) {
-    return path.original === 'has-block-params';
-  }
-
-  function isBuiltInHelper(path) {
-    return isHasBlock(path) || isHasBlockParams(path);
-  }
-
-  function isArg(path) {
-    return !!path['data'];
-  }
-
-  function isDynamicComponent(element) {
-    let open = element.tag.charAt(0);
-    let [maybeLocal] = element.tag.split('.');
-    let isNamedArgument = open === '@';
-    let isLocal = element['symbols'].has(maybeLocal);
-    let isThisPath = element.tag.indexOf('this.') === 0;
-    return isLocal || isNamedArgument || isThisPath;
-  }
-
-  function isComponent(element) {
-    let open = element.tag.charAt(0);
-    let isPath = element.tag.indexOf('.') > -1;
-    let isUpperCase = open === open.toUpperCase() && open !== open.toLowerCase();
-    return isUpperCase && !isPath || isDynamicComponent(element);
-  }
-
-  function assertIsSimplePath(path, loc, context) {
-    if (!isSimplePath(path)) {
-      throw new _syntax.SyntaxError(`\`${path.original}\` is not a valid name for a ${context} on line ${loc.start.line}.`, path.loc);
+    if (namespace) {
+      out.push(namespace);
     }
+
+    return out;
   }
 
-  function assertValidYield(statement) {
-    let {
-      pairs
-    } = statement.hash;
-
-    if (pairs.length === 1 && pairs[0].key !== 'to' || pairs.length > 1) {
-      throw new _syntax.SyntaxError(`yield only takes a single named argument: 'to'`, statement.loc);
-    } else if (pairs.length === 1 && pairs[0].value.type !== 'StringLiteral') {
-      throw new _syntax.SyntaxError(`you can only yield to a literal value`, statement.loc);
-    } else if (pairs.length === 0) {
-      return 'default';
+  function staticAttrOp(kind) {
+    if (kind.component) {
+      return 24
+      /* StaticComponentAttr */
+      ;
     } else {
-      return pairs[0].value.value;
-    }
-  }
-
-  function assertValidPartial(statement) {
-    let {
-      params,
-      hash,
-      escaped,
-      loc
-    } = statement;
-
-    if (params && params.length !== 1) {
-      throw new _syntax.SyntaxError(`Partial found with no arguments. You must specify a template name. (on line ${loc.start.line})`, statement.loc);
-    } else if (hash && hash.pairs.length > 0) {
-      throw new _syntax.SyntaxError(`partial does not take any named arguments (on line ${loc.start.line})`, statement.loc);
-    } else if (!escaped) {
-      throw new _syntax.SyntaxError(`{{{partial ...}}} is not supported, please use {{partial ...}} instead (on line ${loc.start.line})`, statement.loc);
-    }
-
-    return params;
-  }
-
-  function assertValidHasBlockUsage(type, call) {
-    let {
-      params,
-      hash,
-      loc
-    } = call;
-
-    if (hash && hash.pairs.length > 0) {
-      throw new _syntax.SyntaxError(`${type} does not take any named arguments`, call.loc);
-    }
-
-    if (params.length === 0) {
-      return 'default';
-    } else if (params.length === 1) {
-      let param = params[0];
-
-      if (param.type === 'StringLiteral') {
-        return param.value;
-      } else {
-        throw new _syntax.SyntaxError(`you can only yield to a literal value (on line ${loc.start.line})`, call.loc);
+        return 14
+        /* StaticAttr */
+        ;
       }
+  }
+
+  function dynamicAttrOp(kind) {
+    if (kind.component) {
+      return kind.trusting ? 23
+      /* TrustingComponentAttr */
+      : 16
+      /* ComponentAttr */
+      ;
     } else {
-      throw new _syntax.SyntaxError(`${type} only takes a single positional argument (on line ${loc.start.line})`, call.loc);
+      return kind.trusting ? 22
+      /* TrustingDynamicAttr */
+      : 15
+      /* DynamicAttr */
+      ;
     }
   }
 
-  function assertValidDebuggerUsage(statement) {
-    let {
-      params,
-      hash
-    } = statement;
-
-    if (hash && hash.pairs.length > 0) {
-      throw new _syntax.SyntaxError(`debugger does not take any named arguments`, statement.loc);
-    }
-
-    if (params.length === 0) {
-      return 'default';
-    } else {
-      throw new _syntax.SyntaxError(`debugger does not take any positional arguments`, statement.loc);
-    }
+  function visit(template) {
+    var statements = CONTENT.list(template.body);
+    var scope = template.scope;
+    var block = [statements, scope.symbols, scope.hasEval, scope.upvars];
+    return block;
   }
 
-  const defaultId = (() => {
+  var defaultId = function () {
     if (typeof _nodeModule.require === 'function') {
       try {
-        /* tslint:disable:no-require-imports */
-        const crypto = (0, _nodeModule.require)("crypto");
-        /* tslint:enable:no-require-imports */
+        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+        var crypto = (0, _nodeModule.require)('crypto');
 
-        let idFn = src => {
-          let hash = crypto.createHash('sha1');
+        var idFn = function idFn(src) {
+          var hash = crypto.createHash('sha1');
           hash.update(src, 'utf8'); // trim to 6 bytes of data (2^48 - 1)
 
           return hash.digest('base64').substring(0, 8);
@@ -3575,70 +6037,3220 @@ enifed("@glimmer/compiler", ["exports", "node-module", "@glimmer/util", "@glimme
     return function idFn() {
       return null;
     };
-  })();
+  }();
 
   _exports.defaultId = defaultId;
-  const defaultOptions = {
-    id: defaultId,
-    meta: {}
+  var defaultOptions = {
+    id: defaultId
   };
+  /*
+   * Compile a string into a template javascript string.
+   *
+   * Example usage:
+   *     import { precompile } from '@glimmer/compiler';
+   *     import { templateFactory } from 'glimmer-runtime';
+   *     let templateJs = precompile("Howdy {{name}}");
+   *     let factory = templateFactory(new Function("return " + templateJs)());
+   *     let template = factory.create(env);
+   *
+   * @method precompile
+   * @param {string} string a Glimmer template string
+   * @return {string} a template javascript string
+   */
 
-  function precompile(string, options = defaultOptions) {
-    let ast = (0, _syntax.preprocess)(string, options);
-    let {
-      meta
-    } = options;
-    let {
-      block
-    } = TemplateCompiler.compile(ast, options);
-    let idFn = options.id || defaultId;
-    let blockJSON = JSON.stringify(block.toJSON());
-    let templateJSONObject = {
-      id: idFn(JSON.stringify(meta) + blockJSON),
+  function precompileJSON(string, options) {
+    if (options === void 0) {
+      options = defaultOptions;
+    }
+
+    var _a, _b;
+
+    var source = new _syntax.Source(string, (_a = options.meta) === null || _a === void 0 ? void 0 : _a.moduleName);
+
+    var _normalize = (0, _syntax.normalize)(source, options),
+        ast = _normalize[0],
+        locals = _normalize[1];
+
+    var block = normalize$1(source, ast, (_b = options.strictMode) !== null && _b !== void 0 ? _b : false).mapOk(function (pass2In) {
+      return visit(pass2In);
+    });
+
+    if (block.isOk) {
+      return [block.value, locals];
+    } else {
+      throw block.reason;
+    }
+  } // UUID used as a unique placeholder for placing a snippet of JS code into
+  // the otherwise JSON stringified value below.
+
+
+  var SCOPE_PLACEHOLDER = '796d24e6-2450-4fb0-8cdf-b65638b5ef70';
+  /*
+   * Compile a string into a template javascript string.
+   *
+   * Example usage:
+   *     import { precompile } from '@glimmer/compiler';
+   *     import { templateFactory } from 'glimmer-runtime';
+   *     let templateJs = precompile("Howdy {{name}}");
+   *     let factory = templateFactory(new Function("return " + templateJs)());
+   *     let template = factory.create(env);
+   *
+   * @method precompile
+   * @param {string} string a Glimmer template string
+   * @return {string} a template javascript string
+   */
+
+  function precompile(source, options) {
+    if (options === void 0) {
+      options = defaultOptions;
+    }
+
+    var _a, _b;
+
+    var _precompileJSON = precompileJSON(source, options),
+        block = _precompileJSON[0],
+        usedLocals = _precompileJSON[1];
+
+    var moduleName = (_a = options.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
+    var idFn = options.id || defaultId;
+    var blockJSON = JSON.stringify(block);
+    var templateJSONObject = {
+      id: idFn(JSON.stringify(options.meta) + blockJSON),
       block: blockJSON,
-      meta: meta
-    }; // JSON is javascript
+      moduleName: moduleName !== null && moduleName !== void 0 ? moduleName : '(unknown template module)',
+      // lying to the type checker here because we're going to
+      // replace it just below, after stringification
+      scope: SCOPE_PLACEHOLDER,
+      isStrictMode: (_b = options.strictMode) !== null && _b !== void 0 ? _b : false
+    };
 
-    return JSON.stringify(templateJSONObject);
+    if (!options.strictMode) {
+      delete templateJSONObject.scope;
+    } // JSON is javascript
+
+
+    var stringified = JSON.stringify(templateJSONObject);
+
+    if (options.strictMode && usedLocals.length > 0) {
+      var scopeFn = "()=>[" + usedLocals.join(',') + "]";
+      stringified = stringified.replace("\"" + SCOPE_PLACEHOLDER + "\"", scopeFn);
+    } else {
+      stringified = stringified.replace("\"" + SCOPE_PLACEHOLDER + "\"", 'null');
+    }
+
+    return stringified;
+  }
+
+  var VariableKind;
+
+  (function (VariableKind) {
+    VariableKind["Local"] = "Local";
+    VariableKind["Free"] = "Free";
+    VariableKind["Arg"] = "Arg";
+    VariableKind["Block"] = "Block";
+    VariableKind["This"] = "This";
+  })(VariableKind || (VariableKind = {}));
+
+  function normalizeStatement(statement) {
+    if (Array.isArray(statement)) {
+      if (statementIsExpression(statement)) {
+        return normalizeAppendExpression(statement);
+      } else if (isSugaryArrayStatement(statement)) {
+        return normalizeSugaryArrayStatement(statement);
+      } else {
+        return normalizeVerboseStatement(statement);
+      }
+    } else if (typeof statement === 'string') {
+      return normalizeAppendHead(normalizeDottedPath(statement), false);
+    } else {
+      throw (0, _util.assertNever)(statement);
+    }
+  }
+
+  function normalizeAppendHead(head, trusted) {
+    if (head.type === "GetPath"
+    /* GetPath */
+    ) {
+        return {
+          kind: "AppendPath"
+          /* AppendPath */
+          ,
+          path: head,
+          trusted: trusted
+        };
+      } else {
+      return {
+        kind: "AppendExpr"
+        /* AppendExpr */
+        ,
+        expr: head,
+        trusted: trusted
+      };
+    }
+  }
+
+  function isSugaryArrayStatement(statement) {
+    if (Array.isArray(statement) && typeof statement[0] === 'string') {
+      switch (statement[0][0]) {
+        case '(':
+        case '#':
+        case '<':
+        case '!':
+          return true;
+
+        default:
+          return false;
+      }
+    }
+
+    return false;
+  }
+
+  function normalizeSugaryArrayStatement(statement) {
+    var name = statement[0];
+
+    switch (name[0]) {
+      case '(':
+        {
+          var params = null;
+          var hash = null;
+
+          if (statement.length === 3) {
+            params = normalizeParams(statement[1]);
+            hash = normalizeHash(statement[2]);
+          } else if (statement.length === 2) {
+            if (Array.isArray(statement[1])) {
+              params = normalizeParams(statement[1]);
+            } else {
+              hash = normalizeHash(statement[1]);
+            }
+          }
+
+          return {
+            kind: "Call"
+            /* Call */
+            ,
+            head: normalizeCallHead(name),
+            params: params,
+            hash: hash,
+            trusted: false
+          };
+        }
+
+      case '#':
+        {
+          var _normalizeBuilderBloc = normalizeBuilderBlockStatement(statement),
+              path = _normalizeBuilderBloc.head,
+              _params = _normalizeBuilderBloc.params,
+              _hash = _normalizeBuilderBloc.hash,
+              blocks = _normalizeBuilderBloc.blocks,
+              blockParams = _normalizeBuilderBloc.blockParams;
+
+          return {
+            kind: "Block"
+            /* Block */
+            ,
+            head: path,
+            params: _params,
+            hash: _hash,
+            blocks: blocks,
+            blockParams: blockParams
+          };
+        }
+
+      case '!':
+        {
+          var _name4 = statement[0].slice(1);
+
+          var _normalizeBuilderBloc2 = normalizeBuilderBlockStatement(statement),
+              _params2 = _normalizeBuilderBloc2.params,
+              _hash2 = _normalizeBuilderBloc2.hash,
+              _blocks = _normalizeBuilderBloc2.blocks,
+              _blockParams = _normalizeBuilderBloc2.blockParams;
+
+          return {
+            kind: "Keyword"
+            /* Keyword */
+            ,
+            name: _name4,
+            params: _params2,
+            hash: _hash2,
+            blocks: _blocks,
+            blockParams: _blockParams
+          };
+        }
+
+      case '<':
+        {
+          var attrs = (0, _util.dict)();
+          var block = [];
+
+          if (statement.length === 3) {
+            attrs = normalizeAttrs(statement[1]);
+            block = normalizeBlock(statement[2]);
+          } else if (statement.length === 2) {
+            if (Array.isArray(statement[1])) {
+              block = normalizeBlock(statement[1]);
+            } else {
+              attrs = normalizeAttrs(statement[1]);
+            }
+          }
+
+          return {
+            kind: "Element"
+            /* Element */
+            ,
+            name: extractElement(name),
+            attrs: attrs,
+            block: block
+          };
+        }
+
+      default:
+        throw new Error("Unreachable " + JSON.stringify(statement) + " in normalizeSugaryArrayStatement");
+    }
+  }
+
+  function normalizeVerboseStatement(statement) {
+    switch (statement[0]) {
+      case 0
+      /* Literal */
+      :
+        {
+          return {
+            kind: "Literal"
+            /* Literal */
+            ,
+            value: statement[1]
+          };
+        }
+
+      case 2
+      /* Append */
+      :
+        {
+          return normalizeAppendExpression(statement[1], statement[2]);
+        }
+
+      case 3
+      /* Modifier */
+      :
+        {
+          return {
+            kind: "Modifier"
+            /* Modifier */
+            ,
+            params: normalizeParams(statement[1]),
+            hash: normalizeHash(statement[2])
+          };
+        }
+
+      case 4
+      /* DynamicComponent */
+      :
+        {
+          return {
+            kind: "DynamicComponent"
+            /* DynamicComponent */
+            ,
+            expr: normalizeExpression(statement[1]),
+            hash: normalizeHash(statement[2]),
+            block: normalizeBlock(statement[3])
+          };
+        }
+
+      case 1
+      /* Comment */
+      :
+        {
+          return {
+            kind: "Comment"
+            /* Comment */
+            ,
+            value: statement[1]
+          };
+        }
+    }
+  }
+
+  function extractBlockHead(name) {
+    var result = /^(#|!)(.*)$/.exec(name);
+
+    if (result === null) {
+      throw new Error("Unexpected missing # in block head");
+    }
+
+    return normalizeDottedPath(result[2]);
+  }
+
+  function normalizeCallHead(name) {
+    var result = /^\((.*)\)$/.exec(name);
+
+    if (result === null) {
+      throw new Error("Unexpected missing () in call head");
+    }
+
+    return normalizeDottedPath(result[1]);
+  }
+
+  function normalizePath(head, tail) {
+    if (tail === void 0) {
+      tail = [];
+    }
+
+    var pathHead = normalizePathHead(head);
+
+    if ((0, _util.isPresent)(tail)) {
+      return {
+        type: "GetPath"
+        /* GetPath */
+        ,
+        path: {
+          head: pathHead,
+          tail: tail
+        }
+      };
+    } else {
+      return {
+        type: "GetVar"
+        /* GetVar */
+        ,
+        variable: pathHead
+      };
+    }
+  }
+
+  function normalizeDottedPath(whole) {
+    var _normalizePathHead = normalizePathHead(whole),
+        kind = _normalizePathHead.kind,
+        rest = _normalizePathHead.name;
+
+    var _rest$split = rest.split('.'),
+        name = _rest$split[0],
+        tail = _rest$split.slice(1);
+
+    var variable = {
+      kind: kind,
+      name: name,
+      mode: 'loose'
+    };
+
+    if ((0, _util.isPresent)(tail)) {
+      return {
+        type: "GetPath"
+        /* GetPath */
+        ,
+        path: {
+          head: variable,
+          tail: tail
+        }
+      };
+    } else {
+      return {
+        type: "GetVar"
+        /* GetVar */
+        ,
+        variable: variable
+      };
+    }
+  }
+
+  function normalizePathHead(whole) {
+    var kind;
+    var name;
+
+    if (/^this(\.|$)/.exec(whole)) {
+      return {
+        kind: VariableKind.This,
+        name: whole,
+        mode: 'loose'
+      };
+    }
+
+    switch (whole[0]) {
+      case '^':
+        kind = VariableKind.Free;
+        name = whole.slice(1);
+        break;
+
+      case '@':
+        kind = VariableKind.Arg;
+        name = whole.slice(1);
+        break;
+
+      case '&':
+        kind = VariableKind.Block;
+        name = whole.slice(1);
+        break;
+
+      default:
+        kind = VariableKind.Local;
+        name = whole;
+    }
+
+    return {
+      kind: kind,
+      name: name,
+      mode: 'loose'
+    };
+  }
+
+  function normalizeBuilderBlockStatement(statement) {
+    var head = statement[0];
+    var blocks = (0, _util.dict)();
+    var params = null;
+    var hash = null;
+    var blockParams = null;
+
+    if (statement.length === 2) {
+      blocks = normalizeBlocks(statement[1]);
+    } else if (statement.length === 3) {
+      if (Array.isArray(statement[1])) {
+        params = normalizeParams(statement[1]);
+      } else {
+        var _normalizeBlockHash = normalizeBlockHash(statement[1]);
+
+        hash = _normalizeBlockHash.hash;
+        blockParams = _normalizeBlockHash.blockParams;
+      }
+
+      blocks = normalizeBlocks(statement[2]);
+    } else if (statement.length === 4) {
+      params = normalizeParams(statement[1]);
+
+      var _normalizeBlockHash2 = normalizeBlockHash(statement[2]);
+
+      hash = _normalizeBlockHash2.hash;
+      blockParams = _normalizeBlockHash2.blockParams;
+      blocks = normalizeBlocks(statement[3]);
+    }
+
+    return {
+      head: extractBlockHead(head),
+      params: params,
+      hash: hash,
+      blockParams: blockParams,
+      blocks: blocks
+    };
+  }
+
+  function normalizeBlockHash(hash) {
+    if (hash === null) {
+      return {
+        hash: null,
+        blockParams: null
+      };
+    }
+
+    var out = null;
+    var blockParams = null;
+    entries(hash, function (key, value) {
+      if (key === 'as') {
+        blockParams = Array.isArray(value) ? value : [value];
+      } else {
+        out = out || (0, _util.dict)();
+        out[key] = normalizeExpression(value);
+      }
+    });
+    return {
+      hash: out,
+      blockParams: blockParams
+    };
+  }
+
+  function entries(dict$$1, callback) {
+    Object.keys(dict$$1).forEach(function (key) {
+      var value = dict$$1[key];
+      callback(key, value);
+    });
+  }
+
+  function normalizeBlocks(value) {
+    if (Array.isArray(value)) {
+      return {
+        default: normalizeBlock(value)
+      };
+    } else {
+      return mapObject(value, normalizeBlock);
+    }
+  }
+
+  function normalizeBlock(block) {
+    return block.map(function (s) {
+      return normalizeStatement(s);
+    });
+  }
+
+  function normalizeAttrs(attrs) {
+    return mapObject(attrs, function (a) {
+      return normalizeAttr(a).expr;
+    });
+  }
+
+  function normalizeAttr(attr) {
+    if (attr === 'splat') {
+      return {
+        expr: "Splat"
+        /* Splat */
+        ,
+        trusted: false
+      };
+    } else {
+      var expr = normalizeExpression(attr);
+      return {
+        expr: expr,
+        trusted: false
+      };
+    }
+  }
+
+  function mapObject(object, callback) {
+    var out = (0, _util.dict)();
+    Object.keys(object).forEach(function (k) {
+      out[k] = callback(object[k], k);
+    });
+    return out;
+  }
+
+  function extractElement(input) {
+    var match = /^<([a-z0-9\-][a-zA-Z0-9\-]*)>$/.exec(input);
+    return match ? match[1] : null;
+  }
+
+  function normalizeAppendExpression(expression, forceTrusted) {
+    if (forceTrusted === void 0) {
+      forceTrusted = false;
+    }
+
+    if (expression === null || expression === undefined) {
+      return {
+        expr: {
+          type: "Literal"
+          /* Literal */
+          ,
+          value: expression
+        },
+        kind: "AppendExpr"
+        /* AppendExpr */
+        ,
+        trusted: false
+      };
+    } else if (Array.isArray(expression)) {
+      switch (expression[0]) {
+        case 0
+        /* Literal */
+        :
+          return {
+            expr: {
+              type: "Literal"
+              /* Literal */
+              ,
+              value: expression[1]
+            },
+            kind: "AppendExpr"
+            /* AppendExpr */
+            ,
+            trusted: false
+          };
+
+        case 5
+        /* Get */
+        :
+          {
+            return normalizeAppendHead(normalizePath(expression[1], expression[2]), forceTrusted);
+          }
+
+        case 6
+        /* Concat */
+        :
+          {
+            var expr = {
+              type: "Concat"
+              /* Concat */
+              ,
+              params: normalizeParams(expression.slice(1))
+            };
+            return {
+              expr: expr,
+              kind: "AppendExpr"
+              /* AppendExpr */
+              ,
+              trusted: forceTrusted
+            };
+          }
+
+        case 7
+        /* HasBlock */
+        :
+          return {
+            expr: {
+              type: "HasBlock"
+              /* HasBlock */
+              ,
+              name: expression[1]
+            },
+            kind: "AppendExpr"
+            /* AppendExpr */
+            ,
+            trusted: forceTrusted
+          };
+
+        case 8
+        /* HasBlockParams */
+        :
+          return {
+            expr: {
+              type: "HasBlockParams"
+              /* HasBlockParams */
+              ,
+              name: expression[1]
+            },
+            kind: "AppendExpr"
+            /* AppendExpr */
+            ,
+            trusted: forceTrusted
+          };
+
+        default:
+          {
+            if (isBuilderCallExpression(expression)) {
+              return {
+                expr: normalizeCallExpression(expression),
+                kind: "AppendExpr"
+                /* AppendExpr */
+                ,
+                trusted: forceTrusted
+              };
+            } else {
+              throw new Error("Unexpected array in expression position (wasn't a tuple expression and " + expression[0] + " isn't wrapped in parens, so it isn't a call): " + JSON.stringify(expression));
+            }
+          }
+        // BuilderCallExpression
+      }
+    } else if (typeof expression !== 'object') {
+      switch (typeof expression) {
+        case 'string':
+          {
+            return normalizeAppendHead(normalizeDottedPath(expression), forceTrusted);
+          }
+
+        case 'boolean':
+        case 'number':
+          return {
+            expr: {
+              type: "Literal"
+              /* Literal */
+              ,
+              value: expression
+            },
+            kind: "AppendExpr"
+            /* AppendExpr */
+            ,
+            trusted: true
+          };
+
+        default:
+          throw (0, _util.assertNever)(expression);
+      }
+    } else {
+      throw (0, _util.assertNever)(expression);
+    }
+  }
+
+  function normalizeExpression(expression) {
+    if (expression === null || expression === undefined) {
+      return {
+        type: "Literal"
+        /* Literal */
+        ,
+        value: expression
+      };
+    } else if (Array.isArray(expression)) {
+      switch (expression[0]) {
+        case 0
+        /* Literal */
+        :
+          return {
+            type: "Literal"
+            /* Literal */
+            ,
+            value: expression[1]
+          };
+
+        case 5
+        /* Get */
+        :
+          {
+            return normalizePath(expression[1], expression[2]);
+          }
+
+        case 6
+        /* Concat */
+        :
+          {
+            var expr = {
+              type: "Concat"
+              /* Concat */
+              ,
+              params: normalizeParams(expression.slice(1))
+            };
+            return expr;
+          }
+
+        case 7
+        /* HasBlock */
+        :
+          return {
+            type: "HasBlock"
+            /* HasBlock */
+            ,
+            name: expression[1]
+          };
+
+        case 8
+        /* HasBlockParams */
+        :
+          return {
+            type: "HasBlockParams"
+            /* HasBlockParams */
+            ,
+            name: expression[1]
+          };
+
+        default:
+          {
+            if (isBuilderCallExpression(expression)) {
+              return normalizeCallExpression(expression);
+            } else {
+              throw new Error("Unexpected array in expression position (wasn't a tuple expression and " + expression[0] + " isn't wrapped in parens, so it isn't a call): " + JSON.stringify(expression));
+            }
+          }
+        // BuilderCallExpression
+      }
+    } else if (typeof expression !== 'object') {
+      switch (typeof expression) {
+        case 'string':
+          {
+            return normalizeDottedPath(expression);
+          }
+
+        case 'boolean':
+        case 'number':
+          return {
+            type: "Literal"
+            /* Literal */
+            ,
+            value: expression
+          };
+
+        default:
+          throw (0, _util.assertNever)(expression);
+      }
+    } else {
+      throw (0, _util.assertNever)(expression);
+    }
+  }
+
+  function statementIsExpression(statement) {
+    if (!Array.isArray(statement)) {
+      return false;
+    }
+
+    var name = statement[0];
+
+    if (typeof name === 'number') {
+      switch (name) {
+        case 0
+        /* Literal */
+        :
+        case 5
+        /* Get */
+        :
+        case 6
+        /* Concat */
+        :
+        case 7
+        /* HasBlock */
+        :
+        case 8
+        /* HasBlockParams */
+        :
+          return true;
+
+        default:
+          return false;
+      }
+    }
+
+    if (name[0] === '(') {
+      return true;
+    }
+
+    return false;
+  }
+
+  function isBuilderCallExpression(value) {
+    return typeof value[0] === 'string' && value[0][0] === '(';
+  }
+
+  function normalizeParams(input) {
+    return input.map(normalizeExpression);
+  }
+
+  function normalizeHash(input) {
+    if (input === null) return null;
+    return mapObject(input, normalizeExpression);
+  }
+
+  function normalizeCallExpression(expr) {
+    switch (expr.length) {
+      case 1:
+        return {
+          type: "Call"
+          /* Call */
+          ,
+          head: normalizeCallHead(expr[0]),
+          params: null,
+          hash: null
+        };
+
+      case 2:
+        {
+          if (Array.isArray(expr[1])) {
+            return {
+              type: "Call"
+              /* Call */
+              ,
+              head: normalizeCallHead(expr[0]),
+              params: normalizeParams(expr[1]),
+              hash: null
+            };
+          } else {
+            return {
+              type: "Call"
+              /* Call */
+              ,
+              head: normalizeCallHead(expr[0]),
+              params: null,
+              hash: normalizeHash(expr[1])
+            };
+          }
+        }
+
+      case 3:
+        return {
+          type: "Call"
+          /* Call */
+          ,
+          head: normalizeCallHead(expr[0]),
+          params: normalizeParams(expr[1]),
+          hash: normalizeHash(expr[2])
+        };
+    }
+  }
+
+  var ProgramSymbols = /*#__PURE__*/function () {
+    function ProgramSymbols() {
+      this._freeVariables = [];
+      this._symbols = ['this'];
+      this.top = this;
+    }
+
+    var _proto18 = ProgramSymbols.prototype;
+
+    _proto18.toSymbols = function toSymbols() {
+      return this._symbols.slice(1);
+    };
+
+    _proto18.toUpvars = function toUpvars() {
+      return this._freeVariables;
+    };
+
+    _proto18.freeVar = function freeVar(name) {
+      return addString(this._freeVariables, name);
+    };
+
+    _proto18.block = function block(name) {
+      return this.symbol(name);
+    };
+
+    _proto18.arg = function arg(name) {
+      return addString(this._symbols, name);
+    };
+
+    _proto18.local = function local(name) {
+      throw new Error("No local " + name + " was found. Maybe you meant ^" + name + " for upvar, or !" + name + " for keyword?");
+    };
+
+    _proto18.this = function _this() {
+      return 0;
+    };
+
+    _proto18.hasLocal = function hasLocal(_name) {
+      return false;
+    } // any symbol
+    ;
+
+    _proto18.symbol = function symbol(name) {
+      return addString(this._symbols, name);
+    };
+
+    _proto18.child = function child(locals) {
+      return new LocalSymbols(this, locals);
+    };
+
+    return ProgramSymbols;
+  }();
+
+  _exports.ProgramSymbols = ProgramSymbols;
+
+  var LocalSymbols = /*#__PURE__*/function () {
+    function LocalSymbols(parent, locals) {
+      this.parent = parent;
+      this.locals = (0, _util.dict)();
+
+      for (var _iterator10 = (0, _emberBabel.createForOfIteratorHelperLoose)(locals), _step10; !(_step10 = _iterator10()).done;) {
+        var _local = _step10.value;
+        this.locals[_local] = parent.top.symbol(_local);
+      }
+    }
+
+    var _proto19 = LocalSymbols.prototype;
+
+    _proto19.freeVar = function freeVar(name) {
+      return this.parent.freeVar(name);
+    };
+
+    _proto19.arg = function arg(name) {
+      return this.parent.arg(name);
+    };
+
+    _proto19.block = function block(name) {
+      return this.parent.block(name);
+    };
+
+    _proto19.local = function local(name) {
+      if (name in this.locals) {
+        return this.locals[name];
+      } else {
+        return this.parent.local(name);
+      }
+    };
+
+    _proto19.this = function _this() {
+      return this.parent.this();
+    };
+
+    _proto19.hasLocal = function hasLocal(name) {
+      if (name in this.locals) {
+        return true;
+      } else {
+        return this.parent.hasLocal(name);
+      }
+    };
+
+    _proto19.child = function child(locals) {
+      return new LocalSymbols(this, locals);
+    };
+
+    (0, _emberBabel.createClass)(LocalSymbols, [{
+      key: "paramSymbols",
+      get: function get() {
+        return (0, _util.values)(this.locals);
+      }
+    }, {
+      key: "top",
+      get: function get() {
+        return this.parent.top;
+      }
+    }]);
+    return LocalSymbols;
+  }();
+
+  function addString(array, item) {
+    var index = array.indexOf(item);
+
+    if (index === -1) {
+      index = array.length;
+      array.push(item);
+      return index;
+    } else {
+      return index;
+    }
+  }
+
+  function unimpl(message) {
+    return new Error("unimplemented " + message);
+  }
+
+  function buildStatements(statements, symbols) {
+    var out = [];
+    statements.forEach(function (s) {
+      return out.push.apply(out, buildStatement(normalizeStatement(s), symbols));
+    });
+    return out;
+  }
+
+  function buildNormalizedStatements(statements, symbols) {
+    var out = [];
+    statements.forEach(function (s) {
+      return out.push.apply(out, buildStatement(s, symbols));
+    });
+    return out;
+  }
+
+  function buildStatement(normalized, symbols) {
+    if (symbols === void 0) {
+      symbols = new ProgramSymbols();
+    }
+
+    switch (normalized.kind) {
+      case "AppendPath"
+      /* AppendPath */
+      :
+        {
+          return [[normalized.trusted ? 2
+          /* TrustingAppend */
+          : 1
+          /* Append */
+          , buildGetPath(normalized.path, symbols)]];
+        }
+
+      case "AppendExpr"
+      /* AppendExpr */
+      :
+        {
+          return [[normalized.trusted ? 2
+          /* TrustingAppend */
+          : 1
+          /* Append */
+          , buildExpression(normalized.expr, normalized.trusted ? 'TrustedAppend' : 'Append', symbols)]];
+        }
+
+      case "Call"
+      /* Call */
+      :
+        {
+          var path = normalized.head,
+              params = normalized.params,
+              hash = normalized.hash,
+              trusted = normalized.trusted;
+          var builtParams = params ? buildParams(params, symbols) : null;
+          var builtHash = hash ? buildHash(hash, symbols) : null;
+          var builtExpr = buildCallHead(path, trusted ? 3
+          /* AmbiguousInvoke */
+          : 2
+          /* AmbiguousAppendInvoke */
+          , symbols);
+          return [[trusted ? 2
+          /* TrustingAppend */
+          : 1
+          /* Append */
+          , [28
+          /* Call */
+          , builtExpr, builtParams, builtHash]]];
+        }
+
+      case "Literal"
+      /* Literal */
+      :
+        {
+          return [[1
+          /* Append */
+          , normalized.value]];
+        }
+
+      case "Comment"
+      /* Comment */
+      :
+        {
+          return [[3
+          /* Comment */
+          , normalized.value]];
+        }
+
+      case "Block"
+      /* Block */
+      :
+        {
+          var blocks = buildBlocks(normalized.blocks, normalized.blockParams, symbols);
+
+          var _hash3 = buildHash(normalized.hash, symbols);
+
+          var _params3 = buildParams(normalized.params, symbols);
+
+          var _path = buildCallHead(normalized.head, 7
+          /* ResolveAsComponentHead */
+          , symbols);
+
+          return [[6
+          /* Block */
+          , _path, _params3, _hash3, blocks]];
+        }
+
+      case "Keyword"
+      /* Keyword */
+      :
+        {
+          return [buildKeyword(normalized, symbols)];
+        }
+
+      case "Element"
+      /* Element */
+      :
+        return buildElement(normalized, symbols);
+
+      case "Modifier"
+      /* Modifier */
+      :
+        throw unimpl('modifier');
+
+      case "DynamicComponent"
+      /* DynamicComponent */
+      :
+        throw unimpl('dynamic component');
+
+      default:
+        throw (0, _util.assertNever)(normalized);
+    }
+  }
+
+  function s(arr) {
+    for (var _len2 = arguments.length, interpolated = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      interpolated[_key2 - 1] = arguments[_key2];
+    }
+
+    var result = arr.reduce(function (result, string, i) {
+      return result + ("" + string + (interpolated[i] ? String(interpolated[i]) : ''));
+    }, '');
+    return [0
+    /* Literal */
+    , result];
+  }
+
+  function c(arr) {
+    for (var _len3 = arguments.length, interpolated = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+      interpolated[_key3 - 1] = arguments[_key3];
+    }
+
+    var result = arr.reduce(function (result, string, i) {
+      return result + ("" + string + (interpolated[i] ? String(interpolated[i]) : ''));
+    }, '');
+    return [1
+    /* Comment */
+    , result];
+  }
+
+  function unicode(charCode) {
+    return String.fromCharCode(parseInt(charCode, 16));
+  }
+
+  var NEWLINE = '\n';
+  _exports.NEWLINE = NEWLINE;
+
+  function buildKeyword(normalized, symbols) {
+    var name = normalized.name;
+    var params = buildParams(normalized.params, symbols);
+    var childSymbols = symbols.child(normalized.blockParams || []);
+    var block = buildBlock(normalized.blocks.default, childSymbols, childSymbols.paramSymbols);
+    var inverse = normalized.blocks.else ? buildBlock(normalized.blocks.else, symbols, []) : null;
+
+    switch (name) {
+      case 'with':
+        return [43
+        /* With */
+        , params[0], block, inverse];
+
+      case 'if':
+        return [41
+        /* If */
+        , params[0], block, inverse];
+
+      case 'each':
+        var keyExpr = normalized.hash ? normalized.hash['key'] : null;
+        var key = keyExpr ? buildExpression(keyExpr, 'Generic', symbols) : null;
+        return [42
+        /* Each */
+        , params[0], key, block, inverse];
+
+      default:
+        throw new Error('unimplemented keyword');
+    }
+  }
+
+  function buildElement(_ref99, symbols) {
+    var name = _ref99.name,
+        attrs = _ref99.attrs,
+        block = _ref99.block;
+    var out = [hasSplat(attrs) ? [11
+    /* OpenElementWithSplat */
+    , name] : [10
+    /* OpenElement */
+    , name]];
+
+    if (attrs) {
+      var _buildElementParams = buildElementParams(attrs, symbols),
+          params = _buildElementParams.params,
+          args = _buildElementParams.args;
+
+      out.push.apply(out, params);
+    }
+
+    out.push([12
+    /* FlushElement */
+    ]);
+
+    if (Array.isArray(block)) {
+      block.forEach(function (s) {
+        return out.push.apply(out, buildStatement(s, symbols));
+      });
+    } else if (block === null) {// do nothing
+    } else {
+      throw (0, _util.assertNever)(block);
+    }
+
+    out.push([13
+    /* CloseElement */
+    ]);
+    return out;
+  }
+
+  function hasSplat(attrs) {
+    if (attrs === null) return false;
+    return Object.keys(attrs).some(function (a) {
+      return attrs[a] === "Splat";
+    }
+    /* Splat */
+    );
+  }
+
+  function buildElementParams(attrs, symbols) {
+    var params = [];
+    var keys = [];
+    var values$$1 = [];
+    Object.keys(attrs).forEach(function (key) {
+      var value = attrs[key];
+
+      if (value === "Splat"
+      /* Splat */
+      ) {
+          params.push([17
+          /* AttrSplat */
+          , symbols.block('&attrs')]);
+        } else if (key[0] === '@') {
+        keys.push(key);
+        values$$1.push(buildExpression(value, 'Strict', symbols));
+      } else {
+        params.push.apply(params, buildAttributeValue(key, value, // TODO: extract namespace from key
+        extractNamespace(key), symbols));
+      }
+    });
+    return {
+      params: params,
+      args: (0, _util.isPresent)(keys) && (0, _util.isPresent)(values$$1) ? [keys, values$$1] : null
+    };
+  }
+
+  function extractNamespace(name) {
+    if (name === 'xmlns') {
+      return "http://www.w3.org/2000/xmlns/"
+      /* XMLNS */
+      ;
+    }
+
+    var match = /^([^:]*):([^:]*)$/.exec(name);
+
+    if (match === null) {
+      return null;
+    }
+
+    var namespace = match[1];
+
+    switch (namespace) {
+      case 'xlink':
+        return "http://www.w3.org/1999/xlink"
+        /* XLink */
+        ;
+
+      case 'xml':
+        return "http://www.w3.org/XML/1998/namespace"
+        /* XML */
+        ;
+
+      case 'xmlns':
+        return "http://www.w3.org/2000/xmlns/"
+        /* XMLNS */
+        ;
+    }
+
+    return null;
+  }
+
+  function buildAttributeValue(name, value, namespace, symbols) {
+    switch (value.type) {
+      case "Literal"
+      /* Literal */
+      :
+        {
+          var val = value.value;
+
+          if (val === false) {
+            return [];
+          } else if (val === true) {
+            return [[14
+            /* StaticAttr */
+            , name, '', namespace !== null && namespace !== void 0 ? namespace : undefined]];
+          } else if (typeof val === 'string') {
+            return [[14
+            /* StaticAttr */
+            , name, val, namespace !== null && namespace !== void 0 ? namespace : undefined]];
+          } else {
+            throw new Error("Unexpected/unimplemented literal attribute " + JSON.stringify(val));
+          }
+        }
+
+      default:
+        return [[15
+        /* DynamicAttr */
+        , name, buildExpression(value, 'AttrValue', symbols), namespace !== null && namespace !== void 0 ? namespace : undefined]];
+    }
+  }
+
+  function varContext(context, bare) {
+    switch (context) {
+      case 'Append':
+        return bare ? 'AppendBare' : 'AppendInvoke';
+
+      case 'TrustedAppend':
+        return bare ? 'TrustedAppendBare' : 'TrustedAppendInvoke';
+
+      case 'AttrValue':
+        return bare ? 'AttrValueBare' : 'AttrValueInvoke';
+
+      default:
+        return context;
+    }
+  }
+
+  function buildExpression(expr, context, symbols) {
+    switch (expr.type) {
+      case "GetPath"
+      /* GetPath */
+      :
+        {
+          return buildGetPath(expr, symbols);
+        }
+
+      case "GetVar"
+      /* GetVar */
+      :
+        {
+          return buildVar(expr.variable, varContext(context, true), symbols);
+        }
+
+      case "Concat"
+      /* Concat */
+      :
+        {
+          return [29
+          /* Concat */
+          , buildConcat(expr.params, symbols)];
+        }
+
+      case "Call"
+      /* Call */
+      :
+        {
+          var builtParams = buildParams(expr.params, symbols);
+          var builtHash = buildHash(expr.hash, symbols);
+          var builtExpr = buildCallHead(expr.head, context === 'Generic' ? 'SubExpression' : varContext(context, false), symbols);
+          return [28
+          /* Call */
+          , builtExpr, builtParams, builtHash];
+        }
+
+      case "HasBlock"
+      /* HasBlock */
+      :
+        {
+          return [48
+          /* HasBlock */
+          , buildVar({
+            kind: VariableKind.Block,
+            name: expr.name,
+            mode: 'loose'
+          }, 4
+          /* LooseFreeVariable */
+          , symbols)];
+        }
+
+      case "HasBlockParams"
+      /* HasBlockParams */
+      :
+        {
+          return [49
+          /* HasBlockParams */
+          , buildVar({
+            kind: VariableKind.Block,
+            name: expr.name,
+            mode: 'loose'
+          }, 4
+          /* LooseFreeVariable */
+          , symbols)];
+        }
+
+      case "Literal"
+      /* Literal */
+      :
+        {
+          if (expr.value === undefined) {
+            return [27
+            /* Undefined */
+            ];
+          } else {
+            return expr.value;
+          }
+        }
+
+      default:
+        (0, _util.assertNever)(expr);
+    }
+  }
+
+  function buildCallHead(callHead, context, symbols) {
+    if (callHead.type === "GetVar"
+    /* GetVar */
+    ) {
+        return buildVar(callHead.variable, context, symbols);
+      } else {
+      return buildGetPath(callHead, symbols);
+    }
+  }
+
+  function buildGetPath(head, symbols) {
+    return buildVar(head.path.head, 4
+    /* LooseFreeVariable */
+    , symbols, head.path.tail);
+  }
+
+  function buildVar(head, context, symbols, path) {
+    var op = 30
+    /* GetSymbol */
+    ;
+    var sym;
+
+    switch (head.kind) {
+      case VariableKind.Free:
+        if (context === 'Strict') {
+          op = 31
+          /* GetStrictFree */
+          ;
+        } else if (context === 'AppendBare') {
+          op = 34
+          /* GetFreeAsComponentOrHelperHeadOrThisFallback */
+          ;
+        } else if (context === 'AppendInvoke') {
+          op = 35
+          /* GetFreeAsComponentOrHelperHead */
+          ;
+        } else if (context === 'TrustedAppendBare') {
+          op = 36
+          /* GetFreeAsHelperHeadOrThisFallback */
+          ;
+        } else if (context === 'TrustedAppendInvoke') {
+          op = 37
+          /* GetFreeAsHelperHead */
+          ;
+        } else if (context === 'AttrValueBare') {
+          op = 36
+          /* GetFreeAsHelperHeadOrThisFallback */
+          ;
+        } else if (context === 'AttrValueInvoke') {
+          op = 37
+          /* GetFreeAsHelperHead */
+          ;
+        } else if (context === 'SubExpression') {
+          op = 37
+          /* GetFreeAsHelperHead */
+          ;
+        } else if (context === 'Generic') {
+          op = 33
+          /* GetFreeAsFallback */
+          ;
+        } else {
+          op = expressionContextOp(context);
+        }
+
+        sym = symbols.freeVar(head.name);
+        break;
+
+      default:
+        op = 30
+        /* GetSymbol */
+        ;
+        sym = getSymbolForVar(head.kind, symbols, head.name);
+    }
+
+    if (path === undefined || path.length === 0) {
+      return [op, sym];
+    } else {
+      return [op, sym, path];
+    }
+  }
+
+  function getSymbolForVar(kind, symbols, name) {
+    switch (kind) {
+      case VariableKind.Arg:
+        return symbols.arg(name);
+
+      case VariableKind.Block:
+        return symbols.block(name);
+
+      case VariableKind.Local:
+        return symbols.local(name);
+
+      case VariableKind.This:
+        return symbols.this();
+
+      default:
+        return (0, _util.exhausted)(kind);
+    }
+  }
+
+  function expressionContextOp(context) {
+    switch (context) {
+      case 0
+      /* Strict */
+      :
+        return 31
+        /* GetStrictFree */
+        ;
+
+      case 1
+      /* AmbiguousAppend */
+      :
+        return 34
+        /* GetFreeAsComponentOrHelperHeadOrThisFallback */
+        ;
+
+      case 2
+      /* AmbiguousAppendInvoke */
+      :
+        return 35
+        /* GetFreeAsComponentOrHelperHead */
+        ;
+
+      case 3
+      /* AmbiguousInvoke */
+      :
+        return 36
+        /* GetFreeAsHelperHeadOrThisFallback */
+        ;
+
+      case 4
+      /* LooseFreeVariable */
+      :
+        return 33
+        /* GetFreeAsFallback */
+        ;
+
+      case 5
+      /* ResolveAsCallHead */
+      :
+        return 37
+        /* GetFreeAsHelperHead */
+        ;
+
+      case 6
+      /* ResolveAsModifierHead */
+      :
+        return 38
+        /* GetFreeAsModifierHead */
+        ;
+
+      case 7
+      /* ResolveAsComponentHead */
+      :
+        return 39
+        /* GetFreeAsComponentHead */
+        ;
+
+      default:
+        return (0, _util.exhausted)(context);
+    }
+  }
+
+  function buildParams(exprs, symbols) {
+    if (exprs === null || !(0, _util.isPresent)(exprs)) return null;
+    return exprs.map(function (e) {
+      return buildExpression(e, 'Generic', symbols);
+    });
+  }
+
+  function buildConcat(exprs, symbols) {
+    return exprs.map(function (e) {
+      return buildExpression(e, 'AttrValue', symbols);
+    });
+  }
+
+  function buildHash(exprs, symbols) {
+    if (exprs === null) return null;
+    var out = [[], []];
+    Object.keys(exprs).forEach(function (key) {
+      out[0].push(key);
+      out[1].push(buildExpression(exprs[key], 'Generic', symbols));
+    });
+    return out;
+  }
+
+  function buildBlocks(blocks, blockParams, parent) {
+    var keys = [];
+    var values$$1 = [];
+    Object.keys(blocks).forEach(function (name) {
+      keys.push(name);
+
+      if (name === 'default') {
+        var symbols = parent.child(blockParams || []);
+        values$$1.push(buildBlock(blocks[name], symbols, symbols.paramSymbols));
+      } else {
+        values$$1.push(buildBlock(blocks[name], parent, []));
+      }
+    });
+    return [keys, values$$1];
+  }
+
+  function buildBlock(block, symbols, locals) {
+    if (locals === void 0) {
+      locals = [];
+    }
+
+    return [buildNormalizedStatements(block, symbols), locals];
   }
 });
-enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", "handlebars"], function (_exports, _simpleHtmlTokenizer, _util, _handlebars) {
+define("@glimmer/env", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.CI = _exports.DEBUG = void 0;
+  var DEBUG = false;
+  _exports.DEBUG = DEBUG;
+  var CI = false;
+  _exports.CI = CI;
+});
+define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-html-tokenizer", "@handlebars/parser"], function (_exports, _emberBabel, _util, _simpleHtmlTokenizer, _parser) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.normalize = normalize;
+  _exports.generateSyntaxError = generateSyntaxError;
   _exports.preprocess = preprocess;
+  _exports.print = build;
+  _exports.traverse = traverse;
   _exports.cannotRemoveNode = cannotRemoveNode;
   _exports.cannotReplaceNode = cannotReplaceNode;
-  _exports.cannotReplaceOrRemoveInKeyHandlerYet = cannotReplaceOrRemoveInKeyHandlerYet;
-  _exports.traverse = traverse;
-  _exports.print = build;
-  _exports.isLiteral = isLiteral;
-  _exports.printLiteral = printLiteral;
-  _exports.SyntaxError = _exports.Walker = _exports.TraversalError = _exports.builders = _exports.AST = void 0;
+  _exports.isKeyword = isKeyword;
+  _exports.maybeLoc = maybeLoc;
+  _exports.loc = loc;
+  _exports.hasSpan = hasSpan;
+  _exports.node = node;
+  _exports.SpanList = _exports.SourceSpan = _exports.SourceSlice = _exports.KEYWORDS_TYPES = _exports.WalkerPath = _exports.Path = _exports.Walker = _exports.ProgramSymbolTable = _exports.BlockSymbolTable = _exports.SymbolTable = _exports.builders = _exports.Source = _exports.ASTv2 = _exports.AST = _exports.ASTv1 = void 0;
+  var UNKNOWN_POSITION = Object.freeze({
+    line: 1,
+    column: 0
+  });
+  var SYNTHETIC_LOCATION = Object.freeze({
+    source: '(synthetic)',
+    start: UNKNOWN_POSITION,
+    end: UNKNOWN_POSITION
+  });
+  var TEMPORARY_LOCATION = Object.freeze({
+    source: '(temporary)',
+    start: UNKNOWN_POSITION,
+    end: UNKNOWN_POSITION
+  });
+  var NON_EXISTENT_LOCATION = Object.freeze({
+    source: '(nonexistent)',
+    start: UNKNOWN_POSITION,
+    end: UNKNOWN_POSITION
+  });
+  var BROKEN_LOCATION = Object.freeze({
+    source: '(broken)',
+    start: UNKNOWN_POSITION,
+    end: UNKNOWN_POSITION
+  });
 
-  function buildMustache(path, params, hash, raw, loc) {
+  var SourceSlice = /*#__PURE__*/function () {
+    function SourceSlice(options) {
+      this.loc = options.loc;
+      this.chars = options.chars;
+    }
+
+    SourceSlice.synthetic = function synthetic(chars) {
+      var offsets = SourceSpan.synthetic(chars);
+      return new SourceSlice({
+        loc: offsets,
+        chars: chars
+      });
+    };
+
+    SourceSlice.load = function load(source, slice) {
+      return new SourceSlice({
+        loc: SourceSpan.load(source, slice[1]),
+        chars: slice[0]
+      });
+    };
+
+    var _proto = SourceSlice.prototype;
+
+    _proto.getString = function getString() {
+      return this.chars;
+    };
+
+    _proto.serialize = function serialize() {
+      return [this.chars, this.loc.serialize()];
+    };
+
+    return SourceSlice;
+  }();
+
+  _exports.SourceSlice = SourceSlice;
+
+  var __classPrivateFieldSet = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var __classPrivateFieldGet = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    return privateMap.get(receiver);
+  };
+
+  var _whens, _map, _whens_1;
+  /**
+   * This file implements the DSL used by span and offset in places where they need to exhaustively
+   * consider all combinations of states (Handlebars offsets, character offsets and invisible/broken
+   * offsets).
+   *
+   * It's probably overkill, but it makes the code that uses it clear. It could be refactored or
+   * removed.
+   */
+
+
+  var MatchAny = 'MATCH_ANY';
+  var IsInvisible = 'IS_INVISIBLE';
+
+  var WhenList = /*#__PURE__*/function () {
+    function WhenList(whens) {
+      _whens.set(this, void 0);
+
+      __classPrivateFieldSet(this, _whens, whens);
+    }
+
+    var _proto2 = WhenList.prototype;
+
+    _proto2.first = function first(kind) {
+      for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(__classPrivateFieldGet(this, _whens)), _step; !(_step = _iterator()).done;) {
+        var _when = _step.value;
+
+        var _value = _when.match(kind);
+
+        if ((0, _util.isPresent)(_value)) {
+          return _value[0];
+        }
+      }
+
+      return null;
+    };
+
+    return WhenList;
+  }();
+
+  _whens = new WeakMap();
+
+  var When = /*#__PURE__*/function () {
+    function When() {
+      _map.set(this, new Map());
+    }
+
+    var _proto3 = When.prototype;
+
+    _proto3.get = function get(pattern, or) {
+      var value = __classPrivateFieldGet(this, _map).get(pattern);
+
+      if (value) {
+        return value;
+      }
+
+      value = or();
+
+      __classPrivateFieldGet(this, _map).set(pattern, value);
+
+      return value;
+    };
+
+    _proto3.add = function add(pattern, out) {
+      __classPrivateFieldGet(this, _map).set(pattern, out);
+    };
+
+    _proto3.match = function match(kind) {
+      var pattern = patternFor(kind);
+      var out = [];
+
+      var exact = __classPrivateFieldGet(this, _map).get(pattern);
+
+      var fallback = __classPrivateFieldGet(this, _map).get(MatchAny);
+
+      if (exact) {
+        out.push(exact);
+      }
+
+      if (fallback) {
+        out.push(fallback);
+      }
+
+      return out;
+    };
+
+    return When;
+  }();
+
+  _map = new WeakMap();
+
+  function match(callback) {
+    return callback(new Matcher()).check();
+  }
+
+  var Matcher = /*#__PURE__*/function () {
+    function Matcher() {
+      _whens_1.set(this, new When());
+    }
+    /**
+     * You didn't exhaustively match all possibilities.
+     */
+
+
+    var _proto4 = Matcher.prototype;
+
+    _proto4.check = function check() {
+      var _this = this;
+
+      return function (left, right) {
+        return _this.matchFor(left.kind, right.kind)(left, right);
+      };
+    };
+
+    _proto4.matchFor = function matchFor(left, right) {
+      var nesteds = __classPrivateFieldGet(this, _whens_1).match(left);
+
+      var callback = new WhenList(nesteds).first(right);
+      return callback;
+    };
+
+    _proto4.when = function when(left, right, // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    callback) {
+      __classPrivateFieldGet(this, _whens_1).get(left, function () {
+        return new When();
+      }).add(right, callback);
+
+      return this;
+    };
+
+    return Matcher;
+  }();
+
+  _whens_1 = new WeakMap();
+
+  function patternFor(kind) {
+    switch (kind) {
+      case "Broken"
+      /* Broken */
+      :
+      case "InternalsSynthetic"
+      /* InternalsSynthetic */
+      :
+      case "NonExistent"
+      /* NonExistent */
+      :
+        return IsInvisible;
+
+      default:
+        return kind;
+    }
+  }
+
+  var __classPrivateFieldGet$1 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    return privateMap.get(receiver);
+  };
+
+  var __classPrivateFieldSet$1 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var _locPos, _charPos; // eslint-disable-next-line import/no-extraneous-dependencies
+
+  /**
+   * Used to indicate that an attempt to convert a `SourcePosition` to a character offset failed. It
+   * is separate from `null` so that `null` can be used to indicate that the computation wasn't yet
+   * attempted (and therefore to cache the failure)
+   */
+
+
+  var BROKEN = 'BROKEN';
+  /**
+   * A `SourceOffset` represents a single position in the source.
+   *
+   * There are three kinds of backing data for `SourceOffset` objects:
+   *
+   * - `CharPosition`, which contains a character offset into the raw source string
+   * - `HbsPosition`, which contains a `SourcePosition` from the Handlebars AST, which can be
+   *   converted to a `CharPosition` on demand.
+   * - `InvisiblePosition`, which represents a position not in source (@see {InvisiblePosition})
+   */
+
+  var SourceOffset = /*#__PURE__*/function () {
+    function SourceOffset(data) {
+      this.data = data;
+    }
+    /**
+     * Create a `SourceOffset` from a Handlebars `SourcePosition`. It's stored as-is, and converted
+     * into a character offset on demand, which avoids unnecessarily computing the offset of every
+     * `SourceLocation`, but also means that broken `SourcePosition`s are not always detected.
+     */
+
+
+    SourceOffset.forHbsPos = function forHbsPos(source, pos) {
+      return new HbsPosition(source, pos, null).wrap();
+    }
+    /**
+     * Create a `SourceOffset` that corresponds to a broken `SourcePosition`. This means that the
+     * calling code determined (or knows) that the `SourceLocation` doesn't correspond correctly to
+     * any part of the source.
+     */
+    ;
+
+    SourceOffset.broken = function broken(pos) {
+      if (pos === void 0) {
+        pos = UNKNOWN_POSITION;
+      }
+
+      return new InvisiblePosition("Broken"
+      /* Broken */
+      , pos).wrap();
+    }
+    /**
+     * Get the character offset for this `SourceOffset`, if possible.
+     */
+    ;
+
+    var _proto5 = SourceOffset.prototype;
+
+    /**
+     * Compare this offset with another one.
+     *
+     * If both offsets are `HbsPosition`s, they're equivalent as long as their lines and columns are
+     * the same. This avoids computing offsets unnecessarily.
+     *
+     * Otherwise, two `SourceOffset`s are equivalent if their successfully computed character offsets
+     * are the same.
+     */
+    _proto5.eql = function eql(right) {
+      return _eql(this.data, right.data);
+    }
+    /**
+     * Create a span that starts from this source offset and ends with another source offset. Avoid
+     * computing character offsets if both `SourceOffset`s are still lazy.
+     */
+    ;
+
+    _proto5.until = function until(other) {
+      return span(this.data, other.data);
+    }
+    /**
+     * Create a `SourceOffset` by moving the character position represented by this source offset
+     * forward or backward (if `by` is negative), if possible.
+     *
+     * If this `SourceOffset` can't compute a valid character offset, `move` returns a broken offset.
+     *
+     * If the resulting character offset is less than 0 or greater than the size of the source, `move`
+     * returns a broken offset.
+     */
+    ;
+
+    _proto5.move = function move(by) {
+      var charPos = this.data.toCharPos();
+
+      if (charPos === null) {
+        return SourceOffset.broken();
+      } else {
+        var result = charPos.offset + by;
+
+        if (charPos.source.check(result)) {
+          return new CharPosition(charPos.source, result).wrap();
+        } else {
+          return SourceOffset.broken();
+        }
+      }
+    }
+    /**
+     * Create a new `SourceSpan` that represents a collapsed range at this source offset. Avoid
+     * computing the character offset if it has not already been computed.
+     */
+    ;
+
+    _proto5.collapsed = function collapsed() {
+      return span(this.data, this.data);
+    }
+    /**
+     * Convert this `SourceOffset` into a Handlebars {@see SourcePosition} for compatibility with
+     * existing plugins.
+     */
+    ;
+
+    _proto5.toJSON = function toJSON() {
+      return this.data.toJSON();
+    };
+
+    (0, _emberBabel.createClass)(SourceOffset, [{
+      key: "offset",
+      get: function get() {
+        var charPos = this.data.toCharPos();
+        return charPos === null ? null : charPos.offset;
+      }
+    }]);
+    return SourceOffset;
+  }();
+
+  var CharPosition = /*#__PURE__*/function () {
+    function CharPosition(source, charPos) {
+      this.source = source;
+      this.charPos = charPos;
+      this.kind = "CharPosition"
+      /* CharPosition */
+      ;
+      /** Computed from char offset */
+
+      _locPos.set(this, null);
+    }
+    /**
+     * This is already a `CharPosition`.
+     *
+     * {@see HbsPosition} for the alternative.
+     *
+     * @implements {PositionData}
+     */
+
+
+    var _proto6 = CharPosition.prototype;
+
+    _proto6.toCharPos = function toCharPos() {
+      return this;
+    }
+    /**
+     * Produce a Handlebars {@see SourcePosition} for this `CharPosition`. If this `CharPosition` was
+     * computed using {@see SourceOffset#move}, this will compute the `SourcePosition` for the offset.
+     *
+     * @implements {PositionData}
+     */
+    ;
+
+    _proto6.toJSON = function toJSON() {
+      var hbs = this.toHbsPos();
+      return hbs === null ? UNKNOWN_POSITION : hbs.toJSON();
+    };
+
+    _proto6.wrap = function wrap() {
+      return new SourceOffset(this);
+    }
+    /**
+     * A `CharPosition` always has an offset it can produce without any additional computation.
+     */
+    ;
+
+    /**
+     * Convert the current character offset to an `HbsPosition`, if it was not already computed. Once
+     * a `CharPosition` has computed its `HbsPosition`, it will not need to do compute it again, and
+     * the same `CharPosition` is retained when used as one of the ends of a `SourceSpan`, so
+     * computing the `HbsPosition` should be a one-time operation.
+     */
+    _proto6.toHbsPos = function toHbsPos() {
+      var locPos = __classPrivateFieldGet$1(this, _locPos);
+
+      if (locPos === null) {
+        var hbsPos = this.source.hbsPosFor(this.charPos);
+
+        if (hbsPos === null) {
+          __classPrivateFieldSet$1(this, _locPos, locPos = BROKEN);
+        } else {
+          __classPrivateFieldSet$1(this, _locPos, locPos = new HbsPosition(this.source, hbsPos, this.charPos));
+        }
+      }
+
+      return locPos === BROKEN ? null : locPos;
+    };
+
+    (0, _emberBabel.createClass)(CharPosition, [{
+      key: "offset",
+      get: function get() {
+        return this.charPos;
+      }
+    }]);
+    return CharPosition;
+  }();
+
+  _locPos = new WeakMap();
+
+  var HbsPosition = /*#__PURE__*/function () {
+    function HbsPosition(source, hbsPos, charPos) {
+      if (charPos === void 0) {
+        charPos = null;
+      }
+
+      this.source = source;
+      this.hbsPos = hbsPos;
+      this.kind = "HbsPosition"
+      /* HbsPosition */
+      ;
+
+      _charPos.set(this, void 0);
+
+      __classPrivateFieldSet$1(this, _charPos, charPos === null ? null : new CharPosition(source, charPos));
+    }
+    /**
+     * Lazily compute the character offset from the {@see SourcePosition}. Once an `HbsPosition` has
+     * computed its `CharPosition`, it will not need to do compute it again, and the same
+     * `HbsPosition` is retained when used as one of the ends of a `SourceSpan`, so computing the
+     * `CharPosition` should be a one-time operation.
+     *
+     * @implements {PositionData}
+     */
+
+
+    var _proto7 = HbsPosition.prototype;
+
+    _proto7.toCharPos = function toCharPos() {
+      var charPos = __classPrivateFieldGet$1(this, _charPos);
+
+      if (charPos === null) {
+        var charPosNumber = this.source.charPosFor(this.hbsPos);
+
+        if (charPosNumber === null) {
+          __classPrivateFieldSet$1(this, _charPos, charPos = BROKEN);
+        } else {
+          __classPrivateFieldSet$1(this, _charPos, charPos = new CharPosition(this.source, charPosNumber));
+        }
+      }
+
+      return charPos === BROKEN ? null : charPos;
+    }
+    /**
+     * Return the {@see SourcePosition} that this `HbsPosition` was instantiated with. This operation
+     * does not need to compute anything.
+     *
+     * @implements {PositionData}
+     */
+    ;
+
+    _proto7.toJSON = function toJSON() {
+      return this.hbsPos;
+    };
+
+    _proto7.wrap = function wrap() {
+      return new SourceOffset(this);
+    }
+    /**
+     * This is already an `HbsPosition`.
+     *
+     * {@see CharPosition} for the alternative.
+     */
+    ;
+
+    _proto7.toHbsPos = function toHbsPos() {
+      return this;
+    };
+
+    return HbsPosition;
+  }();
+
+  _charPos = new WeakMap();
+
+  var InvisiblePosition = /*#__PURE__*/function () {
+    function InvisiblePosition(kind, // whatever was provided, possibly broken
+    pos) {
+      this.kind = kind;
+      this.pos = pos;
+    }
+    /**
+     * A broken position cannot be turned into a {@see CharacterPosition}.
+     */
+
+
+    var _proto8 = InvisiblePosition.prototype;
+
+    _proto8.toCharPos = function toCharPos() {
+      return null;
+    }
+    /**
+     * The serialization of an `InvisiblePosition is whatever Handlebars {@see SourcePosition} was
+     * originally identified as broken, non-existent or synthetic.
+     *
+     * If an `InvisiblePosition` never had an source offset at all, this method returns
+     * {@see UNKNOWN_POSITION} for compatibility.
+     */
+    ;
+
+    _proto8.toJSON = function toJSON() {
+      return this.pos;
+    };
+
+    _proto8.wrap = function wrap() {
+      return new SourceOffset(this);
+    };
+
+    (0, _emberBabel.createClass)(InvisiblePosition, [{
+      key: "offset",
+      get: function get() {
+        return null;
+      }
+    }]);
+    return InvisiblePosition;
+  }();
+  /**
+   * Compare two {@see AnyPosition} and determine whether they are equal.
+   *
+   * @see {SourceOffset#eql}
+   */
+
+
+  var _eql = match(function (m) {
+    return m.when("HbsPosition"
+    /* HbsPosition */
+    , "HbsPosition"
+    /* HbsPosition */
+    , function (_ref, _ref2) {
+      var left = _ref.hbsPos;
+      var right = _ref2.hbsPos;
+      return left.column === right.column && left.line === right.line;
+    }).when("CharPosition"
+    /* CharPosition */
+    , "CharPosition"
+    /* CharPosition */
+    , function (_ref3, _ref4) {
+      var left = _ref3.charPos;
+      var right = _ref4.charPos;
+      return left === right;
+    }).when("CharPosition"
+    /* CharPosition */
+    , "HbsPosition"
+    /* HbsPosition */
+    , function (_ref5, right) {
+      var left = _ref5.offset;
+
+      var _a;
+
+      return left === ((_a = right.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset);
+    }).when("HbsPosition"
+    /* HbsPosition */
+    , "CharPosition"
+    /* CharPosition */
+    , function (left, _ref6) {
+      var right = _ref6.offset;
+
+      var _a;
+
+      return ((_a = left.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset) === right;
+    }).when(MatchAny, MatchAny, function () {
+      return false;
+    });
+  });
+
+  var __classPrivateFieldGet$2 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    return privateMap.get(receiver);
+  };
+
+  var __classPrivateFieldSet$2 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var _locPosSpan, _charPosSpan, _providedHbsLoc; // eslint-disable-next-line import/no-extraneous-dependencies
+
+  /**
+   * A `SourceSpan` object represents a span of characters inside of a template source.
+   *
+   * There are three kinds of `SourceSpan` objects:
+   *
+   * - `ConcreteSourceSpan`, which contains byte offsets
+   * - `LazySourceSpan`, which contains `SourceLocation`s from the Handlebars AST, which can be
+   *   converted to byte offsets on demand.
+   * - `InvisibleSourceSpan`, which represent source strings that aren't present in the source,
+   *   because:
+   *     - they were created synthetically
+   *     - their location is nonsensical (the span is broken)
+   *     - they represent nothing in the source (this currently happens only when a bug in the
+   *       upstream Handlebars parser fails to assign a location to empty blocks)
+   *
+   * At a high level, all `SourceSpan` objects provide:
+   *
+   * - byte offsets
+   * - source in column and line format
+   *
+   * And you can do these operations on `SourceSpan`s:
+   *
+   * - collapse it to a `SourceSpan` representing its starting or ending position
+   * - slice out some characters, optionally skipping some characters at the beginning or end
+   * - create a new `SourceSpan` with a different starting or ending offset
+   *
+   * All SourceSpan objects implement `SourceLocation`, for compatibility. All SourceSpan
+   * objects have a `toJSON` that emits `SourceLocation`, also for compatibility.
+   *
+   * For compatibility, subclasses of `AbstractSourceSpan` must implement `locDidUpdate`, which
+   * happens when an AST plugin attempts to modify the `start` or `end` of a span directly.
+   *
+   * The goal is to avoid creating any problems for use-cases like AST Explorer.
+   */
+
+
+  var SourceSpan = /*#__PURE__*/function () {
+    function SourceSpan(data) {
+      this.data = data;
+      this.isInvisible = data.kind !== "CharPosition"
+      /* CharPosition */
+      && data.kind !== "HbsPosition"
+      /* HbsPosition */
+      ;
+    }
+
+    SourceSpan.load = function load(source, serialized) {
+      if (typeof serialized === 'number') {
+        return SourceSpan.forCharPositions(source, serialized, serialized);
+      } else if (typeof serialized === 'string') {
+        return SourceSpan.synthetic(serialized);
+      } else if (Array.isArray(serialized)) {
+        return SourceSpan.forCharPositions(source, serialized[0], serialized[1]);
+      } else if (serialized === "NonExistent"
+      /* NonExistent */
+      ) {
+          return SourceSpan.NON_EXISTENT;
+        } else if (serialized === "Broken"
+      /* Broken */
+      ) {
+          return SourceSpan.broken(BROKEN_LOCATION);
+        }
+
+      (0, _util.assertNever)(serialized);
+    };
+
+    SourceSpan.forHbsLoc = function forHbsLoc(source, loc) {
+      var start = new HbsPosition(source, loc.start);
+      var end = new HbsPosition(source, loc.end);
+      return new HbsSpan(source, {
+        start: start,
+        end: end
+      }, loc).wrap();
+    };
+
+    SourceSpan.forCharPositions = function forCharPositions(source, startPos, endPos) {
+      var start = new CharPosition(source, startPos);
+      var end = new CharPosition(source, endPos);
+      return new CharPositionSpan(source, {
+        start: start,
+        end: end
+      }).wrap();
+    };
+
+    SourceSpan.synthetic = function synthetic(chars) {
+      return new InvisibleSpan("InternalsSynthetic"
+      /* InternalsSynthetic */
+      , NON_EXISTENT_LOCATION, chars).wrap();
+    };
+
+    SourceSpan.broken = function broken(pos) {
+      if (pos === void 0) {
+        pos = BROKEN_LOCATION;
+      }
+
+      return new InvisibleSpan("Broken"
+      /* Broken */
+      , pos).wrap();
+    };
+
+    var _proto9 = SourceSpan.prototype;
+
+    _proto9.getStart = function getStart() {
+      return this.data.getStart().wrap();
+    };
+
+    _proto9.getEnd = function getEnd() {
+      return this.data.getEnd().wrap();
+    };
+
+    /**
+     * Support converting ASTv1 nodes into a serialized format using JSON.stringify.
+     */
+    _proto9.toJSON = function toJSON() {
+      return this.loc;
+    }
+    /**
+     * Create a new span with the current span's end and a new beginning.
+     */
+    ;
+
+    _proto9.withStart = function withStart(other) {
+      return span(other.data, this.data.getEnd());
+    }
+    /**
+     * Create a new span with the current span's beginning and a new ending.
+     */
+    ;
+
+    _proto9.withEnd = function withEnd(other) {
+      return span(this.data.getStart(), other.data);
+    };
+
+    _proto9.asString = function asString() {
+      return this.data.asString();
+    }
+    /**
+     * Convert this `SourceSpan` into a `SourceSlice`. In debug mode, this method optionally checks
+     * that the byte offsets represented by this `SourceSpan` actually correspond to the expected
+     * string.
+     */
+    ;
+
+    _proto9.toSlice = function toSlice(expected) {
+      var chars = this.data.asString();
+
+      if (true
+      /* DEBUG */
+      ) {
+        if (expected !== undefined && chars !== expected) {
+          // eslint-disable-next-line no-console
+          console.warn("unexpectedly found " + JSON.stringify(chars) + " when slicing source, but expected " + JSON.stringify(expected));
+        }
+      }
+
+      return new SourceSlice({
+        loc: this,
+        chars: expected || chars
+      });
+    }
+    /**
+     * For compatibility with SourceLocation in AST plugins
+     *
+     * @deprecated use startPosition instead
+     */
+    ;
+
+    _proto9.collapse = function collapse(where) {
+      switch (where) {
+        case 'start':
+          return this.getStart().collapsed();
+
+        case 'end':
+          return this.getEnd().collapsed();
+      }
+    };
+
+    _proto9.extend = function extend(other) {
+      return span(this.data.getStart(), other.data.getEnd());
+    };
+
+    _proto9.serialize = function serialize() {
+      return this.data.serialize();
+    };
+
+    _proto9.slice = function slice(_ref7) {
+      var _ref7$skipStart = _ref7.skipStart,
+          skipStart = _ref7$skipStart === void 0 ? 0 : _ref7$skipStart,
+          _ref7$skipEnd = _ref7.skipEnd,
+          skipEnd = _ref7$skipEnd === void 0 ? 0 : _ref7$skipEnd;
+      return span(this.getStart().move(skipStart).data, this.getEnd().move(-skipEnd).data);
+    };
+
+    _proto9.sliceStartChars = function sliceStartChars(_ref8) {
+      var _ref8$skipStart = _ref8.skipStart,
+          skipStart = _ref8$skipStart === void 0 ? 0 : _ref8$skipStart,
+          chars = _ref8.chars;
+      return span(this.getStart().move(skipStart).data, this.getStart().move(skipStart + chars).data);
+    };
+
+    _proto9.sliceEndChars = function sliceEndChars(_ref9) {
+      var _ref9$skipEnd = _ref9.skipEnd,
+          skipEnd = _ref9$skipEnd === void 0 ? 0 : _ref9$skipEnd,
+          chars = _ref9.chars;
+      return span(this.getEnd().move(skipEnd - chars).data, this.getStart().move(-skipEnd).data);
+    };
+
+    (0, _emberBabel.createClass)(SourceSpan, [{
+      key: "loc",
+      get: function get() {
+        var span = this.data.toHbsSpan();
+        return span === null ? BROKEN_LOCATION : span.toHbsLoc();
+      }
+    }, {
+      key: "module",
+      get: function get() {
+        return this.data.getModule();
+      }
+      /**
+       * Get the starting `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
+       */
+
+    }, {
+      key: "startPosition",
+      get: function get() {
+        return this.loc.start;
+      }
+      /**
+       * Get the ending `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
+       */
+
+    }, {
+      key: "endPosition",
+      get: function get() {
+        return this.loc.end;
+      }
+    }, {
+      key: "start",
+      get: function get() {
+        return this.loc.start;
+      }
+      /**
+       * For compatibility with SourceLocation in AST plugins
+       *
+       * @deprecated use withStart instead
+       */
+      ,
+      set: function set(position) {
+        this.data.locDidUpdate({
+          start: position
+        });
+      }
+      /**
+       * For compatibility with SourceLocation in AST plugins
+       *
+       * @deprecated use endPosition instead
+       */
+
+    }, {
+      key: "end",
+      get: function get() {
+        return this.loc.end;
+      }
+      /**
+       * For compatibility with SourceLocation in AST plugins
+       *
+       * @deprecated use withEnd instead
+       */
+      ,
+      set: function set(position) {
+        this.data.locDidUpdate({
+          end: position
+        });
+      }
+      /**
+       * For compatibility with SourceLocation in AST plugins
+       *
+       * @deprecated use module instead
+       */
+
+    }, {
+      key: "source",
+      get: function get() {
+        return this.module;
+      }
+    }], [{
+      key: "NON_EXISTENT",
+      get: function get() {
+        return new InvisibleSpan("NonExistent"
+        /* NonExistent */
+        , NON_EXISTENT_LOCATION).wrap();
+      }
+    }]);
+    return SourceSpan;
+  }();
+
+  _exports.SourceSpan = SourceSpan;
+
+  var CharPositionSpan = /*#__PURE__*/function () {
+    function CharPositionSpan(source, charPositions) {
+      this.source = source;
+      this.charPositions = charPositions;
+      this.kind = "CharPosition"
+      /* CharPosition */
+      ;
+
+      _locPosSpan.set(this, null);
+    }
+
+    var _proto10 = CharPositionSpan.prototype;
+
+    _proto10.wrap = function wrap() {
+      return new SourceSpan(this);
+    };
+
+    _proto10.asString = function asString() {
+      return this.source.slice(this.charPositions.start.charPos, this.charPositions.end.charPos);
+    };
+
+    _proto10.getModule = function getModule() {
+      return this.source.module;
+    };
+
+    _proto10.getStart = function getStart() {
+      return this.charPositions.start;
+    };
+
+    _proto10.getEnd = function getEnd() {
+      return this.charPositions.end;
+    };
+
+    _proto10.locDidUpdate = function locDidUpdate() {};
+
+    _proto10.toHbsSpan = function toHbsSpan() {
+      var locPosSpan = __classPrivateFieldGet$2(this, _locPosSpan);
+
+      if (locPosSpan === null) {
+        var start = this.charPositions.start.toHbsPos();
+        var end = this.charPositions.end.toHbsPos();
+
+        if (start === null || end === null) {
+          locPosSpan = __classPrivateFieldSet$2(this, _locPosSpan, BROKEN);
+        } else {
+          locPosSpan = __classPrivateFieldSet$2(this, _locPosSpan, new HbsSpan(this.source, {
+            start: start,
+            end: end
+          }));
+        }
+      }
+
+      return locPosSpan === BROKEN ? null : locPosSpan;
+    };
+
+    _proto10.serialize = function serialize() {
+      var _this$charPositions = this.charPositions,
+          start = _this$charPositions.start.charPos,
+          end = _this$charPositions.end.charPos;
+
+      if (start === end) {
+        return start;
+      } else {
+        return [start, end];
+      }
+    };
+
+    _proto10.toCharPosSpan = function toCharPosSpan() {
+      return this;
+    };
+
+    return CharPositionSpan;
+  }();
+
+  _locPosSpan = new WeakMap();
+
+  var HbsSpan = /*#__PURE__*/function () {
+    function HbsSpan(source, hbsPositions, providedHbsLoc) {
+      if (providedHbsLoc === void 0) {
+        providedHbsLoc = null;
+      }
+
+      this.source = source;
+      this.hbsPositions = hbsPositions;
+      this.kind = "HbsPosition"
+      /* HbsPosition */
+      ;
+
+      _charPosSpan.set(this, null); // the source location from Handlebars + AST Plugins -- could be wrong
+
+
+      _providedHbsLoc.set(this, void 0);
+
+      __classPrivateFieldSet$2(this, _providedHbsLoc, providedHbsLoc);
+    }
+
+    var _proto11 = HbsSpan.prototype;
+
+    _proto11.serialize = function serialize() {
+      var charPos = this.toCharPosSpan();
+      return charPos === null ? "Broken"
+      /* Broken */
+      : charPos.wrap().serialize();
+    };
+
+    _proto11.wrap = function wrap() {
+      return new SourceSpan(this);
+    };
+
+    _proto11.updateProvided = function updateProvided(pos, edge) {
+      if (__classPrivateFieldGet$2(this, _providedHbsLoc)) {
+        __classPrivateFieldGet$2(this, _providedHbsLoc)[edge] = pos;
+      } // invalidate computed character offsets
+
+
+      __classPrivateFieldSet$2(this, _charPosSpan, null);
+
+      __classPrivateFieldSet$2(this, _providedHbsLoc, {
+        start: pos,
+        end: pos
+      });
+    };
+
+    _proto11.locDidUpdate = function locDidUpdate(_ref10) {
+      var start = _ref10.start,
+          end = _ref10.end;
+
+      if (start !== undefined) {
+        this.updateProvided(start, 'start');
+        this.hbsPositions.start = new HbsPosition(this.source, start, null);
+      }
+
+      if (end !== undefined) {
+        this.updateProvided(end, 'end');
+        this.hbsPositions.end = new HbsPosition(this.source, end, null);
+      }
+    };
+
+    _proto11.asString = function asString() {
+      var span = this.toCharPosSpan();
+      return span === null ? '' : span.asString();
+    };
+
+    _proto11.getModule = function getModule() {
+      return this.source.module;
+    };
+
+    _proto11.getStart = function getStart() {
+      return this.hbsPositions.start;
+    };
+
+    _proto11.getEnd = function getEnd() {
+      return this.hbsPositions.end;
+    };
+
+    _proto11.toHbsLoc = function toHbsLoc() {
+      return {
+        start: this.hbsPositions.start.hbsPos,
+        end: this.hbsPositions.end.hbsPos
+      };
+    };
+
+    _proto11.toHbsSpan = function toHbsSpan() {
+      return this;
+    };
+
+    _proto11.toCharPosSpan = function toCharPosSpan() {
+      var charPosSpan = __classPrivateFieldGet$2(this, _charPosSpan);
+
+      if (charPosSpan === null) {
+        var start = this.hbsPositions.start.toCharPos();
+        var end = this.hbsPositions.end.toCharPos();
+
+        if (start && end) {
+          charPosSpan = __classPrivateFieldSet$2(this, _charPosSpan, new CharPositionSpan(this.source, {
+            start: start,
+            end: end
+          }));
+        } else {
+          charPosSpan = __classPrivateFieldSet$2(this, _charPosSpan, BROKEN);
+          return null;
+        }
+      }
+
+      return charPosSpan === BROKEN ? null : charPosSpan;
+    };
+
+    return HbsSpan;
+  }();
+
+  _charPosSpan = new WeakMap(), _providedHbsLoc = new WeakMap();
+
+  var InvisibleSpan = /*#__PURE__*/function () {
+    function InvisibleSpan(kind, // whatever was provided, possibly broken
+    loc, // if the span represents a synthetic string
+    string) {
+      if (string === void 0) {
+        string = null;
+      }
+
+      this.kind = kind;
+      this.loc = loc;
+      this.string = string;
+    }
+
+    var _proto12 = InvisibleSpan.prototype;
+
+    _proto12.serialize = function serialize() {
+      switch (this.kind) {
+        case "Broken"
+        /* Broken */
+        :
+        case "NonExistent"
+        /* NonExistent */
+        :
+          return this.kind;
+
+        case "InternalsSynthetic"
+        /* InternalsSynthetic */
+        :
+          return this.string || '';
+      }
+    };
+
+    _proto12.wrap = function wrap() {
+      return new SourceSpan(this);
+    };
+
+    _proto12.asString = function asString() {
+      return this.string || '';
+    };
+
+    _proto12.locDidUpdate = function locDidUpdate(_ref11) {
+      var start = _ref11.start,
+          end = _ref11.end;
+
+      if (start !== undefined) {
+        this.loc.start = start;
+      }
+
+      if (end !== undefined) {
+        this.loc.end = end;
+      }
+    };
+
+    _proto12.getModule = function getModule() {
+      // TODO: Make this reflect the actual module this span originated from
+      return 'an unknown module';
+    };
+
+    _proto12.getStart = function getStart() {
+      return new InvisiblePosition(this.kind, this.loc.start);
+    };
+
+    _proto12.getEnd = function getEnd() {
+      return new InvisiblePosition(this.kind, this.loc.end);
+    };
+
+    _proto12.toCharPosSpan = function toCharPosSpan() {
+      return this;
+    };
+
+    _proto12.toHbsSpan = function toHbsSpan() {
+      return null;
+    };
+
+    _proto12.toHbsLoc = function toHbsLoc() {
+      return BROKEN_LOCATION;
+    };
+
+    return InvisibleSpan;
+  }();
+
+  var span = match(function (m) {
+    return m.when("HbsPosition"
+    /* HbsPosition */
+    , "HbsPosition"
+    /* HbsPosition */
+    , function (left, right) {
+      return new HbsSpan(left.source, {
+        start: left,
+        end: right
+      }).wrap();
+    }).when("CharPosition"
+    /* CharPosition */
+    , "CharPosition"
+    /* CharPosition */
+    , function (left, right) {
+      return new CharPositionSpan(left.source, {
+        start: left,
+        end: right
+      }).wrap();
+    }).when("CharPosition"
+    /* CharPosition */
+    , "HbsPosition"
+    /* HbsPosition */
+    , function (left, right) {
+      var rightCharPos = right.toCharPos();
+
+      if (rightCharPos === null) {
+        return new InvisibleSpan("Broken"
+        /* Broken */
+        , BROKEN_LOCATION).wrap();
+      } else {
+        return span(left, rightCharPos);
+      }
+    }).when("HbsPosition"
+    /* HbsPosition */
+    , "CharPosition"
+    /* CharPosition */
+    , function (left, right) {
+      var leftCharPos = left.toCharPos();
+
+      if (leftCharPos === null) {
+        return new InvisibleSpan("Broken"
+        /* Broken */
+        , BROKEN_LOCATION).wrap();
+      } else {
+        return span(leftCharPos, right);
+      }
+    }).when(IsInvisible, MatchAny, function (left) {
+      return new InvisibleSpan(left.kind, BROKEN_LOCATION).wrap();
+    }).when(MatchAny, IsInvisible, function (_, right) {
+      return new InvisibleSpan(right.kind, BROKEN_LOCATION).wrap();
+    });
+  }); // eslint-disable-next-line import/no-extraneous-dependencies
+
+  var Source = /*#__PURE__*/function () {
+    function Source(source, module) {
+      if (module === void 0) {
+        module = 'an unknown module';
+      }
+
+      this.source = source;
+      this.module = module;
+    }
+    /**
+     * Validate that the character offset represents a position in the source string.
+     */
+
+
+    var _proto13 = Source.prototype;
+
+    _proto13.check = function check(offset) {
+      return offset >= 0 && offset <= this.source.length;
+    };
+
+    _proto13.slice = function slice(start, end) {
+      return this.source.slice(start, end);
+    };
+
+    _proto13.offsetFor = function offsetFor(line, column) {
+      return SourceOffset.forHbsPos(this, {
+        line: line,
+        column: column
+      });
+    };
+
+    _proto13.spanFor = function spanFor(_ref12) {
+      var start = _ref12.start,
+          end = _ref12.end;
+      return SourceSpan.forHbsLoc(this, {
+        start: {
+          line: start.line,
+          column: start.column
+        },
+        end: {
+          line: end.line,
+          column: end.column
+        }
+      });
+    };
+
+    _proto13.hbsPosFor = function hbsPosFor(offset) {
+      var seenLines = 0;
+      var seenChars = 0;
+
+      if (offset > this.source.length) {
+        return null;
+      }
+
+      while (true) {
+        var nextLine = this.source.indexOf('\n', seenChars);
+
+        if (offset <= nextLine || nextLine === -1) {
+          return {
+            line: seenLines + 1,
+            column: offset - seenChars
+          };
+        } else {
+          seenLines += 1;
+          seenChars = nextLine + 1;
+        }
+      }
+    };
+
+    _proto13.charPosFor = function charPosFor(position) {
+      var line = position.line,
+          column = position.column;
+      var sourceString = this.source;
+      var sourceLength = sourceString.length;
+      var seenLines = 0;
+      var seenChars = 0;
+
+      while (true) {
+        if (seenChars >= sourceLength) return sourceLength;
+        var nextLine = this.source.indexOf('\n', seenChars);
+        if (nextLine === -1) nextLine = this.source.length;
+
+        if (seenLines === line - 1) {
+          if (seenChars + column > nextLine) return nextLine;
+
+          if (true
+          /* DEBUG */
+          ) {
+            var roundTrip = this.hbsPosFor(seenChars + column);
+          }
+
+          return seenChars + column;
+        } else if (nextLine === -1) {
+          return 0;
+        } else {
+          seenLines += 1;
+          seenChars = nextLine + 1;
+        }
+      }
+    };
+
+    return Source;
+  }();
+
+  _exports.Source = Source;
+
+  var PathExpressionImplV1 = /*#__PURE__*/function () {
+    function PathExpressionImplV1(original, head, tail, loc) {
+      this.original = original;
+      this.loc = loc;
+      this.type = 'PathExpression';
+      this.this = false;
+      this.data = false;
+      var parts = tail.slice();
+
+      if (head.type === 'ThisHead') {
+        this.this = true;
+      } else if (head.type === 'AtHead') {
+        this.data = true;
+        parts.unshift(head.name.slice(1));
+      } else {
+        parts.unshift(head.name);
+      }
+
+      this.parts = parts;
+    }
+
+    (0, _emberBabel.createClass)(PathExpressionImplV1, [{
+      key: "head",
+      get: function get() {
+        var firstPart;
+
+        if (this.this) {
+          firstPart = 'this';
+        } else if (this.data) {
+          firstPart = "@" + this.parts[0];
+        } else {
+          firstPart = this.parts[0];
+        }
+
+        var firstPartLoc = this.loc.collapse('start').sliceStartChars({
+          chars: firstPart.length
+        }).loc;
+        return publicBuilder.head(firstPart, firstPartLoc);
+      }
+    }, {
+      key: "tail",
+      get: function get() {
+        return this.this ? this.parts : this.parts.slice(1);
+      }
+    }]);
+    return PathExpressionImplV1;
+  }();
+
+  var _SOURCE;
+
+  function SOURCE() {
+    if (!_SOURCE) {
+      _SOURCE = new Source('', '(synthetic)');
+    }
+
+    return _SOURCE;
+  }
+
+  function buildMustache(path, params, hash, raw, loc, strip) {
     if (typeof path === 'string') {
       path = buildPath(path);
     }
 
     return {
       type: 'MustacheStatement',
-      path,
+      path: path,
       params: params || [],
       hash: hash || buildHash([]),
       escaped: !raw,
-      loc: buildLoc(loc || null)
+      trusting: !!raw,
+      loc: buildLoc(loc || null),
+      strip: strip || {
+        open: false,
+        close: false
+      }
     };
   }
 
-  function buildBlock(path, params, hash, program, inverse, loc) {
+  function buildBlock(path, params, hash, _defaultBlock, _elseBlock, loc, openStrip, inverseStrip, closeStrip) {
+    var defaultBlock;
+    var elseBlock;
+
+    if (_defaultBlock.type === 'Template') {
+      defaultBlock = (0, _util.assign)({}, _defaultBlock, {
+        type: 'Block'
+      });
+    } else {
+      defaultBlock = _defaultBlock;
+    }
+
+    if (_elseBlock !== undefined && _elseBlock !== null && _elseBlock.type === 'Template') {
+      elseBlock = (0, _util.assign)({}, _elseBlock, {
+        type: 'Block'
+      });
+    } else {
+      elseBlock = _elseBlock;
+    }
+
     return {
       type: 'BlockStatement',
       path: buildPath(path),
       params: params || [],
       hash: hash || buildHash([]),
-      program: program || null,
-      inverse: inverse || null,
-      loc: buildLoc(loc || null)
+      program: defaultBlock || null,
+      inverse: elseBlock || null,
+      loc: buildLoc(loc || null),
+      openStrip: openStrip || {
+        open: false,
+        close: false
+      },
+      inverseStrip: inverseStrip || {
+        open: false,
+        close: false
+      },
+      closeStrip: closeStrip || {
+        open: false,
+        close: false
+      }
     };
   }
 
@@ -3684,6 +9296,10 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
   }
 
   function buildConcat(parts, loc) {
+    if (!(0, _util.isPresent)(parts)) {
+      throw new Error("b.concat requires at least one part");
+    }
+
     return {
       type: 'ConcatStatement',
       parts: parts || [],
@@ -3691,38 +9307,32 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     };
   }
 
-  function buildElement(tag, attributes, modifiers, children, comments, blockParams, loc) {
-    // this is used for backwards compat prior to `blockParams` being added to the AST
-    if (Array.isArray(comments)) {
-      if (isBlockParms(comments)) {
-        blockParams = comments;
-        comments = [];
-      } else if (isLoc(blockParams)) {
-        loc = blockParams;
-        blockParams = [];
-      }
-    } else if (isLoc(comments)) {
-      // this is used for backwards compat prior to `comments` being added to the AST
-      loc = comments;
-      comments = [];
-    } else if (isLoc(blockParams)) {
-      loc = blockParams;
-      blockParams = [];
-    } // this is used for backwards compat, prior to `selfClosing` being part of the ElementNode AST
+  function buildElement(tag, options) {
+    var attrs = options.attrs,
+        blockParams = options.blockParams,
+        modifiers = options.modifiers,
+        comments = options.comments,
+        children = options.children,
+        loc = options.loc;
+    var tagName; // this is used for backwards compat, prior to `selfClosing` being part of the ElementNode AST
 
-
-    let selfClosing = false;
+    var selfClosing = false;
 
     if (typeof tag === 'object') {
       selfClosing = tag.selfClosing;
-      tag = tag.name;
+      tagName = tag.name;
+    } else if (tag.slice(-1) === '/') {
+      tagName = tag.slice(0, -1);
+      selfClosing = true;
+    } else {
+      tagName = tag;
     }
 
     return {
       type: 'ElementNode',
-      tag: tag || '',
+      tag: tagName,
       selfClosing: selfClosing,
-      attributes: attributes || [],
+      attributes: attrs || [],
       blockParams: blockParams || [],
       modifiers: modifiers || [],
       comments: comments || [],
@@ -3759,30 +9369,138 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     };
   }
 
-  function buildPath(original, loc) {
-    if (typeof original !== 'string') return original;
-    let parts = original.split('.');
-    let thisHead = false;
+  function headToString(head) {
+    switch (head.type) {
+      case 'AtHead':
+        return {
+          original: head.name,
+          parts: [head.name]
+        };
 
-    if (parts[0] === 'this') {
-      thisHead = true;
-      parts = parts.slice(1);
+      case 'ThisHead':
+        return {
+          original: "this",
+          parts: []
+        };
+
+      case 'VarHead':
+        return {
+          original: head.name,
+          parts: [head.name]
+        };
+    }
+  }
+
+  function buildHead(original, loc) {
+    var _original$split = original.split('.'),
+        head = _original$split[0],
+        tail = _original$split.slice(1);
+
+    var headNode;
+
+    if (head === 'this') {
+      headNode = {
+        type: 'ThisHead',
+        loc: buildLoc(loc || null)
+      };
+    } else if (head[0] === '@') {
+      headNode = {
+        type: 'AtHead',
+        name: head,
+        loc: buildLoc(loc || null)
+      };
+    } else {
+      headNode = {
+        type: 'VarHead',
+        name: head,
+        loc: buildLoc(loc || null)
+      };
     }
 
     return {
-      type: 'PathExpression',
-      original,
-      this: thisHead,
-      parts,
-      data: false,
+      head: headNode,
+      tail: tail
+    };
+  }
+
+  function buildThis(loc) {
+    return {
+      type: 'ThisHead',
       loc: buildLoc(loc || null)
     };
   }
 
+  function buildAtName(name, loc) {
+    return {
+      type: 'AtHead',
+      name: name,
+      loc: buildLoc(loc || null)
+    };
+  }
+
+  function buildVar(name, loc) {
+    return {
+      type: 'VarHead',
+      name: name,
+      loc: buildLoc(loc || null)
+    };
+  }
+
+  function buildHeadFromString(head, loc) {
+    if (head[0] === '@') {
+      return buildAtName(head, loc);
+    } else if (head === 'this') {
+      return buildThis(loc);
+    } else {
+      return buildVar(head, loc);
+    }
+  }
+
+  function buildNamedBlockName(name, loc) {
+    return {
+      type: 'NamedBlockName',
+      name: name,
+      loc: buildLoc(loc || null)
+    };
+  }
+
+  function buildCleanPath(head, tail, loc) {
+    var _headToString = headToString(head),
+        originalHead = _headToString.original,
+        headParts = _headToString.parts;
+
+    var parts = [].concat(headParts, tail);
+    var original = [].concat(originalHead, parts).join('.');
+    return new PathExpressionImplV1(original, head, tail, buildLoc(loc || null));
+  }
+
+  function buildPath(path, loc) {
+    if (typeof path !== 'string') {
+      if ('type' in path) {
+        return path;
+      } else {
+        var _buildHead = buildHead(path.head, SourceSpan.broken()),
+            _head = _buildHead.head,
+            _tail = _buildHead.tail;
+
+        var _headToString2 = headToString(_head),
+            originalHead = _headToString2.original;
+
+        return new PathExpressionImplV1([originalHead].concat(_tail).join('.'), _head, _tail, buildLoc(loc || null));
+      }
+    }
+
+    var _buildHead2 = buildHead(path, SourceSpan.broken()),
+        head = _buildHead2.head,
+        tail = _buildHead2.tail;
+
+    return new PathExpressionImplV1(path, head, tail, buildLoc(loc || null));
+  }
+
   function buildLiteral(type, value, loc) {
     return {
-      type,
-      value,
+      type: type,
+      value: value,
       original: value,
       loc: buildLoc(loc || null)
     };
@@ -3801,75 +9519,84 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     return {
       type: 'HashPair',
       key: key,
-      value,
+      value: value,
       loc: buildLoc(loc || null)
     };
   }
 
   function buildProgram(body, blockParams, loc) {
     return {
-      type: 'Program',
+      type: 'Template',
       body: body || [],
       blockParams: blockParams || [],
       loc: buildLoc(loc || null)
     };
   }
 
-  function buildSource(source) {
-    return source || null;
+  function buildBlockItself(body, blockParams, chained, loc) {
+    if (chained === void 0) {
+      chained = false;
+    }
+
+    return {
+      type: 'Block',
+      body: body || [],
+      blockParams: blockParams || [],
+      chained: chained,
+      loc: buildLoc(loc || null)
+    };
+  }
+
+  function buildTemplate(body, blockParams, loc) {
+    return {
+      type: 'Template',
+      body: body || [],
+      blockParams: blockParams || [],
+      loc: buildLoc(loc || null)
+    };
   }
 
   function buildPosition(line, column) {
     return {
-      line,
-      column
+      line: line,
+      column: column
     };
   }
 
-  const SYNTHETIC = {
-    source: '(synthetic)',
-    start: {
-      line: 1,
-      column: 0
-    },
-    end: {
-      line: 1,
-      column: 0
+  function buildLoc() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
     }
-  };
 
-  function buildLoc(...args) {
     if (args.length === 1) {
-      let loc = args[0];
+      var _loc = args[0];
 
-      if (loc && typeof loc === 'object') {
-        return {
-          source: buildSource(loc.source),
-          start: buildPosition(loc.start.line, loc.start.column),
-          end: buildPosition(loc.end.line, loc.end.column)
-        };
+      if (_loc && typeof _loc === 'object') {
+        return SourceSpan.forHbsLoc(SOURCE(), _loc);
       } else {
-        return SYNTHETIC;
+        return SourceSpan.forHbsLoc(SOURCE(), SYNTHETIC_LOCATION);
       }
     } else {
-      let [startLine, startColumn, endLine, endColumn, source] = args;
-      return {
-        source: buildSource(source),
-        start: buildPosition(startLine, startColumn),
-        end: buildPosition(endLine, endColumn)
-      };
+      var startLine = args[0],
+          startColumn = args[1],
+          endLine = args[2],
+          endColumn = args[3],
+          _source = args[4];
+      var source = _source ? new Source('', _source) : SOURCE();
+      return SourceSpan.forHbsLoc(source, {
+        start: {
+          line: startLine,
+          column: startColumn
+        },
+        end: {
+          line: endLine,
+          column: endColumn
+        }
+      });
     }
   }
 
-  function isBlockParms(arr) {
-    return arr[0] === 'string';
-  }
-
-  function isLoc(item) {
-    return !Array.isArray(item);
-  }
-
-  var b = {
+  var publicBuilder = {
     mustache: buildMustache,
     block: buildBlock,
     partial: buildPartial,
@@ -3880,876 +9607,1119 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     attr: buildAttr,
     text: buildText,
     sexpr: buildSexpr,
-    path: buildPath,
     concat: buildConcat,
     hash: buildHash,
     pair: buildPair,
     literal: buildLiteral,
     program: buildProgram,
+    blockItself: buildBlockItself,
+    template: buildTemplate,
     loc: buildLoc,
     pos: buildPosition,
+    path: buildPath,
+    fullPath: buildCleanPath,
+    head: buildHeadFromString,
+    at: buildAtName,
+    var: buildVar,
+    this: buildThis,
+    blockName: buildNamedBlockName,
     string: literal('StringLiteral'),
     boolean: literal('BooleanLiteral'),
     number: literal('NumberLiteral'),
+    undefined: function (_undefined) {
+      function undefined() {
+        return _undefined.apply(this, arguments);
+      }
 
-    undefined() {
+      undefined.toString = function () {
+        return _undefined.toString();
+      };
+
+      return undefined;
+    }(function () {
       return buildLiteral('UndefinedLiteral', undefined);
-    },
-
-    null() {
+    }),
+    null: function _null() {
       return buildLiteral('NullLiteral', null);
     }
-
   };
-  _exports.builders = b;
+  _exports.builders = publicBuilder;
 
   function literal(type) {
-    return function (value) {
-      return buildLiteral(type, value);
+    return function (value, loc) {
+      return buildLiteral(type, value, loc);
     };
   }
+
+  var api = /*#__PURE__*/Object.freeze({});
   /**
-   * Subclass of `Error` with additional information
-   * about location of incorrect markup.
+   * A free variable is resolved according to a resolution rule:
+   *
+   * 1. Strict resolution
+   * 2. Namespaced resolution
+   * 3. Fallback resolution
+   */
+
+  /**
+   * Strict resolution is used:
+   *
+   * 1. in a strict mode template
+   * 2. in an unambiguous invocation with dot paths
+   */
+
+  _exports.AST = _exports.ASTv1 = api;
+
+  var StrictResolution = /*#__PURE__*/function () {
+    function StrictResolution() {
+      this.isAngleBracket = false;
+    }
+
+    var _proto14 = StrictResolution.prototype;
+
+    _proto14.resolution = function resolution() {
+      return 31
+      /* GetStrictFree */
+      ;
+    };
+
+    _proto14.serialize = function serialize() {
+      return 'Strict';
+    };
+
+    return StrictResolution;
+  }();
+
+  var STRICT_RESOLUTION = new StrictResolution();
+  /**
+   * A `LooseModeResolution` includes:
+   *
+   * - 0 or more namespaces to resolve the variable in
+   * - optional fallback behavior
+   *
+   * In practice, there are a limited number of possible combinations of these degrees of freedom,
+   * and they are captured by the `Ambiguity` union below.
+   */
+
+  var LooseModeResolution = /*#__PURE__*/function () {
+    function LooseModeResolution(ambiguity, isAngleBracket) {
+      if (isAngleBracket === void 0) {
+        isAngleBracket = false;
+      }
+
+      this.ambiguity = ambiguity;
+      this.isAngleBracket = isAngleBracket;
+    }
+    /**
+     * Namespaced resolution is used in an unambiguous syntax position:
+     *
+     * 1. `(sexp)` (namespace: `Helper`)
+     * 2. `{{#block}}` (namespace: `Component`)
+     * 3. `<a {{modifier}}>` (namespace: `Modifier`)
+     * 4. `<Component />` (namespace: `Component`)
+     *
+     * @see {NamespacedAmbiguity}
+     */
+
+
+    LooseModeResolution.namespaced = function namespaced(namespace, isAngleBracket) {
+      if (isAngleBracket === void 0) {
+        isAngleBracket = false;
+      }
+
+      return new LooseModeResolution({
+        namespaces: [namespace],
+        fallback: false
+      }, isAngleBracket);
+    }
+    /**
+     * Fallback resolution is used when no namespaced resolutions are possible, but fallback
+     * resolution is still allowed.
+     *
+     * ```hbs
+     * {{x.y}}
+     * ```
+     *
+     * @see {FallbackAmbiguity}
+     */
+    ;
+
+    LooseModeResolution.fallback = function fallback() {
+      return new LooseModeResolution({
+        namespaces: [],
+        fallback: true
+      });
+    }
+    /**
+     * Append resolution is used when the variable should be resolved in both the `component` and
+     * `helper` namespaces. Fallback resolution is optional.
+     *
+     * ```hbs
+     * {{x}}
+     * ```
+     *
+     * ^ `x` should be resolved in the `component` and `helper` namespaces with fallback resolution.
+     *
+     * ```hbs
+     * {{x y}}
+     * ```
+     *
+     * ^ `x` should be resolved in the `component` and `helper` namespaces without fallback
+     * resolution.
+     *
+     * @see {ComponentOrHelperAmbiguity}
+     */
+    ;
+
+    LooseModeResolution.append = function append(_ref13) {
+      var invoke = _ref13.invoke;
+      return new LooseModeResolution({
+        namespaces: ["Component"
+        /* Component */
+        , "Helper"
+        /* Helper */
+        ],
+        fallback: !invoke
+      });
+    }
+    /**
+     * Trusting append resolution is used when the variable should be resolved in both the `component` and
+     * `helper` namespaces. Fallback resolution is optional.
+     *
+     * ```hbs
+     * {{{x}}}
+     * ```
+     *
+     * ^ `x` should be resolved in the `component` and `helper` namespaces with fallback resolution.
+     *
+     * ```hbs
+     * {{{x y}}}
+     * ```
+     *
+     * ^ `x` should be resolved in the `component` and `helper` namespaces without fallback
+     * resolution.
+     *
+     * @see {HelperAmbiguity}
+     */
+    ;
+
+    LooseModeResolution.trustingAppend = function trustingAppend(_ref14) {
+      var invoke = _ref14.invoke;
+      return new LooseModeResolution({
+        namespaces: ["Helper"
+        /* Helper */
+        ],
+        fallback: !invoke
+      });
+    }
+    /**
+     * Attribute resolution is used when the variable should be resolved as a `helper` with fallback
+     * resolution.
+     *
+     * ```hbs
+     * <a href={{x}} />
+     * <a href="{{x}}.html" />
+     * ```
+     *
+     * ^ resolved in the `helper` namespace with fallback
+     *
+     * @see {HelperAmbiguity}
+     */
+    ;
+
+    LooseModeResolution.attr = function attr() {
+      return new LooseModeResolution({
+        namespaces: ["Helper"
+        /* Helper */
+        ],
+        fallback: true
+      });
+    };
+
+    var _proto15 = LooseModeResolution.prototype;
+
+    _proto15.resolution = function resolution() {
+      if (this.ambiguity.namespaces.length === 0) {
+        return 33
+        /* GetFreeAsFallback */
+        ;
+      } else if (this.ambiguity.namespaces.length === 1) {
+        if (this.ambiguity.fallback) {
+          // simple namespaced resolution with fallback must be attr={{x}}
+          return 36
+          /* GetFreeAsHelperHeadOrThisFallback */
+          ;
+        } else {
+          // simple namespaced resolution without fallback
+          switch (this.ambiguity.namespaces[0]) {
+            case "Helper"
+            /* Helper */
+            :
+              return 37
+              /* GetFreeAsHelperHead */
+              ;
+
+            case "Modifier"
+            /* Modifier */
+            :
+              return 38
+              /* GetFreeAsModifierHead */
+              ;
+
+            case "Component"
+            /* Component */
+            :
+              return 39
+              /* GetFreeAsComponentHead */
+              ;
+          }
+        }
+      } else if (this.ambiguity.fallback) {
+        // component or helper + fallback ({{something}})
+        return 34
+        /* GetFreeAsComponentOrHelperHeadOrThisFallback */
+        ;
+      } else {
+          // component or helper without fallback ({{something something}})
+          return 35
+          /* GetFreeAsComponentOrHelperHead */
+          ;
+        }
+    };
+
+    _proto15.serialize = function serialize() {
+      if (this.ambiguity.namespaces.length === 0) {
+        return 'Loose';
+      } else if (this.ambiguity.namespaces.length === 1) {
+        if (this.ambiguity.fallback) {
+          // simple namespaced resolution with fallback must be attr={{x}}
+          return ['ambiguous', "Attr"
+          /* Attr */
+          ];
+        } else {
+          return ['ns', this.ambiguity.namespaces[0]];
+        }
+      } else if (this.ambiguity.fallback) {
+        // component or helper + fallback ({{something}})
+        return ['ambiguous', "Append"
+        /* Append */
+        ];
+      } else {
+        // component or helper without fallback ({{something something}})
+        return ['ambiguous', "Invoke"
+        /* Invoke */
+        ];
+      }
+    };
+
+    return LooseModeResolution;
+  }();
+
+  var ARGUMENT_RESOLUTION = LooseModeResolution.fallback();
+
+  function loadResolution(resolution) {
+    if (typeof resolution === 'string') {
+      switch (resolution) {
+        case 'Loose':
+          return LooseModeResolution.fallback();
+
+        case 'Strict':
+          return STRICT_RESOLUTION;
+      }
+    }
+
+    switch (resolution[0]) {
+      case 'ambiguous':
+        switch (resolution[1]) {
+          case "Append"
+          /* Append */
+          :
+            return LooseModeResolution.append({
+              invoke: false
+            });
+
+          case "Attr"
+          /* Attr */
+          :
+            return LooseModeResolution.attr();
+
+          case "Invoke"
+          /* Invoke */
+          :
+            return LooseModeResolution.append({
+              invoke: true
+            });
+        }
+
+      case 'ns':
+        return LooseModeResolution.namespaced(resolution[1]);
+    }
+  }
+
+  function node(name) {
+    if (name !== undefined) {
+      var type = name;
+      return {
+        fields: function fields() {
+          return /*#__PURE__*/function () {
+            function _class(fields) {
+              this.type = type;
+              this.loc = fields.loc;
+              copy(fields, this);
+            }
+
+            return _class;
+          }();
+        }
+      };
+    } else {
+      return {
+        fields: function fields() {
+          return /*#__PURE__*/function () {
+            function _class2(fields) {
+              this.loc = fields.loc;
+              copy(fields, this);
+            }
+
+            return _class2;
+          }();
+        }
+      };
+    }
+  }
+
+  function keys(object) {
+    return Object.keys(object);
+  }
+
+  function copy(object1, object2) {
+    for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(keys(object1)), _step2; !(_step2 = _iterator2()).done;) {
+      var _key2 = _step2.value;
+      object2[_key2] = object1[_key2];
+    }
+  }
+  /**
+   * Corresponds to syntaxes with positional and named arguments:
+   *
+   * - SubExpression
+   * - Invoking Append
+   * - Invoking attributes
+   * - InvokeBlock
+   *
+   * If `Args` is empty, the `SourceOffsets` for this node should be the collapsed position
+   * immediately after the parent call node's `callee`.
    */
 
 
-  const SyntaxError = function () {
-    SyntaxError.prototype = Object.create(Error.prototype);
-    SyntaxError.prototype.constructor = SyntaxError;
+  var Args = /*#__PURE__*/function (_node$fields) {
+    (0, _emberBabel.inheritsLoose)(Args, _node$fields);
 
-    function SyntaxError(message, location) {
-      let error = Error.call(this, message);
-      this.message = message;
-      this.stack = error.stack;
-      this.location = location;
+    function Args() {
+      return _node$fields.apply(this, arguments) || this;
     }
 
-    return SyntaxError;
-  }(); // Regex to validate the identifier for block parameters.
-  // Based on the ID validation regex in Handlebars.
-
-
-  _exports.SyntaxError = SyntaxError;
-  let ID_INVERSE_PATTERN = /[!"#%-,\.\/;->@\[-\^`\{-~]/; // Checks the element's attributes to see if it uses block params.
-  // If it does, registers the block params with the program and
-  // removes the corresponding attributes from the element.
-
-  function parseElementBlockParams(element) {
-    let params = parseBlockParams(element);
-    if (params) element.blockParams = params;
-  }
-
-  function parseBlockParams(element) {
-    let l = element.attributes.length;
-    let attrNames = [];
-
-    for (let i = 0; i < l; i++) {
-      attrNames.push(element.attributes[i].name);
-    }
-
-    let asIndex = attrNames.indexOf('as');
-
-    if (asIndex !== -1 && l > asIndex && attrNames[asIndex + 1].charAt(0) === '|') {
-      // Some basic validation, since we're doing the parsing ourselves
-      let paramsString = attrNames.slice(asIndex).join(' ');
-
-      if (paramsString.charAt(paramsString.length - 1) !== '|' || paramsString.match(/\|/g).length !== 2) {
-        throw new SyntaxError("Invalid block parameters syntax: '" + paramsString + "'", element.loc);
-      }
-
-      let params = [];
-
-      for (let i = asIndex + 1; i < l; i++) {
-        let param = attrNames[i].replace(/\|/g, '');
-
-        if (param !== '') {
-          if (ID_INVERSE_PATTERN.test(param)) {
-            throw new SyntaxError("Invalid identifier for block parameters: '" + param + "' in '" + paramsString + "'", element.loc);
-          }
-
-          params.push(param);
-        }
-      }
-
-      if (params.length === 0) {
-        throw new SyntaxError("Cannot use zero block parameters: '" + paramsString + "'", element.loc);
-      }
-
-      element.attributes = element.attributes.slice(0, asIndex);
-      return params;
-    }
-
-    return null;
-  }
-
-  function childrenFor(node) {
-    switch (node.type) {
-      case 'Program':
-        return node.body;
-
-      case 'ElementNode':
-        return node.children;
-    }
-  }
-
-  function appendChild(parent, node) {
-    childrenFor(parent).push(node);
-  }
-
-  function isLiteral(path) {
-    return path.type === 'StringLiteral' || path.type === 'BooleanLiteral' || path.type === 'NumberLiteral' || path.type === 'NullLiteral' || path.type === 'UndefinedLiteral';
-  }
-
-  function printLiteral(literal) {
-    if (literal.type === 'UndefinedLiteral') {
-      return 'undefined';
-    } else {
-      return JSON.stringify(literal.value);
-    }
-  }
-
-  const entityParser = new _simpleHtmlTokenizer.EntityParser(_simpleHtmlTokenizer.HTML5NamedCharRefs);
-
-  class Parser {
-    constructor(source) {
-      this.elementStack = [];
-      this.currentAttribute = null;
-      this.currentNode = null;
-      this.tokenizer = new _simpleHtmlTokenizer.EventedTokenizer(this, entityParser);
-      this.source = source.split(/(?:\r\n?|\n)/g);
-    }
-
-    get currentAttr() {
-      return this.currentAttribute;
-    }
-
-    get currentTag() {
-      let node = this.currentNode;
-      return node;
-    }
-
-    get currentStartTag() {
-      let node = this.currentNode;
-      return node;
-    }
-
-    get currentEndTag() {
-      let node = this.currentNode;
-      return node;
-    }
-
-    get currentComment() {
-      let node = this.currentNode;
-      return node;
-    }
-
-    get currentData() {
-      let node = this.currentNode;
-      return node;
-    }
-
-    acceptNode(node) {
-      return this[node.type](node);
-    }
-
-    currentElement() {
-      return this.elementStack[this.elementStack.length - 1];
-    }
-
-    sourceForNode(node, endNode) {
-      let firstLine = node.loc.start.line - 1;
-      let currentLine = firstLine - 1;
-      let firstColumn = node.loc.start.column;
-      let string = [];
-      let line;
-      let lastLine;
-      let lastColumn;
-
-      if (endNode) {
-        lastLine = endNode.loc.end.line - 1;
-        lastColumn = endNode.loc.end.column;
-      } else {
-        lastLine = node.loc.end.line - 1;
-        lastColumn = node.loc.end.column;
-      }
-
-      while (currentLine < lastLine) {
-        currentLine++;
-        line = this.source[currentLine];
-
-        if (currentLine === firstLine) {
-          if (firstLine === lastLine) {
-            string.push(line.slice(firstColumn, lastColumn));
-          } else {
-            string.push(line.slice(firstColumn));
-          }
-        } else if (currentLine === lastLine) {
-          string.push(line.slice(0, lastColumn));
-        } else {
-          string.push(line);
-        }
-      }
-
-      return string.join('\n');
-    }
-
-  }
-
-  class HandlebarsNodeVisitors extends Parser {
-    constructor() {
-      super(...arguments);
-      this.cursorCount = 0;
-    }
-
-    cursor() {
-      return `%cursor:${this.cursorCount++}%`;
-    }
-
-    Program(program) {
-      let body = [];
-      this.cursorCount = 0;
-      let node = b.program(body, program.blockParams, program.loc);
-      let i,
-          l = program.body.length;
-      this.elementStack.push(node);
-
-      if (l === 0) {
-        return this.elementStack.pop();
-      }
-
-      for (i = 0; i < l; i++) {
-        this.acceptNode(program.body[i]);
-      } // Ensure that that the element stack is balanced properly.
-
-
-      let poppedNode = this.elementStack.pop();
-
-      if (poppedNode !== node) {
-        let elementNode = poppedNode;
-        throw new SyntaxError('Unclosed element `' + elementNode.tag + '` (on line ' + elementNode.loc.start.line + ').', elementNode.loc);
-      }
-
-      return node;
-    }
-
-    BlockStatement(block) {
-      if (this.tokenizer['state'] === 'comment') {
-        this.appendToCommentData(this.sourceForNode(block));
-        return;
-      }
-
-      if (this.tokenizer['state'] !== 'comment' && this.tokenizer['state'] !== 'data' && this.tokenizer['state'] !== 'beforeData') {
-        throw new SyntaxError('A block may only be used inside an HTML element or another block.', block.loc);
-      }
-
-      let {
-        path,
-        params,
-        hash
-      } = acceptCallNodes(this, block);
-      let program = this.Program(block.program);
-      let inverse = block.inverse ? this.Program(block.inverse) : null;
-
-      if (path.original === 'in-element') {
-        hash = addInElementHash(this.cursor(), hash, block.loc);
-      }
-
-      let node = b.block(path, params, hash, program, inverse, block.loc);
-      let parentProgram = this.currentElement();
-      appendChild(parentProgram, node);
-    }
-
-    MustacheStatement(rawMustache) {
-      let {
-        tokenizer
-      } = this;
-
-      if (tokenizer.state === 'comment') {
-        this.appendToCommentData(this.sourceForNode(rawMustache));
-        return;
-      }
-
-      let mustache;
-      let {
-        escaped,
-        loc
-      } = rawMustache;
-
-      if (rawMustache.path.type.match(/Literal$/)) {
-        mustache = {
-          type: 'MustacheStatement',
-          path: this.acceptNode(rawMustache.path),
-          params: [],
-          hash: b.hash(),
-          escaped,
-          loc
-        };
-      } else {
-        let {
-          path,
-          params,
-          hash
-        } = acceptCallNodes(this, rawMustache);
-        mustache = b.mustache(path, params, hash, !escaped, loc);
-      }
-
-      switch (tokenizer.state) {
-        // Tag helpers
-        case "tagOpen"
-        /* tagOpen */
-        :
-        case "tagName"
-        /* tagName */
-        :
-          throw new SyntaxError(`Cannot use mustaches in an elements tagname: \`${this.sourceForNode(rawMustache, rawMustache.path)}\` at L${loc.start.line}:C${loc.start.column}`, mustache.loc);
-
-        case "beforeAttributeName"
-        /* beforeAttributeName */
-        :
-          addElementModifier(this.currentStartTag, mustache);
-          break;
-
-        case "attributeName"
-        /* attributeName */
-        :
-        case "afterAttributeName"
-        /* afterAttributeName */
-        :
-          this.beginAttributeValue(false);
-          this.finishAttributeValue();
-          addElementModifier(this.currentStartTag, mustache);
-          tokenizer.transitionTo("beforeAttributeName"
-          /* beforeAttributeName */
-          );
-          break;
-
-        case "afterAttributeValueQuoted"
-        /* afterAttributeValueQuoted */
-        :
-          addElementModifier(this.currentStartTag, mustache);
-          tokenizer.transitionTo("beforeAttributeName"
-          /* beforeAttributeName */
-          );
-          break;
-        // Attribute values
-
-        case "beforeAttributeValue"
-        /* beforeAttributeValue */
-        :
-          this.beginAttributeValue(false);
-          appendDynamicAttributeValuePart(this.currentAttribute, mustache);
-          tokenizer.transitionTo("attributeValueUnquoted"
-          /* attributeValueUnquoted */
-          );
-          break;
-
-        case "attributeValueDoubleQuoted"
-        /* attributeValueDoubleQuoted */
-        :
-        case "attributeValueSingleQuoted"
-        /* attributeValueSingleQuoted */
-        :
-        case "attributeValueUnquoted"
-        /* attributeValueUnquoted */
-        :
-          appendDynamicAttributeValuePart(this.currentAttribute, mustache);
-          break;
-        // TODO: Only append child when the tokenizer state makes
-        // sense to do so, otherwise throw an error.
-
-        default:
-          appendChild(this.currentElement(), mustache);
-      }
-
-      return mustache;
-    }
-
-    ContentStatement(content) {
-      updateTokenizerLocation(this.tokenizer, content);
-      this.tokenizer.tokenizePart(content.value);
-      this.tokenizer.flushData();
-    }
-
-    CommentStatement(rawComment) {
-      let {
-        tokenizer
-      } = this;
-
-      if (tokenizer.state === "comment"
-      /* comment */
-      ) {
-          this.appendToCommentData(this.sourceForNode(rawComment));
-          return null;
-        }
-
-      let {
-        value,
-        loc
-      } = rawComment;
-      let comment = b.mustacheComment(value, loc);
-
-      switch (tokenizer.state) {
-        case "beforeAttributeName"
-        /* beforeAttributeName */
-        :
-          this.currentStartTag.comments.push(comment);
-          break;
-
-        case "beforeData"
-        /* beforeData */
-        :
-        case "data"
-        /* data */
-        :
-          appendChild(this.currentElement(), comment);
-          break;
-
-        default:
-          throw new SyntaxError(`Using a Handlebars comment when in the \`${tokenizer['state']}\` state is not supported: "${comment.value}" on line ${loc.start.line}:${loc.start.column}`, rawComment.loc);
-      }
-
-      return comment;
-    }
-
-    PartialStatement(partial) {
-      let {
-        loc
-      } = partial;
-      throw new SyntaxError(`Handlebars partials are not supported: "${this.sourceForNode(partial, partial.name)}" at L${loc.start.line}:C${loc.start.column}`, partial.loc);
-    }
-
-    PartialBlockStatement(partialBlock) {
-      let {
-        loc
-      } = partialBlock;
-      throw new SyntaxError(`Handlebars partial blocks are not supported: "${this.sourceForNode(partialBlock, partialBlock.name)}" at L${loc.start.line}:C${loc.start.column}`, partialBlock.loc);
-    }
-
-    Decorator(decorator) {
-      let {
-        loc
-      } = decorator;
-      throw new SyntaxError(`Handlebars decorators are not supported: "${this.sourceForNode(decorator, decorator.path)}" at L${loc.start.line}:C${loc.start.column}`, decorator.loc);
-    }
-
-    DecoratorBlock(decoratorBlock) {
-      let {
-        loc
-      } = decoratorBlock;
-      throw new SyntaxError(`Handlebars decorator blocks are not supported: "${this.sourceForNode(decoratorBlock, decoratorBlock.path)}" at L${loc.start.line}:C${loc.start.column}`, decoratorBlock.loc);
-    }
-
-    SubExpression(sexpr) {
-      let {
-        path,
-        params,
-        hash
-      } = acceptCallNodes(this, sexpr);
-      return b.sexpr(path, params, hash, sexpr.loc);
-    }
-
-    PathExpression(path) {
-      let {
-        original,
-        loc
-      } = path;
-      let parts;
-
-      if (original.indexOf('/') !== -1) {
-        if (original.slice(0, 2) === './') {
-          throw new SyntaxError(`Using "./" is not supported in Glimmer and unnecessary: "${path.original}" on line ${loc.start.line}.`, path.loc);
-        }
-
-        if (original.slice(0, 3) === '../') {
-          throw new SyntaxError(`Changing context using "../" is not supported in Glimmer: "${path.original}" on line ${loc.start.line}.`, path.loc);
-        }
-
-        if (original.indexOf('.') !== -1) {
-          throw new SyntaxError(`Mixing '.' and '/' in paths is not supported in Glimmer; use only '.' to separate property paths: "${path.original}" on line ${loc.start.line}.`, path.loc);
-        }
-
-        parts = [path.parts.join('/')];
-      } else if (original === '.') {
-        let locationInfo = `L${loc.start.line}:C${loc.start.column}`;
-        throw new SyntaxError(`'.' is not a supported path in Glimmer; check for a path with a trailing '.' at ${locationInfo}.`, path.loc);
-      } else {
-        parts = path.parts;
-      }
-
-      let thisHead = false; // This is to fix a bug in the Handlebars AST where the path expressions in
-      // `{{this.foo}}` (and similarly `{{foo-bar this.foo named=this.foo}}` etc)
-      // are simply turned into `{{foo}}`. The fix is to push it back onto the
-      // parts array and let the runtime see the difference. However, we cannot
-      // simply use the string `this` as it means literally the property called
-      // "this" in the current context (it can be expressed in the syntax as
-      // `{{[this]}}`, where the square bracket are generally for this kind of
-      // escaping – such as `{{foo.["bar.baz"]}}` would mean lookup a property
-      // named literally "bar.baz" on `this.foo`). By convention, we use `null`
-      // for this purpose.
-
-      if (original.match(/^this(\..+)?$/)) {
-        thisHead = true;
-      }
-
-      return {
-        type: 'PathExpression',
-        original: path.original,
-        this: thisHead,
-        parts,
-        data: path.data,
-        loc: path.loc
-      };
-    }
-
-    Hash(hash) {
-      let pairs = [];
-
-      for (let i = 0; i < hash.pairs.length; i++) {
-        let pair = hash.pairs[i];
-        pairs.push(b.pair(pair.key, this.acceptNode(pair.value), pair.loc));
-      }
-
-      return b.hash(pairs, hash.loc);
-    }
-
-    StringLiteral(string) {
-      return b.literal('StringLiteral', string.value, string.loc);
-    }
-
-    BooleanLiteral(boolean) {
-      return b.literal('BooleanLiteral', boolean.value, boolean.loc);
-    }
-
-    NumberLiteral(number) {
-      return b.literal('NumberLiteral', number.value, number.loc);
-    }
-
-    UndefinedLiteral(undef) {
-      return b.literal('UndefinedLiteral', undefined, undef.loc);
-    }
-
-    NullLiteral(nul) {
-      return b.literal('NullLiteral', null, nul.loc);
-    }
-
-  }
-
-  function calculateRightStrippedOffsets(original, value) {
-    if (value === '') {
-      // if it is empty, just return the count of newlines
-      // in original
-      return {
-        lines: original.split('\n').length - 1,
-        columns: 0
-      };
-    } // otherwise, return the number of newlines prior to
-    // `value`
-
-
-    let difference = original.split(value)[0];
-    let lines = difference.split(/\n/);
-    let lineCount = lines.length - 1;
-    return {
-      lines: lineCount,
-      columns: lines[lineCount].length
+    Args.empty = function empty(loc) {
+      return new Args({
+        loc: loc,
+        positional: PositionalArguments.empty(loc),
+        named: NamedArguments.empty(loc)
+      });
     };
-  }
 
-  function updateTokenizerLocation(tokenizer, content) {
-    let line = content.loc.start.line;
-    let column = content.loc.start.column;
-    let offsets = calculateRightStrippedOffsets(content.original, content.value);
-    line = line + offsets.lines;
-
-    if (offsets.lines) {
-      column = offsets.columns;
-    } else {
-      column = column + offsets.columns;
-    }
-
-    tokenizer.line = line;
-    tokenizer.column = column;
-  }
-
-  function acceptCallNodes(compiler, node) {
-    let path = compiler.PathExpression(node.path);
-    let params = node.params ? node.params.map(e => compiler.acceptNode(e)) : [];
-    let hash = node.hash ? compiler.Hash(node.hash) : b.hash();
-    return {
-      path,
-      params,
-      hash
+    Args.named = function named(_named) {
+      return new Args({
+        loc: _named.loc,
+        positional: PositionalArguments.empty(_named.loc.collapse('end')),
+        named: _named
+      });
     };
-  }
 
-  function addElementModifier(element, mustache) {
-    let {
-      path,
-      params,
-      hash,
-      loc
-    } = mustache;
+    var _proto16 = Args.prototype;
 
-    if (isLiteral(path)) {
-      let modifier = `{{${printLiteral(path)}}}`;
-      let tag = `<${element.name} ... ${modifier} ...`;
-      throw new SyntaxError(`In ${tag}, ${modifier} is not a valid modifier: "${path.original}" on line ${loc && loc.start.line}.`, mustache.loc);
+    _proto16.nth = function nth(offset) {
+      return this.positional.nth(offset);
+    };
+
+    _proto16.get = function get(name) {
+      return this.named.get(name);
+    };
+
+    _proto16.isEmpty = function isEmpty() {
+      return this.positional.isEmpty() && this.named.isEmpty();
+    };
+
+    return Args;
+  }(node().fields());
+  /**
+   * Corresponds to positional arguments.
+   *
+   * If `PositionalArguments` is empty, the `SourceOffsets` for this node should be the collapsed
+   * position immediately after the parent call node's `callee`.
+   */
+
+
+  var PositionalArguments = /*#__PURE__*/function (_node$fields2) {
+    (0, _emberBabel.inheritsLoose)(PositionalArguments, _node$fields2);
+
+    function PositionalArguments() {
+      return _node$fields2.apply(this, arguments) || this;
     }
 
-    let modifier = b.elementModifier(path, params, hash, loc);
-    element.modifiers.push(modifier);
-  }
+    PositionalArguments.empty = function empty(loc) {
+      return new PositionalArguments({
+        loc: loc,
+        exprs: []
+      });
+    };
 
-  function addInElementHash(cursor, hash, loc) {
-    let hasNextSibling = false;
-    hash.pairs.forEach(pair => {
-      if (pair.key === 'guid') {
-        throw new SyntaxError('Cannot pass `guid` from user space', loc);
+    var _proto17 = PositionalArguments.prototype;
+
+    _proto17.nth = function nth(offset) {
+      return this.exprs[offset] || null;
+    };
+
+    _proto17.isEmpty = function isEmpty() {
+      return this.exprs.length === 0;
+    };
+
+    (0, _emberBabel.createClass)(PositionalArguments, [{
+      key: "size",
+      get: function get() {
+        return this.exprs.length;
       }
+    }]);
+    return PositionalArguments;
+  }(node().fields());
+  /**
+   * Corresponds to named arguments.
+   *
+   * If `PositionalArguments` and `NamedArguments` are empty, the `SourceOffsets` for this node should
+   * be the same as the `Args` node that contains this node.
+   *
+   * If `PositionalArguments` is not empty but `NamedArguments` is empty, the `SourceOffsets` for this
+   * node should be the collapsed position immediately after the last positional argument.
+   */
 
-      if (pair.key === 'nextSibling') {
-        hasNextSibling = true;
-      }
-    });
-    let guid = b.literal('StringLiteral', cursor);
-    let guidPair = b.pair('guid', guid);
-    hash.pairs.unshift(guidPair);
 
-    if (!hasNextSibling) {
-      let nullLiteral = b.literal('NullLiteral', null);
-      let nextSibling = b.pair('nextSibling', nullLiteral);
-      hash.pairs.push(nextSibling);
+  var NamedArguments = /*#__PURE__*/function (_node$fields3) {
+    (0, _emberBabel.inheritsLoose)(NamedArguments, _node$fields3);
+
+    function NamedArguments() {
+      return _node$fields3.apply(this, arguments) || this;
     }
 
-    return hash;
-  }
+    NamedArguments.empty = function empty(loc) {
+      return new NamedArguments({
+        loc: loc,
+        entries: []
+      });
+    };
 
-  function appendDynamicAttributeValuePart(attribute, part) {
-    attribute.isDynamic = true;
-    attribute.parts.push(part);
-  } // ensure stays in sync with typing
-  // ParentNode and ChildKey types are derived from VisitorKeysMap
+    var _proto18 = NamedArguments.prototype;
+
+    _proto18.get = function get(name) {
+      var entry = this.entries.filter(function (e) {
+        return e.name.chars === name;
+      })[0];
+      return entry ? entry.value : null;
+    };
+
+    _proto18.isEmpty = function isEmpty() {
+      return this.entries.length === 0;
+    };
+
+    (0, _emberBabel.createClass)(NamedArguments, [{
+      key: "size",
+      get: function get() {
+        return this.entries.length;
+      }
+    }]);
+    return NamedArguments;
+  }(node().fields());
+  /**
+   * Corresponds to a single named argument.
+   *
+   * ```hbs
+   * x=<expr>
+   * ```
+   */
 
 
-  const visitorKeys = {
-    Program: ['body'],
-    MustacheStatement: ['path', 'params', 'hash'],
-    BlockStatement: ['path', 'params', 'hash', 'program', 'inverse'],
-    ElementModifierStatement: ['path', 'params', 'hash'],
-    PartialStatement: ['name', 'params', 'hash'],
-    CommentStatement: [],
-    MustacheCommentStatement: [],
-    ElementNode: ['attributes', 'modifiers', 'children', 'comments'],
-    AttrNode: ['value'],
-    TextNode: [],
-    ConcatStatement: ['parts'],
-    SubExpression: ['path', 'params', 'hash'],
-    PathExpression: [],
-    StringLiteral: [],
-    BooleanLiteral: [],
-    NumberLiteral: [],
-    NullLiteral: [],
-    UndefinedLiteral: [],
-    Hash: ['pairs'],
-    HashPair: ['value']
+  var NamedArgument = function NamedArgument(options) {
+    this.loc = options.name.loc.extend(options.value.loc);
+    this.name = options.name;
+    this.value = options.value;
+  };
+  /**
+   * `HtmlAttr` nodes are valid HTML attributes, with or without a value.
+   *
+   * Exceptions:
+   *
+   * - `...attributes` is `SplatAttr`
+   * - `@x=<value>` is `ComponentArg`
+   */
+
+
+  var HtmlAttr = /*#__PURE__*/function (_node$fields4) {
+    (0, _emberBabel.inheritsLoose)(HtmlAttr, _node$fields4);
+
+    function HtmlAttr() {
+      return _node$fields4.apply(this, arguments) || this;
+    }
+
+    return HtmlAttr;
+  }(node('HtmlAttr').fields());
+
+  var SplatAttr = /*#__PURE__*/function (_node$fields5) {
+    (0, _emberBabel.inheritsLoose)(SplatAttr, _node$fields5);
+
+    function SplatAttr() {
+      return _node$fields5.apply(this, arguments) || this;
+    }
+
+    return SplatAttr;
+  }(node('SplatAttr').fields());
+  /**
+   * Corresponds to an argument passed by a component (`@x=<value>`)
+   */
+
+
+  var ComponentArg = /*#__PURE__*/function (_node$fields6) {
+    (0, _emberBabel.inheritsLoose)(ComponentArg, _node$fields6);
+
+    function ComponentArg() {
+      return _node$fields6.apply(this, arguments) || this;
+    }
+
+    var _proto19 = ComponentArg.prototype;
+
+    /**
+     * Convert the component argument into a named argument node
+     */
+    _proto19.toNamedArgument = function toNamedArgument() {
+      return new NamedArgument({
+        name: this.name,
+        value: this.value
+      });
+    };
+
+    return ComponentArg;
+  }(node().fields());
+  /**
+   * An `ElementModifier` is just a normal call node in modifier position.
+   */
+
+
+  var ElementModifier = /*#__PURE__*/function (_node$fields7) {
+    (0, _emberBabel.inheritsLoose)(ElementModifier, _node$fields7);
+
+    function ElementModifier() {
+      return _node$fields7.apply(this, arguments) || this;
+    }
+
+    return ElementModifier;
+  }(node('ElementModifier').fields());
+
+  var __classPrivateFieldSet$3 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    privateMap.set(receiver, value);
+    return value;
   };
 
-  const TraversalError = function () {
-    TraversalError.prototype = Object.create(Error.prototype);
-    TraversalError.prototype.constructor = TraversalError;
-
-    function TraversalError(message, node, parent, key) {
-      let error = Error.call(this, message);
-      this.key = key;
-      this.message = message;
-      this.node = node;
-      this.parent = parent;
-      this.stack = error.stack;
+  var __classPrivateFieldGet$3 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
     }
 
-    return TraversalError;
+    return privateMap.get(receiver);
+  };
+
+  var _span;
+
+  var SpanList = /*#__PURE__*/function () {
+    function SpanList(span) {
+      if (span === void 0) {
+        span = [];
+      }
+
+      _span.set(this, void 0);
+
+      __classPrivateFieldSet$3(this, _span, span);
+    }
+
+    SpanList.range = function range(span, fallback) {
+      if (fallback === void 0) {
+        fallback = SourceSpan.NON_EXISTENT;
+      }
+
+      return new SpanList(span.map(loc)).getRangeOffset(fallback);
+    };
+
+    var _proto20 = SpanList.prototype;
+
+    _proto20.add = function add(offset) {
+      __classPrivateFieldGet$3(this, _span).push(offset);
+    };
+
+    _proto20.getRangeOffset = function getRangeOffset(fallback) {
+      if (__classPrivateFieldGet$3(this, _span).length === 0) {
+        return fallback;
+      } else {
+        var first = __classPrivateFieldGet$3(this, _span)[0];
+
+        var last = __classPrivateFieldGet$3(this, _span)[__classPrivateFieldGet$3(this, _span).length - 1];
+
+        return first.extend(last);
+      }
+    };
+
+    return SpanList;
   }();
 
-  _exports.TraversalError = TraversalError;
+  _exports.SpanList = SpanList;
+  _span = new WeakMap();
 
-  function cannotRemoveNode(node, parent, key) {
-    return new TraversalError('Cannot remove a node unless it is part of an array', node, parent, key);
-  }
-
-  function cannotReplaceNode(node, parent, key) {
-    return new TraversalError('Cannot replace a node with multiple nodes unless it is part of an array', node, parent, key);
-  }
-
-  function cannotReplaceOrRemoveInKeyHandlerYet(node, key) {
-    return new TraversalError('Replacing and removing in key handlers is not yet supported.', node, null, key);
-  }
-
-  function getEnterFunction(handler) {
-    return typeof handler === 'function' ? handler : handler.enter;
-  }
-
-  function getExitFunction(handler) {
-    return typeof handler !== 'function' ? handler.exit : undefined;
-  }
-
-  function getKeyHandler(handler, key) {
-    let keyVisitor = typeof handler !== 'function' ? handler.keys : undefined;
-    if (keyVisitor === undefined) return;
-    let keyHandler = keyVisitor[key];
-
-    if (keyHandler !== undefined) {
-      // widen specific key to all keys
-      return keyHandler;
-    }
-
-    return keyVisitor.All;
-  }
-
-  function getNodeHandler(visitor, nodeType) {
-    let handler = visitor[nodeType];
-
-    if (handler !== undefined) {
-      // widen specific Node to all nodes
-      return handler;
-    }
-
-    return visitor.All;
-  }
-
-  function visitNode(visitor, node) {
-    let handler = getNodeHandler(visitor, node.type);
-    let enter;
-    let exit;
-
-    if (handler !== undefined) {
-      enter = getEnterFunction(handler);
-      exit = getExitFunction(handler);
-    }
-
-    let result;
-
-    if (enter !== undefined) {
-      result = enter(node);
-    }
-
-    if (result !== undefined && result !== null) {
-      if (JSON.stringify(node) === JSON.stringify(result)) {
-        result = undefined;
-      } else if (Array.isArray(result)) {
-        return visitArray(visitor, result) || result;
-      } else {
-        return visitNode(visitor, result) || result;
-      }
-    }
-
-    if (result === undefined) {
-      let keys = visitorKeys[node.type];
-
-      for (let i = 0; i < keys.length; i++) {
-        // we know if it has child keys we can widen to a ParentNode
-        visitKey(visitor, handler, node, keys[i]);
-      }
-
-      if (exit !== undefined) {
-        result = exit(node);
-      }
-    }
-
-    return result;
-  }
-
-  function visitKey(visitor, handler, node, key) {
-    let value = node[key];
-
-    if (!value) {
-      return;
-    }
-
-    let keyEnter;
-    let keyExit;
-
-    if (handler !== undefined) {
-      let keyHandler = getKeyHandler(handler, key);
-
-      if (keyHandler !== undefined) {
-        keyEnter = getEnterFunction(keyHandler);
-        keyExit = getExitFunction(keyHandler);
-      }
-    }
-
-    if (keyEnter !== undefined) {
-      if (keyEnter(node, key) !== undefined) {
-        throw cannotReplaceOrRemoveInKeyHandlerYet(node, key);
-      }
-    }
-
-    if (Array.isArray(value)) {
-      visitArray(visitor, value);
+  function loc(span) {
+    if (Array.isArray(span)) {
+      var first = span[0];
+      var last = span[span.length - 1];
+      return loc(first).extend(loc(last));
+    } else if (span instanceof SourceSpan) {
+      return span;
     } else {
-      let result = visitNode(visitor, value);
-
-      if (result !== undefined) {
-        assignKey(node, key, result);
-      }
-    }
-
-    if (keyExit !== undefined) {
-      if (keyExit(node, key) !== undefined) {
-        throw cannotReplaceOrRemoveInKeyHandlerYet(node, key);
-      }
+      return span.loc;
     }
   }
 
-  function visitArray(visitor, array) {
-    for (let i = 0; i < array.length; i++) {
-      let result = visitNode(visitor, array[i]);
+  function hasSpan(span) {
+    if (Array.isArray(span) && span.length === 0) {
+      return false;
+    }
 
-      if (result !== undefined) {
-        i += spliceArray(array, i, result) - 1;
-      }
+    return true;
+  }
+
+  function maybeLoc(location, fallback) {
+    if (hasSpan(location)) {
+      return loc(location);
+    } else {
+      return fallback;
     }
   }
 
-  function assignKey(node, key, result) {
-    if (result === null) {
-      throw cannotRemoveNode(node[key], node, key);
-    } else if (Array.isArray(result)) {
-      if (result.length === 1) {
-        node[key] = result[0];
-      } else {
-        if (result.length === 0) {
-          throw cannotRemoveNode(node[key], node, key);
+  var GlimmerComment = /*#__PURE__*/function (_node$fields8) {
+    (0, _emberBabel.inheritsLoose)(GlimmerComment, _node$fields8);
+
+    function GlimmerComment() {
+      return _node$fields8.apply(this, arguments) || this;
+    }
+
+    return GlimmerComment;
+  }(node('GlimmerComment').fields());
+
+  var HtmlText = /*#__PURE__*/function (_node$fields9) {
+    (0, _emberBabel.inheritsLoose)(HtmlText, _node$fields9);
+
+    function HtmlText() {
+      return _node$fields9.apply(this, arguments) || this;
+    }
+
+    return HtmlText;
+  }(node('HtmlText').fields());
+
+  var HtmlComment = /*#__PURE__*/function (_node$fields10) {
+    (0, _emberBabel.inheritsLoose)(HtmlComment, _node$fields10);
+
+    function HtmlComment() {
+      return _node$fields10.apply(this, arguments) || this;
+    }
+
+    return HtmlComment;
+  }(node('HtmlComment').fields());
+
+  var AppendContent = /*#__PURE__*/function (_node$fields11) {
+    (0, _emberBabel.inheritsLoose)(AppendContent, _node$fields11);
+
+    function AppendContent() {
+      return _node$fields11.apply(this, arguments) || this;
+    }
+
+    (0, _emberBabel.createClass)(AppendContent, [{
+      key: "callee",
+      get: function get() {
+        if (this.value.type === 'Call') {
+          return this.value.callee;
         } else {
-          throw cannotReplaceNode(node[key], node, key);
+          return this.value;
         }
       }
+    }, {
+      key: "args",
+      get: function get() {
+        if (this.value.type === 'Call') {
+          return this.value.args;
+        } else {
+          return Args.empty(this.value.loc.collapse('end'));
+        }
+      }
+    }]);
+    return AppendContent;
+  }(node('AppendContent').fields());
+
+  var InvokeBlock = /*#__PURE__*/function (_node$fields12) {
+    (0, _emberBabel.inheritsLoose)(InvokeBlock, _node$fields12);
+
+    function InvokeBlock() {
+      return _node$fields12.apply(this, arguments) || this;
+    }
+
+    return InvokeBlock;
+  }(node('InvokeBlock').fields());
+  /**
+   * Corresponds to a component invocation. When the content of a component invocation contains no
+   * named blocks, `blocks` contains a single named block named `"default"`. When a component
+   * invocation is self-closing, `blocks` is empty.
+   */
+
+
+  var InvokeComponent = /*#__PURE__*/function (_node$fields13) {
+    (0, _emberBabel.inheritsLoose)(InvokeComponent, _node$fields13);
+
+    function InvokeComponent() {
+      return _node$fields13.apply(this, arguments) || this;
+    }
+
+    (0, _emberBabel.createClass)(InvokeComponent, [{
+      key: "args",
+      get: function get() {
+        var entries = this.componentArgs.map(function (a) {
+          return a.toNamedArgument();
+        });
+        return Args.named(new NamedArguments({
+          loc: SpanList.range(entries, this.callee.loc.collapse('end')),
+          entries: entries
+        }));
+      }
+    }]);
+    return InvokeComponent;
+  }(node('InvokeComponent').fields());
+  /**
+   * Corresponds to a simple HTML element. The AST allows component arguments and modifiers to support
+   * future extensions.
+   */
+
+
+  var SimpleElement = /*#__PURE__*/function (_node$fields14) {
+    (0, _emberBabel.inheritsLoose)(SimpleElement, _node$fields14);
+
+    function SimpleElement() {
+      return _node$fields14.apply(this, arguments) || this;
+    }
+
+    (0, _emberBabel.createClass)(SimpleElement, [{
+      key: "args",
+      get: function get() {
+        var entries = this.componentArgs.map(function (a) {
+          return a.toNamedArgument();
+        });
+        return Args.named(new NamedArguments({
+          loc: SpanList.range(entries, this.tag.loc.collapse('end')),
+          entries: entries
+        }));
+      }
+    }]);
+    return SimpleElement;
+  }(node('SimpleElement').fields());
+  /**
+   * Corresponds to a Handlebars literal.
+   *
+   * @see {LiteralValue}
+   */
+
+
+  var LiteralExpression = /*#__PURE__*/function (_node$fields15) {
+    (0, _emberBabel.inheritsLoose)(LiteralExpression, _node$fields15);
+
+    function LiteralExpression() {
+      return _node$fields15.apply(this, arguments) || this;
+    }
+
+    var _proto21 = LiteralExpression.prototype;
+
+    _proto21.toSlice = function toSlice() {
+      return new SourceSlice({
+        loc: this.loc,
+        chars: this.value
+      });
+    };
+
+    return LiteralExpression;
+  }(node('Literal').fields());
+  /**
+   * Returns true if an input {@see ExpressionNode} is a literal.
+   */
+
+
+  function isLiteral(node$$1, kind) {
+    if (node$$1.type === 'Literal') {
+      if (kind === undefined) {
+        return true;
+      } else if (kind === 'null') {
+        return node$$1.value === null;
+      } else {
+        return typeof node$$1.value === kind;
+      }
     } else {
-      node[key] = result;
+      return false;
     }
   }
+  /**
+   * Corresponds to a path in expression position.
+   *
+   * ```hbs
+   * this
+   * this.x
+   * @x
+   * @x.y
+   * x
+   * x.y
+   * ```
+   */
 
-  function spliceArray(array, index, result) {
-    if (result === null) {
-      array.splice(index, 1);
-      return 0;
-    } else if (Array.isArray(result)) {
-      array.splice(index, 1, ...result);
-      return result.length;
-    } else {
-      array.splice(index, 1, result);
-      return 1;
+
+  var PathExpression = /*#__PURE__*/function (_node$fields16) {
+    (0, _emberBabel.inheritsLoose)(PathExpression, _node$fields16);
+
+    function PathExpression() {
+      return _node$fields16.apply(this, arguments) || this;
     }
-  }
 
-  function traverse(node, visitor) {
-    visitNode(visitor, node);
-  }
+    return PathExpression;
+  }(node('Path').fields());
+  /**
+   * Corresponds to a parenthesized call expression.
+   *
+   * ```hbs
+   * (x)
+   * (x.y)
+   * (x y)
+   * (x.y z)
+   * ```
+   */
 
-  const ATTR_VALUE_REGEX_TEST = /[\xA0"&]/;
-  const ATTR_VALUE_REGEX_REPLACE = new RegExp(ATTR_VALUE_REGEX_TEST.source, 'g');
-  const TEXT_REGEX_TEST = /[\xA0&<>]/;
-  const TEXT_REGEX_REPLACE = new RegExp(TEXT_REGEX_TEST.source, 'g');
+
+  var CallExpression = /*#__PURE__*/function (_node$fields17) {
+    (0, _emberBabel.inheritsLoose)(CallExpression, _node$fields17);
+
+    function CallExpression() {
+      return _node$fields17.apply(this, arguments) || this;
+    }
+
+    return CallExpression;
+  }(node('Call').fields());
+  /**
+   * Corresponds to an interpolation in attribute value position.
+   *
+   * ```hbs
+   * <a href="{{url}}.html"
+   * ```
+   */
+
+
+  var InterpolateExpression = /*#__PURE__*/function (_node$fields18) {
+    (0, _emberBabel.inheritsLoose)(InterpolateExpression, _node$fields18);
+
+    function InterpolateExpression() {
+      return _node$fields18.apply(this, arguments) || this;
+    }
+
+    return InterpolateExpression;
+  }(node('Interpolate').fields());
+  /**
+   * Corresponds to `this` at the head of an expression.
+   */
+
+
+  var ThisReference = /*#__PURE__*/function (_node$fields19) {
+    (0, _emberBabel.inheritsLoose)(ThisReference, _node$fields19);
+
+    function ThisReference() {
+      return _node$fields19.apply(this, arguments) || this;
+    }
+
+    return ThisReference;
+  }(node('This').fields());
+  /**
+   * Corresponds to `@<ident>` at the beginning of an expression.
+   */
+
+
+  var ArgReference = /*#__PURE__*/function (_node$fields20) {
+    (0, _emberBabel.inheritsLoose)(ArgReference, _node$fields20);
+
+    function ArgReference() {
+      return _node$fields20.apply(this, arguments) || this;
+    }
+
+    return ArgReference;
+  }(node('Arg').fields());
+  /**
+   * Corresponds to `<ident>` at the beginning of an expression, when `<ident>` is in the current
+   * block's scope.
+   */
+
+
+  var LocalVarReference = /*#__PURE__*/function (_node$fields21) {
+    (0, _emberBabel.inheritsLoose)(LocalVarReference, _node$fields21);
+
+    function LocalVarReference() {
+      return _node$fields21.apply(this, arguments) || this;
+    }
+
+    return LocalVarReference;
+  }(node('Local').fields());
+  /**
+   * Corresponds to `<ident>` at the beginning of an expression, when `<ident>` is *not* in the
+   * current block's scope.
+   *
+   * The `resolution: FreeVarResolution` field describes how to resolve the free variable.
+   *
+   * Note: In strict mode, it must always be a variable that is in a concrete JavaScript scope that
+   * the template will be installed into.
+   */
+
+
+  var FreeVarReference = /*#__PURE__*/function (_node$fields22) {
+    (0, _emberBabel.inheritsLoose)(FreeVarReference, _node$fields22);
+
+    function FreeVarReference() {
+      return _node$fields22.apply(this, arguments) || this;
+    }
+
+    return FreeVarReference;
+  }(node('Free').fields());
+  /**
+   * Corresponds to an entire template.
+   */
+
+
+  var Template = /*#__PURE__*/function (_node$fields23) {
+    (0, _emberBabel.inheritsLoose)(Template, _node$fields23);
+
+    function Template() {
+      return _node$fields23.apply(this, arguments) || this;
+    }
+
+    return Template;
+  }(node().fields());
+  /**
+   * Represents a block. In principle this could be merged with `NamedBlock`, because all cases
+   * involving blocks have at least a notional name.
+   */
+
+
+  var Block = /*#__PURE__*/function (_node$fields24) {
+    (0, _emberBabel.inheritsLoose)(Block, _node$fields24);
+
+    function Block() {
+      return _node$fields24.apply(this, arguments) || this;
+    }
+
+    return Block;
+  }(node().fields());
+  /**
+   * Corresponds to a collection of named blocks.
+   */
+
+
+  var NamedBlocks = /*#__PURE__*/function (_node$fields25) {
+    (0, _emberBabel.inheritsLoose)(NamedBlocks, _node$fields25);
+
+    function NamedBlocks() {
+      return _node$fields25.apply(this, arguments) || this;
+    }
+
+    var _proto22 = NamedBlocks.prototype;
+
+    _proto22.get = function get(name) {
+      return this.blocks.filter(function (block) {
+        return block.name.chars === name;
+      })[0] || null;
+    };
+
+    return NamedBlocks;
+  }(node().fields());
+  /**
+   * Corresponds to a single named block. This is used for anonymous named blocks (`default` and
+   * `else`).
+   */
+
+
+  var NamedBlock = /*#__PURE__*/function (_node$fields26) {
+    (0, _emberBabel.inheritsLoose)(NamedBlock, _node$fields26);
+
+    function NamedBlock() {
+      return _node$fields26.apply(this, arguments) || this;
+    }
+
+    (0, _emberBabel.createClass)(NamedBlock, [{
+      key: "args",
+      get: function get() {
+        var entries = this.componentArgs.map(function (a) {
+          return a.toNamedArgument();
+        });
+        return Args.named(new NamedArguments({
+          loc: SpanList.range(entries, this.name.loc.collapse('end')),
+          entries: entries
+        }));
+      }
+    }]);
+    return NamedBlock;
+  }(node().fields());
+
+  var api$1 = /*#__PURE__*/Object.freeze({
+    StrictResolution: StrictResolution,
+    STRICT_RESOLUTION: STRICT_RESOLUTION,
+    LooseModeResolution: LooseModeResolution,
+    ARGUMENT_RESOLUTION: ARGUMENT_RESOLUTION,
+    loadResolution: loadResolution,
+    node: node,
+    Args: Args,
+    PositionalArguments: PositionalArguments,
+    NamedArguments: NamedArguments,
+    NamedArgument: NamedArgument,
+    HtmlAttr: HtmlAttr,
+    SplatAttr: SplatAttr,
+    ComponentArg: ComponentArg,
+    ElementModifier: ElementModifier,
+    GlimmerComment: GlimmerComment,
+    HtmlText: HtmlText,
+    HtmlComment: HtmlComment,
+    AppendContent: AppendContent,
+    InvokeBlock: InvokeBlock,
+    InvokeComponent: InvokeComponent,
+    SimpleElement: SimpleElement,
+    LiteralExpression: LiteralExpression,
+    isLiteral: isLiteral,
+    PathExpression: PathExpression,
+    CallExpression: CallExpression,
+    InterpolateExpression: InterpolateExpression,
+    ThisReference: ThisReference,
+    ArgReference: ArgReference,
+    LocalVarReference: LocalVarReference,
+    FreeVarReference: FreeVarReference,
+    Template: Template,
+    Block: Block,
+    NamedBlocks: NamedBlocks,
+    NamedBlock: NamedBlock
+  });
+  _exports.ASTv2 = api$1;
+  var ATTR_VALUE_REGEX_TEST = /[\xA0"&]/;
+  var ATTR_VALUE_REGEX_REPLACE = new RegExp(ATTR_VALUE_REGEX_TEST.source, 'g');
+  var TEXT_REGEX_TEST = /[\xA0&<>]/;
+  var TEXT_REGEX_REPLACE = new RegExp(TEXT_REGEX_TEST.source, 'g');
 
   function attrValueReplacer(char) {
     switch (char.charCodeAt(0)) {
@@ -4816,275 +10786,1084 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     return text;
   }
 
-  function unreachable() {
-    throw new Error('unreachable');
-  }
+  var voidMap = Object.create(null);
+  var voidTagNames = 'area base br col command embed hr img input keygen link meta param source track wbr';
+  voidTagNames.split(' ').forEach(function (tagName) {
+    voidMap[tagName] = true;
+  });
+  var NON_WHITESPACE = /\S/;
 
-  function build(ast) {
+  var Printer = /*#__PURE__*/function () {
+    function Printer(options) {
+      this.buffer = '';
+      this.options = options;
+    }
+    /*
+      This is used by _all_ methods on this Printer class that add to `this.buffer`,
+      it allows consumers of the printer to use alternate string representations for
+      a given node.
+         The primary use case for this are things like source -> source codemod utilities.
+      For example, ember-template-recast attempts to always preserve the original string
+      formatting in each AST node if no modifications are made to it.
+    */
+
+
+    var _proto23 = Printer.prototype;
+
+    _proto23.handledByOverride = function handledByOverride(node, ensureLeadingWhitespace) {
+      if (ensureLeadingWhitespace === void 0) {
+        ensureLeadingWhitespace = false;
+      }
+
+      if (this.options.override !== undefined) {
+        var result = this.options.override(node, this.options);
+
+        if (typeof result === 'string') {
+          if (ensureLeadingWhitespace && result !== '' && NON_WHITESPACE.test(result[0])) {
+            result = " " + result;
+          }
+
+          this.buffer += result;
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    _proto23.Node = function Node(node) {
+      switch (node.type) {
+        case 'MustacheStatement':
+        case 'BlockStatement':
+        case 'PartialStatement':
+        case 'MustacheCommentStatement':
+        case 'CommentStatement':
+        case 'TextNode':
+        case 'ElementNode':
+        case 'AttrNode':
+        case 'Block':
+        case 'Template':
+          return this.TopLevelStatement(node);
+
+        case 'StringLiteral':
+        case 'BooleanLiteral':
+        case 'NumberLiteral':
+        case 'UndefinedLiteral':
+        case 'NullLiteral':
+        case 'PathExpression':
+        case 'SubExpression':
+          return this.Expression(node);
+
+        case 'Program':
+          return this.Block(node);
+
+        case 'ConcatStatement':
+          // should have an AttrNode parent
+          return this.ConcatStatement(node);
+
+        case 'Hash':
+          return this.Hash(node);
+
+        case 'HashPair':
+          return this.HashPair(node);
+
+        case 'ElementModifierStatement':
+          return this.ElementModifierStatement(node);
+      }
+    };
+
+    _proto23.Expression = function Expression(expression) {
+      switch (expression.type) {
+        case 'StringLiteral':
+        case 'BooleanLiteral':
+        case 'NumberLiteral':
+        case 'UndefinedLiteral':
+        case 'NullLiteral':
+          return this.Literal(expression);
+
+        case 'PathExpression':
+          return this.PathExpression(expression);
+
+        case 'SubExpression':
+          return this.SubExpression(expression);
+      }
+    };
+
+    _proto23.Literal = function Literal(literal) {
+      switch (literal.type) {
+        case 'StringLiteral':
+          return this.StringLiteral(literal);
+
+        case 'BooleanLiteral':
+          return this.BooleanLiteral(literal);
+
+        case 'NumberLiteral':
+          return this.NumberLiteral(literal);
+
+        case 'UndefinedLiteral':
+          return this.UndefinedLiteral(literal);
+
+        case 'NullLiteral':
+          return this.NullLiteral(literal);
+      }
+    };
+
+    _proto23.TopLevelStatement = function TopLevelStatement(statement) {
+      switch (statement.type) {
+        case 'MustacheStatement':
+          return this.MustacheStatement(statement);
+
+        case 'BlockStatement':
+          return this.BlockStatement(statement);
+
+        case 'PartialStatement':
+          return this.PartialStatement(statement);
+
+        case 'MustacheCommentStatement':
+          return this.MustacheCommentStatement(statement);
+
+        case 'CommentStatement':
+          return this.CommentStatement(statement);
+
+        case 'TextNode':
+          return this.TextNode(statement);
+
+        case 'ElementNode':
+          return this.ElementNode(statement);
+
+        case 'Block':
+        case 'Template':
+          return this.Block(statement);
+
+        case 'AttrNode':
+          // should have element
+          return this.AttrNode(statement);
+      }
+    };
+
+    _proto23.Block = function Block(block) {
+      /*
+        When processing a template like:
+             ```hbs
+        {{#if whatever}}
+          whatever
+        {{else if somethingElse}}
+          something else
+        {{else}}
+          fallback
+        {{/if}}
+        ```
+             The AST still _effectively_ looks like:
+             ```hbs
+        {{#if whatever}}
+          whatever
+        {{else}}{{#if somethingElse}}
+          something else
+        {{else}}
+          fallback
+        {{/if}}{{/if}}
+        ```
+             The only way we can tell if that is the case is by checking for
+        `block.chained`, but unfortunately when the actual statements are
+        processed the `block.body[0]` node (which will always be a
+        `BlockStatement`) has no clue that its ancestor `Block` node was
+        chained.
+             This "forwards" the `chained` setting so that we can check
+        it later when processing the `BlockStatement`.
+      */
+      if (block.chained) {
+        var firstChild = block.body[0];
+        firstChild.chained = true;
+      }
+
+      if (this.handledByOverride(block)) {
+        return;
+      }
+
+      this.TopLevelStatements(block.body);
+    };
+
+    _proto23.TopLevelStatements = function TopLevelStatements(statements) {
+      var _this2 = this;
+
+      statements.forEach(function (statement) {
+        return _this2.TopLevelStatement(statement);
+      });
+    };
+
+    _proto23.ElementNode = function ElementNode(el) {
+      if (this.handledByOverride(el)) {
+        return;
+      }
+
+      this.OpenElementNode(el);
+      this.TopLevelStatements(el.children);
+      this.CloseElementNode(el);
+    };
+
+    _proto23.OpenElementNode = function OpenElementNode(el) {
+      var _this3 = this;
+
+      this.buffer += "<" + el.tag;
+
+      if (el.attributes.length) {
+        el.attributes.forEach(function (attr) {
+          _this3.buffer += ' ';
+
+          _this3.AttrNode(attr);
+        });
+      }
+
+      if (el.modifiers.length) {
+        el.modifiers.forEach(function (mod) {
+          _this3.buffer += ' ';
+
+          _this3.ElementModifierStatement(mod);
+        });
+      }
+
+      if (el.comments.length) {
+        el.comments.forEach(function (comment) {
+          _this3.buffer += ' ';
+
+          _this3.MustacheCommentStatement(comment);
+        });
+      }
+
+      if (el.blockParams.length) {
+        this.BlockParams(el.blockParams);
+      }
+
+      if (el.selfClosing) {
+        this.buffer += ' /';
+      }
+
+      this.buffer += '>';
+    };
+
+    _proto23.CloseElementNode = function CloseElementNode(el) {
+      if (el.selfClosing || voidMap[el.tag.toLowerCase()]) {
+        return;
+      }
+
+      this.buffer += "</" + el.tag + ">";
+    };
+
+    _proto23.AttrNode = function AttrNode(attr) {
+      if (this.handledByOverride(attr)) {
+        return;
+      }
+
+      var name = attr.name,
+          value = attr.value;
+      this.buffer += name;
+
+      if (value.type !== 'TextNode' || value.chars.length > 0) {
+        this.buffer += '=';
+        this.AttrNodeValue(value);
+      }
+    };
+
+    _proto23.AttrNodeValue = function AttrNodeValue(value) {
+      if (value.type === 'TextNode') {
+        this.buffer += '"';
+        this.TextNode(value, true);
+        this.buffer += '"';
+      } else {
+        this.Node(value);
+      }
+    };
+
+    _proto23.TextNode = function TextNode(text, isAttr) {
+      if (this.handledByOverride(text)) {
+        return;
+      }
+
+      if (this.options.entityEncoding === 'raw') {
+        this.buffer += text.chars;
+      } else if (isAttr) {
+        this.buffer += escapeAttrValue(text.chars);
+      } else {
+        this.buffer += escapeText(text.chars);
+      }
+    };
+
+    _proto23.MustacheStatement = function MustacheStatement(mustache) {
+      if (this.handledByOverride(mustache)) {
+        return;
+      }
+
+      this.buffer += mustache.escaped ? '{{' : '{{{';
+
+      if (mustache.strip.open) {
+        this.buffer += '~';
+      }
+
+      this.Expression(mustache.path);
+      this.Params(mustache.params);
+      this.Hash(mustache.hash);
+
+      if (mustache.strip.close) {
+        this.buffer += '~';
+      }
+
+      this.buffer += mustache.escaped ? '}}' : '}}}';
+    };
+
+    _proto23.BlockStatement = function BlockStatement(block) {
+      if (this.handledByOverride(block)) {
+        return;
+      }
+
+      if (block.chained) {
+        this.buffer += block.inverseStrip.open ? '{{~' : '{{';
+        this.buffer += 'else ';
+      } else {
+        this.buffer += block.openStrip.open ? '{{~#' : '{{#';
+      }
+
+      this.Expression(block.path);
+      this.Params(block.params);
+      this.Hash(block.hash);
+
+      if (block.program.blockParams.length) {
+        this.BlockParams(block.program.blockParams);
+      }
+
+      if (block.chained) {
+        this.buffer += block.inverseStrip.close ? '~}}' : '}}';
+      } else {
+        this.buffer += block.openStrip.close ? '~}}' : '}}';
+      }
+
+      this.Block(block.program);
+
+      if (block.inverse) {
+        if (!block.inverse.chained) {
+          this.buffer += block.inverseStrip.open ? '{{~' : '{{';
+          this.buffer += 'else';
+          this.buffer += block.inverseStrip.close ? '~}}' : '}}';
+        }
+
+        this.Block(block.inverse);
+      }
+
+      if (!block.chained) {
+        this.buffer += block.closeStrip.open ? '{{~/' : '{{/';
+        this.Expression(block.path);
+        this.buffer += block.closeStrip.close ? '~}}' : '}}';
+      }
+    };
+
+    _proto23.BlockParams = function BlockParams(blockParams) {
+      this.buffer += " as |" + blockParams.join(' ') + "|";
+    };
+
+    _proto23.PartialStatement = function PartialStatement(partial) {
+      if (this.handledByOverride(partial)) {
+        return;
+      }
+
+      this.buffer += '{{>';
+      this.Expression(partial.name);
+      this.Params(partial.params);
+      this.Hash(partial.hash);
+      this.buffer += '}}';
+    };
+
+    _proto23.ConcatStatement = function ConcatStatement(concat) {
+      var _this4 = this;
+
+      if (this.handledByOverride(concat)) {
+        return;
+      }
+
+      this.buffer += '"';
+      concat.parts.forEach(function (part) {
+        if (part.type === 'TextNode') {
+          _this4.TextNode(part, true);
+        } else {
+          _this4.Node(part);
+        }
+      });
+      this.buffer += '"';
+    };
+
+    _proto23.MustacheCommentStatement = function MustacheCommentStatement(comment) {
+      if (this.handledByOverride(comment)) {
+        return;
+      }
+
+      this.buffer += "{{!--" + comment.value + "--}}";
+    };
+
+    _proto23.ElementModifierStatement = function ElementModifierStatement(mod) {
+      if (this.handledByOverride(mod)) {
+        return;
+      }
+
+      this.buffer += '{{';
+      this.Expression(mod.path);
+      this.Params(mod.params);
+      this.Hash(mod.hash);
+      this.buffer += '}}';
+    };
+
+    _proto23.CommentStatement = function CommentStatement(comment) {
+      if (this.handledByOverride(comment)) {
+        return;
+      }
+
+      this.buffer += "<!--" + comment.value + "-->";
+    };
+
+    _proto23.PathExpression = function PathExpression(path) {
+      if (this.handledByOverride(path)) {
+        return;
+      }
+
+      this.buffer += path.original;
+    };
+
+    _proto23.SubExpression = function SubExpression(sexp) {
+      if (this.handledByOverride(sexp)) {
+        return;
+      }
+
+      this.buffer += '(';
+      this.Expression(sexp.path);
+      this.Params(sexp.params);
+      this.Hash(sexp.hash);
+      this.buffer += ')';
+    };
+
+    _proto23.Params = function Params(params) {
+      var _this5 = this;
+
+      // TODO: implement a top level Params AST node (just like the Hash object)
+      // so that this can also be overridden
+      if (params.length) {
+        params.forEach(function (param) {
+          _this5.buffer += ' ';
+
+          _this5.Expression(param);
+        });
+      }
+    };
+
+    _proto23.Hash = function Hash(hash) {
+      var _this6 = this;
+
+      if (this.handledByOverride(hash, true)) {
+        return;
+      }
+
+      hash.pairs.forEach(function (pair) {
+        _this6.buffer += ' ';
+
+        _this6.HashPair(pair);
+      });
+    };
+
+    _proto23.HashPair = function HashPair(pair) {
+      if (this.handledByOverride(pair)) {
+        return;
+      }
+
+      this.buffer += pair.key;
+      this.buffer += '=';
+      this.Node(pair.value);
+    };
+
+    _proto23.StringLiteral = function StringLiteral(str) {
+      if (this.handledByOverride(str)) {
+        return;
+      }
+
+      this.buffer += JSON.stringify(str.value);
+    };
+
+    _proto23.BooleanLiteral = function BooleanLiteral(bool) {
+      if (this.handledByOverride(bool)) {
+        return;
+      }
+
+      this.buffer += bool.value;
+    };
+
+    _proto23.NumberLiteral = function NumberLiteral(number) {
+      if (this.handledByOverride(number)) {
+        return;
+      }
+
+      this.buffer += number.value;
+    };
+
+    _proto23.UndefinedLiteral = function UndefinedLiteral(node) {
+      if (this.handledByOverride(node)) {
+        return;
+      }
+
+      this.buffer += 'undefined';
+    };
+
+    _proto23.NullLiteral = function NullLiteral(node) {
+      if (this.handledByOverride(node)) {
+        return;
+      }
+
+      this.buffer += 'null';
+    };
+
+    _proto23.print = function print(node) {
+      var options = this.options;
+
+      if (options.override) {
+        var result = options.override(node, options);
+
+        if (result !== undefined) {
+          return result;
+        }
+      }
+
+      this.buffer = '';
+      this.Node(node);
+      return this.buffer;
+    };
+
+    return Printer;
+  }();
+
+  function build(ast, options) {
+    if (options === void 0) {
+      options = {
+        entityEncoding: 'transformed'
+      };
+    }
+
     if (!ast) {
       return '';
     }
 
-    const output = [];
+    var printer = new Printer(options);
+    return printer.print(ast);
+  }
 
-    switch (ast.type) {
-      case 'Program':
-        {
-          const chainBlock = ast['chained'] && ast.body[0];
+  function generateSyntaxError(message, location) {
+    var module = location.module,
+        loc = location.loc;
+    var _loc$start = loc.start,
+        line = _loc$start.line,
+        column = _loc$start.column;
+    var code = location.asString();
+    var quotedCode = code ? "\n\n|\n|  " + code.split('\n').join('\n|  ') + "\n|\n\n" : '';
+    var error = new Error(message + ": " + quotedCode + "(error occurred in '" + module + "' @ line " + line + " : column " + column + ")");
+    error.name = 'SyntaxError';
+    error.location = location;
+    error.code = code;
+    return error;
+  } // ParentNode and ChildKey types are derived from VisitorKeysMap
 
-          if (chainBlock) {
-            chainBlock['chained'] = true;
-          }
 
-          const body = buildEach(ast.body).join('');
-          output.push(body);
-        }
-        break;
+  var visitorKeys = {
+    Program: (0, _util.tuple)('body'),
+    Template: (0, _util.tuple)('body'),
+    Block: (0, _util.tuple)('body'),
+    MustacheStatement: (0, _util.tuple)('path', 'params', 'hash'),
+    BlockStatement: (0, _util.tuple)('path', 'params', 'hash', 'program', 'inverse'),
+    ElementModifierStatement: (0, _util.tuple)('path', 'params', 'hash'),
+    PartialStatement: (0, _util.tuple)('name', 'params', 'hash'),
+    CommentStatement: (0, _util.tuple)(),
+    MustacheCommentStatement: (0, _util.tuple)(),
+    ElementNode: (0, _util.tuple)('attributes', 'modifiers', 'children', 'comments'),
+    AttrNode: (0, _util.tuple)('value'),
+    TextNode: (0, _util.tuple)(),
+    ConcatStatement: (0, _util.tuple)('parts'),
+    SubExpression: (0, _util.tuple)('path', 'params', 'hash'),
+    PathExpression: (0, _util.tuple)(),
+    PathHead: (0, _util.tuple)(),
+    StringLiteral: (0, _util.tuple)(),
+    BooleanLiteral: (0, _util.tuple)(),
+    NumberLiteral: (0, _util.tuple)(),
+    NullLiteral: (0, _util.tuple)(),
+    UndefinedLiteral: (0, _util.tuple)(),
+    Hash: (0, _util.tuple)('pairs'),
+    HashPair: (0, _util.tuple)('value'),
+    // v2 new nodes
+    NamedBlock: (0, _util.tuple)('attributes', 'modifiers', 'children', 'comments'),
+    SimpleElement: (0, _util.tuple)('attributes', 'modifiers', 'children', 'comments'),
+    Component: (0, _util.tuple)('head', 'attributes', 'modifiers', 'children', 'comments')
+  };
 
+  var TraversalError = function () {
+    TraversalError.prototype = Object.create(Error.prototype);
+    TraversalError.prototype.constructor = TraversalError;
+
+    function TraversalError(message, node, parent, key) {
+      var error = Error.call(this, message);
+      this.key = key;
+      this.message = message;
+      this.node = node;
+      this.parent = parent;
+      this.stack = error.stack;
+    }
+
+    return TraversalError;
+  }();
+
+  function cannotRemoveNode(node, parent, key) {
+    return new TraversalError('Cannot remove a node unless it is part of an array', node, parent, key);
+  }
+
+  function cannotReplaceNode(node, parent, key) {
+    return new TraversalError('Cannot replace a node with multiple nodes unless it is part of an array', node, parent, key);
+  }
+
+  function cannotReplaceOrRemoveInKeyHandlerYet(node, key) {
+    return new TraversalError('Replacing and removing in key handlers is not yet supported.', node, null, key);
+  }
+
+  function getLocalName(node) {
+    switch (node.type) {
       case 'ElementNode':
-        output.push('<', ast.tag);
-
-        if (ast.attributes.length) {
-          output.push(' ', buildEach(ast.attributes).join(' '));
-        }
-
-        if (ast.modifiers.length) {
-          output.push(' ', buildEach(ast.modifiers).join(' '));
-        }
-
-        if (ast.comments.length) {
-          output.push(' ', buildEach(ast.comments).join(' '));
-        }
-
-        if (ast.blockParams.length) {
-          output.push(' ', 'as', ' ', `|${ast.blockParams.join(' ')}|`);
-        }
-
-        if (voidMap[ast.tag]) {
-          if (ast.selfClosing) {
-            output.push(' /');
-          }
-
-          output.push('>');
-        } else {
-          output.push('>');
-          output.push.apply(output, buildEach(ast.children));
-          output.push('</', ast.tag, '>');
-        }
-
-        break;
-
-      case 'AttrNode':
-        if (ast.value.type === 'TextNode') {
-          if (ast.value.chars !== '') {
-            output.push(ast.name, '=');
-            output.push('"', escapeAttrValue(ast.value.chars), '"');
-          } else {
-            output.push(ast.name);
-          }
-        } else {
-          output.push(ast.name, '='); // ast.value is mustache or concat
-
-          output.push(build(ast.value));
-        }
-
-        break;
-
-      case 'ConcatStatement':
-        output.push('"');
-        ast.parts.forEach(node => {
-          if (node.type === 'TextNode') {
-            output.push(escapeAttrValue(node.chars));
-          } else {
-            output.push(build(node));
-          }
-        });
-        output.push('"');
-        break;
-
-      case 'TextNode':
-        output.push(escapeText(ast.chars));
-        break;
-
-      case 'MustacheStatement':
-        {
-          output.push(compactJoin(['{{', pathParams(ast), '}}']));
-        }
-        break;
-
-      case 'MustacheCommentStatement':
-        {
-          output.push(compactJoin(['{{!--', ast.value, '--}}']));
-        }
-        break;
-
-      case 'ElementModifierStatement':
-        {
-          output.push(compactJoin(['{{', pathParams(ast), '}}']));
-        }
-        break;
-
-      case 'PathExpression':
-        output.push(ast.original);
-        break;
+        // unfortunately the ElementNode stores `tag` as a string
+        // if that changes in glimmer-vm this will need to be updated
+        return node.tag.split('.')[0];
 
       case 'SubExpression':
-        {
-          output.push('(', pathParams(ast), ')');
-        }
-        break;
-
-      case 'BooleanLiteral':
-        output.push(ast.value ? 'true' : 'false');
-        break;
-
+      case 'MustacheStatement':
       case 'BlockStatement':
-        {
-          const lines = [];
-
-          if (ast['chained']) {
-            lines.push(['{{else ', pathParams(ast), '}}'].join(''));
-          } else {
-            lines.push(openBlock(ast));
-          }
-
-          lines.push(build(ast.program));
-
-          if (ast.inverse) {
-            if (!ast.inverse['chained']) {
-              lines.push('{{else}}');
-            }
-
-            lines.push(build(ast.inverse));
-          }
-
-          if (!ast['chained']) {
-            lines.push(closeBlock(ast));
-          }
-
-          output.push(lines.join(''));
-        }
-        break;
-
-      case 'PartialStatement':
-        {
-          output.push(compactJoin(['{{>', pathParams(ast), '}}']));
-        }
-        break;
-
-      case 'CommentStatement':
-        {
-          output.push(compactJoin(['<!--', ast.value, '-->']));
-        }
-        break;
-
-      case 'StringLiteral':
-        {
-          output.push(`"${ast.value}"`);
-        }
-        break;
-
-      case 'NumberLiteral':
-        {
-          output.push(String(ast.value));
-        }
-        break;
+        return getLocalName(node.path);
 
       case 'UndefinedLiteral':
-        {
-          output.push('undefined');
-        }
-        break;
-
       case 'NullLiteral':
-        {
-          output.push('null');
-        }
-        break;
-
-      case 'Hash':
-        {
-          output.push(ast.pairs.map(pair => {
-            return build(pair);
-          }).join(' '));
-        }
-        break;
-
-      case 'HashPair':
-        {
-          output.push(`${ast.key}=${build(ast.value)}`);
-        }
-        break;
-    }
-
-    return output.join('');
-  }
-
-  function compact(array) {
-    const newArray = [];
-    array.forEach(a => {
-      if (typeof a !== 'undefined' && a !== null && a !== '') {
-        newArray.push(a);
-      }
-    });
-    return newArray;
-  }
-
-  function buildEach(asts) {
-    return asts.map(build);
-  }
-
-  function pathParams(ast) {
-    let path;
-
-    switch (ast.type) {
-      case 'MustacheStatement':
-      case 'SubExpression':
-      case 'ElementModifierStatement':
-      case 'BlockStatement':
-        path = build(ast.path);
-        break;
-
+      case 'BooleanLiteral':
+      case 'StringLiteral':
+      case 'NumberLiteral':
+      case 'TextNode':
+      case 'Template':
+      case 'Block':
+      case 'CommentStatement':
+      case 'MustacheCommentStatement':
       case 'PartialStatement':
-        path = build(ast.name);
-        break;
+      case 'ElementModifierStatement':
+      case 'AttrNode':
+      case 'ConcatStatement':
+      case 'Program':
+      case 'Hash':
+      case 'HashPair':
+        return undefined;
+
+      case 'PathExpression':
+      default:
+        return node.parts.length ? node.parts[0] : undefined;
+    }
+  }
+
+  function getLocals(node) {
+    switch (node.type) {
+      case 'ElementNode':
+      case 'Program':
+      case 'Block':
+      case 'Template':
+        return node.blockParams;
+
+      case 'BlockStatement':
+        return node.program.blockParams;
 
       default:
-        return unreachable();
+        return undefined;
+    }
+  }
+
+  var TransformScope = /*#__PURE__*/function () {
+    function TransformScope(locals) {
+      this.locals = locals;
+      this.hasPartial = false;
+      this.usedLocals = {};
+
+      for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(locals), _step3; !(_step3 = _iterator3()).done;) {
+        var _local = _step3.value;
+        this.usedLocals[_local] = false;
+      }
     }
 
-    return compactJoin([path, buildEach(ast.params).join(' '), build(ast.hash)], ' ');
-  }
+    var _proto24 = TransformScope.prototype;
 
-  function compactJoin(array, delimiter) {
-    return compact(array).join(delimiter || '');
-  }
+    _proto24.child = function child(node) {
+      var locals = getLocals(node);
+      return locals ? new ChildTransformScope(locals, this) : this;
+    };
 
-  function blockParams(block) {
-    const params = block.program.blockParams;
+    _proto24.usePartial = function usePartial() {
+      this.hasPartial = true;
+    };
 
-    if (params.length) {
-      return ` as |${params.join(' ')}|`;
+    return TransformScope;
+  }();
+
+  var RootTransformScope = /*#__PURE__*/function (_TransformScope) {
+    (0, _emberBabel.inheritsLoose)(RootTransformScope, _TransformScope);
+
+    function RootTransformScope(node) {
+      var _a;
+
+      var locals = (_a = getLocals(node)) !== null && _a !== void 0 ? _a : [];
+      return _TransformScope.call(this, locals) || this;
     }
 
-    return null;
+    var _proto25 = RootTransformScope.prototype;
+
+    _proto25.useLocal = function useLocal(node) {
+      var name = getLocalName(node);
+
+      if (name && name in this.usedLocals) {
+        this.usedLocals[name] = true;
+      }
+    };
+
+    _proto25.isLocal = function isLocal(name) {
+      return this.locals.indexOf(name) !== -1;
+    };
+
+    _proto25.currentUnusedLocals = function currentUnusedLocals() {
+      var _this7 = this;
+
+      if (!this.hasPartial && this.locals.length > 0) {
+        return this.locals.filter(function (local) {
+          return !_this7.usedLocals[local];
+        });
+      }
+
+      return false;
+    };
+
+    return RootTransformScope;
+  }(TransformScope);
+
+  var ChildTransformScope = /*#__PURE__*/function (_TransformScope2) {
+    (0, _emberBabel.inheritsLoose)(ChildTransformScope, _TransformScope2);
+
+    function ChildTransformScope(locals, parent) {
+      var _this8;
+
+      _this8 = _TransformScope2.call(this, locals) || this;
+      _this8.parent = parent;
+      return _this8;
+    }
+
+    var _proto26 = ChildTransformScope.prototype;
+
+    _proto26.useLocal = function useLocal(node) {
+      var name = getLocalName(node);
+
+      if (name && name in this.usedLocals) {
+        this.usedLocals[name] = true;
+      } else {
+        this.parent.useLocal(node);
+      }
+    };
+
+    _proto26.isLocal = function isLocal(name) {
+      return this.locals.indexOf(name) !== -1 || this.parent.isLocal(name);
+    };
+
+    _proto26.currentUnusedLocals = function currentUnusedLocals() {
+      if (!this.hasPartial && this.locals.length > 0) {
+        // We only care about the last local, because if it is used then it implies
+        // usage of the others (specifically when in a child block, |foo bar|)
+        if (!this.usedLocals[this.locals[this.locals.length - 1]]) {
+          return [this.locals[this.locals.length - 1]];
+        }
+      }
+
+      return false;
+    };
+
+    return ChildTransformScope;
+  }(TransformScope);
+
+  var WalkerPath = /*#__PURE__*/function () {
+    function WalkerPath(node, parent, parentKey) {
+      var _this9 = this;
+
+      if (parent === void 0) {
+        parent = null;
+      }
+
+      if (parentKey === void 0) {
+        parentKey = null;
+      }
+
+      this.node = node;
+      this.parent = parent;
+      this.parentKey = parentKey;
+      this.scope = parent ? parent.scope.child(node) : new RootTransformScope(node); // Consume in scope values
+
+      if (node.type === 'PathExpression') {
+        this.scope.useLocal(node);
+      }
+
+      if (node.type === 'ElementNode') {
+        this.scope.useLocal(node);
+        node.children.forEach(function (node) {
+          return _this9.scope.useLocal(node);
+        });
+      }
+    }
+
+    var _proto27 = WalkerPath.prototype;
+
+    _proto27.parents = function parents() {
+      var _this10 = this,
+          _ref15;
+
+      return _ref15 = {}, _ref15[Symbol.iterator] = function () {
+        return new PathParentsIterator(_this10);
+      }, _ref15;
+    };
+
+    (0, _emberBabel.createClass)(WalkerPath, [{
+      key: "parentNode",
+      get: function get() {
+        return this.parent ? this.parent.node : null;
+      }
+    }]);
+    return WalkerPath;
+  }();
+
+  _exports.WalkerPath = WalkerPath;
+
+  var PathParentsIterator = /*#__PURE__*/function () {
+    function PathParentsIterator(path) {
+      this.path = path;
+    }
+
+    var _proto28 = PathParentsIterator.prototype;
+
+    _proto28.next = function next() {
+      if (this.path.parent) {
+        this.path = this.path.parent;
+        return {
+          done: false,
+          value: this.path
+        };
+      } else {
+        return {
+          done: true,
+          value: null
+        };
+      }
+    };
+
+    return PathParentsIterator;
+  }();
+
+  function getEnterFunction(handler) {
+    if (typeof handler === 'function') {
+      return handler;
+    } else {
+      return handler.enter;
+    }
   }
 
-  function openBlock(block) {
-    return ['{{#', pathParams(block), blockParams(block), '}}'].join('');
+  function getExitFunction(handler) {
+    if (typeof handler === 'function') {
+      return undefined;
+    } else {
+      return handler.exit;
+    }
   }
 
-  function closeBlock(block) {
-    return ['{{/', build(block.path), '}}'].join('');
+  function getKeyHandler(handler, key) {
+    var keyVisitor = typeof handler !== 'function' ? handler.keys : undefined;
+    if (keyVisitor === undefined) return;
+    var keyHandler = keyVisitor[key];
+
+    if (keyHandler !== undefined) {
+      return keyHandler;
+    }
+
+    return keyVisitor.All;
   }
 
-  class Walker {
-    constructor(order) {
+  function getNodeHandler(visitor, nodeType) {
+    if (nodeType === 'Template' || nodeType === 'Block') {
+      if (visitor.Program) {
+        return visitor.Program;
+      }
+    }
+
+    var handler = visitor[nodeType];
+
+    if (handler !== undefined) {
+      return handler;
+    }
+
+    return visitor.All;
+  }
+
+  function visitNode(visitor, path) {
+    var node = path.node,
+        parent = path.parent,
+        parentKey = path.parentKey;
+    var handler = getNodeHandler(visitor, node.type);
+    var enter;
+    var exit;
+
+    if (handler !== undefined) {
+      enter = getEnterFunction(handler);
+      exit = getExitFunction(handler);
+    }
+
+    var result;
+
+    if (enter !== undefined) {
+      result = enter(node, path);
+    }
+
+    if (result !== undefined && result !== null) {
+      if (JSON.stringify(node) === JSON.stringify(result)) {
+        result = undefined;
+      } else if (Array.isArray(result)) {
+        visitArray(visitor, result, parent, parentKey);
+        return result;
+      } else {
+        var _path = new WalkerPath(result, parent, parentKey);
+
+        return visitNode(visitor, _path) || result;
+      }
+    }
+
+    if (result === undefined) {
+      var _keys = visitorKeys[node.type];
+
+      for (var i = 0; i < _keys.length; i++) {
+        var key = _keys[i]; // we know if it has child keys we can widen to a ParentNode
+
+        visitKey(visitor, handler, path, key);
+      }
+
+      if (exit !== undefined) {
+        result = exit(node, path);
+      }
+    }
+
+    return result;
+  }
+
+  function get(node, key) {
+    return node[key];
+  }
+
+  function set(node, key, value) {
+    node[key] = value;
+  }
+
+  function visitKey(visitor, handler, path, key) {
+    var node = path.node;
+    var value = get(node, key);
+
+    if (!value) {
+      return;
+    }
+
+    var keyEnter;
+    var keyExit;
+
+    if (handler !== undefined) {
+      var keyHandler = getKeyHandler(handler, key);
+
+      if (keyHandler !== undefined) {
+        keyEnter = getEnterFunction(keyHandler);
+        keyExit = getExitFunction(keyHandler);
+      }
+    }
+
+    if (keyEnter !== undefined) {
+      if (keyEnter(node, key) !== undefined) {
+        throw cannotReplaceOrRemoveInKeyHandlerYet(node, key);
+      }
+    }
+
+    if (Array.isArray(value)) {
+      visitArray(visitor, value, path, key);
+    } else {
+      var keyPath = new WalkerPath(value, path, key);
+      var result = visitNode(visitor, keyPath);
+
+      if (result !== undefined) {
+        // TODO: dynamically check the results by having a table of
+        // expected node types in value space, not just type space
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        assignKey(node, key, value, result);
+      }
+    }
+
+    if (keyExit !== undefined) {
+      if (keyExit(node, key) !== undefined) {
+        throw cannotReplaceOrRemoveInKeyHandlerYet(node, key);
+      }
+    }
+  }
+
+  function visitArray(visitor, array, parent, parentKey) {
+    for (var i = 0; i < array.length; i++) {
+      var _node = array[i];
+      var path = new WalkerPath(_node, parent, parentKey);
+      var result = visitNode(visitor, path);
+
+      if (result !== undefined) {
+        i += spliceArray(array, i, result) - 1;
+      }
+    }
+  }
+
+  function assignKey(node, key, value, result) {
+    if (result === null) {
+      throw cannotRemoveNode(value, node, key);
+    } else if (Array.isArray(result)) {
+      if (result.length === 1) {
+        set(node, key, result[0]);
+      } else {
+        if (result.length === 0) {
+          throw cannotRemoveNode(value, node, key);
+        } else {
+          throw cannotReplaceNode(value, node, key);
+        }
+      }
+    } else {
+      set(node, key, result);
+    }
+  }
+
+  function spliceArray(array, index, result) {
+    if (result === null) {
+      array.splice(index, 1);
+      return 0;
+    } else if (Array.isArray(result)) {
+      array.splice.apply(array, [index, 1].concat(result));
+      return result.length;
+    } else {
+      array.splice(index, 1, result);
+      return 1;
+    }
+  }
+
+  function traverse(node, visitor) {
+    var path = new WalkerPath(node);
+    visitNode(visitor, path);
+  }
+
+  var Walker = /*#__PURE__*/function () {
+    function Walker(order) {
       this.order = order;
       this.stack = [];
     }
 
-    visit(node, callback) {
+    var _proto29 = Walker.prototype;
+
+    _proto29.visit = function visit(node, callback) {
       if (!node) {
         return;
       }
@@ -5100,100 +11879,1216 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
       }
 
       this.stack.pop();
-    }
+    };
 
-    children(node, callback) {
-      let visitor = visitors[node.type];
+    _proto29.children = function children(node, callback) {
+      switch (node.type) {
+        case 'Block':
+        case 'Template':
+          return visitors.Program(this, node, callback);
 
-      if (visitor) {
-        visitor(this, node, callback);
+        case 'ElementNode':
+          return visitors.ElementNode(this, node, callback);
+
+        case 'BlockStatement':
+          return visitors.BlockStatement(this, node, callback);
+
+        default:
+          return;
       }
-    }
+    };
 
-  }
+    return Walker;
+  }();
 
-  _exports.Walker = Walker;
-  let visitors = {
-    Program(walker, node, callback) {
-      for (let i = 0; i < node.body.length; i++) {
+  _exports.Path = _exports.Walker = Walker;
+  var visitors = {
+    Program: function Program(walker, node, callback) {
+      for (var i = 0; i < node.body.length; i++) {
         walker.visit(node.body[i], callback);
       }
     },
-
-    ElementNode(walker, node, callback) {
-      for (let i = 0; i < node.children.length; i++) {
+    Template: function Template(walker, node, callback) {
+      for (var i = 0; i < node.body.length; i++) {
+        walker.visit(node.body[i], callback);
+      }
+    },
+    Block: function Block(walker, node, callback) {
+      for (var i = 0; i < node.body.length; i++) {
+        walker.visit(node.body[i], callback);
+      }
+    },
+    ElementNode: function ElementNode(walker, node, callback) {
+      for (var i = 0; i < node.children.length; i++) {
         walker.visit(node.children[i], callback);
       }
     },
-
-    BlockStatement(walker, node, callback) {
+    BlockStatement: function BlockStatement(walker, node, callback) {
       walker.visit(node.program, callback);
       walker.visit(node.inverse || null, callback);
     }
+  }; // Based on the ID validation regex in Handlebars.
 
-  };
-  const voidMap = Object.create(null);
-  let voidTagNames = 'area base br col command embed hr img input keygen link meta param source track wbr';
-  voidTagNames.split(' ').forEach(tagName => {
-    voidMap[tagName] = true;
-  });
+  var ID_INVERSE_PATTERN = /[!"#%-,\.\/;->@\[-\^`\{-~]/; // Checks the element's attributes to see if it uses block params.
+  // If it does, registers the block params with the program and
+  // removes the corresponding attributes from the element.
 
-  class TokenizerEventHandlers extends HandlebarsNodeVisitors {
-    constructor() {
-      super(...arguments);
-      this.tagOpenLine = 0;
-      this.tagOpenColumn = 0;
+  function parseElementBlockParams(element) {
+    var params = parseBlockParams(element);
+    if (params) element.blockParams = params;
+  }
+
+  function parseBlockParams(element) {
+    var l = element.attributes.length;
+    var attrNames = [];
+
+    for (var i = 0; i < l; i++) {
+      attrNames.push(element.attributes[i].name);
     }
 
-    reset() {
+    var asIndex = attrNames.indexOf('as');
+
+    if (asIndex === -1 && attrNames.length > 0 && attrNames[attrNames.length - 1].charAt(0) === '|') {
+      throw generateSyntaxError('Block parameters must be preceded by the `as` keyword, detected block parameters without `as`', element.loc);
+    }
+
+    if (asIndex !== -1 && l > asIndex && attrNames[asIndex + 1].charAt(0) === '|') {
+      // Some basic validation, since we're doing the parsing ourselves
+      var paramsString = attrNames.slice(asIndex).join(' ');
+
+      if (paramsString.charAt(paramsString.length - 1) !== '|' || paramsString.match(/\|/g).length !== 2) {
+        throw generateSyntaxError("Invalid block parameters syntax, '" + paramsString + "'", element.loc);
+      }
+
+      var params = [];
+
+      for (var _i = asIndex + 1; _i < l; _i++) {
+        var param = attrNames[_i].replace(/\|/g, '');
+
+        if (param !== '') {
+          if (ID_INVERSE_PATTERN.test(param)) {
+            throw generateSyntaxError("Invalid identifier for block parameters, '" + param + "'", element.loc);
+          }
+
+          params.push(param);
+        }
+      }
+
+      if (params.length === 0) {
+        throw generateSyntaxError('Cannot use zero block parameters', element.loc);
+      }
+
+      element.attributes = element.attributes.slice(0, asIndex);
+      return params;
+    }
+
+    return null;
+  }
+
+  function childrenFor(node) {
+    switch (node.type) {
+      case 'Block':
+      case 'Template':
+        return node.body;
+
+      case 'ElementNode':
+        return node.children;
+    }
+  }
+
+  function appendChild(parent, node) {
+    childrenFor(parent).push(node);
+  }
+
+  function isHBSLiteral(path) {
+    return path.type === 'StringLiteral' || path.type === 'BooleanLiteral' || path.type === 'NumberLiteral' || path.type === 'NullLiteral' || path.type === 'UndefinedLiteral';
+  }
+
+  function printLiteral(literal) {
+    if (literal.type === 'UndefinedLiteral') {
+      return 'undefined';
+    } else {
+      return JSON.stringify(literal.value);
+    }
+  }
+
+  function isUpperCase(tag) {
+    return tag[0] === tag[0].toUpperCase() && tag[0] !== tag[0].toLowerCase();
+  }
+
+  function isLowerCase(tag) {
+    return tag[0] === tag[0].toLowerCase() && tag[0] !== tag[0].toUpperCase();
+  }
+
+  var DEFAULT_STRIP = {
+    close: false,
+    open: false
+  };
+  /**
+   * The Parser Builder differentiates from the public builder API by:
+   *
+   * 1. Offering fewer different ways to instantiate nodes
+   * 2. Mandating source locations
+   */
+
+  var Builders = /*#__PURE__*/function () {
+    function Builders() {}
+
+    var _proto30 = Builders.prototype;
+
+    _proto30.pos = function pos(line, column) {
+      return {
+        line: line,
+        column: column
+      };
+    };
+
+    _proto30.blockItself = function blockItself(_ref16) {
+      var body = _ref16.body,
+          blockParams = _ref16.blockParams,
+          _ref16$chained = _ref16.chained,
+          chained = _ref16$chained === void 0 ? false : _ref16$chained,
+          loc = _ref16.loc;
+      return {
+        type: 'Block',
+        body: body || [],
+        blockParams: blockParams || [],
+        chained: chained,
+        loc: loc
+      };
+    };
+
+    _proto30.template = function template(_ref17) {
+      var body = _ref17.body,
+          blockParams = _ref17.blockParams,
+          loc = _ref17.loc;
+      return {
+        type: 'Template',
+        body: body || [],
+        blockParams: blockParams || [],
+        loc: loc
+      };
+    };
+
+    _proto30.mustache = function mustache(_ref18) {
+      var path = _ref18.path,
+          params = _ref18.params,
+          hash = _ref18.hash,
+          trusting = _ref18.trusting,
+          loc = _ref18.loc,
+          _ref18$strip = _ref18.strip,
+          strip = _ref18$strip === void 0 ? DEFAULT_STRIP : _ref18$strip;
+      return {
+        type: 'MustacheStatement',
+        path: path,
+        params: params,
+        hash: hash,
+        escaped: !trusting,
+        trusting: trusting,
+        loc: loc,
+        strip: strip || {
+          open: false,
+          close: false
+        }
+      };
+    };
+
+    _proto30.block = function block(_ref19) {
+      var path = _ref19.path,
+          params = _ref19.params,
+          hash = _ref19.hash,
+          defaultBlock = _ref19.defaultBlock,
+          _ref19$elseBlock = _ref19.elseBlock,
+          elseBlock = _ref19$elseBlock === void 0 ? null : _ref19$elseBlock,
+          loc = _ref19.loc,
+          _ref19$openStrip = _ref19.openStrip,
+          openStrip = _ref19$openStrip === void 0 ? DEFAULT_STRIP : _ref19$openStrip,
+          _ref19$inverseStrip = _ref19.inverseStrip,
+          inverseStrip = _ref19$inverseStrip === void 0 ? DEFAULT_STRIP : _ref19$inverseStrip,
+          _ref19$closeStrip = _ref19.closeStrip,
+          closeStrip = _ref19$closeStrip === void 0 ? DEFAULT_STRIP : _ref19$closeStrip;
+      return {
+        type: 'BlockStatement',
+        path: path,
+        params: params,
+        hash: hash,
+        program: defaultBlock,
+        inverse: elseBlock,
+        loc: loc,
+        openStrip: openStrip,
+        inverseStrip: inverseStrip,
+        closeStrip: closeStrip
+      };
+    };
+
+    _proto30.comment = function comment(value, loc) {
+      return {
+        type: 'CommentStatement',
+        value: value,
+        loc: loc
+      };
+    };
+
+    _proto30.mustacheComment = function mustacheComment(value, loc) {
+      return {
+        type: 'MustacheCommentStatement',
+        value: value,
+        loc: loc
+      };
+    };
+
+    _proto30.concat = function concat(parts, loc) {
+      return {
+        type: 'ConcatStatement',
+        parts: parts,
+        loc: loc
+      };
+    };
+
+    _proto30.element = function element(_ref20) {
+      var tag = _ref20.tag,
+          selfClosing = _ref20.selfClosing,
+          attrs = _ref20.attrs,
+          blockParams = _ref20.blockParams,
+          modifiers = _ref20.modifiers,
+          comments = _ref20.comments,
+          children = _ref20.children,
+          loc = _ref20.loc;
+      return {
+        type: 'ElementNode',
+        tag: tag,
+        selfClosing: selfClosing,
+        attributes: attrs || [],
+        blockParams: blockParams || [],
+        modifiers: modifiers || [],
+        comments: comments || [],
+        children: children || [],
+        loc: loc
+      };
+    };
+
+    _proto30.elementModifier = function elementModifier(_ref21) {
+      var path = _ref21.path,
+          params = _ref21.params,
+          hash = _ref21.hash,
+          loc = _ref21.loc;
+      return {
+        type: 'ElementModifierStatement',
+        path: path,
+        params: params,
+        hash: hash,
+        loc: loc
+      };
+    };
+
+    _proto30.attr = function attr(_ref22) {
+      var name = _ref22.name,
+          value = _ref22.value,
+          loc = _ref22.loc;
+      return {
+        type: 'AttrNode',
+        name: name,
+        value: value,
+        loc: loc
+      };
+    };
+
+    _proto30.text = function text(_ref23) {
+      var chars = _ref23.chars,
+          loc = _ref23.loc;
+      return {
+        type: 'TextNode',
+        chars: chars,
+        loc: loc
+      };
+    };
+
+    _proto30.sexpr = function sexpr(_ref24) {
+      var path = _ref24.path,
+          params = _ref24.params,
+          hash = _ref24.hash,
+          loc = _ref24.loc;
+      return {
+        type: 'SubExpression',
+        path: path,
+        params: params,
+        hash: hash,
+        loc: loc
+      };
+    };
+
+    _proto30.path = function path(_ref25) {
+      var head = _ref25.head,
+          tail = _ref25.tail,
+          loc = _ref25.loc;
+
+      var _headToString$ = headToString$1(head),
+          originalHead = _headToString$.original;
+
+      var original = [].concat(originalHead, tail).join('.');
+      return new PathExpressionImplV1(original, head, tail, loc);
+    };
+
+    _proto30.head = function head(_head2, loc) {
+      if (_head2[0] === '@') {
+        return this.atName(_head2, loc);
+      } else if (_head2 === 'this') {
+        return this.this(loc);
+      } else {
+        return this.var(_head2, loc);
+      }
+    };
+
+    _proto30.this = function _this(loc) {
+      return {
+        type: 'ThisHead',
+        loc: loc
+      };
+    };
+
+    _proto30.atName = function atName(name, loc) {
+      return {
+        type: 'AtHead',
+        name: name,
+        loc: loc
+      };
+    };
+
+    _proto30.var = function _var(name, loc) {
+      return {
+        type: 'VarHead',
+        name: name,
+        loc: loc
+      };
+    };
+
+    _proto30.hash = function hash(pairs, loc) {
+      return {
+        type: 'Hash',
+        pairs: pairs || [],
+        loc: loc
+      };
+    };
+
+    _proto30.pair = function pair(_ref26) {
+      var key = _ref26.key,
+          value = _ref26.value,
+          loc = _ref26.loc;
+      return {
+        type: 'HashPair',
+        key: key,
+        value: value,
+        loc: loc
+      };
+    };
+
+    _proto30.literal = function literal(_ref27) {
+      var type = _ref27.type,
+          value = _ref27.value,
+          loc = _ref27.loc;
+      return {
+        type: type,
+        value: value,
+        original: value,
+        loc: loc
+      };
+    };
+
+    _proto30.undefined = function (_undefined2) {
+      function undefined() {
+        return _undefined2.apply(this, arguments);
+      }
+
+      undefined.toString = function () {
+        return _undefined2.toString();
+      };
+
+      return undefined;
+    }(function () {
+      return this.literal({
+        type: 'UndefinedLiteral',
+        value: undefined
+      });
+    });
+
+    _proto30.null = function _null() {
+      return this.literal({
+        type: 'NullLiteral',
+        value: null
+      });
+    };
+
+    _proto30.string = function string(value, loc) {
+      return this.literal({
+        type: 'StringLiteral',
+        value: value,
+        loc: loc
+      });
+    };
+
+    _proto30.boolean = function boolean(value, loc) {
+      return this.literal({
+        type: 'BooleanLiteral',
+        value: value,
+        loc: loc
+      });
+    };
+
+    _proto30.number = function number(value, loc) {
+      return this.literal({
+        type: 'NumberLiteral',
+        value: value,
+        loc: loc
+      });
+    };
+
+    return Builders;
+  }(); // Expressions
+
+
+  function headToString$1(head) {
+    switch (head.type) {
+      case 'AtHead':
+        return {
+          original: head.name,
+          parts: [head.name]
+        };
+
+      case 'ThisHead':
+        return {
+          original: "this",
+          parts: []
+        };
+
+      case 'VarHead':
+        return {
+          original: head.name,
+          parts: [head.name]
+        };
+    }
+  }
+
+  var b = new Builders();
+
+  var Parser = /*#__PURE__*/function () {
+    function Parser(source, entityParser, mode) {
+      if (entityParser === void 0) {
+        entityParser = new _simpleHtmlTokenizer.EntityParser(_simpleHtmlTokenizer.HTML5NamedCharRefs);
+      }
+
+      if (mode === void 0) {
+        mode = 'precompile';
+      }
+
+      this.elementStack = [];
+      this.currentAttribute = null;
+      this.currentNode = null;
+      this.source = source;
+      this.lines = source.source.split(/(?:\r\n?|\n)/g);
+      this.tokenizer = new _simpleHtmlTokenizer.EventedTokenizer(this, entityParser, mode);
+    }
+
+    var _proto31 = Parser.prototype;
+
+    _proto31.offset = function offset() {
+      var _this$tokenizer = this.tokenizer,
+          line = _this$tokenizer.line,
+          column = _this$tokenizer.column;
+      return this.source.offsetFor(line, column);
+    };
+
+    _proto31.pos = function pos(_ref28) {
+      var line = _ref28.line,
+          column = _ref28.column;
+      return this.source.offsetFor(line, column);
+    };
+
+    _proto31.finish = function finish(node) {
+      return (0, _util.assign)({}, node, {
+        loc: node.loc.until(this.offset())
+      }); // node.loc = node.loc.withEnd(end);
+    };
+
+    _proto31.acceptTemplate = function acceptTemplate(node) {
+      return this[node.type](node);
+    };
+
+    _proto31.acceptNode = function acceptNode(node) {
+      return this[node.type](node);
+    };
+
+    _proto31.currentElement = function currentElement() {
+      return this.elementStack[this.elementStack.length - 1];
+    };
+
+    _proto31.sourceForNode = function sourceForNode(node, endNode) {
+      var firstLine = node.loc.start.line - 1;
+      var currentLine = firstLine - 1;
+      var firstColumn = node.loc.start.column;
+      var string = [];
+      var line;
+      var lastLine;
+      var lastColumn;
+
+      if (endNode) {
+        lastLine = endNode.loc.end.line - 1;
+        lastColumn = endNode.loc.end.column;
+      } else {
+        lastLine = node.loc.end.line - 1;
+        lastColumn = node.loc.end.column;
+      }
+
+      while (currentLine < lastLine) {
+        currentLine++;
+        line = this.lines[currentLine];
+
+        if (currentLine === firstLine) {
+          if (firstLine === lastLine) {
+            string.push(line.slice(firstColumn, lastColumn));
+          } else {
+            string.push(line.slice(firstColumn));
+          }
+        } else if (currentLine === lastLine) {
+          string.push(line.slice(0, lastColumn));
+        } else {
+          string.push(line);
+        }
+      }
+
+      return string.join('\n');
+    };
+
+    (0, _emberBabel.createClass)(Parser, [{
+      key: "currentAttr",
+      get: function get() {
+        return this.currentAttribute;
+      }
+    }, {
+      key: "currentTag",
+      get: function get() {
+        var node = this.currentNode;
+        return node;
+      }
+    }, {
+      key: "currentStartTag",
+      get: function get() {
+        var node = this.currentNode;
+        return node;
+      }
+    }, {
+      key: "currentEndTag",
+      get: function get() {
+        var node = this.currentNode;
+        return node;
+      }
+    }, {
+      key: "currentComment",
+      get: function get() {
+        var node = this.currentNode;
+        return node;
+      }
+    }, {
+      key: "currentData",
+      get: function get() {
+        var node = this.currentNode;
+        return node;
+      }
+    }]);
+    return Parser;
+  }();
+
+  var HandlebarsNodeVisitors = /*#__PURE__*/function (_Parser) {
+    (0, _emberBabel.inheritsLoose)(HandlebarsNodeVisitors, _Parser);
+
+    function HandlebarsNodeVisitors() {
+      return _Parser.apply(this, arguments) || this;
+    }
+
+    var _proto32 = HandlebarsNodeVisitors.prototype;
+
+    _proto32.Program = function Program(program) {
+      var body = [];
+      var node;
+
+      if (this.isTopLevel) {
+        node = b.template({
+          body: body,
+          blockParams: program.blockParams,
+          loc: this.source.spanFor(program.loc)
+        });
+      } else {
+        node = b.blockItself({
+          body: body,
+          blockParams: program.blockParams,
+          chained: program.chained,
+          loc: this.source.spanFor(program.loc)
+        });
+      }
+
+      var i,
+          l = program.body.length;
+      this.elementStack.push(node);
+
+      if (l === 0) {
+        return this.elementStack.pop();
+      }
+
+      for (i = 0; i < l; i++) {
+        this.acceptNode(program.body[i]);
+      } // Ensure that that the element stack is balanced properly.
+
+
+      var poppedNode = this.elementStack.pop();
+
+      if (poppedNode !== node) {
+        var elementNode = poppedNode;
+        throw generateSyntaxError("Unclosed element `" + elementNode.tag + "`", elementNode.loc);
+      }
+
+      return node;
+    };
+
+    _proto32.BlockStatement = function BlockStatement(block) {
+      if (this.tokenizer.state === "comment"
+      /* comment */
+      ) {
+          this.appendToCommentData(this.sourceForNode(block));
+          return;
+        }
+
+      if (this.tokenizer.state !== "data"
+      /* data */
+      && this.tokenizer.state !== "beforeData"
+      /* beforeData */
+      ) {
+          throw generateSyntaxError('A block may only be used inside an HTML element or another block.', this.source.spanFor(block.loc));
+        }
+
+      var _acceptCallNodes = acceptCallNodes(this, block),
+          path = _acceptCallNodes.path,
+          params = _acceptCallNodes.params,
+          hash = _acceptCallNodes.hash; // These are bugs in Handlebars upstream
+
+
+      if (!block.program.loc) {
+        block.program.loc = NON_EXISTENT_LOCATION;
+      }
+
+      if (block.inverse && !block.inverse.loc) {
+        block.inverse.loc = NON_EXISTENT_LOCATION;
+      }
+
+      var program = this.Program(block.program);
+      var inverse = block.inverse ? this.Program(block.inverse) : null;
+      var node = b.block({
+        path: path,
+        params: params,
+        hash: hash,
+        defaultBlock: program,
+        elseBlock: inverse,
+        loc: this.source.spanFor(block.loc),
+        openStrip: block.openStrip,
+        inverseStrip: block.inverseStrip,
+        closeStrip: block.closeStrip
+      });
+      var parentProgram = this.currentElement();
+      appendChild(parentProgram, node);
+    };
+
+    _proto32.MustacheStatement = function MustacheStatement(rawMustache) {
+      var tokenizer = this.tokenizer;
+
+      if (tokenizer.state === 'comment') {
+        this.appendToCommentData(this.sourceForNode(rawMustache));
+        return;
+      }
+
+      var mustache;
+      var escaped = rawMustache.escaped,
+          loc = rawMustache.loc,
+          strip = rawMustache.strip;
+
+      if (isHBSLiteral(rawMustache.path)) {
+        mustache = b.mustache({
+          path: this.acceptNode(rawMustache.path),
+          params: [],
+          hash: b.hash([], this.source.spanFor(rawMustache.path.loc).collapse('end')),
+          trusting: !escaped,
+          loc: this.source.spanFor(loc),
+          strip: strip
+        });
+      } else {
+        var _acceptCallNodes2 = acceptCallNodes(this, rawMustache),
+            path = _acceptCallNodes2.path,
+            params = _acceptCallNodes2.params,
+            hash = _acceptCallNodes2.hash;
+
+        mustache = b.mustache({
+          path: path,
+          params: params,
+          hash: hash,
+          trusting: !escaped,
+          loc: this.source.spanFor(loc),
+          strip: strip
+        });
+      }
+
+      switch (tokenizer.state) {
+        // Tag helpers
+        case "tagOpen"
+        /* tagOpen */
+        :
+        case "tagName"
+        /* tagName */
+        :
+          throw generateSyntaxError("Cannot use mustaches in an elements tagname", mustache.loc);
+
+        case "beforeAttributeName"
+        /* beforeAttributeName */
+        :
+          addElementModifier(this.currentStartTag, mustache);
+          break;
+
+        case "attributeName"
+        /* attributeName */
+        :
+        case "afterAttributeName"
+        /* afterAttributeName */
+        :
+          this.beginAttributeValue(false);
+          this.finishAttributeValue();
+          addElementModifier(this.currentStartTag, mustache);
+          tokenizer.transitionTo("beforeAttributeName"
+          /* beforeAttributeName */
+          );
+          break;
+
+        case "afterAttributeValueQuoted"
+        /* afterAttributeValueQuoted */
+        :
+          addElementModifier(this.currentStartTag, mustache);
+          tokenizer.transitionTo("beforeAttributeName"
+          /* beforeAttributeName */
+          );
+          break;
+        // Attribute values
+
+        case "beforeAttributeValue"
+        /* beforeAttributeValue */
+        :
+          this.beginAttributeValue(false);
+          this.appendDynamicAttributeValuePart(mustache);
+          tokenizer.transitionTo("attributeValueUnquoted"
+          /* attributeValueUnquoted */
+          );
+          break;
+
+        case "attributeValueDoubleQuoted"
+        /* attributeValueDoubleQuoted */
+        :
+        case "attributeValueSingleQuoted"
+        /* attributeValueSingleQuoted */
+        :
+        case "attributeValueUnquoted"
+        /* attributeValueUnquoted */
+        :
+          this.appendDynamicAttributeValuePart(mustache);
+          break;
+        // TODO: Only append child when the tokenizer state makes
+        // sense to do so, otherwise throw an error.
+
+        default:
+          appendChild(this.currentElement(), mustache);
+      }
+
+      return mustache;
+    };
+
+    _proto32.appendDynamicAttributeValuePart = function appendDynamicAttributeValuePart(part) {
+      this.finalizeTextPart();
+      var attr = this.currentAttr;
+      attr.isDynamic = true;
+      attr.parts.push(part);
+    };
+
+    _proto32.finalizeTextPart = function finalizeTextPart() {
+      var attr = this.currentAttr;
+      var text = attr.currentPart;
+
+      if (text !== null) {
+        this.currentAttr.parts.push(text);
+        this.startTextPart();
+      }
+    };
+
+    _proto32.startTextPart = function startTextPart() {
+      this.currentAttr.currentPart = null;
+    };
+
+    _proto32.ContentStatement = function ContentStatement(content) {
+      updateTokenizerLocation(this.tokenizer, content);
+      this.tokenizer.tokenizePart(content.value);
+      this.tokenizer.flushData();
+    };
+
+    _proto32.CommentStatement = function CommentStatement(rawComment) {
+      var tokenizer = this.tokenizer;
+
+      if (tokenizer.state === "comment"
+      /* comment */
+      ) {
+          this.appendToCommentData(this.sourceForNode(rawComment));
+          return null;
+        }
+
+      var value = rawComment.value,
+          loc = rawComment.loc;
+      var comment = b.mustacheComment(value, this.source.spanFor(loc));
+
+      switch (tokenizer.state) {
+        case "beforeAttributeName"
+        /* beforeAttributeName */
+        :
+          this.currentStartTag.comments.push(comment);
+          break;
+
+        case "beforeData"
+        /* beforeData */
+        :
+        case "data"
+        /* data */
+        :
+          appendChild(this.currentElement(), comment);
+          break;
+
+        default:
+          throw generateSyntaxError("Using a Handlebars comment when in the `" + tokenizer['state'] + "` state is not supported", this.source.spanFor(rawComment.loc));
+      }
+
+      return comment;
+    };
+
+    _proto32.PartialStatement = function PartialStatement(partial) {
+      throw generateSyntaxError("Handlebars partials are not supported", this.source.spanFor(partial.loc));
+    };
+
+    _proto32.PartialBlockStatement = function PartialBlockStatement(partialBlock) {
+      throw generateSyntaxError("Handlebars partial blocks are not supported", this.source.spanFor(partialBlock.loc));
+    };
+
+    _proto32.Decorator = function Decorator(decorator) {
+      throw generateSyntaxError("Handlebars decorators are not supported", this.source.spanFor(decorator.loc));
+    };
+
+    _proto32.DecoratorBlock = function DecoratorBlock(decoratorBlock) {
+      throw generateSyntaxError("Handlebars decorator blocks are not supported", this.source.spanFor(decoratorBlock.loc));
+    };
+
+    _proto32.SubExpression = function SubExpression(sexpr) {
+      var _acceptCallNodes3 = acceptCallNodes(this, sexpr),
+          path = _acceptCallNodes3.path,
+          params = _acceptCallNodes3.params,
+          hash = _acceptCallNodes3.hash;
+
+      return b.sexpr({
+        path: path,
+        params: params,
+        hash: hash,
+        loc: this.source.spanFor(sexpr.loc)
+      });
+    };
+
+    _proto32.PathExpression = function PathExpression(path) {
+      var original = path.original;
+      var parts;
+
+      if (original.indexOf('/') !== -1) {
+        if (original.slice(0, 2) === './') {
+          throw generateSyntaxError("Using \"./\" is not supported in Glimmer and unnecessary", this.source.spanFor(path.loc));
+        }
+
+        if (original.slice(0, 3) === '../') {
+          throw generateSyntaxError("Changing context using \"../\" is not supported in Glimmer", this.source.spanFor(path.loc));
+        }
+
+        if (original.indexOf('.') !== -1) {
+          throw generateSyntaxError("Mixing '.' and '/' in paths is not supported in Glimmer; use only '.' to separate property paths", this.source.spanFor(path.loc));
+        }
+
+        parts = [path.parts.join('/')];
+      } else if (original === '.') {
+        throw generateSyntaxError("'.' is not a supported path in Glimmer; check for a path with a trailing '.'", this.source.spanFor(path.loc));
+      } else {
+        parts = path.parts;
+      }
+
+      var thisHead = false; // This is to fix a bug in the Handlebars AST where the path expressions in
+      // `{{this.foo}}` (and similarly `{{foo-bar this.foo named=this.foo}}` etc)
+      // are simply turned into `{{foo}}`. The fix is to push it back onto the
+      // parts array and let the runtime see the difference. However, we cannot
+      // simply use the string `this` as it means literally the property called
+      // "this" in the current context (it can be expressed in the syntax as
+      // `{{[this]}}`, where the square bracket are generally for this kind of
+      // escaping – such as `{{foo.["bar.baz"]}}` would mean lookup a property
+      // named literally "bar.baz" on `this.foo`). By convention, we use `null`
+      // for this purpose.
+
+      if (original.match(/^this(\..+)?$/)) {
+        thisHead = true;
+      }
+
+      var pathHead;
+
+      if (thisHead) {
+        pathHead = {
+          type: 'ThisHead',
+          loc: {
+            start: path.loc.start,
+            end: {
+              line: path.loc.start.line,
+              column: path.loc.start.column + 4
+            }
+          }
+        };
+      } else if (path.data) {
+        var head = parts.shift();
+
+        if (head === undefined) {
+          throw generateSyntaxError("Attempted to parse a path expression, but it was not valid. Paths beginning with @ must start with a-z.", this.source.spanFor(path.loc));
+        }
+
+        pathHead = {
+          type: 'AtHead',
+          name: "@" + head,
+          loc: {
+            start: path.loc.start,
+            end: {
+              line: path.loc.start.line,
+              column: path.loc.start.column + head.length + 1
+            }
+          }
+        };
+      } else {
+        var _head3 = parts.shift();
+
+        if (_head3 === undefined) {
+          throw generateSyntaxError("Attempted to parse a path expression, but it was not valid. Paths must start with a-z or A-Z.", this.source.spanFor(path.loc));
+        }
+
+        pathHead = {
+          type: 'VarHead',
+          name: _head3,
+          loc: {
+            start: path.loc.start,
+            end: {
+              line: path.loc.start.line,
+              column: path.loc.start.column + _head3.length
+            }
+          }
+        };
+      }
+
+      return new PathExpressionImplV1(path.original, pathHead, parts, this.source.spanFor(path.loc));
+    };
+
+    _proto32.Hash = function Hash(hash) {
+      var pairs = [];
+
+      for (var i = 0; i < hash.pairs.length; i++) {
+        var pair = hash.pairs[i];
+        pairs.push(b.pair({
+          key: pair.key,
+          value: this.acceptNode(pair.value),
+          loc: this.source.spanFor(pair.loc)
+        }));
+      }
+
+      return b.hash(pairs, this.source.spanFor(hash.loc));
+    };
+
+    _proto32.StringLiteral = function StringLiteral(string) {
+      return b.literal({
+        type: 'StringLiteral',
+        value: string.value,
+        loc: string.loc
+      });
+    };
+
+    _proto32.BooleanLiteral = function BooleanLiteral(boolean) {
+      return b.literal({
+        type: 'BooleanLiteral',
+        value: boolean.value,
+        loc: boolean.loc
+      });
+    };
+
+    _proto32.NumberLiteral = function NumberLiteral(number) {
+      return b.literal({
+        type: 'NumberLiteral',
+        value: number.value,
+        loc: number.loc
+      });
+    };
+
+    _proto32.UndefinedLiteral = function UndefinedLiteral(undef) {
+      return b.literal({
+        type: 'UndefinedLiteral',
+        value: undefined,
+        loc: undef.loc
+      });
+    };
+
+    _proto32.NullLiteral = function NullLiteral(nul) {
+      return b.literal({
+        type: 'NullLiteral',
+        value: null,
+        loc: nul.loc
+      });
+    };
+
+    (0, _emberBabel.createClass)(HandlebarsNodeVisitors, [{
+      key: "isTopLevel",
+      get: function get() {
+        return this.elementStack.length === 0;
+      }
+    }]);
+    return HandlebarsNodeVisitors;
+  }(Parser);
+
+  function calculateRightStrippedOffsets(original, value) {
+    if (value === '') {
+      // if it is empty, just return the count of newlines
+      // in original
+      return {
+        lines: original.split('\n').length - 1,
+        columns: 0
+      };
+    } // otherwise, return the number of newlines prior to
+    // `value`
+
+
+    var difference = original.split(value)[0];
+    var lines = difference.split(/\n/);
+    var lineCount = lines.length - 1;
+    return {
+      lines: lineCount,
+      columns: lines[lineCount].length
+    };
+  }
+
+  function updateTokenizerLocation(tokenizer, content) {
+    var line = content.loc.start.line;
+    var column = content.loc.start.column;
+    var offsets = calculateRightStrippedOffsets(content.original, content.value);
+    line = line + offsets.lines;
+
+    if (offsets.lines) {
+      column = offsets.columns;
+    } else {
+      column = column + offsets.columns;
+    }
+
+    tokenizer.line = line;
+    tokenizer.column = column;
+  }
+
+  function acceptCallNodes(compiler, node) {
+    var path = node.path.type === 'PathExpression' ? compiler.PathExpression(node.path) : compiler.SubExpression(node.path);
+    var params = node.params ? node.params.map(function (e) {
+      return compiler.acceptNode(e);
+    }) : []; // if there is no hash, position it as a collapsed node immediately after the last param (or the
+    // path, if there are also no params)
+
+    var end = params.length > 0 ? params[params.length - 1].loc : path.loc;
+    var hash = node.hash ? compiler.Hash(node.hash) : {
+      type: 'Hash',
+      pairs: [],
+      loc: compiler.source.spanFor(end).collapse('end')
+    };
+    return {
+      path: path,
+      params: params,
+      hash: hash
+    };
+  }
+
+  function addElementModifier(element, mustache) {
+    var path = mustache.path,
+        params = mustache.params,
+        hash = mustache.hash,
+        loc = mustache.loc;
+
+    if (isHBSLiteral(path)) {
+      var _modifier = "{{" + printLiteral(path) + "}}";
+
+      var tag = "<" + element.name + " ... " + _modifier + " ...";
+      throw generateSyntaxError("In " + tag + ", " + _modifier + " is not a valid modifier", mustache.loc);
+    }
+
+    var modifier = b.elementModifier({
+      path: path,
+      params: params,
+      hash: hash,
+      loc: loc
+    });
+    element.modifiers.push(modifier);
+  }
+
+  var TokenizerEventHandlers = /*#__PURE__*/function (_HandlebarsNodeVisito) {
+    (0, _emberBabel.inheritsLoose)(TokenizerEventHandlers, _HandlebarsNodeVisito);
+
+    function TokenizerEventHandlers() {
+      var _this11;
+
+      _this11 = _HandlebarsNodeVisito.apply(this, arguments) || this;
+      _this11.tagOpenLine = 0;
+      _this11.tagOpenColumn = 0;
+      return _this11;
+    }
+
+    var _proto33 = TokenizerEventHandlers.prototype;
+
+    _proto33.reset = function reset() {
       this.currentNode = null;
     } // Comment
+    ;
 
+    _proto33.beginComment = function beginComment() {
+      this.currentNode = b.comment('', this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn));
+    };
 
-    beginComment() {
-      this.currentNode = b.comment('');
-      this.currentNode.loc = {
-        source: null,
-        start: b.pos(this.tagOpenLine, this.tagOpenColumn),
-        end: null
-      };
-    }
-
-    appendToCommentData(char) {
+    _proto33.appendToCommentData = function appendToCommentData(char) {
       this.currentComment.value += char;
-    }
+    };
 
-    finishComment() {
-      this.currentComment.loc.end = b.pos(this.tokenizer.line, this.tokenizer.column);
-      appendChild(this.currentElement(), this.currentComment);
+    _proto33.finishComment = function finishComment() {
+      appendChild(this.currentElement(), this.finish(this.currentComment));
     } // Data
+    ;
 
+    _proto33.beginData = function beginData() {
+      this.currentNode = b.text({
+        chars: '',
+        loc: this.offset().collapsed()
+      });
+    };
 
-    beginData() {
-      this.currentNode = b.text();
-      this.currentNode.loc = {
-        source: null,
-        start: b.pos(this.tokenizer.line, this.tokenizer.column),
-        end: null
-      };
-    }
-
-    appendToData(char) {
+    _proto33.appendToData = function appendToData(char) {
       this.currentData.chars += char;
-    }
+    };
 
-    finishData() {
-      this.currentData.loc.end = b.pos(this.tokenizer.line, this.tokenizer.column);
+    _proto33.finishData = function finishData() {
+      this.currentData.loc = this.currentData.loc.withEnd(this.offset());
       appendChild(this.currentElement(), this.currentData);
     } // Tags - basic
+    ;
 
-
-    tagOpen() {
+    _proto33.tagOpen = function tagOpen() {
       this.tagOpenLine = this.tokenizer.line;
       this.tagOpenColumn = this.tokenizer.column;
-    }
+    };
 
-    beginStartTag() {
+    _proto33.beginStartTag = function beginStartTag() {
       this.currentNode = {
         type: 'StartTag',
         name: '',
@@ -5201,11 +13096,11 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
         modifiers: [],
         comments: [],
         selfClosing: false,
-        loc: SYNTHETIC
+        loc: this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn)
       };
-    }
+    };
 
-    beginEndTag() {
+    _proto33.beginEndTag = function beginEndTag() {
       this.currentNode = {
         type: 'EndTag',
         name: '',
@@ -5213,20 +13108,22 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
         modifiers: [],
         comments: [],
         selfClosing: false,
-        loc: SYNTHETIC
+        loc: this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn)
       };
-    }
+    };
 
-    finishTag() {
-      let {
-        line,
-        column
-      } = this.tokenizer;
-      let tag = this.currentTag;
-      tag.loc = b.loc(this.tagOpenLine, this.tagOpenColumn, line, column);
+    _proto33.finishTag = function finishTag() {
+      var tag = this.finish(this.currentTag);
 
       if (tag.type === 'StartTag') {
         this.finishStartTag();
+
+        if (tag.name === ':') {
+          throw generateSyntaxError('Invalid named block named detected, you may have created a named block without a name, or you may have began your name with a number. Named blocks must have names that are at least one character long, and begin with a lower case letter', this.source.spanFor({
+            start: this.currentTag.loc.toJSON(),
+            end: this.offset().toJSON()
+          }));
+        }
 
         if (voidMap[tag.name] || tag.selfClosing) {
           this.finishEndTag(true);
@@ -5234,190 +13131,256 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
       } else if (tag.type === 'EndTag') {
         this.finishEndTag(false);
       }
-    }
+    };
 
-    finishStartTag() {
-      let {
-        name,
-        attributes,
-        modifiers,
-        comments,
-        selfClosing
-      } = this.currentStartTag;
-      let loc = b.loc(this.tagOpenLine, this.tagOpenColumn);
-      let element = b.element({
-        name,
-        selfClosing
-      }, attributes, modifiers, [], comments, [], loc);
+    _proto33.finishStartTag = function finishStartTag() {
+      var _this$finish = this.finish(this.currentStartTag),
+          name = _this$finish.name,
+          attrs = _this$finish.attributes,
+          modifiers = _this$finish.modifiers,
+          comments = _this$finish.comments,
+          selfClosing = _this$finish.selfClosing,
+          loc = _this$finish.loc;
+
+      var element = b.element({
+        tag: name,
+        selfClosing: selfClosing,
+        attrs: attrs,
+        modifiers: modifiers,
+        comments: comments,
+        children: [],
+        blockParams: [],
+        loc: loc
+      });
       this.elementStack.push(element);
-    }
+    };
 
-    finishEndTag(isVoid) {
-      let tag = this.currentTag;
-      let element = this.elementStack.pop();
-      let parent = this.currentElement();
-      validateEndTag(tag, element, isVoid);
-      element.loc.end.line = this.tokenizer.line;
-      element.loc.end.column = this.tokenizer.column;
+    _proto33.finishEndTag = function finishEndTag(isVoid) {
+      var tag = this.finish(this.currentTag);
+      var element = this.elementStack.pop();
+      var parent = this.currentElement();
+      this.validateEndTag(tag, element, isVoid);
+      element.loc = element.loc.withEnd(this.offset());
       parseElementBlockParams(element);
       appendChild(parent, element);
-    }
+    };
 
-    markTagAsSelfClosing() {
+    _proto33.markTagAsSelfClosing = function markTagAsSelfClosing() {
       this.currentTag.selfClosing = true;
     } // Tags - name
+    ;
 
-
-    appendToTagName(char) {
+    _proto33.appendToTagName = function appendToTagName(char) {
       this.currentTag.name += char;
     } // Tags - attributes
+    ;
 
-
-    beginAttribute() {
-      let tag = this.currentTag;
-
-      if (tag.type === 'EndTag') {
-        throw new SyntaxError(`Invalid end tag: closing tag must not have attributes, ` + `in \`${tag.name}\` (on line ${this.tokenizer.line}).`, tag.loc);
-      }
-
+    _proto33.beginAttribute = function beginAttribute() {
+      var offset = this.offset();
       this.currentAttribute = {
         name: '',
         parts: [],
+        currentPart: null,
         isQuoted: false,
         isDynamic: false,
-        start: b.pos(this.tokenizer.line, this.tokenizer.column),
-        valueStartLine: 0,
-        valueStartColumn: 0
+        start: offset,
+        valueSpan: offset.collapsed()
       };
-    }
+    };
 
-    appendToAttributeName(char) {
+    _proto33.appendToAttributeName = function appendToAttributeName(char) {
       this.currentAttr.name += char;
-    }
+    };
 
-    beginAttributeValue(isQuoted) {
+    _proto33.beginAttributeValue = function beginAttributeValue(isQuoted) {
       this.currentAttr.isQuoted = isQuoted;
-      this.currentAttr.valueStartLine = this.tokenizer.line;
-      this.currentAttr.valueStartColumn = this.tokenizer.column;
-    }
+      this.startTextPart();
+      this.currentAttr.valueSpan = this.offset().collapsed();
+    };
 
-    appendToAttributeValue(char) {
-      let parts = this.currentAttr.parts;
-      let lastPart = parts[parts.length - 1];
+    _proto33.appendToAttributeValue = function appendToAttributeValue(char) {
+      var parts = this.currentAttr.parts;
+      var lastPart = parts[parts.length - 1];
+      var current = this.currentAttr.currentPart;
 
-      if (lastPart && lastPart.type === 'TextNode') {
-        lastPart.chars += char; // update end location for each added char
+      if (current) {
+        current.chars += char; // update end location for each added char
 
-        lastPart.loc.end.line = this.tokenizer.line;
-        lastPart.loc.end.column = this.tokenizer.column;
+        current.loc = current.loc.withEnd(this.offset());
       } else {
         // initially assume the text node is a single char
-        let loc = b.loc(this.tokenizer.line, this.tokenizer.column, this.tokenizer.line, this.tokenizer.column); // correct for `\n` as first char
+        var _loc2 = this.offset(); // the tokenizer line/column have already been advanced, correct location info
+
 
         if (char === '\n') {
-          loc.start.line -= 1;
-          loc.start.column = lastPart ? lastPart.loc.end.column : this.currentAttr.valueStartColumn;
-        }
-
-        let text = b.text(char, loc);
-        parts.push(text);
-      }
-    }
-
-    finishAttributeValue() {
-      let {
-        name,
-        parts,
-        isQuoted,
-        isDynamic,
-        valueStartLine,
-        valueStartColumn
-      } = this.currentAttr;
-      let value = assembleAttributeValue(parts, isQuoted, isDynamic, this.tokenizer.line);
-      value.loc = b.loc(valueStartLine, valueStartColumn, this.tokenizer.line, this.tokenizer.column);
-      let loc = b.loc(this.currentAttr.start.line, this.currentAttr.start.column, this.tokenizer.line, this.tokenizer.column);
-      let attribute = b.attr(name, value, loc);
-      this.currentStartTag.attributes.push(attribute);
-    }
-
-    reportSyntaxError(message) {
-      throw new SyntaxError(`Syntax error at line ${this.tokenizer.line} col ${this.tokenizer.column}: ${message}`, b.loc(this.tokenizer.line, this.tokenizer.column));
-    }
-
-  }
-
-  function assembleAttributeValue(parts, isQuoted, isDynamic, line) {
-    if (isDynamic) {
-      if (isQuoted) {
-        return assembleConcatenatedValue(parts);
-      } else {
-        if (parts.length === 1 || parts.length === 2 && parts[1].type === 'TextNode' && parts[1].chars === '/') {
-          return parts[0];
+          _loc2 = lastPart ? lastPart.loc.getEnd() : this.currentAttr.valueSpan.getStart();
         } else {
-          throw new SyntaxError(`An unquoted attribute value must be a string or a mustache, ` + `preceeded by whitespace or a '=' character, and ` + `followed by whitespace, a '>' character, or '/>' (on line ${line})`, b.loc(line, 0));
+          _loc2 = _loc2.move(-1);
+        }
+
+        this.currentAttr.currentPart = b.text({
+          chars: char,
+          loc: _loc2.collapsed()
+        });
+      }
+    };
+
+    _proto33.finishAttributeValue = function finishAttributeValue() {
+      this.finalizeTextPart();
+      var tag = this.currentTag;
+      var tokenizerPos = this.offset();
+
+      if (tag.type === 'EndTag') {
+        throw generateSyntaxError("Invalid end tag: closing tag must not have attributes", this.source.spanFor({
+          start: tag.loc.toJSON(),
+          end: tokenizerPos.toJSON()
+        }));
+      }
+
+      var _this$currentAttr = this.currentAttr,
+          name = _this$currentAttr.name,
+          parts = _this$currentAttr.parts,
+          start = _this$currentAttr.start,
+          isQuoted = _this$currentAttr.isQuoted,
+          isDynamic = _this$currentAttr.isDynamic,
+          valueSpan = _this$currentAttr.valueSpan;
+      var value = this.assembleAttributeValue(parts, isQuoted, isDynamic, start.until(tokenizerPos));
+      value.loc = valueSpan.withEnd(tokenizerPos);
+      var attribute = b.attr({
+        name: name,
+        value: value,
+        loc: start.until(tokenizerPos)
+      });
+      this.currentStartTag.attributes.push(attribute);
+    };
+
+    _proto33.reportSyntaxError = function reportSyntaxError(message) {
+      throw generateSyntaxError(message, this.offset().collapsed());
+    };
+
+    _proto33.assembleConcatenatedValue = function assembleConcatenatedValue(parts) {
+      for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+
+        if (part.type !== 'MustacheStatement' && part.type !== 'TextNode') {
+          throw generateSyntaxError('Unsupported node in quoted attribute value: ' + part['type'], part.loc);
         }
       }
-    } else {
-      return parts.length > 0 ? parts[0] : b.text('');
-    }
-  }
 
-  function assembleConcatenatedValue(parts) {
-    for (let i = 0; i < parts.length; i++) {
-      let part = parts[i];
+      (0, _util.assertPresent)(parts, "the concatenation parts of an element should not be empty");
+      var first = parts[0];
+      var last = parts[parts.length - 1];
+      return b.concat(parts, this.source.spanFor(first.loc).extend(this.source.spanFor(last.loc)));
+    };
 
-      if (part.type !== 'MustacheStatement' && part.type !== 'TextNode') {
-        throw new SyntaxError('Unsupported node in quoted attribute value: ' + part['type'], part.loc);
+    _proto33.validateEndTag = function validateEndTag(tag, element, selfClosing) {
+      var error;
+
+      if (voidMap[tag.name] && !selfClosing) {
+        // EngTag is also called by StartTag for void and self-closing tags (i.e.
+        // <input> or <br />, so we need to check for that here. Otherwise, we would
+        // throw an error for those cases.
+        error = "<" + tag.name + "> elements do not need end tags. You should remove it";
+      } else if (element.tag === undefined) {
+        error = "Closing tag </" + tag.name + "> without an open tag";
+      } else if (element.tag !== tag.name) {
+        error = "Closing tag </" + tag.name + "> did not match last open tag <" + element.tag + "> (on line " + element.loc.startPosition.line + ")";
       }
-    }
 
-    return b.concat(parts);
-  }
+      if (error) {
+        throw generateSyntaxError(error, tag.loc);
+      }
+    };
 
-  function validateEndTag(tag, element, selfClosing) {
-    let error;
+    _proto33.assembleAttributeValue = function assembleAttributeValue(parts, isQuoted, isDynamic, span) {
+      if (isDynamic) {
+        if (isQuoted) {
+          return this.assembleConcatenatedValue(parts);
+        } else {
+          if (parts.length === 1 || parts.length === 2 && parts[1].type === 'TextNode' && parts[1].chars === '/') {
+            return parts[0];
+          } else {
+            throw generateSyntaxError("An unquoted attribute value must be a string or a mustache, " + "preceded by whitespace or a '=' character, and " + "followed by whitespace, a '>' character, or '/>'", span);
+          }
+        }
+      } else {
+        return parts.length > 0 ? parts[0] : b.text({
+          chars: '',
+          loc: span
+        });
+      }
+    };
 
-    if (voidMap[tag.name] && !selfClosing) {
-      // EngTag is also called by StartTag for void and self-closing tags (i.e.
-      // <input> or <br />, so we need to check for that here. Otherwise, we would
-      // throw an error for those cases.
-      error = 'Invalid end tag ' + formatEndTagInfo(tag) + ' (void elements cannot have end tags).';
-    } else if (element.tag === undefined) {
-      error = 'Closing tag ' + formatEndTagInfo(tag) + ' without an open tag.';
-    } else if (element.tag !== tag.name) {
-      error = 'Closing tag ' + formatEndTagInfo(tag) + ' did not match last open tag `' + element.tag + '` (on line ' + element.loc.start.line + ').';
-    }
+    return TokenizerEventHandlers;
+  }(HandlebarsNodeVisitors);
 
-    if (error) {
-      throw new SyntaxError(error, element.loc);
-    }
-  }
-
-  function formatEndTagInfo(tag) {
-    return '`' + tag.name + '` (on line ' + tag.loc.end.line + ')';
-  }
-
-  const syntax = {
+  var syntax = {
     parse: preprocess,
-    builders: b,
+    builders: publicBuilder,
     print: build,
-    traverse,
-    Walker
+    traverse: traverse,
+    Walker: Walker
   };
 
-  function preprocess(html, options) {
-    let ast = typeof html === 'object' ? html : (0, _handlebars.parse)(html);
-    let program = new TokenizerEventHandlers(html).acceptNode(ast);
+  function preprocess(input, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    var _a, _b, _c;
+
+    var mode = options.mode || 'precompile';
+    var source;
+    var ast;
+
+    if (typeof input === 'string') {
+      source = new Source(input, (_a = options.meta) === null || _a === void 0 ? void 0 : _a.moduleName);
+
+      if (mode === 'codemod') {
+        ast = (0, _parser.parseWithoutProcessing)(input, options.parseOptions);
+      } else {
+        ast = (0, _parser.parse)(input, options.parseOptions);
+      }
+    } else if (input instanceof Source) {
+      source = input;
+
+      if (mode === 'codemod') {
+        ast = (0, _parser.parseWithoutProcessing)(input.source, options.parseOptions);
+      } else {
+        ast = (0, _parser.parse)(input.source, options.parseOptions);
+      }
+    } else {
+      source = new Source('', (_b = options.meta) === null || _b === void 0 ? void 0 : _b.moduleName);
+      ast = input;
+    }
+
+    var entityParser = undefined;
+
+    if (mode === 'codemod') {
+      entityParser = new _simpleHtmlTokenizer.EntityParser({});
+    }
+
+    var offsets = SourceSpan.forCharPositions(source, 0, source.source.length);
+    ast.loc = {
+      source: '(program)',
+      start: offsets.startPosition,
+      end: offsets.endPosition
+    };
+    var program = new TokenizerEventHandlers(source, entityParser, mode).acceptTemplate(ast);
+
+    if (options.strictMode) {
+      program.blockParams = (_c = options.locals) !== null && _c !== void 0 ? _c : [];
+    }
 
     if (options && options.plugins && options.plugins.ast) {
-      for (let i = 0, l = options.plugins.ast.length; i < l; i++) {
-        let transform = options.plugins.ast[i];
-        let env = (0, _util.assign)({}, options, {
-          syntax
+      for (var i = 0, l = options.plugins.ast.length; i < l; i++) {
+        var transform = options.plugins.ast[i];
+        var env = (0, _util.assign)({}, options, {
+          syntax: syntax
         }, {
           plugins: undefined
         });
-        let pluginResult = transform(env);
+        var pluginResult = transform(env);
         traverse(program, pluginResult.visitor);
       }
     }
@@ -5425,44 +13388,1659 @@ enifed("@glimmer/syntax", ["exports", "simple-html-tokenizer", "@glimmer/util", 
     return program;
   }
 
-  var nodes =
-  /*#__PURE__*/
-  Object.freeze({}); // used by ember-compiler
+  var __classPrivateFieldSet$4 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
 
-  _exports.AST = nodes;
+    privateMap.set(receiver, value);
+    return value;
+  };
+
+  var __classPrivateFieldGet$4 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
+    if (!privateMap.has(receiver)) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    return privateMap.get(receiver);
+  };
+
+  var _hasEval;
+
+  var SymbolTable = /*#__PURE__*/function () {
+    function SymbolTable() {}
+
+    SymbolTable.top = function top(locals, customizeComponentName) {
+      return new ProgramSymbolTable(locals, customizeComponentName);
+    };
+
+    var _proto34 = SymbolTable.prototype;
+
+    _proto34.child = function child(locals) {
+      var _this12 = this;
+
+      var symbols = locals.map(function (name) {
+        return _this12.allocate(name);
+      });
+      return new BlockSymbolTable(this, locals, symbols);
+    };
+
+    return SymbolTable;
+  }();
+
+  _exports.SymbolTable = SymbolTable;
+
+  var ProgramSymbolTable = /*#__PURE__*/function (_SymbolTable) {
+    (0, _emberBabel.inheritsLoose)(ProgramSymbolTable, _SymbolTable);
+
+    function ProgramSymbolTable(templateLocals, customizeComponentName) {
+      var _this13;
+
+      _this13 = _SymbolTable.call(this) || this;
+      _this13.templateLocals = templateLocals;
+      _this13.customizeComponentName = customizeComponentName;
+      _this13.symbols = [];
+      _this13.upvars = [];
+      _this13.size = 1;
+      _this13.named = (0, _util.dict)();
+      _this13.blocks = (0, _util.dict)();
+      _this13.usedTemplateLocals = [];
+
+      _hasEval.set((0, _emberBabel.assertThisInitialized)(_this13), false);
+
+      return _this13;
+    }
+
+    var _proto35 = ProgramSymbolTable.prototype;
+
+    _proto35.getUsedTemplateLocals = function getUsedTemplateLocals() {
+      return this.usedTemplateLocals;
+    };
+
+    _proto35.setHasEval = function setHasEval() {
+      __classPrivateFieldSet$4(this, _hasEval, true);
+    };
+
+    _proto35.has = function has(name) {
+      return this.templateLocals.indexOf(name) !== -1;
+    };
+
+    _proto35.get = function get(name) {
+      var index = this.usedTemplateLocals.indexOf(name);
+
+      if (index !== -1) {
+        return [index, true];
+      }
+
+      index = this.usedTemplateLocals.length;
+      this.usedTemplateLocals.push(name);
+      return [index, true];
+    };
+
+    _proto35.getLocalsMap = function getLocalsMap() {
+      return (0, _util.dict)();
+    };
+
+    _proto35.getEvalInfo = function getEvalInfo() {
+      var locals = this.getLocalsMap();
+      return Object.keys(locals).map(function (symbol) {
+        return locals[symbol];
+      });
+    };
+
+    _proto35.allocateFree = function allocateFree(name, resolution) {
+      // If the name in question is an uppercase (i.e. angle-bracket) component invocation, run
+      // the optional `customizeComponentName` function provided to the precompiler.
+      if (resolution.resolution() === 39
+      /* GetFreeAsComponentHead */
+      && resolution.isAngleBracket && isUpperCase(name)) {
+        name = this.customizeComponentName(name);
+      }
+
+      var index = this.upvars.indexOf(name);
+
+      if (index !== -1) {
+        return index;
+      }
+
+      index = this.upvars.length;
+      this.upvars.push(name);
+      return index;
+    };
+
+    _proto35.allocateNamed = function allocateNamed(name) {
+      var named = this.named[name];
+
+      if (!named) {
+        named = this.named[name] = this.allocate(name);
+      }
+
+      return named;
+    };
+
+    _proto35.allocateBlock = function allocateBlock(name) {
+      if (name === 'inverse') {
+        name = 'else';
+      }
+
+      var block = this.blocks[name];
+
+      if (!block) {
+        block = this.blocks[name] = this.allocate("&" + name);
+      }
+
+      return block;
+    };
+
+    _proto35.allocate = function allocate(identifier) {
+      this.symbols.push(identifier);
+      return this.size++;
+    };
+
+    (0, _emberBabel.createClass)(ProgramSymbolTable, [{
+      key: "hasEval",
+      get: function get() {
+        return __classPrivateFieldGet$4(this, _hasEval);
+      }
+    }]);
+    return ProgramSymbolTable;
+  }(SymbolTable);
+
+  _exports.ProgramSymbolTable = ProgramSymbolTable;
+  _hasEval = new WeakMap();
+
+  var BlockSymbolTable = /*#__PURE__*/function (_SymbolTable2) {
+    (0, _emberBabel.inheritsLoose)(BlockSymbolTable, _SymbolTable2);
+
+    function BlockSymbolTable(parent, symbols, slots) {
+      var _this14;
+
+      _this14 = _SymbolTable2.call(this) || this;
+      _this14.parent = parent;
+      _this14.symbols = symbols;
+      _this14.slots = slots;
+      return _this14;
+    }
+
+    var _proto36 = BlockSymbolTable.prototype;
+
+    _proto36.has = function has(name) {
+      return this.symbols.indexOf(name) !== -1 || this.parent.has(name);
+    };
+
+    _proto36.get = function get(name) {
+      var slot = this.symbols.indexOf(name);
+      return slot === -1 ? this.parent.get(name) : [this.slots[slot], false];
+    };
+
+    _proto36.getLocalsMap = function getLocalsMap() {
+      var _this15 = this;
+
+      var dict$$1 = this.parent.getLocalsMap();
+      this.symbols.forEach(function (symbol) {
+        return dict$$1[symbol] = _this15.get(symbol)[0];
+      });
+      return dict$$1;
+    };
+
+    _proto36.getEvalInfo = function getEvalInfo() {
+      var locals = this.getLocalsMap();
+      return Object.keys(locals).map(function (symbol) {
+        return locals[symbol];
+      });
+    };
+
+    _proto36.setHasEval = function setHasEval() {
+      this.parent.setHasEval();
+    };
+
+    _proto36.allocateFree = function allocateFree(name, resolution) {
+      return this.parent.allocateFree(name, resolution);
+    };
+
+    _proto36.allocateNamed = function allocateNamed(name) {
+      return this.parent.allocateNamed(name);
+    };
+
+    _proto36.allocateBlock = function allocateBlock(name) {
+      return this.parent.allocateBlock(name);
+    };
+
+    _proto36.allocate = function allocate(identifier) {
+      return this.parent.allocate(identifier);
+    };
+
+    (0, _emberBabel.createClass)(BlockSymbolTable, [{
+      key: "locals",
+      get: function get() {
+        return this.symbols;
+      }
+    }]);
+    return BlockSymbolTable;
+  }(SymbolTable);
+
+  _exports.BlockSymbolTable = BlockSymbolTable;
+
+  var __rest = undefined && undefined.__rest || function (s, e) {
+    var t = {};
+
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+
+  var Builder = /*#__PURE__*/function () {
+    function Builder() {}
+
+    var _proto37 = Builder.prototype;
+
+    // TEMPLATE //
+    _proto37.template = function template(symbols, body, loc$$1) {
+      return new Template({
+        table: symbols,
+        body: body,
+        loc: loc$$1
+      });
+    } // INTERNAL (these nodes cannot be reached when doing general-purpose visiting) //
+    ;
+
+    _proto37.block = function block(symbols, body, loc$$1) {
+      return new Block({
+        scope: symbols,
+        body: body,
+        loc: loc$$1
+      });
+    };
+
+    _proto37.namedBlock = function namedBlock(name, block, loc$$1) {
+      return new NamedBlock({
+        name: name,
+        block: block,
+        attrs: [],
+        componentArgs: [],
+        modifiers: [],
+        loc: loc$$1
+      });
+    };
+
+    _proto37.simpleNamedBlock = function simpleNamedBlock(name, block, loc$$1) {
+      return new BuildElement({
+        selfClosing: false,
+        attrs: [],
+        componentArgs: [],
+        modifiers: [],
+        comments: []
+      }).named(name, block, loc$$1);
+    };
+
+    _proto37.slice = function slice(chars, loc$$1) {
+      return new SourceSlice({
+        loc: loc$$1,
+        chars: chars
+      });
+    };
+
+    _proto37.args = function args(positional, named, loc$$1) {
+      return new Args({
+        loc: loc$$1,
+        positional: positional,
+        named: named
+      });
+    };
+
+    _proto37.positional = function positional(exprs, loc$$1) {
+      return new PositionalArguments({
+        loc: loc$$1,
+        exprs: exprs
+      });
+    };
+
+    _proto37.namedArgument = function namedArgument(key, value) {
+      return new NamedArgument({
+        name: key,
+        value: value
+      });
+    };
+
+    _proto37.named = function named(entries, loc$$1) {
+      return new NamedArguments({
+        loc: loc$$1,
+        entries: entries
+      });
+    };
+
+    _proto37.attr = function attr(_ref29, loc$$1) {
+      var name = _ref29.name,
+          value = _ref29.value,
+          trusting = _ref29.trusting;
+      return new HtmlAttr({
+        loc: loc$$1,
+        name: name,
+        value: value,
+        trusting: trusting
+      });
+    };
+
+    _proto37.splatAttr = function splatAttr(symbol, loc$$1) {
+      return new SplatAttr({
+        symbol: symbol,
+        loc: loc$$1
+      });
+    };
+
+    _proto37.arg = function arg(_ref30, loc$$1) {
+      var name = _ref30.name,
+          value = _ref30.value,
+          trusting = _ref30.trusting;
+      return new ComponentArg({
+        name: name,
+        value: value,
+        trusting: trusting,
+        loc: loc$$1
+      });
+    } // EXPRESSIONS //
+    ;
+
+    _proto37.path = function path(head, tail, loc$$1) {
+      return new PathExpression({
+        loc: loc$$1,
+        ref: head,
+        tail: tail
+      });
+    };
+
+    _proto37.self = function self(loc$$1) {
+      return new ThisReference({
+        loc: loc$$1
+      });
+    };
+
+    _proto37.at = function at(name, symbol, loc$$1) {
+      return new ArgReference({
+        loc: loc$$1,
+        name: new SourceSlice({
+          loc: loc$$1,
+          chars: name
+        }),
+        symbol: symbol
+      });
+    };
+
+    _proto37.freeVar = function freeVar(_ref31) {
+      var name = _ref31.name,
+          context = _ref31.context,
+          symbol = _ref31.symbol,
+          loc$$1 = _ref31.loc;
+      return new FreeVarReference({
+        name: name,
+        resolution: context,
+        symbol: symbol,
+        loc: loc$$1
+      });
+    };
+
+    _proto37.localVar = function localVar(name, symbol, isTemplateLocal, loc$$1) {
+      return new LocalVarReference({
+        loc: loc$$1,
+        name: name,
+        isTemplateLocal: isTemplateLocal,
+        symbol: symbol
+      });
+    };
+
+    _proto37.sexp = function sexp(parts, loc$$1) {
+      return new CallExpression({
+        loc: loc$$1,
+        callee: parts.callee,
+        args: parts.args
+      });
+    };
+
+    _proto37.interpolate = function interpolate(parts, loc$$1) {
+      (0, _util.assertPresent)(parts);
+      return new InterpolateExpression({
+        loc: loc$$1,
+        parts: parts
+      });
+    };
+
+    _proto37.literal = function literal(value, loc$$1) {
+      return new LiteralExpression({
+        loc: loc$$1,
+        value: value
+      });
+    } // STATEMENTS //
+    ;
+
+    _proto37.append = function append(_ref32, loc$$1) {
+      var table = _ref32.table,
+          trusting = _ref32.trusting,
+          value = _ref32.value;
+      return new AppendContent({
+        table: table,
+        trusting: trusting,
+        value: value,
+        loc: loc$$1
+      });
+    };
+
+    _proto37.modifier = function modifier(_ref33, loc$$1) {
+      var callee = _ref33.callee,
+          args = _ref33.args;
+      return new ElementModifier({
+        loc: loc$$1,
+        callee: callee,
+        args: args
+      });
+    };
+
+    _proto37.namedBlocks = function namedBlocks(blocks, loc$$1) {
+      return new NamedBlocks({
+        loc: loc$$1,
+        blocks: blocks
+      });
+    };
+
+    _proto37.blockStatement = function blockStatement(_a, loc$$1) {
+      var symbols = _a.symbols,
+          program = _a.program,
+          _a$inverse = _a.inverse,
+          inverse = _a$inverse === void 0 ? null : _a$inverse,
+          call = __rest(_a, ["symbols", "program", "inverse"]);
+
+      var blocksLoc = program.loc;
+      var blocks = [this.namedBlock(SourceSlice.synthetic('default'), program, program.loc)];
+
+      if (inverse) {
+        blocksLoc = blocksLoc.extend(inverse.loc);
+        blocks.push(this.namedBlock(SourceSlice.synthetic('else'), inverse, inverse.loc));
+      }
+
+      return new InvokeBlock({
+        loc: loc$$1,
+        blocks: this.namedBlocks(blocks, blocksLoc),
+        callee: call.callee,
+        args: call.args
+      });
+    };
+
+    _proto37.element = function element(options) {
+      return new BuildElement(options);
+    };
+
+    return Builder;
+  }();
+
+  var BuildElement = /*#__PURE__*/function () {
+    function BuildElement(base) {
+      this.base = base;
+      this.builder = new Builder();
+    }
+
+    var _proto38 = BuildElement.prototype;
+
+    _proto38.simple = function simple(tag, body, loc$$1) {
+      return new SimpleElement((0, _util.assign)({
+        tag: tag,
+        body: body,
+        componentArgs: [],
+        loc: loc$$1
+      }, this.base));
+    };
+
+    _proto38.named = function named(name, block, loc$$1) {
+      return new NamedBlock((0, _util.assign)({
+        name: name,
+        block: block,
+        componentArgs: [],
+        loc: loc$$1
+      }, this.base));
+    };
+
+    _proto38.selfClosingComponent = function selfClosingComponent(callee, loc$$1) {
+      return new InvokeComponent((0, _util.assign)({
+        loc: loc$$1,
+        callee: callee,
+        // point the empty named blocks at the `/` self-closing tag
+        blocks: new NamedBlocks({
+          blocks: [],
+          loc: loc$$1.sliceEndChars({
+            skipEnd: 1,
+            chars: 1
+          })
+        })
+      }, this.base));
+    };
+
+    _proto38.componentWithDefaultBlock = function componentWithDefaultBlock(callee, children, symbols, loc$$1) {
+      var block = this.builder.block(symbols, children, loc$$1);
+      var namedBlock = this.builder.namedBlock(SourceSlice.synthetic('default'), block, loc$$1); // BUILDER.simpleNamedBlock('default', children, symbols, loc);
+
+      return new InvokeComponent((0, _util.assign)({
+        loc: loc$$1,
+        callee: callee,
+        blocks: this.builder.namedBlocks([namedBlock], namedBlock.loc)
+      }, this.base));
+    };
+
+    _proto38.componentWithNamedBlocks = function componentWithNamedBlocks(callee, blocks, loc$$1) {
+      return new InvokeComponent((0, _util.assign)({
+        loc: loc$$1,
+        callee: callee,
+        blocks: this.builder.namedBlocks(blocks, SpanList.range(blocks))
+      }, this.base));
+    };
+
+    return BuildElement;
+  }();
+
+  function SexpSyntaxContext(node$$1) {
+    if (isSimpleCallee(node$$1)) {
+      return LooseModeResolution.namespaced("Helper"
+      /* Helper */
+      );
+    } else {
+      return null;
+    }
+  }
+
+  function ModifierSyntaxContext(node$$1) {
+    if (isSimpleCallee(node$$1)) {
+      return LooseModeResolution.namespaced("Modifier"
+      /* Modifier */
+      );
+    } else {
+      return null;
+    }
+  }
+
+  function BlockSyntaxContext(node$$1) {
+    if (isSimpleCallee(node$$1)) {
+      return LooseModeResolution.namespaced("Component"
+      /* Component */
+      );
+    } else {
+      return LooseModeResolution.fallback();
+    }
+  }
+
+  function ComponentSyntaxContext(node$$1) {
+    if (isSimplePath(node$$1)) {
+      return LooseModeResolution.namespaced("Component"
+      /* Component */
+      , true);
+    } else {
+      return null;
+    }
+  }
+  /**
+   * This corresponds to append positions (text curlies or attribute
+   * curlies). In strict mode, this also corresponds to arg curlies.
+   */
+
+
+  function AttrValueSyntaxContext(node$$1) {
+    var isSimple = isSimpleCallee(node$$1);
+    var isInvoke = isInvokeNode(node$$1);
+
+    if (isSimple) {
+      return isInvoke ? LooseModeResolution.namespaced("Helper"
+      /* Helper */
+      ) : LooseModeResolution.attr();
+    } else {
+      return isInvoke ? STRICT_RESOLUTION : LooseModeResolution.fallback();
+    }
+  }
+  /**
+   * This corresponds to append positions (text curlies or attribute
+   * curlies). In strict mode, this also corresponds to arg curlies.
+   */
+
+
+  function AppendSyntaxContext(node$$1) {
+    var isSimple = isSimpleCallee(node$$1);
+    var isInvoke = isInvokeNode(node$$1);
+    var trusting = node$$1.trusting;
+
+    if (isSimple) {
+      return trusting ? LooseModeResolution.trustingAppend({
+        invoke: isInvoke
+      }) : LooseModeResolution.append({
+        invoke: isInvoke
+      });
+    } else {
+      return LooseModeResolution.fallback();
+    }
+  } // UTILITIES
+
+  /**
+   * A call node has a simple callee if its head is:
+   *
+   * - a `PathExpression`
+   * - the `PathExpression`'s head is a `VarHead`
+   * - it has no tail
+   *
+   * Simple heads:
+   *
+   * ```
+   * {{x}}
+   * {{x y}}
+   * ```
+   *
+   * Not simple heads:
+   *
+   * ```
+   * {{x.y}}
+   * {{x.y z}}
+   * {{@x}}
+   * {{@x a}}
+   * {{this}}
+   * {{this a}}
+   * ```
+   */
+
+
+  function isSimpleCallee(node$$1) {
+    var path = node$$1.path;
+    return isSimplePath(path);
+  }
+
+  function isSimplePath(node$$1) {
+    if (node$$1.type === 'PathExpression' && node$$1.head.type === 'VarHead') {
+      return node$$1.tail.length === 0;
+    } else {
+      return false;
+    }
+  }
+  /**
+   * The call expression has at least one argument.
+   */
+
+
+  function isInvokeNode(node$$1) {
+    return node$$1.params.length > 0 || node$$1.hash.pairs.length > 0;
+  }
+
+  function normalize(source, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    var _a;
+
+    var ast = preprocess(source, options);
+    var normalizeOptions = (0, _util.assign)({
+      strictMode: false,
+      locals: []
+    }, options);
+    var top = SymbolTable.top(normalizeOptions.strictMode ? normalizeOptions.locals : [], (_a = // eslint-disable-next-line @typescript-eslint/unbound-method
+    options.customizeComponentName) !== null && _a !== void 0 ? _a : function (name) {
+      return name;
+    });
+    var block = new BlockContext(source, normalizeOptions, top);
+    var normalizer = new StatementNormalizer(block);
+    var astV2 = new TemplateChildren(block.loc(ast.loc), ast.body.map(function (b$$1) {
+      return normalizer.normalize(b$$1);
+    }), block).assertTemplate(top);
+    var locals = top.getUsedTemplateLocals();
+    return [astV2, locals];
+  }
+  /**
+   * A `BlockContext` represents the block that a particular AST node is contained inside of.
+   *
+   * `BlockContext` is aware of template-wide options (such as strict mode), as well as the bindings
+   * that are in-scope within that block.
+   *
+   * Concretely, it has the `PrecompileOptions` and current `SymbolTable`, and provides
+   * facilities for working with those options.
+   *
+   * `BlockContext` is stateless.
+   */
+
+
+  var BlockContext = /*#__PURE__*/function () {
+    function BlockContext(source, options, table) {
+      this.source = source;
+      this.options = options;
+      this.table = table;
+      this.builder = new Builder();
+    }
+
+    var _proto39 = BlockContext.prototype;
+
+    _proto39.loc = function loc(loc$$1) {
+      return this.source.spanFor(loc$$1);
+    };
+
+    _proto39.resolutionFor = function resolutionFor(node$$1, resolution) {
+      if (this.strict) {
+        return {
+          resolution: STRICT_RESOLUTION
+        };
+      }
+
+      if (this.isFreeVar(node$$1)) {
+        var r = resolution(node$$1);
+
+        if (r === null) {
+          return {
+            resolution: 'error',
+            path: printPath(node$$1),
+            head: printHead(node$$1)
+          };
+        }
+
+        return {
+          resolution: r
+        };
+      } else {
+        return {
+          resolution: STRICT_RESOLUTION
+        };
+      }
+    };
+
+    _proto39.isFreeVar = function isFreeVar(callee) {
+      if (callee.type === 'PathExpression') {
+        if (callee.head.type !== 'VarHead') {
+          return false;
+        }
+
+        return !this.table.has(callee.head.name);
+      } else if (callee.path.type === 'PathExpression') {
+        return this.isFreeVar(callee.path);
+      } else {
+        return false;
+      }
+    };
+
+    _proto39.hasBinding = function hasBinding(name) {
+      return this.table.has(name);
+    };
+
+    _proto39.child = function child(blockParams) {
+      return new BlockContext(this.source, this.options, this.table.child(blockParams));
+    };
+
+    _proto39.customizeComponentName = function customizeComponentName(input) {
+      if (this.options.customizeComponentName) {
+        return this.options.customizeComponentName(input);
+      } else {
+        return input;
+      }
+    };
+
+    (0, _emberBabel.createClass)(BlockContext, [{
+      key: "strict",
+      get: function get() {
+        return this.options.strictMode || false;
+      }
+    }]);
+    return BlockContext;
+  }();
+  /**
+   * An `ExpressionNormalizer` normalizes expressions within a block.
+   *
+   * `ExpressionNormalizer` is stateless.
+   */
+
+
+  var ExpressionNormalizer = /*#__PURE__*/function () {
+    function ExpressionNormalizer(block) {
+      this.block = block;
+    }
+
+    var _proto40 = ExpressionNormalizer.prototype;
+
+    _proto40.normalize = function normalize(expr, resolution) {
+      switch (expr.type) {
+        case 'NullLiteral':
+        case 'BooleanLiteral':
+        case 'NumberLiteral':
+        case 'StringLiteral':
+        case 'UndefinedLiteral':
+          return this.block.builder.literal(expr.value, this.block.loc(expr.loc));
+
+        case 'PathExpression':
+          return this.path(expr, resolution);
+
+        case 'SubExpression':
+          {
+            var _resolution = this.block.resolutionFor(expr, SexpSyntaxContext);
+
+            if (_resolution.resolution === 'error') {
+              throw generateSyntaxError("You attempted to invoke a path (`" + _resolution.path + "`) but " + _resolution.head + " was not in scope", expr.loc);
+            }
+
+            return this.block.builder.sexp(this.callParts(expr, _resolution.resolution), this.block.loc(expr.loc));
+          }
+      }
+    };
+
+    _proto40.path = function path(expr, resolution) {
+      var headOffsets = this.block.loc(expr.head.loc);
+      var tail = []; // start with the head
+
+      var offset = headOffsets;
+
+      for (var _iterator4 = (0, _emberBabel.createForOfIteratorHelperLoose)(expr.tail), _step4; !(_step4 = _iterator4()).done;) {
+        var _part = _step4.value;
+        offset = offset.sliceStartChars({
+          chars: _part.length,
+          skipStart: 1
+        });
+        tail.push(new SourceSlice({
+          loc: offset,
+          chars: _part
+        }));
+      }
+
+      return this.block.builder.path(this.ref(expr.head, resolution), tail, this.block.loc(expr.loc));
+    }
+    /**
+     * The `callParts` method takes ASTv1.CallParts as well as a syntax context and normalizes
+     * it to an ASTv2 CallParts.
+     */
+    ;
+
+    _proto40.callParts = function callParts(parts, context) {
+      var _this16 = this;
+
+      var path = parts.path,
+          params = parts.params,
+          hash = parts.hash;
+      var callee = this.normalize(path, context);
+      var paramList = params.map(function (p) {
+        return _this16.normalize(p, ARGUMENT_RESOLUTION);
+      });
+      var paramLoc = SpanList.range(paramList, callee.loc.collapse('end'));
+      var namedLoc = this.block.loc(hash.loc);
+      var argsLoc = SpanList.range([paramLoc, namedLoc]);
+      var positional = this.block.builder.positional(params.map(function (p) {
+        return _this16.normalize(p, ARGUMENT_RESOLUTION);
+      }), paramLoc);
+      var named = this.block.builder.named(hash.pairs.map(function (p) {
+        return _this16.namedArgument(p);
+      }), this.block.loc(hash.loc));
+      return {
+        callee: callee,
+        args: this.block.builder.args(positional, named, argsLoc)
+      };
+    };
+
+    _proto40.namedArgument = function namedArgument(pair) {
+      var offsets = this.block.loc(pair.loc);
+      var keyOffsets = offsets.sliceStartChars({
+        chars: pair.key.length
+      });
+      return this.block.builder.namedArgument(new SourceSlice({
+        chars: pair.key,
+        loc: keyOffsets
+      }), this.normalize(pair.value, ARGUMENT_RESOLUTION));
+    }
+    /**
+     * The `ref` method normalizes an `ASTv1.PathHead` into an `ASTv2.VariableReference`.
+     * This method is extremely important, because it is responsible for normalizing free
+     * variables into an an ASTv2.PathHead *with appropriate context*.
+     *
+     * The syntax context is originally determined by the syntactic position that this `PathHead`
+     * came from, and is ultimately attached to the `ASTv2.VariableReference` here. In ASTv2,
+     * the `VariableReference` node bears full responsibility for loose mode rules that control
+     * the behavior of free variables.
+     */
+    ;
+
+    _proto40.ref = function ref(head, resolution) {
+      var block = this.block;
+      var builder = block.builder,
+          table = block.table;
+      var offsets = block.loc(head.loc);
+
+      switch (head.type) {
+        case 'ThisHead':
+          return builder.self(offsets);
+
+        case 'AtHead':
+          {
+            var symbol = table.allocateNamed(head.name);
+            return builder.at(head.name, symbol, offsets);
+          }
+
+        case 'VarHead':
+          {
+            if (block.hasBinding(head.name)) {
+              var _table$get = table.get(head.name),
+                  _symbol = _table$get[0],
+                  isRoot = _table$get[1];
+
+              return block.builder.localVar(head.name, _symbol, isRoot, offsets);
+            } else {
+              var context = block.strict ? STRICT_RESOLUTION : resolution;
+
+              var _symbol2 = block.table.allocateFree(head.name, context);
+
+              return block.builder.freeVar({
+                name: head.name,
+                context: context,
+                symbol: _symbol2,
+                loc: offsets
+              });
+            }
+          }
+      }
+    };
+
+    return ExpressionNormalizer;
+  }();
+  /**
+   * `TemplateNormalizer` normalizes top-level ASTv1 statements to ASTv2.
+   */
+
+
+  var StatementNormalizer = /*#__PURE__*/function () {
+    function StatementNormalizer(block) {
+      this.block = block;
+    }
+
+    var _proto41 = StatementNormalizer.prototype;
+
+    _proto41.normalize = function normalize(node$$1) {
+      switch (node$$1.type) {
+        case 'PartialStatement':
+          throw new Error("Handlebars partial syntax ({{> ...}}) is not allowed in Glimmer");
+
+        case 'BlockStatement':
+          return this.BlockStatement(node$$1);
+
+        case 'ElementNode':
+          return new ElementNormalizer(this.block).ElementNode(node$$1);
+
+        case 'MustacheStatement':
+          return this.MustacheStatement(node$$1);
+        // These are the same in ASTv2
+
+        case 'MustacheCommentStatement':
+          return this.MustacheCommentStatement(node$$1);
+
+        case 'CommentStatement':
+          {
+            var loc$$1 = this.block.loc(node$$1.loc);
+            return new HtmlComment({
+              loc: loc$$1,
+              text: loc$$1.slice({
+                skipStart: 4,
+                skipEnd: 3
+              }).toSlice(node$$1.value)
+            });
+          }
+
+        case 'TextNode':
+          return new HtmlText({
+            loc: this.block.loc(node$$1.loc),
+            chars: node$$1.chars
+          });
+      }
+    };
+
+    _proto41.MustacheCommentStatement = function MustacheCommentStatement(node$$1) {
+      var loc$$1 = this.block.loc(node$$1.loc);
+      var textLoc;
+
+      if (loc$$1.asString().slice(0, 5) === '{{!--') {
+        textLoc = loc$$1.slice({
+          skipStart: 5,
+          skipEnd: 4
+        });
+      } else {
+        textLoc = loc$$1.slice({
+          skipStart: 3,
+          skipEnd: 2
+        });
+      }
+
+      return new GlimmerComment({
+        loc: loc$$1,
+        text: textLoc.toSlice(node$$1.value)
+      });
+    }
+    /**
+     * Normalizes an ASTv1.MustacheStatement to an ASTv2.AppendStatement
+     */
+    ;
+
+    _proto41.MustacheStatement = function MustacheStatement(mustache) {
+      var escaped = mustache.escaped;
+      var loc$$1 = this.block.loc(mustache.loc); // Normalize the call parts in AppendSyntaxContext
+
+      var callParts = this.expr.callParts({
+        path: mustache.path,
+        params: mustache.params,
+        hash: mustache.hash
+      }, AppendSyntaxContext(mustache));
+      var value = callParts.args.isEmpty() ? callParts.callee : this.block.builder.sexp(callParts, loc$$1);
+      return this.block.builder.append({
+        table: this.block.table,
+        trusting: !escaped,
+        value: value
+      }, loc$$1);
+    }
+    /**
+     * Normalizes a ASTv1.BlockStatement to an ASTv2.BlockStatement
+     */
+    ;
+
+    _proto41.BlockStatement = function BlockStatement(block) {
+      var program = block.program,
+          inverse = block.inverse;
+      var loc$$1 = this.block.loc(block.loc);
+      var resolution = this.block.resolutionFor(block, BlockSyntaxContext);
+
+      if (resolution.resolution === 'error') {
+        throw generateSyntaxError("You attempted to invoke a path (`{{#" + resolution.path + "}}`) but " + resolution.head + " was not in scope", loc$$1);
+      }
+
+      var callParts = this.expr.callParts(block, resolution.resolution);
+      return this.block.builder.blockStatement((0, _util.assign)({
+        symbols: this.block.table,
+        program: this.Block(program),
+        inverse: inverse ? this.Block(inverse) : null
+      }, callParts), loc$$1);
+    };
+
+    _proto41.Block = function Block(_ref34) {
+      var body = _ref34.body,
+          loc$$1 = _ref34.loc,
+          blockParams = _ref34.blockParams;
+      var child = this.block.child(blockParams);
+      var normalizer = new StatementNormalizer(child);
+      return new BlockChildren(this.block.loc(loc$$1), body.map(function (b$$1) {
+        return normalizer.normalize(b$$1);
+      }), this.block).assertBlock(child.table);
+    };
+
+    (0, _emberBabel.createClass)(StatementNormalizer, [{
+      key: "expr",
+      get: function get() {
+        return new ExpressionNormalizer(this.block);
+      }
+    }]);
+    return StatementNormalizer;
+  }();
+
+  var ElementNormalizer = /*#__PURE__*/function () {
+    function ElementNormalizer(ctx) {
+      this.ctx = ctx;
+    }
+    /**
+     * Normalizes an ASTv1.ElementNode to:
+     *
+     * - ASTv2.NamedBlock if the tag name begins with `:`
+     * - ASTv2.Component if the tag name matches the component heuristics
+     * - ASTv2.SimpleElement if the tag name doesn't match the component heuristics
+     *
+     * A tag name represents a component if:
+     *
+     * - it begins with `@`
+     * - it is exactly `this` or begins with `this.`
+     * - the part before the first `.` is a reference to an in-scope variable binding
+     * - it begins with an uppercase character
+     */
+
+
+    var _proto42 = ElementNormalizer.prototype;
+
+    _proto42.ElementNode = function ElementNode(element) {
+      var _this17 = this;
+
+      var tag = element.tag,
+          selfClosing = element.selfClosing,
+          comments = element.comments;
+      var loc$$1 = this.ctx.loc(element.loc);
+
+      var _tag$split = tag.split('.'),
+          tagHead = _tag$split[0],
+          rest = _tag$split.slice(1); // the head, attributes and modifiers are in the current scope
+
+
+      var path = this.classifyTag(tagHead, rest, element.loc);
+      var attrs = element.attributes.filter(function (a) {
+        return a.name[0] !== '@';
+      }).map(function (a) {
+        return _this17.attr(a);
+      });
+      var args = element.attributes.filter(function (a) {
+        return a.name[0] === '@';
+      }).map(function (a) {
+        return _this17.arg(a);
+      });
+      var modifiers = element.modifiers.map(function (m) {
+        return _this17.modifier(m);
+      }); // the element's block params are in scope for the children
+
+      var child = this.ctx.child(element.blockParams);
+      var normalizer = new StatementNormalizer(child);
+      var childNodes = element.children.map(function (s) {
+        return normalizer.normalize(s);
+      });
+      var el = this.ctx.builder.element({
+        selfClosing: selfClosing,
+        attrs: attrs,
+        componentArgs: args,
+        modifiers: modifiers,
+        comments: comments.map(function (c) {
+          return new StatementNormalizer(_this17.ctx).MustacheCommentStatement(c);
+        })
+      });
+      var children = new ElementChildren(el, loc$$1, childNodes, this.ctx);
+      var offsets = this.ctx.loc(element.loc);
+      var tagOffsets = offsets.sliceStartChars({
+        chars: tag.length,
+        skipStart: 1
+      });
+
+      if (path === 'ElementHead') {
+        if (tag[0] === ':') {
+          return children.assertNamedBlock(tagOffsets.slice({
+            skipStart: 1
+          }).toSlice(tag.slice(1)), child.table);
+        } else {
+          return children.assertElement(tagOffsets.toSlice(tag), element.blockParams.length > 0);
+        }
+      }
+
+      if (element.selfClosing) {
+        return el.selfClosingComponent(path, loc$$1);
+      } else {
+        var blocks = children.assertComponent(tag, child.table, element.blockParams.length > 0);
+        return el.componentWithNamedBlocks(path, blocks, loc$$1);
+      }
+    };
+
+    _proto42.modifier = function modifier(m) {
+      var resolution = this.ctx.resolutionFor(m, ModifierSyntaxContext);
+
+      if (resolution.resolution === 'error') {
+        throw generateSyntaxError("You attempted to invoke a path (`{{#" + resolution.path + "}}`) as a modifier, but " + resolution.head + " was not in scope. Try adding `this` to the beginning of the path", m.loc);
+      }
+
+      var callParts = this.expr.callParts(m, resolution.resolution);
+      return this.ctx.builder.modifier(callParts, this.ctx.loc(m.loc));
+    }
+    /**
+     * This method handles attribute values that are curlies, as well as curlies nested inside of
+     * interpolations:
+     *
+     * ```hbs
+     * <a href={{url}} />
+     * <a href="{{url}}.html" />
+     * ```
+     */
+    ;
+
+    _proto42.mustacheAttr = function mustacheAttr(mustache) {
+      // Normalize the call parts in AttrValueSyntaxContext
+      var sexp = this.ctx.builder.sexp(this.expr.callParts(mustache, AttrValueSyntaxContext(mustache)), this.ctx.loc(mustache.loc)); // If there are no params or hash, just return the function part as its own expression
+
+      if (sexp.args.isEmpty()) {
+        return sexp.callee;
+      } else {
+        return sexp;
+      }
+    }
+    /**
+     * attrPart is the narrowed down list of valid attribute values that are also
+     * allowed as a concat part (you can't nest concats).
+     */
+    ;
+
+    _proto42.attrPart = function attrPart(part) {
+      switch (part.type) {
+        case 'MustacheStatement':
+          return {
+            expr: this.mustacheAttr(part),
+            trusting: !part.escaped
+          };
+
+        case 'TextNode':
+          return {
+            expr: this.ctx.builder.literal(part.chars, this.ctx.loc(part.loc)),
+            trusting: true
+          };
+      }
+    };
+
+    _proto42.attrValue = function attrValue(part) {
+      var _this18 = this;
+
+      switch (part.type) {
+        case 'ConcatStatement':
+          {
+            var parts = part.parts.map(function (p) {
+              return _this18.attrPart(p).expr;
+            });
+            return {
+              expr: this.ctx.builder.interpolate(parts, this.ctx.loc(part.loc)),
+              trusting: false
+            };
+          }
+
+        default:
+          return this.attrPart(part);
+      }
+    };
+
+    _proto42.attr = function attr(m) {
+      if (m.name === '...attributes') {
+        return this.ctx.builder.splatAttr(this.ctx.table.allocateBlock('attrs'), this.ctx.loc(m.loc));
+      }
+
+      var offsets = this.ctx.loc(m.loc);
+      var nameSlice = offsets.sliceStartChars({
+        chars: m.name.length
+      }).toSlice(m.name);
+      var value = this.attrValue(m.value);
+      return this.ctx.builder.attr({
+        name: nameSlice,
+        value: value.expr,
+        trusting: value.trusting
+      }, offsets);
+    };
+
+    _proto42.arg = function arg(_arg) {
+      var offsets = this.ctx.loc(_arg.loc);
+      var nameSlice = offsets.sliceStartChars({
+        chars: _arg.name.length
+      }).toSlice(_arg.name);
+      var value = this.attrValue(_arg.value);
+      return this.ctx.builder.arg({
+        name: nameSlice,
+        value: value.expr,
+        trusting: value.trusting
+      }, offsets);
+    }
+    /**
+     * This function classifies the head of an ASTv1.Element into an ASTv2.PathHead (if the
+     * element is a component) or `'ElementHead'` (if the element is a simple element).
+     *
+     * Rules:
+     *
+     * 1. If the variable is an `@arg`, return an `AtHead`
+     * 2. If the variable is `this`, return a `ThisHead`
+     * 3. If the variable is in the current scope:
+     *   a. If the scope is the root scope, then return a Free `LocalVarHead`
+     *   b. Else, return a standard `LocalVarHead`
+     * 4. If the tag name is a path and the variable is not in the current scope, Syntax Error
+     * 5. If the variable is uppercase return a FreeVar(ResolveAsComponentHead)
+     * 6. Otherwise, return `'ElementHead'`
+     */
+    ;
+
+    _proto42.classifyTag = function classifyTag(variable, tail, loc$$1) {
+      var uppercase = isUpperCase(variable);
+      var inScope = variable[0] === '@' || variable === 'this' || this.ctx.hasBinding(variable);
+
+      if (this.ctx.strict && !inScope) {
+        if (uppercase) {
+          throw generateSyntaxError("Attempted to invoke a component that was not in scope in a strict mode template, `<" + variable + ">`. If you wanted to create an element with that name, convert it to lowercase - `<" + variable.toLowerCase() + ">`", loc$$1);
+        } // In strict mode, values are always elements unless they are in scope
+
+
+        return 'ElementHead';
+      } // Since the parser handed us the HTML element name as a string, we need
+      // to convert it into an ASTv1 path so it can be processed using the
+      // expression normalizer.
+
+
+      var isComponent = inScope || uppercase;
+      var variableLoc = loc$$1.sliceStartChars({
+        skipStart: 1,
+        chars: variable.length
+      });
+      var tailLength = tail.reduce(function (accum, part) {
+        return accum + 1 + part.length;
+      }, 0);
+      var pathEnd = variableLoc.getEnd().move(tailLength);
+      var pathLoc = variableLoc.withEnd(pathEnd);
+
+      if (isComponent) {
+        var path = b.path({
+          head: b.head(variable, variableLoc),
+          tail: tail,
+          loc: pathLoc
+        });
+        var resolution = this.ctx.resolutionFor(path, ComponentSyntaxContext);
+
+        if (resolution.resolution === 'error') {
+          throw generateSyntaxError("You attempted to invoke a path (`<" + resolution.path + ">`) but " + resolution.head + " was not in scope", loc$$1);
+        }
+
+        return new ExpressionNormalizer(this.ctx).normalize(path, resolution.resolution);
+      } // If the tag name wasn't a valid component but contained a `.`, it's
+      // a syntax error.
+
+
+      if (tail.length > 0) {
+        throw generateSyntaxError("You used " + variable + "." + tail.join('.') + " as a tag name, but " + variable + " is not in scope", loc$$1);
+      }
+
+      return 'ElementHead';
+    };
+
+    (0, _emberBabel.createClass)(ElementNormalizer, [{
+      key: "expr",
+      get: function get() {
+        return new ExpressionNormalizer(this.ctx);
+      }
+    }]);
+    return ElementNormalizer;
+  }();
+
+  var Children = function Children(loc$$1, children, block) {
+    this.loc = loc$$1;
+    this.children = children;
+    this.block = block;
+    this.namedBlocks = children.filter(function (c) {
+      return c instanceof NamedBlock;
+    });
+    this.hasSemanticContent = Boolean(children.filter(function (c) {
+      if (c instanceof NamedBlock) {
+        return false;
+      }
+
+      switch (c.type) {
+        case 'GlimmerComment':
+        case 'HtmlComment':
+          return false;
+
+        case 'HtmlText':
+          return !/^\s*$/.exec(c.chars);
+
+        default:
+          return true;
+      }
+    }).length);
+    this.nonBlockChildren = children.filter(function (c) {
+      return !(c instanceof NamedBlock);
+    });
+  };
+
+  var TemplateChildren = /*#__PURE__*/function (_Children) {
+    (0, _emberBabel.inheritsLoose)(TemplateChildren, _Children);
+
+    function TemplateChildren() {
+      return _Children.apply(this, arguments) || this;
+    }
+
+    var _proto43 = TemplateChildren.prototype;
+
+    _proto43.assertTemplate = function assertTemplate(table) {
+      if ((0, _util.isPresent)(this.namedBlocks)) {
+        throw generateSyntaxError("Unexpected named block at the top-level of a template", this.loc);
+      }
+
+      return this.block.builder.template(table, this.nonBlockChildren, this.block.loc(this.loc));
+    };
+
+    return TemplateChildren;
+  }(Children);
+
+  var BlockChildren = /*#__PURE__*/function (_Children2) {
+    (0, _emberBabel.inheritsLoose)(BlockChildren, _Children2);
+
+    function BlockChildren() {
+      return _Children2.apply(this, arguments) || this;
+    }
+
+    var _proto44 = BlockChildren.prototype;
+
+    _proto44.assertBlock = function assertBlock(table) {
+      if ((0, _util.isPresent)(this.namedBlocks)) {
+        throw generateSyntaxError("Unexpected named block nested in a normal block", this.loc);
+      }
+
+      return this.block.builder.block(table, this.nonBlockChildren, this.loc);
+    };
+
+    return BlockChildren;
+  }(Children);
+
+  var ElementChildren = /*#__PURE__*/function (_Children3) {
+    (0, _emberBabel.inheritsLoose)(ElementChildren, _Children3);
+
+    function ElementChildren(el, loc$$1, children, block) {
+      var _this19;
+
+      _this19 = _Children3.call(this, loc$$1, children, block) || this;
+      _this19.el = el;
+      return _this19;
+    }
+
+    var _proto45 = ElementChildren.prototype;
+
+    _proto45.assertNamedBlock = function assertNamedBlock(name, table) {
+      if (this.el.base.selfClosing) {
+        throw generateSyntaxError("<:" + name.chars + "/> is not a valid named block: named blocks cannot be self-closing", this.loc);
+      }
+
+      if ((0, _util.isPresent)(this.namedBlocks)) {
+        throw generateSyntaxError("Unexpected named block inside <:" + name.chars + "> named block: named blocks cannot contain nested named blocks", this.loc);
+      }
+
+      if (!isLowerCase(name.chars)) {
+        throw generateSyntaxError("<:" + name.chars + "> is not a valid named block, and named blocks must begin with a lowercase letter", this.loc);
+      }
+
+      if (this.el.base.attrs.length > 0 || this.el.base.componentArgs.length > 0 || this.el.base.modifiers.length > 0) {
+        throw generateSyntaxError("named block <:" + name.chars + "> cannot have attributes, arguments, or modifiers", this.loc);
+      }
+
+      var offsets = SpanList.range(this.nonBlockChildren, this.loc);
+      return this.block.builder.namedBlock(name, this.block.builder.block(table, this.nonBlockChildren, offsets), this.loc);
+    };
+
+    _proto45.assertElement = function assertElement(name, hasBlockParams) {
+      if (hasBlockParams) {
+        throw generateSyntaxError("Unexpected block params in <" + name + ">: simple elements cannot have block params", this.loc);
+      }
+
+      if ((0, _util.isPresent)(this.namedBlocks)) {
+        var names = this.namedBlocks.map(function (b$$1) {
+          return b$$1.name;
+        });
+
+        if (names.length === 1) {
+          throw generateSyntaxError("Unexpected named block <:foo> inside <" + name.chars + "> HTML element", this.loc);
+        } else {
+          var printedNames = names.map(function (n) {
+            return "<:" + n.chars + ">";
+          }).join(', ');
+          throw generateSyntaxError("Unexpected named blocks inside <" + name.chars + "> HTML element (" + printedNames + ")", this.loc);
+        }
+      }
+
+      return this.el.simple(name, this.nonBlockChildren, this.loc);
+    };
+
+    _proto45.assertComponent = function assertComponent(name, table, hasBlockParams) {
+      if ((0, _util.isPresent)(this.namedBlocks) && this.hasSemanticContent) {
+        throw generateSyntaxError("Unexpected content inside <" + name + "> component invocation: when using named blocks, the tag cannot contain other content", this.loc);
+      }
+
+      if ((0, _util.isPresent)(this.namedBlocks)) {
+        if (hasBlockParams) {
+          throw generateSyntaxError("Unexpected block params list on <" + name + "> component invocation: when passing named blocks, the invocation tag cannot take block params", this.loc);
+        }
+
+        var seenNames = new Set();
+
+        for (var _iterator5 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.namedBlocks), _step5; !(_step5 = _iterator5()).done;) {
+          var _block = _step5.value;
+          var _name2 = _block.name.chars;
+
+          if (seenNames.has(_name2)) {
+            throw generateSyntaxError("Component had two named blocks with the same name, `<:" + _name2 + ">`. Only one block with a given name may be passed", this.loc);
+          }
+
+          seenNames.add(_name2);
+        }
+
+        return this.namedBlocks;
+      } else {
+        return [this.block.builder.namedBlock(SourceSlice.synthetic('default'), this.block.builder.block(table, this.nonBlockChildren, this.loc), this.loc)];
+      }
+    };
+
+    return ElementChildren;
+  }(Children);
+
+  function printPath(node$$1) {
+    if (node$$1.type !== 'PathExpression' && node$$1.path.type === 'PathExpression') {
+      return printPath(node$$1.path);
+    } else {
+      return new Printer({
+        entityEncoding: 'raw'
+      }).print(node$$1);
+    }
+  }
+
+  function printHead(node$$1) {
+    if (node$$1.type === 'PathExpression') {
+      switch (node$$1.head.type) {
+        case 'AtHead':
+        case 'VarHead':
+          return node$$1.head.name;
+
+        case 'ThisHead':
+          return 'this';
+      }
+    } else if (node$$1.path.type === 'PathExpression') {
+      return printHead(node$$1.path);
+    } else {
+      return new Printer({
+        entityEncoding: 'raw'
+      }).print(node$$1);
+    }
+  }
+
+  function isKeyword(word) {
+    return word in KEYWORDS_TYPES;
+  }
+  /**
+   * This includes the full list of keywords currently in use in the template
+   * language, and where their valid usages are.
+   */
+
+
+  var KEYWORDS_TYPES = {
+    component: ['Call', 'Append', 'Block'],
+    debugger: ['Append'],
+    'each-in': ['Block'],
+    each: ['Block'],
+    'has-block-params': ['Call', 'Append'],
+    'has-block': ['Call', 'Append'],
+    helper: ['Call', 'Append'],
+    if: ['Call', 'Append', 'Block'],
+    'in-element': ['Block'],
+    let: ['Block'],
+    'link-to': ['Append', 'Block'],
+    log: ['Call', 'Append'],
+    modifier: ['Call'],
+    mount: ['Append'],
+    mut: ['Call', 'Append'],
+    outlet: ['Append'],
+    'query-params': ['Call'],
+    readonly: ['Call', 'Append'],
+    unbound: ['Call', 'Append'],
+    unless: ['Call', 'Append', 'Block'],
+    with: ['Block'],
+    yield: ['Append']
+  };
+  _exports.KEYWORDS_TYPES = KEYWORDS_TYPES;
 });
-enifed("@glimmer/util", ["exports"], function (_exports) {
+define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBabel) {
   "use strict";
 
-  _exports.assert = debugAssert;
-  _exports.assign = assign;
-  _exports.fillNulls = fillNulls;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.assertNever = assertNever;
+  _exports.assert = debugAssert$$1;
+  _exports.deprecate = deprecate$$1;
+  _exports.dict = dict;
+  _exports.isDict = isDict;
+  _exports.isObject = isObject;
   _exports.ensureGuid = ensureGuid;
   _exports.initializeGuid = initializeGuid;
   _exports.isSerializationFirstNode = isSerializationFirstNode;
-  _exports.dict = dict;
+  _exports.assign = assign;
+  _exports.fillNulls = fillNulls;
+  _exports.values = values;
+  _exports.castToSimple = castToSimple;
+  _exports.castToBrowser = castToBrowser;
+  _exports.checkNode = checkNode;
+  _exports.intern = intern;
+  _exports.buildUntouchableThis = buildUntouchableThis;
+  _exports.emptyArray = emptyArray;
+  _exports.isEmptyArray = isEmptyArray;
+  _exports.clearElement = clearElement;
+  _exports.keys = keys;
   _exports.unwrap = unwrap;
   _exports.expect = expect;
   _exports.unreachable = unreachable;
-  _exports.EMPTY_ARRAY = _exports.ListSlice = _exports.ListNode = _exports.LinkedList = _exports.EMPTY_SLICE = _exports.DictSet = _exports.Stack = _exports.SERIALIZATION_FIRST_NODE_STRING = void 0;
+  _exports.exhausted = exhausted;
+  _exports.enumerableSymbol = enumerableSymbol;
+  _exports.strip = strip;
+  _exports.isHandle = isHandle;
+  _exports.isNonPrimitiveHandle = isNonPrimitiveHandle;
+  _exports.constants = constants;
+  _exports.isSmallInt = isSmallInt;
+  _exports.encodeNegative = encodeNegative;
+  _exports.decodeNegative = decodeNegative;
+  _exports.encodePositive = encodePositive;
+  _exports.decodePositive = decodePositive;
+  _exports.encodeHandle = encodeHandle;
+  _exports.decodeHandle = decodeHandle;
+  _exports.encodeImmediate = encodeImmediate;
+  _exports.decodeImmediate = decodeImmediate;
+  _exports.unwrapHandle = unwrapHandle;
+  _exports.unwrapTemplate = unwrapTemplate;
+  _exports.extractHandle = extractHandle;
+  _exports.isOkHandle = isOkHandle;
+  _exports.isErrHandle = isErrHandle;
+  _exports.isPresent = isPresent;
+  _exports.ifPresent = ifPresent;
+  _exports.toPresentOption = toPresentOption;
+  _exports.assertPresent = assertPresent;
+  _exports.mapPresent = mapPresent;
+  _exports.symbol = _exports.tuple = _exports.HAS_NATIVE_SYMBOL = _exports.HAS_NATIVE_PROXY = _exports.EMPTY_NUMBER_ARRAY = _exports.EMPTY_STRING_ARRAY = _exports.EMPTY_ARRAY = _exports.verifySteps = _exports.logStep = _exports.endTestSteps = _exports.beginTestSteps = _exports.debugToString = _exports._WeakSet = _exports.SERIALIZATION_FIRST_NODE_STRING = _exports.NonemptyStack = _exports.Stack = _exports.DictSet = _exports.LOGGER = _exports.LOCAL_LOGGER = void 0;
+  var EMPTY_ARRAY = Object.freeze([]);
+  _exports.EMPTY_ARRAY = EMPTY_ARRAY;
 
-  function unwrap(val) {
-    if (val === null || val === undefined) throw new Error(`Expected value to be present`);
-    return val;
+  function emptyArray() {
+    return EMPTY_ARRAY;
   }
 
-  function expect(val, message) {
-    if (val === null || val === undefined) throw new Error(message);
-    return val;
-  }
+  var EMPTY_STRING_ARRAY = emptyArray();
+  _exports.EMPTY_STRING_ARRAY = EMPTY_STRING_ARRAY;
+  var EMPTY_NUMBER_ARRAY = emptyArray();
+  /**
+   * This function returns `true` if the input array is the special empty array sentinel,
+   * which is sometimes used for optimizations.
+   */
 
-  function unreachable(message = 'unreachable') {
-    return new Error(message);
+  _exports.EMPTY_NUMBER_ARRAY = EMPTY_NUMBER_ARRAY;
+
+  function isEmptyArray(input) {
+    return input === EMPTY_ARRAY;
   } // import Logger from './logger';
-  // let alreadyWarned = false;
 
 
-  function debugAssert(test, msg) {
+  function debugAssert$$1(test, msg) {
     // if (!alreadyWarned) {
     //   alreadyWarned = true;
     //   Logger.warn("Don't leave debug assertions on in public builds");
@@ -5472,36 +15050,11 @@ enifed("@glimmer/util", ["exports"], function (_exports) {
     }
   }
 
-  const {
-    keys: objKeys
-  } = Object;
-
-  function assign(obj) {
-    for (let i = 1; i < arguments.length; i++) {
-      let assignment = arguments[i];
-      if (assignment === null || typeof assignment !== 'object') continue;
-      let keys = objKeys(assignment);
-
-      for (let j = 0; j < keys.length; j++) {
-        let key = keys[j];
-        obj[key] = assignment[key];
-      }
-    }
-
-    return obj;
+  function deprecate$$1(desc) {
+    LOCAL_LOGGER.warn("DEPRECATION: " + desc);
   }
 
-  function fillNulls(count) {
-    let arr = new Array(count);
-
-    for (let i = 0; i < count; i++) {
-      arr[i] = null;
-    }
-
-    return arr;
-  }
-
-  let GUID = 0;
+  var GUID = 0;
 
   function initializeGuid(object) {
     return object._guid = ++GUID;
@@ -5511,231 +15064,745 @@ enifed("@glimmer/util", ["exports"], function (_exports) {
     return object._guid || initializeGuid(object);
   }
 
-  const SERIALIZATION_FIRST_NODE_STRING = '%+b:0%';
+  function dict() {
+    return Object.create(null);
+  }
+
+  function isDict(u) {
+    return u !== null && u !== undefined;
+  }
+
+  function isObject(u) {
+    return typeof u === 'object' && u !== null;
+  }
+
+  var DictSet = /*#__PURE__*/function () {
+    function DictSet() {
+      this.dict = dict();
+    }
+
+    var _proto = DictSet.prototype;
+
+    _proto.add = function add(obj) {
+      if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[ensureGuid(obj)] = obj;
+      return this;
+    };
+
+    _proto.delete = function _delete(obj) {
+      if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
+    };
+
+    return DictSet;
+  }();
+
+  _exports.DictSet = DictSet;
+
+  var StackImpl = /*#__PURE__*/function () {
+    function StackImpl(values) {
+      if (values === void 0) {
+        values = [];
+      }
+
+      this.current = null;
+      this.stack = values;
+    }
+
+    var _proto2 = StackImpl.prototype;
+
+    _proto2.push = function push(item) {
+      this.current = item;
+      this.stack.push(item);
+    };
+
+    _proto2.pop = function pop() {
+      var item = this.stack.pop();
+      var len = this.stack.length;
+      this.current = len === 0 ? null : this.stack[len - 1];
+      return item === undefined ? null : item;
+    };
+
+    _proto2.nth = function nth(from) {
+      var len = this.stack.length;
+      return len < from ? null : this.stack[len - from];
+    };
+
+    _proto2.isEmpty = function isEmpty() {
+      return this.stack.length === 0;
+    };
+
+    _proto2.toArray = function toArray() {
+      return this.stack;
+    };
+
+    (0, _emberBabel.createClass)(StackImpl, [{
+      key: "size",
+      get: function get() {
+        return this.stack.length;
+      }
+    }]);
+    return StackImpl;
+  }();
+
+  _exports.Stack = StackImpl;
+
+  var NonemptyStackImpl = /*#__PURE__*/function () {
+    function NonemptyStackImpl(values) {
+      this.stack = values;
+      this.current = values[values.length - 1];
+    }
+
+    var _proto3 = NonemptyStackImpl.prototype;
+
+    _proto3.push = function push(item) {
+      this.current = item;
+      this.stack.push(item);
+    };
+
+    _proto3.pop = function pop() {
+      if (this.stack.length === 1) {
+        throw new Error("cannot pop the last element of a NonemptyStack");
+      }
+
+      var item = this.stack.pop();
+      var len = this.stack.length;
+      this.current = this.stack[len - 1];
+      return item;
+    };
+
+    _proto3.nth = function nth(from) {
+      var len = this.stack.length;
+      return from >= len ? null : this.stack[from];
+    };
+
+    _proto3.nthBack = function nthBack(from) {
+      var len = this.stack.length;
+      return len < from ? null : this.stack[len - from];
+    };
+
+    _proto3.toArray = function toArray() {
+      return this.stack;
+    };
+
+    (0, _emberBabel.createClass)(NonemptyStackImpl, [{
+      key: "size",
+      get: function get() {
+        return this.stack.length;
+      }
+    }]);
+    return NonemptyStackImpl;
+  }();
+
+  _exports.NonemptyStack = NonemptyStackImpl;
+
+  function clearElement(parent) {
+    var current = parent.firstChild;
+
+    while (current) {
+      var next = current.nextSibling;
+      parent.removeChild(current);
+      current = next;
+    }
+  }
+
+  var SERIALIZATION_FIRST_NODE_STRING = '%+b:0%';
   _exports.SERIALIZATION_FIRST_NODE_STRING = SERIALIZATION_FIRST_NODE_STRING;
 
   function isSerializationFirstNode(node) {
     return node.nodeValue === SERIALIZATION_FIRST_NODE_STRING;
   }
 
-  function dict() {
-    return Object.create(null);
-  }
+  var objKeys = Object.keys;
 
-  class DictSet {
-    constructor() {
-      this.dict = dict();
+  function assign(obj) {
+    for (var i = 1; i < arguments.length; i++) {
+      var assignment = arguments[i];
+      if (assignment === null || typeof assignment !== 'object') continue;
+
+      var _keys = objKeys(assignment);
+
+      for (var j = 0; j < _keys.length; j++) {
+        var key = _keys[j];
+        obj[key] = assignment[key];
+      }
     }
 
-    add(obj) {
-      if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[ensureGuid(obj)] = obj;
+    return obj;
+  }
+
+  function fillNulls(count) {
+    var arr = new Array(count);
+
+    for (var i = 0; i < count; i++) {
+      arr[i] = null;
+    }
+
+    return arr;
+  }
+
+  function values(obj) {
+    var vals = [];
+
+    for (var key in obj) {
+      vals.push(obj[key]);
+    }
+
+    return vals;
+  }
+  /**
+    Strongly hint runtimes to intern the provided string.
+  
+    When do I need to use this function?
+  
+    For the most part, never. Pre-mature optimization is bad, and often the
+    runtime does exactly what you need it to, and more often the trade-off isn't
+    worth it.
+  
+    Why?
+  
+    Runtimes store strings in at least 2 different representations:
+    Ropes and Symbols (interned strings). The Rope provides a memory efficient
+    data-structure for strings created from concatenation or some other string
+    manipulation like splitting.
+  
+    Unfortunately checking equality of different ropes can be quite costly as
+    runtimes must resort to clever string comparison algorithms. These
+    algorithms typically cost in proportion to the length of the string.
+    Luckily, this is where the Symbols (interned strings) shine. As Symbols are
+    unique by their string content, equality checks can be done by pointer
+    comparison.
+  
+    How do I know if my string is a rope or symbol?
+  
+    Typically (warning general sweeping statement, but truthy in runtimes at
+    present) static strings created as part of the JS source are interned.
+    Strings often used for comparisons can be interned at runtime if some
+    criteria are met.  One of these criteria can be the size of the entire rope.
+    For example, in chrome 38 a rope longer then 12 characters will not
+    intern, nor will segments of that rope.
+  
+    Some numbers: http://jsperf.com/eval-vs-keys/8
+  
+    Known Trick™
+  
+    @private
+    @return {String} interned version of the provided string
+  */
+
+
+  function intern(str) {
+    var obj = {};
+    obj[str] = 1;
+
+    for (var key in obj) {
+      if (key === str) {
+        return key;
+      }
+    }
+
+    return str;
+  }
+
+  var HAS_NATIVE_PROXY = typeof Proxy === 'function';
+  _exports.HAS_NATIVE_PROXY = HAS_NATIVE_PROXY;
+
+  var HAS_NATIVE_SYMBOL = function () {
+    if (typeof Symbol !== 'function') {
+      return false;
+    } // eslint-disable-next-line symbol-description
+
+
+    return typeof Symbol() === 'symbol';
+  }();
+
+  _exports.HAS_NATIVE_SYMBOL = HAS_NATIVE_SYMBOL;
+
+  function keys(obj) {
+    return Object.keys(obj);
+  }
+
+  function unwrap(val) {
+    if (val === null || val === undefined) throw new Error("Expected value to be present");
+    return val;
+  }
+
+  function expect(val, message) {
+    if (val === null || val === undefined) throw new Error(message);
+    return val;
+  }
+
+  function unreachable(message) {
+    if (message === void 0) {
+      message = 'unreachable';
+    }
+
+    return new Error(message);
+  }
+
+  function exhausted(value) {
+    throw new Error("Exhausted " + value);
+  }
+
+  var tuple = function tuple() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return args;
+  };
+
+  _exports.tuple = tuple;
+
+  function enumerableSymbol(key) {
+    return intern("__" + key + Math.floor(Math.random() * Date.now()) + "__");
+  }
+
+  var symbol = HAS_NATIVE_SYMBOL ? Symbol : enumerableSymbol;
+  _exports.symbol = symbol;
+
+  function strip(strings) {
+    var out = '';
+
+    for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      args[_key2 - 1] = arguments[_key2];
+    }
+
+    for (var i = 0; i < strings.length; i++) {
+      var string = strings[i];
+      var dynamic = args[i] !== undefined ? String(args[i]) : '';
+      out += "" + string + dynamic;
+    }
+
+    var lines = out.split('\n');
+
+    while (lines.length && lines[0].match(/^\s*$/)) {
+      lines.shift();
+    }
+
+    while (lines.length && lines[lines.length - 1].match(/^\s*$/)) {
+      lines.pop();
+    }
+
+    var min = Infinity;
+
+    for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(lines), _step; !(_step = _iterator()).done;) {
+      var _line2 = _step.value;
+
+      var _leading = _line2.match(/^\s*/)[0].length;
+
+      min = Math.min(min, _leading);
+    }
+
+    var stripped = [];
+
+    for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(lines), _step2; !(_step2 = _iterator2()).done;) {
+      var _line3 = _step2.value;
+      stripped.push(_line3.slice(min));
+    }
+
+    return stripped.join('\n');
+  }
+
+  function isHandle(value) {
+    return value >= 0;
+  }
+
+  function isNonPrimitiveHandle(value) {
+    return value > 3
+    /* ENCODED_UNDEFINED_HANDLE */
+    ;
+  }
+
+  function constants() {
+    for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+      values[_key3] = arguments[_key3];
+    }
+
+    return [false, true, null, undefined].concat(values);
+  }
+
+  function isSmallInt(value) {
+    return value % 1 === 0 && value <= 536870911
+    /* MAX_INT */
+    && value >= -536870912
+    /* MIN_INT */
+    ;
+  }
+
+  function encodeNegative(num) {
+    return num & -536870913
+    /* SIGN_BIT */
+    ;
+  }
+
+  function decodeNegative(num) {
+    return num | ~-536870913
+    /* SIGN_BIT */
+    ;
+  }
+
+  function encodePositive(num) {
+    return ~num;
+  }
+
+  function decodePositive(num) {
+    return ~num;
+  }
+
+  function encodeHandle(num) {
+    return num;
+  }
+
+  function decodeHandle(num) {
+    return num;
+  }
+
+  function encodeImmediate(num) {
+    num |= 0;
+    return num < 0 ? encodeNegative(num) : encodePositive(num);
+  }
+
+  function decodeImmediate(num) {
+    num |= 0;
+    return num > -536870913
+    /* SIGN_BIT */
+    ? decodePositive(num) : decodeNegative(num);
+  } // Warm
+
+
+  [1, -1].forEach(function (x) {
+    return decodeImmediate(encodeImmediate(x));
+  });
+
+  function unwrapHandle(handle) {
+    if (typeof handle === 'number') {
+      return handle;
+    } else {
+      var error = handle.errors[0];
+      throw new Error("Compile Error: " + error.problem + " @ " + error.span.start + ".." + error.span.end);
+    }
+  }
+
+  function unwrapTemplate(template) {
+    if (template.result === 'error') {
+      throw new Error("Compile Error: " + template.problem + " @ " + template.span.start + ".." + template.span.end);
+    }
+
+    return template;
+  }
+
+  function extractHandle(handle) {
+    if (typeof handle === 'number') {
+      return handle;
+    } else {
+      return handle.handle;
+    }
+  }
+
+  function isOkHandle(handle) {
+    return typeof handle === 'number';
+  }
+
+  function isErrHandle(handle) {
+    return typeof handle === 'number';
+  }
+
+  var weakSet = typeof WeakSet === 'function' ? WeakSet : /*#__PURE__*/function () {
+    function WeakSetPolyFill() {
+      this._map = new WeakMap();
+    }
+
+    var _proto4 = WeakSetPolyFill.prototype;
+
+    _proto4.add = function add(val) {
+      this._map.set(val, true);
+
       return this;
-    }
+    };
 
-    delete(obj) {
-      if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
-    }
+    _proto4.delete = function _delete(val) {
+      return this._map.delete(val);
+    };
 
+    _proto4.has = function has(val) {
+      return this._map.has(val);
+    };
+
+    return WeakSetPolyFill;
+  }();
+  _exports._WeakSet = weakSet;
+
+  function castToSimple(node) {
+    if (isDocument(node)) {
+      return node;
+    } else if (isElement(node)) {
+      return node;
+    } else {
+      return node;
+    }
   }
 
-  _exports.DictSet = DictSet;
-
-  class Stack {
-    constructor() {
-      this.stack = [];
-      this.current = null;
+  function castToBrowser(node, sugaryCheck) {
+    if (node === null || node === undefined) {
+      return null;
     }
 
-    get size() {
-      return this.stack.length;
+    if (typeof document === undefined) {
+      throw new Error('Attempted to cast to a browser node in a non-browser context');
     }
 
-    push(item) {
-      this.current = item;
-      this.stack.push(item);
-    }
-
-    pop() {
-      let item = this.stack.pop();
-      let len = this.stack.length;
-      this.current = len === 0 ? null : this.stack[len - 1];
-      return item === undefined ? null : item;
-    }
-
-    isEmpty() {
-      return this.stack.length === 0;
-    }
-
-  }
-
-  _exports.Stack = Stack;
-
-  class ListNode {
-    constructor(value) {
-      this.next = null;
-      this.prev = null;
-      this.value = value;
-    }
-
-  }
-
-  _exports.ListNode = ListNode;
-
-  class LinkedList {
-    constructor() {
-      this.clear();
-    }
-
-    head() {
-      return this._head;
-    }
-
-    tail() {
-      return this._tail;
-    }
-
-    clear() {
-      this._head = this._tail = null;
-    }
-
-    toArray() {
-      let out = [];
-      this.forEachNode(n => out.push(n));
-      return out;
-    }
-
-    nextNode(node) {
-      return node.next;
-    }
-
-    forEachNode(callback) {
-      let node = this._head;
-
-      while (node !== null) {
-        callback(node);
-        node = node.next;
-      }
-    }
-
-    insertBefore(node, reference = null) {
-      if (reference === null) return this.append(node);
-      if (reference.prev) reference.prev.next = node;else this._head = node;
-      node.prev = reference.prev;
-      node.next = reference;
-      reference.prev = node;
+    if (isDocument(node)) {
       return node;
     }
 
-    append(node) {
-      let tail = this._tail;
+    if (node.ownerDocument !== document) {
+      throw new Error('Attempted to cast to a browser node with a node that was not created from this document');
+    }
 
-      if (tail) {
-        tail.next = node;
-        node.prev = tail;
-        node.next = null;
+    return checkNode(node, sugaryCheck);
+  }
+
+  function checkError(from, check) {
+    return new Error("cannot cast a " + from + " into " + check);
+  }
+
+  function isDocument(node) {
+    return node.nodeType === 9
+    /* DOCUMENT_NODE */
+    ;
+  }
+
+  function isElement(node) {
+    return node.nodeType === 1
+    /* ELEMENT_NODE */
+    ;
+  }
+
+  function checkNode(node, check) {
+    var isMatch = false;
+
+    if (node !== null) {
+      if (typeof check === 'string') {
+        isMatch = stringCheckNode(node, check);
+      } else if (Array.isArray(check)) {
+        isMatch = check.some(function (c) {
+          return stringCheckNode(node, c);
+        });
       } else {
-        this._head = node;
+        throw unreachable();
       }
-
-      return this._tail = node;
     }
 
-    remove(node) {
-      if (node.prev) node.prev.next = node.next;else this._head = node.next;
-      if (node.next) node.next.prev = node.prev;else this._tail = node.prev;
+    if (isMatch) {
       return node;
+    } else {
+      throw checkError("SimpleElement(" + node + ")", check);
     }
-
   }
 
-  _exports.LinkedList = LinkedList;
+  function stringCheckNode(node, check) {
+    switch (check) {
+      case 'NODE':
+        return true;
 
-  class ListSlice {
-    constructor(head, tail) {
-      this._head = head;
-      this._tail = tail;
+      case 'HTML':
+        return node instanceof HTMLElement;
+
+      case 'SVG':
+        return node instanceof SVGElement;
+
+      case 'ELEMENT':
+        return node instanceof Element;
+
+      default:
+        if (check.toUpperCase() === check) {
+          throw new Error("BUG: this code is missing handling for a generic node type");
+        }
+
+        return node instanceof Element && node.tagName.toLowerCase() === check;
+    }
+  }
+
+  function isPresent(list) {
+    return list.length > 0;
+  }
+
+  function ifPresent(list, ifPresent, otherwise) {
+    if (isPresent(list)) {
+      return ifPresent(list);
+    } else {
+      return otherwise();
+    }
+  }
+
+  function toPresentOption(list) {
+    if (isPresent(list)) {
+      return list;
+    } else {
+      return null;
+    }
+  }
+
+  function assertPresent(list, message) {
+    if (message === void 0) {
+      message = "unexpected empty list";
     }
 
-    forEachNode(callback) {
-      let node = this._head;
+    if (!isPresent(list)) {
+      throw new Error(message);
+    }
+  }
 
-      while (node !== null) {
-        callback(node);
-        node = this.nextNode(node);
+  function mapPresent(list, callback) {
+    if (list === null) {
+      return null;
+    }
+
+    var out = [];
+
+    for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(list), _step3; !(_step3 = _iterator3()).done;) {
+      var _item = _step3.value;
+      out.push(callback(_item));
+    }
+
+    return out;
+  }
+
+  function buildUntouchableThis(source) {
+    var context = null;
+
+    if (true
+    /* DEBUG */
+    && HAS_NATIVE_PROXY) {
+      var assertOnProperty = function assertOnProperty(property) {
+        throw new Error("You accessed `this." + String(property) + "` from a function passed to the " + source + ", but the function itself was not bound to a valid `this` context. Consider updating to use a bound function (for instance, use an arrow function, `() => {}`).");
+      };
+
+      context = new Proxy({}, {
+        get: function get(_target, property) {
+          assertOnProperty(property);
+        },
+        set: function set(_target, property) {
+          assertOnProperty(property);
+          return false;
+        },
+        has: function has(_target, property) {
+          assertOnProperty(property);
+          return false;
+        }
+      });
+    }
+
+    return context;
+  }
+
+  var debugToString;
+
+  if (true
+  /* DEBUG */
+  ) {
+    var getFunctionName = function getFunctionName(fn) {
+      var functionName = fn.name;
+
+      if (functionName === undefined) {
+        var match = Function.prototype.toString.call(fn).match(/function (\w+)\s*\(/);
+        functionName = match && match[1] || '';
       }
-    }
 
-    head() {
-      return this._head;
-    }
+      return functionName.replace(/^bound /, '');
+    };
 
-    tail() {
-      return this._tail;
-    }
+    var getObjectName = function getObjectName(obj) {
+      var name;
+      var className;
 
-    toArray() {
-      let out = [];
-      this.forEachNode(n => out.push(n));
-      return out;
-    }
+      if (obj.constructor && typeof obj.constructor === 'function') {
+        className = getFunctionName(obj.constructor);
+      }
 
-    nextNode(node) {
-      if (node === this._tail) return null;
-      return node.next;
-    }
+      if ('toString' in obj && obj.toString !== Object.prototype.toString && obj.toString !== Function.prototype.toString) {
+        name = obj.toString();
+      } // If the class has a decent looking name, and the `toString` is one of the
+      // default Ember toStrings, replace the constructor portion of the toString
+      // with the class name. We check the length of the class name to prevent doing
+      // this when the value is minified.
 
+
+      if (name && name.match(/<.*:ember\d+>/) && className && className[0] !== '_' && className.length > 2 && className !== 'Class') {
+        return name.replace(/<.*:/, "<" + className + ":");
+      }
+
+      return name || className;
+    };
+
+    var getPrimitiveName = function getPrimitiveName(value) {
+      return String(value);
+    };
+
+    debugToString = function debugToString(value) {
+      if (typeof value === 'function') {
+        return getFunctionName(value) || "(unknown function)";
+      } else if (typeof value === 'object' && value !== null) {
+        return getObjectName(value) || "(unknown object)";
+      } else {
+        return getPrimitiveName(value);
+      }
+    };
   }
 
-  _exports.ListSlice = ListSlice;
-  const EMPTY_SLICE = new ListSlice(null, null);
-  _exports.EMPTY_SLICE = EMPTY_SLICE;
-  const EMPTY_ARRAY = Object.freeze([]);
-  _exports.EMPTY_ARRAY = EMPTY_ARRAY;
+  var debugToString$1 = debugToString;
+  _exports.debugToString = debugToString$1;
+  var beginTestSteps;
+  _exports.beginTestSteps = beginTestSteps;
+  var endTestSteps;
+  _exports.endTestSteps = endTestSteps;
+  var verifySteps;
+  _exports.verifySteps = verifySteps;
+  var logStep;
+  /**
+   * This constant exists to make it easier to differentiate normal logs from
+   * errant console.logs. LOCAL_LOGGER should only be used inside a
+   * LOCAL_SHOULD_LOG check.
+   *
+   * It does not alleviate the need to check LOCAL_SHOULD_LOG, which is used
+   * for stripping.
+   */
+
+  _exports.logStep = logStep;
+  var LOCAL_LOGGER = console;
+  /**
+   * This constant exists to make it easier to differentiate normal logs from
+   * errant console.logs. LOGGER can be used outside of LOCAL_SHOULD_LOG checks,
+   * and is meant to be used in the rare situation where a console.* call is
+   * actually appropriate.
+   */
+
+  _exports.LOCAL_LOGGER = LOCAL_LOGGER;
+  var LOGGER = console;
+  _exports.LOGGER = LOGGER;
+
+  function assertNever(value, desc) {
+    if (desc === void 0) {
+      desc = 'unexpected unreachable branch';
+    }
+
+    LOGGER.log('unreachable', value);
+    LOGGER.log(desc + " :: " + JSON.stringify(value) + " (" + value + ")");
+    throw new Error("code reached unreachable");
+  }
 });
-enifed("@glimmer/wire-format", ["exports"], function (_exports) {
+define("@glimmer/wire-format", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.is = is;
   _exports.isAttribute = isAttribute;
+  _exports.isStringLiteral = isStringLiteral;
+  _exports.getStringFromValue = getStringFromValue;
   _exports.isArgument = isArgument;
-  _exports.Ops = _exports.isMaybeLocal = _exports.isGet = _exports.isAttrSplat = _exports.isFlushElement = void 0;
-  var Opcodes;
-  _exports.Ops = Opcodes;
-
-  (function (Opcodes) {
-    // Statements
-    Opcodes[Opcodes["Text"] = 0] = "Text";
-    Opcodes[Opcodes["Append"] = 1] = "Append";
-    Opcodes[Opcodes["Comment"] = 2] = "Comment";
-    Opcodes[Opcodes["Modifier"] = 3] = "Modifier";
-    Opcodes[Opcodes["Block"] = 4] = "Block";
-    Opcodes[Opcodes["Component"] = 5] = "Component";
-    Opcodes[Opcodes["DynamicComponent"] = 6] = "DynamicComponent";
-    Opcodes[Opcodes["OpenElement"] = 7] = "OpenElement";
-    Opcodes[Opcodes["OpenSplattedElement"] = 8] = "OpenSplattedElement";
-    Opcodes[Opcodes["FlushElement"] = 9] = "FlushElement";
-    Opcodes[Opcodes["CloseElement"] = 10] = "CloseElement";
-    Opcodes[Opcodes["StaticAttr"] = 11] = "StaticAttr";
-    Opcodes[Opcodes["DynamicAttr"] = 12] = "DynamicAttr";
-    Opcodes[Opcodes["AttrSplat"] = 13] = "AttrSplat";
-    Opcodes[Opcodes["Yield"] = 14] = "Yield";
-    Opcodes[Opcodes["Partial"] = 15] = "Partial";
-    Opcodes[Opcodes["DynamicArg"] = 16] = "DynamicArg";
-    Opcodes[Opcodes["StaticArg"] = 17] = "StaticArg";
-    Opcodes[Opcodes["TrustingAttr"] = 18] = "TrustingAttr";
-    Opcodes[Opcodes["Debugger"] = 19] = "Debugger";
-    Opcodes[Opcodes["ClientSideStatement"] = 20] = "ClientSideStatement"; // Expressions
-
-    Opcodes[Opcodes["Unknown"] = 21] = "Unknown";
-    Opcodes[Opcodes["Get"] = 22] = "Get";
-    Opcodes[Opcodes["MaybeLocal"] = 23] = "MaybeLocal";
-    Opcodes[Opcodes["HasBlock"] = 24] = "HasBlock";
-    Opcodes[Opcodes["HasBlockParams"] = 25] = "HasBlockParams";
-    Opcodes[Opcodes["Undefined"] = 26] = "Undefined";
-    Opcodes[Opcodes["Helper"] = 27] = "Helper";
-    Opcodes[Opcodes["Concat"] = 28] = "Concat";
-    Opcodes[Opcodes["ClientSideExpression"] = 29] = "ClientSideExpression";
-  })(Opcodes || (_exports.Ops = Opcodes = {}));
+  _exports.isHelper = isHelper;
+  _exports.isGet = _exports.isFlushElement = void 0;
 
   function is(variant) {
     return function (value) {
@@ -5744,50 +15811,2785 @@ enifed("@glimmer/wire-format", ["exports"], function (_exports) {
   } // Statements
 
 
-  const isFlushElement = is(Opcodes.FlushElement);
+  var isFlushElement = is(12
+  /* FlushElement */
+  );
   _exports.isFlushElement = isFlushElement;
-  const isAttrSplat = is(Opcodes.AttrSplat);
-  _exports.isAttrSplat = isAttrSplat;
 
   function isAttribute(val) {
-    return val[0] === Opcodes.StaticAttr || val[0] === Opcodes.DynamicAttr || val[0] === Opcodes.TrustingAttr;
+    return val[0] === 14
+    /* StaticAttr */
+    || val[0] === 15
+    /* DynamicAttr */
+    || val[0] === 22
+    /* TrustingDynamicAttr */
+    || val[0] === 16
+    /* ComponentAttr */
+    || val[0] === 24
+    /* StaticComponentAttr */
+    || val[0] === 23
+    /* TrustingComponentAttr */
+    || val[0] === 17
+    /* AttrSplat */
+    || val[0] === 4
+    /* Modifier */
+    ;
+  }
+
+  function isStringLiteral(expr) {
+    return typeof expr === 'string';
+  }
+
+  function getStringFromValue(expr) {
+    return expr;
   }
 
   function isArgument(val) {
-    return val[0] === Opcodes.StaticArg || val[0] === Opcodes.DynamicArg;
+    return val[0] === 21
+    /* StaticArg */
+    || val[0] === 20
+    /* DynamicArg */
+    ;
+  }
+
+  function isHelper(expr) {
+    return Array.isArray(expr) && expr[0] === 28
+    /* Call */
+    ;
   } // Expressions
 
 
-  const isGet = is(Opcodes.Get);
+  var isGet = is(30
+  /* GetSymbol */
+  );
   _exports.isGet = isGet;
-  const isMaybeLocal = is(Opcodes.MaybeLocal);
-  _exports.isMaybeLocal = isMaybeLocal;
 });
-enifed("ember-babel", ["exports"], function (_exports) {
+define("@handlebars/parser/index", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.Visitor = Visitor;
+  _exports.WhitespaceControl = WhitespaceControl;
+  _exports.Exception = Exception;
+  _exports.print = print;
+  _exports.PrintVisitor = PrintVisitor;
+  _exports.parse = parse;
+  _exports.parseWithoutProcessing = parseWithoutProcessing;
+  _exports.parser = void 0;
+  var errorProps = ['description', 'fileName', 'lineNumber', 'endLineNumber', 'message', 'name', 'number', 'stack'];
+
+  function Exception(message, node) {
+    var loc = node && node.loc,
+        line,
+        endLineNumber,
+        column,
+        endColumn;
+
+    if (loc) {
+      line = loc.start.line;
+      endLineNumber = loc.end.line;
+      column = loc.start.column;
+      endColumn = loc.end.column;
+      message += ' - ' + line + ':' + column;
+    }
+
+    var tmp = Error.prototype.constructor.call(this, message); // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
+
+    for (var idx = 0; idx < errorProps.length; idx++) {
+      this[errorProps[idx]] = tmp[errorProps[idx]];
+    }
+    /* istanbul ignore else */
+
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, Exception);
+    }
+
+    try {
+      if (loc) {
+        this.lineNumber = line;
+        this.endLineNumber = endLineNumber; // Work around issue under safari where we can't directly set the column value
+
+        /* istanbul ignore next */
+
+        if (Object.defineProperty) {
+          Object.defineProperty(this, 'column', {
+            value: column,
+            enumerable: true
+          });
+          Object.defineProperty(this, 'endColumn', {
+            value: endColumn,
+            enumerable: true
+          });
+        } else {
+          this.column = column;
+          this.endColumn = endColumn;
+        }
+      }
+    } catch (nop) {
+      /* Ignore if the browser is very particular */
+    }
+  }
+
+  Exception.prototype = new Error();
+
+  function Visitor() {
+    this.parents = [];
+  }
+
+  Visitor.prototype = {
+    constructor: Visitor,
+    mutating: false,
+    // Visits a given value. If mutating, will replace the value if necessary.
+    acceptKey: function acceptKey(node, name) {
+      var value = this.accept(node[name]);
+
+      if (this.mutating) {
+        // Hacky sanity check: This may have a few false positives for type for the helper
+        // methods but will generally do the right thing without a lot of overhead.
+        if (value && !Visitor.prototype[value.type]) {
+          throw new Exception('Unexpected node type "' + value.type + '" found when accepting ' + name + ' on ' + node.type);
+        }
+
+        node[name] = value;
+      }
+    },
+    // Performs an accept operation with added sanity check to ensure
+    // required keys are not removed.
+    acceptRequired: function acceptRequired(node, name) {
+      this.acceptKey(node, name);
+
+      if (!node[name]) {
+        throw new Exception(node.type + ' requires ' + name);
+      }
+    },
+    // Traverses a given array. If mutating, empty respnses will be removed
+    // for child elements.
+    acceptArray: function acceptArray(array) {
+      for (var i = 0, l = array.length; i < l; i++) {
+        this.acceptKey(array, i);
+
+        if (!array[i]) {
+          array.splice(i, 1);
+          i--;
+          l--;
+        }
+      }
+    },
+    accept: function accept(object) {
+      if (!object) {
+        return;
+      }
+      /* istanbul ignore next: Sanity code */
+
+
+      if (!this[object.type]) {
+        throw new Exception('Unknown type: ' + object.type, object);
+      }
+
+      if (this.current) {
+        this.parents.unshift(this.current);
+      }
+
+      this.current = object;
+      var ret = this[object.type](object);
+      this.current = this.parents.shift();
+
+      if (!this.mutating || ret) {
+        return ret;
+      } else if (ret !== false) {
+        return object;
+      }
+    },
+    Program: function Program(program) {
+      this.acceptArray(program.body);
+    },
+    MustacheStatement: visitSubExpression,
+    Decorator: visitSubExpression,
+    BlockStatement: visitBlock,
+    DecoratorBlock: visitBlock,
+    PartialStatement: visitPartial,
+    PartialBlockStatement: function PartialBlockStatement(partial) {
+      visitPartial.call(this, partial);
+      this.acceptKey(partial, 'program');
+    },
+    ContentStatement: function ContentStatement()
+    /* content */
+    {},
+    CommentStatement: function CommentStatement()
+    /* comment */
+    {},
+    SubExpression: visitSubExpression,
+    PathExpression: function PathExpression()
+    /* path */
+    {},
+    StringLiteral: function StringLiteral()
+    /* string */
+    {},
+    NumberLiteral: function NumberLiteral()
+    /* number */
+    {},
+    BooleanLiteral: function BooleanLiteral()
+    /* bool */
+    {},
+    UndefinedLiteral: function UndefinedLiteral()
+    /* literal */
+    {},
+    NullLiteral: function NullLiteral()
+    /* literal */
+    {},
+    Hash: function Hash(hash) {
+      this.acceptArray(hash.pairs);
+    },
+    HashPair: function HashPair(pair) {
+      this.acceptRequired(pair, 'value');
+    }
+  };
+
+  function visitSubExpression(mustache) {
+    this.acceptRequired(mustache, 'path');
+    this.acceptArray(mustache.params);
+    this.acceptKey(mustache, 'hash');
+  }
+
+  function visitBlock(block) {
+    visitSubExpression.call(this, block);
+    this.acceptKey(block, 'program');
+    this.acceptKey(block, 'inverse');
+  }
+
+  function visitPartial(partial) {
+    this.acceptRequired(partial, 'name');
+    this.acceptArray(partial.params);
+    this.acceptKey(partial, 'hash');
+  }
+
+  function WhitespaceControl(options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    this.options = options;
+  }
+
+  WhitespaceControl.prototype = new Visitor();
+
+  WhitespaceControl.prototype.Program = function (program) {
+    var doStandalone = !this.options.ignoreStandalone;
+    var isRoot = !this.isRootSeen;
+    this.isRootSeen = true;
+    var body = program.body;
+
+    for (var i = 0, l = body.length; i < l; i++) {
+      var current = body[i],
+          strip = this.accept(current);
+
+      if (!strip) {
+        continue;
+      }
+
+      var _isPrevWhitespace = isPrevWhitespace(body, i, isRoot),
+          _isNextWhitespace = isNextWhitespace(body, i, isRoot),
+          openStandalone = strip.openStandalone && _isPrevWhitespace,
+          closeStandalone = strip.closeStandalone && _isNextWhitespace,
+          inlineStandalone = strip.inlineStandalone && _isPrevWhitespace && _isNextWhitespace;
+
+      if (strip.close) {
+        omitRight(body, i, true);
+      }
+
+      if (strip.open) {
+        omitLeft(body, i, true);
+      }
+
+      if (doStandalone && inlineStandalone) {
+        omitRight(body, i);
+
+        if (omitLeft(body, i)) {
+          // If we are on a standalone node, save the indent info for partials
+          if (current.type === 'PartialStatement') {
+            // Pull out the whitespace from the final line
+            current.indent = /([ \t]+$)/.exec(body[i - 1].original)[1];
+          }
+        }
+      }
+
+      if (doStandalone && openStandalone) {
+        omitRight((current.program || current.inverse).body); // Strip out the previous content node if it's whitespace only
+
+        omitLeft(body, i);
+      }
+
+      if (doStandalone && closeStandalone) {
+        // Always strip the next node
+        omitRight(body, i);
+        omitLeft((current.inverse || current.program).body);
+      }
+    }
+
+    return program;
+  };
+
+  WhitespaceControl.prototype.BlockStatement = WhitespaceControl.prototype.DecoratorBlock = WhitespaceControl.prototype.PartialBlockStatement = function (block) {
+    this.accept(block.program);
+    this.accept(block.inverse); // Find the inverse program that is involed with whitespace stripping.
+
+    var program = block.program || block.inverse,
+        inverse = block.program && block.inverse,
+        firstInverse = inverse,
+        lastInverse = inverse;
+
+    if (inverse && inverse.chained) {
+      firstInverse = inverse.body[0].program; // Walk the inverse chain to find the last inverse that is actually in the chain.
+
+      while (lastInverse.chained) {
+        lastInverse = lastInverse.body[lastInverse.body.length - 1].program;
+      }
+    }
+
+    var strip = {
+      open: block.openStrip.open,
+      close: block.closeStrip.close,
+      // Determine the standalone candiacy. Basically flag our content as being possibly standalone
+      // so our parent can determine if we actually are standalone
+      openStandalone: isNextWhitespace(program.body),
+      closeStandalone: isPrevWhitespace((firstInverse || program).body)
+    };
+
+    if (block.openStrip.close) {
+      omitRight(program.body, null, true);
+    }
+
+    if (inverse) {
+      var inverseStrip = block.inverseStrip;
+
+      if (inverseStrip.open) {
+        omitLeft(program.body, null, true);
+      }
+
+      if (inverseStrip.close) {
+        omitRight(firstInverse.body, null, true);
+      }
+
+      if (block.closeStrip.open) {
+        omitLeft(lastInverse.body, null, true);
+      } // Find standalone else statments
+
+
+      if (!this.options.ignoreStandalone && isPrevWhitespace(program.body) && isNextWhitespace(firstInverse.body)) {
+        omitLeft(program.body);
+        omitRight(firstInverse.body);
+      }
+    } else if (block.closeStrip.open) {
+      omitLeft(program.body, null, true);
+    }
+
+    return strip;
+  };
+
+  WhitespaceControl.prototype.Decorator = WhitespaceControl.prototype.MustacheStatement = function (mustache) {
+    return mustache.strip;
+  };
+
+  WhitespaceControl.prototype.PartialStatement = WhitespaceControl.prototype.CommentStatement = function (node) {
+    /* istanbul ignore next */
+    var strip = node.strip || {};
+    return {
+      inlineStandalone: true,
+      open: strip.open,
+      close: strip.close
+    };
+  };
+
+  function isPrevWhitespace(body, i, isRoot) {
+    if (i === undefined) {
+      i = body.length;
+    } // Nodes that end with newlines are considered whitespace (but are special
+    // cased for strip operations)
+
+
+    var prev = body[i - 1],
+        sibling = body[i - 2];
+
+    if (!prev) {
+      return isRoot;
+    }
+
+    if (prev.type === 'ContentStatement') {
+      return (sibling || !isRoot ? /\r?\n\s*?$/ : /(^|\r?\n)\s*?$/).test(prev.original);
+    }
+  }
+
+  function isNextWhitespace(body, i, isRoot) {
+    if (i === undefined) {
+      i = -1;
+    }
+
+    var next = body[i + 1],
+        sibling = body[i + 2];
+
+    if (!next) {
+      return isRoot;
+    }
+
+    if (next.type === 'ContentStatement') {
+      return (sibling || !isRoot ? /^\s*?\r?\n/ : /^\s*?(\r?\n|$)/).test(next.original);
+    }
+  } // Marks the node to the right of the position as omitted.
+  // I.e. {{foo}}' ' will mark the ' ' node as omitted.
+  //
+  // If i is undefined, then the first child will be marked as such.
+  //
+  // If multiple is truthy then all whitespace will be stripped out until non-whitespace
+  // content is met.
+
+
+  function omitRight(body, i, multiple) {
+    var current = body[i == null ? 0 : i + 1];
+
+    if (!current || current.type !== 'ContentStatement' || !multiple && current.rightStripped) {
+      return;
+    }
+
+    var original = current.value;
+    current.value = current.value.replace(multiple ? /^\s+/ : /^[ \t]*\r?\n?/, '');
+    current.rightStripped = current.value !== original;
+  } // Marks the node to the left of the position as omitted.
+  // I.e. ' '{{foo}} will mark the ' ' node as omitted.
+  //
+  // If i is undefined then the last child will be marked as such.
+  //
+  // If multiple is truthy then all whitespace will be stripped out until non-whitespace
+  // content is met.
+
+
+  function omitLeft(body, i, multiple) {
+    var current = body[i == null ? body.length - 1 : i - 1];
+
+    if (!current || current.type !== 'ContentStatement' || !multiple && current.leftStripped) {
+      return;
+    } // We omit the last node if it's whitespace only and not preceded by a non-content node.
+
+
+    var original = current.value;
+    current.value = current.value.replace(multiple ? /\s+$/ : /[ \t]+$/, '');
+    current.leftStripped = current.value !== original;
+    return current.leftStripped;
+  }
+  /* parser generated by jison 0.4.18 */
+
+  /*
+    Returns a Parser object of the following structure:
+  
+    Parser: {
+      yy: {}
+    }
+  
+    Parser.prototype: {
+      yy: {},
+      trace: function(),
+      symbols_: {associative list: name ==> number},
+      terminals_: {associative list: number ==> name},
+      productions_: [...],
+      performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$),
+      table: [...],
+      defaultActions: {...},
+      parseError: function(str, hash),
+      parse: function(input),
+  
+      lexer: {
+          EOF: 1,
+          parseError: function(str, hash),
+          setInput: function(input),
+          input: function(),
+          unput: function(str),
+          more: function(),
+          less: function(n),
+          pastInput: function(),
+          upcomingInput: function(),
+          showPosition: function(),
+          test_match: function(regex_match_array, rule_index),
+          next: function(),
+          lex: function(),
+          begin: function(condition),
+          popState: function(),
+          _currentRules: function(),
+          topState: function(),
+          pushState: function(condition),
+  
+          options: {
+              ranges: boolean           (optional: true ==> token location info will include a .range[] member)
+              flex: boolean             (optional: true ==> flex-like lexing behaviour where the rules are tested exhaustively to find the longest match)
+              backtrack_lexer: boolean  (optional: true ==> lexer regexes are tested in order and for each matching regex the action code is invoked; the lexer terminates the scan when a token is returned by the action code)
+          },
+  
+          performAction: function(yy, yy_, $avoiding_name_collisions, YY_START),
+          rules: [...],
+          conditions: {associative list: name ==> set},
+      }
+    }
+  
+  
+    token location info (@$, _$, etc.): {
+      first_line: n,
+      last_line: n,
+      first_column: n,
+      last_column: n,
+      range: [start_number, end_number]       (where the numbers are indexes into the input string, regular zero-based)
+    }
+  
+  
+    the parseError function receives a 'hash' object with these members for lexer and parser errors: {
+      text:        (matched text)
+      token:       (the produced terminal token, if any)
+      line:        (yylineno)
+    }
+    while parser (grammar) errors will also provide these members, i.e. parser errors deliver a superset of attributes: {
+      loc:         (yylloc)
+      expected:    (string describing the set of expected tokens)
+      recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
+    }
+  */
+
+
+  var parser = function () {
+    var o = function o(k, v, _o, l) {
+      for (_o = _o || {}, l = k.length; l--; _o[k[l]] = v) {
+        ;
+      }
+
+      return _o;
+    },
+        $V0 = [2, 44],
+        $V1 = [1, 20],
+        $V2 = [5, 14, 15, 19, 29, 34, 39, 44, 47, 48, 52, 56, 60],
+        $V3 = [1, 35],
+        $V4 = [1, 38],
+        $V5 = [1, 30],
+        $V6 = [1, 31],
+        $V7 = [1, 32],
+        $V8 = [1, 33],
+        $V9 = [1, 34],
+        $Va = [1, 37],
+        $Vb = [14, 15, 19, 29, 34, 39, 44, 47, 48, 52, 56, 60],
+        $Vc = [14, 15, 19, 29, 34, 44, 47, 48, 52, 56, 60],
+        $Vd = [15, 18],
+        $Ve = [14, 15, 19, 29, 34, 47, 48, 52, 56, 60],
+        $Vf = [33, 64, 71, 79, 80, 81, 82, 83, 84],
+        $Vg = [23, 33, 55, 64, 67, 71, 74, 79, 80, 81, 82, 83, 84],
+        $Vh = [1, 51],
+        $Vi = [23, 33, 55, 64, 67, 71, 74, 79, 80, 81, 82, 83, 84, 86],
+        $Vj = [2, 43],
+        $Vk = [55, 64, 71, 79, 80, 81, 82, 83, 84],
+        $Vl = [1, 58],
+        $Vm = [1, 59],
+        $Vn = [1, 66],
+        $Vo = [33, 64, 71, 74, 79, 80, 81, 82, 83, 84],
+        $Vp = [23, 64, 71, 79, 80, 81, 82, 83, 84],
+        $Vq = [1, 76],
+        $Vr = [64, 67, 71, 79, 80, 81, 82, 83, 84],
+        $Vs = [33, 74],
+        $Vt = [23, 33, 55, 67, 71, 74],
+        $Vu = [1, 106],
+        $Vv = [1, 118],
+        $Vw = [71, 76];
+
+    var parser = {
+      trace: function trace() {},
+      yy: {},
+      symbols_: {
+        "error": 2,
+        "root": 3,
+        "program": 4,
+        "EOF": 5,
+        "program_repetition0": 6,
+        "statement": 7,
+        "mustache": 8,
+        "block": 9,
+        "rawBlock": 10,
+        "partial": 11,
+        "partialBlock": 12,
+        "content": 13,
+        "COMMENT": 14,
+        "CONTENT": 15,
+        "openRawBlock": 16,
+        "rawBlock_repetition0": 17,
+        "END_RAW_BLOCK": 18,
+        "OPEN_RAW_BLOCK": 19,
+        "helperName": 20,
+        "openRawBlock_repetition0": 21,
+        "openRawBlock_option0": 22,
+        "CLOSE_RAW_BLOCK": 23,
+        "openBlock": 24,
+        "block_option0": 25,
+        "closeBlock": 26,
+        "openInverse": 27,
+        "block_option1": 28,
+        "OPEN_BLOCK": 29,
+        "openBlock_repetition0": 30,
+        "openBlock_option0": 31,
+        "openBlock_option1": 32,
+        "CLOSE": 33,
+        "OPEN_INVERSE": 34,
+        "openInverse_repetition0": 35,
+        "openInverse_option0": 36,
+        "openInverse_option1": 37,
+        "openInverseChain": 38,
+        "OPEN_INVERSE_CHAIN": 39,
+        "openInverseChain_repetition0": 40,
+        "openInverseChain_option0": 41,
+        "openInverseChain_option1": 42,
+        "inverseAndProgram": 43,
+        "INVERSE": 44,
+        "inverseChain": 45,
+        "inverseChain_option0": 46,
+        "OPEN_ENDBLOCK": 47,
+        "OPEN": 48,
+        "expr": 49,
+        "mustache_repetition0": 50,
+        "mustache_option0": 51,
+        "OPEN_UNESCAPED": 52,
+        "mustache_repetition1": 53,
+        "mustache_option1": 54,
+        "CLOSE_UNESCAPED": 55,
+        "OPEN_PARTIAL": 56,
+        "partial_repetition0": 57,
+        "partial_option0": 58,
+        "openPartialBlock": 59,
+        "OPEN_PARTIAL_BLOCK": 60,
+        "openPartialBlock_repetition0": 61,
+        "openPartialBlock_option0": 62,
+        "sexpr": 63,
+        "OPEN_SEXPR": 64,
+        "sexpr_repetition0": 65,
+        "sexpr_option0": 66,
+        "CLOSE_SEXPR": 67,
+        "hash": 68,
+        "hash_repetition_plus0": 69,
+        "hashSegment": 70,
+        "ID": 71,
+        "EQUALS": 72,
+        "blockParams": 73,
+        "OPEN_BLOCK_PARAMS": 74,
+        "blockParams_repetition_plus0": 75,
+        "CLOSE_BLOCK_PARAMS": 76,
+        "path": 77,
+        "dataName": 78,
+        "STRING": 79,
+        "NUMBER": 80,
+        "BOOLEAN": 81,
+        "UNDEFINED": 82,
+        "NULL": 83,
+        "DATA": 84,
+        "pathSegments": 85,
+        "SEP": 86,
+        "$accept": 0,
+        "$end": 1
+      },
+      terminals_: {
+        2: "error",
+        5: "EOF",
+        14: "COMMENT",
+        15: "CONTENT",
+        18: "END_RAW_BLOCK",
+        19: "OPEN_RAW_BLOCK",
+        23: "CLOSE_RAW_BLOCK",
+        29: "OPEN_BLOCK",
+        33: "CLOSE",
+        34: "OPEN_INVERSE",
+        39: "OPEN_INVERSE_CHAIN",
+        44: "INVERSE",
+        47: "OPEN_ENDBLOCK",
+        48: "OPEN",
+        52: "OPEN_UNESCAPED",
+        55: "CLOSE_UNESCAPED",
+        56: "OPEN_PARTIAL",
+        60: "OPEN_PARTIAL_BLOCK",
+        64: "OPEN_SEXPR",
+        67: "CLOSE_SEXPR",
+        71: "ID",
+        72: "EQUALS",
+        74: "OPEN_BLOCK_PARAMS",
+        76: "CLOSE_BLOCK_PARAMS",
+        79: "STRING",
+        80: "NUMBER",
+        81: "BOOLEAN",
+        82: "UNDEFINED",
+        83: "NULL",
+        84: "DATA",
+        86: "SEP"
+      },
+      productions_: [0, [3, 2], [4, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [13, 1], [10, 3], [16, 5], [9, 4], [9, 4], [24, 6], [27, 6], [38, 6], [43, 2], [45, 3], [45, 1], [26, 3], [8, 5], [8, 5], [11, 5], [12, 3], [59, 5], [49, 1], [49, 1], [63, 5], [68, 1], [70, 3], [73, 3], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [78, 2], [77, 1], [85, 3], [85, 1], [6, 0], [6, 2], [17, 0], [17, 2], [21, 0], [21, 2], [22, 0], [22, 1], [25, 0], [25, 1], [28, 0], [28, 1], [30, 0], [30, 2], [31, 0], [31, 1], [32, 0], [32, 1], [35, 0], [35, 2], [36, 0], [36, 1], [37, 0], [37, 1], [40, 0], [40, 2], [41, 0], [41, 1], [42, 0], [42, 1], [46, 0], [46, 1], [50, 0], [50, 2], [51, 0], [51, 1], [53, 0], [53, 2], [54, 0], [54, 1], [57, 0], [57, 2], [58, 0], [58, 1], [61, 0], [61, 2], [62, 0], [62, 1], [65, 0], [65, 2], [66, 0], [66, 1], [69, 1], [69, 2], [75, 1], [75, 2]],
+      performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate
+      /* action[1] */
+      , $$
+      /* vstack */
+      , _$
+      /* lstack */
+      ) {
+        /* this == yyval */
+        var $0 = $$.length - 1;
+
+        switch (yystate) {
+          case 1:
+            return $$[$0 - 1];
+            break;
+
+          case 2:
+            this.$ = yy.prepareProgram($$[$0]);
+            break;
+
+          case 3:
+          case 4:
+          case 5:
+          case 6:
+          case 7:
+          case 8:
+          case 20:
+          case 27:
+          case 28:
+          case 33:
+          case 34:
+            this.$ = $$[$0];
+            break;
+
+          case 9:
+            this.$ = {
+              type: 'CommentStatement',
+              value: yy.stripComment($$[$0]),
+              strip: yy.stripFlags($$[$0], $$[$0]),
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 10:
+            this.$ = {
+              type: 'ContentStatement',
+              original: $$[$0],
+              value: $$[$0],
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 11:
+            this.$ = yy.prepareRawBlock($$[$0 - 2], $$[$0 - 1], $$[$0], this._$);
+            break;
+
+          case 12:
+            this.$ = {
+              path: $$[$0 - 3],
+              params: $$[$0 - 2],
+              hash: $$[$0 - 1]
+            };
+            break;
+
+          case 13:
+            this.$ = yy.prepareBlock($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0], false, this._$);
+            break;
+
+          case 14:
+            this.$ = yy.prepareBlock($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0], true, this._$);
+            break;
+
+          case 15:
+            this.$ = {
+              open: $$[$0 - 5],
+              path: $$[$0 - 4],
+              params: $$[$0 - 3],
+              hash: $$[$0 - 2],
+              blockParams: $$[$0 - 1],
+              strip: yy.stripFlags($$[$0 - 5], $$[$0])
+            };
+            break;
+
+          case 16:
+          case 17:
+            this.$ = {
+              path: $$[$0 - 4],
+              params: $$[$0 - 3],
+              hash: $$[$0 - 2],
+              blockParams: $$[$0 - 1],
+              strip: yy.stripFlags($$[$0 - 5], $$[$0])
+            };
+            break;
+
+          case 18:
+            this.$ = {
+              strip: yy.stripFlags($$[$0 - 1], $$[$0 - 1]),
+              program: $$[$0]
+            };
+            break;
+
+          case 19:
+            var inverse = yy.prepareBlock($$[$0 - 2], $$[$0 - 1], $$[$0], $$[$0], false, this._$),
+                program = yy.prepareProgram([inverse], $$[$0 - 1].loc);
+            program.chained = true;
+            this.$ = {
+              strip: $$[$0 - 2].strip,
+              program: program,
+              chain: true
+            };
+            break;
+
+          case 21:
+            this.$ = {
+              path: $$[$0 - 1],
+              strip: yy.stripFlags($$[$0 - 2], $$[$0])
+            };
+            break;
+
+          case 22:
+          case 23:
+            this.$ = yy.prepareMustache($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0 - 4], yy.stripFlags($$[$0 - 4], $$[$0]), this._$);
+            break;
+
+          case 24:
+            this.$ = {
+              type: 'PartialStatement',
+              name: $$[$0 - 3],
+              params: $$[$0 - 2],
+              hash: $$[$0 - 1],
+              indent: '',
+              strip: yy.stripFlags($$[$0 - 4], $$[$0]),
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 25:
+            this.$ = yy.preparePartialBlock($$[$0 - 2], $$[$0 - 1], $$[$0], this._$);
+            break;
+
+          case 26:
+            this.$ = {
+              path: $$[$0 - 3],
+              params: $$[$0 - 2],
+              hash: $$[$0 - 1],
+              strip: yy.stripFlags($$[$0 - 4], $$[$0])
+            };
+            break;
+
+          case 29:
+            this.$ = {
+              type: 'SubExpression',
+              path: $$[$0 - 3],
+              params: $$[$0 - 2],
+              hash: $$[$0 - 1],
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 30:
+            this.$ = {
+              type: 'Hash',
+              pairs: $$[$0],
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 31:
+            this.$ = {
+              type: 'HashPair',
+              key: yy.id($$[$0 - 2]),
+              value: $$[$0],
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 32:
+            this.$ = yy.id($$[$0 - 1]);
+            break;
+
+          case 35:
+            this.$ = {
+              type: 'StringLiteral',
+              value: $$[$0],
+              original: $$[$0],
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 36:
+            this.$ = {
+              type: 'NumberLiteral',
+              value: Number($$[$0]),
+              original: Number($$[$0]),
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 37:
+            this.$ = {
+              type: 'BooleanLiteral',
+              value: $$[$0] === 'true',
+              original: $$[$0] === 'true',
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 38:
+            this.$ = {
+              type: 'UndefinedLiteral',
+              original: undefined,
+              value: undefined,
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 39:
+            this.$ = {
+              type: 'NullLiteral',
+              original: null,
+              value: null,
+              loc: yy.locInfo(this._$)
+            };
+            break;
+
+          case 40:
+            this.$ = yy.preparePath(true, $$[$0], this._$);
+            break;
+
+          case 41:
+            this.$ = yy.preparePath(false, $$[$0], this._$);
+            break;
+
+          case 42:
+            $$[$0 - 2].push({
+              part: yy.id($$[$0]),
+              original: $$[$0],
+              separator: $$[$0 - 1]
+            });
+            this.$ = $$[$0 - 2];
+            break;
+
+          case 43:
+            this.$ = [{
+              part: yy.id($$[$0]),
+              original: $$[$0]
+            }];
+            break;
+
+          case 44:
+          case 46:
+          case 48:
+          case 56:
+          case 62:
+          case 68:
+          case 76:
+          case 80:
+          case 84:
+          case 88:
+          case 92:
+            this.$ = [];
+            break;
+
+          case 45:
+          case 47:
+          case 49:
+          case 57:
+          case 63:
+          case 69:
+          case 77:
+          case 81:
+          case 85:
+          case 89:
+          case 93:
+          case 97:
+          case 99:
+            $$[$0 - 1].push($$[$0]);
+            break;
+
+          case 96:
+          case 98:
+            this.$ = [$$[$0]];
+            break;
+        }
+      },
+      table: [o([5, 14, 15, 19, 29, 34, 48, 52, 56, 60], $V0, {
+        3: 1,
+        4: 2,
+        6: 3
+      }), {
+        1: [3]
+      }, {
+        5: [1, 4]
+      }, o([5, 39, 44, 47], [2, 2], {
+        7: 5,
+        8: 6,
+        9: 7,
+        10: 8,
+        11: 9,
+        12: 10,
+        13: 11,
+        24: 15,
+        27: 16,
+        16: 17,
+        59: 19,
+        14: [1, 12],
+        15: $V1,
+        19: [1, 23],
+        29: [1, 21],
+        34: [1, 22],
+        48: [1, 13],
+        52: [1, 14],
+        56: [1, 18],
+        60: [1, 24]
+      }), {
+        1: [2, 1]
+      }, o($V2, [2, 45]), o($V2, [2, 3]), o($V2, [2, 4]), o($V2, [2, 5]), o($V2, [2, 6]), o($V2, [2, 7]), o($V2, [2, 8]), o($V2, [2, 9]), {
+        20: 26,
+        49: 25,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        20: 26,
+        49: 39,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vb, $V0, {
+        6: 3,
+        4: 40
+      }), o($Vc, $V0, {
+        6: 3,
+        4: 41
+      }), o($Vd, [2, 46], {
+        17: 42
+      }), {
+        20: 26,
+        49: 43,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Ve, $V0, {
+        6: 3,
+        4: 44
+      }), o([5, 14, 15, 18, 19, 29, 34, 39, 44, 47, 48, 52, 56, 60], [2, 10]), {
+        20: 45,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        20: 46,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        20: 47,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        20: 26,
+        49: 48,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vf, [2, 76], {
+        50: 49
+      }), o($Vg, [2, 27]), o($Vg, [2, 28]), o($Vg, [2, 33]), o($Vg, [2, 34]), o($Vg, [2, 35]), o($Vg, [2, 36]), o($Vg, [2, 37]), o($Vg, [2, 38]), o($Vg, [2, 39]), {
+        20: 26,
+        49: 50,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vg, [2, 41], {
+        86: $Vh
+      }), {
+        71: $V4,
+        85: 52
+      }, o($Vi, $Vj), o($Vk, [2, 80], {
+        53: 53
+      }), {
+        25: 54,
+        38: 56,
+        39: $Vl,
+        43: 57,
+        44: $Vm,
+        45: 55,
+        47: [2, 52]
+      }, {
+        28: 60,
+        43: 61,
+        44: $Vm,
+        47: [2, 54]
+      }, {
+        13: 63,
+        15: $V1,
+        18: [1, 62]
+      }, o($Vf, [2, 84], {
+        57: 64
+      }), {
+        26: 65,
+        47: $Vn
+      }, o($Vo, [2, 56], {
+        30: 67
+      }), o($Vo, [2, 62], {
+        35: 68
+      }), o($Vp, [2, 48], {
+        21: 69
+      }), o($Vf, [2, 88], {
+        61: 70
+      }), {
+        20: 26,
+        33: [2, 78],
+        49: 72,
+        51: 71,
+        63: 27,
+        64: $V3,
+        68: 73,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vr, [2, 92], {
+        65: 77
+      }), {
+        71: [1, 78]
+      }, o($Vg, [2, 40], {
+        86: $Vh
+      }), {
+        20: 26,
+        49: 80,
+        54: 79,
+        55: [2, 82],
+        63: 27,
+        64: $V3,
+        68: 81,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        26: 82,
+        47: $Vn
+      }, {
+        47: [2, 53]
+      }, o($Vb, $V0, {
+        6: 3,
+        4: 83
+      }), {
+        47: [2, 20]
+      }, {
+        20: 84,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Ve, $V0, {
+        6: 3,
+        4: 85
+      }), {
+        26: 86,
+        47: $Vn
+      }, {
+        47: [2, 55]
+      }, o($V2, [2, 11]), o($Vd, [2, 47]), {
+        20: 26,
+        33: [2, 86],
+        49: 88,
+        58: 87,
+        63: 27,
+        64: $V3,
+        68: 89,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($V2, [2, 25]), {
+        20: 90,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vs, [2, 58], {
+        20: 26,
+        63: 27,
+        77: 28,
+        78: 29,
+        85: 36,
+        69: 74,
+        70: 75,
+        31: 91,
+        49: 92,
+        68: 93,
+        64: $V3,
+        71: $Vq,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va
+      }), o($Vs, [2, 64], {
+        20: 26,
+        63: 27,
+        77: 28,
+        78: 29,
+        85: 36,
+        69: 74,
+        70: 75,
+        36: 94,
+        49: 95,
+        68: 96,
+        64: $V3,
+        71: $Vq,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va
+      }), {
+        20: 26,
+        22: 97,
+        23: [2, 50],
+        49: 98,
+        63: 27,
+        64: $V3,
+        68: 99,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        20: 26,
+        33: [2, 90],
+        49: 101,
+        62: 100,
+        63: 27,
+        64: $V3,
+        68: 102,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        33: [1, 103]
+      }, o($Vf, [2, 77]), {
+        33: [2, 79]
+      }, o([23, 33, 55, 67, 74], [2, 30], {
+        70: 104,
+        71: [1, 105]
+      }), o($Vt, [2, 96]), o($Vi, $Vj, {
+        72: $Vu
+      }), {
+        20: 26,
+        49: 108,
+        63: 27,
+        64: $V3,
+        66: 107,
+        67: [2, 94],
+        68: 109,
+        69: 74,
+        70: 75,
+        71: $Vq,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, o($Vi, [2, 42]), {
+        55: [1, 110]
+      }, o($Vk, [2, 81]), {
+        55: [2, 83]
+      }, o($V2, [2, 13]), {
+        38: 56,
+        39: $Vl,
+        43: 57,
+        44: $Vm,
+        45: 112,
+        46: 111,
+        47: [2, 74]
+      }, o($Vo, [2, 68], {
+        40: 113
+      }), {
+        47: [2, 18]
+      }, o($V2, [2, 14]), {
+        33: [1, 114]
+      }, o($Vf, [2, 85]), {
+        33: [2, 87]
+      }, {
+        33: [1, 115]
+      }, {
+        32: 116,
+        33: [2, 60],
+        73: 117,
+        74: $Vv
+      }, o($Vo, [2, 57]), o($Vs, [2, 59]), {
+        33: [2, 66],
+        37: 119,
+        73: 120,
+        74: $Vv
+      }, o($Vo, [2, 63]), o($Vs, [2, 65]), {
+        23: [1, 121]
+      }, o($Vp, [2, 49]), {
+        23: [2, 51]
+      }, {
+        33: [1, 122]
+      }, o($Vf, [2, 89]), {
+        33: [2, 91]
+      }, o($V2, [2, 22]), o($Vt, [2, 97]), {
+        72: $Vu
+      }, {
+        20: 26,
+        49: 123,
+        63: 27,
+        64: $V3,
+        71: $V4,
+        77: 28,
+        78: 29,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va,
+        85: 36
+      }, {
+        67: [1, 124]
+      }, o($Vr, [2, 93]), {
+        67: [2, 95]
+      }, o($V2, [2, 23]), {
+        47: [2, 19]
+      }, {
+        47: [2, 75]
+      }, o($Vs, [2, 70], {
+        20: 26,
+        63: 27,
+        77: 28,
+        78: 29,
+        85: 36,
+        69: 74,
+        70: 75,
+        41: 125,
+        49: 126,
+        68: 127,
+        64: $V3,
+        71: $Vq,
+        79: $V5,
+        80: $V6,
+        81: $V7,
+        82: $V8,
+        83: $V9,
+        84: $Va
+      }), o($V2, [2, 24]), o($V2, [2, 21]), {
+        33: [1, 128]
+      }, {
+        33: [2, 61]
+      }, {
+        71: [1, 130],
+        75: 129
+      }, {
+        33: [1, 131]
+      }, {
+        33: [2, 67]
+      }, o($Vd, [2, 12]), o($Ve, [2, 26]), o($Vt, [2, 31]), o($Vg, [2, 29]), {
+        33: [2, 72],
+        42: 132,
+        73: 133,
+        74: $Vv
+      }, o($Vo, [2, 69]), o($Vs, [2, 71]), o($Vb, [2, 15]), {
+        71: [1, 135],
+        76: [1, 134]
+      }, o($Vw, [2, 98]), o($Vc, [2, 16]), {
+        33: [1, 136]
+      }, {
+        33: [2, 73]
+      }, {
+        33: [2, 32]
+      }, o($Vw, [2, 99]), o($Vb, [2, 17])],
+      defaultActions: {
+        4: [2, 1],
+        55: [2, 53],
+        57: [2, 20],
+        61: [2, 55],
+        73: [2, 79],
+        81: [2, 83],
+        85: [2, 18],
+        89: [2, 87],
+        99: [2, 51],
+        102: [2, 91],
+        109: [2, 95],
+        111: [2, 19],
+        112: [2, 75],
+        117: [2, 61],
+        120: [2, 67],
+        133: [2, 73],
+        134: [2, 32]
+      },
+      parseError: function parseError(str, hash) {
+        if (hash.recoverable) {
+          this.trace(str);
+        } else {
+          var error = new Error(str);
+          error.hash = hash;
+          throw error;
+        }
+      },
+      parse: function parse(input) {
+        var self = this,
+            stack = [0],
+            vstack = [null],
+            lstack = [],
+            table = this.table,
+            yytext = '',
+            yylineno = 0,
+            yyleng = 0,
+            TERROR = 2,
+            EOF = 1;
+        var args = lstack.slice.call(arguments, 1);
+        var lexer = Object.create(this.lexer);
+        var sharedState = {
+          yy: {}
+        };
+
+        for (var k in this.yy) {
+          if (Object.prototype.hasOwnProperty.call(this.yy, k)) {
+            sharedState.yy[k] = this.yy[k];
+          }
+        }
+
+        lexer.setInput(input, sharedState.yy);
+        sharedState.yy.lexer = lexer;
+        sharedState.yy.parser = this;
+
+        if (typeof lexer.yylloc == 'undefined') {
+          lexer.yylloc = {};
+        }
+
+        var yyloc = lexer.yylloc;
+        lstack.push(yyloc);
+        var ranges = lexer.options && lexer.options.ranges;
+
+        if (typeof sharedState.yy.parseError === 'function') {
+          this.parseError = sharedState.yy.parseError;
+        } else {
+          this.parseError = Object.getPrototypeOf(this).parseError;
+        }
+
+        _token_stack: var lex = function lex() {
+          var token;
+          token = lexer.lex() || EOF;
+
+          if (typeof token !== 'number') {
+            token = self.symbols_[token] || token;
+          }
+
+          return token;
+        };
+
+        var symbol,
+            preErrorSymbol,
+            state,
+            action,
+            r,
+            yyval = {},
+            p,
+            len,
+            newState,
+            expected;
+
+        while (true) {
+          state = stack[stack.length - 1];
+
+          if (this.defaultActions[state]) {
+            action = this.defaultActions[state];
+          } else {
+            if (symbol === null || typeof symbol == 'undefined') {
+              symbol = lex();
+            }
+
+            action = table[state] && table[state][symbol];
+          }
+
+          if (typeof action === 'undefined' || !action.length || !action[0]) {
+            var errStr = '';
+            expected = [];
+
+            for (p in table[state]) {
+              if (this.terminals_[p] && p > TERROR) {
+                expected.push('\'' + this.terminals_[p] + '\'');
+              }
+            }
+
+            if (lexer.showPosition) {
+              errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
+            } else {
+              errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
+            }
+
+            this.parseError(errStr, {
+              text: lexer.match,
+              token: this.terminals_[symbol] || symbol,
+              line: lexer.yylineno,
+              loc: yyloc,
+              expected: expected
+            });
+          }
+
+          if (action[0] instanceof Array && action.length > 1) {
+            throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+          }
+
+          switch (action[0]) {
+            case 1:
+              stack.push(symbol);
+              vstack.push(lexer.yytext);
+              lstack.push(lexer.yylloc);
+              stack.push(action[1]);
+              symbol = null;
+
+              if (!preErrorSymbol) {
+                yyleng = lexer.yyleng;
+                yytext = lexer.yytext;
+                yylineno = lexer.yylineno;
+                yyloc = lexer.yylloc;
+              } else {
+                symbol = preErrorSymbol;
+                preErrorSymbol = null;
+              }
+
+              break;
+
+            case 2:
+              len = this.productions_[action[1]][1];
+              yyval.$ = vstack[vstack.length - len];
+              yyval._$ = {
+                first_line: lstack[lstack.length - (len || 1)].first_line,
+                last_line: lstack[lstack.length - 1].last_line,
+                first_column: lstack[lstack.length - (len || 1)].first_column,
+                last_column: lstack[lstack.length - 1].last_column
+              };
+
+              if (ranges) {
+                yyval._$.range = [lstack[lstack.length - (len || 1)].range[0], lstack[lstack.length - 1].range[1]];
+              }
+
+              r = this.performAction.apply(yyval, [yytext, yyleng, yylineno, sharedState.yy, action[1], vstack, lstack].concat(args));
+
+              if (typeof r !== 'undefined') {
+                return r;
+              }
+
+              if (len) {
+                stack = stack.slice(0, -1 * len * 2);
+                vstack = vstack.slice(0, -1 * len);
+                lstack = lstack.slice(0, -1 * len);
+              }
+
+              stack.push(this.productions_[action[1]][0]);
+              vstack.push(yyval.$);
+              lstack.push(yyval._$);
+              newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
+              stack.push(newState);
+              break;
+
+            case 3:
+              return true;
+          }
+        }
+
+        return true;
+      }
+    };
+    /* generated by jison-lex 0.3.4 */
+
+    var lexer = function () {
+      var lexer = {
+        EOF: 1,
+        parseError: function parseError(str, hash) {
+          if (this.yy.parser) {
+            this.yy.parser.parseError(str, hash);
+          } else {
+            throw new Error(str);
+          }
+        },
+        // resets the lexer, sets new input
+        setInput: function setInput(input, yy) {
+          this.yy = yy || this.yy || {};
+          this._input = input;
+          this._more = this._backtrack = this.done = false;
+          this.yylineno = this.yyleng = 0;
+          this.yytext = this.matched = this.match = '';
+          this.conditionStack = ['INITIAL'];
+          this.yylloc = {
+            first_line: 1,
+            first_column: 0,
+            last_line: 1,
+            last_column: 0
+          };
+
+          if (this.options.ranges) {
+            this.yylloc.range = [0, 0];
+          }
+
+          this.offset = 0;
+          return this;
+        },
+        // consumes and returns one char from the input
+        input: function input() {
+          var ch = this._input[0];
+          this.yytext += ch;
+          this.yyleng++;
+          this.offset++;
+          this.match += ch;
+          this.matched += ch;
+          var lines = ch.match(/(?:\r\n?|\n).*/g);
+
+          if (lines) {
+            this.yylineno++;
+            this.yylloc.last_line++;
+          } else {
+            this.yylloc.last_column++;
+          }
+
+          if (this.options.ranges) {
+            this.yylloc.range[1]++;
+          }
+
+          this._input = this._input.slice(1);
+          return ch;
+        },
+        // unshifts one char (or a string) into the input
+        unput: function unput(ch) {
+          var len = ch.length;
+          var lines = ch.split(/(?:\r\n?|\n)/g);
+          this._input = ch + this._input;
+          this.yytext = this.yytext.substr(0, this.yytext.length - len); //this.yyleng -= len;
+
+          this.offset -= len;
+          var oldLines = this.match.split(/(?:\r\n?|\n)/g);
+          this.match = this.match.substr(0, this.match.length - 1);
+          this.matched = this.matched.substr(0, this.matched.length - 1);
+
+          if (lines.length - 1) {
+            this.yylineno -= lines.length - 1;
+          }
+
+          var r = this.yylloc.range;
+          this.yylloc = {
+            first_line: this.yylloc.first_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.first_column,
+            last_column: lines ? (lines.length === oldLines.length ? this.yylloc.first_column : 0) + oldLines[oldLines.length - lines.length].length - lines[0].length : this.yylloc.first_column - len
+          };
+
+          if (this.options.ranges) {
+            this.yylloc.range = [r[0], r[0] + this.yyleng - len];
+          }
+
+          this.yyleng = this.yytext.length;
+          return this;
+        },
+        // When called from action, caches matched text and appends it on next action
+        more: function more() {
+          this._more = true;
+          return this;
+        },
+        // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
+        reject: function reject() {
+          if (this.options.backtrack_lexer) {
+            this._backtrack = true;
+          } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n' + this.showPosition(), {
+              text: "",
+              token: null,
+              line: this.yylineno
+            });
+          }
+
+          return this;
+        },
+        // retain first n characters of the match
+        less: function less(n) {
+          this.unput(this.match.slice(n));
+        },
+        // displays already matched input, i.e. for error messages
+        pastInput: function pastInput() {
+          var past = this.matched.substr(0, this.matched.length - this.match.length);
+          return (past.length > 20 ? '...' : '') + past.substr(-20).replace(/\n/g, "");
+        },
+        // displays upcoming input, i.e. for error messages
+        upcomingInput: function upcomingInput() {
+          var next = this.match;
+
+          if (next.length < 20) {
+            next += this._input.substr(0, 20 - next.length);
+          }
+
+          return (next.substr(0, 20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
+        },
+        // displays the character position where the lexing error occurred, i.e. for error messages
+        showPosition: function showPosition() {
+          var pre = this.pastInput();
+          var c = new Array(pre.length + 1).join("-");
+          return pre + this.upcomingInput() + "\n" + c + "^";
+        },
+        // test the lexed token: return FALSE when not a match, otherwise return token
+        test_match: function test_match(match, indexed_rule) {
+          var token, lines, backup;
+
+          if (this.options.backtrack_lexer) {
+            // save context
+            backup = {
+              yylineno: this.yylineno,
+              yylloc: {
+                first_line: this.yylloc.first_line,
+                last_line: this.last_line,
+                first_column: this.yylloc.first_column,
+                last_column: this.yylloc.last_column
+              },
+              yytext: this.yytext,
+              match: this.match,
+              matches: this.matches,
+              matched: this.matched,
+              yyleng: this.yyleng,
+              offset: this.offset,
+              _more: this._more,
+              _input: this._input,
+              yy: this.yy,
+              conditionStack: this.conditionStack.slice(0),
+              done: this.done
+            };
+
+            if (this.options.ranges) {
+              backup.yylloc.range = this.yylloc.range.slice(0);
+            }
+          }
+
+          lines = match[0].match(/(?:\r\n?|\n).*/g);
+
+          if (lines) {
+            this.yylineno += lines.length;
+          }
+
+          this.yylloc = {
+            first_line: this.yylloc.last_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.last_column,
+            last_column: lines ? lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length : this.yylloc.last_column + match[0].length
+          };
+          this.yytext += match[0];
+          this.match += match[0];
+          this.matches = match;
+          this.yyleng = this.yytext.length;
+
+          if (this.options.ranges) {
+            this.yylloc.range = [this.offset, this.offset += this.yyleng];
+          }
+
+          this._more = false;
+          this._backtrack = false;
+          this._input = this._input.slice(match[0].length);
+          this.matched += match[0];
+          token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]);
+
+          if (this.done && this._input) {
+            this.done = false;
+          }
+
+          if (token) {
+            return token;
+          } else if (this._backtrack) {
+            // recover context
+            for (var k in backup) {
+              this[k] = backup[k];
+            }
+
+            return false; // rule action called reject() implying the next rule should be tested instead.
+          }
+
+          return false;
+        },
+        // return next match in input
+        next: function next() {
+          if (this.done) {
+            return this.EOF;
+          }
+
+          if (!this._input) {
+            this.done = true;
+          }
+
+          var token, match, tempMatch, index;
+
+          if (!this._more) {
+            this.yytext = '';
+            this.match = '';
+          }
+
+          var rules = this._currentRules();
+
+          for (var i = 0; i < rules.length; i++) {
+            tempMatch = this._input.match(this.rules[rules[i]]);
+
+            if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
+              match = tempMatch;
+              index = i;
+
+              if (this.options.backtrack_lexer) {
+                token = this.test_match(tempMatch, rules[i]);
+
+                if (token !== false) {
+                  return token;
+                } else if (this._backtrack) {
+                  match = false;
+                  continue; // rule action called reject() implying a rule MISmatch.
+                } else {
+                  // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+                  return false;
+                }
+              } else if (!this.options.flex) {
+                break;
+              }
+            }
+          }
+
+          if (match) {
+            token = this.test_match(match, rules[index]);
+
+            if (token !== false) {
+              return token;
+            } // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+
+
+            return false;
+          }
+
+          if (this._input === "") {
+            return this.EOF;
+          } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
+              text: "",
+              token: null,
+              line: this.yylineno
+            });
+          }
+        },
+        // return next match that has a token
+        lex: function lex() {
+          var r = this.next();
+
+          if (r) {
+            return r;
+          } else {
+            return this.lex();
+          }
+        },
+        // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
+        begin: function begin(condition) {
+          this.conditionStack.push(condition);
+        },
+        // pop the previously active lexer condition state off the condition stack
+        popState: function popState() {
+          var n = this.conditionStack.length - 1;
+
+          if (n > 0) {
+            return this.conditionStack.pop();
+          } else {
+            return this.conditionStack[0];
+          }
+        },
+        // produce the lexer rule set which is active for the currently active lexer condition state
+        _currentRules: function _currentRules() {
+          if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
+            return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
+          } else {
+            return this.conditions["INITIAL"].rules;
+          }
+        },
+        // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
+        topState: function topState(n) {
+          n = this.conditionStack.length - 1 - Math.abs(n || 0);
+
+          if (n >= 0) {
+            return this.conditionStack[n];
+          } else {
+            return "INITIAL";
+          }
+        },
+        // alias for begin(condition)
+        pushState: function pushState(condition) {
+          this.begin(condition);
+        },
+        // return the number of states currently on the stack
+        stateStackSize: function stateStackSize() {
+          return this.conditionStack.length;
+        },
+        options: {},
+        performAction: function anonymous(yy, yy_, $avoiding_name_collisions, YY_START) {
+          function strip(start, end) {
+            return yy_.yytext = yy_.yytext.substring(start, yy_.yyleng - end + start);
+          }
+
+          switch ($avoiding_name_collisions) {
+            case 0:
+              if (yy_.yytext.slice(-2) === "\\\\") {
+                strip(0, 1);
+                this.begin("mu");
+              } else if (yy_.yytext.slice(-1) === "\\") {
+                strip(0, 1);
+                this.begin("emu");
+              } else {
+                this.begin("mu");
+              }
+
+              if (yy_.yytext) return 15;
+              break;
+
+            case 1:
+              return 15;
+              break;
+
+            case 2:
+              this.popState();
+              return 15;
+              break;
+
+            case 3:
+              this.begin('raw');
+              return 15;
+              break;
+
+            case 4:
+              this.popState(); // Should be using `this.topState()` below, but it currently
+              // returns the second top instead of the first top. Opened an
+              // issue about it at https://github.com/zaach/jison/issues/291
+
+              if (this.conditionStack[this.conditionStack.length - 1] === 'raw') {
+                return 15;
+              } else {
+                strip(5, 9);
+                return 18;
+              }
+
+              break;
+
+            case 5:
+              return 15;
+              break;
+
+            case 6:
+              this.popState();
+              return 14;
+              break;
+
+            case 7:
+              return 64;
+              break;
+
+            case 8:
+              return 67;
+              break;
+
+            case 9:
+              return 19;
+              break;
+
+            case 10:
+              this.popState();
+              this.begin('raw');
+              return 23;
+              break;
+
+            case 11:
+              return 56;
+              break;
+
+            case 12:
+              return 60;
+              break;
+
+            case 13:
+              return 29;
+              break;
+
+            case 14:
+              return 47;
+              break;
+
+            case 15:
+              this.popState();
+              return 44;
+              break;
+
+            case 16:
+              this.popState();
+              return 44;
+              break;
+
+            case 17:
+              return 34;
+              break;
+
+            case 18:
+              return 39;
+              break;
+
+            case 19:
+              return 52;
+              break;
+
+            case 20:
+              return 48;
+              break;
+
+            case 21:
+              this.unput(yy_.yytext);
+              this.popState();
+              this.begin('com');
+              break;
+
+            case 22:
+              this.popState();
+              return 14;
+              break;
+
+            case 23:
+              return 48;
+              break;
+
+            case 24:
+              return 72;
+              break;
+
+            case 25:
+              return 71;
+              break;
+
+            case 26:
+              return 71;
+              break;
+
+            case 27:
+              return 86;
+              break;
+
+            case 28:
+              // ignore whitespace
+              break;
+
+            case 29:
+              this.popState();
+              return 55;
+              break;
+
+            case 30:
+              this.popState();
+              return 33;
+              break;
+
+            case 31:
+              yy_.yytext = strip(1, 2).replace(/\\"/g, '"');
+              return 79;
+              break;
+
+            case 32:
+              yy_.yytext = strip(1, 2).replace(/\\'/g, "'");
+              return 79;
+              break;
+
+            case 33:
+              return 84;
+              break;
+
+            case 34:
+              return 81;
+              break;
+
+            case 35:
+              return 81;
+              break;
+
+            case 36:
+              return 82;
+              break;
+
+            case 37:
+              return 83;
+              break;
+
+            case 38:
+              return 80;
+              break;
+
+            case 39:
+              return 74;
+              break;
+
+            case 40:
+              return 76;
+              break;
+
+            case 41:
+              return 71;
+              break;
+
+            case 42:
+              yy_.yytext = yy_.yytext.replace(/\\([\\\]])/g, '$1');
+              return 71;
+              break;
+
+            case 43:
+              return 'INVALID';
+              break;
+
+            case 44:
+              return 5;
+              break;
+          }
+        },
+        rules: [/^(?:[^\x00]*?(?=(\{\{)))/, /^(?:[^\x00]+)/, /^(?:[^\x00]{2,}?(?=(\{\{|\\\{\{|\\\\\{\{|$)))/, /^(?:\{\{\{\{(?=[^/]))/, /^(?:\{\{\{\{\/[^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=[=}\s\/.])\}\}\}\})/, /^(?:[^\x00]+?(?=(\{\{\{\{)))/, /^(?:[\s\S]*?--(~)?\}\})/, /^(?:\()/, /^(?:\))/, /^(?:\{\{\{\{)/, /^(?:\}\}\}\})/, /^(?:\{\{(~)?>)/, /^(?:\{\{(~)?#>)/, /^(?:\{\{(~)?#\*?)/, /^(?:\{\{(~)?\/)/, /^(?:\{\{(~)?\^\s*(~)?\}\})/, /^(?:\{\{(~)?\s*else\s*(~)?\}\})/, /^(?:\{\{(~)?\^)/, /^(?:\{\{(~)?\s*else\b)/, /^(?:\{\{(~)?\{)/, /^(?:\{\{(~)?&)/, /^(?:\{\{(~)?!--)/, /^(?:\{\{(~)?![\s\S]*?\}\})/, /^(?:\{\{(~)?\*?)/, /^(?:=)/, /^(?:\.\.)/, /^(?:\.(?=([=~}\s\/.)|])))/, /^(?:[\/.])/, /^(?:\s+)/, /^(?:\}(~)?\}\})/, /^(?:(~)?\}\})/, /^(?:"(\\["]|[^"])*")/, /^(?:'(\\[']|[^'])*')/, /^(?:@)/, /^(?:true(?=([~}\s)])))/, /^(?:false(?=([~}\s)])))/, /^(?:undefined(?=([~}\s)])))/, /^(?:null(?=([~}\s)])))/, /^(?:-?[0-9]+(?:\.[0-9]+)?(?=([~}\s)])))/, /^(?:as\s+\|)/, /^(?:\|)/, /^(?:([^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=([=~}\s\/.)|]))))/, /^(?:\[(\\\]|[^\]])*\])/, /^(?:.)/, /^(?:$)/],
+        conditions: {
+          "mu": {
+            "rules": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+            "inclusive": false
+          },
+          "emu": {
+            "rules": [2],
+            "inclusive": false
+          },
+          "com": {
+            "rules": [6],
+            "inclusive": false
+          },
+          "raw": {
+            "rules": [3, 4, 5],
+            "inclusive": false
+          },
+          "INITIAL": {
+            "rules": [0, 1, 44],
+            "inclusive": true
+          }
+        }
+      };
+      return lexer;
+    }();
+
+    parser.lexer = lexer;
+
+    function Parser() {
+      this.yy = {};
+    }
+
+    Parser.prototype = parser;
+    parser.Parser = Parser;
+    return new Parser();
+  }();
+  /* eslint-disable new-cap */
+
+
+  _exports.parser = parser;
+
+  function print(ast) {
+    return new PrintVisitor().accept(ast);
+  }
+
+  function PrintVisitor() {
+    this.padding = 0;
+  }
+
+  PrintVisitor.prototype = new Visitor();
+
+  PrintVisitor.prototype.pad = function (string) {
+    var out = '';
+
+    for (var i = 0, l = this.padding; i < l; i++) {
+      out += '  ';
+    }
+
+    out += string + '\n';
+    return out;
+  };
+
+  PrintVisitor.prototype.Program = function (program) {
+    var out = '',
+        body = program.body,
+        i,
+        l;
+
+    if (program.blockParams) {
+      var blockParams = 'BLOCK PARAMS: [';
+
+      for (i = 0, l = program.blockParams.length; i < l; i++) {
+        blockParams += ' ' + program.blockParams[i];
+      }
+
+      blockParams += ' ]';
+      out += this.pad(blockParams);
+    }
+
+    for (i = 0, l = body.length; i < l; i++) {
+      out += this.accept(body[i]);
+    }
+
+    this.padding--;
+    return out;
+  };
+
+  PrintVisitor.prototype.MustacheStatement = function (mustache) {
+    return this.pad('{{ ' + this.SubExpression(mustache) + ' }}');
+  };
+
+  PrintVisitor.prototype.Decorator = function (mustache) {
+    return this.pad('{{ DIRECTIVE ' + this.SubExpression(mustache) + ' }}');
+  };
+
+  PrintVisitor.prototype.BlockStatement = PrintVisitor.prototype.DecoratorBlock = function (block) {
+    var out = '';
+    out += this.pad((block.type === 'DecoratorBlock' ? 'DIRECTIVE ' : '') + 'BLOCK:');
+    this.padding++;
+    out += this.pad(this.SubExpression(block));
+
+    if (block.program) {
+      out += this.pad('PROGRAM:');
+      this.padding++;
+      out += this.accept(block.program);
+      this.padding--;
+    }
+
+    if (block.inverse) {
+      if (block.program) {
+        this.padding++;
+      }
+
+      out += this.pad('{{^}}');
+      this.padding++;
+      out += this.accept(block.inverse);
+      this.padding--;
+
+      if (block.program) {
+        this.padding--;
+      }
+    }
+
+    this.padding--;
+    return out;
+  };
+
+  PrintVisitor.prototype.PartialStatement = function (partial) {
+    var content = 'PARTIAL:' + partial.name.original;
+
+    if (partial.params[0]) {
+      content += ' ' + this.accept(partial.params[0]);
+    }
+
+    if (partial.hash) {
+      content += ' ' + this.accept(partial.hash);
+    }
+
+    return this.pad('{{> ' + content + ' }}');
+  };
+
+  PrintVisitor.prototype.PartialBlockStatement = function (partial) {
+    var content = 'PARTIAL BLOCK:' + partial.name.original;
+
+    if (partial.params[0]) {
+      content += ' ' + this.accept(partial.params[0]);
+    }
+
+    if (partial.hash) {
+      content += ' ' + this.accept(partial.hash);
+    }
+
+    content += ' ' + this.pad('PROGRAM:');
+    this.padding++;
+    content += this.accept(partial.program);
+    this.padding--;
+    return this.pad('{{> ' + content + ' }}');
+  };
+
+  PrintVisitor.prototype.ContentStatement = function (content) {
+    return this.pad("CONTENT[ '" + content.value + "' ]");
+  };
+
+  PrintVisitor.prototype.CommentStatement = function (comment) {
+    return this.pad("{{! '" + comment.value + "' }}");
+  };
+
+  PrintVisitor.prototype.SubExpression = function (sexpr) {
+    var params = sexpr.params,
+        paramStrings = [],
+        hash;
+
+    for (var i = 0, l = params.length; i < l; i++) {
+      paramStrings.push(this.accept(params[i]));
+    }
+
+    params = '[' + paramStrings.join(', ') + ']';
+    hash = sexpr.hash ? ' ' + this.accept(sexpr.hash) : '';
+    return this.accept(sexpr.path) + ' ' + params + hash;
+  };
+
+  PrintVisitor.prototype.PathExpression = function (id) {
+    var path = id.parts.join('/');
+    return (id.data ? '@' : '') + 'PATH:' + path;
+  };
+
+  PrintVisitor.prototype.StringLiteral = function (string) {
+    return '"' + string.value + '"';
+  };
+
+  PrintVisitor.prototype.NumberLiteral = function (number) {
+    return 'NUMBER{' + number.value + '}';
+  };
+
+  PrintVisitor.prototype.BooleanLiteral = function (bool) {
+    return 'BOOLEAN{' + bool.value + '}';
+  };
+
+  PrintVisitor.prototype.UndefinedLiteral = function () {
+    return 'UNDEFINED';
+  };
+
+  PrintVisitor.prototype.NullLiteral = function () {
+    return 'NULL';
+  };
+
+  PrintVisitor.prototype.Hash = function (hash) {
+    var pairs = hash.pairs,
+        joinedPairs = [];
+
+    for (var i = 0, l = pairs.length; i < l; i++) {
+      joinedPairs.push(this.accept(pairs[i]));
+    }
+
+    return 'HASH{' + joinedPairs.join(', ') + '}';
+  };
+
+  PrintVisitor.prototype.HashPair = function (pair) {
+    return pair.key + '=' + this.accept(pair.value);
+  };
+  /* eslint-enable new-cap */
+
+
+  function validateClose(open, close) {
+    close = close.path ? close.path.original : close;
+
+    if (open.path.original !== close) {
+      var errorNode = {
+        loc: open.path.loc
+      };
+      throw new Exception(open.path.original + " doesn't match " + close, errorNode);
+    }
+  }
+
+  function SourceLocation(source, locInfo) {
+    this.source = source;
+    this.start = {
+      line: locInfo.first_line,
+      column: locInfo.first_column
+    };
+    this.end = {
+      line: locInfo.last_line,
+      column: locInfo.last_column
+    };
+  }
+
+  function id(token) {
+    if (/^\[.*\]$/.test(token)) {
+      return token.substring(1, token.length - 1);
+    } else {
+      return token;
+    }
+  }
+
+  function stripFlags(open, close) {
+    return {
+      open: open.charAt(2) === '~',
+      close: close.charAt(close.length - 3) === '~'
+    };
+  }
+
+  function stripComment(comment) {
+    return comment.replace(/^\{\{~?!-?-?/, '').replace(/-?-?~?\}\}$/, '');
+  }
+
+  function preparePath(data, parts, loc) {
+    loc = this.locInfo(loc);
+    var original = data ? '@' : '',
+        dig = [],
+        depth = 0;
+
+    for (var i = 0, l = parts.length; i < l; i++) {
+      var part = parts[i].part,
+          // If we have [] syntax then we do not treat path references as operators,
+      // i.e. foo.[this] resolves to approximately context.foo['this']
+      isLiteral = parts[i].original !== part;
+      original += (parts[i].separator || '') + part;
+
+      if (!isLiteral && (part === '..' || part === '.' || part === 'this')) {
+        if (dig.length > 0) {
+          throw new Exception('Invalid path: ' + original, {
+            loc: loc
+          });
+        } else if (part === '..') {
+          depth++;
+        }
+      } else {
+        dig.push(part);
+      }
+    }
+
+    return {
+      type: 'PathExpression',
+      data: data,
+      depth: depth,
+      parts: dig,
+      original: original,
+      loc: loc
+    };
+  }
+
+  function prepareMustache(path, params, hash, open, strip, locInfo) {
+    // Must use charAt to support IE pre-10
+    var escapeFlag = open.charAt(3) || open.charAt(2),
+        escaped = escapeFlag !== '{' && escapeFlag !== '&';
+    var decorator = /\*/.test(open);
+    return {
+      type: decorator ? 'Decorator' : 'MustacheStatement',
+      path: path,
+      params: params,
+      hash: hash,
+      escaped: escaped,
+      strip: strip,
+      loc: this.locInfo(locInfo)
+    };
+  }
+
+  function prepareRawBlock(openRawBlock, contents, close, locInfo) {
+    validateClose(openRawBlock, close);
+    locInfo = this.locInfo(locInfo);
+    var program = {
+      type: 'Program',
+      body: contents,
+      strip: {},
+      loc: locInfo
+    };
+    return {
+      type: 'BlockStatement',
+      path: openRawBlock.path,
+      params: openRawBlock.params,
+      hash: openRawBlock.hash,
+      program: program,
+      openStrip: {},
+      inverseStrip: {},
+      closeStrip: {},
+      loc: locInfo
+    };
+  }
+
+  function prepareBlock(openBlock, program, inverseAndProgram, close, inverted, locInfo) {
+    if (close && close.path) {
+      validateClose(openBlock, close);
+    }
+
+    var decorator = /\*/.test(openBlock.open);
+    program.blockParams = openBlock.blockParams;
+    var inverse, inverseStrip;
+
+    if (inverseAndProgram) {
+      if (decorator) {
+        throw new Exception('Unexpected inverse block on decorator', inverseAndProgram);
+      }
+
+      if (inverseAndProgram.chain) {
+        inverseAndProgram.program.body[0].closeStrip = close.strip;
+      }
+
+      inverseStrip = inverseAndProgram.strip;
+      inverse = inverseAndProgram.program;
+    }
+
+    if (inverted) {
+      inverted = inverse;
+      inverse = program;
+      program = inverted;
+    }
+
+    return {
+      type: decorator ? 'DecoratorBlock' : 'BlockStatement',
+      path: openBlock.path,
+      params: openBlock.params,
+      hash: openBlock.hash,
+      program: program,
+      inverse: inverse,
+      openStrip: openBlock.strip,
+      inverseStrip: inverseStrip,
+      closeStrip: close && close.strip,
+      loc: this.locInfo(locInfo)
+    };
+  }
+
+  function prepareProgram(statements, loc) {
+    if (!loc && statements.length) {
+      var firstLoc = statements[0].loc,
+          lastLoc = statements[statements.length - 1].loc;
+      /* istanbul ignore else */
+
+      if (firstLoc && lastLoc) {
+        loc = {
+          source: firstLoc.source,
+          start: {
+            line: firstLoc.start.line,
+            column: firstLoc.start.column
+          },
+          end: {
+            line: lastLoc.end.line,
+            column: lastLoc.end.column
+          }
+        };
+      }
+    }
+
+    return {
+      type: 'Program',
+      body: statements,
+      strip: {},
+      loc: loc
+    };
+  }
+
+  function preparePartialBlock(open, program, close, locInfo) {
+    validateClose(open, close);
+    return {
+      type: 'PartialBlockStatement',
+      name: open.path,
+      params: open.params,
+      hash: open.hash,
+      program: program,
+      openStrip: open.strip,
+      closeStrip: close && close.strip,
+      loc: this.locInfo(locInfo)
+    };
+  }
+
+  var Helpers = /*#__PURE__*/Object.freeze({
+    SourceLocation: SourceLocation,
+    id: id,
+    stripFlags: stripFlags,
+    stripComment: stripComment,
+    preparePath: preparePath,
+    prepareMustache: prepareMustache,
+    prepareRawBlock: prepareRawBlock,
+    prepareBlock: prepareBlock,
+    prepareProgram: prepareProgram,
+    preparePartialBlock: preparePartialBlock
+  });
+  var baseHelpers = {};
+
+  for (var helper in Helpers) {
+    if (Object.prototype.hasOwnProperty.call(Helpers, helper)) {
+      baseHelpers[helper] = Helpers[helper];
+    }
+  }
+
+  function parseWithoutProcessing(input, options) {
+    // Just return if an already-compiled AST was passed in.
+    if (input.type === 'Program') {
+      return input;
+    }
+
+    parser.yy = baseHelpers; // Altering the shared object here, but this is ok as parser is a sync operation
+
+    parser.yy.locInfo = function (locInfo) {
+      return new SourceLocation(options && options.srcName, locInfo);
+    };
+
+    var ast = parser.parse(input);
+    return ast;
+  }
+
+  function parse(input, options) {
+    var ast = parseWithoutProcessing(input, options);
+    var strip = new WhitespaceControl(options);
+    return strip.accept(ast);
+  }
+});
+define("ember-babel", ["exports"], function (_exports) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.wrapNativeSuper = wrapNativeSuper;
   _exports.classCallCheck = classCallCheck;
   _exports.inheritsLoose = inheritsLoose;
   _exports.taggedTemplateLiteralLoose = taggedTemplateLiteralLoose;
   _exports.createClass = createClass;
   _exports.assertThisInitialized = assertThisInitialized;
   _exports.possibleConstructorReturn = possibleConstructorReturn;
-  const setPrototypeOf = Object.setPrototypeOf;
+  _exports.objectDestructuringEmpty = objectDestructuringEmpty;
+  _exports.createSuper = createSuper;
+  _exports.createForOfIteratorHelperLoose = createForOfIteratorHelperLoose;
+
+  /* globals Reflect */
+  var setPrototypeOf = Object.setPrototypeOf;
+  var getPrototypeOf = Object.getPrototypeOf;
+  var hasReflectConstruct = typeof Reflect === 'object' && typeof Reflect.construct === 'function';
+  var nativeWrapperCache = new Map(); // Super minimal version of Babel's wrapNativeSuper. We only use this for
+  // extending Function, for ComputedDecoratorImpl and AliasDecoratorImpl. We know
+  // we will never directly create an instance of these classes so no need to
+  // include `construct` code or other helpers.
+
+  function wrapNativeSuper(Class) {
+    if (nativeWrapperCache.has(Class)) {
+      return nativeWrapperCache.get(Class);
+    }
+
+    function Wrapper() {}
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    nativeWrapperCache.set(Class, Wrapper);
+    return setPrototypeOf(Wrapper, Class);
+  }
 
   function classCallCheck(instance, Constructor) {
     if (true
     /* DEBUG */
     ) {
-        if (!(instance instanceof Constructor)) {
-          throw new TypeError('Cannot call a class as a function');
-        }
+      if (!(instance instanceof Constructor)) {
+        throw new TypeError('Cannot call a class as a function');
       }
+    }
   }
   /*
     Overrides default `inheritsLoose` to _also_ call `Object.setPrototypeOf`.
     This is needed so that we can use `loose` option with the
     `@babel/plugin-transform-classes` (because we want simple assignment to the
-    prototype whereever possible) but also keep our constructor based prototypal
+    prototype wherever possible) but also keep our constructor based prototypal
     inheritance working properly
   */
 
@@ -5796,10 +18598,10 @@ enifed("ember-babel", ["exports"], function (_exports) {
     if (true
     /* DEBUG */
     ) {
-        if (typeof superClass !== 'function' && superClass !== null) {
-          throw new TypeError('Super expression must either be null or a function');
-        }
+      if (typeof superClass !== 'function' && superClass !== null) {
+        throw new TypeError('Super expression must either be null or a function');
       }
+    }
 
     subClass.prototype = Object.create(superClass === null ? null : superClass.prototype, {
       constructor: {
@@ -5871,49 +18673,144 @@ enifed("ember-babel", ["exports"], function (_exports) {
 
     return assertThisInitialized(self);
   }
+
+  function objectDestructuringEmpty(obj) {
+    if (true
+    /* DEBUG */
+    && (obj === null || obj === undefined)) {
+      throw new TypeError('Cannot destructure undefined');
+    }
+  }
+  /*
+    Differs from default implementation by checking for _any_ `Reflect.construct`
+    (the default implementation tries to ensure that `Reflect.construct` is truly
+    the native one).
+  
+    Original source: https://github.com/babel/babel/blob/v7.9.2/packages/babel-helpers/src/helpers.js#L738-L757
+  */
+
+
+  function createSuper(Derived) {
+    return function () {
+      var Super = getPrototypeOf(Derived);
+      var result;
+
+      if (hasReflectConstruct) {
+        // NOTE: This doesn't work if this.__proto__.constructor has been modified.
+        var NewTarget = getPrototypeOf(this).constructor;
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return possibleConstructorReturn(this, result);
+    };
+  }
+  /*
+    Does not differ from default implementation.
+  */
+
+
+  function arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+    var arr2 = new Array(len);
+
+    for (var i = 0; i < len; i++) {
+      arr2[i] = arr[i];
+    }
+
+    return arr2;
+  }
+  /*
+    Does not differ from default implementation.
+  */
+
+
+  function unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === 'string') return arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === 'Object' && o.constructor) n = o.constructor.name;
+    if (n === 'Map' || n === 'Set') return Array.from(n);
+    if (n === 'Arguments' || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+  }
+  /*
+    Does not differ from default implementation.
+  */
+
+
+  function createForOfIteratorHelperLoose(o) {
+    var i = 0;
+
+    if (typeof Symbol === 'undefined' || o[Symbol.iterator] == null) {
+      // Fallback for engines without symbol support
+      if (Array.isArray(o) || (o = unsupportedIterableToArray(o))) return function () {
+        if (i >= o.length) return {
+          done: true
+        };
+        return {
+          done: false,
+          value: o[i++]
+        };
+      };
+      throw new TypeError('Invalid attempt to iterate non-iterable instance.\\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.');
+    }
+
+    i = o[Symbol.iterator]();
+    return i.next.bind(i);
+  }
 });
-enifed("ember-template-compiler/index", ["exports", "@ember/-internals/environment", "@ember/canary-features", "ember/version", "ember-template-compiler/lib/compat", "ember-template-compiler/lib/system/precompile", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/bootstrap", "ember-template-compiler/lib/system/initializer"], function (_exports, _environment, _canaryFeatures, _version, _compat, _precompile, _compile, _compileOptions, _index, _bootstrap, _initializer) {
+define("ember-template-compiler/index", ["exports", "@ember/-internals/environment", "@ember/canary-features", "ember/version", "ember-template-compiler/lib/compat", "ember-template-compiler/lib/system/precompile", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/bootstrap", "ember-template-compiler/lib/system/initializer"], function (_exports, _environment, _canaryFeatures, _version, _compat, _precompile, _compile, _compileOptions, _index, _bootstrap, _initializer) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   Object.defineProperty(_exports, "precompile", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _precompile.default;
     }
   });
   Object.defineProperty(_exports, "compile", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _compile.default;
     }
   });
   Object.defineProperty(_exports, "compileOptions", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _compileOptions.default;
     }
   });
   Object.defineProperty(_exports, "registerPlugin", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _compileOptions.registerPlugin;
     }
   });
   Object.defineProperty(_exports, "unregisterPlugin", {
     enumerable: true,
-    get: function () {
+    get: function get() {
       return _compileOptions.unregisterPlugin;
     }
   });
-  Object.defineProperty(_exports, "defaultPlugins", {
+  Object.defineProperty(_exports, "RESOLUTION_MODE_TRANSFORMS", {
     enumerable: true,
-    get: function () {
-      return _index.default;
+    get: function get() {
+      return _index.RESOLUTION_MODE_TRANSFORMS;
+    }
+  });
+  Object.defineProperty(_exports, "STRICT_MODE_TRANSFORMS", {
+    enumerable: true,
+    get: function get() {
+      return _index.STRICT_MODE_TRANSFORMS;
     }
   });
   _exports._Ember = void 0;
 
-  const _Ember = typeof _environment.context.imports.Ember === 'object' && _environment.context.imports.Ember || {}; // private API used by ember-cli-htmlbars to setup ENV and FEATURES
+  var _Ember = typeof _environment.context.imports.Ember === 'object' && _environment.context.imports.Ember || {}; // private API used by ember-cli-htmlbars to setup ENV and FEATURES
 
 
   _exports._Ember = _Ember;
@@ -5933,19 +18830,22 @@ enifed("ember-template-compiler/index", ["exports", "@ember/-internals/environme
 
   (0, _compat.default)(_Ember);
 });
-enifed("ember-template-compiler/lib/compat", ["exports", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/system/precompile"], function (_exports, _compile, _compileOptions, _precompile) {
+define("ember-template-compiler/lib/compat", ["exports", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/system/precompile"], function (_exports, _compile, _compileOptions, _precompile) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = setupGlobal;
 
   function setupGlobal(Ember) {
-    let EmberHandlebars = Ember.Handlebars;
+    var EmberHandlebars = Ember.Handlebars;
 
     if (!EmberHandlebars) {
       Ember.Handlebars = EmberHandlebars = {};
     }
 
-    let EmberHTMLBars = Ember.HTMLBars;
+    var EmberHTMLBars = Ember.HTMLBars;
 
     if (!EmberHTMLBars) {
       Ember.HTMLBars = EmberHTMLBars = {};
@@ -5956,312 +18856,335 @@ enifed("ember-template-compiler/lib/compat", ["exports", "ember-template-compile
     EmberHTMLBars.registerPlugin = _compileOptions.registerPlugin;
   }
 });
-enifed("ember-template-compiler/lib/plugins/assert-if-helper-without-arguments", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modifiers", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
   "use strict";
 
-  _exports.default = assertIfHelperWithoutArguments;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = assertAgainstDynamicHelpersModifiers;
 
-  function assertIfHelperWithoutArguments(env) {
-    let {
-      moduleName
-    } = env.meta;
+  function assertAgainstDynamicHelpersModifiers(env) {
+    var moduleName = env.meta.moduleName;
+
+    var _trackLocals = (0, _utils.trackLocals)(),
+        hasLocal = _trackLocals.hasLocal,
+        node = _trackLocals.node;
+
     return {
-      name: 'assert-if-helper-without-arguments',
+      name: 'assert-against-dynamic-helpers-modifiers',
       visitor: {
-        BlockStatement(node) {
-          if (isInvalidBlockIf(node)) {
-            true && !false && (0, _debug.assert)(`${blockAssertMessage(node.path.original)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`);
+        Program: node,
+        ElementNode: {
+          keys: {
+            children: node
           }
         },
-
-        MustacheStatement(node) {
-          if (isInvalidInlineIf(node)) {
-            true && !false && (0, _debug.assert)(`${inlineAssertMessage(node.path.original)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`);
+        MustacheStatement: function MustacheStatement(node) {
+          if ((0, _utils.isPath)(node.path)) {
+            var name = node.path.parts[0];
+            (true && !(name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)) && (0, _debug.assert)(messageFor(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)));
           }
         },
-
-        SubExpression(node) {
-          if (isInvalidInlineIf(node)) {
-            true && !false && (0, _debug.assert)(`${inlineAssertMessage(node.path.original)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`);
+        SubExpression: function SubExpression(node) {
+          if ((0, _utils.isPath)(node.path)) {
+            var name = node.path.parts[0];
+            (true && !(name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)) && (0, _debug.assert)(messageFor(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)));
           }
         }
-
       }
     };
   }
 
-  function blockAssertMessage(original) {
-    return `#${original} requires a single argument.`;
+  function isLocalVariable(node, hasLocal) {
+    return !node.this && node.parts.length === 1 && hasLocal(node.parts[0]);
   }
 
-  function inlineAssertMessage(original) {
-    return `The inline form of the '${original}' helper expects two or three arguments.`;
-  }
-
-  function isInvalidInlineIf(node) {
-    return node.path.original === 'if' && (!node.params || node.params.length < 2 || node.params.length > 3);
-  }
-
-  function isInvalidBlockIf(node) {
-    return node.path.original === 'if' && (!node.params || node.params.length !== 1);
+  function messageFor(name) {
+    return "Cannot use the (" + name + ") keyword yet, as it has not been implemented.";
   }
 });
-enifed("ember-template-compiler/lib/plugins/assert-input-helper-without-block", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/assert-against-named-blocks", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = assertAgainstNamedBlocks;
+
+  /**
+   @module ember
+  */
+
+  /**
+    Prevents usage of named blocks
+  
+    @private
+    @class AssertAgainstNamedBlocks
+  */
+  function assertAgainstNamedBlocks(env) {
+    var moduleName = env.meta.moduleName;
+    return {
+      name: 'assert-against-named-blocks',
+      visitor: {
+        ElementNode: function ElementNode(node) {
+          if (node.tag[0] === ':') {
+            var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+            (true && !(false) && (0, _debug.assert)("Named blocks are not currently available, attempted to use the <" + node.tag + "> named block. " + sourceInformation));
+          }
+        },
+        MustacheStatement: function MustacheStatement(node) {
+          if (node.path.type === 'PathExpression' && node.path.original === 'yield') {
+            var to = node.hash.pairs.filter(function (pair) {
+              return pair.key === 'to';
+            })[0]; // Glimmer template compiler ensures yield must receive a string literal,
+            // so we only need to check if it is not "default" or "inverse"
+
+            if (to && to.value.type === 'StringLiteral' && to.value.original !== 'default' && to.value.original !== 'inverse') {
+              var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+              (true && !(false) && (0, _debug.assert)("Named blocks are not currently available, attempted to yield to a named block other than \"default\" or \"inverse\": {{yield to=\"" + to.value.original + "\"}}. " + sourceInformation));
+            }
+          }
+        }
+      }
+    };
+  }
+});
+define("ember-template-compiler/lib/plugins/assert-input-helper-without-block", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = errorOnInputWithContent;
 
   function errorOnInputWithContent(env) {
-    let {
-      moduleName
-    } = env.meta;
+    var moduleName = env.meta.moduleName;
     return {
       name: 'assert-input-helper-without-block',
       visitor: {
-        BlockStatement(node) {
-          if (node.path.original !== 'input') {
-            return;
+        BlockStatement: function BlockStatement(node) {
+          if ((0, _utils.isPath)(node.path) && node.path.original === 'input') {
+            (true && !(false) && (0, _debug.assert)(assertMessage(moduleName, node)));
           }
-
-          true && !false && (0, _debug.assert)(assertMessage(moduleName, node));
         }
-
       }
     };
   }
 
   function assertMessage(moduleName, node) {
-    let sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
-    return `The {{input}} helper cannot be used in block form. ${sourceInformation}`;
+    var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+    return "The {{input}} helper cannot be used in block form. " + sourceInformation;
   }
 });
-enifed("ember-template-compiler/lib/plugins/assert-local-variable-shadowing-helper-invocation", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/assert-reserved-named-arguments", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
   "use strict";
 
-  _exports.default = assertLocalVariableShadowingHelperInvocation;
-
-  function assertLocalVariableShadowingHelperInvocation(env) {
-    let {
-      moduleName
-    } = env.meta;
-    let locals = [];
-    return {
-      name: 'assert-local-variable-shadowing-helper-invocation',
-      visitor: {
-        Program: {
-          enter(node) {
-            locals.push(node.blockParams);
-          },
-
-          exit() {
-            locals.pop();
-          }
-
-        },
-        ElementNode: {
-          keys: {
-            children: {
-              enter(node) {
-                locals.push(node.blockParams);
-              },
-
-              exit() {
-                locals.pop();
-              }
-
-            }
-          }
-        },
-
-        MustacheStatement(node) {
-          if (isPath(node.path) && hasArguments(node)) {
-            let name = node.path.parts[0];
-            let type = 'helper';
-            true && !!isLocalVariable(node.path, locals) && (0, _debug.assert)(`${messageFor(name, type)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`, !isLocalVariable(node.path, locals));
-          }
-        },
-
-        SubExpression(node) {
-          let name = node.path.parts[0];
-          let type = 'helper';
-          true && !!isLocalVariable(node.path, locals) && (0, _debug.assert)(`${messageFor(name, type)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`, !isLocalVariable(node.path, locals));
-        },
-
-        ElementModifierStatement(node) {
-          let name = node.path.parts[0];
-          let type = 'modifier';
-          true && !!isLocalVariable(node.path, locals) && (0, _debug.assert)(`${messageFor(name, type)} ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`, !isLocalVariable(node.path, locals));
-        }
-
-      }
-    };
-  }
-
-  function isLocalVariable(node, locals) {
-    return !node.this && node.parts.length === 1 && hasLocalVariable(node.parts[0], locals);
-  }
-
-  function hasLocalVariable(name, locals) {
-    return locals.some(names => names.indexOf(name) !== -1);
-  }
-
-  function messageFor(name, type) {
-    return `Cannot invoke the \`${name}\` ${type} because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict.`;
-  }
-
-  function isPath(node) {
-    return node.type === 'PathExpression';
-  }
-
-  function hasArguments(node) {
-    return node.params.length > 0 || node.hash.pairs.length > 0;
-  }
-});
-enifed("ember-template-compiler/lib/plugins/assert-reserved-named-arguments", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
-  "use strict";
-
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = assertReservedNamedArguments;
-  const RESERVED = ['@arguments', '@args', '@block', '@else'];
-  let isReserved, assertMessage;
 
   function assertReservedNamedArguments(env) {
-    let {
-      moduleName
-    } = env.meta;
+    var moduleName = env.meta.moduleName;
     return {
       name: 'assert-reserved-named-arguments',
       visitor: {
-        PathExpression({
-          original,
-          loc
-        }) {
+        // In general, we don't assert on the invocation side to avoid creating migration
+        // hazards (e.g. using angle bracket to invoke a classic component that uses
+        // `this.someReservedName`. However, we want to avoid leaking special internal
+        // things, such as `__ARGS__`, so those would need to be asserted on both sides.
+        AttrNode: function AttrNode(_ref) {
+          var name = _ref.name,
+              loc = _ref.loc;
+
+          if (name === '@__ARGS__') {
+            (true && !(false) && (0, _debug.assert)(assertMessage(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
+          }
+        },
+        HashPair: function HashPair(_ref2) {
+          var key = _ref2.key,
+              loc = _ref2.loc;
+
+          if (key === '__ARGS__') {
+            (true && !(false) && (0, _debug.assert)(assertMessage(key) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
+          }
+        },
+        PathExpression: function PathExpression(_ref3) {
+          var original = _ref3.original,
+              loc = _ref3.loc;
+
           if (isReserved(original)) {
-            true && !false && (0, _debug.assert)(`${assertMessage(original)} ${(0, _calculateLocationDisplay.default)(moduleName, loc)}`);
+            (true && !(false) && (0, _debug.assert)(assertMessage(original) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         }
-
       }
     };
   }
 
-  if (true
-  /* EMBER_GLIMMER_NAMED_ARGUMENTS */
-  ) {
-      isReserved = name => RESERVED.indexOf(name) !== -1 || Boolean(name.match(/^@[^a-z]/));
+  var RESERVED = ['@arguments', '@args', '@block', '@else'];
 
-      assertMessage = name => `'${name}' is reserved.`;
-    } else {
-    isReserved = name => name[0] === '@';
+  function isReserved(name) {
+    return RESERVED.indexOf(name) !== -1 || Boolean(name.match(/^@[^a-z]/));
+  }
 
-    assertMessage = name => `'${name}' is not a valid path.`;
+  function assertMessage(name) {
+    return "'" + name + "' is reserved.";
   }
 });
-enifed("ember-template-compiler/lib/plugins/assert-splattribute-expression", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/assert-splattribute-expression", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = assertSplattributeExpressions;
 
   function assertSplattributeExpressions(env) {
-    let {
-      moduleName
-    } = env.meta;
+    var moduleName = env.meta.moduleName;
     return {
       name: 'assert-splattribute-expressions',
       visitor: {
-        AttrNode({
-          name,
-          loc
-        }) {
-          if (!true
-          /* EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION */
-          && name === '...attributes') {
-            true && !false && (0, _debug.assert)(`${errorMessage()} ${(0, _calculateLocationDisplay.default)(moduleName, loc)}`);
-          }
-        },
+        PathExpression: function PathExpression(_ref) {
+          var original = _ref.original,
+              loc = _ref.loc;
 
-        PathExpression({
-          original,
-          loc
-        }) {
           if (original === '...attributes') {
-            true && !false && (0, _debug.assert)(`${errorMessage()} ${(0, _calculateLocationDisplay.default)(moduleName, loc)}`);
+            (true && !(false) && (0, _debug.assert)(errorMessage() + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         }
-
       }
     };
   }
 
   function errorMessage() {
-    if (true
-    /* EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION */
-    ) {
-        return `Using "...attributes" can only be used in the element position e.g. <div ...attributes />. It cannot be used as a path.`;
-      }
-
-    return `...attributes is an invalid path`;
+    return '`...attributes` can only be used in the element position e.g. `<div ...attributes />`. It cannot be used as a path.';
   }
 });
-enifed("ember-template-compiler/lib/plugins/deprecate-send-action", ["exports", "@ember/debug", "@ember/deprecated-features", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _deprecatedFeatures, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/deprecate-send-action", ["exports", "@ember/debug", "@ember/deprecated-features", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _deprecatedFeatures, _calculateLocationDisplay, _utils) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = deprecateSendAction;
-  const EVENTS = ['insert-newline', 'enter', 'escape-press', 'focus-in', 'focus-out', 'key-press', 'key-up', 'key-down'];
+  var EVENTS = ['insert-newline', 'enter', 'escape-press', 'focus-in', 'focus-out', 'key-press', 'key-up', 'key-down'];
 
   function deprecateSendAction(env) {
     if (_deprecatedFeatures.SEND_ACTION) {
-      let {
-        moduleName
-      } = env.meta;
+      var moduleName = env.meta.moduleName;
 
-      let deprecationMessage = (node, evName, action) => {
-        let sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
-        return `Please refactor \`{{input ${evName}="${action}"}}\` to \`{{input ${evName}=(action "${action}")}}\. ${sourceInformation}`;
+      var deprecationMessage = function deprecationMessage(node, eventName, actionName) {
+        var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+
+        if (node.type === 'ElementNode') {
+          return "Passing actions to components as strings (like `<Input @" + eventName + "=\"" + actionName + "\" />`) is deprecated. Please use closure actions instead (`<Input @" + eventName + "={{action \"" + actionName + "\"}} />`). " + sourceInformation;
+        } else {
+          return "Passing actions to components as strings (like `{{input " + eventName + "=\"" + actionName + "\"}}`) is deprecated. Please use closure actions instead (`{{input " + eventName + "=(action \"" + actionName + "\")}}`). " + sourceInformation;
+        }
       };
 
       return {
         name: 'deprecate-send-action',
         visitor: {
-          MustacheStatement(node) {
-            if (node.path.original !== 'input') {
+          ElementNode: function ElementNode(node) {
+            if (node.tag !== 'Input') {
               return;
             }
 
-            node.hash.pairs.forEach(pair => {
+            node.attributes.forEach(function (_ref) {
+              var name = _ref.name,
+                  value = _ref.value;
+
+              if (name.charAt(0) === '@') {
+                var eventName = name.substring(1);
+
+                if (EVENTS.indexOf(eventName) > -1) {
+                  if (value.type === 'TextNode') {
+                    (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, eventName, value.chars), false, {
+                      id: 'ember-component.send-action',
+                      until: '4.0.0',
+                      url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
+                      for: 'ember-source',
+                      since: {
+                        enabled: '3.4.0'
+                      }
+                    }));
+                  } else if (value.type === 'MustacheStatement' && value.path.type === 'StringLiteral') {
+                    (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, eventName, value.path.original), false, {
+                      id: 'ember-component.send-action',
+                      until: '4.0.0',
+                      url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
+                      for: 'ember-source',
+                      since: {
+                        enabled: '3.4.0'
+                      }
+                    }));
+                  }
+                }
+              }
+            });
+          },
+          MustacheStatement: function MustacheStatement(node) {
+            if (!(0, _utils.isPath)(node.path) || node.path.original !== 'input') {
+              return;
+            }
+
+            node.hash.pairs.forEach(function (pair) {
               if (EVENTS.indexOf(pair.key) > -1 && pair.value.type === 'StringLiteral') {
-                true && !false && (0, _debug.deprecate)(deprecationMessage(node, pair.key, pair.value.original), false, {
+                (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, pair.key, pair.value.original), false, {
                   id: 'ember-component.send-action',
                   until: '4.0.0',
-                  url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action'
-                });
+                  url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
+                  for: 'ember-source',
+                  since: {
+                    enabled: '3.4.0'
+                  }
+                }));
               }
             });
           }
-
         }
       };
     }
 
-    return;
+    return {
+      name: 'deprecate-send-action',
+      visitor: {}
+    };
   }
 });
-enifed("ember-template-compiler/lib/plugins/index", ["exports", "ember-template-compiler/lib/plugins/assert-if-helper-without-arguments", "ember-template-compiler/lib/plugins/assert-input-helper-without-block", "ember-template-compiler/lib/plugins/assert-local-variable-shadowing-helper-invocation", "ember-template-compiler/lib/plugins/assert-reserved-named-arguments", "ember-template-compiler/lib/plugins/assert-splattribute-expression", "ember-template-compiler/lib/plugins/deprecate-send-action", "ember-template-compiler/lib/plugins/transform-action-syntax", "ember-template-compiler/lib/plugins/transform-angle-bracket-components", "ember-template-compiler/lib/plugins/transform-attrs-into-args", "ember-template-compiler/lib/plugins/transform-component-invocation", "ember-template-compiler/lib/plugins/transform-each-in-into-each", "ember-template-compiler/lib/plugins/transform-has-block-syntax", "ember-template-compiler/lib/plugins/transform-in-element", "ember-template-compiler/lib/plugins/transform-inline-link-to", "ember-template-compiler/lib/plugins/transform-input-type-syntax", "ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", "ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", "ember-template-compiler/lib/plugins/transform-top-level-components", "@ember/deprecated-features"], function (_exports, _assertIfHelperWithoutArguments, _assertInputHelperWithoutBlock, _assertLocalVariableShadowingHelperInvocation, _assertReservedNamedArguments, _assertSplattributeExpression, _deprecateSendAction, _transformActionSyntax, _transformAngleBracketComponents, _transformAttrsIntoArgs, _transformComponentInvocation, _transformEachInIntoEach, _transformHasBlockSyntax, _transformInElement, _transformInlineLinkTo, _transformInputTypeSyntax, _transformOldClassBindingSyntax, _transformQuotedBindingsIntoJustBindings, _transformTopLevelComponents, _deprecatedFeatures) {
+define("ember-template-compiler/lib/plugins/index", ["exports", "ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modifiers", "ember-template-compiler/lib/plugins/assert-against-named-blocks", "ember-template-compiler/lib/plugins/assert-input-helper-without-block", "ember-template-compiler/lib/plugins/assert-reserved-named-arguments", "ember-template-compiler/lib/plugins/assert-splattribute-expression", "ember-template-compiler/lib/plugins/deprecate-send-action", "ember-template-compiler/lib/plugins/transform-action-syntax", "ember-template-compiler/lib/plugins/transform-attrs-into-args", "ember-template-compiler/lib/plugins/transform-each-in-into-each", "ember-template-compiler/lib/plugins/transform-each-track-array", "ember-template-compiler/lib/plugins/transform-has-block-syntax", "ember-template-compiler/lib/plugins/transform-in-element", "ember-template-compiler/lib/plugins/transform-link-to", "ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", "ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", "ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet", "@ember/deprecated-features"], function (_exports, _assertAgainstDynamicHelpersModifiers, _assertAgainstNamedBlocks, _assertInputHelperWithoutBlock, _assertReservedNamedArguments, _assertSplattributeExpression, _deprecateSendAction, _transformActionSyntax, _transformAttrsIntoArgs, _transformEachInIntoEach, _transformEachTrackArray, _transformHasBlockSyntax, _transformInElement, _transformLinkTo, _transformOldClassBindingSyntax, _transformQuotedBindingsIntoJustBindings, _transformWrapMountAndOutlet, _deprecatedFeatures) {
   "use strict";
 
-  _exports.default = void 0;
-  const transforms = [_transformComponentInvocation.default, _transformAngleBracketComponents.default, _transformTopLevelComponents.default, _transformInlineLinkTo.default, _transformOldClassBindingSyntax.default, _transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformInputTypeSyntax.default, _transformAttrsIntoArgs.default, _transformEachInIntoEach.default, _transformHasBlockSyntax.default, _assertLocalVariableShadowingHelperInvocation.default, _assertInputHelperWithoutBlock.default, _transformInElement.default, _assertIfHelperWithoutArguments.default, _assertSplattributeExpression.default];
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.STRICT_MODE_TRANSFORMS = _exports.RESOLUTION_MODE_TRANSFORMS = void 0;
+  // order of plugins is important
+  var RESOLUTION_MODE_TRANSFORMS = Object.freeze([_transformOldClassBindingSyntax.default, _transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformAttrsIntoArgs.default, _transformEachInIntoEach.default, _transformHasBlockSyntax.default, _transformLinkTo.default, _assertInputHelperWithoutBlock.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _transformWrapMountAndOutlet.default, _deprecatedFeatures.SEND_ACTION ? _deprecateSendAction.default : null, !true
+  /* EMBER_NAMED_BLOCKS */
+  ? _assertAgainstNamedBlocks.default : null, !false
+  /* EMBER_DYNAMIC_HELPERS_AND_MODIFIERS */
+  ? _assertAgainstDynamicHelpersModifiers.default : null].filter(notNull));
+  _exports.RESOLUTION_MODE_TRANSFORMS = RESOLUTION_MODE_TRANSFORMS;
+  var STRICT_MODE_TRANSFORMS = Object.freeze([_transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformEachInIntoEach.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _transformWrapMountAndOutlet.default, _deprecatedFeatures.SEND_ACTION ? _deprecateSendAction.default : null, !true
+  /* EMBER_NAMED_BLOCKS */
+  ? _assertAgainstNamedBlocks.default : null, !false
+  /* EMBER_DYNAMIC_HELPERS_AND_MODIFIERS */
+  ? _assertAgainstDynamicHelpersModifiers.default : null].filter(notNull));
+  _exports.STRICT_MODE_TRANSFORMS = STRICT_MODE_TRANSFORMS;
 
-  if (_deprecatedFeatures.SEND_ACTION) {
-    transforms.push(_deprecateSendAction.default);
+  function notNull(value) {
+    return value !== null;
   }
-
-  var _default = Object.freeze(transforms);
-
-  _exports.default = _default;
 });
-enifed("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformActionSyntax;
 
   /**
@@ -6270,85 +19193,63 @@ enifed("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports"
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-
+  
     ```handlebars
    <button {{action 'foo'}}>
    <button onblur={{action 'foo'}}>
    <button onblur={{action (action 'foo') 'bar'}}>
     ```
-
+  
     with
-
+  
     ```handlebars
    <button {{action this 'foo'}}>
    <button onblur={{action this 'foo'}}>
    <button onblur={{action this (action this 'foo') 'bar'}}>
     ```
-
+  
     @private
     @class TransformActionSyntax
   */
-  function transformActionSyntax({
-    syntax
-  }) {
-    let {
-      builders: b
-    } = syntax;
+  function transformActionSyntax(_ref) {
+    var syntax = _ref.syntax;
+    var b = syntax.builders;
     return {
       name: 'transform-action-syntax',
       visitor: {
-        ElementModifierStatement(node) {
+        ElementModifierStatement: function ElementModifierStatement(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         },
-
-        MustacheStatement(node) {
+        MustacheStatement: function MustacheStatement(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         },
-
-        SubExpression(node) {
+        SubExpression: function SubExpression(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         }
-
       }
     };
   }
 
   function isAction(node) {
-    return node.path.original === 'action';
+    return (0, _utils.isPath)(node.path) && node.path.original === 'action';
   }
 
   function insertThisAsFirstParam(node, builders) {
     node.params.unshift(builders.path('this'));
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-angle-bracket-components", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["exports"], function (_exports) {
   "use strict";
 
-  _exports.default = transformAngleBracketComponents;
-
-  function transformAngleBracketComponents()
-  /* env */
-  {
-    return {
-      name: 'transform-angle-bracket-components',
-      visitor: {
-        ComponentNode(node) {
-          node.tag = `<${node.tag}>`;
-        }
-
-      }
-    };
-  }
-});
-enifed("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["exports"], function (_exports) {
-  "use strict";
-
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformAttrsIntoArgs;
 
   /**
@@ -6357,58 +19258,52 @@ enifed("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["export
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-
+  
     ```handlebars
    {{attrs.foo.bar}}
     ```
-
+  
     to
-
+  
     ```handlebars
    {{@foo.bar}}
     ```
-
+  
     as well as `{{#if attrs.foo}}`, `{{deeply (nested attrs.foobar.baz)}}`,
     `{{this.attrs.foo}}` etc
-
+  
     @private
     @class TransformAttrsToProps
   */
   function transformAttrsIntoArgs(env) {
-    let {
-      builders: b
-    } = env.syntax;
-    let stack = [[]];
+    var b = env.syntax.builders;
+    var stack = [[]];
     return {
       name: 'transform-attrs-into-args',
       visitor: {
         Program: {
-          enter(node) {
-            let parent = stack[stack.length - 1];
+          enter: function enter(node) {
+            var parent = stack[stack.length - 1];
             stack.push(parent.concat(node.blockParams));
           },
-
-          exit() {
+          exit: function exit() {
             stack.pop();
           }
-
         },
-
-        PathExpression(node) {
+        PathExpression: function PathExpression(node) {
           if (isAttrs(node, stack[stack.length - 1])) {
-            let path = b.path(node.original.substr(6));
-            path.original = `@${path.original}`;
+            var path = b.path(node.original.substr(6));
+            path.original = "@" + path.original;
             path.data = true;
             return path;
           }
         }
-
       }
     };
   }
 
   function isAttrs(node, symbols) {
-    let name = node.parts[0];
+    var name = node.parts[0];
 
     if (symbols.indexOf(name) !== -1) {
       return false;
@@ -6426,249 +19321,12 @@ enifed("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["export
     return false;
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-component-invocation", ["exports", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
   "use strict";
 
-  _exports.default = transformComponentInvocation;
-
-  /**
-    Transforms unambigious invocations of closure components to be wrapped with
-    the component helper. Once these syntaxes are fully supported by Glimmer VM
-    natively, this transform can be removed.
-
-    ```handlebars
-    {{!-- this.foo is not a legal helper/component name --}}
-    {{this.foo "with" some="args"}}
-    ```
-
-    with
-
-    ```handlebars
-    {{component this.foo "with" some="args"}}
-    ```
-
-    and
-
-    ```handlebars
-    {{!-- this.foo is not a legal helper/component name --}}
-    {{#this.foo}}...{{/this.foo}}
-    ```
-
-    with
-
-    ```handlebars
-    {{#component this.foo}}...{{/component}}
-    ```
-
-    and
-
-    ```handlebars
-    {{!-- foo.bar is not a legal helper/component name --}}
-    {{foo.bar "with" some="args"}}
-    ```
-
-    with
-
-    ```handlebars
-    {{component foo.bar "with" some="args"}}
-    ```
-
-    and
-
-    ```handlebars
-    {{!-- foo.bar is not a legal helper/component name --}}
-    {{#foo.bar}}...{{/foo.bar}}
-    ```
-
-    with
-
-    ```handlebars
-    {{#component foo.bar}}...{{/component}}
-    ```
-
-    and
-
-    ```handlebars
-    {{!-- @foo is not a legal helper/component name --}}
-    {{@foo "with" some="args"}}
-    ```
-
-    with
-
-    ```handlebars
-    {{component @foo "with" some="args"}}
-    ```
-
-    and
-
-    ```handlebars
-    {{!-- @foo is not a legal helper/component name --}}
-    {{#@foo}}...{{/@foo}}
-    ```
-
-    with
-
-    ```handlebars
-    {{#component @foo}}...{{/component}}
-    ```
-
-    and
-
-    ```handlebars
-    {{#let ... as |foo|}}
-      {{!-- foo is a local variable --}}
-      {{foo "with" some="args"}}
-    {{/let}}
-    ```
-
-    with
-
-    ```handlebars
-    {{#let ... as |foo|}}
-      {{component foo "with" some="args"}}
-    {{/let}}
-    ```
-
-    and
-
-    ```handlebars
-    {{#let ... as |foo|}}
-      {{!-- foo is a local variable --}}
-      {{#foo}}...{{/foo}}
-    {{/let}}
-    ```
-
-    with
-
-    ```handlebars
-    {{#let ... as |foo|}}
-      {{#component foo}}...{{/component}}
-    {{/let}}
-    ```
-
-    @private
-    @class TransFormComponentInvocation
-  */
-  function transformComponentInvocation(env) {
-    let {
-      moduleName
-    } = env.meta;
-    let {
-      builders: b
-    } = env.syntax;
-    let locals = [];
-    let isAttrs = false;
-    return {
-      name: 'transform-component-invocation',
-      visitor: {
-        Program: {
-          enter(node) {
-            locals.push(node.blockParams);
-          },
-
-          exit() {
-            locals.pop();
-          }
-
-        },
-        ElementNode: {
-          keys: {
-            attributes: {
-              enter() {
-                isAttrs = true;
-              },
-
-              exit() {
-                isAttrs = false;
-              }
-
-            },
-            children: {
-              enter(node) {
-                locals.push(node.blockParams);
-              },
-
-              exit() {
-                locals.pop();
-              }
-
-            }
-          }
-        },
-
-        BlockStatement(node) {
-          if (isBlockInvocation(node, locals)) {
-            wrapInComponent(moduleName, node, b);
-          }
-        },
-
-        MustacheStatement(node) {
-          if (!isAttrs && isInlineInvocation(node, locals)) {
-            wrapInComponent(moduleName, node, b);
-          }
-        }
-
-      }
-    };
-  }
-
-  function isInlineInvocation(node, locals) {
-    let {
-      path
-    } = node;
-    return isPath(path) && isIllegalName(path, locals) && hasArguments(node);
-  }
-
-  function isPath(node) {
-    return node.type === 'PathExpression';
-  }
-
-  function isIllegalName(node, locals) {
-    return isThisPath(node) || isDotPath(node) || isNamedArg(node) || isLocalVariable(node, locals);
-  }
-
-  function isThisPath(node) {
-    return node.this === true;
-  }
-
-  function isDotPath(node) {
-    return node.parts.length > 1;
-  }
-
-  function isNamedArg(node) {
-    return node.data === true;
-  }
-
-  function isLocalVariable(node, locals) {
-    return !node.this && hasLocalVariable(node.parts[0], locals);
-  }
-
-  function hasLocalVariable(name, locals) {
-    return locals.some(names => names.indexOf(name) !== -1);
-  }
-
-  function hasArguments(node) {
-    return node.params.length > 0 || node.hash.pairs.length > 0;
-  }
-
-  function isBlockInvocation(node, locals) {
-    return isIllegalName(node.path, locals);
-  }
-
-  function wrapInAssertion(moduleName, node, b) {
-    let error = b.string(`expected \`${node.original}\` to be a contextual component but found a string. Did you mean \`(component ${node.original})\`? ${(0, _calculateLocationDisplay.default)(moduleName, node.loc)}`);
-    return b.sexpr(b.path('-assert-implicit-component-helper-argument'), [node, error], b.hash(), node.loc);
-  }
-
-  function wrapInComponent(moduleName, node, b) {
-    let component = wrapInAssertion(moduleName, node.path, b);
-    node.path = b.path('component');
-    node.params.unshift(component);
-  }
-});
-enifed("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["exports"], function (_exports) {
-  "use strict";
-
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformEachInIntoEach;
 
   /**
@@ -6677,31 +19335,29 @@ enifed("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["expo
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-
+  
     ```handlebars
-   {{#each-in iterableThing as |key value|}}
+    {{#each-in iterableThing as |key value|}}
     ```
-
+  
     with
-
+  
     ```handlebars
-   {{#each (-each-in iterableThing) as |value key|}}
+    {{#each (-each-in iterableThing) as |value key|}}
     ```
-
+  
     @private
     @class TransformHasBlockSyntax
   */
   function transformEachInIntoEach(env) {
-    let {
-      builders: b
-    } = env.syntax;
+    var b = env.syntax.builders;
     return {
       name: 'transform-each-in-into-each',
       visitor: {
-        BlockStatement(node) {
-          if (node.path.original === 'each-in') {
+        BlockStatement: function BlockStatement(node) {
+          if ((0, _utils.isPath)(node.path) && node.path.original === 'each-in') {
             node.params[0] = b.sexpr(b.path('-each-in'), [node.params[0]]);
-            let blockParams = node.program.blockParams;
+            var blockParams = node.program.blockParams;
 
             if (!blockParams || blockParams.length === 0) {// who uses {{#each-in}} without block params?!
             } else if (blockParams.length === 1) {
@@ -6709,23 +19365,74 @@ enifed("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["expo
               // pick a name that won't parse so it won't shadow any real variables
               blockParams = ['( unused value )', blockParams[0]];
             } else {
-              let key = blockParams.shift();
-              let value = blockParams.shift();
-              blockParams = [value, key, ...blockParams];
+              var key = blockParams.shift();
+              var value = blockParams.shift();
+              blockParams = [value, key].concat(blockParams);
             }
 
             node.program.blockParams = blockParams;
             return b.block(b.path('each'), node.params, node.hash, node.program, node.inverse, node.loc);
           }
         }
-
       }
     };
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-has-block-syntax", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-each-track-array", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = transformEachTrackArray;
+
+  /**
+   @module ember
+  */
+
+  /**
+    A Glimmer2 AST transformation that replaces all instances of
+  
+    ```handlebars
+    {{#each iterableThing as |key value|}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{#each (-track-array iterableThing) as |key value|}}
+    ```
+  
+    @private
+    @class TransformHasBlockSyntax
+  */
+  function transformEachTrackArray(env) {
+    var b = env.syntax.builders;
+    return {
+      name: 'transform-each-track-array',
+      visitor: {
+        BlockStatement: function BlockStatement(node) {
+          if ((0, _utils.isPath)(node.path) && node.path.original === 'each') {
+            var firstParam = node.params[0];
+
+            if (firstParam.type === 'SubExpression' && firstParam.path.type === 'PathExpression' && firstParam.path.original === '-each-in') {
+              return;
+            }
+
+            node.params[0] = b.sexpr(b.path('-track-array'), [node.params[0]]);
+            return b.block(b.path('each'), node.params, node.hash, node.program, node.inverse, node.loc);
+          }
+        }
+      }
+    };
+  }
+});
+define("ember-template-compiler/lib/plugins/transform-has-block-syntax", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformHasBlockSyntax;
 
   /**
@@ -6734,57 +19441,55 @@ enifed("ember-template-compiler/lib/plugins/transform-has-block-syntax", ["expor
 
   /**
     A Glimmer2 AST transformation that replaces all instances of
-
+  
     ```handlebars
    {{hasBlock}}
     ```
-
+  
     with
-
+  
     ```handlebars
    {{has-block}}
     ```
-
+  
     @private
     @class TransformHasBlockSyntax
   */
-  const TRANSFORMATIONS = {
+  var TRANSFORMATIONS = {
     hasBlock: 'has-block',
     hasBlockParams: 'has-block-params'
   };
 
   function transformHasBlockSyntax(env) {
-    let {
-      builders: b
-    } = env.syntax;
+    var b = env.syntax.builders;
     return {
       name: 'transform-has-block-syntax',
       visitor: {
-        PathExpression(node) {
+        PathExpression: function PathExpression(node) {
           if (TRANSFORMATIONS[node.original]) {
             return b.sexpr(b.path(TRANSFORMATIONS[node.original]));
           }
         },
-
-        MustacheStatement(node) {
-          if (typeof node.path.original === 'string' && TRANSFORMATIONS[node.path.original]) {
+        MustacheStatement: function MustacheStatement(node) {
+          if ((0, _utils.isPath)(node.path) && TRANSFORMATIONS[node.path.original]) {
             return b.mustache(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash, undefined, node.loc);
           }
         },
-
-        SubExpression(node) {
-          if (TRANSFORMATIONS[node.path.original]) {
+        SubExpression: function SubExpression(node) {
+          if ((0, _utils.isPath)(node.path) && TRANSFORMATIONS[node.path.original]) {
             return b.sexpr(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash);
           }
         }
-
       }
     };
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformInElement;
 
   /**
@@ -6792,229 +19497,229 @@ enifed("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "
   */
 
   /**
-    glimmer-vm has made the `in-element` API public from its perspective (in
-    https://github.com/glimmerjs/glimmer-vm/pull/619) so in glimmer-vm the
-    correct keyword to use is `in-element`, however Ember is still working through
-    its form of `in-element` (see https://github.com/emberjs/rfcs/pull/287).
-
-    There are enough usages of the pre-existing private API (`{{-in-element`) in
-    the wild that we need to transform `{{-in-element` into `{{in-element` during
-    template transpilation, but since RFC#287 is not landed and enabled by default we _also_ need
-    to prevent folks from starting to use `{{in-element` "for realz".
-
-    Tranforms:
-
+    A Glimmer2 AST transformation that handles the public `{{in-element}}` as per RFC287, and deprecates but still
+    continues support for the private `{{-in-element}}`.
+  
+    Transforms:
+  
     ```handlebars
     {{#-in-element someElement}}
       {{modal-display text=text}}
     {{/-in-element}}
     ```
-
+  
     into:
-
+  
     ```handlebars
     {{#in-element someElement}}
       {{modal-display text=text}}
     {{/in-element}}
     ```
-
-    And issues a build time assertion for:
-
+  
+    And issues a deprecation message.
+  
+    Issues a build time assertion for:
+  
     ```handlebars
-    {{#in-element someElement}}
+    {{#in-element someElement insertBefore="some-none-null-value"}}
       {{modal-display text=text}}
     {{/in-element}}
     ```
-
+  
     @private
-    @class TransformHasBlockSyntax
+    @class TransformInElement
   */
   function transformInElement(env) {
-    let {
-      moduleName
-    } = env.meta;
-    let {
-      builders: b
-    } = env.syntax;
-    let cursorCount = 0;
+    var moduleName = env.meta.moduleName;
+    var b = env.syntax.builders;
     return {
       name: 'transform-in-element',
       visitor: {
-        BlockStatement(node) {
+        BlockStatement: function BlockStatement(node) {
+          if (!(0, _utils.isPath)(node.path)) return;
+
           if (node.path.original === 'in-element') {
-            true && !false && (0, _debug.assert)(assertMessage(moduleName, node));
+            var originalValue = node.params[0];
+
+            if (originalValue && !env.isProduction) {
+              var subExpr = b.sexpr('-in-el-null', [originalValue]);
+              node.params.shift();
+              node.params.unshift(subExpr);
+            }
+
+            node.hash.pairs.forEach(function (pair) {
+              if (pair.key === 'insertBefore') {
+                (true && !(pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral') && (0, _debug.assert)("Can only pass null to insertBefore in in-element, received: " + JSON.stringify(pair.value), pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral'));
+              }
+            });
           } else if (node.path.original === '-in-element') {
+            var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+            (true && !(false) && (0, _debug.deprecate)("The use of the private `{{-in-element}}` is deprecated, please refactor to the public `{{in-element}}`. " + sourceInformation, false, {
+              id: 'glimmer.private-in-element',
+              until: '3.25.0',
+              for: 'ember-source',
+              since: {
+                enabled: '3.20.0'
+              }
+            }));
             node.path.original = 'in-element';
             node.path.parts = ['in-element']; // replicate special hash arguments added here:
             // https://github.com/glimmerjs/glimmer-vm/blob/ba9b37d44b85fa1385eeeea71910ff5798198c8e/packages/%40glimmer/syntax/lib/parser/handlebars-node-visitors.ts#L340-L363
 
-            let hasNextSibling = false;
-            let hash = node.hash;
-            hash.pairs.forEach(pair => {
-              if (pair.key === 'nextSibling') {
-                hasNextSibling = true;
+            var needsInsertBefore = true;
+            var hash = node.hash;
+            hash.pairs.forEach(function (pair) {
+              if (pair.key === 'insertBefore') {
+                (true && !(pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral') && (0, _debug.assert)("Can only pass a null or undefined literals to insertBefore in -in-element, received: " + JSON.stringify(pair.value), pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral'));
+                needsInsertBefore = false;
               }
-            });
-            let guid = b.literal('StringLiteral', `%cursor:${cursorCount++}%`);
-            let guidPair = b.pair('guid', guid);
-            hash.pairs.unshift(guidPair);
+            }); // Maintain compatibility with previous -in-element behavior (defaults to append, not clear)
 
-            if (!hasNextSibling) {
-              let nullLiteral = b.literal('NullLiteral', null);
-              let nextSibling = b.pair('nextSibling', nullLiteral);
+            if (needsInsertBefore) {
+              var nullLiteral = b.literal('NullLiteral', null);
+              var nextSibling = b.pair('insertBefore', nullLiteral);
               hash.pairs.push(nextSibling);
             }
           }
         }
-
       }
     };
   }
-
-  function assertMessage(moduleName, node) {
-    let sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
-    return `The {{in-element}} helper cannot be used. ${sourceInformation}`;
-  }
 });
-enifed("ember-template-compiler/lib/plugins/transform-inline-link-to", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-link-to", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
   "use strict";
 
-  _exports.default = transformInlineLinkTo;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = transformLinkTo;
 
-  function buildProgram(b, content, loc) {
-    return b.program([buildStatement(b, content, loc)], undefined, loc);
+  function isInlineLinkTo(node) {
+    return (0, _utils.isPath)(node.path) && node.path.original === 'link-to';
   }
 
-  function buildStatement(b, content, loc) {
+  function isBlockLinkTo(node) {
+    return (0, _utils.isPath)(node.path) && node.path.original === 'link-to';
+  }
+
+  function isQueryParams(node) {
+    return (0, _utils.isSubExpression)(node) && (0, _utils.isPath)(node.path) && node.path.original === 'query-params';
+  }
+
+  function transformInlineLinkToIntoBlockForm(env, node) {
+    var b = env.syntax.builders;
+    return b.block('link-to', node.params.slice(1), node.hash, b.blockItself([buildStatement(b, node.params[0], node.escaped, node.loc)], undefined, false, node.loc), null, node.loc);
+  }
+
+  function transformPositionalLinkToIntoNamedArguments(env, node) {
+    var b = env.syntax.builders;
+    var moduleName = env.meta.moduleName;
+    var params = node.params,
+        pairs = node.hash.pairs;
+    var keys = pairs.map(function (pair) {
+      return pair.key;
+    });
+
+    if (params.length === 0) {
+      (true && !(keys.indexOf('params') !== -1 || keys.indexOf('route') !== -1 || keys.indexOf('model') !== -1 || keys.indexOf('models') !== -1 || keys.indexOf('query') !== -1) && (0, _debug.assert)("You must provide one or more parameters to the `{{link-to}}` component. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('params') !== -1 || keys.indexOf('route') !== -1 || keys.indexOf('model') !== -1 || keys.indexOf('models') !== -1 || keys.indexOf('query') !== -1));
+      return node;
+    } else {
+      (true && !(keys.indexOf('params') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `params` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('params') === -1));
+      (true && !(keys.indexOf('route') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `route` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('route') === -1));
+      (true && !(keys.indexOf('model') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `model` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('model') === -1));
+      (true && !(keys.indexOf('models') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `models` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('models') === -1));
+      (true && !(keys.indexOf('query') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `query` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('query') === -1));
+    }
+
+    (true && !(params.length > 0) && (0, _debug.assert)("You must provide one or more parameters to the `{{link-to}}` component. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), params.length > 0)); // 1. The last argument is possibly the `query` object.
+
+    var query = params[params.length - 1];
+
+    if (query && isQueryParams(query)) {
+      params.pop();
+      (true && !(query.params.length === 0) && (0, _debug.assert)("The `(query-params ...)` helper does not take positional arguments. " + (0, _calculateLocationDisplay.default)(moduleName, query.loc), query.params.length === 0));
+      pairs.push(b.pair('query', b.sexpr(b.path('-hash', query.path.loc), [], query.hash, query.loc), query.loc));
+    } // 2. If there is a `route`, it is now at index 0.
+
+
+    var route = params.shift();
+
+    if (route) {
+      pairs.push(b.pair('route', route, route.loc));
+    } // 3. Any remaining indices (if any) are `models`.
+
+
+    if (params.length === 1) {
+      pairs.push(b.pair('model', params[0], params[0].loc));
+    } else if (params.length > 1) {
+      pairs.push(b.pair('models', b.sexpr(b.path('array', node.loc), params, undefined, node.loc), node.loc));
+    }
+
+    return b.block(node.path, null, b.hash(pairs, node.hash.loc), node.program, node.inverse, node.loc);
+  }
+
+  function buildStatement(b, content, escaped, loc) {
     switch (content.type) {
       case 'PathExpression':
-        return b.mustache(content, undefined, undefined, undefined, loc);
+        return b.mustache(content, undefined, undefined, !escaped, loc);
 
       case 'SubExpression':
-        return b.mustache(content.path, content.params, content.hash, undefined, loc);
+        return b.mustache(content.path, content.params, content.hash, !escaped, loc);
       // The default case handles literals.
 
       default:
-        return b.text(`${content.value}`, loc);
+        return b.text("" + content.value, loc);
     }
   }
 
-  function unsafeHtml(b, expr) {
-    return b.sexpr('-html-safe', [expr]);
-  }
-
-  function transformInlineLinkTo(env) {
-    let {
-      builders: b
-    } = env.syntax;
+  function transformLinkTo(env) {
     return {
-      name: 'transform-inline-link-to',
+      name: 'transform-link-to',
       visitor: {
-        MustacheStatement(node) {
-          if (node.path.original === 'link-to') {
-            let content = node.escaped ? node.params[0] : unsafeHtml(b, node.params[0]);
-            return b.block('link-to', node.params.slice(1), node.hash, buildProgram(b, content, node.loc), null, node.loc);
+        MustacheStatement: function MustacheStatement(node) {
+          if (isInlineLinkTo(node)) {
+            var block = transformInlineLinkToIntoBlockForm(env, node);
+            return transformPositionalLinkToIntoNamedArguments(env, block);
+          }
+        },
+        BlockStatement: function BlockStatement(node) {
+          if (isBlockLinkTo(node)) {
+            return transformPositionalLinkToIntoNamedArguments(env, node);
           }
         }
-
       }
     };
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-input-type-syntax", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", ["exports"], function (_exports) {
   "use strict";
 
-  _exports.default = transformInputTypeSyntax;
-
-  /**
-   @module ember
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-
-    ```handlebars
-   {{input type=boundType}}
-    ```
-
-    with
-
-    ```handlebars
-   {{input (-input-type boundType) type=boundType}}
-    ```
-
-    Note that the type parameters is not removed as the -input-type helpers
-    is only used to select the component class. The component still needs
-    the type parameter to function.
-
-    @private
-    @class TransformInputTypeSyntax
-  */
-  function transformInputTypeSyntax(env) {
-    let b = env.syntax.builders;
-    return {
-      name: 'transform-input-type-syntax',
-      visitor: {
-        MustacheStatement(node) {
-          if (isInput(node)) {
-            insertTypeHelperParameter(node, b);
-          }
-        }
-
-      }
-    };
-  }
-
-  function isInput(node) {
-    return node.path.original === 'input';
-  }
-
-  function insertTypeHelperParameter(node, builders) {
-    let pairs = node.hash.pairs;
-    let pair = null;
-
-    for (let i = 0; i < pairs.length; i++) {
-      if (pairs[i].key === 'type') {
-        pair = pairs[i];
-        break;
-      }
-    }
-
-    if (pair && pair.value.type !== 'StringLiteral') {
-      node.params.unshift(builders.sexpr('-input-type', [pair.value], undefined, pair.loc));
-    }
-  }
-});
-enifed("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", ["exports"], function (_exports) {
-  "use strict";
-
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformOldClassBindingSyntax;
 
   function transformOldClassBindingSyntax(env) {
-    let b = env.syntax.builders;
+    var b = env.syntax.builders;
     return {
       name: 'transform-old-class-binding-syntax',
       visitor: {
-        MustacheStatement(node) {
+        MustacheStatement: function MustacheStatement(node) {
           process(b, node);
         },
-
-        BlockStatement(node) {
+        BlockStatement: function BlockStatement(node) {
           process(b, node);
         }
-
       }
     };
   }
 
   function process(b, node) {
-    let allOfTheMicrosyntaxes = [];
-    let allOfTheMicrosyntaxIndexes = [];
-    let classPair;
-    each(node.hash.pairs, (pair, index) => {
-      let {
-        key
-      } = pair;
+    var allOfTheMicrosyntaxes = [];
+    var allOfTheMicrosyntaxIndexes = [];
+    var classPair;
+    each(node.hash.pairs, function (pair, index) {
+      var key = pair.key;
 
       if (key === 'classBinding' || key === 'classNameBindings') {
         allOfTheMicrosyntaxIndexes.push(index);
@@ -7028,7 +19733,7 @@ enifed("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax",
       return;
     }
 
-    let classValue = [];
+    var classValue = [];
 
     if (classPair) {
       classValue.push(classPair.value);
@@ -7038,40 +19743,42 @@ enifed("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax",
       node.hash.pairs.push(classPair);
     }
 
-    each(allOfTheMicrosyntaxIndexes, index => {
+    each(allOfTheMicrosyntaxIndexes, function (index) {
       node.hash.pairs.splice(index, 1);
     });
-    each(allOfTheMicrosyntaxes, ({
-      value
-    }) => {
-      let sexprs = []; // TODO: add helpful deprecation when both `classNames` and `classNameBindings` can
+    each(allOfTheMicrosyntaxes, function (_ref) {
+      var value = _ref.value;
+      var sexprs = []; // TODO: add helpful deprecation when both `classNames` and `classNameBindings` can
       // be removed.
 
       if (value.type === 'StringLiteral') {
-        let microsyntax = parseMicrosyntax(value.original);
+        var microsyntax = parseMicrosyntax(value.original);
         buildSexprs(microsyntax, sexprs, b);
-        classValue.push(...sexprs);
+        classValue.push.apply(classValue, sexprs);
       }
     });
-    let hash = b.hash();
+    var hash = b.hash();
     classPair.value = b.sexpr(b.path('concat'), classValue, hash);
   }
 
   function buildSexprs(microsyntax, sexprs, b) {
-    for (let i = 0; i < microsyntax.length; i++) {
-      let [propName, activeClass, inactiveClass] = microsyntax[i];
-      let sexpr; // :my-class-name microsyntax for static values
+    for (var i = 0; i < microsyntax.length; i++) {
+      var _microsyntax$i = microsyntax[i],
+          propName = _microsyntax$i[0],
+          activeClass = _microsyntax$i[1],
+          inactiveClass = _microsyntax$i[2];
+      var sexpr = void 0; // :my-class-name microsyntax for static values
 
       if (propName === '') {
         sexpr = b.string(activeClass);
       } else {
-        let params = [b.path(propName)];
+        var params = [b.path(propName)];
 
         if (activeClass || activeClass === '') {
           params.push(b.string(activeClass));
         } else {
-          let sexprParams = [b.string(propName), b.path(propName)];
-          let hash = b.hash();
+          var sexprParams = [b.string(propName), b.path(propName)];
+          var hash = b.hash();
 
           if (activeClass !== undefined) {
             hash.pairs.push(b.pair('activeClass', b.string(activeClass)));
@@ -7097,25 +19804,28 @@ enifed("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax",
   }
 
   function each(list, callback) {
-    for (let i = 0; i < list.length; i++) {
+    for (var i = 0; i < list.length; i++) {
       callback(list[i], i);
     }
   }
 
   function parseMicrosyntax(string) {
-    let segments = string.split(' ');
-    let ret = [];
+    var segments = string.split(' ');
+    var ret = [];
 
-    for (let i = 0; i < segments.length; i++) {
+    for (var i = 0; i < segments.length; i++) {
       ret[i] = segments[i].split(':');
     }
 
     return ret;
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = transformQuotedBindingsIntoJustBindings;
 
   function transformQuotedBindingsIntoJustBindings()
@@ -7124,8 +19834,8 @@ enifed("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
     return {
       name: 'transform-quoted-bindings-into-just-bindings',
       visitor: {
-        ElementNode(node) {
-          let styleAttr = getStyleAttr(node);
+        ElementNode: function ElementNode(node) {
+          var styleAttr = getStyleAttr(node);
 
           if (!validStyleAttr(styleAttr)) {
             return;
@@ -7133,7 +19843,6 @@ enifed("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
 
           styleAttr.value = styleAttr.value.parts[0];
         }
-
       }
     };
   }
@@ -7143,20 +19852,20 @@ enifed("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
       return false;
     }
 
-    let value = attr.value;
+    var value = attr.value;
 
     if (!value || value.type !== 'ConcatStatement' || value.parts.length !== 1) {
       return false;
     }
 
-    let onlyPart = value.parts[0];
+    var onlyPart = value.parts[0];
     return onlyPart.type === 'MustacheStatement';
   }
 
   function getStyleAttr(node) {
-    let attributes = node.attributes;
+    var attributes = node.attributes;
 
-    for (let i = 0; i < attributes.length; i++) {
+    for (var i = 0; i < attributes.length; i++) {
       if (attributes[i].name === 'style') {
         return attributes[i];
       }
@@ -7165,70 +19874,126 @@ enifed("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
     return undefined;
   }
 });
-enifed("ember-template-compiler/lib/plugins/transform-top-level-components", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
   "use strict";
 
-  _exports.default = transformTopLevelComponent;
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = transformWrapMountAndOutlet;
 
-  function transformTopLevelComponent()
-  /* env */
-  {
+  /**
+   @module ember
+  */
+
+  /**
+    A Glimmer2 AST transformation that replaces all instances of
+  
+    ```handlebars
+    {{mount "engine" model=this.model}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{component (-mount "engine" model=this.model)}}
+    ```
+  
+    and
+  
+    ```handlebars
+    {{outlet}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{component (-outlet)}}
+    ```
+  
+    @private
+    @class TransformHasBlockSyntax
+  */
+  function transformWrapMountAndOutlet(env) {
+    var b = env.syntax.builders;
+
+    var _trackLocals = (0, _utils.trackLocals)(),
+        hasLocal = _trackLocals.hasLocal,
+        node = _trackLocals.node;
+
     return {
-      name: 'transform-top-level-component',
+      name: 'transform-wrap-mount-and-outlet',
       visitor: {
-        Program(node) {
-          hasSingleComponentNode(node, component => {
-            component.tag = `@${component.tag}`;
-            component.isStatic = true;
-          });
+        Program: node,
+        ElementNode: node,
+        MustacheStatement: function MustacheStatement(node) {
+          if ((0, _utils.isPath)(node.path) && (node.path.original === 'mount' || node.path.original === 'outlet') && !hasLocal(node.path.original)) {
+            var subexpression = b.sexpr(b.path("-" + node.path.original), node.params, node.hash, node.loc);
+            return b.mustache(b.path('component'), [subexpression], b.hash(), undefined, node.loc);
+          }
         }
-
       }
     };
   }
-
-  function hasSingleComponentNode(program, componentCallback) {
-    let {
-      loc,
-      body
-    } = program;
-
-    if (!loc || loc.start.line !== 1 || loc.start.column !== 0) {
-      return;
-    }
-
-    let lastComponentNode;
-    let nodeCount = 0;
-
-    for (let i = 0; i < body.length; i++) {
-      let curr = body[i]; // text node with whitespace only
-
-      if (curr.type === 'TextNode' && /^[\s]*$/.test(curr.chars)) {
-        continue;
-      } // has multiple root elements if we've been here before
-
-
-      if (nodeCount++ > 0) {
-        return false;
-      }
-
-      if (curr.type === 'ComponentNode' || curr.type === 'ElementNode') {
-        lastComponentNode = curr;
-      }
-    }
-
-    if (!lastComponentNode) {
-      return;
-    }
-
-    if (lastComponentNode.type === 'ComponentNode') {
-      componentCallback(lastComponentNode);
-    }
-  }
 });
-enifed("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-template-compiler/lib/system/compile"], function (_exports, _compile) {
+define("ember-template-compiler/lib/plugins/utils", ["exports", "ember-babel"], function (_exports, _emberBabel) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.isPath = isPath;
+  _exports.isSubExpression = isSubExpression;
+  _exports.trackLocals = trackLocals;
+
+  function isPath(node) {
+    return node.type === 'PathExpression';
+  }
+
+  function isSubExpression(node) {
+    return node.type === 'SubExpression';
+  }
+
+  function trackLocals() {
+    var locals = new Map();
+    var node = {
+      enter: function enter(node) {
+        for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(node.blockParams), _step; !(_step = _iterator()).done;) {
+          var _param = _step.value;
+
+          var _value = locals.get(_param) || 0;
+
+          locals.set(_param, _value + 1);
+        }
+      },
+      exit: function exit(node) {
+        for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(node.blockParams), _step2; !(_step2 = _iterator2()).done;) {
+          var _param2 = _step2.value;
+
+          var _value2 = locals.get(_param2) - 1;
+
+          if (_value2 === 0) {
+            locals.delete(_param2);
+          } else {
+            locals.set(_param2, _value2);
+          }
+        }
+      }
+    };
+    return {
+      hasLocal: function hasLocal(key) {
+        return locals.has(key);
+      },
+      node: node
+    };
+  }
+});
+define("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-template-compiler/lib/system/compile"], function (_exports, _compile) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = void 0;
 
   /**
@@ -7238,41 +20003,41 @@ enifed("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-templa
   /**
     Find templates stored in the head tag as script tags and make them available
     to `Ember.CoreView` in the global `Ember.TEMPLATES` object.
-
+  
     Script tags with `text/x-handlebars` will be compiled
     with Ember's template compiler and are suitable for use as a view's template.
-
+  
     @private
     @method bootstrap
     @for Ember.HTMLBars
     @static
     @param ctx
   */
-  function bootstrap({
-    context,
-    hasTemplate,
-    setTemplate
-  }) {
+  function bootstrap(_ref) {
+    var context = _ref.context,
+        hasTemplate = _ref.hasTemplate,
+        setTemplate = _ref.setTemplate;
+
     if (!context) {
       context = document;
     }
 
-    let selector = 'script[type="text/x-handlebars"]';
-    let elements = context.querySelectorAll(selector);
+    var selector = 'script[type="text/x-handlebars"]';
+    var elements = context.querySelectorAll(selector);
 
-    for (let i = 0; i < elements.length; i++) {
-      let script = elements[i]; // Get the name of the script
+    for (var i = 0; i < elements.length; i++) {
+      var script = elements[i]; // Get the name of the script
       // First look for data-template-name attribute, then fall back to its
       // id if no name is found.
 
-      let templateName = script.getAttribute('data-template-name') || script.getAttribute('id') || 'application';
-      let template;
+      var templateName = script.getAttribute('data-template-name') || script.getAttribute('id') || 'application';
+      var template = void 0;
       template = (0, _compile.default)(script.innerHTML, {
         moduleName: templateName
       }); // Check if template of same name already exists.
 
       if (hasTemplate(templateName)) {
-        throw new Error(`Template named "${templateName}" already exists.`);
+        throw new Error("Template named \"" + templateName + "\" already exists.");
       } // For templates which have a name, we save them and then remove them from the DOM.
 
 
@@ -7285,26 +20050,28 @@ enifed("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-templa
   var _default = bootstrap;
   _exports.default = _default;
 });
-enifed("ember-template-compiler/lib/system/calculate-location-display", ["exports"], function (_exports) {
+define("ember-template-compiler/lib/system/calculate-location-display", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = calculateLocationDisplay;
 
   function calculateLocationDisplay(moduleName, loc) {
-    let moduleInfo = '';
+    var moduleInfo = '';
 
     if (moduleName) {
-      moduleInfo += `'${moduleName}' `;
+      moduleInfo += "'" + moduleName + "' ";
     }
 
     if (loc) {
-      let {
-        column,
-        line
-      } = loc.start || {
+      var _ref = loc.start || {
         line: undefined,
         column: undefined
-      };
+      },
+          column = _ref.column,
+          line = _ref.line;
 
       if (line !== undefined && column !== undefined) {
         if (moduleName) {
@@ -7312,74 +20079,103 @@ enifed("ember-template-compiler/lib/system/calculate-location-display", ["export
           moduleInfo += '@ ';
         }
 
-        moduleInfo += `L${line}:C${column}`;
+        moduleInfo += "L" + line + ":C" + column;
       }
     }
 
     if (moduleInfo) {
-      moduleInfo = `(${moduleInfo}) `;
+      moduleInfo = "(" + moduleInfo + ") ";
     }
 
     return moduleInfo;
   }
 });
-enifed("ember-template-compiler/lib/system/compile-options", ["exports", "@ember/polyfills", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/dasherize-component-name"], function (_exports, _polyfills, _index, _dasherizeComponentName) {
+define("ember-template-compiler/lib/system/compile-options", ["exports", "@ember/debug", "@ember/polyfills", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/dasherize-component-name"], function (_exports, _debug, _polyfills, _index, _dasherizeComponentName) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = compileOptions;
   _exports.registerPlugin = registerPlugin;
   _exports.unregisterPlugin = unregisterPlugin;
-  let USER_PLUGINS = [];
+  var USER_PLUGINS = [];
+
+  function malformedComponentLookup(string) {
+    return string.indexOf('::') === -1 && string.indexOf(':') > -1;
+  }
 
   function compileOptions(_options) {
-    let options = (0, _polyfills.assign)({
-      meta: {}
+    if (_options === void 0) {
+      _options = {};
+    }
+
+    var options = (0, _polyfills.assign)({
+      meta: {},
+      isProduction: false,
+      plugins: {
+        ast: []
+      }
     }, _options, {
-      customizeComponentName(tagname) {
+      customizeComponentName: function customizeComponentName(tagname) {
+        (true && !(!malformedComponentLookup(tagname)) && (0, _debug.assert)("You tried to invoke a component named <" + tagname + " /> in \"" + _options.moduleName + "\", but that is not a valid name for a component. Did you mean to use the \"::\" syntax for nested components?", !malformedComponentLookup(tagname)));
         return _dasherizeComponentName.default.get(tagname);
       }
+    });
 
-    }); // move `moduleName` into `meta` property
+    if (!true
+    /* EMBER_STRICT_MODE */
+    ) {
+        options.strictMode = false;
+        options.locals = undefined;
+      } // move `moduleName` into `meta` property
+
 
     if (options.moduleName) {
-      let meta = options.meta;
+      var meta = options.meta;
       meta.moduleName = options.moduleName;
     }
 
-    if (!options.plugins) {
+    var builtInPlugins = options.strictMode ? _index.STRICT_MODE_TRANSFORMS : _index.RESOLUTION_MODE_TRANSFORMS;
+
+    if (!_options.plugins) {
       options.plugins = {
-        ast: [...USER_PLUGINS, ..._index.default]
+        ast: [].concat(USER_PLUGINS, builtInPlugins)
       };
     } else {
-      let potententialPugins = [...USER_PLUGINS, ..._index.default];
-      let providedPlugins = options.plugins.ast.map(plugin => wrapLegacyPluginIfNeeded(plugin));
-      let pluginsToAdd = potententialPugins.filter(plugin => {
+      var potententialPugins = [].concat(USER_PLUGINS, builtInPlugins);
+      var providedPlugins = options.plugins.ast.map(function (plugin) {
+        return wrapLegacyPluginIfNeeded(plugin);
+      });
+      var pluginsToAdd = potententialPugins.filter(function (plugin) {
         return options.plugins.ast.indexOf(plugin) === -1;
       });
       options.plugins.ast = providedPlugins.concat(pluginsToAdd);
-    }
+    } // TODO: Fix the types here so that this conversion isn't necessary
+
 
     return options;
   }
 
   function wrapLegacyPluginIfNeeded(_plugin) {
-    let plugin = _plugin;
+    var plugin = _plugin;
 
     if (_plugin.prototype && _plugin.prototype.transform) {
-      const pluginFunc = env => {
-        let pluginInstantiated = false;
+      var pluginFunc = function pluginFunc(env) {
+        var pluginInstantiated = false;
         return {
           name: _plugin.constructor && _plugin.constructor.name,
           visitor: {
-            Program(node) {
+            Program: function Program(node) {
               if (!pluginInstantiated) {
                 pluginInstantiated = true;
-                let plugin = new _plugin(env);
-                plugin.syntax = env.syntax;
-                return plugin.transform(node);
+
+                var _plugin2 = new _plugin(env);
+
+                _plugin2.syntax = env.syntax;
+                return _plugin2.transform(node);
               }
             }
-
           }
         };
       };
@@ -7393,43 +20189,46 @@ enifed("ember-template-compiler/lib/system/compile-options", ["exports", "@ember
 
   function registerPlugin(type, _plugin) {
     if (type !== 'ast') {
-      throw new Error(`Attempting to register ${_plugin} as "${type}" which is not a valid Glimmer plugin type.`);
+      throw new Error("Attempting to register " + _plugin + " as \"" + type + "\" which is not a valid Glimmer plugin type.");
     }
 
-    for (let i = 0; i < USER_PLUGINS.length; i++) {
-      let PLUGIN = USER_PLUGINS[i];
+    for (var i = 0; i < USER_PLUGINS.length; i++) {
+      var PLUGIN = USER_PLUGINS[i];
 
       if (PLUGIN === _plugin || PLUGIN.__raw === _plugin) {
         return;
       }
     }
 
-    let plugin = wrapLegacyPluginIfNeeded(_plugin);
-    USER_PLUGINS = [plugin, ...USER_PLUGINS];
+    var plugin = wrapLegacyPluginIfNeeded(_plugin);
+    USER_PLUGINS = [plugin].concat(USER_PLUGINS);
   }
 
   function unregisterPlugin(type, PluginClass) {
     if (type !== 'ast') {
-      throw new Error(`Attempting to unregister ${PluginClass} as "${type}" which is not a valid Glimmer plugin type.`);
+      throw new Error("Attempting to unregister " + PluginClass + " as \"" + type + "\" which is not a valid Glimmer plugin type.");
     }
 
-    USER_PLUGINS = USER_PLUGINS.filter(plugin => plugin !== PluginClass && plugin.__raw !== PluginClass);
+    USER_PLUGINS = USER_PLUGINS.filter(function (plugin) {
+      return plugin !== PluginClass && plugin.__raw !== PluginClass;
+    });
   }
 });
-enifed("ember-template-compiler/lib/system/compile", ["exports", "require", "ember-template-compiler/lib/system/precompile"], function (_exports, _require, _precompile) {
+define("ember-template-compiler/lib/system/compile", ["exports", "require", "ember-template-compiler/lib/system/precompile"], function (_exports, _require, _precompile) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = compile;
 
   /**
   @module ember
   */
-  let template;
+  var template;
   /**
     Uses HTMLBars `compile` function to process a string into a compiled template.
-
     This is not present in production builds.
-
     @private
     @method compile
     @param {String} templateString This is the string to be compiled by HTMLBars.
@@ -7437,6 +20236,10 @@ enifed("ember-template-compiler/lib/system/compile", ["exports", "require", "emb
   */
 
   function compile(templateString, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
     if (!template && (0, _require.has)('@ember/-internals/glimmer')) {
       // tslint:disable-next-line:no-require-imports
       template = (0, _require.default)("@ember/-internals/glimmer").template;
@@ -7446,73 +20249,77 @@ enifed("ember-template-compiler/lib/system/compile", ["exports", "require", "emb
       throw new Error('Cannot call `compile` with only the template compiler loaded. Please load `ember.debug.js` or `ember.prod.js` prior to calling `compile`.');
     }
 
-    let precompiledTemplateString = (0, _precompile.default)(templateString, options);
-    let templateJS = new Function(`return ${precompiledTemplateString}`)();
-    return template(templateJS);
+    return template(evaluate((0, _precompile.default)(templateString, options)));
+  }
+
+  function evaluate(precompiled) {
+    return new Function("return " + precompiled)();
   }
 });
-enifed("ember-template-compiler/lib/system/dasherize-component-name", ["exports", "@ember/-internals/utils"], function (_exports, _utils) {
+define("ember-template-compiler/lib/system/dasherize-component-name", ["exports", "@ember/-internals/utils"], function (_exports, _utils) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = void 0;
 
   /*
     This diverges from `Ember.String.dasherize` so that`<XFoo />` can resolve to `x-foo`.
     `Ember.String.dasherize` would resolve it to `xfoo`..
   */
-  const SIMPLE_DASHERIZE_REGEXP = /[A-Z]/g;
-  const ALPHA = /[A-Za-z0-9]/;
+  var SIMPLE_DASHERIZE_REGEXP = /[A-Z]|::/g;
+  var ALPHA = /[A-Za-z0-9]/;
 
-  var _default = new _utils.Cache(1000, key => key.replace(SIMPLE_DASHERIZE_REGEXP, (char, index) => {
-    if (index === 0 || !ALPHA.test(key[index - 1])) {
-      return char.toLowerCase();
-    }
+  var _default = new _utils.Cache(1000, function (key) {
+    return key.replace(SIMPLE_DASHERIZE_REGEXP, function (char, index) {
+      if (char === '::') {
+        return '/';
+      }
 
-    return `-${char.toLowerCase()}`;
-  }));
+      if (index === 0 || !ALPHA.test(key[index - 1])) {
+        return char.toLowerCase();
+      }
+
+      return "-" + char.toLowerCase();
+    });
+  });
 
   _exports.default = _default;
 });
-enifed("ember-template-compiler/lib/system/initializer", ["require", "ember-template-compiler/lib/system/bootstrap"], function (_require, _bootstrap) {
+define("ember-template-compiler/lib/system/initializer", ["require", "ember-template-compiler/lib/system/bootstrap"], function (_require, _bootstrap) {
   "use strict";
 
   // Globals mode template compiler
   if ((0, _require.has)('@ember/application') && (0, _require.has)('@ember/-internals/browser-environment') && (0, _require.has)('@ember/-internals/glimmer')) {
     // tslint:disable:no-require-imports
-    let emberEnv = (0, _require.default)("@ember/-internals/browser-environment");
-    let emberGlimmer = (0, _require.default)("@ember/-internals/glimmer");
-    let emberApp = (0, _require.default)("@ember/application");
-    let Application = emberApp.default;
-    let {
-      hasTemplate,
-      setTemplate
-    } = emberGlimmer;
-    let {
-      hasDOM
-    } = emberEnv;
+    var emberEnv = (0, _require.default)("@ember/-internals/browser-environment");
+    var emberGlimmer = (0, _require.default)("@ember/-internals/glimmer");
+    var emberApp = (0, _require.default)("@ember/application");
+    var Application = emberApp.default;
+    var hasTemplate = emberGlimmer.hasTemplate,
+        setTemplate = emberGlimmer.setTemplate;
+    var hasDOM = emberEnv.hasDOM;
     Application.initializer({
       name: 'domTemplates',
-
-      initialize() {
-        let context;
-
+      initialize: function initialize() {
         if (hasDOM) {
-          context = document;
+          (0, _bootstrap.default)({
+            context: document,
+            hasTemplate: hasTemplate,
+            setTemplate: setTemplate
+          });
         }
-
-        (0, _bootstrap.default)({
-          context,
-          hasTemplate,
-          setTemplate
-        });
       }
-
     });
   }
 });
-enifed("ember-template-compiler/lib/system/precompile", ["exports", "@glimmer/compiler", "ember-template-compiler/lib/system/compile-options"], function (_exports, _compiler, _compileOptions) {
+define("ember-template-compiler/lib/system/precompile", ["exports", "@glimmer/compiler", "ember-template-compiler/lib/system/compile-options"], function (_exports, _compiler, _compileOptions) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.default = precompile;
 
   /**
@@ -7522,4566 +20329,61 @@ enifed("ember-template-compiler/lib/system/precompile", ["exports", "@glimmer/co
   /**
     Uses HTMLBars `compile` function to process a string into a compiled template string.
     The returned string must be passed through `Ember.HTMLBars.template`.
-
+  
     This is not present in production builds.
-
+  
     @private
     @method precompile
     @param {String} templateString This is the string to be compiled by HTMLBars.
   */
   function precompile(templateString, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
     return (0, _compiler.precompile)(templateString, (0, _compileOptions.default)(options));
   }
 });
-enifed("ember-template-compiler/tests/plugins/assert-if-helper-without-arguments-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
+define("ember/version", ["exports"], function (_exports) {
   "use strict";
 
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-if-helper-without-argument', class extends _internalTestHelpers.AbstractTestCase {
-    [`@test block if helper expects one argument`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`{{#if}}aVal{{/if}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `#if requires a single argument. ('baz/foo-bar' @ L1:C0) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`{{#if val1 val2}}aVal{{/if}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `#if requires a single argument. ('baz/foo-bar' @ L1:C0) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`{{#if}}aVal{{/if}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `#if requires a single argument. ('baz/foo-bar' @ L1:C0) `);
-    }
-
-    [`@test inline if helper expects between one and three arguments`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`{{if}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `The inline form of the 'if' helper expects two or three arguments. ('baz/foo-bar' @ L1:C0) `);
-      (0, _index.compile)(`{{if foo bar baz}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    ['@test subexpression if helper expects between one and three arguments']() {
-      expectAssertion(() => {
-        (0, _index.compile)(`{{input foo=(if)}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `The inline form of the 'if' helper expects two or three arguments. ('baz/foo-bar' @ L1:C12) `);
-      (0, _index.compile)(`{{some-thing foo=(if foo bar baz)}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
   });
-});
-enifed("ember-template-compiler/tests/plugins/assert-input-helper-without-block-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-input-helper-without-block', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test Using {{#input}}{{/input}} is not valid']() {
-      let expectedMessage = `The {{input}} helper cannot be used in block form. ('baz/foo-bar' @ L1:C0) `;
-      expectAssertion(() => {
-        (0, _index.compile)('{{#input value="123"}}Completely invalid{{/input}}', {
-          moduleName: 'baz/foo-bar'
-        });
-      }, expectedMessage);
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/plugins/assert-local-variable-shadowing-helper-invocation-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-local-variable-shadowing-helper-invocation', class extends _internalTestHelpers.AbstractTestCase {
-    [`@test block statements shadowing sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            {{concat (foo)}}
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C21) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            {{concat (foo bar baz)}}
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C21) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}{{/let}}
-        {{concat (foo)}}
-        {{concat (foo bar baz)}}`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          {{concat foo}}
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (concat foo) as |concat|}}
-          {{input value=concat}}
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test element nodes shadowing sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            {{concat (foo)}}
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C21) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            {{concat (foo bar baz)}}
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C21) `); // Not shadowed
-
-      (0, _index.compile)(`
-        <Foo as |foo|></Foo>
-        {{concat (foo)}}
-        {{concat (foo bar baz)}}`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        <Foo as |foo|>
-          {{concat foo}}
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        <Foo foo={{concat foo}} as |concat|>
-          {{input value=concat}}
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test deeply nested sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                {{concat (foo)}}
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C25) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                {{concat (foo bar baz)}}
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C25) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-            {{/each}}
-            {{concat (baz)}}
-            {{concat (baz bat)}}
-          </FooBar>
-          {{concat (bar)}}
-          {{concat (bar baz bat)}}
-        {{/let}}
-        {{concat (foo)}}
-        {{concat (foo bar baz bat)}}`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-              {{concat foo}}
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (foo foo) as |foo|}}
-          <FooBar bar=(bar bar) as |bar|>
-            {{#each (baz baz) as |baz|}}
-              {{concat foo bar baz}}
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test block statements shadowing attribute sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <div class={{concat (foo bar baz)}} />
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C32) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}{{/let}}
-        <div class={{concat (foo)}} />
-        <div class={{concat (foo bar baz)}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <div class={{concat foo}} />
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (foo foo) as |foo|}}
-          <div class={{concat foo}} />
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test element nodes shadowing attribute sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            <div class={{concat (foo bar baz)}} />
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C32) `); // Not shadowed
-
-      (0, _index.compile)(`
-        <Foo as |foo|></Foo>
-        <div class={{concat (foo)}} />
-        <div class={{concat (foo bar baz)}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        <Foo as |foo|>
-          <div class={{concat foo}} />
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        <Foo foo={{foo foo}} as |foo|>
-          <div class={{concat foo}} />
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test deeply nested attribute sub-expression invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                <div class={{concat (foo bar baz)}} />
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C36) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-            {{/each}}
-            <div class={{concat (baz)}} />
-            <div class={{concat (baz bat)}} />
-          </FooBar>
-          <div class={{concat (bar)}} />
-          <div class={{concat (bar baz bat)}} />
-        {{/let}}
-        <div class={{concat (foo)}} />
-        <div class={{concat (foo bar baz bat)}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-              <div class={{concat foo}} />
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (foo foo) as |foo|}}
-          <FooBar bar=(bar bar) as |bar|>
-            {{#each (baz baz) as |baz|}}
-              <div class={{concat foo bar baz}} />
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test block statements shadowing attribute mustache invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <div class={{foo bar baz}} />
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C23) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}{{/let}}
-        <div class={{foo}} />
-        <div class={{foo bar baz}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <div class={{foo}} />
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (concat foo) as |concat|}}
-          <div class={{concat}} />
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test element nodes shadowing attribute mustache invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            <div class={{foo bar baz}} />
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C23) `); // Not shadowed
-
-      (0, _index.compile)(`
-        <Foo as |foo|></Foo>
-        <div class={{foo}} />
-        <div class={{foo bar baz}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        <Foo as |foo|>
-          <div class={{foo}} />
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        <Foo foo={{concat foo}} as |concat|>
-          <div class={{concat}} />
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test deeply nested attribute mustache invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                <div class={{foo bar baz}} />
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` helper because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C27) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-            {{/each}}
-            <div class={{baz}} />
-            <div class={{baz bat}} />
-          </FooBar>
-          <div class={{bar}} />
-          <div class={{bar baz bat}} />
-        {{/let}}
-        <div class={{foo}} />
-        <div class={{foo bar baz bat}} />`, {
-        moduleName: 'baz/foo-bar'
-      }); // Not invocations
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-              <div class={{foo}} />
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let (foo foo) as |foo|}}
-          <FooBar bar=(bar bar) as |bar|>
-            {{#each (baz baz) as |baz|}}
-              <div foo={{foo}} bar={{bar}} baz={{baz}} />
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test block statements shadowing mustache invocations`](assert) {
-      // These are fine, because they should already be considered contextual
-      // component invocations, not helper invocations
-      assert.expect(0);
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          {{foo}}
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          {{foo bar baz}}
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test element nodes shadowing mustache invocations`](assert) {
-      // These are fine, because they should already be considered contextual
-      // component invocations, not helper invocations
-      assert.expect(0);
-      (0, _index.compile)(`
-        <Foo as |foo|>
-          {{foo}}
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        <Foo as |foo|>
-          {{foo bar baz}}
-        </Foo>`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test deeply nested mustache invocations`](assert) {
-      // These are fine, because they should already be considered contextual
-      // component invocations, not helper invocations
-      assert.expect(0);
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-              {{foo}}
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-              {{foo bar baz}}
-            {{/each}}
-          </FooBar>
-        {{/let}}`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test block statements shadowing modifier invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <div {{foo}} />
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C17) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <div {{foo bar baz}} />
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C17) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}{{/let}}
-        <div {{foo}} />
-        <div {{foo bar baz}} />`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test element nodes shadowing modifier invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            <div {{foo}} />
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C17) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          <Foo as |foo|>
-            <div {{foo bar baz}} />
-          </Foo>`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L3:C17) `); // Not shadowed
-
-      (0, _index.compile)(`
-        <Foo as |foo|></Foo>
-        <div {{foo}} />
-        <div {{foo bar baz}} />`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-    [`@test deeply nested modifier invocations`]() {
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                <div {{foo}} />
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C21) `);
-      expectAssertion(() => {
-        (0, _index.compile)(`
-          {{#let foo as |foo|}}
-            <FooBar as |bar|>
-              {{#each items as |baz|}}
-                <div {{foo bar baz}} />
-              {{/each}}
-            </FooBar>
-          {{/let}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, `Cannot invoke the \`foo\` modifier because it was shadowed by a local variable (i.e. a block param) with the same name. Please rename the local variable to resolve the conflict. ('baz/foo-bar' @ L5:C21) `); // Not shadowed
-
-      (0, _index.compile)(`
-        {{#let foo as |foo|}}
-          <FooBar as |bar|>
-            {{#each items as |baz|}}
-            {{/each}}
-            <div {{baz}} />
-            <div {{baz bat}} />
-          </FooBar>
-          <div {{bar}} />
-          <div {{bar baz bat}} />
-        {{/let}}
-        <div {{foo}} />
-        <div {{foo bar baz bat}} />`, {
-        moduleName: 'baz/foo-bar'
-      });
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/plugins/assert-reserved-named-arguments-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  if (true
-  /* EMBER_GLIMMER_NAMED_ARGUMENTS */
-  ) {
-      (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-reserved-named-arguments (EMBER_GLIMMER_NAMED_ARGUMENTS) ', class extends _internalTestHelpers.AbstractTestCase {
-        [`@test '@arguments' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@arguments}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@arguments' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @arguments}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@arguments' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @arguments "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@arguments' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@args' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@args}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@args' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @args}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@args' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @args "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@args' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@block' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@block}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@block' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @block}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@block' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @block "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@block' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@else' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@else}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@else' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @else}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@else' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @else "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@else' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        } // anything else that doesn't start with a lower case letter
-
-
-        [`@test '@Arguments' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@Arguments}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Arguments' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @Arguments}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Arguments' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @Arguments "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Arguments' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@Args' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@Args}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Args' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @Args}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Args' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @Args "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Args' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@FOO' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@FOO}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@FOO' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @FOO}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@FOO' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @FOO "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@FOO' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@Foo' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@Foo}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Foo' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @Foo}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Foo' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @Foo "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@Foo' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@.' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@.}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@.' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @.}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@.' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @. "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@.' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@_' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@_}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@_' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @_}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@_' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @_ "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@_' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@-' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@-}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@-' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @-}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@-' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @- "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@-' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@$' is reserved`]() {
-          expectAssertion(() => {
-            (0, _index.compile)(`{{@$}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@$' is reserved. ('baz/foo-bar' @ L1:C2) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{#if @$}}Yup{{/if}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@$' is reserved. ('baz/foo-bar' @ L1:C6) `);
-          expectAssertion(() => {
-            (0, _index.compile)(`{{input type=(if @$ "bar" "baz")}}`, {
-              moduleName: 'baz/foo-bar'
-            });
-          }, `'@$' is reserved. ('baz/foo-bar' @ L1:C17) `);
-        }
-
-        [`@test '@' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @ "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@0' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@0}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @0}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @0 "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@1' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@1}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @1}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @1 "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@2' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@2}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @2}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @2 "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@@' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@@}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @@}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @@ "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@=' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@=}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @=}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @= "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-        [`@test '@!' is de facto reserved (parse error)`](assert) {
-          assert.throws(() => {
-            (0, _index.compile)('{{@!}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{#if @!}}Yup{{/if}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-          assert.throws(() => {
-            (0, _index.compile)('{{input type=(if @! "bar" "baz")}}', {
-              moduleName: 'baz/foo-bar'
-            });
-          }, /Expecting 'ID'/);
-        }
-
-      });
-    } else {
-    (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-reserved-named-arguments', class extends _internalTestHelpers.AbstractTestCase {
-      ['@test Paths beginning with @ are not valid']() {
-        expectAssertion(() => {
-          (0, _index.compile)('{{@foo}}', {
-            moduleName: 'baz/foo-bar'
-          });
-        }, `'@foo' is not a valid path. ('baz/foo-bar' @ L1:C2) `);
-        expectAssertion(() => {
-          (0, _index.compile)('{{#if @foo}}Yup{{/if}}', {
-            moduleName: 'baz/foo-bar'
-          });
-        }, `'@foo' is not a valid path. ('baz/foo-bar' @ L1:C6) `);
-        expectAssertion(() => {
-          (0, _index.compile)('{{input type=(if @foo "bar" "baz")}}', {
-            moduleName: 'baz/foo-bar'
-          });
-        }, `'@foo' is not a valid path. ('baz/foo-bar' @ L1:C17) `);
-      }
-
-    });
-  }
-});
-enifed("ember-template-compiler/tests/plugins/assert-splattribute-expression-test", ["internal-test-helpers", "ember-template-compiler/index"], function (_internalTestHelpers, _index) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: assert-splattribute-expression', class extends _internalTestHelpers.AbstractTestCase {
-    expectedMessage(locInfo) {
-      return true
-      /* EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION */
-      ? `Using "...attributes" can only be used in the element position e.g. <div ...attributes />. It cannot be used as a path. (${locInfo}) ` : `...attributes is an invalid path (${locInfo}) `;
-    }
-
-    '@test ...attributes is in element space'(assert) {
-      if (true
-      /* EMBER_GLIMMER_ANGLE_BRACKET_INVOCATION */
-      ) {
-          assert.expect(0);
-          (0, _index.compile)('<div ...attributes>Foo</div>');
-        } else {
-        expectAssertion(() => {
-          (0, _index.compile)('<div ...attributes>Foo</div>');
-        }, this.expectedMessage('L1:C5'));
-      }
-    }
-
-    '@test {{...attributes}} is not valid'() {
-      expectAssertion(() => {
-        (0, _index.compile)('<div>{{...attributes}}</div>', {
-          moduleName: 'foo-bar'
-        });
-      }, this.expectedMessage(`'foo-bar' @ L1:C7`));
-    }
-
-    '@test {{...attributes}} is not valid path expression'() {
-      expectAssertion(() => {
-        (0, _index.compile)('<div>{{...attributes}}</div>', {
-          moduleName: 'foo-bar'
-        });
-      }, this.expectedMessage(`'foo-bar' @ L1:C7`));
-    }
-
-    '@test {{...attributes}} is not valid modifier'() {
-      expectAssertion(() => {
-        (0, _index.compile)('<div {{...attributes}}>Wat</div>', {
-          moduleName: 'foo-bar'
-        });
-      }, this.expectedMessage(`'foo-bar' @ L1:C7`));
-    }
-
-    '@test {{...attributes}} is not valid attribute'() {
-      expectAssertion(() => {
-        (0, _index.compile)('<div class={{...attributes}}>Wat</div>', {
-          moduleName: 'foo-bar'
-        });
-      }, this.expectedMessage(`'foo-bar' @ L1:C13`));
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/plugins/deprecate-send-action-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  const EVENTS = ['insert-newline', 'enter', 'escape-press', 'focus-in', 'focus-out', 'key-press', 'key-up', 'key-down'];
-
-  class DeprecateSendActionTest extends _internalTestHelpers.AbstractTestCase {}
-
-  EVENTS.forEach(function (e) {
-    DeprecateSendActionTest.prototype[`@test Using \`{{input ${e}="actionName"}}\` provides a deprecation`] = function () {
-      let expectedMessage = `Please refactor \`{{input ${e}="foo-bar"}}\` to \`{{input ${e}=(action "foo-bar")}}\. ('baz/foo-bar' @ L1:C0) `;
-      expectDeprecation(() => {
-        (0, _index.compile)(`{{input ${e}="foo-bar"}}`, {
-          moduleName: 'baz/foo-bar'
-        });
-      }, expectedMessage);
-    };
-  });
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: deprecate-send-action', DeprecateSendActionTest);
-});
-enifed("ember-template-compiler/tests/plugins/transform-component-invocation-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: transforms component invocation', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test Does not throw a compiler error for component invocations'](assert) {
-      assert.expect(0);
-      ['{{this.modal open}}', '{{this.modal isOpen=true}}', '{{#this.modal}}Woot{{/this.modal}}', '{{@modal open}}', // RFC#311
-      '{{@modal isOpen=true}}', // RFC#311
-      '{{#@modal}}Woot{{/@modal}}', // RFC#311
-      '{{c.modal open}}', '{{c.modal isOpen=true}}', '{{#c.modal}}Woot{{/c.modal}}', '{{#my-component as |c|}}{{c name="Chad"}}{{/my-component}}', // RFC#311
-      '{{#my-component as |c|}}{{c "Chad"}}{{/my-component}}', // RFC#311
-      '{{#my-component as |c|}}{{#c}}{{/c}}{{/my-component}}', // RFC#311
-      '<input disabled={{true}}>', // GH#15740
-      '<td colspan={{3}}></td>'].forEach((layout, i) => {
-        (0, _index.compile)(layout, {
-          moduleName: `example-${i}`
-        });
-      });
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/plugins/transform-inline-link-to-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: inline-link-to', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test Can transform an inline {{link-to}} without error'](assert) {
-      assert.expect(0);
-      (0, _index.compile)(`{{link-to 'foo' 'index'}}`, {
-        moduleName: 'foo/bar/baz'
-      });
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/plugins/transform-input-type-syntax-test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: input type syntax', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test Can compile an {{input}} helper that has a sub-expression value as its type'](assert) {
-      assert.expect(0);
-      (0, _index.compile)(`{{input type=(if true 'password' 'text')}}`);
-    }
-
-    ['@test Can compile an {{input}} helper with a string literal type'](assert) {
-      assert.expect(0);
-      (0, _index.compile)(`{{input type='text'}}`);
-    }
-
-    ['@test Can compile an {{input}} helper with a type stored in a var'](assert) {
-      assert.expect(0);
-      (0, _index.compile)(`{{input type=_type}}`);
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/system/bootstrap-test", ["@ember/runloop", "@ember/-internals/glimmer", "ember-template-compiler/lib/system/bootstrap", "internal-test-helpers"], function (_runloop, _glimmer, _bootstrap, _internalTestHelpers) {
-  "use strict";
-
-  let component, fixture;
-
-  function checkTemplate(templateName, assert) {
-    (0, _runloop.run)(() => (0, _bootstrap.default)({
-      context: fixture,
-      hasTemplate: _glimmer.hasTemplate,
-      setTemplate: _glimmer.setTemplate
-    }));
-    let template = (0, _glimmer.getTemplate)(templateName);
-    let qunitFixture = document.querySelector('#qunit-fixture');
-    assert.ok(template, 'template is available on Ember.TEMPLATES');
-    assert.notOk(qunitFixture.querySelector('script'), 'script removed');
-    let owner = (0, _internalTestHelpers.buildOwner)();
-    owner.register('template:-top-level', template);
-    owner.register('component:-top-level', _glimmer.Component.extend({
-      layoutName: '-top-level',
-      firstName: 'Tobias',
-      drug: 'teamocil'
-    }));
-    component = owner.lookup('component:-top-level');
-    (0, _internalTestHelpers.runAppend)(component);
-    assert.equal(qunitFixture.textContent.trim(), 'Tobias takes teamocil', 'template works');
-    (0, _internalTestHelpers.runDestroy)(owner);
-  }
-
-  (0, _internalTestHelpers.moduleFor)('ember-templates: bootstrap', class extends _internalTestHelpers.AbstractTestCase {
-    constructor() {
-      super();
-      fixture = document.getElementById('qunit-fixture');
-    }
-
-    teardown() {
-      (0, _glimmer.setTemplates)({});
-      fixture = component = null;
-    }
-
-    ['@test template with data-template-name should add a new template to Ember.TEMPLATES'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars" data-template-name="funkyTemplate">{{firstName}} takes {{drug}}</script>';
-      checkTemplate('funkyTemplate', assert);
-    }
-
-    ['@test template with id instead of data-template-name should add a new template to Ember.TEMPLATES'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars" id="funkyTemplate" >{{firstName}} takes {{drug}}</script>';
-      checkTemplate('funkyTemplate', assert);
-    }
-
-    ['@test template without data-template-name or id should default to application'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars">{{firstName}} takes {{drug}}</script>';
-      checkTemplate('application', assert);
-    } // Add this test case, only for typeof Handlebars === 'object';
-
-
-    [`${typeof Handlebars === 'object' ? '@test' : '@skip'} template with type text/x-raw-handlebars should be parsed`](assert) {
-      fixture.innerHTML = '<script type="text/x-raw-handlebars" data-template-name="funkyTemplate">{{name}}</script>';
-      (0, _runloop.run)(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }));
-      let template = (0, _glimmer.getTemplate)('funkyTemplate');
-      assert.ok(template, 'template with name funkyTemplate available'); // This won't even work with Ember templates
-
-      assert.equal(template({
-        name: 'Tobias'
-      }).trim(), 'Tobias');
-    }
-
-    ['@test duplicated default application templates should throw exception'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars">first</script><script type="text/x-handlebars">second</script>';
-      assert.throws(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }), /Template named "[^"]+" already exists\./, 'duplicate templates should not be allowed');
-    }
-
-    ['@test default default application template and id application template present should throw exception'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars">first</script><script type="text/x-handlebars" id="application">second</script>';
-      assert.throws(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }), /Template named "[^"]+" already exists\./, 'duplicate templates should not be allowed');
-    }
-
-    ['@test default application template and data-template-name application template present should throw exception'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars">first</script><script type="text/x-handlebars" data-template-name="application">second</script>';
-      assert.throws(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }), /Template named "[^"]+" already exists\./, 'duplicate templates should not be allowed');
-    }
-
-    ['@test duplicated template id should throw exception'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars" id="funkyTemplate">first</script><script type="text/x-handlebars" id="funkyTemplate">second</script>';
-      assert.throws(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }), /Template named "[^"]+" already exists\./, 'duplicate templates should not be allowed');
-    }
-
-    ['@test duplicated template data-template-name should throw exception'](assert) {
-      fixture.innerHTML = '<script type="text/x-handlebars" data-template-name="funkyTemplate">first</script><script type="text/x-handlebars" data-template-name="funkyTemplate">second</script>';
-      assert.throws(() => (0, _bootstrap.default)({
-        context: fixture,
-        hasTemplate: _glimmer.hasTemplate,
-        setTemplate: _glimmer.setTemplate
-      }), /Template named "[^"]+" already exists\./, 'duplicate templates should not be allowed');
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/system/compile_options_test", ["ember-template-compiler/index", "internal-test-helpers"], function (_index, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: default compile options', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test default options are a new copy'](assert) {
-      assert.notEqual((0, _index.compileOptions)(), (0, _index.compileOptions)());
-    }
-
-    ['@test has default AST plugins'](assert) {
-      assert.expect(_index.defaultPlugins.length);
-      let plugins = (0, _index.compileOptions)().plugins.ast;
-
-      for (let i = 0; i < _index.defaultPlugins.length; i++) {
-        let plugin = _index.defaultPlugins[i];
-        assert.ok(plugins.indexOf(plugin) > -1, `includes ${plugin}`);
-      }
-    }
-
-  });
-  let customTransformCounter = 0;
-
-  class LegacyCustomTransform {
-    constructor(options) {
-      customTransformCounter++;
-      this.options = options;
-      this.syntax = null;
-    }
-
-    transform(ast) {
-      let walker = new this.syntax.Walker();
-      walker.visit(ast, node => {
-        if (node.type !== 'ElementNode') {
-          return;
-        }
-
-        for (var i = 0; i < node.attributes.length; i++) {
-          let attribute = node.attributes[i];
-
-          if (attribute.name === 'data-test') {
-            node.attributes.splice(i, 1);
-          }
-        }
-      });
-      return ast;
-    }
-
-  }
-
-  function customTransform() {
-    customTransformCounter++;
-    return {
-      name: 'remove-data-test',
-      visitor: {
-        ElementNode(node) {
-          for (var i = 0; i < node.attributes.length; i++) {
-            let attribute = node.attributes[i];
-
-            if (attribute.name === 'data-test') {
-              node.attributes.splice(i, 1);
-            }
-          }
-        }
-
-      }
-    };
-  }
-
-  class CustomPluginsTests extends _internalTestHelpers.RenderingTestCase {
-    afterEach() {
-      customTransformCounter = 0;
-      return super.afterEach();
-    }
-
-    ['@test custom plugins can be used']() {
-      this.render('<div data-test="foo" data-blah="derp" class="hahaha"></div>');
-      this.assertElement(this.firstChild, {
-        tagName: 'div',
-        attrs: {
-          class: 'hahaha',
-          'data-blah': 'derp'
-        },
-        content: ''
-      });
-    }
-
-    ['@test wrapped plugins are only invoked once per template'](assert) {
-      this.render('<div>{{#if falsey}}nope{{/if}}</div>');
-      assert.equal(customTransformCounter, 1, 'transform should only be instantiated once');
-    }
-
-  }
-
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: registerPlugin with a custom plugins in legacy format', class extends CustomPluginsTests {
-    beforeEach() {
-      (0, _index.registerPlugin)('ast', LegacyCustomTransform);
-    }
-
-    afterEach() {
-      (0, _index.unregisterPlugin)('ast', LegacyCustomTransform);
-      return super.afterEach();
-    }
-
-    ['@test custom registered plugins are deduplicated'](assert) {
-      (0, _index.registerPlugin)('ast', LegacyCustomTransform);
-      this.registerTemplate('application', '<div data-test="foo" data-blah="derp" class="hahaha"></div>');
-      assert.equal(customTransformCounter, 1, 'transform should only be instantiated once');
-    }
-
-  });
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: registerPlugin with a custom plugins', class extends CustomPluginsTests {
-    beforeEach() {
-      (0, _index.registerPlugin)('ast', customTransform);
-    }
-
-    afterEach() {
-      (0, _index.unregisterPlugin)('ast', customTransform);
-      return super.afterEach();
-    }
-
-    ['@test custom registered plugins are deduplicated'](assert) {
-      (0, _index.registerPlugin)('ast', customTransform);
-      this.registerTemplate('application', '<div data-test="foo" data-blah="derp" class="hahaha"></div>');
-      assert.equal(customTransformCounter, 1, 'transform should only be instantiated once');
-    }
-
-  });
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: custom plugins in legacy format passed to compile', class extends _internalTestHelpers.RenderingTestCase {
-    // override so that we can provide custom AST plugins to compile
-    compile(templateString) {
-      return (0, _index.compile)(templateString, {
-        plugins: {
-          ast: [LegacyCustomTransform]
-        }
-      });
-    }
-
-  });
-  (0, _internalTestHelpers.moduleFor)('ember-template-compiler: custom plugins passed to compile', class extends _internalTestHelpers.RenderingTestCase {
-    // override so that we can provide custom AST plugins to compile
-    compile(templateString) {
-      return (0, _index.compile)(templateString, {
-        plugins: {
-          ast: [customTransform]
-        }
-      });
-    }
-
-  });
-});
-enifed("ember-template-compiler/tests/system/dasherize-component-name-test", ["ember-template-compiler/lib/system/dasherize-component-name", "internal-test-helpers"], function (_dasherizeComponentName, _internalTestHelpers) {
-  "use strict";
-
-  (0, _internalTestHelpers.moduleFor)('dasherize-component-name', class extends _internalTestHelpers.AbstractTestCase {
-    ['@test names are correctly dasherized'](assert) {
-      assert.equal(_dasherizeComponentName.default.get('Foo'), 'foo');
-      assert.equal(_dasherizeComponentName.default.get('foo-bar'), 'foo-bar');
-      assert.equal(_dasherizeComponentName.default.get('FooBar'), 'foo-bar');
-      assert.equal(_dasherizeComponentName.default.get('F3Bar'), 'f3-bar');
-      assert.equal(_dasherizeComponentName.default.get('Foo3Bar'), 'foo3-bar');
-      assert.equal(_dasherizeComponentName.default.get('Foo3barBaz'), 'foo3bar-baz');
-      assert.equal(_dasherizeComponentName.default.get('FooB3ar'), 'foo-b3ar');
-      assert.equal(_dasherizeComponentName.default.get('XBlah'), 'x-blah');
-      assert.equal(_dasherizeComponentName.default.get('X-Blah'), 'x-blah');
-      assert.equal(_dasherizeComponentName.default.get('Foo::BarBaz'), 'foo::bar-baz');
-      assert.equal(_dasherizeComponentName.default.get('Foo::Bar-Baz'), 'foo::bar-baz');
-      assert.equal(_dasherizeComponentName.default.get('Foo@BarBaz'), 'foo@bar-baz');
-      assert.equal(_dasherizeComponentName.default.get('Foo@Bar-Baz'), 'foo@bar-baz');
-    }
-
-  });
-});
-enifed("ember/version", ["exports"], function (_exports) {
-  "use strict";
-
   _exports.default = void 0;
-  var _default = "3.8.0";
+  var _default = "3.25.0";
   _exports.default = _default;
 });
-enifed("handlebars", ["exports"], function (_exports) {
+define("node-module/index", ["exports"], function (_exports) {
   "use strict";
 
-  _exports.parse = parse;
-  _exports.parser = void 0;
-
-  // File ignored in coverage tests via setting in .istanbul.yml
-
-  /* Jison generated parser */
-  var handlebars = function () {
-    var parser = {
-      trace: function trace() {},
-      yy: {},
-      symbols_: {
-        "error": 2,
-        "root": 3,
-        "program": 4,
-        "EOF": 5,
-        "program_repetition0": 6,
-        "statement": 7,
-        "mustache": 8,
-        "block": 9,
-        "rawBlock": 10,
-        "partial": 11,
-        "partialBlock": 12,
-        "content": 13,
-        "COMMENT": 14,
-        "CONTENT": 15,
-        "openRawBlock": 16,
-        "rawBlock_repetition_plus0": 17,
-        "END_RAW_BLOCK": 18,
-        "OPEN_RAW_BLOCK": 19,
-        "helperName": 20,
-        "openRawBlock_repetition0": 21,
-        "openRawBlock_option0": 22,
-        "CLOSE_RAW_BLOCK": 23,
-        "openBlock": 24,
-        "block_option0": 25,
-        "closeBlock": 26,
-        "openInverse": 27,
-        "block_option1": 28,
-        "OPEN_BLOCK": 29,
-        "openBlock_repetition0": 30,
-        "openBlock_option0": 31,
-        "openBlock_option1": 32,
-        "CLOSE": 33,
-        "OPEN_INVERSE": 34,
-        "openInverse_repetition0": 35,
-        "openInverse_option0": 36,
-        "openInverse_option1": 37,
-        "openInverseChain": 38,
-        "OPEN_INVERSE_CHAIN": 39,
-        "openInverseChain_repetition0": 40,
-        "openInverseChain_option0": 41,
-        "openInverseChain_option1": 42,
-        "inverseAndProgram": 43,
-        "INVERSE": 44,
-        "inverseChain": 45,
-        "inverseChain_option0": 46,
-        "OPEN_ENDBLOCK": 47,
-        "OPEN": 48,
-        "mustache_repetition0": 49,
-        "mustache_option0": 50,
-        "OPEN_UNESCAPED": 51,
-        "mustache_repetition1": 52,
-        "mustache_option1": 53,
-        "CLOSE_UNESCAPED": 54,
-        "OPEN_PARTIAL": 55,
-        "partialName": 56,
-        "partial_repetition0": 57,
-        "partial_option0": 58,
-        "openPartialBlock": 59,
-        "OPEN_PARTIAL_BLOCK": 60,
-        "openPartialBlock_repetition0": 61,
-        "openPartialBlock_option0": 62,
-        "param": 63,
-        "sexpr": 64,
-        "OPEN_SEXPR": 65,
-        "sexpr_repetition0": 66,
-        "sexpr_option0": 67,
-        "CLOSE_SEXPR": 68,
-        "hash": 69,
-        "hash_repetition_plus0": 70,
-        "hashSegment": 71,
-        "ID": 72,
-        "EQUALS": 73,
-        "blockParams": 74,
-        "OPEN_BLOCK_PARAMS": 75,
-        "blockParams_repetition_plus0": 76,
-        "CLOSE_BLOCK_PARAMS": 77,
-        "path": 78,
-        "dataName": 79,
-        "STRING": 80,
-        "NUMBER": 81,
-        "BOOLEAN": 82,
-        "UNDEFINED": 83,
-        "NULL": 84,
-        "DATA": 85,
-        "pathSegments": 86,
-        "SEP": 87,
-        "$accept": 0,
-        "$end": 1
-      },
-      terminals_: {
-        2: "error",
-        5: "EOF",
-        14: "COMMENT",
-        15: "CONTENT",
-        18: "END_RAW_BLOCK",
-        19: "OPEN_RAW_BLOCK",
-        23: "CLOSE_RAW_BLOCK",
-        29: "OPEN_BLOCK",
-        33: "CLOSE",
-        34: "OPEN_INVERSE",
-        39: "OPEN_INVERSE_CHAIN",
-        44: "INVERSE",
-        47: "OPEN_ENDBLOCK",
-        48: "OPEN",
-        51: "OPEN_UNESCAPED",
-        54: "CLOSE_UNESCAPED",
-        55: "OPEN_PARTIAL",
-        60: "OPEN_PARTIAL_BLOCK",
-        65: "OPEN_SEXPR",
-        68: "CLOSE_SEXPR",
-        72: "ID",
-        73: "EQUALS",
-        75: "OPEN_BLOCK_PARAMS",
-        77: "CLOSE_BLOCK_PARAMS",
-        80: "STRING",
-        81: "NUMBER",
-        82: "BOOLEAN",
-        83: "UNDEFINED",
-        84: "NULL",
-        85: "DATA",
-        87: "SEP"
-      },
-      productions_: [0, [3, 2], [4, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [13, 1], [10, 3], [16, 5], [9, 4], [9, 4], [24, 6], [27, 6], [38, 6], [43, 2], [45, 3], [45, 1], [26, 3], [8, 5], [8, 5], [11, 5], [12, 3], [59, 5], [63, 1], [63, 1], [64, 5], [69, 1], [71, 3], [74, 3], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [20, 1], [56, 1], [56, 1], [79, 2], [78, 1], [86, 3], [86, 1], [6, 0], [6, 2], [17, 1], [17, 2], [21, 0], [21, 2], [22, 0], [22, 1], [25, 0], [25, 1], [28, 0], [28, 1], [30, 0], [30, 2], [31, 0], [31, 1], [32, 0], [32, 1], [35, 0], [35, 2], [36, 0], [36, 1], [37, 0], [37, 1], [40, 0], [40, 2], [41, 0], [41, 1], [42, 0], [42, 1], [46, 0], [46, 1], [49, 0], [49, 2], [50, 0], [50, 1], [52, 0], [52, 2], [53, 0], [53, 1], [57, 0], [57, 2], [58, 0], [58, 1], [61, 0], [61, 2], [62, 0], [62, 1], [66, 0], [66, 2], [67, 0], [67, 1], [70, 1], [70, 2], [76, 1], [76, 2]],
-      performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$
-      /*``*/
-      ) {
-        var $0 = $$.length - 1;
-
-        switch (yystate) {
-          case 1:
-            return $$[$0 - 1];
-            break;
-
-          case 2:
-            this.$ = yy.prepareProgram($$[$0]);
-            break;
-
-          case 3:
-            this.$ = $$[$0];
-            break;
-
-          case 4:
-            this.$ = $$[$0];
-            break;
-
-          case 5:
-            this.$ = $$[$0];
-            break;
-
-          case 6:
-            this.$ = $$[$0];
-            break;
-
-          case 7:
-            this.$ = $$[$0];
-            break;
-
-          case 8:
-            this.$ = $$[$0];
-            break;
-
-          case 9:
-            this.$ = {
-              type: 'CommentStatement',
-              value: yy.stripComment($$[$0]),
-              strip: yy.stripFlags($$[$0], $$[$0]),
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 10:
-            this.$ = {
-              type: 'ContentStatement',
-              original: $$[$0],
-              value: $$[$0],
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 11:
-            this.$ = yy.prepareRawBlock($$[$0 - 2], $$[$0 - 1], $$[$0], this._$);
-            break;
-
-          case 12:
-            this.$ = {
-              path: $$[$0 - 3],
-              params: $$[$0 - 2],
-              hash: $$[$0 - 1]
-            };
-            break;
-
-          case 13:
-            this.$ = yy.prepareBlock($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0], false, this._$);
-            break;
-
-          case 14:
-            this.$ = yy.prepareBlock($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0], true, this._$);
-            break;
-
-          case 15:
-            this.$ = {
-              open: $$[$0 - 5],
-              path: $$[$0 - 4],
-              params: $$[$0 - 3],
-              hash: $$[$0 - 2],
-              blockParams: $$[$0 - 1],
-              strip: yy.stripFlags($$[$0 - 5], $$[$0])
-            };
-            break;
-
-          case 16:
-            this.$ = {
-              path: $$[$0 - 4],
-              params: $$[$0 - 3],
-              hash: $$[$0 - 2],
-              blockParams: $$[$0 - 1],
-              strip: yy.stripFlags($$[$0 - 5], $$[$0])
-            };
-            break;
-
-          case 17:
-            this.$ = {
-              path: $$[$0 - 4],
-              params: $$[$0 - 3],
-              hash: $$[$0 - 2],
-              blockParams: $$[$0 - 1],
-              strip: yy.stripFlags($$[$0 - 5], $$[$0])
-            };
-            break;
-
-          case 18:
-            this.$ = {
-              strip: yy.stripFlags($$[$0 - 1], $$[$0 - 1]),
-              program: $$[$0]
-            };
-            break;
-
-          case 19:
-            var inverse = yy.prepareBlock($$[$0 - 2], $$[$0 - 1], $$[$0], $$[$0], false, this._$),
-                program = yy.prepareProgram([inverse], $$[$0 - 1].loc);
-            program.chained = true;
-            this.$ = {
-              strip: $$[$0 - 2].strip,
-              program: program,
-              chain: true
-            };
-            break;
-
-          case 20:
-            this.$ = $$[$0];
-            break;
-
-          case 21:
-            this.$ = {
-              path: $$[$0 - 1],
-              strip: yy.stripFlags($$[$0 - 2], $$[$0])
-            };
-            break;
-
-          case 22:
-            this.$ = yy.prepareMustache($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0 - 4], yy.stripFlags($$[$0 - 4], $$[$0]), this._$);
-            break;
-
-          case 23:
-            this.$ = yy.prepareMustache($$[$0 - 3], $$[$0 - 2], $$[$0 - 1], $$[$0 - 4], yy.stripFlags($$[$0 - 4], $$[$0]), this._$);
-            break;
-
-          case 24:
-            this.$ = {
-              type: 'PartialStatement',
-              name: $$[$0 - 3],
-              params: $$[$0 - 2],
-              hash: $$[$0 - 1],
-              indent: '',
-              strip: yy.stripFlags($$[$0 - 4], $$[$0]),
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 25:
-            this.$ = yy.preparePartialBlock($$[$0 - 2], $$[$0 - 1], $$[$0], this._$);
-            break;
-
-          case 26:
-            this.$ = {
-              path: $$[$0 - 3],
-              params: $$[$0 - 2],
-              hash: $$[$0 - 1],
-              strip: yy.stripFlags($$[$0 - 4], $$[$0])
-            };
-            break;
-
-          case 27:
-            this.$ = $$[$0];
-            break;
-
-          case 28:
-            this.$ = $$[$0];
-            break;
-
-          case 29:
-            this.$ = {
-              type: 'SubExpression',
-              path: $$[$0 - 3],
-              params: $$[$0 - 2],
-              hash: $$[$0 - 1],
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 30:
-            this.$ = {
-              type: 'Hash',
-              pairs: $$[$0],
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 31:
-            this.$ = {
-              type: 'HashPair',
-              key: yy.id($$[$0 - 2]),
-              value: $$[$0],
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 32:
-            this.$ = yy.id($$[$0 - 1]);
-            break;
-
-          case 33:
-            this.$ = $$[$0];
-            break;
-
-          case 34:
-            this.$ = $$[$0];
-            break;
-
-          case 35:
-            this.$ = {
-              type: 'StringLiteral',
-              value: $$[$0],
-              original: $$[$0],
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 36:
-            this.$ = {
-              type: 'NumberLiteral',
-              value: Number($$[$0]),
-              original: Number($$[$0]),
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 37:
-            this.$ = {
-              type: 'BooleanLiteral',
-              value: $$[$0] === 'true',
-              original: $$[$0] === 'true',
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 38:
-            this.$ = {
-              type: 'UndefinedLiteral',
-              original: undefined,
-              value: undefined,
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 39:
-            this.$ = {
-              type: 'NullLiteral',
-              original: null,
-              value: null,
-              loc: yy.locInfo(this._$)
-            };
-            break;
-
-          case 40:
-            this.$ = $$[$0];
-            break;
-
-          case 41:
-            this.$ = $$[$0];
-            break;
-
-          case 42:
-            this.$ = yy.preparePath(true, $$[$0], this._$);
-            break;
-
-          case 43:
-            this.$ = yy.preparePath(false, $$[$0], this._$);
-            break;
-
-          case 44:
-            $$[$0 - 2].push({
-              part: yy.id($$[$0]),
-              original: $$[$0],
-              separator: $$[$0 - 1]
-            });
-            this.$ = $$[$0 - 2];
-            break;
-
-          case 45:
-            this.$ = [{
-              part: yy.id($$[$0]),
-              original: $$[$0]
-            }];
-            break;
-
-          case 46:
-            this.$ = [];
-            break;
-
-          case 47:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 48:
-            this.$ = [$$[$0]];
-            break;
-
-          case 49:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 50:
-            this.$ = [];
-            break;
-
-          case 51:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 58:
-            this.$ = [];
-            break;
-
-          case 59:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 64:
-            this.$ = [];
-            break;
-
-          case 65:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 70:
-            this.$ = [];
-            break;
-
-          case 71:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 78:
-            this.$ = [];
-            break;
-
-          case 79:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 82:
-            this.$ = [];
-            break;
-
-          case 83:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 86:
-            this.$ = [];
-            break;
-
-          case 87:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 90:
-            this.$ = [];
-            break;
-
-          case 91:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 94:
-            this.$ = [];
-            break;
-
-          case 95:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 98:
-            this.$ = [$$[$0]];
-            break;
-
-          case 99:
-            $$[$0 - 1].push($$[$0]);
-            break;
-
-          case 100:
-            this.$ = [$$[$0]];
-            break;
-
-          case 101:
-            $$[$0 - 1].push($$[$0]);
-            break;
-        }
-      },
-      table: [{
-        3: 1,
-        4: 2,
-        5: [2, 46],
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        1: [3]
-      }, {
-        5: [1, 4]
-      }, {
-        5: [2, 2],
-        7: 5,
-        8: 6,
-        9: 7,
-        10: 8,
-        11: 9,
-        12: 10,
-        13: 11,
-        14: [1, 12],
-        15: [1, 20],
-        16: 17,
-        19: [1, 23],
-        24: 15,
-        27: 16,
-        29: [1, 21],
-        34: [1, 22],
-        39: [2, 2],
-        44: [2, 2],
-        47: [2, 2],
-        48: [1, 13],
-        51: [1, 14],
-        55: [1, 18],
-        59: 19,
-        60: [1, 24]
-      }, {
-        1: [2, 1]
-      }, {
-        5: [2, 47],
-        14: [2, 47],
-        15: [2, 47],
-        19: [2, 47],
-        29: [2, 47],
-        34: [2, 47],
-        39: [2, 47],
-        44: [2, 47],
-        47: [2, 47],
-        48: [2, 47],
-        51: [2, 47],
-        55: [2, 47],
-        60: [2, 47]
-      }, {
-        5: [2, 3],
-        14: [2, 3],
-        15: [2, 3],
-        19: [2, 3],
-        29: [2, 3],
-        34: [2, 3],
-        39: [2, 3],
-        44: [2, 3],
-        47: [2, 3],
-        48: [2, 3],
-        51: [2, 3],
-        55: [2, 3],
-        60: [2, 3]
-      }, {
-        5: [2, 4],
-        14: [2, 4],
-        15: [2, 4],
-        19: [2, 4],
-        29: [2, 4],
-        34: [2, 4],
-        39: [2, 4],
-        44: [2, 4],
-        47: [2, 4],
-        48: [2, 4],
-        51: [2, 4],
-        55: [2, 4],
-        60: [2, 4]
-      }, {
-        5: [2, 5],
-        14: [2, 5],
-        15: [2, 5],
-        19: [2, 5],
-        29: [2, 5],
-        34: [2, 5],
-        39: [2, 5],
-        44: [2, 5],
-        47: [2, 5],
-        48: [2, 5],
-        51: [2, 5],
-        55: [2, 5],
-        60: [2, 5]
-      }, {
-        5: [2, 6],
-        14: [2, 6],
-        15: [2, 6],
-        19: [2, 6],
-        29: [2, 6],
-        34: [2, 6],
-        39: [2, 6],
-        44: [2, 6],
-        47: [2, 6],
-        48: [2, 6],
-        51: [2, 6],
-        55: [2, 6],
-        60: [2, 6]
-      }, {
-        5: [2, 7],
-        14: [2, 7],
-        15: [2, 7],
-        19: [2, 7],
-        29: [2, 7],
-        34: [2, 7],
-        39: [2, 7],
-        44: [2, 7],
-        47: [2, 7],
-        48: [2, 7],
-        51: [2, 7],
-        55: [2, 7],
-        60: [2, 7]
-      }, {
-        5: [2, 8],
-        14: [2, 8],
-        15: [2, 8],
-        19: [2, 8],
-        29: [2, 8],
-        34: [2, 8],
-        39: [2, 8],
-        44: [2, 8],
-        47: [2, 8],
-        48: [2, 8],
-        51: [2, 8],
-        55: [2, 8],
-        60: [2, 8]
-      }, {
-        5: [2, 9],
-        14: [2, 9],
-        15: [2, 9],
-        19: [2, 9],
-        29: [2, 9],
-        34: [2, 9],
-        39: [2, 9],
-        44: [2, 9],
-        47: [2, 9],
-        48: [2, 9],
-        51: [2, 9],
-        55: [2, 9],
-        60: [2, 9]
-      }, {
-        20: 25,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 36,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        4: 37,
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        39: [2, 46],
-        44: [2, 46],
-        47: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        4: 38,
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        44: [2, 46],
-        47: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        13: 40,
-        15: [1, 20],
-        17: 39
-      }, {
-        20: 42,
-        56: 41,
-        64: 43,
-        65: [1, 44],
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        4: 45,
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        47: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        5: [2, 10],
-        14: [2, 10],
-        15: [2, 10],
-        18: [2, 10],
-        19: [2, 10],
-        29: [2, 10],
-        34: [2, 10],
-        39: [2, 10],
-        44: [2, 10],
-        47: [2, 10],
-        48: [2, 10],
-        51: [2, 10],
-        55: [2, 10],
-        60: [2, 10]
-      }, {
-        20: 46,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 47,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 48,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 42,
-        56: 49,
-        64: 43,
-        65: [1, 44],
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        33: [2, 78],
-        49: 50,
-        65: [2, 78],
-        72: [2, 78],
-        80: [2, 78],
-        81: [2, 78],
-        82: [2, 78],
-        83: [2, 78],
-        84: [2, 78],
-        85: [2, 78]
-      }, {
-        23: [2, 33],
-        33: [2, 33],
-        54: [2, 33],
-        65: [2, 33],
-        68: [2, 33],
-        72: [2, 33],
-        75: [2, 33],
-        80: [2, 33],
-        81: [2, 33],
-        82: [2, 33],
-        83: [2, 33],
-        84: [2, 33],
-        85: [2, 33]
-      }, {
-        23: [2, 34],
-        33: [2, 34],
-        54: [2, 34],
-        65: [2, 34],
-        68: [2, 34],
-        72: [2, 34],
-        75: [2, 34],
-        80: [2, 34],
-        81: [2, 34],
-        82: [2, 34],
-        83: [2, 34],
-        84: [2, 34],
-        85: [2, 34]
-      }, {
-        23: [2, 35],
-        33: [2, 35],
-        54: [2, 35],
-        65: [2, 35],
-        68: [2, 35],
-        72: [2, 35],
-        75: [2, 35],
-        80: [2, 35],
-        81: [2, 35],
-        82: [2, 35],
-        83: [2, 35],
-        84: [2, 35],
-        85: [2, 35]
-      }, {
-        23: [2, 36],
-        33: [2, 36],
-        54: [2, 36],
-        65: [2, 36],
-        68: [2, 36],
-        72: [2, 36],
-        75: [2, 36],
-        80: [2, 36],
-        81: [2, 36],
-        82: [2, 36],
-        83: [2, 36],
-        84: [2, 36],
-        85: [2, 36]
-      }, {
-        23: [2, 37],
-        33: [2, 37],
-        54: [2, 37],
-        65: [2, 37],
-        68: [2, 37],
-        72: [2, 37],
-        75: [2, 37],
-        80: [2, 37],
-        81: [2, 37],
-        82: [2, 37],
-        83: [2, 37],
-        84: [2, 37],
-        85: [2, 37]
-      }, {
-        23: [2, 38],
-        33: [2, 38],
-        54: [2, 38],
-        65: [2, 38],
-        68: [2, 38],
-        72: [2, 38],
-        75: [2, 38],
-        80: [2, 38],
-        81: [2, 38],
-        82: [2, 38],
-        83: [2, 38],
-        84: [2, 38],
-        85: [2, 38]
-      }, {
-        23: [2, 39],
-        33: [2, 39],
-        54: [2, 39],
-        65: [2, 39],
-        68: [2, 39],
-        72: [2, 39],
-        75: [2, 39],
-        80: [2, 39],
-        81: [2, 39],
-        82: [2, 39],
-        83: [2, 39],
-        84: [2, 39],
-        85: [2, 39]
-      }, {
-        23: [2, 43],
-        33: [2, 43],
-        54: [2, 43],
-        65: [2, 43],
-        68: [2, 43],
-        72: [2, 43],
-        75: [2, 43],
-        80: [2, 43],
-        81: [2, 43],
-        82: [2, 43],
-        83: [2, 43],
-        84: [2, 43],
-        85: [2, 43],
-        87: [1, 51]
-      }, {
-        72: [1, 35],
-        86: 52
-      }, {
-        23: [2, 45],
-        33: [2, 45],
-        54: [2, 45],
-        65: [2, 45],
-        68: [2, 45],
-        72: [2, 45],
-        75: [2, 45],
-        80: [2, 45],
-        81: [2, 45],
-        82: [2, 45],
-        83: [2, 45],
-        84: [2, 45],
-        85: [2, 45],
-        87: [2, 45]
-      }, {
-        52: 53,
-        54: [2, 82],
-        65: [2, 82],
-        72: [2, 82],
-        80: [2, 82],
-        81: [2, 82],
-        82: [2, 82],
-        83: [2, 82],
-        84: [2, 82],
-        85: [2, 82]
-      }, {
-        25: 54,
-        38: 56,
-        39: [1, 58],
-        43: 57,
-        44: [1, 59],
-        45: 55,
-        47: [2, 54]
-      }, {
-        28: 60,
-        43: 61,
-        44: [1, 59],
-        47: [2, 56]
-      }, {
-        13: 63,
-        15: [1, 20],
-        18: [1, 62]
-      }, {
-        15: [2, 48],
-        18: [2, 48]
-      }, {
-        33: [2, 86],
-        57: 64,
-        65: [2, 86],
-        72: [2, 86],
-        80: [2, 86],
-        81: [2, 86],
-        82: [2, 86],
-        83: [2, 86],
-        84: [2, 86],
-        85: [2, 86]
-      }, {
-        33: [2, 40],
-        65: [2, 40],
-        72: [2, 40],
-        80: [2, 40],
-        81: [2, 40],
-        82: [2, 40],
-        83: [2, 40],
-        84: [2, 40],
-        85: [2, 40]
-      }, {
-        33: [2, 41],
-        65: [2, 41],
-        72: [2, 41],
-        80: [2, 41],
-        81: [2, 41],
-        82: [2, 41],
-        83: [2, 41],
-        84: [2, 41],
-        85: [2, 41]
-      }, {
-        20: 65,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        26: 66,
-        47: [1, 67]
-      }, {
-        30: 68,
-        33: [2, 58],
-        65: [2, 58],
-        72: [2, 58],
-        75: [2, 58],
-        80: [2, 58],
-        81: [2, 58],
-        82: [2, 58],
-        83: [2, 58],
-        84: [2, 58],
-        85: [2, 58]
-      }, {
-        33: [2, 64],
-        35: 69,
-        65: [2, 64],
-        72: [2, 64],
-        75: [2, 64],
-        80: [2, 64],
-        81: [2, 64],
-        82: [2, 64],
-        83: [2, 64],
-        84: [2, 64],
-        85: [2, 64]
-      }, {
-        21: 70,
-        23: [2, 50],
-        65: [2, 50],
-        72: [2, 50],
-        80: [2, 50],
-        81: [2, 50],
-        82: [2, 50],
-        83: [2, 50],
-        84: [2, 50],
-        85: [2, 50]
-      }, {
-        33: [2, 90],
-        61: 71,
-        65: [2, 90],
-        72: [2, 90],
-        80: [2, 90],
-        81: [2, 90],
-        82: [2, 90],
-        83: [2, 90],
-        84: [2, 90],
-        85: [2, 90]
-      }, {
-        20: 75,
-        33: [2, 80],
-        50: 72,
-        63: 73,
-        64: 76,
-        65: [1, 44],
-        69: 74,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        72: [1, 80]
-      }, {
-        23: [2, 42],
-        33: [2, 42],
-        54: [2, 42],
-        65: [2, 42],
-        68: [2, 42],
-        72: [2, 42],
-        75: [2, 42],
-        80: [2, 42],
-        81: [2, 42],
-        82: [2, 42],
-        83: [2, 42],
-        84: [2, 42],
-        85: [2, 42],
-        87: [1, 51]
-      }, {
-        20: 75,
-        53: 81,
-        54: [2, 84],
-        63: 82,
-        64: 76,
-        65: [1, 44],
-        69: 83,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        26: 84,
-        47: [1, 67]
-      }, {
-        47: [2, 55]
-      }, {
-        4: 85,
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        39: [2, 46],
-        44: [2, 46],
-        47: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        47: [2, 20]
-      }, {
-        20: 86,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        4: 87,
-        6: 3,
-        14: [2, 46],
-        15: [2, 46],
-        19: [2, 46],
-        29: [2, 46],
-        34: [2, 46],
-        47: [2, 46],
-        48: [2, 46],
-        51: [2, 46],
-        55: [2, 46],
-        60: [2, 46]
-      }, {
-        26: 88,
-        47: [1, 67]
-      }, {
-        47: [2, 57]
-      }, {
-        5: [2, 11],
-        14: [2, 11],
-        15: [2, 11],
-        19: [2, 11],
-        29: [2, 11],
-        34: [2, 11],
-        39: [2, 11],
-        44: [2, 11],
-        47: [2, 11],
-        48: [2, 11],
-        51: [2, 11],
-        55: [2, 11],
-        60: [2, 11]
-      }, {
-        15: [2, 49],
-        18: [2, 49]
-      }, {
-        20: 75,
-        33: [2, 88],
-        58: 89,
-        63: 90,
-        64: 76,
-        65: [1, 44],
-        69: 91,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        65: [2, 94],
-        66: 92,
-        68: [2, 94],
-        72: [2, 94],
-        80: [2, 94],
-        81: [2, 94],
-        82: [2, 94],
-        83: [2, 94],
-        84: [2, 94],
-        85: [2, 94]
-      }, {
-        5: [2, 25],
-        14: [2, 25],
-        15: [2, 25],
-        19: [2, 25],
-        29: [2, 25],
-        34: [2, 25],
-        39: [2, 25],
-        44: [2, 25],
-        47: [2, 25],
-        48: [2, 25],
-        51: [2, 25],
-        55: [2, 25],
-        60: [2, 25]
-      }, {
-        20: 93,
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 75,
-        31: 94,
-        33: [2, 60],
-        63: 95,
-        64: 76,
-        65: [1, 44],
-        69: 96,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        75: [2, 60],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 75,
-        33: [2, 66],
-        36: 97,
-        63: 98,
-        64: 76,
-        65: [1, 44],
-        69: 99,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        75: [2, 66],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 75,
-        22: 100,
-        23: [2, 52],
-        63: 101,
-        64: 76,
-        65: [1, 44],
-        69: 102,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        20: 75,
-        33: [2, 92],
-        62: 103,
-        63: 104,
-        64: 76,
-        65: [1, 44],
-        69: 105,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        33: [1, 106]
-      }, {
-        33: [2, 79],
-        65: [2, 79],
-        72: [2, 79],
-        80: [2, 79],
-        81: [2, 79],
-        82: [2, 79],
-        83: [2, 79],
-        84: [2, 79],
-        85: [2, 79]
-      }, {
-        33: [2, 81]
-      }, {
-        23: [2, 27],
-        33: [2, 27],
-        54: [2, 27],
-        65: [2, 27],
-        68: [2, 27],
-        72: [2, 27],
-        75: [2, 27],
-        80: [2, 27],
-        81: [2, 27],
-        82: [2, 27],
-        83: [2, 27],
-        84: [2, 27],
-        85: [2, 27]
-      }, {
-        23: [2, 28],
-        33: [2, 28],
-        54: [2, 28],
-        65: [2, 28],
-        68: [2, 28],
-        72: [2, 28],
-        75: [2, 28],
-        80: [2, 28],
-        81: [2, 28],
-        82: [2, 28],
-        83: [2, 28],
-        84: [2, 28],
-        85: [2, 28]
-      }, {
-        23: [2, 30],
-        33: [2, 30],
-        54: [2, 30],
-        68: [2, 30],
-        71: 107,
-        72: [1, 108],
-        75: [2, 30]
-      }, {
-        23: [2, 98],
-        33: [2, 98],
-        54: [2, 98],
-        68: [2, 98],
-        72: [2, 98],
-        75: [2, 98]
-      }, {
-        23: [2, 45],
-        33: [2, 45],
-        54: [2, 45],
-        65: [2, 45],
-        68: [2, 45],
-        72: [2, 45],
-        73: [1, 109],
-        75: [2, 45],
-        80: [2, 45],
-        81: [2, 45],
-        82: [2, 45],
-        83: [2, 45],
-        84: [2, 45],
-        85: [2, 45],
-        87: [2, 45]
-      }, {
-        23: [2, 44],
-        33: [2, 44],
-        54: [2, 44],
-        65: [2, 44],
-        68: [2, 44],
-        72: [2, 44],
-        75: [2, 44],
-        80: [2, 44],
-        81: [2, 44],
-        82: [2, 44],
-        83: [2, 44],
-        84: [2, 44],
-        85: [2, 44],
-        87: [2, 44]
-      }, {
-        54: [1, 110]
-      }, {
-        54: [2, 83],
-        65: [2, 83],
-        72: [2, 83],
-        80: [2, 83],
-        81: [2, 83],
-        82: [2, 83],
-        83: [2, 83],
-        84: [2, 83],
-        85: [2, 83]
-      }, {
-        54: [2, 85]
-      }, {
-        5: [2, 13],
-        14: [2, 13],
-        15: [2, 13],
-        19: [2, 13],
-        29: [2, 13],
-        34: [2, 13],
-        39: [2, 13],
-        44: [2, 13],
-        47: [2, 13],
-        48: [2, 13],
-        51: [2, 13],
-        55: [2, 13],
-        60: [2, 13]
-      }, {
-        38: 56,
-        39: [1, 58],
-        43: 57,
-        44: [1, 59],
-        45: 112,
-        46: 111,
-        47: [2, 76]
-      }, {
-        33: [2, 70],
-        40: 113,
-        65: [2, 70],
-        72: [2, 70],
-        75: [2, 70],
-        80: [2, 70],
-        81: [2, 70],
-        82: [2, 70],
-        83: [2, 70],
-        84: [2, 70],
-        85: [2, 70]
-      }, {
-        47: [2, 18]
-      }, {
-        5: [2, 14],
-        14: [2, 14],
-        15: [2, 14],
-        19: [2, 14],
-        29: [2, 14],
-        34: [2, 14],
-        39: [2, 14],
-        44: [2, 14],
-        47: [2, 14],
-        48: [2, 14],
-        51: [2, 14],
-        55: [2, 14],
-        60: [2, 14]
-      }, {
-        33: [1, 114]
-      }, {
-        33: [2, 87],
-        65: [2, 87],
-        72: [2, 87],
-        80: [2, 87],
-        81: [2, 87],
-        82: [2, 87],
-        83: [2, 87],
-        84: [2, 87],
-        85: [2, 87]
-      }, {
-        33: [2, 89]
-      }, {
-        20: 75,
-        63: 116,
-        64: 76,
-        65: [1, 44],
-        67: 115,
-        68: [2, 96],
-        69: 117,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        33: [1, 118]
-      }, {
-        32: 119,
-        33: [2, 62],
-        74: 120,
-        75: [1, 121]
-      }, {
-        33: [2, 59],
-        65: [2, 59],
-        72: [2, 59],
-        75: [2, 59],
-        80: [2, 59],
-        81: [2, 59],
-        82: [2, 59],
-        83: [2, 59],
-        84: [2, 59],
-        85: [2, 59]
-      }, {
-        33: [2, 61],
-        75: [2, 61]
-      }, {
-        33: [2, 68],
-        37: 122,
-        74: 123,
-        75: [1, 121]
-      }, {
-        33: [2, 65],
-        65: [2, 65],
-        72: [2, 65],
-        75: [2, 65],
-        80: [2, 65],
-        81: [2, 65],
-        82: [2, 65],
-        83: [2, 65],
-        84: [2, 65],
-        85: [2, 65]
-      }, {
-        33: [2, 67],
-        75: [2, 67]
-      }, {
-        23: [1, 124]
-      }, {
-        23: [2, 51],
-        65: [2, 51],
-        72: [2, 51],
-        80: [2, 51],
-        81: [2, 51],
-        82: [2, 51],
-        83: [2, 51],
-        84: [2, 51],
-        85: [2, 51]
-      }, {
-        23: [2, 53]
-      }, {
-        33: [1, 125]
-      }, {
-        33: [2, 91],
-        65: [2, 91],
-        72: [2, 91],
-        80: [2, 91],
-        81: [2, 91],
-        82: [2, 91],
-        83: [2, 91],
-        84: [2, 91],
-        85: [2, 91]
-      }, {
-        33: [2, 93]
-      }, {
-        5: [2, 22],
-        14: [2, 22],
-        15: [2, 22],
-        19: [2, 22],
-        29: [2, 22],
-        34: [2, 22],
-        39: [2, 22],
-        44: [2, 22],
-        47: [2, 22],
-        48: [2, 22],
-        51: [2, 22],
-        55: [2, 22],
-        60: [2, 22]
-      }, {
-        23: [2, 99],
-        33: [2, 99],
-        54: [2, 99],
-        68: [2, 99],
-        72: [2, 99],
-        75: [2, 99]
-      }, {
-        73: [1, 109]
-      }, {
-        20: 75,
-        63: 126,
-        64: 76,
-        65: [1, 44],
-        72: [1, 35],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        5: [2, 23],
-        14: [2, 23],
-        15: [2, 23],
-        19: [2, 23],
-        29: [2, 23],
-        34: [2, 23],
-        39: [2, 23],
-        44: [2, 23],
-        47: [2, 23],
-        48: [2, 23],
-        51: [2, 23],
-        55: [2, 23],
-        60: [2, 23]
-      }, {
-        47: [2, 19]
-      }, {
-        47: [2, 77]
-      }, {
-        20: 75,
-        33: [2, 72],
-        41: 127,
-        63: 128,
-        64: 76,
-        65: [1, 44],
-        69: 129,
-        70: 77,
-        71: 78,
-        72: [1, 79],
-        75: [2, 72],
-        78: 26,
-        79: 27,
-        80: [1, 28],
-        81: [1, 29],
-        82: [1, 30],
-        83: [1, 31],
-        84: [1, 32],
-        85: [1, 34],
-        86: 33
-      }, {
-        5: [2, 24],
-        14: [2, 24],
-        15: [2, 24],
-        19: [2, 24],
-        29: [2, 24],
-        34: [2, 24],
-        39: [2, 24],
-        44: [2, 24],
-        47: [2, 24],
-        48: [2, 24],
-        51: [2, 24],
-        55: [2, 24],
-        60: [2, 24]
-      }, {
-        68: [1, 130]
-      }, {
-        65: [2, 95],
-        68: [2, 95],
-        72: [2, 95],
-        80: [2, 95],
-        81: [2, 95],
-        82: [2, 95],
-        83: [2, 95],
-        84: [2, 95],
-        85: [2, 95]
-      }, {
-        68: [2, 97]
-      }, {
-        5: [2, 21],
-        14: [2, 21],
-        15: [2, 21],
-        19: [2, 21],
-        29: [2, 21],
-        34: [2, 21],
-        39: [2, 21],
-        44: [2, 21],
-        47: [2, 21],
-        48: [2, 21],
-        51: [2, 21],
-        55: [2, 21],
-        60: [2, 21]
-      }, {
-        33: [1, 131]
-      }, {
-        33: [2, 63]
-      }, {
-        72: [1, 133],
-        76: 132
-      }, {
-        33: [1, 134]
-      }, {
-        33: [2, 69]
-      }, {
-        15: [2, 12]
-      }, {
-        14: [2, 26],
-        15: [2, 26],
-        19: [2, 26],
-        29: [2, 26],
-        34: [2, 26],
-        47: [2, 26],
-        48: [2, 26],
-        51: [2, 26],
-        55: [2, 26],
-        60: [2, 26]
-      }, {
-        23: [2, 31],
-        33: [2, 31],
-        54: [2, 31],
-        68: [2, 31],
-        72: [2, 31],
-        75: [2, 31]
-      }, {
-        33: [2, 74],
-        42: 135,
-        74: 136,
-        75: [1, 121]
-      }, {
-        33: [2, 71],
-        65: [2, 71],
-        72: [2, 71],
-        75: [2, 71],
-        80: [2, 71],
-        81: [2, 71],
-        82: [2, 71],
-        83: [2, 71],
-        84: [2, 71],
-        85: [2, 71]
-      }, {
-        33: [2, 73],
-        75: [2, 73]
-      }, {
-        23: [2, 29],
-        33: [2, 29],
-        54: [2, 29],
-        65: [2, 29],
-        68: [2, 29],
-        72: [2, 29],
-        75: [2, 29],
-        80: [2, 29],
-        81: [2, 29],
-        82: [2, 29],
-        83: [2, 29],
-        84: [2, 29],
-        85: [2, 29]
-      }, {
-        14: [2, 15],
-        15: [2, 15],
-        19: [2, 15],
-        29: [2, 15],
-        34: [2, 15],
-        39: [2, 15],
-        44: [2, 15],
-        47: [2, 15],
-        48: [2, 15],
-        51: [2, 15],
-        55: [2, 15],
-        60: [2, 15]
-      }, {
-        72: [1, 138],
-        77: [1, 137]
-      }, {
-        72: [2, 100],
-        77: [2, 100]
-      }, {
-        14: [2, 16],
-        15: [2, 16],
-        19: [2, 16],
-        29: [2, 16],
-        34: [2, 16],
-        44: [2, 16],
-        47: [2, 16],
-        48: [2, 16],
-        51: [2, 16],
-        55: [2, 16],
-        60: [2, 16]
-      }, {
-        33: [1, 139]
-      }, {
-        33: [2, 75]
-      }, {
-        33: [2, 32]
-      }, {
-        72: [2, 101],
-        77: [2, 101]
-      }, {
-        14: [2, 17],
-        15: [2, 17],
-        19: [2, 17],
-        29: [2, 17],
-        34: [2, 17],
-        39: [2, 17],
-        44: [2, 17],
-        47: [2, 17],
-        48: [2, 17],
-        51: [2, 17],
-        55: [2, 17],
-        60: [2, 17]
-      }],
-      defaultActions: {
-        4: [2, 1],
-        55: [2, 55],
-        57: [2, 20],
-        61: [2, 57],
-        74: [2, 81],
-        83: [2, 85],
-        87: [2, 18],
-        91: [2, 89],
-        102: [2, 53],
-        105: [2, 93],
-        111: [2, 19],
-        112: [2, 77],
-        117: [2, 97],
-        120: [2, 63],
-        123: [2, 69],
-        124: [2, 12],
-        136: [2, 75],
-        137: [2, 32]
-      },
-      parseError: function parseError(str, hash) {
-        throw new Error(str);
-      },
-      parse: function parse(input) {
-        var self = this,
-            stack = [0],
-            vstack = [null],
-            lstack = [],
-            table = this.table,
-            yytext = "",
-            yylineno = 0,
-            yyleng = 0,
-            recovering = 0;
-        this.lexer.setInput(input);
-        this.lexer.yy = this.yy;
-        this.yy.lexer = this.lexer;
-        this.yy.parser = this;
-        if (typeof this.lexer.yylloc == "undefined") this.lexer.yylloc = {};
-        var yyloc = this.lexer.yylloc;
-        lstack.push(yyloc);
-        var ranges = this.lexer.options && this.lexer.options.ranges;
-        if (typeof this.yy.parseError === "function") this.parseError = this.yy.parseError;
-
-        function lex() {
-          var token;
-          token = self.lexer.lex() || 1;
-
-          if (typeof token !== "number") {
-            token = self.symbols_[token] || token;
-          }
-
-          return token;
-        }
-
-        var symbol,
-            preErrorSymbol,
-            state,
-            action,
-            r,
-            yyval = {},
-            p,
-            len,
-            newState,
-            expected;
-
-        while (true) {
-          state = stack[stack.length - 1];
-
-          if (this.defaultActions[state]) {
-            action = this.defaultActions[state];
-          } else {
-            if (symbol === null || typeof symbol == "undefined") {
-              symbol = lex();
-            }
-
-            action = table[state] && table[state][symbol];
-          }
-
-          if (typeof action === "undefined" || !action.length || !action[0]) {
-            var errStr = "";
-
-            if (!recovering) {
-              expected = [];
-
-              for (p in table[state]) if (this.terminals_[p] && p > 2) {
-                expected.push("'" + this.terminals_[p] + "'");
-              }
-
-              if (this.lexer.showPosition) {
-                errStr = "Parse error on line " + (yylineno + 1) + ":\n" + this.lexer.showPosition() + "\nExpecting " + expected.join(", ") + ", got '" + (this.terminals_[symbol] || symbol) + "'";
-              } else {
-                errStr = "Parse error on line " + (yylineno + 1) + ": Unexpected " + (symbol == 1 ? "end of input" : "'" + (this.terminals_[symbol] || symbol) + "'");
-              }
-
-              this.parseError(errStr, {
-                text: this.lexer.match,
-                token: this.terminals_[symbol] || symbol,
-                line: this.lexer.yylineno,
-                loc: yyloc,
-                expected: expected
-              });
-            }
-          }
-
-          if (action[0] instanceof Array && action.length > 1) {
-            throw new Error("Parse Error: multiple actions possible at state: " + state + ", token: " + symbol);
-          }
-
-          switch (action[0]) {
-            case 1:
-              stack.push(symbol);
-              vstack.push(this.lexer.yytext);
-              lstack.push(this.lexer.yylloc);
-              stack.push(action[1]);
-              symbol = null;
-
-              if (!preErrorSymbol) {
-                yyleng = this.lexer.yyleng;
-                yytext = this.lexer.yytext;
-                yylineno = this.lexer.yylineno;
-                yyloc = this.lexer.yylloc;
-                if (recovering > 0) recovering--;
-              } else {
-                symbol = preErrorSymbol;
-                preErrorSymbol = null;
-              }
-
-              break;
-
-            case 2:
-              len = this.productions_[action[1]][1];
-              yyval.$ = vstack[vstack.length - len];
-              yyval._$ = {
-                first_line: lstack[lstack.length - (len || 1)].first_line,
-                last_line: lstack[lstack.length - 1].last_line,
-                first_column: lstack[lstack.length - (len || 1)].first_column,
-                last_column: lstack[lstack.length - 1].last_column
-              };
-
-              if (ranges) {
-                yyval._$.range = [lstack[lstack.length - (len || 1)].range[0], lstack[lstack.length - 1].range[1]];
-              }
-
-              r = this.performAction.call(yyval, yytext, yyleng, yylineno, this.yy, action[1], vstack, lstack);
-
-              if (typeof r !== "undefined") {
-                return r;
-              }
-
-              if (len) {
-                stack = stack.slice(0, -1 * len * 2);
-                vstack = vstack.slice(0, -1 * len);
-                lstack = lstack.slice(0, -1 * len);
-              }
-
-              stack.push(this.productions_[action[1]][0]);
-              vstack.push(yyval.$);
-              lstack.push(yyval._$);
-              newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
-              stack.push(newState);
-              break;
-
-            case 3:
-              return true;
-          }
-        }
-
-        return true;
-      }
-    };
-    /* Jison generated lexer */
-
-    var lexer = function () {
-      var lexer = {
-        EOF: 1,
-        parseError: function parseError(str, hash) {
-          if (this.yy.parser) {
-            this.yy.parser.parseError(str, hash);
-          } else {
-            throw new Error(str);
-          }
-        },
-        setInput: function (input) {
-          this._input = input;
-          this._more = this._less = this.done = false;
-          this.yylineno = this.yyleng = 0;
-          this.yytext = this.matched = this.match = '';
-          this.conditionStack = ['INITIAL'];
-          this.yylloc = {
-            first_line: 1,
-            first_column: 0,
-            last_line: 1,
-            last_column: 0
-          };
-          if (this.options.ranges) this.yylloc.range = [0, 0];
-          this.offset = 0;
-          return this;
-        },
-        input: function () {
-          var ch = this._input[0];
-          this.yytext += ch;
-          this.yyleng++;
-          this.offset++;
-          this.match += ch;
-          this.matched += ch;
-          var lines = ch.match(/(?:\r\n?|\n).*/g);
-
-          if (lines) {
-            this.yylineno++;
-            this.yylloc.last_line++;
-          } else {
-            this.yylloc.last_column++;
-          }
-
-          if (this.options.ranges) this.yylloc.range[1]++;
-          this._input = this._input.slice(1);
-          return ch;
-        },
-        unput: function (ch) {
-          var len = ch.length;
-          var lines = ch.split(/(?:\r\n?|\n)/g);
-          this._input = ch + this._input;
-          this.yytext = this.yytext.substr(0, this.yytext.length - len - 1); //this.yyleng -= len;
-
-          this.offset -= len;
-          var oldLines = this.match.split(/(?:\r\n?|\n)/g);
-          this.match = this.match.substr(0, this.match.length - 1);
-          this.matched = this.matched.substr(0, this.matched.length - 1);
-          if (lines.length - 1) this.yylineno -= lines.length - 1;
-          var r = this.yylloc.range;
-          this.yylloc = {
-            first_line: this.yylloc.first_line,
-            last_line: this.yylineno + 1,
-            first_column: this.yylloc.first_column,
-            last_column: lines ? (lines.length === oldLines.length ? this.yylloc.first_column : 0) + oldLines[oldLines.length - lines.length].length - lines[0].length : this.yylloc.first_column - len
-          };
-
-          if (this.options.ranges) {
-            this.yylloc.range = [r[0], r[0] + this.yyleng - len];
-          }
-
-          return this;
-        },
-        more: function () {
-          this._more = true;
-          return this;
-        },
-        less: function (n) {
-          this.unput(this.match.slice(n));
-        },
-        pastInput: function () {
-          var past = this.matched.substr(0, this.matched.length - this.match.length);
-          return (past.length > 20 ? '...' : '') + past.substr(-20).replace(/\n/g, "");
-        },
-        upcomingInput: function () {
-          var next = this.match;
-
-          if (next.length < 20) {
-            next += this._input.substr(0, 20 - next.length);
-          }
-
-          return (next.substr(0, 20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
-        },
-        showPosition: function () {
-          var pre = this.pastInput();
-          var c = new Array(pre.length + 1).join("-");
-          return pre + this.upcomingInput() + "\n" + c + "^";
-        },
-        next: function () {
-          if (this.done) {
-            return this.EOF;
-          }
-
-          if (!this._input) this.done = true;
-          var token, match, tempMatch, index, lines;
-
-          if (!this._more) {
-            this.yytext = '';
-            this.match = '';
-          }
-
-          var rules = this._currentRules();
-
-          for (var i = 0; i < rules.length; i++) {
-            tempMatch = this._input.match(this.rules[rules[i]]);
-
-            if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
-              match = tempMatch;
-              index = i;
-              if (!this.options.flex) break;
-            }
-          }
-
-          if (match) {
-            lines = match[0].match(/(?:\r\n?|\n).*/g);
-            if (lines) this.yylineno += lines.length;
-            this.yylloc = {
-              first_line: this.yylloc.last_line,
-              last_line: this.yylineno + 1,
-              first_column: this.yylloc.last_column,
-              last_column: lines ? lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length : this.yylloc.last_column + match[0].length
-            };
-            this.yytext += match[0];
-            this.match += match[0];
-            this.matches = match;
-            this.yyleng = this.yytext.length;
-
-            if (this.options.ranges) {
-              this.yylloc.range = [this.offset, this.offset += this.yyleng];
-            }
-
-            this._more = false;
-            this._input = this._input.slice(match[0].length);
-            this.matched += match[0];
-            token = this.performAction.call(this, this.yy, this, rules[index], this.conditionStack[this.conditionStack.length - 1]);
-            if (this.done && this._input) this.done = false;
-            if (token) return token;else return;
-          }
-
-          if (this._input === "") {
-            return this.EOF;
-          } else {
-            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
-              text: "",
-              token: null,
-              line: this.yylineno
-            });
-          }
-        },
-        lex: function lex() {
-          var r = this.next();
-
-          if (typeof r !== 'undefined') {
-            return r;
-          } else {
-            return this.lex();
-          }
-        },
-        begin: function begin(condition) {
-          this.conditionStack.push(condition);
-        },
-        popState: function popState() {
-          return this.conditionStack.pop();
-        },
-        _currentRules: function _currentRules() {
-          return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
-        },
-        topState: function () {
-          return this.conditionStack[this.conditionStack.length - 2];
-        },
-        pushState: function begin(condition) {
-          this.begin(condition);
-        }
-      };
-      lexer.options = {};
-
-      lexer.performAction = function anonymous(yy, yy_, $avoiding_name_collisions, YY_START
-      /*``*/
-      ) {
-        function strip(start, end) {
-          return yy_.yytext = yy_.yytext.substr(start, yy_.yyleng - end);
-        }
-
-        switch ($avoiding_name_collisions) {
-          case 0:
-            if (yy_.yytext.slice(-2) === "\\\\") {
-              strip(0, 1);
-              this.begin("mu");
-            } else if (yy_.yytext.slice(-1) === "\\") {
-              strip(0, 1);
-              this.begin("emu");
-            } else {
-              this.begin("mu");
-            }
-
-            if (yy_.yytext) return 15;
-            break;
-
-          case 1:
-            return 15;
-            break;
-
-          case 2:
-            this.popState();
-            return 15;
-            break;
-
-          case 3:
-            this.begin('raw');
-            return 15;
-            break;
-
-          case 4:
-            this.popState(); // Should be using `this.topState()` below, but it currently
-            // returns the second top instead of the first top. Opened an
-            // issue about it at https://github.com/zaach/jison/issues/291
-
-            if (this.conditionStack[this.conditionStack.length - 1] === 'raw') {
-              return 15;
-            } else {
-              yy_.yytext = yy_.yytext.substr(5, yy_.yyleng - 9);
-              return 'END_RAW_BLOCK';
-            }
-
-            break;
-
-          case 5:
-            return 15;
-            break;
-
-          case 6:
-            this.popState();
-            return 14;
-            break;
-
-          case 7:
-            return 65;
-            break;
-
-          case 8:
-            return 68;
-            break;
-
-          case 9:
-            return 19;
-            break;
-
-          case 10:
-            this.popState();
-            this.begin('raw');
-            return 23;
-            break;
-
-          case 11:
-            return 55;
-            break;
-
-          case 12:
-            return 60;
-            break;
-
-          case 13:
-            return 29;
-            break;
-
-          case 14:
-            return 47;
-            break;
-
-          case 15:
-            this.popState();
-            return 44;
-            break;
-
-          case 16:
-            this.popState();
-            return 44;
-            break;
-
-          case 17:
-            return 34;
-            break;
-
-          case 18:
-            return 39;
-            break;
-
-          case 19:
-            return 51;
-            break;
-
-          case 20:
-            return 48;
-            break;
-
-          case 21:
-            this.unput(yy_.yytext);
-            this.popState();
-            this.begin('com');
-            break;
-
-          case 22:
-            this.popState();
-            return 14;
-            break;
-
-          case 23:
-            return 48;
-            break;
-
-          case 24:
-            return 73;
-            break;
-
-          case 25:
-            return 72;
-            break;
-
-          case 26:
-            return 72;
-            break;
-
-          case 27:
-            return 87;
-            break;
-
-          case 28:
-            // ignore whitespace
-            break;
-
-          case 29:
-            this.popState();
-            return 54;
-            break;
-
-          case 30:
-            this.popState();
-            return 33;
-            break;
-
-          case 31:
-            yy_.yytext = strip(1, 2).replace(/\\"/g, '"');
-            return 80;
-            break;
-
-          case 32:
-            yy_.yytext = strip(1, 2).replace(/\\'/g, "'");
-            return 80;
-            break;
-
-          case 33:
-            return 85;
-            break;
-
-          case 34:
-            return 82;
-            break;
-
-          case 35:
-            return 82;
-            break;
-
-          case 36:
-            return 83;
-            break;
-
-          case 37:
-            return 84;
-            break;
-
-          case 38:
-            return 81;
-            break;
-
-          case 39:
-            return 75;
-            break;
-
-          case 40:
-            return 77;
-            break;
-
-          case 41:
-            return 72;
-            break;
-
-          case 42:
-            yy_.yytext = yy_.yytext.replace(/\\([\\\]])/g, '$1');
-            return 72;
-            break;
-
-          case 43:
-            return 'INVALID';
-            break;
-
-          case 44:
-            return 5;
-            break;
-        }
-      };
-
-      lexer.rules = [/^(?:[^\x00]*?(?=(\{\{)))/, /^(?:[^\x00]+)/, /^(?:[^\x00]{2,}?(?=(\{\{|\\\{\{|\\\\\{\{|$)))/, /^(?:\{\{\{\{(?=[^\/]))/, /^(?:\{\{\{\{\/[^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=[=}\s\/.])\}\}\}\})/, /^(?:[^\x00]*?(?=(\{\{\{\{)))/, /^(?:[\s\S]*?--(~)?\}\})/, /^(?:\()/, /^(?:\))/, /^(?:\{\{\{\{)/, /^(?:\}\}\}\})/, /^(?:\{\{(~)?>)/, /^(?:\{\{(~)?#>)/, /^(?:\{\{(~)?#\*?)/, /^(?:\{\{(~)?\/)/, /^(?:\{\{(~)?\^\s*(~)?\}\})/, /^(?:\{\{(~)?\s*else\s*(~)?\}\})/, /^(?:\{\{(~)?\^)/, /^(?:\{\{(~)?\s*else\b)/, /^(?:\{\{(~)?\{)/, /^(?:\{\{(~)?&)/, /^(?:\{\{(~)?!--)/, /^(?:\{\{(~)?![\s\S]*?\}\})/, /^(?:\{\{(~)?\*?)/, /^(?:=)/, /^(?:\.\.)/, /^(?:\.(?=([=~}\s\/.)|])))/, /^(?:[\/.])/, /^(?:\s+)/, /^(?:\}(~)?\}\})/, /^(?:(~)?\}\})/, /^(?:"(\\["]|[^"])*")/, /^(?:'(\\[']|[^'])*')/, /^(?:@)/, /^(?:true(?=([~}\s)])))/, /^(?:false(?=([~}\s)])))/, /^(?:undefined(?=([~}\s)])))/, /^(?:null(?=([~}\s)])))/, /^(?:-?[0-9]+(?:\.[0-9]+)?(?=([~}\s)])))/, /^(?:as\s+\|)/, /^(?:\|)/, /^(?:([^\s!"#%-,\.\/;->@\[-\^`\{-~]+(?=([=~}\s\/.)|]))))/, /^(?:\[(\\\]|[^\]])*\])/, /^(?:.)/, /^(?:$)/];
-      lexer.conditions = {
-        "mu": {
-          "rules": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
-          "inclusive": false
-        },
-        "emu": {
-          "rules": [2],
-          "inclusive": false
-        },
-        "com": {
-          "rules": [6],
-          "inclusive": false
-        },
-        "raw": {
-          "rules": [3, 4, 5],
-          "inclusive": false
-        },
-        "INITIAL": {
-          "rules": [0, 1, 44],
-          "inclusive": true
-        }
-      };
-      return lexer;
-    }();
-
-    parser.lexer = lexer;
-
-    function Parser() {
-      this.yy = {};
-    }
-
-    Parser.prototype = parser;
-    parser.Parser = Parser;
-    return new Parser();
-  }();
-
-  _exports.parser = handlebars;
-  const errorProps = ['description', 'fileName', 'lineNumber', 'message', 'name', 'number', 'stack'];
-
-  function Exception(message, node) {
-    let loc = node && node.loc,
-        line,
-        column;
-
-    if (loc) {
-      line = loc.start.line;
-      column = loc.start.column;
-      message += ' - ' + line + ':' + column;
-    }
-
-    let tmp = Error.prototype.constructor.call(this, message); // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
-
-    for (let idx = 0; idx < errorProps.length; idx++) {
-      this[errorProps[idx]] = tmp[errorProps[idx]];
-    }
-    /* istanbul ignore else */
-
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, Exception);
-    }
-
-    try {
-      if (loc) {
-        this.lineNumber = line; // Work around issue under safari where we can't directly set the column value
-
-        /* istanbul ignore next */
-
-        if (Object.defineProperty) {
-          Object.defineProperty(this, 'column', {
-            value: column,
-            enumerable: true
-          });
-        } else {
-          this.column = column;
-        }
-      }
-    } catch (nop) {
-      /* Ignore if the browser is very particular */
-    }
-  }
-
-  Exception.prototype = new Error();
-
-  function Visitor() {
-    this.parents = [];
-  }
-
-  Visitor.prototype = {
-    constructor: Visitor,
-    mutating: false,
-    // Visits a given value. If mutating, will replace the value if necessary.
-    acceptKey: function (node, name) {
-      let value = this.accept(node[name]);
-
-      if (this.mutating) {
-        // Hacky sanity check: This may have a few false positives for type for the helper
-        // methods but will generally do the right thing without a lot of overhead.
-        if (value && !Visitor.prototype[value.type]) {
-          throw new Exception('Unexpected node type "' + value.type + '" found when accepting ' + name + ' on ' + node.type);
-        }
-
-        node[name] = value;
-      }
-    },
-    // Performs an accept operation with added sanity check to ensure
-    // required keys are not removed.
-    acceptRequired: function (node, name) {
-      this.acceptKey(node, name);
-
-      if (!node[name]) {
-        throw new Exception(node.type + ' requires ' + name);
-      }
-    },
-    // Traverses a given array. If mutating, empty respnses will be removed
-    // for child elements.
-    acceptArray: function (array) {
-      for (let i = 0, l = array.length; i < l; i++) {
-        this.acceptKey(array, i);
-
-        if (!array[i]) {
-          array.splice(i, 1);
-          i--;
-          l--;
-        }
-      }
-    },
-    accept: function (object) {
-      if (!object) {
-        return;
-      }
-      /* istanbul ignore next: Sanity code */
-
-
-      if (!this[object.type]) {
-        throw new Exception('Unknown type: ' + object.type, object);
-      }
-
-      if (this.current) {
-        this.parents.unshift(this.current);
-      }
-
-      this.current = object;
-      let ret = this[object.type](object);
-      this.current = this.parents.shift();
-
-      if (!this.mutating || ret) {
-        return ret;
-      } else if (ret !== false) {
-        return object;
-      }
-    },
-    Program: function (program) {
-      this.acceptArray(program.body);
-    },
-    MustacheStatement: visitSubExpression,
-    Decorator: visitSubExpression,
-    BlockStatement: visitBlock,
-    DecoratorBlock: visitBlock,
-    PartialStatement: visitPartial,
-    PartialBlockStatement: function (partial) {
-      visitPartial.call(this, partial);
-      this.acceptKey(partial, 'program');
-    },
-    ContentStatement: function ()
-    /* content */
-    {},
-    CommentStatement: function ()
-    /* comment */
-    {},
-    SubExpression: visitSubExpression,
-    PathExpression: function ()
-    /* path */
-    {},
-    StringLiteral: function ()
-    /* string */
-    {},
-    NumberLiteral: function ()
-    /* number */
-    {},
-    BooleanLiteral: function ()
-    /* bool */
-    {},
-    UndefinedLiteral: function ()
-    /* literal */
-    {},
-    NullLiteral: function ()
-    /* literal */
-    {},
-    Hash: function (hash) {
-      this.acceptArray(hash.pairs);
-    },
-    HashPair: function (pair) {
-      this.acceptRequired(pair, 'value');
-    }
-  };
-
-  function visitSubExpression(mustache) {
-    this.acceptRequired(mustache, 'path');
-    this.acceptArray(mustache.params);
-    this.acceptKey(mustache, 'hash');
-  }
-
-  function visitBlock(block) {
-    visitSubExpression.call(this, block);
-    this.acceptKey(block, 'program');
-    this.acceptKey(block, 'inverse');
-  }
-
-  function visitPartial(partial) {
-    this.acceptRequired(partial, 'name');
-    this.acceptArray(partial.params);
-    this.acceptKey(partial, 'hash');
-  }
-
-  function WhitespaceControl(options = {}) {
-    this.options = options;
-  }
-
-  WhitespaceControl.prototype = new Visitor();
-
-  WhitespaceControl.prototype.Program = function (program) {
-    const doStandalone = !this.options.ignoreStandalone;
-    let isRoot = !this.isRootSeen;
-    this.isRootSeen = true;
-    let body = program.body;
-
-    for (let i = 0, l = body.length; i < l; i++) {
-      let current = body[i],
-          strip = this.accept(current);
-
-      if (!strip) {
-        continue;
-      }
-
-      let _isPrevWhitespace = isPrevWhitespace(body, i, isRoot),
-          _isNextWhitespace = isNextWhitespace(body, i, isRoot),
-          openStandalone = strip.openStandalone && _isPrevWhitespace,
-          closeStandalone = strip.closeStandalone && _isNextWhitespace,
-          inlineStandalone = strip.inlineStandalone && _isPrevWhitespace && _isNextWhitespace;
-
-      if (strip.close) {
-        omitRight(body, i, true);
-      }
-
-      if (strip.open) {
-        omitLeft(body, i, true);
-      }
-
-      if (doStandalone && inlineStandalone) {
-        omitRight(body, i);
-
-        if (omitLeft(body, i)) {
-          // If we are on a standalone node, save the indent info for partials
-          if (current.type === 'PartialStatement') {
-            // Pull out the whitespace from the final line
-            current.indent = /([ \t]+$)/.exec(body[i - 1].original)[1];
-          }
-        }
-      }
-
-      if (doStandalone && openStandalone) {
-        omitRight((current.program || current.inverse).body); // Strip out the previous content node if it's whitespace only
-
-        omitLeft(body, i);
-      }
-
-      if (doStandalone && closeStandalone) {
-        // Always strip the next node
-        omitRight(body, i);
-        omitLeft((current.inverse || current.program).body);
-      }
-    }
-
-    return program;
-  };
-
-  WhitespaceControl.prototype.BlockStatement = WhitespaceControl.prototype.DecoratorBlock = WhitespaceControl.prototype.PartialBlockStatement = function (block) {
-    this.accept(block.program);
-    this.accept(block.inverse); // Find the inverse program that is involed with whitespace stripping.
-
-    let program = block.program || block.inverse,
-        inverse = block.program && block.inverse,
-        firstInverse = inverse,
-        lastInverse = inverse;
-
-    if (inverse && inverse.chained) {
-      firstInverse = inverse.body[0].program; // Walk the inverse chain to find the last inverse that is actually in the chain.
-
-      while (lastInverse.chained) {
-        lastInverse = lastInverse.body[lastInverse.body.length - 1].program;
-      }
-    }
-
-    let strip = {
-      open: block.openStrip.open,
-      close: block.closeStrip.close,
-      // Determine the standalone candiacy. Basically flag our content as being possibly standalone
-      // so our parent can determine if we actually are standalone
-      openStandalone: isNextWhitespace(program.body),
-      closeStandalone: isPrevWhitespace((firstInverse || program).body)
-    };
-
-    if (block.openStrip.close) {
-      omitRight(program.body, null, true);
-    }
-
-    if (inverse) {
-      let inverseStrip = block.inverseStrip;
-
-      if (inverseStrip.open) {
-        omitLeft(program.body, null, true);
-      }
-
-      if (inverseStrip.close) {
-        omitRight(firstInverse.body, null, true);
-      }
-
-      if (block.closeStrip.open) {
-        omitLeft(lastInverse.body, null, true);
-      } // Find standalone else statments
-
-
-      if (!this.options.ignoreStandalone && isPrevWhitespace(program.body) && isNextWhitespace(firstInverse.body)) {
-        omitLeft(program.body);
-        omitRight(firstInverse.body);
-      }
-    } else if (block.closeStrip.open) {
-      omitLeft(program.body, null, true);
-    }
-
-    return strip;
-  };
-
-  WhitespaceControl.prototype.Decorator = WhitespaceControl.prototype.MustacheStatement = function (mustache) {
-    return mustache.strip;
-  };
-
-  WhitespaceControl.prototype.PartialStatement = WhitespaceControl.prototype.CommentStatement = function (node) {
-    /* istanbul ignore next */
-    let strip = node.strip || {};
-    return {
-      inlineStandalone: true,
-      open: strip.open,
-      close: strip.close
-    };
-  };
-
-  function isPrevWhitespace(body, i, isRoot) {
-    if (i === undefined) {
-      i = body.length;
-    } // Nodes that end with newlines are considered whitespace (but are special
-    // cased for strip operations)
-
-
-    let prev = body[i - 1],
-        sibling = body[i - 2];
-
-    if (!prev) {
-      return isRoot;
-    }
-
-    if (prev.type === 'ContentStatement') {
-      return (sibling || !isRoot ? /\r?\n\s*?$/ : /(^|\r?\n)\s*?$/).test(prev.original);
-    }
-  }
-
-  function isNextWhitespace(body, i, isRoot) {
-    if (i === undefined) {
-      i = -1;
-    }
-
-    let next = body[i + 1],
-        sibling = body[i + 2];
-
-    if (!next) {
-      return isRoot;
-    }
-
-    if (next.type === 'ContentStatement') {
-      return (sibling || !isRoot ? /^\s*?\r?\n/ : /^\s*?(\r?\n|$)/).test(next.original);
-    }
-  } // Marks the node to the right of the position as omitted.
-  // I.e. {{foo}}' ' will mark the ' ' node as omitted.
-  //
-  // If i is undefined, then the first child will be marked as such.
-  //
-  // If mulitple is truthy then all whitespace will be stripped out until non-whitespace
-  // content is met.
-
-
-  function omitRight(body, i, multiple) {
-    let current = body[i == null ? 0 : i + 1];
-
-    if (!current || current.type !== 'ContentStatement' || !multiple && current.rightStripped) {
-      return;
-    }
-
-    let original = current.value;
-    current.value = current.value.replace(multiple ? /^\s+/ : /^[ \t]*\r?\n?/, '');
-    current.rightStripped = current.value !== original;
-  } // Marks the node to the left of the position as omitted.
-  // I.e. ' '{{foo}} will mark the ' ' node as omitted.
-  //
-  // If i is undefined then the last child will be marked as such.
-  //
-  // If mulitple is truthy then all whitespace will be stripped out until non-whitespace
-  // content is met.
-
-
-  function omitLeft(body, i, multiple) {
-    let current = body[i == null ? body.length - 1 : i - 1];
-
-    if (!current || current.type !== 'ContentStatement' || !multiple && current.leftStripped) {
-      return;
-    } // We omit the last node if it's whitespace only and not preceeded by a non-content node.
-
-
-    let original = current.value;
-    current.value = current.value.replace(multiple ? /\s+$/ : /[ \t]+$/, '');
-    current.leftStripped = current.value !== original;
-    return current.leftStripped;
-  }
-
-  function validateClose(open, close) {
-    close = close.path ? close.path.original : close;
-
-    if (open.path.original !== close) {
-      let errorNode = {
-        loc: open.path.loc
-      };
-      throw new Exception(open.path.original + " doesn't match " + close, errorNode);
-    }
-  }
-
-  function SourceLocation(source, locInfo) {
-    this.source = source;
-    this.start = {
-      line: locInfo.first_line,
-      column: locInfo.first_column
-    };
-    this.end = {
-      line: locInfo.last_line,
-      column: locInfo.last_column
-    };
-  }
-
-  function id(token) {
-    if (/^\[.*\]$/.test(token)) {
-      return token.substr(1, token.length - 2);
-    } else {
-      return token;
-    }
-  }
-
-  function stripFlags(open, close) {
-    return {
-      open: open.charAt(2) === '~',
-      close: close.charAt(close.length - 3) === '~'
-    };
-  }
-
-  function stripComment(comment) {
-    return comment.replace(/^\{\{~?!-?-?/, '').replace(/-?-?~?\}\}$/, '');
-  }
-
-  function preparePath(data, parts, loc) {
-    loc = this.locInfo(loc);
-    let original = data ? '@' : '',
-        dig = [],
-        depth = 0;
-
-    for (let i = 0, l = parts.length; i < l; i++) {
-      let part = parts[i].part,
-          // If we have [] syntax then we do not treat path references as operators,
-      // i.e. foo.[this] resolves to approximately context.foo['this']
-      isLiteral = parts[i].original !== part;
-      original += (parts[i].separator || '') + part;
-
-      if (!isLiteral && (part === '..' || part === '.' || part === 'this')) {
-        if (dig.length > 0) {
-          throw new Exception('Invalid path: ' + original, {
-            loc
-          });
-        } else if (part === '..') {
-          depth++;
-        }
-      } else {
-        dig.push(part);
-      }
-    }
-
-    return {
-      type: 'PathExpression',
-      data,
-      depth,
-      parts: dig,
-      original,
-      loc
-    };
-  }
-
-  function prepareMustache(path, params, hash, open, strip, locInfo) {
-    // Must use charAt to support IE pre-10
-    let escapeFlag = open.charAt(3) || open.charAt(2),
-        escaped = escapeFlag !== '{' && escapeFlag !== '&';
-    let decorator = /\*/.test(open);
-    return {
-      type: decorator ? 'Decorator' : 'MustacheStatement',
-      path,
-      params,
-      hash,
-      escaped,
-      strip,
-      loc: this.locInfo(locInfo)
-    };
-  }
-
-  function prepareRawBlock(openRawBlock, contents, close, locInfo) {
-    validateClose(openRawBlock, close);
-    locInfo = this.locInfo(locInfo);
-    let program = {
-      type: 'Program',
-      body: contents,
-      strip: {},
-      loc: locInfo
-    };
-    return {
-      type: 'BlockStatement',
-      path: openRawBlock.path,
-      params: openRawBlock.params,
-      hash: openRawBlock.hash,
-      program,
-      openStrip: {},
-      inverseStrip: {},
-      closeStrip: {},
-      loc: locInfo
-    };
-  }
-
-  function prepareBlock(openBlock, program, inverseAndProgram, close, inverted, locInfo) {
-    if (close && close.path) {
-      validateClose(openBlock, close);
-    }
-
-    let decorator = /\*/.test(openBlock.open);
-    program.blockParams = openBlock.blockParams;
-    let inverse, inverseStrip;
-
-    if (inverseAndProgram) {
-      if (decorator) {
-        throw new Exception('Unexpected inverse block on decorator', inverseAndProgram);
-      }
-
-      if (inverseAndProgram.chain) {
-        inverseAndProgram.program.body[0].closeStrip = close.strip;
-      }
-
-      inverseStrip = inverseAndProgram.strip;
-      inverse = inverseAndProgram.program;
-    }
-
-    if (inverted) {
-      inverted = inverse;
-      inverse = program;
-      program = inverted;
-    }
-
-    return {
-      type: decorator ? 'DecoratorBlock' : 'BlockStatement',
-      path: openBlock.path,
-      params: openBlock.params,
-      hash: openBlock.hash,
-      program,
-      inverse,
-      openStrip: openBlock.strip,
-      inverseStrip,
-      closeStrip: close && close.strip,
-      loc: this.locInfo(locInfo)
-    };
-  }
-
-  function prepareProgram(statements, loc) {
-    if (!loc && statements.length) {
-      const firstLoc = statements[0].loc,
-            lastLoc = statements[statements.length - 1].loc;
-      /* istanbul ignore else */
-
-      if (firstLoc && lastLoc) {
-        loc = {
-          source: firstLoc.source,
-          start: {
-            line: firstLoc.start.line,
-            column: firstLoc.start.column
-          },
-          end: {
-            line: lastLoc.end.line,
-            column: lastLoc.end.column
-          }
-        };
-      }
-    }
-
-    return {
-      type: 'Program',
-      body: statements,
-      strip: {},
-      loc: loc
-    };
-  }
-
-  function preparePartialBlock(open, program, close, locInfo) {
-    validateClose(open, close);
-    return {
-      type: 'PartialBlockStatement',
-      name: open.path,
-      params: open.params,
-      hash: open.hash,
-      program,
-      openStrip: open.strip,
-      closeStrip: close && close.strip,
-      loc: this.locInfo(locInfo)
-    };
-  }
-
-  var Helpers =
-  /*#__PURE__*/
-  Object.freeze({
-    SourceLocation: SourceLocation,
-    id: id,
-    stripFlags: stripFlags,
-    stripComment: stripComment,
-    preparePath: preparePath,
-    prepareMustache: prepareMustache,
-    prepareRawBlock: prepareRawBlock,
-    prepareBlock: prepareBlock,
-    prepareProgram: prepareProgram,
-    preparePartialBlock: preparePartialBlock
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
   });
+  _exports.require = _exports.module = _exports.IS_NODE = void 0;
 
-  function extend(obj
-  /* , ...source */
-  ) {
-    for (let i = 1; i < arguments.length; i++) {
-      for (let key in arguments[i]) {
-        if (Object.prototype.hasOwnProperty.call(arguments[i], key)) {
-          obj[key] = arguments[i][key];
-        }
-      }
-    }
-
-    return obj;
-  }
-
-  let toString = Object.prototype.toString; // Sourced from lodash
-  // https://github.com/bestiejs/lodash/blob/master/LICENSE.txt
-
-  /* eslint-disable func-style */
-
-  let isFunction = function (value) {
-    return typeof value === 'function';
-  }; // fallback for older versions of Chrome and Safari
-
-  /* istanbul ignore next */
-
-
-  if (isFunction(/x/)) {
-    isFunction = function (value) {
-      return typeof value === 'function' && toString.call(value) === '[object Function]';
-    };
-  }
-
-  let yy = {};
-  extend(yy, Helpers);
-
-  function parse(input, options) {
-    // Just return if an already-compiled AST was passed in.
-    if (input.type === 'Program') {
-      return input;
-    }
-
-    handlebars.yy = yy; // Altering the shared object here, but this is ok as parser is a sync operation
-
-    yy.locInfo = function (locInfo) {
-      return new yy.SourceLocation(options && options.srcName, locInfo);
-    };
-
-    let strip = new WhitespaceControl(options);
-    return strip.accept(handlebars.parse(input));
-  }
-});
-/*global enifed, module */
-enifed('node-module', ['exports'], function(_exports) {
+  /*global module */
   var IS_NODE = typeof module === 'object' && typeof module.require === 'function';
+  _exports.IS_NODE = IS_NODE;
+  var exportModule;
+  _exports.module = exportModule;
+  var exportRequire;
+  _exports.require = exportRequire;
+
   if (IS_NODE) {
-    _exports.require = module.require;
-    _exports.module = module;
-    _exports.IS_NODE = IS_NODE;
+    _exports.module = exportModule = module;
+    _exports.require = exportRequire = module.require;
   } else {
-    _exports.require = null;
-    _exports.module = null;
-    _exports.IS_NODE = IS_NODE;
+    _exports.module = exportModule = null;
+    _exports.require = exportRequire = null;
   }
 });
-
-enifed("simple-html-tokenizer", ["exports"], function (_exports) {
+define("simple-html-tokenizer", ["exports"], function (_exports) {
   "use strict";
 
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
   _exports.tokenize = tokenize;
   _exports.Tokenizer = _exports.EventedTokenizer = _exports.EntityParser = _exports.HTML5NamedCharRefs = void 0;
 
@@ -13079,7 +21381,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     lrcorner: "⌟",
     lrhar: "⇋",
     lrhard: "⥭",
-    lrm: "\u200e",
+    lrm: "\u200E",
     lrtri: "⊿",
     lsaquo: "‹",
     lscr: "𝓁",
@@ -13199,7 +21501,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     nesim: "≂̸",
     NestedGreaterGreater: "≫",
     NestedLessLess: "≪",
-    NewLine: "\u000a",
+    NewLine: "\n",
     nexist: "∄",
     nexists: "∄",
     Nfr: "𝔑",
@@ -13680,7 +21982,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     risingdotseq: "≓",
     rlarr: "⇄",
     rlhar: "⇌",
-    rlm: "\u200f",
+    rlm: "\u200F",
     rmoustache: "⎱",
     rmoust: "⎱",
     rnmid: "⫮",
@@ -13764,7 +22066,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     shortparallel: "∥",
     ShortRightArrow: "→",
     ShortUpArrow: "↑",
-    shy: "\u00ad",
+    shy: "\xAD",
     Sigma: "Σ",
     sigma: "σ",
     sigmaf: "ς",
@@ -13907,7 +22209,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     swarrow: "↙",
     swnwar: "⤪",
     szlig: "ß",
-    Tab: "\u0009",
+    Tab: "\t",
     target: "⌖",
     Tau: "Τ",
     tau: "τ",
@@ -14213,8 +22515,8 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     Zopf: "ℤ",
     Zscr: "𝒵",
     zscr: "𝓏",
-    zwj: "\u200d",
-    zwnj: "\u200c"
+    zwj: "\u200D",
+    zwnj: "\u200C"
   };
   _exports.HTML5NamedCharRefs = namedCharRefs;
   var HEXCHARCODE = /^#[xX]([A-Fa-f0-9]+)$/;
@@ -14275,9 +22577,14 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
   var EventedTokenizer =
   /** @class */
   function () {
-    function EventedTokenizer(delegate, entityParser) {
+    function EventedTokenizer(delegate, entityParser, mode) {
+      if (mode === void 0) {
+        mode = 'precompile';
+      }
+
       this.delegate = delegate;
       this.entityParser = entityParser;
+      this.mode = mode;
       this.state = "beforeData"
       /* beforeData */
       ;
@@ -14287,17 +22594,17 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
       this.index = -1;
       this.tagNameBuffer = '';
       this.states = {
-        beforeData: function () {
+        beforeData: function beforeData() {
           var char = this.peek();
 
-          if (char === '<') {
+          if (char === '<' && !this.isIgnoredEndTag()) {
             this.transitionTo("tagOpen"
             /* tagOpen */
             );
             this.markTagStart();
             this.consume();
           } else {
-            if (char === '\n') {
+            if (this.mode === 'precompile' && char === '\n') {
               var tag = this.tagNameBuffer.toLowerCase();
 
               if (tag === 'pre' || tag === 'textarea') {
@@ -14311,17 +22618,18 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.beginData();
           }
         },
-        data: function () {
+        data: function data() {
           var char = this.peek();
+          var tag = this.tagNameBuffer;
 
-          if (char === '<') {
+          if (char === '<' && !this.isIgnoredEndTag()) {
             this.delegate.finishData();
             this.transitionTo("tagOpen"
             /* tagOpen */
             );
             this.markTagStart();
             this.consume();
-          } else if (char === '&') {
+          } else if (char === '&' && tag !== 'script' && tag !== 'style') {
             this.consume();
             this.delegate.appendToData(this.consumeCharRef() || '&');
           } else {
@@ -14329,7 +22637,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToData(char);
           }
         },
-        tagOpen: function () {
+        tagOpen: function tagOpen() {
           var char = this.consume();
 
           if (char === '!') {
@@ -14340,7 +22648,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.transitionTo("endTagOpen"
             /* endTagOpen */
             );
-          } else if (char === '@' || isAlpha(char)) {
+          } else if (char === '@' || char === ':' || isAlpha(char)) {
             this.transitionTo("tagName"
             /* tagName */
             );
@@ -14349,10 +22657,10 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.appendToTagName(char);
           }
         },
-        markupDeclarationOpen: function () {
+        markupDeclarationOpen: function markupDeclarationOpen() {
           var char = this.consume();
 
-          if (char === '-' && this.input.charAt(this.index) === '-') {
+          if (char === '-' && this.peek() === '-') {
             this.consume();
             this.transitionTo("commentStart"
             /* commentStart */
@@ -14360,7 +22668,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.beginComment();
           }
         },
-        commentStart: function () {
+        commentStart: function commentStart() {
           var char = this.consume();
 
           if (char === '-') {
@@ -14379,7 +22687,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        commentStartDash: function () {
+        commentStartDash: function commentStartDash() {
           var char = this.consume();
 
           if (char === '-') {
@@ -14398,7 +22706,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        comment: function () {
+        comment: function comment() {
           var char = this.consume();
 
           if (char === '-') {
@@ -14409,7 +22717,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToCommentData(char);
           }
         },
-        commentEndDash: function () {
+        commentEndDash: function commentEndDash() {
           var char = this.consume();
 
           if (char === '-') {
@@ -14423,7 +22731,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        commentEnd: function () {
+        commentEnd: function commentEnd() {
           var char = this.consume();
 
           if (char === '>') {
@@ -14438,7 +22746,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        tagName: function () {
+        tagName: function tagName() {
           var char = this.consume();
 
           if (isSpace(char)) {
@@ -14458,7 +22766,30 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.appendToTagName(char);
           }
         },
-        beforeAttributeName: function () {
+        endTagName: function endTagName() {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            this.transitionTo("beforeAttributeName"
+            /* beforeAttributeName */
+            );
+            this.tagNameBuffer = '';
+          } else if (char === '/') {
+            this.transitionTo("selfClosingStartTag"
+            /* selfClosingStartTag */
+            );
+            this.tagNameBuffer = '';
+          } else if (char === '>') {
+            this.delegate.finishTag();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+            this.tagNameBuffer = '';
+          } else {
+            this.appendToTagName(char);
+          }
+        },
+        beforeAttributeName: function beforeAttributeName() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14490,7 +22821,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.beginAttribute();
           }
         },
-        attributeName: function () {
+        attributeName: function attributeName() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14527,7 +22858,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeName(char);
           }
         },
-        afterAttributeName: function () {
+        afterAttributeName: function afterAttributeName() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14564,7 +22895,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeName(char);
           }
         },
-        beforeAttributeValue: function () {
+        beforeAttributeValue: function beforeAttributeValue() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14598,7 +22929,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueDoubleQuoted: function () {
+        attributeValueDoubleQuoted: function attributeValueDoubleQuoted() {
           var char = this.consume();
 
           if (char === '"') {
@@ -14612,7 +22943,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueSingleQuoted: function () {
+        attributeValueSingleQuoted: function attributeValueSingleQuoted() {
           var char = this.consume();
 
           if (char === "'") {
@@ -14626,7 +22957,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueUnquoted: function () {
+        attributeValueUnquoted: function attributeValueUnquoted() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14656,7 +22987,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        afterAttributeValueQuoted: function () {
+        afterAttributeValueQuoted: function afterAttributeValueQuoted() {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -14681,7 +23012,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        selfClosingStartTag: function () {
+        selfClosingStartTag: function selfClosingStartTag() {
           var char = this.peek();
 
           if (char === '>') {
@@ -14697,12 +23028,12 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        endTagOpen: function () {
+        endTagOpen: function endTagOpen() {
           var char = this.consume();
 
-          if (char === '@' || isAlpha(char)) {
-            this.transitionTo("tagName"
-            /* tagName */
+          if (char === '@' || char === ':' || isAlpha(char)) {
+            this.transitionTo("endTagName"
+            /* endTagName */
             );
             this.tagNameBuffer = '';
             this.delegate.beginEndTag();
@@ -14718,6 +23049,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
       /* beforeData */
       );
       this.input = '';
+      this.tagNameBuffer = '';
       this.index = 0;
       this.line = 1;
       this.column = 0;
@@ -14812,6 +23144,11 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
       this.delegate.appendToTagName(char);
     };
 
+    EventedTokenizer.prototype.isIgnoredEndTag = function () {
+      var tag = this.tagNameBuffer;
+      return tag === 'title' && this.input.substring(this.index, this.index + 8) !== '</title>' || tag === 'style' && this.input.substring(this.index, this.index + 8) !== '</style>' || tag === 'script' && this.input.substring(this.index, this.index + 9) !== '</script>';
+    };
+
     return EventedTokenizer;
   }();
 
@@ -14830,7 +23167,7 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
       this.startLine = 1;
       this.startColumn = 0;
       this.tokens = [];
-      this.tokenizer = new EventedTokenizer(this, entityParser);
+      this.tokenizer = new EventedTokenizer(this, entityParser, options.mode);
       this._currentAttribute = undefined;
     }
 
@@ -15024,8 +23361,6 @@ enifed("simple-html-tokenizer", ["exports"], function (_exports) {
     return tokenizer.tokenize(input);
   }
 });
-(function (m) { if (typeof module === "object" && module.exports) { module.exports = m } }(requireModule('ember-template-compiler')));
-
-
+(function (m) { if (typeof module === "object" && module.exports) { module.exports = m } }(require("ember-template-compiler")));
 }());
 //# sourceMappingURL=ember-template-compiler.map

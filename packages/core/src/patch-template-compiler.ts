@@ -15,7 +15,7 @@ import {
 import { NodePath } from '@babel/traverse';
 import { transform } from '@babel/core';
 
-function emberVersionGte(templateCompilerPath: string, source: string, major: number, minor: number): boolean {
+function parseVersion(templateCompilerPath: string, source: string): { major: number; minor: number; patch: number } {
   // ember-template-compiler.js contains a comment that indicates what version it is for
   // that looks like:
 
@@ -37,17 +37,30 @@ function emberVersionGte(templateCompilerPath: string, source: string, major: nu
   }
 
   let numbers = version[1].split('.');
-  let actualMajor = parseInt(numbers[0], 10);
-  let actualMinor = parseInt(numbers[1], 10);
+  let major = parseInt(numbers[0], 10);
+  let minor = parseInt(numbers[1], 10);
+  let patch = parseInt(numbers[2], 10);
 
-  return actualMajor > major || (actualMajor === major && actualMinor >= minor);
+  return { major, minor, patch };
+}
+
+function emberVersionGte(templateCompilerPath: string, source: string, major: number, minor: number): boolean {
+  let actual = parseVersion(templateCompilerPath, source);
+
+  return actual.major > major || (actual.major === major && actual.minor >= minor);
 }
 
 export function patch(source: string, templateCompilerPath: string): string {
-  if (emberVersionGte(templateCompilerPath, source, 3, 26)) {
+  let version = parseVersion(templateCompilerPath, source);
+
+  if (
+    emberVersionGte(templateCompilerPath, source, 3, 26) ||
+    (version.major === 3 && version.minor === 25 && version.patch >= 2) ||
+    (version.major === 3 && version.minor === 24 && version.patch >= 3)
+  ) {
     // no modifications are needed after
-    // https://github.com/emberjs/ember.js/pull/19426 and backported to 3.26 in
-    // https://github.com/emberjs/ember.js/commit/9121bcfa4f5ab3d2b49fc0a46a65aa62646b2b10
+    // https://github.com/emberjs/ember.js/pull/19426 and backported to
+    // 3.26.0-beta.3, 3.25.2, 3.24.3
     return source;
   }
 

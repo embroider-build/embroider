@@ -1,29 +1,12 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
-import stringify from 'json-stable-stringify';
-import { createHash } from 'crypto';
-import { join, resolve, sep } from 'path';
+import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { Plugins, GlimmerSyntax, AST } from './ember-template-compiler-types';
 import { loadGlimmerSyntax } from './load-ember-template-compiler';
-
-export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
-  let p = new Portable({ hints });
-  let result = p.dehydrate(params);
-  return {
-    src: [
-      `const { TemplateCompiler } = require("${__filename}");`,
-      `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
-      `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
-      `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
-    ].join('\n'),
-    isParallelSafe: result.isParallelSafe,
-  };
-}
 
 export interface TemplateCompilerParams {
   compilerPath: string;
@@ -51,14 +34,8 @@ export class TemplateCompiler {
   private setup() {
     let syntax = loadGlimmerSyntax(this.params.compilerPath);
     initializeEmberENV(syntax, this.params.EmberENV);
-    let cacheKey = createHash('md5')
-      .update(
-        stringify({
-          // todo: get resolver reflected in cacheKey
-          syntax: syntax.cacheKey,
-        })
-      )
-      .digest('hex');
+    // todo: get resolver reflected in cacheKey
+    let cacheKey = syntax.cacheKey;
     return { syntax, cacheKey };
   }
 
@@ -164,7 +141,7 @@ export class TemplateCompiler {
     return [
       join(__dirname, 'babel-plugin-inline-hbs.js'),
       {
-        templateCompiler: Object.assign({ cacheKey: this.cacheKey, baseDir: this.baseDir }, this.params),
+        templateCompiler: this.params,
         stage: 1,
       } as InlineBabelParams,
     ];

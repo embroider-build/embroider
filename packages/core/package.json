@@ -15,7 +15,8 @@
     ".": {
       "browser": "./src/browser-index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./src/messages": "./src/messages.js"
   },
   "files": [
     "src/**/*.js",

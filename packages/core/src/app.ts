@@ -1158,11 +1158,10 @@ export class AppBuilder<TreeNames> {
 
   private importPaths(engine: Engine, engineRelativePath: string, fromFile: string) {
     let appRelativePath = join(engine.appRelativePath, engineRelativePath);
-    let noJS = appRelativePath.replace(this.resolvableExtensionsPattern, '');
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
-      buildtime: explicitRelative(dirname(fromFile), noJS),
+      buildtime: explicitRelative(dirname(fromFile), appRelativePath),
     };
   }
 
@@ -1229,7 +1228,7 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
-    relativeTo: string,
+    _relativeTo: string,
     engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
@@ -1258,7 +1257,7 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime: explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
+            buildtime: join(packageName, name),
           });
         }
       }

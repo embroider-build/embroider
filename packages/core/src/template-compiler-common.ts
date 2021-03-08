@@ -4,19 +4,27 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { Plugins, GlimmerSyntax, AST } from './ember-template-compiler-types';
-import { loadGlimmerSyntax } from './load-ember-template-compiler';
 
 export interface TemplateCompilerParams {
-  compilerPath: string;
+  loadGlimmerSyntax: () => GlimmerSyntax;
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
 }
 
 export class TemplateCompiler {
-  constructor(public params: TemplateCompilerParams) {
+  private loadGlimmerSyntax: () => GlimmerSyntax;
+  private resolver?: Resolver;
+  private EmberENV: unknown;
+  private plugins: Plugins;
+
+  constructor(params: TemplateCompilerParams) {
+    this.loadGlimmerSyntax = params.loadGlimmerSyntax;
+    this.resolver = params.resolver;
+    this.EmberENV = params.EmberENV;
+    this.plugins = params.plugins;
+
     // stage3 packagers don't need to know about our instance, they can just
     // grab the compile function and use it.
     this.compile = this.compile.bind(this);
@@ -32,8 +40,8 @@ export class TemplateCompiler {
 
   @Memoize()
   private setup() {
-    let syntax = loadGlimmerSyntax(this.params.compilerPath);
-    initializeEmberENV(syntax, this.params.EmberENV);
+    let syntax = this.loadGlimmerSyntax();
+    initializeEmberENV(syntax, this.EmberENV);
     // todo: get resolver reflected in cacheKey
     let cacheKey = syntax.cacheKey;
     return { syntax, cacheKey };
@@ -49,8 +57,8 @@ export class TemplateCompiler {
     let dependencies: ResolvedDep[];
     let runtimeName: string;
 
-    if (this.params.resolver) {
-      runtimeName = this.params.resolver.absPathToRuntimePath(moduleName);
+    if (this.resolver) {
+      runtimeName = this.resolver.absPathToRuntimePath(moduleName);
     } else {
       runtimeName = moduleName;
     }
@@ -60,8 +68,8 @@ export class TemplateCompiler {
       ...opts?.plugins,
 
       ast: [
-        ...this.getReversedASTPlugins(this.params.plugins.ast!),
-        this.params.resolver && this.params.resolver.astTransformer(this),
+        ...this.getReversedASTPlugins(this.plugins.ast!),
+        this.resolver && this.resolver.astTransformer(this),
 
         // Ember 3.27+ uses _buildCompileOptions will not add AST plugins to its result
         ...(opts?.plugins?.ast ?? []),
@@ -75,8 +83,8 @@ export class TemplateCompiler {
       plugins,
     });
 
-    if (this.params.resolver) {
-      dependencies = this.params.resolver.dependenciesOf(moduleName);
+    if (this.resolver) {
+      dependencies = this.resolver.dependenciesOf(moduleName);
     } else {
       dependencies = [];
     }
@@ -111,7 +119,7 @@ export class TemplateCompiler {
     // syntax.defaultOptions, but then we lose some of the compatibility
     // normalization that it does on the user-provided plugins.
     opts.plugins = opts.plugins || {}; // Ember 3.27+ won't add opts.plugins
-    opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
+    opts.plugins.ast = this.getReversedASTPlugins(this.plugins.ast!).map(plugin => {
       // Although the precompile API does, this direct glimmer syntax api
       // does not support these legacy plugins, so we must wrap them.
       return wrapLegacyHbsPluginIfNeeded(plugin as any);
@@ -121,9 +129,7 @@ export class TemplateCompiler {
     opts.mode = 'codemod';
 
     opts.filename = moduleName;
-    opts.moduleName = this.params.resolver
-      ? this.params.resolver.absPathToRuntimePath(moduleName) || moduleName
-      : moduleName;
+    opts.moduleName = this.resolver ? this.resolver.absPathToRuntimePath(moduleName) || moduleName : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
 
     return this.syntax.print(ast, { entityEncoding: 'raw' });
@@ -133,18 +139,6 @@ export class TemplateCompiler {
     // this is just a parse, so we deliberately don't run any plugins.
     let opts = { contents, moduleName, plugins: {} };
     return this.syntax.preprocess(contents, opts);
-  }
-
-  // Use applyTransforms on the contents of inline hbs template strings inside
-  // Javascript.
-  inlineTransformsBabelPlugin(): PluginItem {
-    return [
-      join(__dirname, 'babel-plugin-inline-hbs.js'),
-      {
-        templateCompiler: this.params,
-        stage: 1,
-      } as InlineBabelParams,
-    ];
   }
 
   baseDir() {

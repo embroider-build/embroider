@@ -14,7 +14,7 @@ import {
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import { join } from 'path';
-import { TemplateCompiler, TemplateCompilerParams } from './template-compiler';
+import { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';
 import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
@@ -34,7 +34,7 @@ const modulePaths = [
 
 interface State {
   opts: {
-    templateCompiler: TemplateCompilerParams;
+    templateCompiler: NodeTemplateCompilerParams;
 
     // the stages here correspond to the two places in the overall Embroider
     // architecture that this transform applies. In stage1 HBS stays as HBS, but
@@ -50,7 +50,7 @@ interface State {
     };
   };
   dependencies: Map<string, ResolvedDep>;
-  templateCompiler: TemplateCompiler | undefined;
+  templateCompiler: NodeTemplateCompiler | undefined;
 }
 
 export type Params = State['opts'];
@@ -138,7 +138,7 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
     }
     (path.get('arguments')[0] as NodePath).replaceWith(stringLiteral(compiled));
   } else {
-    let result: ReturnType<TemplateCompiler['precompile']>;
+    let result: ReturnType<NodeTemplateCompiler['precompile']>;
     try {
       result = compilerInstance.precompile(state.file.opts.filename, template);
     } catch (err) {
@@ -192,7 +192,7 @@ function jsonLiteral(value: unknown | undefined) {
 
 function compiler(state: State) {
   if (!state.templateCompiler) {
-    state.templateCompiler = new TemplateCompiler(state.opts.templateCompiler);
+    state.templateCompiler = new NodeTemplateCompiler(state.opts.templateCompiler);
   }
   return state.templateCompiler;
 }

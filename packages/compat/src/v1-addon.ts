@@ -11,7 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
+import { AddonMeta, NodeTemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -85,7 +85,7 @@ class V1AddonCompatResolver implements Resolver {
       params,
     };
   }
-  astTransformer(_templateCompiler: TemplateCompiler): unknown {
+  astTransformer(_templateCompiler: NodeTemplateCompiler): unknown {
     return;
   }
   dependenciesOf(_moduleName: string): ResolvedDep[] {
@@ -121,7 +121,7 @@ export default class V1Addon {
 
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
-  private get templateCompiler(): TemplateCompiler | undefined {
+  private get templateCompiler(): NodeTemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
       let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
@@ -129,7 +129,7 @@ export default class V1Addon {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         if (options.plugins.ast.length > 0) {
-          return new TemplateCompiler({
+          return new NodeTemplateCompiler({
             compilerPath: options.templateCompilerPath,
             EmberENV: {},
             plugins: options.plugins,
@@ -994,7 +994,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
+  if (NodeTemplateCompiler.isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline

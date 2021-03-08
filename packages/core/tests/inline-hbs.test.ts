@@ -1,6 +1,6 @@
 import { allBabelVersions, emberTemplateCompilerPath } from '@embroider/test-support';
 import { join } from 'path';
-import { TemplateCompilerParams } from '../src/template-compiler';
+import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs';
 
@@ -77,7 +77,7 @@ describe('inline-hbs', () => {
   describe('stage1', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
@@ -97,7 +97,7 @@ describe('inline-hbs', () => {
   describe('stage3 no presets', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
@@ -117,7 +117,7 @@ describe('inline-hbs', () => {
   describe('stage3 with presets', () => {
     allBabelVersions({
       babelConfig(major: number) {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {

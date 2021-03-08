@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
 import { tmpdir } from 'os';
-import { TemplateCompiler, throwOnWarnings } from '@embroider/core';
+import { NodeTemplateCompiler, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
@@ -44,7 +44,7 @@ describe('compat-resolver', function () {
         otherOptions.adjustImportsImports
       ),
     });
-    let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
+    let compiler = new NodeTemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);

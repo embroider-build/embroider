@@ -1,8 +1,8 @@
 import { resolve } from 'path';
 import { Portable, PortableHint } from './portable';
-import type { TemplateCompilerParams } from './template-compiler';
+import type { NodeTemplateCompilerParams } from './template-compiler-node';
 
-export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
+export function templateCompilerModule(params: NodeTemplateCompilerParams, hints: PortableHint[]) {
   let p = new Portable({ hints });
   let result = p.dehydrate(params);
   return {

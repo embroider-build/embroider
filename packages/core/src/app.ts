@@ -19,7 +19,7 @@ import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import type { TemplateCompilerParams } from './template-compiler';
+import type { NodeTemplateCompilerParams } from './template-compiler-node';
 import { templateCompilerModule } from './write-template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
@@ -335,7 +335,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompilerParams: TemplateCompilerParams, appFiles: Engine[]) {
+  private babelConfig(templateCompilerParams: NodeTemplateCompilerParams, appFiles: Engine[]) {
     let babel = cloneDeep(this.adapter.babelConfig());
 
     if (!babel.plugins) {
@@ -879,7 +879,7 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private templateCompiler(config: EmberENV): TemplateCompilerParams {
+  private templateCompiler(config: EmberENV): NodeTemplateCompilerParams {
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -913,7 +913,7 @@ export class AppBuilder<TreeNames> {
     });
   }
 
-  private addTemplateCompiler(params: TemplateCompilerParams): boolean {
+  private addTemplateCompiler(params: NodeTemplateCompilerParams): boolean {
     let mod = templateCompilerModule(params, this.portableHints);
     writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
     return mod.isParallelSafe;

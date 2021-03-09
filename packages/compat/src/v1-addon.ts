@@ -262,8 +262,27 @@ export default class V1Addon {
     return this.packageJSON.name;
   }
 
+  // you can override this to change what stage1 finds in package.json. However,
+  // this does not alter what stage1 outputs in package.json. For that, see
+  // newPackageJSON.
   protected get packageJSON() {
     return this.addonInstance.pkg;
+  }
+
+  protected get newPackageJSON() {
+    // shallow copy only! This is OK as long as we're only changing top-level
+    // keys in this method
+    let pkg = Object.assign({}, this.packageJSON);
+    let meta: AddonMeta = Object.assign({}, pkg.meta, this.packageMeta);
+    pkg['ember-addon'] = meta;
+
+    // classic addons don't get to customize their entrypoints like this. We
+    // always rewrite them so their entrypoint is index.js, so whatever was here
+    // is just misleading to stage3 packagers that might look (rollup does).
+    delete pkg.main;
+    delete pkg.module;
+
+    return pkg;
   }
 
   @Memoize()
@@ -507,7 +526,15 @@ export default class V1Addon {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(
+      {
+        version: 2,
+        'auto-upgraded': true,
+        type: 'addon',
+      },
+      built.staticMeta,
+      ...built.dynamicMeta.map(d => d())
+    );
   }
 
   @Memoize()
@@ -752,10 +779,6 @@ export default class V1Addon {
   }
 
   private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Node, localDir: string, key: keyof AddonMeta): Node {
-    // unforunately Funnel doesn't create destDir if its input exists but is
-    // empty. And we want to only put the app-js key in package.json if
-    // there's really a directory for it to point to. So we need to monitor
-    // the output and use dynamicMeta.
     let files: AddonMeta['app-js'];
     built.dynamicMeta.push(() => {
       if (files) {
@@ -939,12 +962,7 @@ export default class V1Addon {
   }
 
   private buildPackageJSON(built: IntermediateBuild) {
-    let packageJSONRewriter = new RewritePackageJSON(
-      this.rootTree,
-      () => this.packageMeta,
-      this.packageCache.get(this.root).packageJSON
-    );
-    built.trees.push(packageJSONRewriter);
+    built.trees.push(new RewritePackageJSON(this.rootTree, () => this.newPackageJSON));
   }
 
   @Memoize()

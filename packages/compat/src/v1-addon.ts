@@ -756,16 +756,23 @@ export default class V1Addon {
     // empty. And we want to only put the app-js key in package.json if
     // there's really a directory for it to point to. So we need to monitor
     // the output and use dynamicMeta.
-    let dirExists = false;
+    let files: AddonMeta['app-js'];
     built.dynamicMeta.push(() => {
-      if (dirExists) {
-        return { [key]: localDir };
+      if (files) {
+        return { [key]: files };
       } else {
         return {};
       }
     });
     return new ObserveTree(tree, (outputPath: string) => {
-      dirExists = pathExistsSync(join(outputPath, localDir));
+      let dir = join(outputPath, localDir);
+      if (existsSync(dir)) {
+        files = Object.fromEntries(
+          walkSync(dir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => [`./${f}`, `./${localDir}/${f}`])
+        );
+      } else {
+        files = undefined;
+      }
     });
   }
 

@@ -1,17 +1,19 @@
 import { V2AddonPackage } from './package';
 import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
-import { join, basename, dirname } from 'path';
+import { join, basename, dirname, resolve } from 'path';
 import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync, writeFileSync, readFileSync } from 'fs-extra';
 import { debug } from './messages';
 import assertNever from 'assert-never';
 import { describeExports } from './describe-exports';
 import { compile } from './js-handlebars';
 import { TransformOptions } from '@babel/core';
+import { statSync } from 'fs';
+import { format } from 'util';
 
 export default class AppDiffer {
   private differ: MultiTreeDiff;
-  private sourceDirs: string[] = [];
+  private sources: Source[];
   private firstFastbootTree = Infinity;
 
   // maps from each filename in the app to the original directory from whence it
@@ -27,67 +29,52 @@ export default class AppDiffer {
 
   constructor(
     private outputPath: string,
-    private ownAppJSDir: string,
+    ownAppJSDir: string,
     activeAddonDescendants: V2AddonPackage[],
     // arguments below this point are only needed in fastboot mode. Fastboot
     // makes this pretty messy because fastboot trees all merge into the app 🤮.
     fastbootEnabled = false,
-    private ownFastbootJSDir?: string | undefined,
+    ownFastbootJSDir?: string | undefined,
     private babelParserConfig?: TransformOptions | undefined
   ) {
-    let trees = activeAddonDescendants
-      .map((addon): InputTree | undefined => {
-        let dir = addon.meta['app-js'];
-        if (dir) {
-          let definitelyDir = join(addon.root, dir);
-          this.sourceDirs.push(definitelyDir);
-          return {
-            mayChange: addon.mayRebuild,
-            walk() {
-              return walkSync.entries(definitelyDir);
-            },
-          };
-        }
-      })
-      .filter(Boolean) as InputTree[];
+    this.sources = activeAddonDescendants.map(addon => maybeSource(addon, 'app-js')).filter(Boolean) as Source[];
 
-    trees.push({
+    this.sources.push({
       mayChange: true,
       walk() {
         return walkSync.entries(ownAppJSDir);
       },
+      isRelocated: false,
+      locate(relativePath: string) {
+        return resolve(ownAppJSDir, relativePath);
+      },
     });
-    this.sourceDirs.push(ownAppJSDir);
 
     if (!fastbootEnabled) {
-      this.differ = new MultiTreeDiff(trees, lastOneWins);
+      this.differ = new MultiTreeDiff(this.sources, lastOneWins);
       return;
     }
 
-    this.firstFastbootTree = trees.length;
+    this.firstFastbootTree = this.sources.length;
     for (let addon of activeAddonDescendants) {
-      let dir = addon.meta['fastboot-js'];
-      if (dir) {
-        let definitelyDir = join(addon.root, dir);
-        this.sourceDirs.push(definitelyDir);
-        trees.push({
-          mayChange: addon.mayRebuild,
-          walk() {
-            return walkSync.entries(definitelyDir);
-          },
-        });
+      let source = maybeSource(addon, 'fastboot-js');
+      if (source) {
+        this.sources.push(source);
       }
     }
     if (ownFastbootJSDir) {
-      trees.push({
+      this.sources.push({
         mayChange: true,
         walk() {
           return walkSync.entries(ownFastbootJSDir);
         },
+        isRelocated: false,
+        locate(relativePath) {
+          return resolve(ownFastbootJSDir, relativePath);
+        },
       });
-      this.sourceDirs.push(ownFastbootJSDir);
     }
-    this.differ = new MultiTreeDiff(trees, fastbootMerge(this.firstFastbootTree));
+    this.differ = new MultiTreeDiff(this.sources, fastbootMerge(this.firstFastbootTree));
   }
 
   update() {
@@ -118,17 +105,19 @@ export default class AppDiffer {
             // trying to import it anyway, because that would have already been
             // an error pre-embroider).
             this.isFastbootOnly.set(relativePath, sourceIndices[0] >= this.firstFastbootTree);
-            let sourceDir = this.sourceDirs[sourceIndices[0]];
-            let sourceFile = join(sourceDir, relativePath);
+            let source = this.sources[sourceIndices[0]];
+            let sourceFile = source.locate(relativePath);
             copySync(sourceFile, outputPath, { dereference: true });
-            this.updateFiles(relativePath, sourceDir, sourceFile);
+            this.updateFiles(relativePath, source, sourceFile);
           } else {
             // we have both fastboot and non-fastboot files for this path.
             // Because of the way fastbootMerge is written, the first one is the
             // non-fastboot.
             this.isFastbootOnly.set(relativePath, false);
-            let [browserDir, fastbootDir] = sourceIndices.map(i => this.sourceDirs[i]);
-            let [browserSourceFile, fastbootSourceFile] = [browserDir, fastbootDir].map(dir => join(dir, relativePath));
+            let [browserSrc, fastbootSrc] = sourceIndices.map(i => this.sources[i]);
+            let [browserSourceFile, fastbootSourceFile] = [browserSrc, fastbootSrc].map(src =>
+              src.locate(relativePath)
+            );
             let dir = dirname(relativePath);
             let base = basename(relativePath);
             let browserDest = `_browser_${base}`;
@@ -139,7 +128,7 @@ export default class AppDiffer {
               outputPath,
               switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
             );
-            this.updateFiles(relativePath, browserDir, browserSourceFile);
+            this.updateFiles(relativePath, browserSrc, browserSourceFile);
           }
           break;
         default:
@@ -148,14 +137,11 @@ export default class AppDiffer {
     }
   }
 
-  private updateFiles(relativePath: string, sourceDir: string, sourceFile: string) {
-    switch (sourceDir) {
-      case this.ownAppJSDir:
-      case this.ownFastbootJSDir:
-        this.files.set(relativePath, null);
-        break;
-      default:
-        this.files.set(relativePath, sourceFile);
+  private updateFiles(relativePath: string, source: Source, sourceFile: string) {
+    if (source.isRelocated) {
+      this.files.set(relativePath, sourceFile);
+    } else {
+      this.files.set(relativePath, null);
     }
   }
 }
@@ -210,4 +196,57 @@ function switcher(
 ): string {
   let { names, hasDefaultExport } = describeExports(browserSource, babelParserConfig);
   return switcherTemplate({ fastbootDest, browserDest, names: [...names], hasDefaultExport });
+}
+
+interface Source extends InputTree {
+  // find the real on disk location of the file that is presented externally as
+  // `relativePath`
+  locate(relativePath: string): string;
+
+  // true if this source relocates its file out of their original package,
+  // meaning we will need to track them in order to adjust package resolution
+  isRelocated: boolean;
+}
+
+function maybeSource(addon: V2AddonPackage, key: 'app-js' | 'fastboot-js'): Source | undefined {
+  let maybeFiles = addon.meta[key];
+  if (maybeFiles) {
+    let files = maybeFiles;
+    return {
+      mayChange: addon.mayRebuild,
+      walk() {
+        return Object.entries(files).map(([externalName, internalName]) => {
+          let stat = statSync(resolve(addon.root, internalName));
+          return {
+            relativePath: withoutMandatoryDotSlash(externalName, [
+              'in package.json at %s in key ember-addon.%s',
+              addon.root,
+              key,
+            ]),
+            mode: stat.mode,
+            size: stat.size,
+            mtime: stat.mtime,
+            isDirectory() {
+              return false;
+            },
+          };
+        });
+      },
+      isRelocated: true,
+      locate(relativePath: string) {
+        let internal = files['./' + relativePath];
+        if (!internal) {
+          throw new Error(`bug: couldn't find ${relativePath} in ${JSON.stringify(files)}`);
+        }
+        return resolve(addon.root, internal);
+      },
+    };
+  }
+}
+
+function withoutMandatoryDotSlash(filename: string, debugInfo: any[]): string {
+  if (!filename.startsWith('./')) {
+    throw new Error(`${format(debugInfo)}: ${filename} is required to start with "./"`);
+  }
+  return filename.slice(2);
 }

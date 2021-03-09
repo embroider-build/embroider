@@ -5,7 +5,7 @@ import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Node } from 'broccoli-node-api';
 import OneShot from './one-shot';
 import Funnel from 'broccoli-funnel';
-import { UnwatchedDir } from 'broccoli-source';
+import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
 export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
@@ -22,7 +22,7 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
     // non-native-v2 addon. (The non-native one will get rewritten and
     // therefore moved, so to continue depending on it the native one needs to
     // move too.)
-    return withoutNodeModules(originalPackage.root);
+    return withoutNodeModules(originalPackage);
   }
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
@@ -49,8 +49,9 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
   }
 }
 
-function withoutNodeModules(root: string): Node {
-  return new Funnel(new UnwatchedDir(root), {
+function withoutNodeModules(originalPackage: Package): Node {
+  let Klass = originalPackage.mayRebuild ? WatchedDir : UnwatchedDir;
+  return new Funnel(new Klass(originalPackage.root), {
     exclude: ['node_modules'],
   });
 }

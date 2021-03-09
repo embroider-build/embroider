@@ -33,6 +33,7 @@ export class MovedPackageCache extends PackageCache {
   readonly appDestDir: string;
   private commonSegmentCount: number;
   readonly moved: Map<Package, Package> = new Map();
+  readonly unmovedAddons: Set<Package>;
 
   constructor(
     rootCache: PackageCache['rootCache'],
@@ -82,6 +83,7 @@ export class MovedPackageCache extends PackageCache {
     }
     this.rootCache = rootCache;
     this.resolutionCache = resolutionCache;
+    this.unmovedAddons = movedSet.unmovedAddons;
   }
 
   private movedPackage(originalPkg: Package): Package {
@@ -215,6 +217,7 @@ function pathSegments(filename: string) {
 
 class MovedSet {
   private mustMove: Map<Package, boolean> = new Map();
+  unmovedAddons: Set<Package> = new Set();
 
   constructor(private app: Package) {
     this.check(app);
@@ -256,6 +259,11 @@ class MovedSet {
       mustMove = this.check(dep) || mustMove;
     }
     this.mustMove.set(pkg, mustMove);
+
+    if (!mustMove) {
+      this.unmovedAddons.add(pkg);
+    }
+
     return mustMove;
   }
 

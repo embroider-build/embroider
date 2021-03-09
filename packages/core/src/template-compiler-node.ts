@@ -3,7 +3,7 @@ import { join } from 'path';
 import type { PluginItem } from '@babel/core';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { Plugins } from './ember-template-compiler-types';
-import { loadGlimmerSyntax } from './load-ember-template-compiler';
+import { getEmberExports } from './load-ember-template-compiler';
 import { TemplateCompiler } from './template-compiler-common';
 
 export interface NodeTemplateCompilerParams {
@@ -16,7 +16,7 @@ export interface NodeTemplateCompilerParams {
 export class NodeTemplateCompiler extends TemplateCompiler {
   constructor(public params: NodeTemplateCompilerParams) {
     super({
-      loadGlimmerSyntax: () => loadGlimmerSyntax(params.compilerPath),
+      loadEmberTemplateCompiler: () => getEmberExports(params.compilerPath),
       resolver: params.resolver,
       EmberENV: params.EmberENV,
       plugins: params.plugins,

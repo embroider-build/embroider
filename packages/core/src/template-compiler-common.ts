@@ -4,23 +4,78 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-import { Plugins, GlimmerSyntax, AST } from './ember-template-compiler-types';
+
+export interface Plugins {
+  ast?: unknown[];
+}
+
+export interface AST {
+  _deliberatelyOpaque: 'AST';
+}
+
+export interface PreprocessOptions {
+  contents: string;
+  moduleName: string;
+  plugins?: Plugins;
+  filename?: string;
+
+  parseOptions?: {
+    srcName?: string;
+    ignoreStandalone?: boolean;
+  };
+
+  // added in Ember 3.17 (@glimmer/syntax@0.40.2)
+  mode?: 'codemod' | 'precompile';
+
+  // added in Ember 3.25
+  strictMode?: boolean;
+  locals?: string[];
+}
+
+export interface PrinterOptions {
+  entityEncoding?: 'transformed' | 'raw';
+}
+
+// This just reflects the API we're extracting from ember-template-compiler.js,
+// plus a cache key that lets us know when the underlying source has remained
+// stable.
+export interface GlimmerSyntax {
+  preprocess(html: string, options?: PreprocessOptions): AST;
+  print(ast: AST, options?: PrinterOptions): string;
+  defaultOptions(options: PreprocessOptions): PreprocessOptions;
+  precompile(
+    templateContents: string,
+    options: {
+      contents: string;
+      moduleName: string;
+      filename: string;
+      plugins?: any;
+      parseOptions?: {
+        srcName?: string;
+      };
+    }
+  ): string;
+  _Ember: { FEATURES: any; ENV: any };
+}
 
 export interface TemplateCompilerParams {
-  loadGlimmerSyntax: () => GlimmerSyntax;
+  // this should be the exports object from ember-template-compiler.js. It's
+  // "unknown" here because it changes shape in different ember versions, we
+  // will do our best to consume it.
+  loadEmberTemplateCompiler: () => { theExports: unknown; cacheKey: string };
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
 }
 
 export class TemplateCompiler {
-  private loadGlimmerSyntax: () => GlimmerSyntax;
+  private loadEmberTemplateCompiler: () => { theExports: unknown; cacheKey: string };
   private resolver?: Resolver;
   private EmberENV: unknown;
   private plugins: Plugins;
 
   constructor(params: TemplateCompilerParams) {
-    this.loadGlimmerSyntax = params.loadGlimmerSyntax;
+    this.loadEmberTemplateCompiler = params.loadEmberTemplateCompiler;
     this.resolver = params.resolver;
     this.EmberENV = params.EmberENV;
     this.plugins = params.plugins;
@@ -40,10 +95,10 @@ export class TemplateCompiler {
 
   @Memoize()
   private setup() {
-    let syntax = this.loadGlimmerSyntax();
+    let { theExports, cacheKey } = this.loadEmberTemplateCompiler();
+    let syntax = loadGlimmerSyntax(theExports);
     initializeEmberENV(syntax, this.EmberENV);
     // todo: get resolver reflected in cacheKey
-    let cacheKey = syntax.cacheKey;
     return { syntax, cacheKey };
   }
 
@@ -196,5 +251,46 @@ function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {
       }
       syntax._Ember.ENV[prop] = EmberENV[prop];
     });
+  }
+}
+
+// we could directly depend on @glimmer/syntax and have nice types and
+// everything. But the problem is, we really want to use the exact version that
+// the app itself is using, and its copy is bundled away inside
+// ember-template-compiler.js.
+function loadGlimmerSyntax(emberTemplateCompilerExports: any): GlimmerSyntax {
+  // detect if we are using an Ember version with the exports we need
+  // (from https://github.com/emberjs/ember.js/pull/19426)
+  if (emberTemplateCompilerExports._preprocess !== undefined) {
+    return {
+      print: emberTemplateCompilerExports._print,
+      preprocess: emberTemplateCompilerExports._preprocess,
+      defaultOptions: emberTemplateCompilerExports._buildCompileOptions,
+      precompile: emberTemplateCompilerExports.precompile,
+      _Ember: emberTemplateCompilerExports._Ember,
+    };
+  } else {
+    // Older Ember versions (prior to 3.27) do not expose a public way to to source 2 source compilation of templates.
+    // because of this, we must resort to some hackery.
+    //
+    // We use the following API's (that we grab from Ember.__loader):
+    //
+    // * glimmer/syntax's preprocess
+    // * glimmer/syntax's print
+    // * ember-template-compiler/lib/system/compile-options's defaultOptions
+    let syntax = (emberTemplateCompilerExports.Ember ?? emberTemplateCompilerExports._Ember).__loader.require(
+      '@glimmer/syntax'
+    );
+    let compilerOptions = (emberTemplateCompilerExports.Ember ?? emberTemplateCompilerExports._Ember).__loader.require(
+      'ember-template-compiler/lib/system/compile-options'
+    );
+
+    return {
+      print: syntax.print,
+      preprocess: syntax.preprocess,
+      defaultOptions: compilerOptions.default,
+      precompile: emberTemplateCompilerExports.precompile,
+      _Ember: emberTemplateCompilerExports._Ember,
+    };
   }
 }

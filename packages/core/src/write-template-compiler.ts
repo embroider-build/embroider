@@ -7,10 +7,10 @@ export function templateCompilerModule(params: NodeTemplateCompilerParams, hints
   let result = p.dehydrate(params);
   return {
     src: [
-      `const { TemplateCompiler } = require("${__filename}");`,
+      `const { NodeTemplateCompiler } = require("${resolve(__dirname, './template-compiler-node.js')}");`,
       `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
       `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
-      `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
+      `module.exports = new NodeTemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
     ].join('\n'),
     isParallelSafe: result.isParallelSafe,
   };

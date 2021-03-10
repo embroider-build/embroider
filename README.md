@@ -101,6 +101,20 @@ The recommended steps when introducing Embroider into an existing app are:
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
 
+## Configuring asset URLs
+
+If you are serving your assets from a different origin (like a CDN) from where your index.html content will
+be served from, you can use the publicAssetURL option to specify the base URL. In pre-Embroider Ember apps,
+this was accomplished by configuring the `fingerprint: { prepend: ... }` option handled by broccoli-asset-rev.
+
+```js
+return require('@embroider/compat').compatBuild(app, Webpack, {
+  packagerOptions: {
+    publicAssetURL: 'https://your-cdn-here.com/', // This should be a URL ending in "/"
+  },
+});
+```
+
 ## Analyzing Bundles
 
 see [`ANALYZING.md`](ANALYZING.md)

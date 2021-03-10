@@ -11,17 +11,19 @@ import {
   blockStatement,
   throwStatement,
   newExpression,
+  importDeclaration,
+  importDefaultSpecifier,
+  expressionStatement,
+  returnStatement,
+  identifier,
+  callExpression,
+  memberExpression,
 } from '@babel/types';
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
+import { parse } from '@babel/core';
 import { join } from 'path';
 import { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';
-import { identifier, callExpression, memberExpression } from '@babel/types';
-import { parse } from '@babel/core';
-import { ResolvedDep } from './resolver';
-import { importDeclaration } from '@babel/types';
-import { importDefaultSpecifier } from '@babel/types';
-import { expressionStatement } from '@babel/types';
-import { returnStatement } from '@babel/types';
+import type { ResolvedDep } from './resolver';
 
 // These are the known names that people are using to import the `hbs` macro
 // from. In theory the original plugin lets people customize these names, but

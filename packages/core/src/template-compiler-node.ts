@@ -27,7 +27,7 @@ export class NodeTemplateCompiler extends TemplateCompiler {
   // Javascript.
   inlineTransformsBabelPlugin(): PluginItem {
     return [
-      join(__dirname, 'babel-plugin-inline-hbs.js'),
+      join(__dirname, 'babel-plugin-inline-hbs-node.js'),
       {
         templateCompiler: this.params,
         stage: 1,

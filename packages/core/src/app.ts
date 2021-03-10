@@ -29,7 +29,7 @@ import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node';
 import { PortableHint } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 
@@ -354,7 +354,7 @@ export class AppBuilder<TreeNames> {
 
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
-      join(__dirname, 'babel-plugin-inline-hbs.js'),
+      join(__dirname, 'babel-plugin-inline-hbs-node.js'),
       {
         templateCompiler: templateCompilerParams,
         stage: 3,

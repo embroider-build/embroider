@@ -460,6 +460,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
       error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
     }
     if (typeof error.message === 'string') {
+      error.message = error.message.replace(error.module.context, error.module.userRequest);
+
       // the tmpdir on OSX is horribly long and makes error messages hard to
       // read. This is doing the same as String.prototype.replaceAll, which node
       // doesn't have yet.

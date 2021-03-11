@@ -1,0 +1,44 @@
+{
+  "name": "@embroider/esbuild",
+  "version": "0.37.0",
+  "private": false,
+  "description": "Builds EmberJS apps with ESBuild",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/esbuild"
+  },
+  "license": "MIT",
+  "author": "NullVoxPopuli",
+  "main": "src/ember-esbuild.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {
+    "prepare": "tsc"
+  },
+  "dependencies": {
+    "debug": "^3.1.0",
+    "esbuild": "^0.9.0",
+    "fs-extra": "^7.0.0",
+    "jsdom": "^16.4.0",
+    "lodash": "^4.17.10"
+  },
+  "devDependencies": {
+    "@types/node": "^10.5.2",
+    "@types/fs-extra": "^5.0.4",
+    "@types/lodash": "^4.14.116",
+    "typescript": "~4.0.0"
+  },
+  "peerDependencies": {
+    "@embroider/core": "0.37.0"
+  },
+  "engines": {
+    "node": "10.* || 12.* || >= 14"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

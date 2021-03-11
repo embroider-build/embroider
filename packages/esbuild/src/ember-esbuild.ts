@@ -22,14 +22,10 @@ import { tmpdir } from 'os';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
-import type { HbsLoaderConfig } from '@embroider/hbs-loader';
+
+import esbuild from 'esbuild';
 
 const debug = makeDebug('embroider:debug');
-
-// This is a type-only import, so it gets compiled away. At runtime, we load
-// terser lazily so it's only loaded for production builds that use it. Don't
-// add any non-type-only imports here.
-import type { MinifyOptions } from 'terser';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -86,6 +82,19 @@ export const ESBuild: Packager<Options> = class ESBuild implements PackagerInsta
     // let webpack = this.getWebpack(appInfo);
     // let stats = this.summarizeStats(await this.runWebpack(webpack));
     // await this.writeFiles(stats, appInfo);
+
+    // TODO: fix the options
+    await esbuild.build({
+      loader: { '.ts': 'ts' },
+      entryPoints: [entryPath],
+      bundle: true,
+      outfile: path.join(buildDir, `${name}.js`),
+      format: 'esm',
+      minify: isProduction,
+      sourcemap: !isProduction,
+      // incremental: true,
+      tsconfig: path.join(addonFolder, 'tsconfig.json'),
+    });
   }
 
 };

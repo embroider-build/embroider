@@ -901,7 +901,7 @@ export default class V1Addon {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {
-            publicAssets[`public/${filename}`] = filename;
+            publicAssets[`./public/${filename}`] = './' + filename;
           }
         }
       });

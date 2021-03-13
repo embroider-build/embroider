@@ -68,12 +68,14 @@ export const ESBuild: Packager<Options> = class ESBuild implements PackagerInsta
 
     console.error(appInfo, this.variants, this.outputPath);
 
-    let scriptEntryPoints = appInfo.entrypoints.flatMap(html => {
-      return html.modules.map(script => `${this.pathToVanillaApp}/${script}`);
+    let scripts: string[] = [];
+
+    appInfo.entrypoints.forEach(html => {
+      return html.modules.forEach(script => scripts.push(`${this.pathToVanillaApp}/${script}`));
     });
 
     await esbuild.build({
-      entryPoints: scriptEntryPoints,
+      entryPoints: scripts,
       loader: {
         '.ts': 'ts',
         '.js': 'js',

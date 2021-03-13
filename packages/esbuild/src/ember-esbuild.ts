@@ -23,7 +23,7 @@ import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
 
-import esbuild from 'esbuild';
+import * as esbuild from 'esbuild';
 
 const debug = makeDebug('embroider:debug');
 

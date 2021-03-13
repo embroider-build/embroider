@@ -9,19 +9,13 @@
   getting script vs module context correct).
 */
 
+import path from 'path';
 import { getOrCreate, Variant, applyVariantToBabelConfig } from '@embroider/core';
 import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
-import isEqual from 'lodash/isEqual';
-import mergeWith from 'lodash/mergeWith';
-import flatMap from 'lodash/flatMap';
-import { format } from 'util';
 import makeDebug from 'debug';
-import { tmpdir } from 'os';
 import { HTMLEntrypoint } from './html-entrypoint';
-import { StatSummary } from './stat-summary';
-import crypto from 'crypto';
 
 import * as esbuild from 'esbuild';
 
@@ -35,15 +29,6 @@ interface AppInfo {
   rootURL: AppMeta['root-url'];
   publicAssetURL: string;
   resolvableExtensions: AppMeta['resolvable-extensions'];
-}
-
-// AppInfos are equal if they result in the same webpack config.
-function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
-  return (
-    isEqual(left.babel, right.babel) &&
-    left.entrypoints.length === right.entrypoints.length &&
-    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
-  );
 }
 
 interface Options {
@@ -78,24 +63,61 @@ export const ESBuild: Packager<Options> = class ESBuild implements PackagerInsta
   }
 
   async build(): Promise<void> {
-    // let appInfo = this.examineApp();
-    // let webpack = this.getWebpack(appInfo);
-    // let stats = this.summarizeStats(await this.runWebpack(webpack));
-    // await this.writeFiles(stats, appInfo);
+    let appInfo = this.examineApp();
+    let variantInfo = this.variants[0];
 
-    // TODO: fix the options
+    console.error(appInfo, this.variants, this.outputPath);
+
+    let scriptEntryPoints = appInfo.entrypoints.flatMap(html => {
+      return html.modules.map(script => `${this.pathToVanillaApp}/${script}`);
+    });
+
     await esbuild.build({
-      loader: { '.ts': 'ts' },
-      entryPoints: [entryPath],
+      entryPoints: scriptEntryPoints,
+      loader: {
+        '.ts': 'ts',
+        '.js': 'js',
+        /* TODO: '.hbs': 'hbs', */
+        /* Maybe TODO?: '.html':'html' */
+      },
       bundle: true,
-      outfile: path.join(buildDir, `${name}.js`),
+      outdir: this.outputPath,
       format: 'esm',
-      minify: isProduction,
-      sourcemap: !isProduction,
-      // incremental: true,
-      tsconfig: path.join(addonFolder, 'tsconfig.json'),
+      minify: variantInfo.optimizeForProduction,
+      sourcemap: !variantInfo.optimizeForProduction,
+      incremental: true,
+      splitting: true,
+      plugins: [
+        /* TODO: hbs plugin */
+      ],
+      // tsconfig: path.join(addonFolder, 'tsconfig.json'),
     });
   }
 
-};
+  /**
+   * Direct copy from ember-webpack
+   *
+   * should this be extracted?
+   *
+   */
+  private examineApp(): AppInfo {
+    let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+    let templateCompiler = meta['template-compiler'];
+    let rootURL = meta['root-url'];
+    let babel = meta['babel'];
+    let resolvableExtensions = meta['resolvable-extensions'];
+    let entrypoints = [];
+    let otherAssets = [];
+    let publicAssetURL = this.publicAssetURL || rootURL;
 
+    for (let relativePath of meta.assets) {
+      if (/\.html/i.test(relativePath)) {
+        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, publicAssetURL, relativePath));
+      } else {
+        otherAssets.push(relativePath);
+      }
+    }
+
+    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicAssetURL };
+  }
+};

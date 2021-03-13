@@ -29,7 +29,7 @@
     "@embroider/core": "0.37.0",
     "@embroider/macros": "0.37.0",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "0.37.0",
+    "@embroider/esbuild": "0.37.0",
     "@glimmer/component": "^1.0.3",
     "@glimmer/tracking": "^1.0.3",
     "babel-eslint": "^10.1.0",

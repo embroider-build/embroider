@@ -1,4 +1,4 @@
-# Embroider: a modern build system for EmberJS apps
+# Embroider: translating existing Ember code into spec-compliant modern JavaScript
 
 [![GitHub Actions CI][github-actions-badge]][github-actions-ci-url]
 

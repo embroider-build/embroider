@@ -94,7 +94,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.publicAssetURL = options?.publicAssetURL;
     this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprint);
 
-    if (fingerprint.exclude) {
+    if (fingerprint?.exclude) {
       this.fingerprint.exclude = fingerprint.exclude.map(glob => {
         return new Minimatch(glob);
       });

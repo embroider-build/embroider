@@ -24,6 +24,7 @@ module.exports = function (defaults) {
     skipBabel: [
       {
         package: 'qunit',
+        semver: '*',
       },
     ],
     packageRules: [

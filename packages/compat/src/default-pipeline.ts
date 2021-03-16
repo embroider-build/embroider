@@ -11,7 +11,7 @@ interface PipelineOptions<PackagerOptions> extends Options {
 }
 
 export default function defaultPipeline<PackagerOptions>(
-  emberApp: object,
+  emberApp: any,
   packager?: Packager<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Node {
@@ -49,7 +49,7 @@ export default function defaultPipeline<PackagerOptions>(
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
+  return new BroccoliPackager(embroiderApp, variants, emberApp.options.fingerprint, options && options.packagerOptions);
 }
 
 function hasFastboot(emberApp: any) {

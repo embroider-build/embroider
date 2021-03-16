@@ -1,5 +1,11 @@
 // This is a collection of flags that convey what kind of build you want. They
 // are intended to be generic across Packagers, and it's up to Packager authors
+
+export interface FingerprintOptions {
+  enabled?: boolean;
+  exclude?: any[];
+}
+
 // to support each option (or not).
 export interface Variant {
   // descriptive name that can be used by the packager to label which output
@@ -50,6 +56,10 @@ export interface Packager<Options> {
     // if possible, the packager should direct its console output through this
     // hook.
     consoleWrite: (message: string) => void,
+    // options instructing the 3rd stage if it should fingerprint
+    // assets or not. primarly used for testem to make sure that it
+    // is not being fingerprinted as it is expected to be testem.js
+    fingerprint: FingerprintOptions,
     // A packager can have whatever custom options type it wants here. If the
     // packager is based on a third-party tool, this is where that tool's
     // configuration can go.

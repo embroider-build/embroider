@@ -25,6 +25,7 @@ import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
+import { Minimatch } from 'minimatch';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 
 const debug = makeDebug('embroider:debug');
@@ -33,6 +34,7 @@ const debug = makeDebug('embroider:debug');
 // terser lazily so it's only loaded for production builds that use it. Don't
 // add any non-type-only imports here.
 import type { MinifyOptions } from 'terser';
+import { FingerprintOptions } from '@embroider/core/src/packager';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -62,6 +64,8 @@ interface Options {
   //
   // This should be a URL ending in "/".
   publicAssetURL?: string;
+
+  fingerprint: FingerprintOptions;
 }
 
 // we want to ensure that not only does our instance conform to
@@ -75,17 +79,26 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
+  private fingerprint: FingerprintOptions;
 
   constructor(
     pathToVanillaApp: string,
     private outputPath: string,
     private variants: Variant[],
     private consoleWrite: (msg: string) => void,
+    fingerprint: FingerprintOptions,
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
+    this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprint);
+
+    if (fingerprint.exclude) {
+      this.fingerprint.exclude = fingerprint.exclude.map(glob => {
+        return new Minimatch(glob);
+      });
+    }
     warmUp();
   }
 
@@ -218,8 +231,33 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return (this.lastWebpack = webpack(config));
   }
 
+  private shouldFingerprint(filename: string, variant: Variant) {
+    if (this.fingerprint.enabled === false || variant.optimizeForProduction === false) {
+      return false;
+    }
+
+    let excludedFingerprints = this.fingerprint.exclude;
+
+    // based on the following logic:
+    // https://github.com/ember-cli/broccoli-asset-rev/blob/78f6047c15acb3bd348611f658b03bdd1041911f/lib/fingerprint.js#L72-L84
+    if (excludedFingerprints) {
+      for (let i = 0; i < excludedFingerprints.length; i++) {
+        // glob expression
+        if (excludedFingerprints[i].match(filename)) {
+          return false;
+        }
+        // allow 'fonts' and 'assets/fonts' to match 'assets/font/foo.ttf'
+        if (filename.indexOf(excludedFingerprints[i].pattern) !== -1) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   private async writeScript(script: string, written: Set<string>, variant: Variant) {
-    if (!variant.optimizeForProduction) {
+    if (!this.shouldFingerprint(script, variant)) {
       this.copyThrough(script);
       return script;
     }
@@ -258,7 +296,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private async writeStyle(style: string, written: Set<string>, variant: Variant) {
-    if (!variant.optimizeForProduction) {
+    if (!this.shouldFingerprint(style, variant)) {
       this.copyThrough(style);
       written.add(style);
       return style;

@@ -21,6 +21,11 @@ module.exports = function (defaults) {
     staticAddonTrees: true,
     staticComponents: true,
     staticHelpers: true,
+    skipBabel: [
+      {
+        package: 'qunit',
+      },
+    ],
     packageRules: [
       {
         package: 'static-app',

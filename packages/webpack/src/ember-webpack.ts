@@ -25,7 +25,7 @@ import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
-import { Minimatch } from 'minimatch';
+import { IMinimatch, Minimatch } from 'minimatch';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 
 const debug = makeDebug('embroider:debug');
@@ -70,7 +70,11 @@ interface Options {
 
 // make sure that testem and asset chunks are always excluded
 // from fingerprinting
-function ensureDefaultExcludedFingerprints(excluded: any[]) {
+function defaultExcludedFingerprints(excluded?: string[]) {
+  if (!excluded) {
+    excluded = [];
+  }
+
   if (!excluded.includes('testem')) {
     excluded.push('testem');
   }
@@ -93,7 +97,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
-  private fingerprint: FingerprintOptions;
+  private fingerprintExclude: IMinimatch[];
+  private fingerprintEnabled: boolean;
 
   constructor(
     pathToVanillaApp: string,
@@ -106,10 +111,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
-    this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprintOptions);
-
-    this.fingerprint.exclude = ensureDefaultExcludedFingerprints(this.fingerprint.exclude);
-    this.fingerprint.exclude = fingerprintOptions.exclude.map(glob => {
+    this.fingerprintEnabled = fingerprintOptions?.enabled !== false;
+    this.fingerprintExclude = defaultExcludedFingerprints(fingerprintOptions?.exclude).map(glob => {
       return new Minimatch(glob);
     });
 
@@ -246,11 +249,11 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private shouldFingerprint(filename: string, variant: Variant) {
-    if (this.fingerprint.enabled === false || variant.optimizeForProduction === false) {
+    if (this.fingerprintEnabled === false || variant.optimizeForProduction === false) {
       return false;
     }
 
-    let excludedFingerprints = this.fingerprint.exclude;
+    let excludedFingerprints = this.fingerprintExclude;
 
     // based on the following logic:
     // https://github.com/ember-cli/broccoli-asset-rev/blob/78f6047c15acb3bd348611f658b03bdd1041911f/lib/fingerprint.js#L72-L84

@@ -68,6 +68,20 @@ interface Options {
   fingerprint: FingerprintOptions;
 }
 
+// make sure that testem and asset chunks are always excluded
+// from fingerprinting
+function ensureDefaultExcludedFingerprints(excluded: any[]) {
+  if (!excluded.includes('testem')) {
+    excluded.push('testem');
+  }
+
+  if (!excluded.includes('assets/chunk.*.js')) {
+    excluded.push('assets/chunk.*.js');
+  }
+
+  return excluded;
+}
+
 // we want to ensure that not only does our instance conform to
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
@@ -86,19 +100,23 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     private outputPath: string,
     private variants: Variant[],
     private consoleWrite: (msg: string) => void,
-    fingerprint: FingerprintOptions,
+    fingerprintOptions: FingerprintOptions,
     options?: Options
   ) {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
-    this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprint);
+    this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprintOptions);
 
-    if (fingerprint?.exclude) {
-      this.fingerprint.exclude = fingerprint.exclude.map(glob => {
-        return new Minimatch(glob);
-      });
+    if (!fingerprintOptions.exclude) {
+      fingerprintOptions.exclude = [];
     }
+
+    fingerprintOptions.exclude = ensureDefaultExcludedFingerprints(fingerprintOptions.exclude);
+    this.fingerprint.exclude = fingerprintOptions.exclude.map(glob => {
+      return new Minimatch(glob);
+    });
+
     warmUp();
   }
 

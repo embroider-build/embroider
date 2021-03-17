@@ -34,7 +34,7 @@ const debug = makeDebug('embroider:debug');
 // terser lazily so it's only loaded for production builds that use it. Don't
 // add any non-type-only imports here.
 import type { MinifyOptions } from 'terser';
-import { FingerprintOptions } from '@embroider/core/src/packager';
+import type { FingerprintOptions } from '@embroider/core/src/packager';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];

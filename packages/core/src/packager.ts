@@ -2,8 +2,8 @@
 // are intended to be generic across Packagers, and it's up to Packager authors
 
 export interface FingerprintOptions {
-  enabled?: boolean;
-  exclude?: any[];
+  enabled: boolean;
+  exclude: any[];
 }
 
 // to support each option (or not).

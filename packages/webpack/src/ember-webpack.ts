@@ -108,11 +108,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.publicAssetURL = options?.publicAssetURL;
     this.fingerprint = Object.assign({ enabled: true, exclude: [] }, fingerprintOptions);
 
-    if (!fingerprintOptions.exclude) {
-      fingerprintOptions.exclude = [];
-    }
-
-    fingerprintOptions.exclude = ensureDefaultExcludedFingerprints(fingerprintOptions.exclude);
+    this.fingerprint.exclude = ensureDefaultExcludedFingerprints(this.fingerprint.exclude);
     this.fingerprint.exclude = fingerprintOptions.exclude.map(glob => {
       return new Minimatch(glob);
     });

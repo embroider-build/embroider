@@ -167,11 +167,22 @@ export default class Package {
 
   @Memoize()
   get dependencies(): Package[] {
-    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
+    return this.loadDependencies(this.dependencyKeys);
+  }
+
+  @Memoize()
+  get addonDependencies(): Package[] {
+    // When looking for child addons, we want to ignore 'peerDependencies' of a given package, to
+    // align with how ember-cli resolves addons
+    return this.loadDependencies(this.dependencyKeys.filter(key => key !== 'peerDependencies'));
+  }
+
+  loadDependencies(keys: ('dependencies' | 'devDependencies' | 'peerDependencies')[]): Package[] {
+    const names = flatMap(keys, key => Object.keys(this.packageJSON[key] || {}));
     return names
       .map(name => {
         if (this.nonResolvableDeps) {
-          let dep = this.nonResolvableDeps.get(name);
+          const dep = this.nonResolvableDeps.get(name);
           if (dep) {
             return dep;
           }

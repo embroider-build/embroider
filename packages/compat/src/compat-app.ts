@@ -176,7 +176,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
 
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
-    let result = pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[];
+    let result = pkg.addonDependencies.filter(this.isActiveAddon) as AddonPackage[];
     if (pkg === this.appPackage) {
       let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
       result = [...result, ...extras];

@@ -1,6 +1,6 @@
 import { macroCondition, dependencySatisfies } from '@embroider/macros';
+import Ember from 'ember';
 
-/* global Ember */
 let {
   isCurriedComponentDefinition,
   CurriedComponentDefinition,

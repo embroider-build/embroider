@@ -92,21 +92,31 @@ export async function githubMatrix() {
     dir: resolve(__dirname, '..', '..'),
   });
 
-  // add our eslint
-  suites.unshift({
-    name: 'lint',
-    command: 'yarn',
-    args: ['lint'],
-    dir: resolve(__dirname, '..', '..'),
-  });
-
-  return {
-    name: suites.map(s => s.name),
-    include: suites.map(s => ({
-      name: s.name,
+  let include = [
+    // add our eslint
+    {
+      name: 'lint',
+      os: 'ubuntu',
+      command: 'yarn lint',
+      dir: resolve(__dirname, '..', '..'),
+    },
+    ...suites.map(s => ({
+      name: `${s.name} ubuntu`,
+      os: 'ubuntu',
       command: `${s.command} ${s.args.join(' ')}`,
       dir: s.dir,
     })),
+    ...suites.map(s => ({
+      name: `${s.name} windows`,
+      os: 'windows',
+      command: `${s.command} ${s.args.join(' ')}`,
+      dir: s.dir,
+    })),
+  ];
+
+  return {
+    name: include.map(s => s.name),
+    include,
   };
 }
 

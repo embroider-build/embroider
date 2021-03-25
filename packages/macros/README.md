@@ -89,6 +89,14 @@ Macros can also be used inside of templates:
 {{/if}}
 ```
 
+Starting with Ember 3.25 you can also use it to conditionally apply modifiers:
+
+```hbs
+<button {{(if (macroCondition true) on) "click" this.something}}>Submit</button>
+```
+
+However, in all cases the argument to `macroCondition` must be statically analyzable:
+
 ```js
 import { macroCondition } from '@embroider/macros';
 

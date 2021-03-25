@@ -25,11 +25,11 @@
   "devDependencies": {
     "@ember/jquery": "^0.6.0",
     "@ember/optional-features": "^0.7.0",
-    "@embroider/compat": "0.36.0",
-    "@embroider/core": "0.36.0",
-    "@embroider/router": "0.36.0",
+    "@embroider/compat": "0.37.0",
+    "@embroider/core": "0.37.0",
+    "@embroider/router": "0.37.0",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "0.36.0",
+    "@embroider/webpack": "0.37.0",
     "broccoli-asset-rev": "^3.0.0",
     "eager-engine": "0.0.0",
     "ember-cli": "~3.10.1",
@@ -63,5 +63,10 @@
   },
   "volta": {
     "extends": "../../package.json"
+  },
+  "ember-addon": {
+    "paths": [
+      "lib/lazy-in-repo-engine"
+    ]
   }
 }

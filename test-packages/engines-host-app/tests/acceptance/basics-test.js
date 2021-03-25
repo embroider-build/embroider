@@ -105,6 +105,58 @@ module('Acceptance | basics', function (hooks) {
   // See TODO comment in above test
   skip('lazy engines own app tree is lazy', function () {});
 
+  // this test must be the first test that loads the lazy-in-repo-engine as after it has loaded
+  // it will not "unload" and we are checkign that these modules are entering require.entries
+  // for the first time.
+  test('lazy-in-repo-engine', async function (assert) {
+    await visit('/');
+    const entriesBefore = Object.entries(window.require.entries).length;
+    let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
+
+    assert.notOk(rules.includes('lazy-in-repo-engine/addon/styles/addon.css'));
+
+    await visit('/style-check');
+    assert.dom('.shared-style-target').exists();
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'],
+      '2px',
+      'eager-engine styles are present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-bottom-width'],
+      '0px',
+      'lazy-in-repo-engine addon styles are not present'
+    );
+
+    await visit('/use-lazy-in-repo-engine');
+    const entriesAfter = Object.entries(window.require.entries).length;
+    assert.ok(!!window.require.entries['lazy-in-repo-engine/helpers/duplicated-helper']);
+    assert.ok(entriesAfter > entriesBefore);
+    assert.equal(currentURL(), '/use-lazy-in-repo-engine');
+    assert.dom('[data-test-lazy-in-repo-engine-main] > h1').containsText('Lazy In-Repo Engine');
+    assert.dom('[data-test-duplicated-helper]').containsText('from-lazy-in-repo-engine');
+
+    rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
+
+    assert.ok(rules.includes('lazy-in-repo-engine/addon/styles/addon.css'));
+
+    await visit('/style-check');
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-left-width'],
+      '2px',
+      'eager-engine styles are still present'
+    );
+
+    assert.equal(
+      getComputedStyle(document.querySelector('.shared-style-target'))['border-bottom-width'],
+      '2px',
+      'lazy-in-repo-engine addon styles are present'
+    );
+  });
+
   test('eager-engine', async function (assert) {
     await visit('/use-eager-engine');
     assert.equal(currentURL(), '/use-eager-engine');

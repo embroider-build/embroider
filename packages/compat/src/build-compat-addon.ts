@@ -49,9 +49,9 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
   }
 }
 
-function withoutNodeModules(pkg: Package): Node {
-  let root = pkg.mayRebuild ? new WatchedDir(pkg.root) : new UnwatchedDir(pkg.root);
-  return new Funnel(root, {
+function withoutNodeModules(originalPackage: Package): Node {
+  let Klass = originalPackage.mayRebuild ? WatchedDir : UnwatchedDir;
+  return new Funnel(new Klass(originalPackage.root), {
     exclude: ['node_modules'],
   });
 }

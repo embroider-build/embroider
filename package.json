@@ -1,5 +1,9 @@
 {
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:embroider-build/embroider.git"
+  },
   "workspaces": {
     "packages": [
       "packages/*",
@@ -30,8 +34,8 @@
     ]
   },
   "resolutions": {
-    "**/fastboot": "^3.1.0",
-    "**/browserslist": "^4.14.0"
+    "**/browserslist": "^4.14.0",
+    "**/fastboot": "^3.1.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
@@ -42,10 +46,43 @@
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^24.5.0",
-    "prettier": "2.1.2"
+    "prettier": "2.1.2",
+    "release-it": "^14.2.1",
+    "release-it-lerna-changelog": "^3.1.0",
+    "release-it-yarn-workspaces": "^2.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "plugins": {
+      "release-it-lerna-changelog": {
+        "infile": "CHANGELOG.md",
+        "launchEditor": true
+      },
+      "release-it-yarn-workspaces": {
+        "workspaces": [
+          "packages/*"
+        ],
+        "additionalManifests": {
+          "dependencyUpdates": [
+            "test-packages/*/package.json"
+          ]
+        }
+      }
+    },
+    "git": {
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true,
+      "tokenRef": "GITHUB_AUTH"
+    },
+    "npm": false
   },
   "volta": {
     "node": "12.16.1",
     "yarn": "1.17.3"
-  }
+  },
+  "version": "0.37.0"
 }

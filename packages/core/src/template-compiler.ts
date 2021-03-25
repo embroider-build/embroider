@@ -12,6 +12,7 @@ import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
 import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { createContext, Script } from 'vm';
 
 export interface Plugins {
   ast?: unknown[];
@@ -26,6 +27,22 @@ interface PreprocessOptions {
   moduleName: string;
   plugins?: Plugins;
   filename?: string;
+
+  parseOptions?: {
+    srcName?: string;
+    ignoreStandalone?: boolean;
+  };
+
+  // added in Ember 3.17 (@glimmer/syntax@0.40.2)
+  mode?: 'codemod' | 'precompile';
+
+  // added in Ember 3.25
+  strictMode?: boolean;
+  locals?: string[];
+}
+
+interface PrinterOptions {
+  entityEncoding?: 'transformed' | 'raw';
 }
 
 // This just reflects the API we're extracting from ember-template-compiler.js,
@@ -33,9 +50,8 @@ interface PreprocessOptions {
 // stable.
 interface GlimmerSyntax {
   preprocess(html: string, options?: PreprocessOptions): AST;
-  print(ast: AST): string;
+  print(ast: AST, options?: PrinterOptions): string;
   defaultOptions(options: PreprocessOptions): PreprocessOptions;
-  registerPlugin(type: string, plugin: unknown): void;
   precompile(
     templateContents: string,
     options: {
@@ -67,14 +83,6 @@ type TemplateCompilerCacheEntry = {
 
 const CACHE = new Map<string, TemplateCompilerCacheEntry>();
 
-// Today the template compiler seems to not expose a public way to to source 2 source compilation of templates.
-// because of this, we must resort to some hackery.
-//
-// TODO: expose a way to accomplish this via purely public API's.
-// Today we use the following API's
-// * glimmer/syntax's preprocess
-// * glimmer/syntax's print
-// * ember-template-compiler/lib/system/compile-options's defaultOptions
 function getEmberExports(templateCompilerPath: string): EmbersExports {
   let entry = CACHE.get(templateCompilerPath);
 
@@ -94,7 +102,26 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
   let stat = statSync(templateCompilerPath);
 
   let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
-  let theExports: any = new Function(source)();
+
+  // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
+  let sandbox = {
+    module: { require, exports: {} },
+    require,
+  };
+  if (typeof globalThis === 'undefined') {
+    // for Node 10 usage with Ember 3.27+ we have to define the `global` global
+    // in order for ember-template-compiler.js to evaluate properly
+    // due to this code https://git.io/Jtb7s
+    (sandbox as any).global = sandbox;
+  }
+
+  // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
+  // so that any global mutation done within ember-template-compiler.js does not leak out
+  let context = createContext(sandbox);
+  let script = new Script(source, { filename: templateCompilerPath });
+
+  script.runInContext(context);
+  let theExports: any = context.module.exports;
 
   // cacheKey, theExports
   let cacheKey = createHash('md5').update(source).digest('hex');
@@ -118,19 +145,38 @@ function getEmberExports(templateCompilerPath: string): EmbersExports {
 function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
   let { theExports, cacheKey } = getEmberExports(templateCompilerPath);
 
-  // TODO: we should work to make this, or what it intends to accomplish, public API
-  let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
-  let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
+  // detect if we are using an Ember version with the exports we need
+  // (from https://github.com/emberjs/ember.js/pull/19426)
+  if (theExports._preprocess !== undefined) {
+    return {
+      print: theExports._print,
+      preprocess: theExports._preprocess,
+      defaultOptions: theExports._buildCompileOptions,
+      precompile: theExports.precompile,
+      _Ember: theExports._Ember,
+      cacheKey,
+    };
+  } else {
+    // Older Ember versions (prior to 3.27) do not expose a public way to to source 2 source compilation of templates.
+    // because of this, we must resort to some hackery.
+    //
+    // We use the following API's (that we grab from Ember.__loader):
+    //
+    // * glimmer/syntax's preprocess
+    // * glimmer/syntax's print
+    // * ember-template-compiler/lib/system/compile-options's defaultOptions
+    let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
+    let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
 
-  return {
-    print: syntax.print,
-    preprocess: syntax.preprocess,
-    defaultOptions: compilerOptions.default,
-    registerPlugin: compilerOptions.registerPlugin,
-    precompile: theExports.precompile,
-    _Ember: theExports._Ember,
-    cacheKey,
-  };
+    return {
+      print: syntax.print,
+      preprocess: syntax.preprocess,
+      defaultOptions: compilerOptions.default,
+      precompile: theExports.precompile,
+      _Ember: theExports._Ember,
+      cacheKey,
+    };
+  }
 }
 
 export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
@@ -202,11 +248,14 @@ export class TemplateCompiler {
 
     let opts = this.syntax.defaultOptions({ contents, moduleName });
     let plugins: Plugins = {
-      ...opts.plugins,
+      ...opts?.plugins,
+
       ast: [
         ...this.getReversedASTPlugins(this.params.plugins.ast!),
         this.params.resolver && this.params.resolver.astTransformer(this),
-        ...opts.plugins!.ast!,
+
+        // Ember 3.27+ uses _buildCompileOptions will not add AST plugins to its result
+        ...(opts?.plugins?.ast ?? []),
       ].filter(Boolean),
     };
 
@@ -241,30 +290,34 @@ export class TemplateCompiler {
 
   // Applies all custom AST transforms and emits the results still as
   // handlebars.
-  applyTransforms(moduleName: string, contents: string) {
+  applyTransforms(moduleName: string, contents: string): string {
     let opts = this.syntax.defaultOptions({ contents, moduleName });
-    if (opts.plugins && opts.plugins.ast) {
-      // the user-provided plugins come first in the list, and those are the
-      // only ones we want to run. The built-in plugins don't need to run here
-      // in stage1, it's better that they run in stage3 when the appropriate
-      // ember version is in charge.
-      //
-      // rather than slicing them off, we could choose instead to not call
-      // syntax.defaultOptions, but then we lose some of the compatibility
-      // normalization that it does on the user-provided plugins.
-      opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
-        // Although the precompile API does, this direct glimmer syntax api
-        // does not support these legacy plugins, so we must wrap them.
-        return wrapLegacyHbsPluginIfNeeded(plugin as any);
-      });
-    }
+
+    // the user-provided plugins come first in the list, and those are the
+    // only ones we want to run. The built-in plugins don't need to run here
+    // in stage1, it's better that they run in stage3 when the appropriate
+    // ember version is in charge.
+    //
+    // rather than slicing them off, we could choose instead to not call
+    // syntax.defaultOptions, but then we lose some of the compatibility
+    // normalization that it does on the user-provided plugins.
+    opts.plugins = opts.plugins || {}; // Ember 3.27+ won't add opts.plugins
+    opts.plugins.ast = this.getReversedASTPlugins(this.params.plugins.ast!).map(plugin => {
+      // Although the precompile API does, this direct glimmer syntax api
+      // does not support these legacy plugins, so we must wrap them.
+      return wrapLegacyHbsPluginIfNeeded(plugin as any);
+    });
+
+    // instructs glimmer-vm to preserve entity encodings (e.g. don't parse &nbsp; -> ' ')
+    opts.mode = 'codemod';
 
     opts.filename = moduleName;
     opts.moduleName = this.params.resolver
       ? this.params.resolver.absPathToRuntimePath(moduleName) || moduleName
       : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
-    return this.syntax.print(ast);
+
+    return this.syntax.print(ast, { entityEncoding: 'raw' });
   }
 
   parse(moduleName: string, contents: string): AST {
@@ -349,6 +402,7 @@ function hasProperties(item: any) {
   return item && (typeof item === 'object' || typeof item === 'function');
 }
 
+// this matches the setup done by ember-cli-htmlbars: https://git.io/JtbN6
 function initializeEmberENV(syntax: GlimmerSyntax, EmberENV: any) {
   if (!EmberENV) {
     return;

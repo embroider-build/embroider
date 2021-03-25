@@ -152,33 +152,29 @@ export async function emitDynamicSuites() {
   }
 }
 
+async function main() {
+  try {
+    if (process.argv.includes('--list')) {
+      const result = await allSuites();
+
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    }
+
+    if (process.argv.includes('--matrix')) {
+      const result = await githubMatrix();
+
+      process.stdout.write(JSON.stringify(result));
+    }
+
+    if (process.argv.includes('--emit')) {
+      await emitDynamicSuites();
+    }
+  } catch (error) {
+    console.error(error);
+    process.exitCode = -1;
+  }
+}
+
 if (require.main === module) {
-  if (process.argv.includes('--list')) {
-    allSuites()
-      .then(result => {
-        process.stdout.write(JSON.stringify(result, null, 2) + '\n');
-      })
-      .catch(err => {
-        process.stderr.write(err);
-        process.exit(-1);
-      });
-  }
-
-  if (process.argv.includes('--matrix')) {
-    githubMatrix()
-      .then(result => {
-        process.stdout.write(JSON.stringify(result));
-      })
-      .catch(err => {
-        process.stderr.write(err);
-        process.exit(-1);
-      });
-  }
-
-  if (process.argv.includes('--emit')) {
-    emitDynamicSuites().catch(err => {
-      console.log(err);
-      process.exit(-1);
-    });
-  }
+  main();
 }

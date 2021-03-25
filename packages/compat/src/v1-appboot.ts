@@ -22,6 +22,7 @@ export class WriteV1AppBoot extends Plugin {
 
 export class ReadV1AppBoot extends Plugin {
   private appBoot: string | undefined;
+  private hasBuilt = false;
   constructor(appBootTree: Node) {
     super([appBootTree], {
       persistentOutput: true,
@@ -29,10 +30,11 @@ export class ReadV1AppBoot extends Plugin {
   }
   build() {
     this.appBoot = readFileSync(join(this.inputPaths[0], `config/app-boot.js`), 'utf8');
+    this.hasBuilt = true;
   }
 
   readAppBoot() {
-    if (!this.appBoot) {
+    if (!this.hasBuilt) {
       throw new Error(`AppBoot not available until after the build`);
     }
     return this.appBoot;

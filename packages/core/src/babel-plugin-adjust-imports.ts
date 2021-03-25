@@ -403,7 +403,7 @@ export default function main() {
       ) {
         let { opts, emberCLIVanillaJobs } = state;
         const { source } = path.node;
-        if (!source) {
+        if (source === null || source === undefined) {
           return;
         }
 

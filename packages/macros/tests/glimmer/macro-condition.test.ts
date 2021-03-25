@@ -74,5 +74,20 @@ describe(`macroCondition`, function () {
       );
       expect(code).toMatch(/\{\{my-assertion ["']red["']\}\}/);
     });
+
+    test('macroCondition in modifier position when true', function () {
+      let code = transform(`<button {{(if (macroCondition true) on) "click" this.something}}>Submit</button>`);
+      expect(code).toMatch('<button {{on "click" this.something}}>Submit</button>');
+    });
+
+    test('macroCondition in modifier position when false', function () {
+      let code = transform(`<button {{(if (macroCondition false) off on) "click" this.something}}>Submit</button>`);
+      expect(code).toMatch('<button {{on "click" this.something}}>Submit</button>');
+    });
+
+    test('macroCondition in modifier position when false with no alternate', function () {
+      let code = transform(`<button {{(if (macroCondition false) on) "click" this.something}}>Submit</button>`);
+      expect(code).toMatch('<button>Submit</button>');
+    });
   });
 });

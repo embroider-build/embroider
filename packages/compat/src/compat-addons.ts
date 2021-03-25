@@ -11,6 +11,7 @@ import Options, { optionsWithDefaults } from './options';
 import V1App from './v1-app';
 import { createHash } from 'crypto';
 import TreeSync from 'tree-sync';
+import { WatchedDir } from 'broccoli-source';
 
 export default class CompatAddons implements Stage {
   private didBuild = false;
@@ -42,9 +43,18 @@ export default class CompatAddons implements Stage {
 
   get tree(): Node {
     let movedAddons = [...this.packageCache.moved.keys()].map(oldPkg => buildCompatAddon(oldPkg, this.v1Cache));
+
+    // these get watched so that EMBROIDER_REBUILD_ADDONS will still work
+    // correctly, even for v2 addons that have no v1 addon deps and therefore
+    // don't need to be moved. We don't consume these trees in our build step,
+    // we only do this to trigger rebuilds to happen.
+    let watchedUnmovedAddons = [...this.packageCache.unmovedAddons]
+      .filter(pkg => pkg.mayRebuild)
+      .map(pkg => new WatchedDir(pkg.root));
+
     let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
     return new WaitForTrees(
-      { movedAddons, synthVendor, synthStyles },
+      { movedAddons, synthVendor, synthStyles, watchedUnmovedAddons },
       '@embroider/compat/addons',
       this.build.bind(this)
     );

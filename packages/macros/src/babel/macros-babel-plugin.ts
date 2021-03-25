@@ -86,12 +86,8 @@ export default function main(context: unknown): unknown {
           return;
         }
 
-        // importSync doesn't evaluate to a static value, so it's implemented
-        // directly here, not in evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          let r = identifier('require');
-          state.generatedRequires.add(r);
-          callee.replaceWith(r);
+          // we handle importSync in the exit hook
           return;
         }
 
@@ -131,6 +127,23 @@ export default function main(context: unknown): unknown {
           path.replaceWith(buildLiterals(result.value));
         }
       },
+      exit(path: NodePath<CallExpression>, state: State) {
+        let callee = path.get('callee');
+        if (!callee.isIdentifier()) {
+          return;
+        }
+        // importSync doesn't evaluate to a static value, so it's implemented
+        // directly here, not in evaluateMacroCall.
+        // We intentionally do this on exit here, to allow other transforms to handle importSync before we do
+        // For example ember-auto-import needs to do some custom transforms to enable use of dynamic template strings,
+        // so its babel plugin needs to see and handle the importSync call first!
+        if (callee.referencesImport('@embroider/macros', 'importSync')) {
+          let r = identifier('require');
+          state.generatedRequires.add(r);
+          callee.replaceWith(r);
+          return;
+        }
+      },
     },
     ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
       for (let candidate of [
@@ -139,7 +152,8 @@ export default function main(context: unknown): unknown {
         'getConfig',
         'getOwnConfig',
         'failBuild',
-        'importSync',
+        // we cannot check importSync, as the babel transform runs on exit, so *after* this check
+        // 'importSync',
         'isDevelopingApp',
         'isDevelopingThisPackage',
         'isTesting',

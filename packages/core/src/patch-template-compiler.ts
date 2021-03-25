@@ -177,6 +177,9 @@ export function patch(source: string, templateCompilerPath: string): string {
     // we can give it our own predefined `Ember` variable instead, which it will
     // use and put `Ember.__loader` onto.
     patchedSource = transform(source, {
+      generatorOpts: {
+        compact: true,
+      },
       plugins: [
         function () {
           return {

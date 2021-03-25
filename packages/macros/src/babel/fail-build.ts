@@ -1,6 +1,6 @@
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import { Evaluator, ConfidentResult } from './evaluate-json';
-import { CallExpression } from '@babel/types';
+import type { CallExpression } from '@babel/types';
 import error from './error';
 import { format } from 'util';
 import State from './state';

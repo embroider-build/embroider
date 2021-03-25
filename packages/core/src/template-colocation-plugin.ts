@@ -21,8 +21,8 @@ import {
   importSpecifier,
 } from '@babel/types';
 import { dirname } from 'path';
-import { explicitRelative } from './paths';
-import PackageCache from './package-cache';
+import { explicitRelative } from '@embroider/shared-internals';
+import { PackageCache } from '@embroider/shared-internals';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 

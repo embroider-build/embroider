@@ -1,0 +1,42 @@
+{
+  "name": "@embroider/shared-internals",
+  "version": "0.37.0",
+  "private": false,
+  "description": "Utilities shared among the other embroider packages",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/shared-internals"
+  },
+  "license": "MIT",
+  "author": "Edward Faulkner",
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {
+    "prepare": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "resolve-package-path": "^1.2.2",
+    "pkg-up": "^3.1.0",
+    "typescript-memoize": "^1.0.0-alpha.3",
+    "fs-extra": "^7.0.1",
+    "lodash": "^4.17.10"
+  },
+  "devDependencies": {
+    "@types/tmp": "^0.1.0",
+    "fixturify": "^1.2.0",
+    "tmp": "^0.1.0",
+    "typescript": "~4.0.0"
+  },
+  "engines": {
+    "node": "10.* || 12.* || >= 14"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

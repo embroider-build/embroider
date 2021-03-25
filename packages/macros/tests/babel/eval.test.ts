@@ -2,6 +2,7 @@ import { allBabelVersions } from '@embroider/test-support';
 import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import { VariableDeclarator, isIdentifier, Expression } from '@babel/types';
 import { NodePath } from '@babel/traverse';
+import { BabelContext } from '../../src/babel/babel-context';
 
 describe('evaluation', function () {
   allBabelVersions({
@@ -114,7 +115,7 @@ function isNodePathPresent(path: NodePath<Expression | null | undefined>): path 
   return path.node != null;
 }
 
-function testEval() {
+function testEval(babelContext: BabelContext) {
   let visitor = {
     VariableDeclarator: {
       exit(path: NodePath<VariableDeclarator>) {
@@ -129,7 +130,7 @@ function testEval() {
           });
           let result = evaluator.evaluate(value);
           if (result.confident) {
-            value.replaceWith(buildLiterals(result.value));
+            value.replaceWith(buildLiterals(result.value, babelContext));
           }
         }
       },

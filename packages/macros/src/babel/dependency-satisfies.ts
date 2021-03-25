@@ -1,8 +1,8 @@
-import { NodePath } from '@babel/traverse';
-import { CallExpression } from '@babel/types';
+import type { NodePath } from '@babel/traverse';
+import type { CallExpression } from '@babel/types';
 import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
-import { PackageCache } from '@embroider/core';
+import { PackageCache } from '@embroider/shared-internals';
 import error from './error';
 import { assertArray } from './evaluate-json';
 

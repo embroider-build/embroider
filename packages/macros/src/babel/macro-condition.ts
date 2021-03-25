@@ -1,6 +1,6 @@
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import { Evaluator } from './evaluate-json';
-import { IfStatement, ConditionalExpression, CallExpression, Identifier } from '@babel/types';
+import type { IfStatement, ConditionalExpression, CallExpression, Identifier } from '@babel/types';
 import error from './error';
 import State from './state';
 

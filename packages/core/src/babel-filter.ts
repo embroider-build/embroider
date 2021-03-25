@@ -1,4 +1,4 @@
-import PackageCache from './package-cache';
+import { PackageCache } from '@embroider/shared-internals';
 import Options from './options';
 import semver from 'semver';
 

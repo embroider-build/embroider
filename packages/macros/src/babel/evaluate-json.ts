@@ -1,20 +1,18 @@
-import { NodePath } from '@babel/traverse';
-import {
+import type { NodePath } from '@babel/traverse';
+import type {
   Identifier,
   ObjectExpression,
-  identifier,
   MemberExpression,
   Expression,
-  File,
   ExpressionStatement,
   CallExpression,
   OptionalMemberExpression,
 } from '@babel/types';
-import { parse } from '@babel/core';
 import State, { owningPackage } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
+import { BabelContext } from './babel-context';
 
 type OpValue = string | boolean | number;
 
@@ -423,12 +421,11 @@ export function assertArray<T>(input: T | T[]): T[] {
   return input;
 }
 
-export function buildLiterals(value: unknown | undefined): Identifier | ObjectExpression {
+export function buildLiterals(value: unknown | undefined, babelContext: BabelContext): Identifier | ObjectExpression {
   if (typeof value === 'undefined') {
-    return identifier('undefined');
+    return babelContext.types.identifier('undefined');
   }
-  let ast = parse(`a(${JSON.stringify(value)})`, {}) as File;
-  let statement = ast.program.body[0] as ExpressionStatement;
+  let statement = babelContext.template(`a(${JSON.stringify(value)})`)() as ExpressionStatement;
   let expression = statement.expression as CallExpression;
   return expression.arguments[0] as ObjectExpression;
 }

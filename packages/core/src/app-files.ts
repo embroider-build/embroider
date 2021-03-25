@@ -1,5 +1,5 @@
 import { sep } from 'path';
-import Package, { V2AddonPackage } from './package';
+import { Package, AddonPackage } from '@embroider/shared-internals';
 import AppDiffer from './app-differ';
 
 export interface RouteFiles {
@@ -147,7 +147,7 @@ export interface EngineSummary {
   // the engine's own package
   package: Package;
   // the set of active addons in the engine
-  addons: Set<V2AddonPackage>;
+  addons: Set<AddonPackage>;
   // the parent engine, if any
   parent: EngineSummary | undefined;
   // where the engine's own V2 code comes from

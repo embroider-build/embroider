@@ -24,10 +24,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@babel/core": "^7.12.3",
-    "@babel/traverse": "^7.12.1",
-    "@babel/types": "^7.12.1",
-    "@embroider/core": "0.37.0",
+    "@embroider/shared-internals": "0.37.0",
     "assert-never": "^1.1.0",
     "ember-cli-babel": "^7.23.0",
     "lodash": "^4.17.10",
@@ -35,6 +32,10 @@
     "semver": "^7.3.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.12.3",
+    "@babel/traverse": "^7.12.1",
+    "@babel/types": "^7.12.1",
+    "@embroider/core": "0.37.0",
     "@embroider/test-support": "0.36.0",
     "@types/babel__core": "^7.1.10",
     "@types/babel__generator": "^7.6.2",

@@ -1,5 +1,5 @@
 import WaitForTrees, { OutputPaths } from './wait-for-trees';
-import PackageCache from './package-cache';
+import { PackageCache } from '@embroider/shared-internals';
 import Stage from './stage';
 import { Node } from 'broccoli-node-api';
 import { Memoize } from 'typescript-memoize';

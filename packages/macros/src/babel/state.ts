@@ -1,8 +1,8 @@
-import { NodePath, Node } from '@babel/traverse';
+import type { NodePath, Node } from '@babel/traverse';
 import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
-import { explicitRelative, Package, PackageCache } from '@embroider/core';
+import { explicitRelative, Package, PackageCache } from '@embroider/shared-internals';
 
 export default interface State {
   generatedRequires: Set<Node>;

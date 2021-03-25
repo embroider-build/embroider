@@ -1,8 +1,7 @@
 import PackageCache from './package-cache';
-import Options from './options';
 import semver from 'semver';
 
-export default function babelFilter(skipBabel: Required<Options>['skipBabel']) {
+export default function babelFilter(skipBabel: { package: string; semverRange?: string }[]) {
   return function shouldTranspileFile(filename: string) {
     if (!babelCanHandle(filename)) {
       // quick exit for non JS extensions

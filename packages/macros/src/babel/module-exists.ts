@@ -1,5 +1,5 @@
-import { NodePath } from '@babel/traverse';
-import { CallExpression } from '@babel/types';
+import type { NodePath } from '@babel/traverse';
+import type { CallExpression } from '@babel/types';
 import State, { sourceFile } from './state';
 import error from './error';
 import { assertArray } from './evaluate-json';

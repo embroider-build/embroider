@@ -8,6 +8,10 @@
   "repository": "",
   "license": "MIT",
   "author": "",
+  "exports": {
+    "./shim": "./src/shim.js",
+    "./addon-main": "./src/shim.js"
+  },
   "directories": {
     "doc": "doc",
     "test": "tests"

@@ -1,12 +1,12 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'ember-qunit';
-import EmberComponent from '@ember/component';
+import Component from '@glimmer/component';
 
 module('Unit | Service | ensure-registered', function (hooks) {
   setupTest(hooks);
 
-  const Klass1 = EmberComponent.extend();
-  const Klass2 = EmberComponent.extend();
+  const Klass1 = class extends Component {};
+  const Klass2 = class extends Component {};
 
   test('it returns nonce for class', function (assert) {
     let service = this.owner.lookup('service:-ensure-registered');

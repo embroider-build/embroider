@@ -45,7 +45,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await render(hbs`
       <this.thing />
    `);
-    assert.equal(this.element.textContent.trim(), 'hello from colocated-example');
+    assert.equal(
+      this.element.textContent.trim(),
+      'hello from colocated-example'
+    );
   });
 
   test('curried component value', async function (assert) {

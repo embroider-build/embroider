@@ -1,9 +1,12 @@
 import { macroCondition, dependencySatisfies } from '@embroider/macros';
 
 /* global Ember */
-let { isCurriedComponentDefinition, CurriedComponentDefinition, curry, CurriedValue } = Ember.__loader.require(
-  '@glimmer/runtime'
-);
+let {
+  isCurriedComponentDefinition,
+  CurriedComponentDefinition,
+  curry,
+  CurriedValue,
+} = Ember.__loader.require('@glimmer/runtime');
 
 // older embers have isCurriedComponentDefinition, new ones have CurriedValue
 // and instanceof CurriedValue seems good enough.
@@ -21,12 +24,16 @@ function runtimeResolver(owner) {
     return resolver;
   }
 
-  let entry = Object.entries(owner.__container__.cache).find(e => e[0].startsWith('template-compiler:main-'));
+  let entry = Object.entries(owner.__container__.cache).find((e) =>
+    e[0].startsWith('template-compiler:main-')
+  );
   if (entry) {
     return entry[1].resolver.resolver;
   }
 
-  throw new Error(`@embroider/util couldn't locate the runtime resolver on this ember version`);
+  throw new Error(
+    `@embroider/util couldn't locate the runtime resolver on this ember version`
+  );
 }
 
 export function lookupCurriedComponentDefinition(name, owner) {
@@ -43,13 +50,19 @@ export function lookupCurriedComponentDefinition(name, owner) {
   // resolvedDefinition as part of our return value).
   let resolvedDefinition = resolver.lookupComponent(name, owner);
   if (!resolvedDefinition) {
-    throw new Error(`Attempted to resolve \`${name}\` via ensureSafeComponent, but nothing was found.`);
+    throw new Error(
+      `Attempted to resolve \`${name}\` via ensureSafeComponent, but nothing was found.`
+    );
   }
   return curry(0, name, owner, { named: {}, positional: [] });
 }
 
 function contextForLookup(owner) {
-  if (macroCondition(dependencySatisfies('ember-source', '>=3.24.0-canary || >=3.24.0-beta'))) {
+  if (
+    macroCondition(
+      dependencySatisfies('ember-source', '>=3.24.0-canary || >=3.24.0-beta')
+    )
+  ) {
     return owner;
   } else {
     return { owner };

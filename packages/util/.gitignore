@@ -3,6 +3,9 @@
 # compiled output
 /dist/
 /tmp/
+/src/**/*.js
+/src/**/*.d.ts
+/src/**/*.map
 
 # dependencies
 /bower_components/

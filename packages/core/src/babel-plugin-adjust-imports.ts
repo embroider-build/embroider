@@ -227,6 +227,12 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   let relocatedPkg = sourceFile.relocatedIntoPackage();
   if (relocatedPkg) {
     // this file has been moved into another package (presumably the app).
+
+    // self-imports are legal in the app tree, even for v2 packages
+    if (packageName === pkg.name) {
+      return specifier;
+    }
+
     // first try to resolve from the destination package
     if (isResolvable(packageName, relocatedPkg)) {
       if (!pkg.meta['auto-upgraded']) {

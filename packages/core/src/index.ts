@@ -22,7 +22,6 @@ export { default as BuildStage } from './build-stage';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
-export { default as babelFilter } from './babel-filter';
 export { mangledEngineRoot } from './engine-mangler';
 
 export {
@@ -36,4 +35,5 @@ export {
   AppPackage,
   V2Package,
   PackageCache,
+  babelFilter,
 } from '@embroider/shared-internals';

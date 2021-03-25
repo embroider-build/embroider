@@ -25,9 +25,11 @@
     "pkg-up": "^3.1.0",
     "typescript-memoize": "^1.0.0-alpha.3",
     "fs-extra": "^7.0.1",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "semver": "^7.3.2"
   },
   "devDependencies": {
+    "@types/semver": "^7.3.4",
     "@types/tmp": "^0.1.0",
     "fixturify": "^1.2.0",
     "tmp": "^0.1.0",

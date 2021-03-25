@@ -47,6 +47,9 @@ export default class Placeholder {
     if (url.endsWith('.css')) {
       return this.insertStyleLink(url);
     }
+    if (url.endsWith('.map')) {
+      return;
+    }
     throw new Error(`don't know how to insertURL ${url}`);
   }
 

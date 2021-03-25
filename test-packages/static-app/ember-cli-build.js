@@ -21,6 +21,13 @@ module.exports = function (defaults) {
     staticAddonTrees: true,
     staticComponents: true,
     staticHelpers: true,
+    packagerOptions: {
+      // Setting devtool to source-map to ensure a failure if there's a regression on
+      // https://github.com/embroider-build/embroider/issues/725
+      webpackConfig: {
+        devtool: 'source-map',
+      },
+    },
     packageRules: [
       {
         package: 'static-app',

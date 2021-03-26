@@ -182,10 +182,23 @@ function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
 export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
   let p = new Portable({ hints });
   let result = p.dehydrate(params);
+
+  let escapedCompilerPath = __filename;
+  let portablePath = resolve(__dirname, './portable.js');
+
+  if (__filename.includes('\\')) {
+    // for windows this path will look something like:
+    // C:\foo\bar\baz however because of the back slashes this
+    // does not escape correctly. Therefor we need to replace the
+    // path to: C:\\foo\\bar\\baz
+    escapedCompilerPath = escapedCompilerPath.replace(/\\/g, '\\\\');
+    portablePath = portablePath.replace(/\\/g, '\\\\');
+  }
+
   return {
     src: [
-      `const { TemplateCompiler } = require("${__filename}");`,
-      `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
+      `const { TemplateCompiler } = require("${escapedCompilerPath}");`,
+      `const { Portable } = require("${portablePath}");`,
       `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
       `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
     ].join('\n'),
@@ -316,7 +329,6 @@ export class TemplateCompiler {
       ? this.params.resolver.absPathToRuntimePath(moduleName) || moduleName
       : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
-
     return this.syntax.print(ast, { entityEncoding: 'raw' });
   }
 
@@ -395,7 +407,20 @@ class TemplateCompileTree extends Filter {
 }
 
 function matchesSourceFile(filename: string) {
-  return /(htmlbars-inline-precompile|ember-cli-htmlbars)\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
+  // this respects ember-cli-htmlbars\lib\require-from-worker.js and
+  // ember-cli-htmlbars/lib/require-from-worker.js
+  let matches = [
+    ['htmlbars-inline-precompile', 'index.js'].join(sep),
+    ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
+    ['htmlbars-inline-precompile', 'index'].join(sep),
+    ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
+    ['ember-cli-htmlbars', 'index.js'].join(sep),
+    ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
+    ['ember-cli-htmlbars', 'index'].join(sep),
+    ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
+  ];
+
+  return matches.find(match => filename.endsWith(match));
 }
 
 function hasProperties(item: any) {

@@ -1279,7 +1279,7 @@ let d = w.define;
 {{#if styles}}
   if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
     {{#each styles as |stylePath| ~}}
-      i("{{stylePath.path}}");
+      i("{{js-string-escape stylePath.path}}");
     {{/each}}
   }
 {{/if}}

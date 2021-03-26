@@ -48,32 +48,34 @@ describe('template-colocation-plugin', () => {
         makeColocatedTemplate();
         let code = transform(`export default class extends Component {}`);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
-        expect(code).toMatch(/export default Ember._setComponentTemplate\(TEMPLATE, class extends Component \{\}/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/);
       });
 
       test('named class declaration', () => {
         makeColocatedTemplate();
         let code = transform(`export default class Foo extends Component {}`);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
         expect(code).toMatch(/export default class Foo extends Component \{\}/);
-        expect(code).toMatch(/Ember._setComponentTemplate\(TEMPLATE, Foo\)/);
+        expect(code).toMatch(/setComponentTemplate\(TEMPLATE, Foo\)/);
       });
 
       test('anonymous function declaration', () => {
         makeColocatedTemplate();
         let code = transform(`export default function(){ return 1; }`);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
-        expect(code).toMatch(
-          /export default Ember._setComponentTemplate\(TEMPLATE, function\s*\(\)\s*\{\s*return 1;\s*\}\)/
-        );
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/export default setComponentTemplate\(TEMPLATE, function\s*\(\)\s*\{\s*return 1;\s*\}\)/);
       });
 
       test('named function declaration', () => {
         makeColocatedTemplate();
         let code = transform(`export default function x(){ return 1; }`);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
         expect(code).toMatch(/export default function x\s*\(\)\s*\{\s*return 1;\s*\}/);
-        expect(code).toMatch(/Ember._setComponentTemplate\(TEMPLATE, x\)/);
+        expect(code).toMatch(/setComponentTemplate\(TEMPLATE, x\)/);
       });
 
       test('non-class-syntax default export', () => {
@@ -84,7 +86,8 @@ describe('template-colocation-plugin', () => {
           export default Foo;
         `);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
-        expect(code).toMatch(/export default Ember._setComponentTemplate\(TEMPLATE, Foo\)/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/export default setComponentTemplate\(TEMPLATE, Foo\)/);
       });
 
       test('non-class-syntax as default export', () => {
@@ -96,7 +99,8 @@ describe('template-colocation-plugin', () => {
         `);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
         expect(code).toMatch(/export { Foo as default }/);
-        expect(code).toMatch(/Ember._setComponentTemplate\(TEMPLATE, Foo\)/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/setComponentTemplate\(TEMPLATE, Foo\)/);
       });
 
       test('default reexport', () => {
@@ -106,7 +110,8 @@ describe('template-colocation-plugin', () => {
         `);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
         expect(code).toMatch(/import COMPONENT from ['"]elsewhere['"];/);
-        expect(code).toMatch(/Ember._setComponentTemplate\(TEMPLATE, COMPONENT\)/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/setComponentTemplate\(TEMPLATE, COMPONENT\)/);
         expect(code).toMatch(/export \{ default \} from 'elsewhere'/);
       });
 
@@ -117,13 +122,16 @@ describe('template-colocation-plugin', () => {
         `);
         expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
         expect(code).toMatch(/import { thing as COMPONENT } from ['"]elsewhere['"];/);
-        expect(code).toMatch(/Ember._setComponentTemplate\(TEMPLATE, COMPONENT\)/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/setComponentTemplate\(TEMPLATE, COMPONENT\)/);
         expect(code).toMatch(/export { thing as default } from ["']elsewhere["']/);
       });
 
       test('no colocated template is present', () => {
         let code = transform(`export default class extends Component {}`);
         expect(code).not.toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
+        expect(code).not.toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+
         expect(code).toMatch(/export default class extends Component \{\}/);
       });
 
@@ -134,7 +142,8 @@ describe('template-colocation-plugin', () => {
           export default class extends Component {}
         `);
         expect(code).toMatch(/import TEMPLATE0 from ['"]\.\/sample.hbs['"];/);
-        expect(code).toMatch(/export default Ember._setComponentTemplate\(TEMPLATE0, class extends Component \{\}/);
+        expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+        expect(code).toMatch(/export default setComponentTemplate\(TEMPLATE0, class extends Component \{\}/);
       });
     },
   });

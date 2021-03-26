@@ -10,23 +10,14 @@ type BabelTypes = typeof t;
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-export interface Options {
-  needsModulesPolyfill: boolean;
-}
-
 interface State {
-  opts: Options;
   colocatedTemplate: string | undefined;
   associate: { component: t.Identifier; template: t.Identifier } | undefined;
   adder: ImportAdder;
 }
 
-function setComponentTemplate(target: NodePath<t.Node>, t: BabelTypes, state: State) {
-  if (state.opts.needsModulesPolyfill) {
-    return t.memberExpression(t.identifier('Ember'), t.identifier('_setComponentTemplate'));
-  } else {
-    return state.adder.import(target, '@ember/component', 'setComponentTemplate');
-  }
+function setComponentTemplate(target: NodePath<t.Node>, state: State) {
+  return state.adder.import(target, '@ember/component', 'setComponentTemplate');
 }
 
 export default function main(babel: unknown) {
@@ -55,7 +46,7 @@ export default function main(babel: unknown) {
           if (state.associate) {
             path.node.body.push(
               t.expressionStatement(
-                t.callExpression(setComponentTemplate(path, t, state), [
+                t.callExpression(setComponentTemplate(path, state), [
                   state.associate.template,
                   state.associate.component,
                 ])
@@ -77,7 +68,7 @@ export default function main(babel: unknown) {
           if (declaration.id != null) {
             state.associate = { template, component: declaration.id };
           } else {
-            path.node.declaration = t.callExpression(setComponentTemplate(path, t, state), [
+            path.node.declaration = t.callExpression(setComponentTemplate(path, state), [
               template,
               t.classExpression(null, declaration.superClass, declaration.body, declaration.decorators ?? []),
             ]);
@@ -88,7 +79,7 @@ export default function main(babel: unknown) {
           if (declaration.id != null) {
             state.associate = { template, component: declaration.id };
           } else {
-            path.node.declaration = t.callExpression(setComponentTemplate(path, t, state), [
+            path.node.declaration = t.callExpression(setComponentTemplate(path, state), [
               template,
               t.functionExpression(
                 null,
@@ -103,7 +94,7 @@ export default function main(babel: unknown) {
           // we don't rewrite this
         } else {
           let local = importTemplate(path, state.adder, state.colocatedTemplate);
-          path.node.declaration = t.callExpression(setComponentTemplate(path, t, state), [local, declaration]);
+          path.node.declaration = t.callExpression(setComponentTemplate(path, state), [local, declaration]);
         }
       },
       ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: State) {

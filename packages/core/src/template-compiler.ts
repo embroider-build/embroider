@@ -6,13 +6,14 @@ import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { join, resolve, sep } from 'path';
-import { PluginItem } from '@babel/core';
+import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
 import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { createContext, Script } from 'vm';
+import miniModulesPolyfill from './mini-modules-polyfill';
 
 export interface Plugins {
   ast?: unknown[];
@@ -198,6 +199,7 @@ export interface TemplateCompilerParams {
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
+  emberNeedsModulesPolyfill: boolean;
 }
 
 export class TemplateCompiler {
@@ -285,13 +287,20 @@ export class TemplateCompiler {
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
 
-    // TODO: this is using the adjusted output location of
-    // @ember/template-factory, but we shouldn't need to make that assumption
-    // here. This should go through adjust-imports-plugin.
-    lines.push(`import { createTemplateFactory } from 'ember-source/@ember/template-factory';`);
-
+    lines.push(`import { createTemplateFactory } from '@ember/template-factory';`);
     lines.push(`export default createTemplateFactory(${compiled});`);
-    return lines.join('\n');
+
+    let src = lines.join('\n');
+    if (this.params.emberNeedsModulesPolyfill) {
+      return transform(src, {
+        generatorOpts: {
+          compact: false,
+        },
+        plugins: [miniModulesPolyfill],
+      })!.code!;
+    } else {
+      return src;
+    }
   }
 
   // Applies all custom AST transforms and emits the results still as
@@ -345,7 +354,6 @@ export class TemplateCompiler {
       {
         templateCompiler: Object.assign({ cacheKey: this.cacheKey, baseDir: this.baseDir }, this.params),
         stage: 1,
-        needsModulesPolyfill: false,
       } as InlineBabelParams,
     ];
   }

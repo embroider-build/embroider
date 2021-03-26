@@ -34,7 +34,6 @@ import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
-import type { Options as ColocationOptions } from './template-colocation-plugin';
 import { PortableHint } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 
@@ -371,10 +370,7 @@ export class AppBuilder<TreeNames> {
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
-    let colocationOpts: ColocationOptions = {
-      needsModulesPolyfill: false,
-    };
-    babel.plugins.push([require.resolve('./template-colocation-plugin'), colocationOpts]);
+    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -903,6 +899,7 @@ export class AppBuilder<TreeNames> {
       compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
+      emberNeedsModulesPolyfill: this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill,
     };
   }
 
@@ -1066,7 +1063,14 @@ export class AppBuilder<TreeNames> {
       return cached;
     }
 
-    let eagerModules = ['@ember/-internals/bootstrap'];
+    let eagerModules = [];
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, vendor.js takes care of
+      // this bootstrapping. But when we're running with real ember modules,
+      // it's up to our entrypoint.
+      eagerModules.push('@ember/-internals/bootstrap');
+    }
+
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -1209,8 +1213,14 @@ export class AppBuilder<TreeNames> {
     // module dependency.
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
-      'ember-testing',
     ];
+
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, the prebuilt test-support
+      // script takes care of this bootstrapping. But when we're running with
+      // real ember modules, it's up to our entrypoint.
+      eagerModules.push('ember-testing');
+    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of

@@ -1,5 +1,22 @@
-import { macroCondition, dependencySatisfies } from '@embroider/macros';
-import * as runtime from '@glimmer/runtime';
+import {
+  macroCondition,
+  dependencySatisfies,
+  importSync,
+} from '@embroider/macros';
+
+let runtime;
+
+if (
+  macroCondition(
+    dependencySatisfies('ember-source', '>=3.27.0-canary || >=3.27.0-beta')
+  )
+) {
+  // new enough ember has a real module we can import
+  runtime = importSync('@glimmer/runtime');
+} else {
+  // older ember has its own internal loader
+  runtime = window.Ember.__loader.require('@glimmer/runtime');
+}
 
 let {
   isCurriedComponentDefinition,

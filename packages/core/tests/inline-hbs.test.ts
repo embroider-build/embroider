@@ -49,39 +49,6 @@ function stage3Tests(transform: (code: string) => string) {
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
-  });
-  test('call form', () => {
-    let code = transform(`
-      import hbs from 'htmlbars-inline-precompile';
-      export default function() {
-        return hbs("<div class={{embroider-sample-transforms-target}}></div>");
-      }
-      `);
-    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
-  });
-  test('runtime errors become exceptions in stage 3', () => {
-    let code = transform(`
-      import hbs from 'htmlbars-inline-precompile';
-      export default function() {
-        return hbs("<div>", { insertRuntimeErrors: true });
-      }
-      `);
-    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).toMatch(/throw new Error\("Unclosed element `div`/);
-  });
-}
-
-function stage3NativeModulesTests(transform: (code: string) => string) {
-  test('tagged template literal form', () => {
-    let code = transform(`
-      import hbs from 'htmlbars-inline-precompile';
-      export default function() {
-        return hbs${'`'}<div class={{embroider-sample-transforms-target}}></div>${'`'};
-      }
-      `);
-    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
     expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
     expect(code).toMatch(/return createTemplateFactory\({/);
   });
@@ -119,6 +86,7 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [sampleTransform],
           },
+          emberNeedsModulesPolyfill: false,
         };
         return {
           plugins: [
@@ -139,6 +107,7 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
+          emberNeedsModulesPolyfill: true,
         };
         return {
           plugins: [
@@ -162,6 +131,7 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
+          emberNeedsModulesPolyfill: true,
         };
         return {
           plugins: [
@@ -184,29 +154,6 @@ describe('inline-hbs', () => {
         };
       },
       createTests: stage3Tests,
-    });
-  });
-
-  describe('stage3 with modules', () => {
-    allBabelVersions({
-      babelConfig() {
-        let templateCompiler: TemplateCompilerParams = {
-          compilerPath: emberTemplateCompilerPath(),
-          EmberENV: {},
-          plugins: {
-            ast: [],
-          },
-        };
-        return {
-          plugins: [
-            [
-              join(__dirname, '../src/babel-plugin-inline-hbs.js'),
-              { templateCompiler, stage: 3, needsModulesPolyfill: false } as InlineBabelParams,
-            ],
-          ],
-        };
-      },
-      createTests: stage3NativeModulesTests,
     });
   });
 });

@@ -27,8 +27,6 @@ interface State {
     // stage3, we are running more like the traditional
     // ember-cli-htmlbars-inline-precompile by compiling the HBS to Javascript.
     stage: 1 | 3;
-
-    needsModulesPolyfill: boolean;
   };
   file: {
     code: string;
@@ -105,16 +103,11 @@ function handleTagged(path: NodePath<t.TaggedTemplateExpression>, state: State, 
       state.dependencies.set(dep.runtimeName, dep);
     }
 
-    let callee: t.Expression;
-    if (state.opts.needsModulesPolyfill) {
-      callee = t.memberExpression(
-        t.memberExpression(t.identifier('Ember'), t.identifier('HTMLBars')),
-        t.identifier('template')
-      );
-    } else {
-      callee = state.adder.import(path, '@ember/template-factory', 'createTemplateFactory');
-    }
-    path.replaceWith(t.callExpression(callee, [jsonLiteral(compiled, t)]));
+    path.replaceWith(
+      t.callExpression(state.adder.import(path, '@ember/template-factory', 'createTemplateFactory'), [
+        jsonLiteral(compiled, t),
+      ])
+    );
   }
 }
 
@@ -162,16 +155,11 @@ function handleCalled(path: NodePath<t.CallExpression>, state: State, t: BabelTy
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
-    let callee: t.Expression;
-    if (state.opts.needsModulesPolyfill) {
-      callee = t.memberExpression(
-        t.memberExpression(t.identifier('Ember'), t.identifier('HTMLBars')),
-        t.identifier('template')
-      );
-    } else {
-      callee = state.adder.import(path, '@ember/template-factory', 'createTemplateFactory');
-    }
-    path.replaceWith(t.callExpression(callee, [jsonLiteral(compiled, t)]));
+    path.replaceWith(
+      t.callExpression(state.adder.import(path, '@ember/template-factory', 'createTemplateFactory'), [
+        jsonLiteral(compiled, t),
+      ])
+    );
   }
 }
 

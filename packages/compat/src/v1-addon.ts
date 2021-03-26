@@ -133,6 +133,10 @@ export default class V1Addon {
             EmberENV: {},
             plugins: options.plugins,
             resolver: this.templateResolver(),
+
+            // in stage one we never polyfill ember modules, regardless of
+            // whether stage3 will do so
+            emberNeedsModulesPolyfill: false,
           });
         }
       }

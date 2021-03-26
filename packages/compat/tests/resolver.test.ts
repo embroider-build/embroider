@@ -40,11 +40,18 @@ describe('compat-resolver', function () {
           activeAddons: {},
           relocatedFiles: {},
           resolvableExtensions: ['.js', '.hbs'],
+          emberNeedsModulesPolyfill: false,
         },
         otherOptions.adjustImportsImports
       ),
     });
-    let compiler = new TemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
+    let compiler = new TemplateCompiler({
+      compilerPath,
+      resolver,
+      EmberENV,
+      plugins,
+      emberNeedsModulesPolyfill: false,
+    });
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);

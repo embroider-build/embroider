@@ -4,19 +4,27 @@ import mergeTrees from 'broccoli-merge-trees';
 import AddToTree from '../add-to-tree';
 import { outputFileSync, unlinkSync } from 'fs-extra';
 import { join } from 'path';
+import semver from 'semver';
 
 export default class extends V1Addon {
-  // we're replacing treeForAddon and treeForVendor
+  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0', { includePrerelease: true });
+
+  // when using real modules, we're replacing treeForAddon and treeForVendor
   customizes(treeName: string) {
-    return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
+    return (
+      (this.useRealModules && (treeName === 'treeForAddon' || treeName === 'treeForVendor')) ||
+      super.customizes(treeName)
+    );
   }
 
   invokeOriginalTreeFor(name: string, opts: { neuterPreprocessors: boolean } = { neuterPreprocessors: false }) {
-    if (name === 'addon') {
-      return this.customAddonTree();
-    }
-    if (name === 'vendor') {
-      return this.customVendorTree();
+    if (this.useRealModules) {
+      if (name === 'addon') {
+        return this.customAddonTree();
+      }
+      if (name === 'vendor') {
+        return this.customVendorTree();
+      }
     }
     return super.invokeOriginalTreeFor(name, opts);
   }
@@ -52,16 +60,17 @@ export default class extends V1Addon {
 
   get packageMeta() {
     let meta = super.packageMeta;
+    if (this.useRealModules) {
+      if (!meta['implicit-modules']) {
+        meta['implicit-modules'] = [];
+      }
+      meta['implicit-modules'].push('./ember/index.js');
 
-    if (!meta['implicit-modules']) {
-      meta['implicit-modules'] = [];
+      if (!meta['implicit-test-modules']) {
+        meta['implicit-test-modules'] = [];
+      }
+      meta['implicit-test-modules'].push('./ember-testing/index.js');
     }
-    meta['implicit-modules'].push('./ember/index.js');
-
-    if (!meta['implicit-test-modules']) {
-      meta['implicit-test-modules'] = [];
-    }
-    meta['implicit-test-modules'].push('./ember-testing/index.js');
     return meta;
   }
 }

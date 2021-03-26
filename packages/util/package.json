@@ -56,7 +56,7 @@
     "ember-page-title": "^6.2.1",
     "ember-qunit": "^5.1.2",
     "ember-resolver": "^8.0.2",
-    "ember-source": "https://s3.amazonaws.com/builds.emberjs.com/release/shas/79f130f779a58969b98d079acf7d0e83c81dae63.tgz",
+    "ember-source": "~3.21.1",
     "ember-source-channel-url": "^3.0.0",
     "ember-template-lint": "^2.18.1",
     "ember-try": "^1.4.0",

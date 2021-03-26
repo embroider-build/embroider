@@ -1,5 +1,5 @@
 import { tmpdir } from 'os';
-import { basename, join, resolve } from 'path';
+import { basename, join, relative, resolve } from 'path';
 import { readdirSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 
 // we sometimes run our various Ember app's test suites in parallel, and
@@ -81,6 +81,12 @@ export async function allSuites({ includeEmberTry } = { includeEmberTry: true })
   return suites;
 }
 
+function relativeToEmbroiderRoot(absolutePath: string): string {
+  let embroiderRoot = resolve(__dirname, '../..');
+
+  return relative(embroiderRoot, absolutePath);
+}
+
 export async function githubMatrix() {
   let suites = await allSuites();
 
@@ -110,7 +116,7 @@ export async function githubMatrix() {
       name: `${s.name} windows`,
       os: 'windows',
       command: `${s.command} ${s.args.join(' ')}`,
-      dir: s.dir,
+      dir: relativeToEmbroiderRoot(s.dir),
     })),
   ];
 

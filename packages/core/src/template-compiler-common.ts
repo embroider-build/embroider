@@ -4,6 +4,19 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
+<<<<<<< HEAD:packages/core/src/template-compiler-common.ts
+||||||| parent of 5bf3fe4a (Use jsStringEscape for better back slash handling):packages/core/src/template-compiler.ts
+import { patch } from './patch-template-compiler';
+import { Portable, PortableHint } from './portable';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { createContext, Script } from 'vm';
+=======
+import { patch } from './patch-template-compiler';
+import { Portable, PortableHint } from './portable';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import { createContext, Script } from 'vm';
+import jsStringEscape from 'js-string-escape';
+>>>>>>> 5bf3fe4a (Use jsStringEscape for better back slash handling):packages/core/src/template-compiler.ts
 
 export interface Plugins {
   ast?: unknown[];
@@ -303,22 +316,10 @@ export function templateCompilerModule(params: TemplateCompilerParams, hints: Po
   let p = new Portable({ hints });
   let result = p.dehydrate(params);
 
-  let escapedCompilerPath = __filename;
-  let portablePath = resolve(__dirname, './portable.js');
-
-  if (__filename.includes('\\')) {
-    // for windows this path will look something like:
-    // C:\foo\bar\baz however because of the back slashes this
-    // does not escape correctly. Therefor we need to replace the
-    // path to: C:\\foo\\bar\\baz
-    escapedCompilerPath = escapedCompilerPath.replace(/\\/g, '\\\\');
-    portablePath = portablePath.replace(/\\/g, '\\\\');
-  }
-
   return {
     src: [
-      `const { TemplateCompiler } = require("${escapedCompilerPath}");`,
-      `const { Portable } = require("${portablePath}");`,
+      `const { TemplateCompiler } = require("${jsStringEscape(__filename)}");`,
+      `const { Portable } = require("${jsStringEscape(resolve(__dirname, './portable.js'))}");`,
       `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
       `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
     ].join('\n'),

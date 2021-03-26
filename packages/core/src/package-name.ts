@@ -1,5 +1,5 @@
 export default function absolutePackageName(specifier: string): string | undefined {
-  if (specifier[0] === '.' || specifier[0] === '/') {
+  if (specifier[0] === '.' || specifier[0] === '/' || specifier.startsWith('C:')) {
     // Not an absolute specifier
     return;
   }

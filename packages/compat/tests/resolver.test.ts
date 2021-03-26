@@ -50,7 +50,6 @@ describe('compat-resolver', function () {
       resolver,
       EmberENV,
       plugins,
-      emberNeedsModulesPolyfill: false,
     });
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);

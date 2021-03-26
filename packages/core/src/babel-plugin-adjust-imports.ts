@@ -441,6 +441,9 @@ class AdjustFile {
   readonly originalFile: string;
 
   constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
+    if (!name) {
+      throw new Error(`bug: adjust-imports plugin was run without a filename`);
+    }
     this.originalFile = relocatedFiles[name] || name;
   }
 

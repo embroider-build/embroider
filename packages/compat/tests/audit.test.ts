@@ -26,7 +26,6 @@ describe('audit', function () {
         compilerPath: emberTemplateCompilerPath(),
         EmberENV: {},
         plugins: { ast: [] },
-        emberNeedsModulesPolyfill: false,
         resolver: new CompatResolver({
           root: app.baseDir,
           modulePrefix: 'audit-this-app',

@@ -13,7 +13,7 @@ import { patch } from './patch-template-compiler';
 import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { createContext, Script } from 'vm';
-import miniModulesPolyfill from './mini-modules-polyfill';
+import adjustImportsPlugin from './babel-plugin-adjust-imports';
 
 export interface Plugins {
   ast?: unknown[];
@@ -199,7 +199,6 @@ export interface TemplateCompilerParams {
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;
-  emberNeedsModulesPolyfill: boolean;
 }
 
 export class TemplateCompiler {
@@ -291,12 +290,14 @@ export class TemplateCompiler {
     lines.push(`export default createTemplateFactory(${compiled});`);
 
     let src = lines.join('\n');
-    if (this.params.emberNeedsModulesPolyfill) {
+    let resolver = this.params.resolver;
+    if (resolver) {
       return transform(src, {
+        filename: moduleName,
         generatorOpts: {
           compact: false,
         },
-        plugins: [miniModulesPolyfill],
+        plugins: [[adjustImportsPlugin, resolver.adjustImportsOptions]],
       })!.code!;
     } else {
       return src;

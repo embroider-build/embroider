@@ -899,7 +899,6 @@ export class AppBuilder<TreeNames> {
       compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
-      emberNeedsModulesPolyfill: this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill,
     };
   }
 

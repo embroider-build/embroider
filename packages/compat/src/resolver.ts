@@ -426,6 +426,10 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
+  get adjustImportsOptions() {
+    return this.params.adjustImportsOptions;
+  }
+
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
     return { root: this.params.root, name: this.params.modulePrefix };

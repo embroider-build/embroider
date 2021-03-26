@@ -23,7 +23,6 @@ export function templateTests(createTests: CreateTestsWithConfig | CreateTests) 
     plugins: {
       ast: plugins,
     },
-    emberNeedsModulesPolyfill: false,
   });
   let transform = (templateContents: string, options: TemplateTransformOptions = {}) => {
     let filename = options.filename ?? join(__dirname, 'sample.hbs');

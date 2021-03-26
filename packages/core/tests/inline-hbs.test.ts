@@ -86,7 +86,6 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [sampleTransform],
           },
-          emberNeedsModulesPolyfill: false,
         };
         return {
           plugins: [
@@ -107,7 +106,6 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
-          emberNeedsModulesPolyfill: true,
         };
         return {
           plugins: [
@@ -131,7 +129,6 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
-          emberNeedsModulesPolyfill: true,
         };
         return {
           plugins: [

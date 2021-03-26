@@ -402,7 +402,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
         EmberENV: {},
         plugins: {},
-        emberNeedsModulesPolyfill: false,
       })
     );
     return resolver;

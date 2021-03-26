@@ -10,13 +10,7 @@
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "cwd": "${workspaceFolder}/packages/core",
-      "args": [
-        "--runInBand",
-        "--testPathPattern",
-        "tests/portable-babel-config.test.js",
-        "--test-name-pattern",
-        "undefined"
-      ],
+      "args": ["--runInBand", "--testPathPattern", "tests/import-adder.test.js"],
       "outputCapture": "std"
     },
     {
@@ -143,7 +137,8 @@
       "cwd": "${workspaceFolder}/packages/util",
       "args": ["build"],
       "env": {
-        "JOBS": "1"
+        "JOBS": "1",
+        "EMBROIDER_TEST_SETUP_FORCE": "embroider"
       },
       "outputCapture": "std"
     },

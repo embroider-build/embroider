@@ -284,7 +284,13 @@ export class TemplateCompiler {
       lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
-    lines.push(`export default Ember.HTMLBars.template(${compiled});`);
+
+    // TODO: this is using the adjusted output location of
+    // @ember/template-factory, but we shouldn't need to make that assumption
+    // here. This should go through adjust-imports-plugin.
+    lines.push(`import { createTemplateFactory } from 'ember-source/@ember/template-factory';`);
+
+    lines.push(`export default createTemplateFactory(${compiled});`);
     return lines.join('\n');
   }
 

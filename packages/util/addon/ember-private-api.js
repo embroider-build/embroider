@@ -1,12 +1,12 @@
 import { macroCondition, dependencySatisfies } from '@embroider/macros';
-import Ember from 'ember';
+import * as runtime from '@glimmer/runtime';
 
 let {
   isCurriedComponentDefinition,
   CurriedComponentDefinition,
   curry,
   CurriedValue,
-} = Ember.__loader.require('@glimmer/runtime');
+} = runtime;
 
 // older embers have isCurriedComponentDefinition, new ones have CurriedValue
 // and instanceof CurriedValue seems good enough.

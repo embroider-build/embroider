@@ -52,10 +52,16 @@ export default class extends V1Addon {
 
   get packageMeta() {
     let meta = super.packageMeta;
+
     if (!meta['implicit-modules']) {
       meta['implicit-modules'] = [];
     }
     meta['implicit-modules'].push('./ember/index.js');
+
+    if (!meta['implicit-test-modules']) {
+      meta['implicit-test-modules'] = [];
+    }
+    meta['implicit-test-modules'].push('./ember-testing/index.js');
     return meta;
   }
 }

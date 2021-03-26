@@ -5,7 +5,7 @@
 export { default as MacrosConfig, Merger } from './macros-config';
 
 // Utility for detecting our babel and AST plugins.
-import { PluginItem } from '@babel/core';
+import type { PluginItem } from '@babel/core';
 export function isEmbroiderMacrosPlugin(item: PluginItem) {
   return (
     (Array.isArray(item) &&

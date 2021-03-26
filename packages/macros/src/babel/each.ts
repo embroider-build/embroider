@@ -1,9 +1,9 @@
-import { NodePath } from '@babel/traverse';
-import { Evaluator } from './evaluate-json';
-import { parse } from '@babel/core';
-import { CallExpression, ForOfStatement, identifier, File, ExpressionStatement, Identifier } from '@babel/types';
+import type { NodePath } from '@babel/traverse';
+import { buildLiterals, Evaluator } from './evaluate-json';
+import type { CallExpression, ForOfStatement, Identifier } from '@babel/types';
 import error from './error';
 import State, { cloneDeep } from './state';
+import { BabelContext } from './babel-context';
 
 type CallEachExpression = NodePath<CallExpression> & {
   get(callee: 'callee'): NodePath<Identifier>;
@@ -24,7 +24,7 @@ export function isEachPath(path: NodePath<ForOfStatement>): path is EachPath {
   return false;
 }
 
-export function insertEach(path: EachPath, state: State) {
+export function insertEach(path: EachPath, state: State, context: BabelContext) {
   let args = path.get('right').get('arguments');
   if (args.length !== 1) {
     throw error(path, `the each() macro accepts exactly one argument, you passed ${args.length}`);
@@ -54,7 +54,7 @@ export function insertEach(path: EachPath, state: State) {
     state.neededRuntimeImports.set(callee.node.name, 'each');
   } else {
     for (let element of array.value) {
-      let literalElement = asLiteral(element);
+      let literalElement = buildLiterals(element, context);
       for (let target of nameRefs) {
         target.replaceWith(literalElement);
       }
@@ -62,14 +62,4 @@ export function insertEach(path: EachPath, state: State) {
     }
     path.remove();
   }
-}
-
-function asLiteral(value: unknown | undefined) {
-  if (typeof value === 'undefined') {
-    return identifier('undefined');
-  }
-  let ast = parse(`a(${JSON.stringify(value)})`, {}) as File;
-  let statement = ast.program.body[0] as ExpressionStatement;
-  let expression = statement.expression as CallExpression;
-  return expression.arguments[0];
 }

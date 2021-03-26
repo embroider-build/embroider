@@ -15,7 +15,7 @@ describe('template-colocation-plugin', () => {
     babelConfig() {
       return {
         filename,
-        plugins: [[join(__dirname, '../src/template-colocation-plugin.js')]],
+        plugins: [[join(__dirname, '../src/template-colocation-plugin.js'), { needsModulesPolyfill: true }]],
       };
     },
     createTests(transform) {

@@ -15,5 +15,8 @@ module.exports = function (defaults) {
     behave. You most likely want to be modifying `./index.js` or app's build file
   */
 
-  return maybeEmbroider(app);
+  return maybeEmbroider(app, {
+    staticAddonTrees: true,
+    staticAddonTestSupportTrees: true,
+  });
 };

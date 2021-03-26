@@ -29,7 +29,6 @@ import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 
 interface State {
-  emberCLIVanillaJobs: Function[];
   adjustFile: AdjustFile;
   opts: {
     renamePackages: {
@@ -332,12 +331,11 @@ export default function main() {
     visitor: {
       Program: {
         enter(path: NodePath<Program>, state: State) {
-          state.emberCLIVanillaJobs = [];
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
           addExtraImports(path, state.opts.extraImports);
         },
-        exit(_: any, state: State) {
-          state.emberCLIVanillaJobs.forEach(job => job());
+        exit(path: NodePath<Program>, state: State) {
+          path.traverse(lateVisitor() as any, state);
         },
       },
       CallExpression(path: NodePath<CallExpression>, state: State) {
@@ -389,21 +387,26 @@ export default function main() {
           }
         }
       },
-      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(
-        path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>,
-        state: State
-      ) {
-        let { opts, emberCLIVanillaJobs } = state;
-        const { source } = path.node;
-        if (source === null || source === undefined) {
-          return;
-        }
+    },
+  };
+}
 
-        let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
-        if (specifier !== source.value) {
-          emberCLIVanillaJobs.push(() => (source.value = specifier));
-        }
-      },
+function lateVisitor() {
+  return {
+    'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(
+      path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>,
+      state: State
+    ) {
+      let { opts } = state;
+      const { source } = path.node;
+      if (source === null || source === undefined) {
+        return;
+      }
+
+      let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
+      if (specifier !== source.value) {
+        source.value = specifier;
+      }
     },
   };
 }

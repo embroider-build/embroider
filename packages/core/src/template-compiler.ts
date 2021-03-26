@@ -339,6 +339,7 @@ export class TemplateCompiler {
       {
         templateCompiler: Object.assign({ cacheKey: this.cacheKey, baseDir: this.baseDir }, this.params),
         stage: 1,
+        needsModulesPolyfill: false,
       } as InlineBabelParams,
     ];
   }

@@ -1,27 +1,12 @@
-import {
-  TaggedTemplateExpression,
-  CallExpression,
-  templateLiteral,
-  templateElement,
-  ExpressionStatement,
-  stringLiteral,
-  File,
-  Program,
-  functionExpression,
-  blockStatement,
-  throwStatement,
-  newExpression,
-} from '@babel/types';
-import { NodePath } from '@babel/traverse';
+import type * as t from '@babel/types';
+import type { NodePath } from '@babel/traverse';
 import { join } from 'path';
 import { TemplateCompiler, TemplateCompilerParams } from './template-compiler';
-import { identifier, callExpression, memberExpression } from '@babel/types';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
-import { importDeclaration } from '@babel/types';
-import { importDefaultSpecifier } from '@babel/types';
-import { expressionStatement } from '@babel/types';
-import { returnStatement } from '@babel/types';
+import { ImportAdder } from './babel-import-adder';
+
+type BabelTypes = typeof t;
 
 // These are the known names that people are using to import the `hbs` macro
 // from. In theory the original plugin lets people customize these names, but
@@ -42,6 +27,8 @@ interface State {
     // stage3, we are running more like the traditional
     // ember-cli-htmlbars-inline-precompile by compiling the HBS to Javascript.
     stage: 1 | 3;
+
+    needsModulesPolyfill: boolean;
   };
   file: {
     code: string;
@@ -51,41 +38,44 @@ interface State {
   };
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
+  adder: ImportAdder;
 }
 
 export type Params = State['opts'];
 
-export default function inlineHBSTransform(): unknown {
+export default function inlineHBSTransform(babel: unknown): unknown {
+  let t = (babel as any).types as BabelTypes;
   return {
     visitor: {
       Program: {
-        enter(_: NodePath, state: State) {
+        enter(path: NodePath<t.Program>, state: State) {
           state.dependencies = new Map();
+          state.adder = new ImportAdder(t, path);
         },
-        exit(path: NodePath<Program>, state: State) {
+        exit(path: NodePath<t.Program>, state: State) {
           if (state.opts.stage === 3) {
             pruneImports(path);
           }
           let counter = 0;
           for (let dep of state.dependencies.values()) {
-            path.node.body.unshift(amdDefine(dep.runtimeName, counter));
+            path.node.body.unshift(amdDefine(dep.runtimeName, counter, t));
             path.node.body.unshift(
-              importDeclaration([importDefaultSpecifier(identifier(`a${counter++}`))], stringLiteral(dep.path))
+              t.importDeclaration([t.importDefaultSpecifier(t.identifier(`a${counter++}`))], t.stringLiteral(dep.path))
             );
           }
         },
       },
-      TaggedTemplateExpression(path: NodePath<TaggedTemplateExpression>, state: State) {
+      TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>, state: State) {
         for (let [modulePath, identifier] of modulePaths) {
           if (path.get('tag').referencesImport(modulePath, identifier)) {
-            handleTagged(path, state);
+            handleTagged(path, state, t);
           }
         }
       },
-      CallExpression(path: NodePath<CallExpression>, state: State) {
+      CallExpression(path: NodePath<t.CallExpression>, state: State) {
         for (let [modulePath, identifier] of modulePaths) {
           if (path.get('callee').referencesImport(modulePath, identifier)) {
-            handleCalled(path, state);
+            handleCalled(path, state, t);
           }
         }
       },
@@ -101,25 +91,34 @@ inlineHBSTransform.baseDir = function () {
   return join(__dirname, '..');
 };
 
-function handleTagged(path: NodePath<TaggedTemplateExpression>, state: State) {
+function handleTagged(path: NodePath<t.TaggedTemplateExpression>, state: State, t: BabelTypes) {
   if (path.node.quasi.expressions.length) {
     throw path.buildCodeFrameError('placeholders inside a tagged template string are not supported');
   }
   let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
   if (state.opts.stage === 1) {
     let compiled = compiler(state).applyTransforms(state.file.opts.filename, template);
-    path.get('quasi').replaceWith(templateLiteral([templateElement({ raw: compiled, cooked: compiled })], []));
+    path.get('quasi').replaceWith(t.templateLiteral([t.templateElement({ raw: compiled, cooked: compiled })], []));
   } else {
     let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
-    let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
-    path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
+
+    let callee: t.Expression;
+    if (state.opts.needsModulesPolyfill) {
+      callee = t.memberExpression(
+        t.memberExpression(t.identifier('Ember'), t.identifier('HTMLBars')),
+        t.identifier('template')
+      );
+    } else {
+      callee = state.adder.import(path, '@ember/template-factory', 'createTemplateFactory');
+    }
+    path.replaceWith(t.callExpression(callee, [jsonLiteral(compiled, t)]));
   }
 }
 
-function handleCalled(path: NodePath<CallExpression>, state: State) {
+function handleCalled(path: NodePath<t.CallExpression>, state: State, t: BabelTypes) {
   let { template, insertRuntimeErrors } = getCallArguments(path);
   let compilerInstance = compiler(state);
 
@@ -136,7 +135,7 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
       }
       throw err;
     }
-    (path.get('arguments')[0] as NodePath).replaceWith(stringLiteral(compiled));
+    (path.get('arguments')[0] as NodePath).replaceWith(t.stringLiteral(compiled));
   } else {
     let result: ReturnType<TemplateCompiler['precompile']>;
     try {
@@ -144,11 +143,13 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
     } catch (err) {
       if (insertRuntimeErrors) {
         path.replaceWith(
-          callExpression(
-            functionExpression(
+          t.callExpression(
+            t.functionExpression(
               null,
               [],
-              blockStatement([throwStatement(newExpression(identifier('Error'), [stringLiteral(err.message)]))])
+              t.blockStatement([
+                t.throwStatement(t.newExpression(t.identifier('Error'), [t.stringLiteral(err.message)])),
+              ])
             ),
             []
           )
@@ -161,8 +162,16 @@ function handleCalled(path: NodePath<CallExpression>, state: State) {
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
-    let func = memberExpression(memberExpression(identifier('Ember'), identifier('HTMLBars')), identifier('template'));
-    path.replaceWith(callExpression(func, [jsonLiteral(compiled)]));
+    let callee: t.Expression;
+    if (state.opts.needsModulesPolyfill) {
+      callee = t.memberExpression(
+        t.memberExpression(t.identifier('Ember'), t.identifier('HTMLBars')),
+        t.identifier('template')
+      );
+    } else {
+      callee = state.adder.import(path, '@ember/template-factory', 'createTemplateFactory');
+    }
+    path.replaceWith(t.callExpression(callee, [jsonLiteral(compiled, t)]));
   }
 }
 
@@ -180,13 +189,13 @@ function pruneImports(path: NodePath) {
   }
 }
 
-function jsonLiteral(value: unknown | undefined) {
+function jsonLiteral(value: unknown | undefined, t: BabelTypes) {
   if (typeof value === 'undefined') {
-    return identifier('undefined');
+    return t.identifier('undefined');
   }
-  let ast = parse(`a(${value})`, {}) as File;
-  let statement = ast.program.body[0] as ExpressionStatement;
-  let expression = statement.expression as CallExpression;
+  let ast = parse(`a(${value})`, {}) as t.File;
+  let statement = ast.program.body[0] as t.ExpressionStatement;
+  let expression = statement.expression as t.CallExpression;
   return expression.arguments[0];
 }
 
@@ -197,16 +206,16 @@ function compiler(state: State) {
   return state.templateCompiler;
 }
 
-function amdDefine(runtimeName: string, importCounter: number) {
-  return expressionStatement(
-    callExpression(memberExpression(identifier('window'), identifier('define')), [
-      stringLiteral(runtimeName),
-      functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
+function amdDefine(runtimeName: string, importCounter: number, t: BabelTypes) {
+  return t.expressionStatement(
+    t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
+      t.stringLiteral(runtimeName),
+      t.functionExpression(null, [], t.blockStatement([t.returnStatement(t.identifier(`a${importCounter}`))])),
     ])
   );
 }
 
-function getCallArguments(path: NodePath<CallExpression>): { template: string; insertRuntimeErrors: boolean } {
+function getCallArguments(path: NodePath<t.CallExpression>): { template: string; insertRuntimeErrors: boolean } {
   let [template, options] = path.node.arguments;
 
   if (template?.type !== 'StringLiteral') {

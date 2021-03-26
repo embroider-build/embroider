@@ -34,6 +34,7 @@ import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import type { Options as ColocationOptions } from './template-colocation-plugin';
 import { PortableHint } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 
@@ -370,7 +371,10 @@ export class AppBuilder<TreeNames> {
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
-    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+    let colocationOpts: ColocationOptions = {
+      needsModulesPolyfill: false,
+    };
+    babel.plugins.push([require.resolve('./template-colocation-plugin'), colocationOpts]);
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -1062,7 +1066,7 @@ export class AppBuilder<TreeNames> {
       return cached;
     }
 
-    let eagerModules = [];
+    let eagerModules = ['@ember/-internals/bootstrap'];
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -1205,6 +1209,7 @@ export class AppBuilder<TreeNames> {
     // module dependency.
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
+      'ember-testing',
     ];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];

@@ -34,7 +34,8 @@
   },
   "resolutions": {
     "**/browserslist": "^4.14.0",
-    "**/fastboot": "^3.1.0"
+    "**/fastboot": "^3.1.0",
+    "**/qunit": "^2.14.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",

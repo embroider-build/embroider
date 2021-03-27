@@ -365,12 +365,12 @@ export class AppBuilder<TreeNames> {
       } as InlineBabelParams,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
-
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([

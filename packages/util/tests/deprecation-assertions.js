@@ -10,7 +10,7 @@ class DeprecationMonitor {
     let start = this.buffer.length;
     await cb();
     let candidates = this.buffer.slice(start, start.length);
-    let found = candidates.find(candidate => pattern.test(candidate.message));
+    let found = candidates.find((candidate) => pattern.test(candidate.message));
     if (found) {
       found.handled = true;
       this.assert.pushResult({
@@ -22,9 +22,10 @@ class DeprecationMonitor {
     } else {
       this.assert.pushResult({
         result: false,
-        actual: candidates.map(c => c.message),
+        actual: candidates.map((c) => c.message),
         expected: pattern.toString(),
-        message: 'Expected deprecation during test, but no matching deprecation was found.',
+        message:
+          'Expected deprecation during test, but no matching deprecation was found.',
       });
     }
   }
@@ -32,12 +33,17 @@ class DeprecationMonitor {
     this.buffer.push({ message, handled: false });
   }
   assertNoUnexpected() {
-    let unexpected = this.buffer.filter(entry => !entry.handled).map(entry => entry.message);
+    let unexpected = this.buffer
+      .filter((entry) => !entry.handled)
+      .map((entry) => entry.message);
     this.assert.pushResult({
       result: unexpected.length === 0,
       actual: unexpected,
       expected: [],
-      message: unexpected.length === 0 ? 'No unexpected deprecations' : 'Unexpected deprecations',
+      message:
+        unexpected.length === 0
+          ? 'No unexpected deprecations'
+          : 'Unexpected deprecations',
     });
   }
 }

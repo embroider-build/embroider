@@ -6,13 +6,14 @@ import Filter from 'broccoli-persistent-filter';
 import stringify from 'json-stable-stringify';
 import { createHash } from 'crypto';
 import { join, resolve, sep } from 'path';
-import { PluginItem } from '@babel/core';
+import { PluginItem, transform } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 import { patch } from './patch-template-compiler';
 import { Portable, PortableHint } from './portable';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { createContext, Script } from 'vm';
+import adjustImportsPlugin from './babel-plugin-adjust-imports';
 
 export interface Plugins {
   ast?: unknown[];
@@ -284,8 +285,23 @@ export class TemplateCompiler {
       lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
       lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
     }
-    lines.push(`export default Ember.HTMLBars.template(${compiled});`);
-    return lines.join('\n');
+
+    lines.push(`import { createTemplateFactory } from '@ember/template-factory';`);
+    lines.push(`export default createTemplateFactory(${compiled});`);
+
+    let src = lines.join('\n');
+    let resolver = this.params.resolver;
+    if (resolver) {
+      return transform(src, {
+        filename: moduleName,
+        generatorOpts: {
+          compact: false,
+        },
+        plugins: [[adjustImportsPlugin, resolver.adjustImportsOptions]],
+      })!.code!;
+    } else {
+      return src;
+    }
   }
 
   // Applies all custom AST transforms and emits the results still as

@@ -101,6 +101,9 @@ class V1AddonCompatResolver implements Resolver {
       .replace(extensionsPattern(['.js', '.hbs']), '')
       .replace(/\/index$/, '');
   }
+  get adjustImportsOptions(): Resolver['adjustImportsOptions'] {
+    throw new Error(`bug: the addon compat resolver only supports absPath mapping`);
+  }
 }
 
 // This controls and types the interface between our new world and the classic

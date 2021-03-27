@@ -34,7 +34,8 @@
   },
   "resolutions": {
     "**/browserslist": "^4.14.0",
-    "**/fastboot": "^3.1.0"
+    "**/fastboot": "^3.1.0",
+    "**/qunit": "^2.14.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
@@ -81,7 +82,7 @@
   },
   "volta": {
     "node": "12.16.1",
-    "yarn": "1.17.3"
+    "yarn": "1.22.5"
   },
   "version": "0.37.0"
 }

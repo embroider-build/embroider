@@ -4,7 +4,7 @@ import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
 
-interface PipelineOptions<PackagerOptions> extends Options {
+export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
   onOutputPath?: (outputPath: string) => void;
   variants?: Variant[];

@@ -365,12 +365,12 @@ export class AppBuilder<TreeNames> {
       } as InlineBabelParams,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
-
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -1063,6 +1063,13 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, vendor.js takes care of
+      // this bootstrapping. But when we're running with real ember modules,
+      // it's up to our entrypoint.
+      eagerModules.push('@ember/-internals/bootstrap');
+    }
+
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -1206,6 +1213,13 @@ export class AppBuilder<TreeNames> {
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
     ];
+
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, the prebuilt test-support
+      // script takes care of this bootstrapping. But when we're running with
+      // real ember modules, it's up to our entrypoint.
+      eagerModules.push('ember-testing');
+    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of

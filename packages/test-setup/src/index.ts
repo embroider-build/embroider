@@ -1,4 +1,8 @@
-import type { Options } from '@embroider/compat';
+import type { PipelineOptions } from '@embroider/compat';
+import type { Packager } from '@embroider/core';
+import type { Webpack } from '@embroider/webpack';
+
+type EmberWebpackOptions = typeof Webpack extends Packager<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const currentEmbroiderVersion = require('../package.json').version;
@@ -9,7 +13,7 @@ const currentEmbroiderVersion = require('../package.json').version;
     return maybeEmbroider(app);
 
 */
-export function maybeEmbroider(app: any, opts: Options = {}) {
+export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptions> = {}) {
   if (!shouldUseEmbroider(app)) {
     return app.toTree(opts?.extraPublicTrees);
   }

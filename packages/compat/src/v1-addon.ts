@@ -22,8 +22,7 @@ import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
-import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
-import { isCompactReexports } from './detect-compact-reexports';
+import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from './detect-babel-plugins';
 import { ResolvedDep } from '@embroider/core/src/resolver';
 
 const stockTreeNames = Object.freeze([
@@ -247,8 +246,7 @@ export default class V1Addon {
       return true;
     }
 
-    let babelConfig = this.options.babel as TransformOptions | undefined;
-    if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
+    if ((this.options.babel?.plugins?.filter(babelPluginAllowedInStage1)?.length ?? 0) > 0) {
       // this addon has custom babel plugins, so we need to run them here in
       // stage1
       return true;
@@ -1013,6 +1011,13 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
   if (isCompactReexports(plugin)) {
     // We don't want to replace re-exports at this stage, since that will turn
     // an `export` statement into a `define`, which is handled in Stage 3
+    return false;
+  }
+
+  if (isColocationPlugin(plugin)) {
+    // template co-location is a first-class feature we support directly, so
+    // whether or not the app brought a plugin for it we're going to do it our
+    // way.
     return false;
   }
 

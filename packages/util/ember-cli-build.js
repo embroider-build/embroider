@@ -18,5 +18,10 @@ module.exports = function (defaults) {
   return maybeEmbroider(app, {
     staticAddonTrees: true,
     staticAddonTestSupportTrees: true,
+    skipBabel: [
+      {
+        package: 'qunit',
+      },
+    ],
   });
 };

@@ -269,11 +269,11 @@ export default class V1Addon {
     return this.packageJSON.name;
   }
 
-  // you can override this to change what stage1 finds in package.json. However,
-  // this does not alter what stage1 outputs in package.json. For that, see
-  // newPackageJSON.
+  // you can override this to change the *input* packageJSON that the rest of
+  // stage1 will see. If you want to see and change the *output* packageJSON see
+  // `newPackageJSON`.
   protected get packageJSON() {
-    return this.addonInstance.pkg;
+    return this.packageCache.get(this.root).packageJSON;
   }
 
   protected get newPackageJSON() {

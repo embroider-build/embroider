@@ -188,7 +188,7 @@ export default class V1Addon {
     // ember-cli-babel in their custom hooks, and in that case we want to be
     // sure we've taken out the babel plugins that really shouldn't run at this
     // stage.
-      this.updateBabelConfig();
+    this.updateBabelConfig();
 
     if (!needsCustomBabel) {
       // no custom babel behavior, so we don't run the ember-cli-babel

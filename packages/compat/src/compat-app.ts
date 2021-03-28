@@ -13,7 +13,7 @@ import {
   Package,
   TemplateCompilerPlugins,
   Resolver,
-  TemplateCompiler,
+  NodeTemplateCompiler,
   AddonPackage,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -398,7 +398,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
     resolver.astTransformer(
-      new TemplateCompiler({
+      new NodeTemplateCompiler({
         compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
         EmberENV: {},
         plugins: {},

@@ -11,7 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
+import { AddonMeta, NodeTemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -24,6 +24,7 @@ import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from './detect-babel-plugins';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -83,7 +84,7 @@ class V1AddonCompatResolver implements Resolver {
       params,
     };
   }
-  astTransformer(_templateCompiler: TemplateCompiler): unknown {
+  astTransformer(_templateCompiler: NodeTemplateCompiler): unknown {
     return;
   }
   dependenciesOf(_moduleName: string): ResolvedDep[] {
@@ -122,7 +123,7 @@ export default class V1Addon {
 
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
-  private get templateCompiler(): TemplateCompiler | undefined {
+  private get templateCompiler(): NodeTemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
       let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
@@ -130,7 +131,7 @@ export default class V1Addon {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         if (options.plugins.ast.length > 0) {
-          return new TemplateCompiler({
+          return new NodeTemplateCompiler({
             compilerPath: options.templateCompilerPath,
             EmberENV: {},
             plugins: options.plugins,
@@ -169,7 +170,7 @@ export default class V1Addon {
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Node): Node {
         if (this._addon.templateCompiler) {
-          return this._addon.templateCompiler.applyTransformsToTree(tree);
+          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler, 1);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.
@@ -268,8 +269,27 @@ export default class V1Addon {
     return this.packageJSON.name;
   }
 
+  // you can override this to change the *input* packageJSON that the rest of
+  // stage1 will see. If you want to see and change the *output* packageJSON see
+  // `newPackageJSON`.
   protected get packageJSON() {
-    return this.addonInstance.pkg;
+    return this.packageCache.get(this.root).packageJSON;
+  }
+
+  protected get newPackageJSON() {
+    // shallow copy only! This is OK as long as we're only changing top-level
+    // keys in this method
+    let pkg = Object.assign({}, this.packageJSON);
+    let meta: AddonMeta = Object.assign({}, pkg.meta, this.packageMeta);
+    pkg['ember-addon'] = meta;
+
+    // classic addons don't get to customize their entrypoints like this. We
+    // always rewrite them so their entrypoint is index.js, so whatever was here
+    // is just misleading to stage3 packagers that might look (rollup does).
+    delete pkg.main;
+    delete pkg.module;
+
+    return pkg;
   }
 
   @Memoize()
@@ -513,7 +533,15 @@ export default class V1Addon {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(
+      {
+        version: 2,
+        'auto-upgraded': true,
+        type: 'addon',
+      },
+      built.staticMeta,
+      ...built.dynamicMeta.map(d => d())
+    );
   }
 
   @Memoize()
@@ -758,20 +786,23 @@ export default class V1Addon {
   }
 
   private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Node, localDir: string, key: keyof AddonMeta): Node {
-    // unforunately Funnel doesn't create destDir if its input exists but is
-    // empty. And we want to only put the app-js key in package.json if
-    // there's really a directory for it to point to. So we need to monitor
-    // the output and use dynamicMeta.
-    let dirExists = false;
+    let files: AddonMeta['app-js'];
     built.dynamicMeta.push(() => {
-      if (dirExists) {
-        return { [key]: localDir };
+      if (files) {
+        return { [key]: files };
       } else {
         return {};
       }
     });
     return new ObserveTree(tree, (outputPath: string) => {
-      dirExists = pathExistsSync(join(outputPath, localDir));
+      let dir = join(outputPath, localDir);
+      if (existsSync(dir)) {
+        files = Object.fromEntries(
+          walkSync(dir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => [`./${f}`, `./${localDir}/${f}`])
+        );
+      } else {
+        files = undefined;
+      }
     });
   }
 
@@ -877,7 +908,7 @@ export default class V1Addon {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {
-            publicAssets[`public/${filename}`] = filename;
+            publicAssets[`./public/${filename}`] = './' + filename;
           }
         }
       });
@@ -938,12 +969,7 @@ export default class V1Addon {
   }
 
   private buildPackageJSON(built: IntermediateBuild) {
-    let packageJSONRewriter = new RewritePackageJSON(
-      this.rootTree,
-      () => this.packageMeta,
-      this.packageCache.get(this.root).packageJSON
-    );
-    built.trees.push(packageJSONRewriter);
+    built.trees.push(new RewritePackageJSON(this.rootTree, () => this.newPackageJSON));
   }
 
   @Memoize()
@@ -1000,7 +1026,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
+  if (NodeTemplateCompiler.isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline

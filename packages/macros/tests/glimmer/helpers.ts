@@ -1,4 +1,4 @@
-import { TemplateCompiler } from '@embroider/core';
+import { NodeTemplateCompiler } from '@embroider/core';
 import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
@@ -17,7 +17,7 @@ export function templateTests(createTests: CreateTestsWithConfig | CreateTests) 
   let { plugins, setConfig } = MacrosConfig.astPlugins();
   let config = MacrosConfig.for({});
   setConfig(config);
-  let compiler = new TemplateCompiler({
+  let compiler = new NodeTemplateCompiler({
     compilerPath,
     EmberENV: {},
     plugins: {

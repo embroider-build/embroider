@@ -1,14 +1,5 @@
 import type { NodePath } from '@babel/traverse';
-import type {
-  CallExpression,
-  Identifier,
-  IfStatement,
-  ConditionalExpression,
-  ForOfStatement,
-  FunctionDeclaration,
-  OptionalMemberExpression,
-  Program,
-} from '@babel/types';
+import type * as t from '@babel/types';
 import { PackageCache } from '@embroider/shared-internals';
 import State, { sourceFile, pathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
@@ -23,25 +14,28 @@ import { BabelContext } from './babel-context';
 const packageCache = PackageCache.shared('embroider-stage3');
 
 export default function main(context: BabelContext): unknown {
+  let t = context.types;
   let visitor = {
     Program: {
-      enter(_: NodePath<Program>, state: State) {
+      enter(_: NodePath<t.Program>, state: State) {
         state.generatedRequires = new Set();
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
         state.neededRuntimeImports = new Map();
+        state.neededEagerImports = new Map();
       },
-      exit(path: NodePath<Program>, state: State) {
+      exit(path: NodePath<t.Program>, state: State) {
         pruneMacroImports(path);
         addRuntimeImports(path, state, context);
+        addEagerImports(path, state, t);
         for (let handler of state.jobs) {
           handler();
         }
       },
     },
     'IfStatement|ConditionalExpression': {
-      enter(path: NodePath<IfStatement | ConditionalExpression>, state: State) {
+      enter(path: NodePath<t.IfStatement | t.ConditionalExpression>, state: State) {
         if (isMacroConditionPath(path)) {
           state.calledIdentifiers.add(path.get('test').get('callee').node);
           macroCondition(path, state);
@@ -49,7 +43,7 @@ export default function main(context: BabelContext): unknown {
       },
     },
     ForOfStatement: {
-      enter(path: NodePath<ForOfStatement>, state: State) {
+      enter(path: NodePath<t.ForOfStatement>, state: State) {
         if (isEachPath(path)) {
           state.calledIdentifiers.add(path.get('right').get('callee').node);
           insertEach(path, state, context);
@@ -57,7 +51,7 @@ export default function main(context: BabelContext): unknown {
       },
     },
     FunctionDeclaration: {
-      enter(path: NodePath<FunctionDeclaration>, state: State) {
+      enter(path: NodePath<t.FunctionDeclaration>, state: State) {
         let id = path.get('id');
         if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
           let pkg = packageCache.ownerOfFile(sourceFile(path, state));
@@ -68,7 +62,7 @@ export default function main(context: BabelContext): unknown {
       },
     },
     CallExpression: {
-      enter(path: NodePath<CallExpression>, state: State) {
+      enter(path: NodePath<t.CallExpression>, state: State) {
         let callee = path.get('callee');
         if (!callee.isIdentifier()) {
           return;
@@ -123,7 +117,7 @@ export default function main(context: BabelContext): unknown {
           path.replaceWith(buildLiterals(result.value, context));
         }
       },
-      exit(path: NodePath<CallExpression>, state: State) {
+      exit(path: NodePath<t.CallExpression>, state: State) {
         let callee = path.get('callee');
         if (!callee.isIdentifier()) {
           return;
@@ -134,14 +128,28 @@ export default function main(context: BabelContext): unknown {
         // For example ember-auto-import needs to do some custom transforms to enable use of dynamic template strings,
         // so its babel plugin needs to see and handle the importSync call first!
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          let r = context.types.identifier('require');
-          state.generatedRequires.add(r);
-          callee.replaceWith(r);
+          if (state.opts.importSyncImplementation === 'eager') {
+            let specifier = path.node.arguments[0];
+            if (specifier?.type !== 'StringLiteral') {
+              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
+            }
+            let replacePaths = state.neededEagerImports.get(specifier.value);
+            if (!replacePaths) {
+              replacePaths = [];
+              state.neededEagerImports.set(specifier.value, replacePaths);
+            }
+            replacePaths.push(path);
+            state.calledIdentifiers.add(callee.node);
+          } else {
+            let r = t.identifier('require');
+            state.generatedRequires.add(r);
+            callee.replaceWith(r);
+          }
           return;
         }
       },
     },
-    ReferencedIdentifier(path: NodePath<Identifier>, state: State) {
+    ReferencedIdentifier(path: NodePath<t.Identifier>, state: State) {
       for (let candidate of [
         'dependencySatisfies',
         'moduleExists',
@@ -184,6 +192,7 @@ export default function main(context: BabelContext): unknown {
       }
 
       if (
+        state.opts.importSyncImplementation === 'cjs' &&
         path.node.name === 'require' &&
         !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&
@@ -192,7 +201,7 @@ export default function main(context: BabelContext): unknown {
         // Our importSync macro has been compiled to `require`. But we want to
         // distinguish that from any pre-existing, user-written `require` in an
         // Ember addon, which should retain its *runtime* meaning.
-        path.replaceWith(context.types.memberExpression(context.types.identifier('window'), path.node));
+        path.replaceWith(t.memberExpression(t.identifier('window'), path.node));
       }
     },
   };
@@ -202,7 +211,7 @@ export default function main(context: BabelContext): unknown {
     // optional chaining. To make that work we need to see the optional chaining
     // before preset-env compiles them away.
     (visitor as any).OptionalMemberExpression = {
-      enter(path: NodePath<OptionalMemberExpression>, state: State) {
+      enter(path: NodePath<t.OptionalMemberExpression>, state: State) {
         if (state.opts.mode === 'compile-time') {
           let result = new Evaluator({ state }).evaluate(path);
           if (result.confident) {
@@ -229,7 +238,7 @@ function pruneMacroImports(path: NodePath) {
   }
 }
 
-function addRuntimeImports(path: NodePath<Program>, state: State, context: BabelContext) {
+function addRuntimeImports(path: NodePath<t.Program>, state: State, context: BabelContext) {
   let t = context.types;
   if (state.neededRuntimeImports.size > 0) {
     path.node.body.push(
@@ -243,8 +252,31 @@ function addRuntimeImports(path: NodePath<Program>, state: State, context: Babel
   }
 }
 
+function addEagerImports(path: NodePath<t.Program>, state: State, t: BabelContext['types']) {
+  let createdNames = new Set<string>();
+  for (let [specifier, replacePaths] of state.neededEagerImports.entries()) {
+    let local = unusedNameLike('a', replacePaths, createdNames);
+    createdNames.add(local);
+    path.node.body.push(
+      t.importDeclaration([t.importNamespaceSpecifier(t.identifier(local))], t.stringLiteral(specifier))
+    );
+    for (let nodePath of replacePaths) {
+      nodePath.replaceWith(t.identifier(local));
+    }
+  }
+}
+
 function ownedByEmberPackage(path: NodePath, state: State) {
   let filename = sourceFile(path, state);
   let pkg = packageCache.ownerOfFile(filename);
   return pkg && pkg.isEmberPackage();
+}
+
+function unusedNameLike(name: string, paths: NodePath<unknown>[], banned: Set<string>) {
+  let candidate = name;
+  let counter = 0;
+  while (banned.has(candidate) || paths.some(path => path.scope.getBinding(candidate))) {
+    candidate = `${name}${counter++}`;
+  }
+  return candidate;
 }

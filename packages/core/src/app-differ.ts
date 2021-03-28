@@ -216,20 +216,29 @@ function maybeSource(addon: AddonPackage, key: 'app-js' | 'fastboot-js'): Source
       mayChange: addon.mayRebuild,
       walk() {
         return Object.entries(files).map(([externalName, internalName]) => {
-          let stat = statSync(resolve(addon.root, internalName));
-          return {
-            relativePath: withoutMandatoryDotSlash(externalName, [
-              'in package.json at %s in key ember-addon.%s',
-              addon.root,
-              key,
-            ]),
-            mode: stat.mode,
-            size: stat.size,
-            mtime: stat.mtime,
-            isDirectory() {
-              return false;
-            },
-          };
+          try {
+            let stat = statSync(resolve(addon.root, internalName));
+            return {
+              relativePath: withoutMandatoryDotSlash(externalName, [
+                'in package.json at %s in key ember-addon.%s',
+                addon.root,
+                key,
+              ]),
+              mode: stat.mode,
+              size: stat.size,
+              mtime: stat.mtime,
+              isDirectory() {
+                return false;
+              },
+            };
+          } catch (err) {
+            if (err.code === 'ENOENT') {
+              throw new Error(
+                `${addon.name}/package.json lists ${internalName} in ember-addon.${key}, but that file does not exist`
+              );
+            }
+            throw err;
+          }
         });
       },
       isRelocated: true,

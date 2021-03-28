@@ -178,12 +178,18 @@ export default class V1Addon {
       },
     });
 
-    if (this.needsCustomBabel()) {
-      // there is customized babel behavior needed, so we will leave
-      // ember-cli-babel in place, but modify its config so it doesn't do the
-      // things we don't want to do in stage1.
-      this.updateBabelConfig();
-    } else {
+    // first, look into the babel config and related packages to decide whether
+    // we need to run babel at all in this stage.
+    let needsCustomBabel = this.needsCustomBabel();
+
+    // regardless of the answer, we modify the babel config, because even if
+    // we're unregistering ember-cli-babel, some addons manually invoke
+    // ember-cli-babel in their custom hooks, and in that case we want to be
+    // sure we've taken out the babel plugins that really shouldn't run at this
+    // stage.
+    this.updateBabelConfig();
+
+    if (!needsCustomBabel) {
       // no custom babel behavior, so we don't run the ember-cli-babel
       // preprocessor at all. We still need to register a no-op preprocessor to
       // prevent ember-cli from emitting a deprecation warning.

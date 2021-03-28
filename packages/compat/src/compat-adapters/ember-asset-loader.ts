@@ -1,5 +1,6 @@
 import V1Addon from '../v1-addon';
 import Funnel from 'broccoli-funnel';
+import cloneDeep from 'lodash/cloneDeep';
 
 // ember-asset-loader's ManifestGenerator (which is used as the Addon base class
 // for by ember-engines) has an "all" postprocessTree hook. We can't / won't run
@@ -14,7 +15,16 @@ import Funnel from 'broccoli-funnel';
 export default class extends V1Addon {
   get v2Tree() {
     return new Funnel(super.v2Tree, {
-      exclude: ['_app/config/asset-manifest.js', '_app_/instance-initializers/load-asset-manifest.js'],
+      exclude: ['_app_/config/asset-manifest.js', '_app_/instance-initializers/load-asset-manifest.js'],
     });
+  }
+  get packageMeta() {
+    let meta = super.packageMeta;
+    if (meta['app-js']) {
+      meta = cloneDeep(meta);
+      delete meta['app-js']!['./instance-initializers/load-asset-manifest.js'];
+      delete meta['app-js']!['./config/asset-manifest.js'];
+    }
+    return meta;
   }
 }

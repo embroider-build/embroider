@@ -7,12 +7,10 @@ export {
 } from './packager';
 export { Resolver } from './resolver';
 export { default as Stage } from './stage';
-export {
-  TemplateCompiler,
-  Plugins as TemplateCompilerPlugins,
-  TemplateCompilerParams,
-  templateCompilerModule,
-} from './template-compiler';
+export { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';
+export { TemplateCompiler, TemplateCompilerParams } from './template-compiler-common';
+export { templateCompilerModule } from './write-template-compiler';
+export { Plugins as TemplateCompilerPlugins } from './ember-template-compiler-types';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

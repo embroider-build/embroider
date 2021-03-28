@@ -1,4 +1,4 @@
-import { TemplateCompiler } from './template-compiler';
+import { TemplateCompiler } from './template-compiler-common';
 import { Options } from './babel-plugin-adjust-imports';
 
 export interface ResolvedDep {

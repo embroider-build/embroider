@@ -2,7 +2,8 @@
 // which is our browser-visible public entrypoint
 
 // Entrypoint for managing the macro config within Node.
-export { default as MacrosConfig, Merger } from './macros-config';
+export { default as MacrosConfig } from './macros-config';
+export type { Merger } from './macros-config';
 
 // Utility for detecting our babel and AST plugins.
 import type { PluginItem } from '@babel/core';

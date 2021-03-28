@@ -10,8 +10,14 @@ export default interface State {
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
 
-  // map from local name to imported name
+  // map from local name to imported name from @embroider/macros own runtime
+  // implementations.
   neededRuntimeImports: Map<string, string>;
+
+  // when we're running with importSync's eager implementation, this maps from
+  // module specifier to the set of nodes that should be replaced with the
+  // module value.
+  neededEagerImports: Map<string, NodePath[]>;
 
   opts: {
     userConfigs: {
@@ -39,6 +45,8 @@ export default interface State {
     embroiderMacrosConfigMarker: true;
 
     mode: 'compile-time' | 'run-time';
+
+    importSyncImplementation: 'cjs' | 'eager';
   };
 }
 

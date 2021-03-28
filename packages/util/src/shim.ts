@@ -6,7 +6,9 @@ export interface ShimOptions {
 }
 
 export function addonV1Shim(directory: string, options: ShimOptions = {}) {
-  let pkg = JSON.parse(readFileSync(resolve(directory, './package.json'), 'utf8'));
+  let pkg = JSON.parse(
+    readFileSync(resolve(directory, './package.json'), 'utf8')
+  );
   return {
     name: pkg.name,
     treeForApp(this: AddonInstance) {

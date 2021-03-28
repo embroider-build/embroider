@@ -6,4 +6,7 @@ module.exports = {
     manifest.vendorFiles.push('fastboot-addon/sample.js');
     return manifest;
   },
+  included(...args) {
+    this._super.included.call(this, ...args);
+  },
 };

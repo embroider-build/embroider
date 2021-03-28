@@ -59,6 +59,18 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Build fastboot-app",
+      "program": "/Users/edward/hacking/sample/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/fastboot-app",
+      "args": ["build"],
+      "env": {
+        "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Test fastboot-app",
       "program": "${workspaceFolder}/node_modules/.bin/qunit",
       "cwd": "${workspaceFolder}/test-packages/fastboot-app",

@@ -1,10 +1,9 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
 import { join, sep } from 'path';
-import { PluginItem, transform } from '@babel/core';
+import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-import adjustImportsPlugin from './babel-plugin-adjust-imports';
 
 export interface Plugins {
   ast?: unknown[];
@@ -161,18 +160,7 @@ export class TemplateCompiler {
     lines.push(`import { createTemplateFactory } from '@ember/template-factory';`);
     lines.push(`export default createTemplateFactory(${compiled});`);
 
-    let src = lines.join('\n');
-    if (this.resolver) {
-      return transform(src, {
-        filename: moduleName,
-        generatorOpts: {
-          compact: false,
-        },
-        plugins: [[adjustImportsPlugin, this.resolver.adjustImportsOptions]],
-      })!.code!;
-    } else {
-      return src;
-    }
+    return lines.join('\n');
   }
 
   // Applies all custom AST transforms and emits the results still as

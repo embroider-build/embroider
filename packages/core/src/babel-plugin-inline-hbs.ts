@@ -1,7 +1,7 @@
 import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { join } from 'path';
-import { TemplateCompiler, TemplateCompilerParams } from './template-compiler';
+import { TemplateCompiler } from './template-compiler-common';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
 import { ImportAdder } from './babel-import-adder';

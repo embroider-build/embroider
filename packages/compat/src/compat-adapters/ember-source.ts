@@ -22,10 +22,7 @@ export default class extends V1Addon {
     return pkg;
   }
   get v2Tree() {
-    return broccoliMergeTrees([
-      super.v2Tree,
-      new Funnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] }),
-    ]);
+    return mergeTrees([super.v2Tree, new Funnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
   }
 
   // when using real modules, we're replacing treeForAddon and treeForVendor

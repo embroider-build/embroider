@@ -8,6 +8,12 @@
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/shared-internals"
   },
+  "exports": {
+    ".": {
+      "browser": "./src/browser-index.js",
+      "default": "./src/index.js"
+    }
+  },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",

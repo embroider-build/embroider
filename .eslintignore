@@ -1,5 +1,7 @@
 /packages/core/**/*.js
 /packages/core/**/*.d.ts
+/packages/shared-internals/**/*.js
+/packages/shared-internals/**/*.d.ts
 /packages/compat/**/*.js
 /packages/compat/**/*.d.ts
 /packages/macros/**/*.js

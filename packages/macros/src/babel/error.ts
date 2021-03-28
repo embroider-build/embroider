@@ -1,4 +1,4 @@
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 
 export default function error(path: NodePath, message: string) {
   return path.buildCodeFrameError(message, MacroError);

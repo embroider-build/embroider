@@ -39,6 +39,7 @@ describe('audit', function () {
             activeAddons: {},
             relocatedFiles: {},
             resolvableExtensions,
+            emberNeedsModulesPolyfill: true,
           },
         }),
       },

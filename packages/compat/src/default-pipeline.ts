@@ -4,7 +4,7 @@ import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
 
-interface PipelineOptions<PackagerOptions> extends Options {
+export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
   onOutputPath?: (outputPath: string) => void;
   variants?: Variant[];
@@ -12,7 +12,7 @@ interface PipelineOptions<PackagerOptions> extends Options {
 
 export default function defaultPipeline<PackagerOptions>(
   emberApp: object,
-  packager: Packager<PackagerOptions>,
+  packager?: Packager<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Node {
   let outputPath: string;
@@ -43,7 +43,7 @@ export default function defaultPipeline<PackagerOptions>(
 
   let embroiderApp = new App(emberApp, addons, options);
 
-  if (process.env.STAGE2_ONLY) {
+  if (process.env.STAGE2_ONLY || !packager) {
     return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => outputPath)]);
   }
 

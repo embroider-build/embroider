@@ -1,5 +1,5 @@
 import { satisfies } from 'semver';
-import { PackageCache } from '@embroider/core';
+import { PackageCache } from '@embroider/shared-internals';
 
 let packageCache = PackageCache.shared('embroider-stage3');
 

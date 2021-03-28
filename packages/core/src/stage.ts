@@ -1,5 +1,5 @@
-import { Node } from 'broccoli-node-api';
-import PackageCache from './package-cache';
+import type { Node } from 'broccoli-node-api';
+import { PackageCache } from '@embroider/shared-internals';
 
 // A build Stage is _kinda_ like a Broccoli transform, and it interoperates with
 // Broccoli, but it takes a different approach to how stages combine.

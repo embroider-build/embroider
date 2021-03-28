@@ -25,7 +25,7 @@
     "fs-extra": "^7.0.0",
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",
-    "qunit": "^2.8.0"
+    "qunit": "^2.14.1"
   },
   "volta": {
     "extends": "../../package.json"

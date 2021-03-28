@@ -1,18 +1,11 @@
-import { NodePath } from '@babel/traverse';
-import {
-  identifier,
-  CallExpression,
-  callExpression,
-  stringLiteral,
-  FunctionDeclaration,
-  returnStatement,
-} from '@babel/types';
+import type { NodePath } from '@babel/traverse';
+import type { CallExpression, FunctionDeclaration } from '@babel/types';
 import State, { sourceFile, unusedNameLike } from './state';
-import { PackageCache, Package } from '@embroider/core';
+import { PackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 import assertNever from 'assert-never';
-import { isIdentifier } from '@babel/types';
+import { BabelContext } from './babel-context';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 export type Mode = 'own' | 'getGlobalConfig' | 'package';
@@ -55,25 +48,25 @@ export default function getConfig(path: NodePath<CallExpression>, state: State, 
 // this is the imperative version that's invoked directly by the babel visitor
 // when we encounter getConfig. It's implemented in terms of getConfig so we can
 // be sure we have the same semantics.
-export function insertConfig(path: NodePath<CallExpression>, state: State, mode: Mode) {
+export function insertConfig(path: NodePath<CallExpression>, state: State, mode: Mode, context: BabelContext) {
   if (state.opts.mode === 'compile-time') {
     let config = getConfig(path, state, mode);
     let collapsed = collapse(path, config);
-    let literalResult = buildLiterals(collapsed.config);
+    let literalResult = buildLiterals(collapsed.config, context);
     collapsed.path.replaceWith(literalResult);
   } else {
     if (mode === 'getGlobalConfig') {
-      state.neededRuntimeImports.set(calleeName(path), 'getGlobalConfig');
+      state.neededRuntimeImports.set(calleeName(path, context), 'getGlobalConfig');
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;
       if (pkg) {
-        pkgRoot = stringLiteral(pkg.root);
+        pkgRoot = context.types.stringLiteral(pkg.root);
       } else {
-        pkgRoot = identifier('undefined');
+        pkgRoot = context.types.identifier('undefined');
       }
       let name = unusedNameLike('config', path);
-      path.replaceWith(callExpression(identifier(name), [pkgRoot]));
+      path.replaceWith(context.types.callExpression(context.types.identifier(name), [pkgRoot]));
       state.neededRuntimeImports.set(name, 'config');
     }
   }
@@ -107,15 +100,17 @@ function collapse(path: NodePath, config: any) {
   }
 }
 
-export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State) {
+export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State, context: BabelContext) {
   path.get('body').node.body = [
-    returnStatement(buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig })),
+    context.types.returnStatement(
+      buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
+    ),
   ];
 }
 
-function calleeName(path: NodePath<CallExpression>): string {
+function calleeName(path: NodePath<CallExpression>, context: BabelContext): string {
   let callee = path.node.callee;
-  if (isIdentifier(callee)) {
+  if (context.types.isIdentifier(callee)) {
     return callee.name;
   }
   throw new Error(`bug: our macros should only be invoked as identifiers`);

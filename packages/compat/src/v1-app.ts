@@ -18,7 +18,7 @@ import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
-import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
+import { isEmberAutoImportDynamic } from './detect-babel-plugins';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.

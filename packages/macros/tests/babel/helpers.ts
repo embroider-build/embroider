@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import { allBabelVersions as allBabel, Project, runDefault, Transform, toCJS } from '@embroider/test-support';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
-import { explicitRelative } from '@embroider/core';
+import { explicitRelative } from '@embroider/shared-internals';
 
 export { runDefault, Project };
 

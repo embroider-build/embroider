@@ -47,7 +47,7 @@
     "@types/csso": "^3.5.1",
     "@types/fs-extra": "^5.0.4",
     "@types/lodash": "^4.14.116",
-    "@types/mini-css-extract-plugin": "^0.2.0",
+    "@types/mini-css-extract-plugin": "^1.2.1",
     "@types/node": "^10.5.2",
     "@types/webpack": "^4.4.17",
     "typescript": "~4.0.0"

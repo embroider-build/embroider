@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { PluginItem } from '@babel/core';
-import { PackageCache, getOrCreate } from '@embroider/core';
+import type { PluginItem } from '@babel/core';
+import { PackageCache, getOrCreate } from '@embroider/shared-internals';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import State from './babel/state';
 

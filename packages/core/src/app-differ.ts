@@ -1,4 +1,4 @@
-import { V2AddonPackage } from './package';
+import { AddonPackage } from '@embroider/shared-internals';
 import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
 import { join, basename, dirname, resolve } from 'path';
@@ -30,7 +30,7 @@ export default class AppDiffer {
   constructor(
     private outputPath: string,
     ownAppJSDir: string,
-    activeAddonDescendants: V2AddonPackage[],
+    activeAddonDescendants: AddonPackage[],
     // arguments below this point are only needed in fastboot mode. Fastboot
     // makes this pretty messy because fastboot trees all merge into the app 🤮.
     fastbootEnabled = false,
@@ -208,7 +208,7 @@ interface Source extends InputTree {
   isRelocated: boolean;
 }
 
-function maybeSource(addon: V2AddonPackage, key: 'app-js' | 'fastboot-js'): Source | undefined {
+function maybeSource(addon: AddonPackage, key: 'app-js' | 'fastboot-js'): Source | undefined {
   let maybeFiles = addon.meta[key];
   if (maybeFiles) {
     let files = maybeFiles;

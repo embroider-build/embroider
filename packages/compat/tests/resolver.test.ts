@@ -40,6 +40,7 @@ describe('compat-resolver', function () {
           activeAddons: {},
           relocatedFiles: {},
           resolvableExtensions: ['.js', '.hbs'],
+          emberNeedsModulesPolyfill: false,
         },
         otherOptions.adjustImportsImports
       ),

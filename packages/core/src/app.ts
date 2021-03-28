@@ -1,7 +1,13 @@
-import { AddonMeta, AppMeta } from './metadata';
+import {
+  AddonMeta,
+  AppMeta,
+  Package,
+  AddonPackage,
+  explicitRelative,
+  extensionsPattern,
+} from '@embroider/shared-internals';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
-import Package, { V2AddonPackage } from './package';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { copySync, ensureDirSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
@@ -23,7 +29,6 @@ import type { NodeTemplateCompilerParams } from './template-compiler-node';
 import { templateCompilerModule } from './write-template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { explicitRelative, extensionsPattern } from './paths';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
@@ -47,10 +52,10 @@ export type EmberENV = unknown;
 */
 export interface AppAdapter<TreeNames> {
   // the set of all addon packages that are active (recursive)
-  readonly allActiveAddons: V2AddonPackage[];
+  readonly allActiveAddons: AddonPackage[];
 
   // the direct active addon dependencies of a given package
-  activeAddonChildren(pkg: Package): V2AddonPackage[];
+  activeAddonChildren(pkg: Package): AddonPackage[];
 
   // path to the directory where the app's own Javascript lives. Doesn't include
   // any files copied out of addons, we take care of that generically in
@@ -361,12 +366,12 @@ export class AppBuilder<TreeNames> {
       } as InlineBabelParams,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
-
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -1059,6 +1064,13 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, vendor.js takes care of
+      // this bootstrapping. But when we're running with real ember modules,
+      // it's up to our entrypoint.
+      eagerModules.push('@ember/-internals/bootstrap');
+    }
+
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -1201,6 +1213,13 @@ export class AppBuilder<TreeNames> {
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
     ];
+
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, the prebuilt test-support
+      // script takes care of this bootstrapping. But when we're running with
+      // real ember modules, it's up to our entrypoint.
+      eagerModules.push('ember-testing');
+    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -1389,7 +1408,7 @@ module.exports = babelFilter({{{json-stringify skipBabel}}});
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path
 // to classic import path.
-function inverseRenamedModules(meta: V2AddonPackage['meta'], extensions: RegExp) {
+function inverseRenamedModules(meta: AddonPackage['meta'], extensions: RegExp) {
   let renamed = meta['renamed-modules'];
   if (renamed) {
     let inverted = {} as { [name: string]: string };

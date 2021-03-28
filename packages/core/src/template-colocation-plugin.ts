@@ -1,56 +1,32 @@
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import { existsSync } from 'fs';
-import {
-  Program,
-  ExportDefaultDeclaration,
-  callExpression,
-  identifier,
-  isClassDeclaration,
-  classExpression,
-  importDeclaration,
-  stringLiteral,
-  importDefaultSpecifier,
-  memberExpression,
-  expressionStatement,
-  isFunctionDeclaration,
-  isTSDeclareFunction,
-  functionExpression,
-  ExportNamedDeclaration,
-  isExportDefaultSpecifier,
-  isExportSpecifier,
-  importSpecifier,
-} from '@babel/types';
+import type * as t from '@babel/types';
 import { dirname } from 'path';
-import { explicitRelative } from './paths';
-import PackageCache from './package-cache';
+import { explicitRelative } from '@embroider/shared-internals';
+import { PackageCache } from '@embroider/shared-internals';
+import { ImportAdder } from './babel-import-adder';
+
+type BabelTypes = typeof t;
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
 interface State {
   colocatedTemplate: string | undefined;
-  importTemplateAs: string | undefined;
-  associateWithName: string | undefined;
-  mustImportComponent: undefined | { source: string; name: string };
+  associate: { component: t.Identifier; template: t.Identifier } | undefined;
+  adder: ImportAdder;
 }
 
-function unusedNameLike(name: string, path: NodePath<unknown>) {
-  let candidate = name;
-  let counter = 0;
-  while (path.scope.getBinding(candidate)) {
-    candidate = `${name}${counter++}`;
-  }
-  return candidate;
+function setComponentTemplate(target: NodePath<t.Node>, state: State) {
+  return state.adder.import(target, '@ember/component', 'setComponentTemplate');
 }
 
-function setComponentTemplate() {
-  return memberExpression(identifier('Ember'), identifier('_setComponentTemplate'));
-}
-
-export default function main() {
+export default function main(babel: unknown) {
+  let t = (babel as any).types as BabelTypes;
   return {
     visitor: {
       Program: {
-        enter(path: NodePath<Program>, state: State) {
+        enter(path: NodePath<t.Program>, state: State) {
+          state.adder = new ImportAdder(t, path);
           let filename = path.hub.file.opts.filename;
 
           let owningPackage = packageCache.ownerOfFile(filename);
@@ -63,101 +39,85 @@ export default function main() {
             state.colocatedTemplate = hbsFilename;
           }
         },
-        exit(path: NodePath<Program>, state: State) {
+        exit(path: NodePath<t.Program>, state: State) {
           if (!state.colocatedTemplate) {
             return;
           }
-          if (state.importTemplateAs) {
-            path.node.body.unshift(
-              importDeclaration(
-                [importDefaultSpecifier(identifier(state.importTemplateAs))],
-                stringLiteral(explicitRelative(dirname(state.colocatedTemplate), state.colocatedTemplate))
-              )
-            );
-          }
-          if (state.mustImportComponent) {
-            state.associateWithName = unusedNameLike('COMPONENT', path);
-            let specifier;
-            if (state.mustImportComponent.name === 'default') {
-              specifier = importDefaultSpecifier(identifier(state.associateWithName));
-            } else {
-              specifier = importSpecifier(
-                identifier(state.associateWithName),
-                identifier(state.mustImportComponent.name)
-              );
-            }
-            path.node.body.push(importDeclaration([specifier], stringLiteral(state.mustImportComponent.source)));
-          }
-          if (state.associateWithName && state.importTemplateAs) {
+          if (state.associate) {
             path.node.body.push(
-              expressionStatement(
-                callExpression(setComponentTemplate(), [
-                  identifier(state.importTemplateAs),
-                  identifier(state.associateWithName),
+              t.expressionStatement(
+                t.callExpression(setComponentTemplate(path, state), [
+                  state.associate.template,
+                  state.associate.component,
                 ])
               )
             );
           }
         },
       },
-      ExportDefaultDeclaration(path: NodePath<ExportDefaultDeclaration>, state: State) {
+
+      ExportDefaultDeclaration(path: NodePath<t.ExportDefaultDeclaration>, state: State) {
         if (!state.colocatedTemplate) {
           return;
         }
 
         let declaration = path.get('declaration').node;
 
-        if (isClassDeclaration(declaration)) {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+        if (t.isClassDeclaration(declaration)) {
+          let template = importTemplate(path, state.adder, state.colocatedTemplate);
           if (declaration.id != null) {
-            state.associateWithName = declaration.id.name;
+            state.associate = { template, component: declaration.id };
           } else {
-            path.node.declaration = callExpression(setComponentTemplate(), [
-              identifier(state.importTemplateAs),
-              classExpression(null, declaration.superClass, declaration.body, declaration.decorators),
+            path.node.declaration = t.callExpression(setComponentTemplate(path, state), [
+              template,
+              t.classExpression(null, declaration.superClass, declaration.body, declaration.decorators ?? []),
             ]);
           }
-        } else if (isFunctionDeclaration(declaration)) {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+        } else if (t.isFunctionDeclaration(declaration)) {
+          let template = importTemplate(path, state.adder, state.colocatedTemplate);
 
           if (declaration.id != null) {
-            state.associateWithName = declaration.id.name;
+            state.associate = { template, component: declaration.id };
           } else {
-            path.node.declaration = callExpression(setComponentTemplate(), [
-              identifier(state.importTemplateAs),
-              functionExpression(null, declaration.params, declaration.body, declaration.generator, declaration.async),
+            path.node.declaration = t.callExpression(setComponentTemplate(path, state), [
+              template,
+              t.functionExpression(
+                null,
+                declaration.params,
+                declaration.body,
+                declaration.generator,
+                declaration.async
+              ),
             ]);
           }
-        } else if (isTSDeclareFunction(declaration)) {
+        } else if (isTSDeclareFunction(t, declaration)) {
           // we don't rewrite this
         } else {
-          state.importTemplateAs = unusedNameLike('TEMPLATE', path);
-          path.node.declaration = callExpression(setComponentTemplate(), [
-            identifier(state.importTemplateAs),
-            declaration,
-          ]);
+          let local = importTemplate(path, state.adder, state.colocatedTemplate);
+          path.node.declaration = t.callExpression(setComponentTemplate(path, state), [local, declaration]);
         }
       },
-      ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>, state: State) {
+      ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: State) {
         if (!state.colocatedTemplate) {
           return;
         }
         let { node } = path;
         for (let specifier of path.node.specifiers) {
-          if (isExportDefaultSpecifier(specifier)) {
-          } else if (isExportSpecifier(specifier)) {
+          if (t.isExportDefaultSpecifier(specifier)) {
+          } else if (t.isExportSpecifier(specifier)) {
             const name = specifier.exported.type === 'Identifier' ? specifier.exported.name : specifier.exported.value;
 
             if (name === 'default') {
-              state.importTemplateAs = unusedNameLike('TEMPLATE', path);
+              let template = importTemplate(path, state.adder, state.colocatedTemplate);
               if (node.source) {
                 // our default export is a reexport from elsewhere. We will
                 // synthesize a new import for it so we can get a local handle
                 // on it
-                state.mustImportComponent = { source: node.source.value, name: specifier.local.name };
+                let component = state.adder.import(path, node.source.value, specifier.local.name, 'COMPONENT');
+                state.associate = { template, component };
               } else {
                 // our default export is one of our local names
-                state.associateWithName = specifier.local.name;
+                state.associate = { template, component: t.identifier(specifier.local.name) };
               }
             }
           }
@@ -165,4 +125,14 @@ export default function main() {
       },
     },
   };
+}
+
+// this is here because babel6 doesn't offer this function, but we still want it
+// to provide type exhaustiveness when it's missing
+function isTSDeclareFunction(t: BabelTypes, dec: any): dec is t.TSDeclareFunction {
+  return t.isTSDeclareFunction?.(dec);
+}
+
+function importTemplate(target: NodePath<t.Node>, adder: ImportAdder, colocatedTemplate: string) {
+  return adder.import(target, explicitRelative(dirname(colocatedTemplate), colocatedTemplate), 'default', 'TEMPLATE');
 }

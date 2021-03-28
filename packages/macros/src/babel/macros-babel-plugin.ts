@@ -1,21 +1,17 @@
-import { NodePath } from '@babel/traverse';
-import {
+import type { NodePath } from '@babel/traverse';
+import type {
   CallExpression,
   Identifier,
-  memberExpression,
-  identifier,
   IfStatement,
   ConditionalExpression,
   ForOfStatement,
   FunctionDeclaration,
   OptionalMemberExpression,
-  importSpecifier,
-  importDeclaration,
   Program,
   stringLiteral,
   importNamespaceSpecifier,
 } from '@babel/types';
-import { PackageCache } from '@embroider/core';
+import { PackageCache } from '@embroider/shared-internals';
 import State, { sourceFile, pathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
@@ -24,10 +20,11 @@ import { isEachPath, insertEach } from './each';
 import error from './error';
 import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
+import { BabelContext } from './babel-context';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-export default function main(context: unknown): unknown {
+export default function main(context: BabelContext): unknown {
   let visitor = {
     Program: {
       enter(_: NodePath<Program>, state: State) {
@@ -40,7 +37,7 @@ export default function main(context: unknown): unknown {
       },
       exit(path: NodePath<Program>, state: State) {
         pruneMacroImports(path);
-        addRuntimeImports(path, state);
+        addRuntimeImports(path, state, context);
         addEagerImports(path, state);
         for (let handler of state.jobs) {
           handler();
@@ -59,7 +56,7 @@ export default function main(context: unknown): unknown {
       enter(path: NodePath<ForOfStatement>, state: State) {
         if (isEachPath(path)) {
           state.calledIdentifiers.add(path.get('right').get('callee').node);
-          insertEach(path, state);
+          insertEach(path, state, context);
         }
       },
     },
@@ -69,7 +66,7 @@ export default function main(context: unknown): unknown {
         if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
           let pkg = packageCache.ownerOfFile(sourceFile(path, state));
           if (pkg && pkg.name === '@embroider/macros') {
-            inlineRuntimeConfig(path, state);
+            inlineRuntimeConfig(path, state, context);
           }
         }
       },
@@ -112,7 +109,7 @@ export default function main(context: unknown): unknown {
           : false;
         if (mode) {
           state.calledIdentifiers.add(callee.node);
-          insertConfig(path, state, mode);
+          insertConfig(path, state, mode, context);
           return;
         }
 
@@ -127,7 +124,7 @@ export default function main(context: unknown): unknown {
         let result = new Evaluator({ state }).evaluateMacroCall(path);
         if (result.confident) {
           state.calledIdentifiers.add(callee.node);
-          path.replaceWith(buildLiterals(result.value));
+          path.replaceWith(buildLiterals(result.value, context));
         }
       },
       exit(path: NodePath<CallExpression>, state: State) {
@@ -154,7 +151,7 @@ export default function main(context: unknown): unknown {
             replacePaths.push(path);
             state.calledIdentifiers.add(callee.node);
           } else {
-            let r = identifier('require');
+            let r = context.types.identifier('require');
             state.generatedRequires.add(r);
             callee.replaceWith(r);
           }
@@ -214,7 +211,7 @@ export default function main(context: unknown): unknown {
         // Our importSync macro has been compiled to `require`. But we want to
         // distinguish that from any pre-existing, user-written `require` in an
         // Ember addon, which should retain its *runtime* meaning.
-        path.replaceWith(memberExpression(identifier('window'), path.node));
+        path.replaceWith(context.types.memberExpression(context.types.identifier('window'), path.node));
       }
     },
   };
@@ -228,7 +225,7 @@ export default function main(context: unknown): unknown {
         if (state.opts.mode === 'compile-time') {
           let result = new Evaluator({ state }).evaluate(path);
           if (result.confident) {
-            path.replaceWith(buildLiterals(result.value));
+            path.replaceWith(buildLiterals(result.value, context));
           }
         }
       },
@@ -251,14 +248,15 @@ function pruneMacroImports(path: NodePath) {
   }
 }
 
-function addRuntimeImports(path: NodePath<Program>, state: State) {
+function addRuntimeImports(path: NodePath<Program>, state: State, context: BabelContext) {
+  let t = context.types;
   if (state.neededRuntimeImports.size > 0) {
     path.node.body.push(
-      importDeclaration(
+      t.importDeclaration(
         [...state.neededRuntimeImports].map(([local, imported]) =>
-          importSpecifier(identifier(local), identifier(imported))
+          t.importSpecifier(t.identifier(local), t.identifier(imported))
         ),
-        stringLiteral(pathToRuntime(path, state))
+        t.stringLiteral(pathToRuntime(path, state))
       )
     );
   }

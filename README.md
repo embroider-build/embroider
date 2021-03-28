@@ -1,4 +1,4 @@
-# Embroider: a modern build system for EmberJS apps
+# Embroider: translating existing Ember code into spec-compliant modern JavaScript
 
 [![GitHub Actions CI][github-actions-badge]][github-actions-ci-url]
 
@@ -31,16 +31,13 @@ You can read more about the motivation and key ideas in the [intro to the SPEC](
 
 ## Status / Should I Use It?
 
-This is beta-quality software. Teams are encouraged to test their apps and
-addons using Embroider and report bugs. We need more real-world testing before
-we can hit stable 1.0 and integrate into ember-cli as the default build
-pipeline.
-
-The main risks to be aware of if you choose to use Embroider in production are:
+We are rapidly nearing a 1.0 release, and several large, heavily-tested Ember apps are shipping to production with Embroider. So if you are excited to adopt Embroider, it is a reasonable choice. The main risks to be aware of if you choose to use Embroider in production are:
 
 - you're likely to discover some Ember addons don't work or break your build
 - Embroider's own configuration options are subject to change, so you'll need
   to read the CHANGELOG.md when updating the Embroider packages.
+  
+Alternatively, it is totally safe to stick with the traditional build pipeline and wait for the official cutover point when EmberCLI starts generating new apps with Embroider by default.
 
 ## For Addon Authors
 
@@ -100,6 +97,20 @@ The recommended steps when introducing Embroider into an existing app are:
 3. Enable `staticHelpers` and test. This is usually safe because addons get invoke declarative in templates and we can see all invocations.
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work.
+
+## Configuring asset URLs
+
+If you are serving your assets from a different origin (like a CDN) from where your index.html content will
+be served from, you can use the publicAssetURL option to specify the base URL. In pre-Embroider Ember apps,
+this was accomplished by configuring the `fingerprint: { prepend: ... }` option handled by broccoli-asset-rev.
+
+```js
+return require('@embroider/compat').compatBuild(app, Webpack, {
+  packagerOptions: {
+    publicAssetURL: 'https://your-cdn-here.com/', // This should be a URL ending in "/"
+  },
+});
+```
 
 ## Analyzing Bundles
 

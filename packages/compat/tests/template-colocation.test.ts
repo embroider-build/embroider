@@ -80,8 +80,9 @@ describe('template colocation', function () {
   test(`app's colocated template is associated with JS`, function () {
     let assertFile = expectFile('components/has-colocated-template.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/has-colocated-template.hbs['"];/, 'imported template');
+    assertFile.matches(/const setComponentTemplate = Ember\._setComponentTemplate;/, 'found setComponentTemplate');
     assertFile.matches(
-      /export default Ember._setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
+      /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
       'default export is wrapped'
     );
   });
@@ -89,8 +90,9 @@ describe('template colocation', function () {
   test(`app's template-only component JS is synthesized`, function () {
     let assertFile = expectFile('components/template-only-component.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/template-only-component.hbs['"];/, 'imported template');
+    assertFile.matches(/const setComponentTemplate = Ember\._setComponentTemplate;/, 'found setComponentTemplate');
     assertFile.matches(
-      /export default Ember._setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
+      /export default setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
       'default export is wrapped'
     );
   });
@@ -108,8 +110,9 @@ describe('template colocation', function () {
   test(`addon's colocated template is associated with JS`, function () {
     let assertFile = expectFile('node_modules/my-addon/components/component-one.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
+    assertFile.matches(/const setComponentTemplate = Ember\._setComponentTemplate;/, 'found setComponentTemplate');
     assertFile.matches(
-      /export default Ember._setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
+      /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
       'default export is wrapped'
     );
   });
@@ -117,8 +120,9 @@ describe('template colocation', function () {
   test(`addon's template-only component JS is synthesized`, function () {
     let assertFile = expectFile('node_modules/my-addon/components/component-two.js').transform(build.transpile);
     assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
+    assertFile.matches(/const setComponentTemplate = Ember\._setComponentTemplate;/, 'found setComponentTemplate');
     assertFile.matches(
-      /export default Ember._setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
+      /export default setComponentTemplate\(TEMPLATE, Ember._templateOnlyComponent\(\)\)/,
       'default export is wrapped'
     );
   });

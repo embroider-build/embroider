@@ -22,7 +22,13 @@ import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
-import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from './detect-babel-plugins';
+import {
+  isEmberAutoImportDynamic,
+  isCompactReexports,
+  isColocationPlugin,
+  isInlinePrecompilePlugin,
+} from './detect-babel-plugins';
+
 import { ResolvedDep } from '@embroider/core/src/resolver';
 import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 
@@ -1026,7 +1032,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (NodeTemplateCompiler.isInlinePrecompilePlugin(plugin)) {
+  if (isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline

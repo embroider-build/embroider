@@ -2,7 +2,7 @@ import { allBabelVersions, emberTemplateCompilerPath } from '@embroider/test-sup
 import { join } from 'path';
 import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
-import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs';
+import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -89,7 +89,10 @@ describe('inline-hbs', () => {
         };
         return {
           plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 } as InlineBabelParams],
+            [
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
+              { templateCompiler, stage: 1 } as InlineBabelParams,
+            ],
           ],
         };
       },
@@ -110,7 +113,7 @@ describe('inline-hbs', () => {
         return {
           plugins: [
             [
-              join(__dirname, '../src/babel-plugin-inline-hbs.js'),
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
               { templateCompiler, stage: 3, needsModulesPolyfill: true } as InlineBabelParams,
             ],
           ],
@@ -133,7 +136,7 @@ describe('inline-hbs', () => {
         return {
           plugins: [
             [
-              join(__dirname, '../src/babel-plugin-inline-hbs.js'),
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
               { templateCompiler, stage: 3, needsModulesPolyfill: true } as InlineBabelParams,
             ],
           ],

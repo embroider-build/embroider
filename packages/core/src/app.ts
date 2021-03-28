@@ -1248,7 +1248,7 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
-    _relativeTo: string,
+    relativeTo: string,
     engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
@@ -1277,7 +1277,10 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime: join(packageName, name),
+            buildtime:
+              this.options.implicitModulesStrategy === 'packageNames'
+                ? join(packageName, name)
+                : explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
           });
         }
       }

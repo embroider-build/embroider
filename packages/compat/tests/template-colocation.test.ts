@@ -100,10 +100,10 @@ describe('template colocation', function () {
   test(`app's colocated components are implicitly included correctly`, function () {
     let assertFile = expectFile('assets/my-app.js');
     assertFile.matches(
-      /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/has-colocated-template['"]\);\s*\}/
+      /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/has-colocated-template\.js['"]\);\s*\}/
     );
     assertFile.matches(
-      /d\(["']my-app\/components\/template-only-component["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/template-only-component['"]\);\s*\}/
+      /d\(["']my-app\/components\/template-only-component["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/template-only-component\.js['"]\);\s*\}/
     );
   });
 

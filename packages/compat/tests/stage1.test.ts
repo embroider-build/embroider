@@ -116,7 +116,7 @@ describe('stage1 build', function () {
 
     test('addon metadata', function () {
       let assertMeta = expectFile('node_modules/my-addon/package.json').json('ember-addon');
-      assertMeta.get('app-js').equals('_app_'); // should have app-js metadata
+      assertMeta.get('app-js').deepEquals({ './components/hello-world.js': './_app_/components/hello-world.js' }); // should have app-js metadata
       assertMeta
         .get('implicit-modules')
         .includes('./components/hello-world', 'staticAddonTrees is off so we should include the component implicitly');

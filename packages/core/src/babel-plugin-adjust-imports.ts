@@ -1,4 +1,4 @@
-import getPackageName from './package-name';
+import { packageName as getPackageName } from '@embroider/shared-internals';
 import { join, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';

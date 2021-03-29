@@ -14,7 +14,6 @@ export { Plugins as TemplateCompilerPlugins } from './ember-template-compiler-ty
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';
-export { default as packageName } from './package-name';
 export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
 export { default as BuildStage } from './build-stage';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
@@ -34,4 +33,5 @@ export {
   V2Package,
   PackageCache,
   babelFilter,
+  packageName,
 } from '@embroider/shared-internals';

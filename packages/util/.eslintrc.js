@@ -51,7 +51,7 @@ module.exports = {
     },
     // node typescript files
     {
-      files: ['src/**/*.ts'],
+      files: ['src/**/*.ts', 'shim.ts'],
       parser: '@typescript-eslint/parser',
       parserOptions: {
         ecmaVersion: 2017,
@@ -69,7 +69,10 @@ module.exports = {
         ],
         '@typescript-eslint/consistent-type-assertions': 'error',
         '@typescript-eslint/no-inferrable-types': 'error',
-        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_' },
+        ],
         'no-unused-vars': 'off',
         '@typescript-eslint/no-require-imports': 'error',
       },

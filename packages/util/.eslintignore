@@ -7,6 +7,8 @@
 /tmp/
 /src/**/*.js
 /src/**/*.d.ts
+/shim.js
+/shim.d.ts
 
 # dependencies
 /bower_components/

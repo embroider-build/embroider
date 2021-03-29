@@ -21,17 +21,6 @@ export { AppAdapter, AppBuilder, EmberENV } from './app';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
 export { mangledEngineRoot } from './engine-mangler';
 
-export {
-  AppMeta,
-  AddonMeta,
-  explicitRelative,
-  extensionsPattern,
-  getOrCreate,
-  Package,
-  AddonPackage,
-  AppPackage,
-  V2Package,
-  PackageCache,
-  babelFilter,
-  packageName,
-} from '@embroider/shared-internals';
+// this is reexported because we already make users manage a peerDep from some
+// other packages (like embroider/webpack and @embroider/
+export * from '@embroider/shared-internals';

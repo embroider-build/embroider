@@ -234,8 +234,8 @@ export class TemplateCompiler {
   }
 }
 
-function matchesSourceFile(filename: string) {
-  return htmlbarPathMatches.find(match => filename.endsWith(match));
+export function matchesSourceFile(filename: string) {
+  return Boolean(htmlbarPathMatches.find(match => filename.endsWith(match)));
 }
 
 function hasProperties(item: any) {

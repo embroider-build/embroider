@@ -6,6 +6,9 @@
 /src/**/*.js
 /src/**/*.d.ts
 /src/**/*.map
+/shim.js
+/shim.d.ts
+/shim.js.map
 
 # dependencies
 /bower_components/

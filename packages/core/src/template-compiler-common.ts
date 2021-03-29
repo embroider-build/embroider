@@ -4,19 +4,6 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-<<<<<<< HEAD:packages/core/src/template-compiler-common.ts
-||||||| parent of 5bf3fe4a (Use jsStringEscape for better back slash handling):packages/core/src/template-compiler.ts
-import { patch } from './patch-template-compiler';
-import { Portable, PortableHint } from './portable';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
-import { createContext, Script } from 'vm';
-=======
-import { patch } from './patch-template-compiler';
-import { Portable, PortableHint } from './portable';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
-import { createContext, Script } from 'vm';
-import jsStringEscape from 'js-string-escape';
->>>>>>> 5bf3fe4a (Use jsStringEscape for better back slash handling):packages/core/src/template-compiler.ts
 
 export interface Plugins {
   ast?: unknown[];
@@ -69,264 +56,18 @@ export interface GlimmerSyntax {
     }
   ): string;
   _Ember: { FEATURES: any; ENV: any };
-<<<<<<< HEAD:packages/core/src/template-compiler-common.ts
-||||||| parent of a468d406 (Improving windows support):packages/core/src/template-compiler.ts
-  cacheKey: string;
 }
 
-// Here we cache the templateCompiler, as we tend to reuse the same template
-// compiler throughout the build.
-//
-type EmbersExports = {
-  cacheKey: string;
-  theExports: any;
-};
-
-type TemplateCompilerCacheEntry = {
-  value: EmbersExports;
-  stat: fs.Stats;
-};
-
-const CACHE = new Map<string, TemplateCompilerCacheEntry>();
-
-function getEmberExports(templateCompilerPath: string): EmbersExports {
-  let entry = CACHE.get(templateCompilerPath);
-
-  if (entry) {
-    let currentStat = statSync(templateCompilerPath);
-
-    // Let's ensure the template is still what we cached
-    if (
-      currentStat.mode === entry.stat.mode &&
-      currentStat.size === entry.stat.size &&
-      currentStat.mtime.getTime() === entry.stat.mtime.getTime()
-    ) {
-      return entry.value;
-    }
-  }
-
-  let stat = statSync(templateCompilerPath);
-
-  let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
-
-  // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
-  let sandbox = {
-    module: { require, exports: {} },
-    require,
-  };
-  if (typeof globalThis === 'undefined') {
-    // for Node 10 usage with Ember 3.27+ we have to define the `global` global
-    // in order for ember-template-compiler.js to evaluate properly
-    // due to this code https://git.io/Jtb7s
-    (sandbox as any).global = sandbox;
-  }
-
-  // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
-  // so that any global mutation done within ember-template-compiler.js does not leak out
-  let context = createContext(sandbox);
-  let script = new Script(source, { filename: templateCompilerPath });
-
-  script.runInContext(context);
-  let theExports: any = context.module.exports;
-
-  // cacheKey, theExports
-  let cacheKey = createHash('md5').update(source).digest('hex');
-
-  entry = Object.freeze({
-    value: {
-      cacheKey,
-      theExports,
-    },
-    stat, // This is stored, so we can reload the templateCompiler if it changes mid-build.
-  });
-
-  CACHE.set(templateCompilerPath, entry);
-  return entry.value;
-}
-
-// we could directly depend on @glimmer/syntax and have nice types and
-// everything. But the problem is, we really want to use the exact version that
-// the app itself is using, and its copy is bundled away inside
-// ember-template-compiler.js.
-function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
-  let { theExports, cacheKey } = getEmberExports(templateCompilerPath);
-
-  // detect if we are using an Ember version with the exports we need
-  // (from https://github.com/emberjs/ember.js/pull/19426)
-  if (theExports._preprocess !== undefined) {
-    return {
-      print: theExports._print,
-      preprocess: theExports._preprocess,
-      defaultOptions: theExports._buildCompileOptions,
-      precompile: theExports.precompile,
-      _Ember: theExports._Ember,
-      cacheKey,
-    };
-  } else {
-    // Older Ember versions (prior to 3.27) do not expose a public way to to source 2 source compilation of templates.
-    // because of this, we must resort to some hackery.
-    //
-    // We use the following API's (that we grab from Ember.__loader):
-    //
-    // * glimmer/syntax's preprocess
-    // * glimmer/syntax's print
-    // * ember-template-compiler/lib/system/compile-options's defaultOptions
-    let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
-    let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
-
-    return {
-      print: syntax.print,
-      preprocess: syntax.preprocess,
-      defaultOptions: compilerOptions.default,
-      precompile: theExports.precompile,
-      _Ember: theExports._Ember,
-      cacheKey,
-    };
-  }
-}
-
-export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
-  let p = new Portable({ hints });
-  let result = p.dehydrate(params);
-  return {
-    src: [
-      `const { TemplateCompiler } = require("${__filename}");`,
-      `const { Portable } = require("${resolve(__dirname, './portable.js')}");`,
-      `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
-      `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
-    ].join('\n'),
-    isParallelSafe: result.isParallelSafe,
-  };
-=======
-  cacheKey: string;
-}
-
-// Here we cache the templateCompiler, as we tend to reuse the same template
-// compiler throughout the build.
-//
-type EmbersExports = {
-  cacheKey: string;
-  theExports: any;
-};
-
-type TemplateCompilerCacheEntry = {
-  value: EmbersExports;
-  stat: fs.Stats;
-};
-
-const CACHE = new Map<string, TemplateCompilerCacheEntry>();
-
-function getEmberExports(templateCompilerPath: string): EmbersExports {
-  let entry = CACHE.get(templateCompilerPath);
-
-  if (entry) {
-    let currentStat = statSync(templateCompilerPath);
-
-    // Let's ensure the template is still what we cached
-    if (
-      currentStat.mode === entry.stat.mode &&
-      currentStat.size === entry.stat.size &&
-      currentStat.mtime.getTime() === entry.stat.mtime.getTime()
-    ) {
-      return entry.value;
-    }
-  }
-
-  let stat = statSync(templateCompilerPath);
-
-  let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
-
-  // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
-  let sandbox = {
-    module: { require, exports: {} },
-    require,
-  };
-  if (typeof globalThis === 'undefined') {
-    // for Node 10 usage with Ember 3.27+ we have to define the `global` global
-    // in order for ember-template-compiler.js to evaluate properly
-    // due to this code https://git.io/Jtb7s
-    (sandbox as any).global = sandbox;
-  }
-
-  // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
-  // so that any global mutation done within ember-template-compiler.js does not leak out
-  let context = createContext(sandbox);
-  let script = new Script(source, { filename: templateCompilerPath });
-
-  script.runInContext(context);
-  let theExports: any = context.module.exports;
-
-  // cacheKey, theExports
-  let cacheKey = createHash('md5').update(source).digest('hex');
-
-  entry = Object.freeze({
-    value: {
-      cacheKey,
-      theExports,
-    },
-    stat, // This is stored, so we can reload the templateCompiler if it changes mid-build.
-  });
-
-  CACHE.set(templateCompilerPath, entry);
-  return entry.value;
-}
-
-// we could directly depend on @glimmer/syntax and have nice types and
-// everything. But the problem is, we really want to use the exact version that
-// the app itself is using, and its copy is bundled away inside
-// ember-template-compiler.js.
-function loadGlimmerSyntax(templateCompilerPath: string): GlimmerSyntax {
-  let { theExports, cacheKey } = getEmberExports(templateCompilerPath);
-
-  // detect if we are using an Ember version with the exports we need
-  // (from https://github.com/emberjs/ember.js/pull/19426)
-  if (theExports._preprocess !== undefined) {
-    return {
-      print: theExports._print,
-      preprocess: theExports._preprocess,
-      defaultOptions: theExports._buildCompileOptions,
-      precompile: theExports.precompile,
-      _Ember: theExports._Ember,
-      cacheKey,
-    };
-  } else {
-    // Older Ember versions (prior to 3.27) do not expose a public way to to source 2 source compilation of templates.
-    // because of this, we must resort to some hackery.
-    //
-    // We use the following API's (that we grab from Ember.__loader):
-    //
-    // * glimmer/syntax's preprocess
-    // * glimmer/syntax's print
-    // * ember-template-compiler/lib/system/compile-options's defaultOptions
-    let syntax = theExports.Ember.__loader.require('@glimmer/syntax');
-    let compilerOptions = theExports.Ember.__loader.require('ember-template-compiler/lib/system/compile-options');
-
-    return {
-      print: syntax.print,
-      preprocess: syntax.preprocess,
-      defaultOptions: compilerOptions.default,
-      precompile: theExports.precompile,
-      _Ember: theExports._Ember,
-      cacheKey,
-    };
-  }
-}
-
-export function templateCompilerModule(params: TemplateCompilerParams, hints: PortableHint[]) {
-  let p = new Portable({ hints });
-  let result = p.dehydrate(params);
-
-  return {
-    src: [
-      `const { TemplateCompiler } = require("${jsStringEscape(__filename)}");`,
-      `const { Portable } = require("${jsStringEscape(resolve(__dirname, './portable.js'))}");`,
-      `let p = new Portable({ hints: ${JSON.stringify(hints, null, 2)} });`,
-      `module.exports = new TemplateCompiler(p.hydrate(${JSON.stringify(result.value, null, 2)}))`,
-    ].join('\n'),
-    isParallelSafe: result.isParallelSafe,
-  };
->>>>>>> a468d406 (Improving windows support):packages/core/src/template-compiler.ts
-}
+const htmlbarPathMatches = [
+  ['htmlbars-inline-precompile', 'index.js'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
+  ['htmlbars-inline-precompile', 'index'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
+  ['ember-cli-htmlbars', 'index.js'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
+  ['ember-cli-htmlbars', 'index'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
+];
 
 export interface TemplateCompilerParams {
   // this should be the exports object from ember-template-compiler.js. It's
@@ -459,6 +200,7 @@ export class TemplateCompiler {
     opts.filename = moduleName;
     opts.moduleName = this.resolver ? this.resolver.absPathToRuntimePath(moduleName) || moduleName : moduleName;
     let ast = this.syntax.preprocess(contents, opts);
+
     return this.syntax.print(ast, { entityEncoding: 'raw' });
   }
 
@@ -493,20 +235,7 @@ export class TemplateCompiler {
 }
 
 function matchesSourceFile(filename: string) {
-  // this respects ember-cli-htmlbars\lib\require-from-worker.js and
-  // ember-cli-htmlbars/lib/require-from-worker.js
-  let matches = [
-    ['htmlbars-inline-precompile', 'index.js'].join(sep),
-    ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
-    ['htmlbars-inline-precompile', 'index'].join(sep),
-    ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
-    ['ember-cli-htmlbars', 'index.js'].join(sep),
-    ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
-    ['ember-cli-htmlbars', 'index'].join(sep),
-    ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
-  ];
-
-  return matches.find(match => filename.endsWith(match));
+  return htmlbarPathMatches.find(match => filename.endsWith(match));
 }
 
 function hasProperties(item: any) {

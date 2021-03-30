@@ -25,3 +25,14 @@ export const emberVirtualPackages = new Set<string>(mappings.map((m: any) => m.m
 // a v1 addon in between the app and a v2 addon might not declare the peerDep,
 // breaking the deeper v2 addon.
 export const emberVirtualPeerDeps = new Set<string>(['@glimmer/component']);
+
+// this is a real package, even though it's still listed in rfc176
+emberVirtualPackages.delete('@ember/string');
+emberVirtualPeerDeps.add('@ember/string');
+
+// these can also appear in ember code and should get compiled away by babel,
+// but we may need to tell a build tool that is inspecting pre-transpiled code
+// (like snowpack) not to worrya bout these packages.
+emberVirtualPackages.add('@glimmer/env');
+emberVirtualPackages.add('ember');
+emberVirtualPackages.add('@embroider/macros');

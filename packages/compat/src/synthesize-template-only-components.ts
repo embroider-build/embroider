@@ -4,7 +4,8 @@ import { join, basename } from 'path';
 import walkSync from 'walk-sync';
 import { remove, outputFileSync, pathExistsSync } from 'fs-extra';
 
-const source = `export default Ember._templateOnlyComponent();`;
+const source = `import templateOnlyComponent from '@ember/component/template-only';
+export default templateOnlyComponent();`;
 
 const templateExtension = '.hbs';
 

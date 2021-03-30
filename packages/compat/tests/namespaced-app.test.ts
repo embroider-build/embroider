@@ -42,7 +42,7 @@ describe('namespaced app', function () {
       'implicit-modules have correct paths'
     );
     assertFile.matches(
-      /d\(["']@ef4\/namespaced-app\/app['"], function\(\)\{ return i\(['"]\.\.\/\.\.\/app"\);\}\);/,
+      /d\(["']@ef4\/namespaced-app\/app['"], function\(\)\{ return i\(['"]\.\.\/\.\.\/app\.js"\);\}\);/,
       `app's own modules are correct`
     );
   });

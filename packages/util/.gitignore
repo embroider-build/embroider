@@ -3,6 +3,12 @@
 # compiled output
 /dist/
 /tmp/
+/src/**/*.js
+/src/**/*.d.ts
+/src/**/*.map
+/shim.js
+/shim.d.ts
+/shim.js.map
 
 # dependencies
 /bower_components/
@@ -12,6 +18,7 @@
 /.env*
 /.pnp*
 /.sass-cache
+/.eslintcache
 /connect.lock
 /coverage/
 /libpeerconnection.log

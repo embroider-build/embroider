@@ -5,6 +5,10 @@
 # compiled output
 /dist/
 /tmp/
+/src/**/*.js
+/src/**/*.d.ts
+/shim.js
+/shim.d.ts
 
 # dependencies
 /bower_components/
@@ -13,6 +17,7 @@
 # misc
 /coverage/
 !.*
+.eslintcache
 
 # ember-try
 /.node_modules.ember-try/

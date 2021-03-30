@@ -113,7 +113,7 @@ describe('splitAtRoutes', function () {
     });
 
     it('dynamically imports the route entrypoint from the main entrypoint', function () {
-      expectFile('./assets/my-app.js').matches('import("./_route_/people")');
+      expectFile('./assets/my-app.js').matches('import("./_route_/people.js")');
     });
 
     it('has split controllers in route entrypoint', function () {
@@ -292,7 +292,7 @@ describe('splitAtRoutes', function () {
     });
 
     it('dynamically imports the route entrypoint from the main entrypoint', function () {
-      expectFile('./assets/my-app.js').matches('import("./_route_/people")');
+      expectFile('./assets/my-app.js').matches('import("./_route_/people.js")');
     });
 
     it('has split controllers in route entrypoint', function () {

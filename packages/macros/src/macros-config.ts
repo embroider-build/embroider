@@ -96,6 +96,21 @@ export default class MacrosConfig {
     }
   }
 
+  private _importSyncImplementation: 'cjs' | 'eager' = 'cjs';
+
+  get importSyncImplementation() {
+    return this._importSyncImplementation;
+  }
+
+  set importSyncImplementation(value: 'cjs' | 'eager') {
+    if (!this._configWritable) {
+      throw new Error(
+        `[Embroider:MacrosConfig] attempted to set importSyncImplementation after configs have been finalized`
+      );
+    }
+    this._importSyncImplementation = value;
+  }
+
   private constructor() {
     // this uses globalConfig because these things truly are global. Even if a
     // package doesn't have a dep or peerDep on @embroider/macros, it's legit
@@ -239,6 +254,8 @@ export default class MacrosConfig {
       get mode() {
         return self.mode;
       },
+
+      importSyncImplementation: this.importSyncImplementation,
     };
     return [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts];
   }

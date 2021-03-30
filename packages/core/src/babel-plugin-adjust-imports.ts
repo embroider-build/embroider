@@ -1,35 +1,14 @@
-import getPackageName from './package-name';
+import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { join, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
-import {
-  blockStatement,
-  callExpression,
-  expressionStatement,
-  functionExpression,
-  identifier,
-  importDeclaration,
-  memberExpression,
-  Program,
-  returnStatement,
-  stringLiteral,
-  isStringLiteral,
-  isArrayExpression,
-  isFunction,
-  CallExpression,
-  StringLiteral,
-  ArrayExpression,
-  ExportNamedDeclaration,
-  ImportDeclaration,
-  ExportAllDeclaration,
-  importNamespaceSpecifier,
-} from '@babel/types';
+import type * as t from '@babel/types';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
+import { emberModulesPolyfill } from './mini-modules-polyfill';
 
 interface State {
-  emberCLIVanillaJobs: Function[];
   adjustFile: AdjustFile;
   opts: {
     renamePackages: {
@@ -49,20 +28,23 @@ interface State {
     };
     relocatedFiles: { [relativePath: string]: string };
     resolvableExtensions: string[];
+    emberNeedsModulesPolyfill: boolean;
   };
 }
+
+type BabelTypes = typeof t;
 
 export type Options = State['opts'];
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-type DefineExpressionPath = NodePath<CallExpression> & {
-  node: CallExpression & {
-    arguments: [StringLiteral, ArrayExpression, Function];
+type DefineExpressionPath = NodePath<t.CallExpression> & {
+  node: t.CallExpression & {
+    arguments: [t.StringLiteral, t.ArrayExpression, Function];
   };
 };
 
-export function isImportSyncExpression(path: NodePath<any>) {
+export function isImportSyncExpression(t: BabelTypes, path: NodePath<any>) {
   if (
     !path ||
     !path.isCallExpression() ||
@@ -73,19 +55,19 @@ export function isImportSyncExpression(path: NodePath<any>) {
   }
 
   const args = path.node.arguments;
-  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+  return Array.isArray(args) && args.length === 1 && t.isStringLiteral(args[0]);
 }
 
-export function isDynamicImportExpression(path: NodePath<any>) {
+export function isDynamicImportExpression(t: BabelTypes, path: NodePath<any>) {
   if (!path || !path.isCallExpression() || path.node.callee.type !== 'Import') {
     return false;
   }
 
   const args = path.node.arguments;
-  return Array.isArray(args) && args.length === 1 && isStringLiteral(args[0]);
+  return Array.isArray(args) && args.length === 1 && t.isStringLiteral(args[0]);
 }
 
-export function isDefineExpression(path: NodePath<any>): path is DefineExpressionPath {
+export function isDefineExpression(t: BabelTypes, path: NodePath<any>): path is DefineExpressionPath {
   // should we allow nested defines, or stop at the top level?
   if (!path.isCallExpression() || path.node.callee.type !== 'Identifier' || path.node.callee.name !== 'define') {
     return false;
@@ -97,9 +79,9 @@ export function isDefineExpression(path: NodePath<any>): path is DefineExpressio
   return (
     Array.isArray(args) &&
     args.length === 3 &&
-    isStringLiteral(args[0]) &&
-    isArrayExpression(args[1]) &&
-    isFunction(args[2])
+    t.isStringLiteral(args[0]) &&
+    t.isArrayExpression(args[1]) &&
+    t.isFunction(args[2])
   );
 }
 
@@ -245,6 +227,12 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   let relocatedPkg = sourceFile.relocatedIntoPackage();
   if (relocatedPkg) {
     // this file has been moved into another package (presumably the app).
+
+    // self-imports are legal in the app tree, even for v2 packages
+    if (packageName === pkg.name) {
+      return specifier;
+    }
+
     // first try to resolve from the destination package
     if (isResolvable(packageName, relocatedPkg)) {
       if (!pkg.meta['auto-upgraded']) {
@@ -291,6 +279,27 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return makeExternal(specifier, sourceFile, opts);
   }
 
+  if (pkg.isV2Ember()) {
+    // native v2 packages don't automatically externalize *everything* the way
+    // auto-upgraded packages do, but they still externalize known and approved
+    // ember virtual packages (like @ember/component)
+    if (emberVirtualPackages.has(packageName)) {
+      return makeExternal(specifier, sourceFile, opts);
+    }
+
+    // native v2 packages don't automatically get to use every other addon as a
+    // peerDep, but they do get the known and approved ember virtual peer deps,
+    // like @glimmer/component
+    if (emberVirtualPeerDeps.has(packageName)) {
+      if (!opts.activeAddons[packageName]) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName}, which is supposed to be present in all ember apps but seems to be missing`
+        );
+      }
+      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+    }
+  }
+
   // non-resolvable imports in dynamic positions become runtime errors, not
   // build-time errors, so we emit the runtime error module here before the
   // stage3 packager has a chance to see the missing module. (Maybe some stage3
@@ -327,30 +336,34 @@ function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options):
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
-export default function main() {
+export default function main(babel: unknown) {
+  let t = (babel as any).types as BabelTypes;
   return {
     visitor: {
       Program: {
-        enter(path: NodePath<Program>, state: State) {
-          state.emberCLIVanillaJobs = [];
+        enter(path: NodePath<t.Program>, state: State) {
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
-          addExtraImports(path, state.opts.extraImports);
+          addExtraImports(t, path, state.opts.extraImports);
         },
-        exit(_: any, state: State) {
-          state.emberCLIVanillaJobs.forEach(job => job());
+        exit(path: NodePath<t.Program>, state: State) {
+          for (let child of path.get('body')) {
+            if (child.isImportDeclaration() || child.isExportNamedDeclaration() || child.isExportAllDeclaration()) {
+              rewriteTopLevelImport(t, child, state);
+            }
+          }
         },
       },
-      CallExpression(path: NodePath<CallExpression>, state: State) {
-        if (isImportSyncExpression(path) || isDynamicImportExpression(path)) {
+      CallExpression(path: NodePath<t.CallExpression>, state: State) {
+        if (isImportSyncExpression(t, path) || isDynamicImportExpression(t, path)) {
           const [source] = path.get('arguments');
           let { opts } = state;
           let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts, true);
-          source.replaceWith(stringLiteral(specifier));
+          source.replaceWith(t.stringLiteral(specifier));
           return;
         }
 
         // Should/can we make this early exit when the first define was found?
-        if (!isDefineExpression(path)) {
+        if (!isDefineExpression(t, path)) {
           return;
         }
 
@@ -389,50 +402,64 @@ export default function main() {
           }
         }
       },
-      'ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration'(
-        path: NodePath<ImportDeclaration | ExportNamedDeclaration | ExportAllDeclaration>,
-        state: State
-      ) {
-        let { opts, emberCLIVanillaJobs } = state;
-        const { source } = path.node;
-        if (source === null || source === undefined) {
-          return;
-        }
-
-        let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
-        if (specifier !== source.value) {
-          emberCLIVanillaJobs.push(() => (source.value = specifier));
-        }
-      },
     },
   };
+}
+
+function rewriteTopLevelImport(
+  t: BabelTypes,
+  path: NodePath<t.ImportDeclaration | t.ExportNamedDeclaration | t.ExportAllDeclaration>,
+  state: State
+) {
+  let { opts } = state;
+  const { source } = path.node;
+  if (source === null || source === undefined) {
+    return;
+  }
+
+  if (opts.emberNeedsModulesPolyfill && path.isImportDeclaration()) {
+    let replacement = emberModulesPolyfill(t, path);
+    if (replacement) {
+      path.replaceWith(replacement);
+      return;
+    }
+  }
+
+  let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
+  if (specifier !== source.value) {
+    source.value = specifier;
+  }
 }
 
 (main as any).baseDir = function () {
   return join(__dirname, '..');
 };
 
-function addExtraImports(path: NodePath<Program>, extraImports: Required<State['opts']>['extraImports']) {
+function addExtraImports(
+  t: BabelTypes,
+  path: NodePath<t.Program>,
+  extraImports: Required<State['opts']>['extraImports']
+) {
   let counter = 0;
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
       if (runtimeName) {
-        path.node.body.unshift(amdDefine(runtimeName, counter));
+        path.node.body.unshift(amdDefine(t, runtimeName, counter));
         path.node.body.unshift(
-          importDeclaration([importNamespaceSpecifier(identifier(`a${counter++}`))], stringLiteral(target))
+          t.importDeclaration([t.importNamespaceSpecifier(t.identifier(`a${counter++}`))], t.stringLiteral(target))
         );
       } else {
-        path.node.body.unshift(importDeclaration([], stringLiteral(target)));
+        path.node.body.unshift(t.importDeclaration([], t.stringLiteral(target)));
       }
     }
   }
 }
 
-function amdDefine(runtimeName: string, importCounter: number) {
-  return expressionStatement(
-    callExpression(memberExpression(identifier('window'), identifier('define')), [
-      stringLiteral(runtimeName),
-      functionExpression(null, [], blockStatement([returnStatement(identifier(`a${importCounter}`))])),
+function amdDefine(t: BabelTypes, runtimeName: string, importCounter: number) {
+  return t.expressionStatement(
+    t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
+      t.stringLiteral(runtimeName),
+      t.functionExpression(null, [], t.blockStatement([t.returnStatement(t.identifier(`a${importCounter}`))])),
     ])
   );
 }
@@ -441,6 +468,9 @@ class AdjustFile {
   readonly originalFile: string;
 
   constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
+    if (!name) {
+      throw new Error(`bug: adjust-imports plugin was run without a filename`);
+    }
     this.originalFile = relocatedFiles[name] || name;
   }
 

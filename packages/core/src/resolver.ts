@@ -1,4 +1,5 @@
-import { TemplateCompiler } from './template-compiler';
+import { TemplateCompiler } from './template-compiler-common';
+import { Options } from './babel-plugin-adjust-imports';
 
 export interface ResolvedDep {
   runtimeName: string;
@@ -19,4 +20,6 @@ export interface Resolver {
   // this takes an absolute path to a file and gives back the runtime name of
   // that module, as it would tradtionally be named within loader.js.
   absPathToRuntimeName(absPath: string): string;
+
+  adjustImportsOptions: Options;
 }

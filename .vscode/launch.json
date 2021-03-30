@@ -9,14 +9,8 @@
       "request": "launch",
       "name": "Run tests",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "cwd": "${workspaceFolder}/packages/core",
-      "args": [
-        "--runInBand",
-        "--testPathPattern",
-        "tests/portable-babel-config.test.js",
-        "--test-name-pattern",
-        "undefined"
-      ],
+      "cwd": "${workspaceFolder}/packages/compat",
+      "args": ["--runInBand", "--testPathPattern", "tests/stage2  .test.js"],
       "outputCapture": "std"
     },
     {
@@ -56,6 +50,18 @@
       "name": "Build sample",
       "program": "/Users/edward/hacking/sample/node_modules/.bin/ember",
       "cwd": "/Users/edward/hacking/sample",
+      "args": ["build"],
+      "env": {
+        "JOBS": "1"
+      },
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build fastboot-app",
+      "program": "/Users/edward/hacking/sample/node_modules/.bin/ember",
+      "cwd": "${workspaceFolder}/test-packages/fastboot-app",
       "args": ["build"],
       "env": {
         "JOBS": "1"
@@ -143,7 +149,8 @@
       "cwd": "${workspaceFolder}/packages/util",
       "args": ["build"],
       "env": {
-        "JOBS": "1"
+        "JOBS": "1",
+        "EMBROIDER_TEST_SETUP_FORCE": "embroider"
       },
       "outputCapture": "std"
     },

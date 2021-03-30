@@ -31,8 +31,8 @@ export interface AddonMeta {
   'lazy-engine'?: boolean;
 
   'auto-upgraded'?: true;
-  'app-js'?: Filename;
-  'fastboot-js'?: Filename;
+  'app-js'?: { [appName: string]: Filename };
+  'fastboot-js'?: { [appName: string]: Filename };
   externals?: string[];
   'implicit-modules'?: string[];
   'implicit-scripts'?: Filename[];

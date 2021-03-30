@@ -1,8 +1,8 @@
 import { allBabelVersions, emberTemplateCompilerPath } from '@embroider/test-support';
 import { join } from 'path';
-import { TemplateCompilerParams } from '../src/template-compiler';
+import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
-import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs';
+import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -49,7 +49,8 @@ function stage3Tests(transform: (code: string) => string) {
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
+    expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
+    expect(code).toMatch(/return createTemplateFactory\({/);
   });
   test('call form', () => {
     let code = transform(`
@@ -59,7 +60,8 @@ function stage3Tests(transform: (code: string) => string) {
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).toMatch(/return Ember.HTMLBars.template\({/);
+    expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
+    expect(code).toMatch(/return createTemplateFactory\({/);
   });
   test('runtime errors become exceptions in stage 3', () => {
     let code = transform(`
@@ -69,6 +71,7 @@ function stage3Tests(transform: (code: string) => string) {
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).not.toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
     expect(code).toMatch(/throw new Error\("Unclosed element `div`/);
   });
 }
@@ -77,7 +80,7 @@ describe('inline-hbs', () => {
   describe('stage1', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
@@ -86,7 +89,10 @@ describe('inline-hbs', () => {
         };
         return {
           plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 1 } as InlineBabelParams],
+            [
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
+              { templateCompiler, stage: 1 } as InlineBabelParams,
+            ],
           ],
         };
       },
@@ -97,7 +103,7 @@ describe('inline-hbs', () => {
   describe('stage3 no presets', () => {
     allBabelVersions({
       babelConfig() {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
@@ -106,7 +112,10 @@ describe('inline-hbs', () => {
         };
         return {
           plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 } as InlineBabelParams],
+            [
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
+              { templateCompiler, stage: 3, needsModulesPolyfill: true } as InlineBabelParams,
+            ],
           ],
         };
       },
@@ -117,7 +126,7 @@ describe('inline-hbs', () => {
   describe('stage3 with presets', () => {
     allBabelVersions({
       babelConfig(major: number) {
-        let templateCompiler: TemplateCompilerParams = {
+        let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
           EmberENV: {},
           plugins: {
@@ -126,7 +135,10 @@ describe('inline-hbs', () => {
         };
         return {
           plugins: [
-            [join(__dirname, '../src/babel-plugin-inline-hbs.js'), { templateCompiler, stage: 3 } as InlineBabelParams],
+            [
+              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
+              { templateCompiler, stage: 3, needsModulesPolyfill: true } as InlineBabelParams,
+            ],
           ],
           presets: [
             [

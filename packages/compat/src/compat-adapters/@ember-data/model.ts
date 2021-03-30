@@ -6,7 +6,7 @@ export default class EmberDataModel extends V1Addon {
     if (!meta['implicit-modules']) {
       meta['implicit-modules'] = [];
     }
-    meta['implicit-modules'].push('./-private');
+    meta['implicit-modules'].push('./-private.js');
     return meta;
   }
 }

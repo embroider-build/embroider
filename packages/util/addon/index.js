@@ -1,6 +1,9 @@
 import { assert, deprecate } from '@ember/debug';
 import { getOwner } from '@ember/application';
-import { isCurriedComponentDefinition, lookupCurriedComponentDefinition } from './ember-private-api';
+import {
+  isCurriedComponentDefinition,
+  lookupCurriedComponentDefinition,
+} from './ember-private-api';
 import Helper from '@ember/component/helper';
 
 export function ensureSafeComponent(value, thingWithOwner) {

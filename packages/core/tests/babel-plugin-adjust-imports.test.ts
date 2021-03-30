@@ -7,6 +7,7 @@ import main, {
 import { transformSync } from '@babel/core';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
+import * as t from '@babel/types';
 
 describe('babel-plugin-adjust-imports', function () {
   function getFirstCallExpresssionPath(source: string) {
@@ -26,14 +27,14 @@ describe('babel-plugin-adjust-imports', function () {
   }
 
   function isDefineExpressionFromSource(source: string) {
-    return isDefineExpression(getFirstCallExpresssionPath(source));
+    return isDefineExpression(t, getFirstCallExpresssionPath(source));
   }
 
   function isImportSyncExpressionFromSource(source: string) {
-    return isImportSyncExpression(getFirstCallExpresssionPath(source));
+    return isImportSyncExpression(t, getFirstCallExpresssionPath(source));
   }
   function isDynamicImportExpressionFromSource(source: string) {
-    return isDynamicImportExpression(getFirstCallExpresssionPath(source));
+    return isDynamicImportExpression(t, getFirstCallExpresssionPath(source));
   }
 
   test('isDefineExpression works', function () {
@@ -93,6 +94,7 @@ describe('babel-plugin-adjust-imports', function () {
       relocatedFiles: {},
       externalsDir: 'test',
       resolvableExtensions: ['.js', '.hbs'],
+      emberNeedsModulesPolyfill: false,
     };
 
     {

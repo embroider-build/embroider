@@ -11,7 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, TemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
+import { AddonMeta, NodeTemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -22,9 +22,9 @@ import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
-import { isEmberAutoImportDynamic } from './detect-ember-auto-import';
-import { isCompactReexports } from './detect-compact-reexports';
+import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from './detect-babel-plugins';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -84,7 +84,7 @@ class V1AddonCompatResolver implements Resolver {
       params,
     };
   }
-  astTransformer(_templateCompiler: TemplateCompiler): unknown {
+  astTransformer(_templateCompiler: NodeTemplateCompiler): unknown {
     return;
   }
   dependenciesOf(_moduleName: string): ResolvedDep[] {
@@ -100,6 +100,9 @@ class V1AddonCompatResolver implements Resolver {
     return this.absPathToRuntimePath(absPath)
       .replace(extensionsPattern(['.js', '.hbs']), '')
       .replace(/\/index$/, '');
+  }
+  get adjustImportsOptions(): Resolver['adjustImportsOptions'] {
+    throw new Error(`bug: the addon compat resolver only supports absPath mapping`);
   }
 }
 
@@ -120,7 +123,7 @@ export default class V1Addon {
 
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
-  private get templateCompiler(): TemplateCompiler | undefined {
+  private get templateCompiler(): NodeTemplateCompiler | undefined {
     let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
       let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
@@ -128,7 +131,7 @@ export default class V1Addon {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         if (options.plugins.ast.length > 0) {
-          return new TemplateCompiler({
+          return new NodeTemplateCompiler({
             compilerPath: options.templateCompilerPath,
             EmberENV: {},
             plugins: options.plugins,
@@ -167,7 +170,7 @@ export default class V1Addon {
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Node): Node {
         if (this._addon.templateCompiler) {
-          return this._addon.templateCompiler.applyTransformsToTree(tree);
+          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler, 1);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.
@@ -176,12 +179,18 @@ export default class V1Addon {
       },
     });
 
-    if (this.needsCustomBabel()) {
-      // there is customized babel behavior needed, so we will leave
-      // ember-cli-babel in place, but modify its config so it doesn't do the
-      // things we don't want to do in stage1.
-      this.updateBabelConfig();
-    } else {
+    // first, look into the babel config and related packages to decide whether
+    // we need to run babel at all in this stage.
+    let needsCustomBabel = this.needsCustomBabel();
+
+    // regardless of the answer, we modify the babel config, because even if
+    // we're unregistering ember-cli-babel, some addons manually invoke
+    // ember-cli-babel in their custom hooks, and in that case we want to be
+    // sure we've taken out the babel plugins that really shouldn't run at this
+    // stage.
+    this.updateBabelConfig();
+
+    if (!needsCustomBabel) {
       // no custom babel behavior, so we don't run the ember-cli-babel
       // preprocessor at all. We still need to register a no-op preprocessor to
       // prevent ember-cli from emitting a deprecation warning.
@@ -244,8 +253,7 @@ export default class V1Addon {
       return true;
     }
 
-    let babelConfig = this.options.babel as TransformOptions | undefined;
-    if (babelConfig && babelConfig.plugins && babelConfig.plugins.length > 0) {
+    if ((this.options.babel?.plugins?.filter(babelPluginAllowedInStage1)?.length ?? 0) > 0) {
       // this addon has custom babel plugins, so we need to run them here in
       // stage1
       return true;
@@ -261,8 +269,27 @@ export default class V1Addon {
     return this.packageJSON.name;
   }
 
+  // you can override this to change the *input* packageJSON that the rest of
+  // stage1 will see. If you want to see and change the *output* packageJSON see
+  // `newPackageJSON`.
   protected get packageJSON() {
-    return this.addonInstance.pkg;
+    return this.packageCache.get(this.root).packageJSON;
+  }
+
+  protected get newPackageJSON() {
+    // shallow copy only! This is OK as long as we're only changing top-level
+    // keys in this method
+    let pkg = Object.assign({}, this.packageJSON);
+    let meta: AddonMeta = Object.assign({}, pkg.meta, this.packageMeta);
+    pkg['ember-addon'] = meta;
+
+    // classic addons don't get to customize their entrypoints like this. We
+    // always rewrite them so their entrypoint is index.js, so whatever was here
+    // is just misleading to stage3 packagers that might look (rollup does).
+    delete pkg.main;
+    delete pkg.module;
+
+    return pkg;
   }
 
   @Memoize()
@@ -506,7 +533,15 @@ export default class V1Addon {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
-    return mergeWithAppend(built.staticMeta, ...built.dynamicMeta.map(d => d()));
+    return mergeWithAppend(
+      {
+        version: 2,
+        'auto-upgraded': true,
+        type: 'addon',
+      },
+      built.staticMeta,
+      ...built.dynamicMeta.map(d => d())
+    );
   }
 
   @Memoize()
@@ -751,20 +786,23 @@ export default class V1Addon {
   }
 
   private maybeSetDirectoryMeta(built: IntermediateBuild, tree: Node, localDir: string, key: keyof AddonMeta): Node {
-    // unforunately Funnel doesn't create destDir if its input exists but is
-    // empty. And we want to only put the app-js key in package.json if
-    // there's really a directory for it to point to. So we need to monitor
-    // the output and use dynamicMeta.
-    let dirExists = false;
+    let files: AddonMeta['app-js'];
     built.dynamicMeta.push(() => {
-      if (dirExists) {
-        return { [key]: localDir };
+      if (files) {
+        return { [key]: files };
       } else {
         return {};
       }
     });
     return new ObserveTree(tree, (outputPath: string) => {
-      dirExists = pathExistsSync(join(outputPath, localDir));
+      let dir = join(outputPath, localDir);
+      if (existsSync(dir)) {
+        files = Object.fromEntries(
+          walkSync(dir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => [`./${f}`, `./${localDir}/${f}`])
+        );
+      } else {
+        files = undefined;
+      }
     });
   }
 
@@ -870,7 +908,7 @@ export default class V1Addon {
         publicAssets = {};
         for (let filename of walkSync(join(outputPath, 'public'))) {
           if (!filename.endsWith('/')) {
-            publicAssets[`public/${filename}`] = filename;
+            publicAssets[`./public/${filename}`] = './' + filename;
           }
         }
       });
@@ -931,12 +969,7 @@ export default class V1Addon {
   }
 
   private buildPackageJSON(built: IntermediateBuild) {
-    let packageJSONRewriter = new RewritePackageJSON(
-      this.rootTree,
-      () => this.packageMeta,
-      this.packageCache.get(this.root).packageJSON
-    );
-    built.trees.push(packageJSONRewriter);
+    built.trees.push(new RewritePackageJSON(this.rootTree, () => this.newPackageJSON));
   }
 
   @Memoize()
@@ -993,7 +1026,7 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
     return false;
   }
 
-  if (TemplateCompiler.isInlinePrecompilePlugin(plugin)) {
+  if (NodeTemplateCompiler.isInlinePrecompilePlugin(plugin)) {
     // Similarly, the inline precompile plugin must not run in stage1. We
     // want all templates uncompiled. Instead, we will be adding our own
     // plugin that only runs custom AST transforms inside inline
@@ -1010,6 +1043,13 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
   if (isCompactReexports(plugin)) {
     // We don't want to replace re-exports at this stage, since that will turn
     // an `export` statement into a `define`, which is handled in Stage 3
+    return false;
+  }
+
+  if (isColocationPlugin(plugin)) {
+    // template co-location is a first-class feature we support directly, so
+    // whether or not the app brought a plugin for it we're going to do it our
+    // way.
     return false;
   }
 

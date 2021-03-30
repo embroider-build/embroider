@@ -25,7 +25,8 @@ import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
-import { templateCompilerModule, TemplateCompilerParams } from './template-compiler';
+import type { NodeTemplateCompilerParams } from './template-compiler-node';
+import { templateCompilerModule } from './write-template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { mangledEngineRoot } from './engine-mangler';
@@ -33,7 +34,7 @@ import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node';
 import { PortableHint } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 
@@ -339,7 +340,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompilerParams: TemplateCompilerParams, appFiles: Engine[]) {
+  private babelConfig(templateCompilerParams: NodeTemplateCompilerParams, appFiles: Engine[]) {
     let babel = cloneDeep(this.adapter.babelConfig());
 
     if (!babel.plugins) {
@@ -358,19 +359,19 @@ export class AppBuilder<TreeNames> {
 
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
-      join(__dirname, 'babel-plugin-inline-hbs.js'),
+      join(__dirname, 'babel-plugin-inline-hbs-node.js'),
       {
         templateCompiler: templateCompilerParams,
         stage: 3,
       } as InlineBabelParams,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
-
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+
+    babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -883,7 +884,7 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private templateCompiler(config: EmberENV): TemplateCompilerParams {
+  private templateCompiler(config: EmberENV): NodeTemplateCompilerParams {
     let plugins = this.adapter.htmlbarsPlugins();
     if (!plugins.ast) {
       plugins.ast = [];
@@ -917,7 +918,7 @@ export class AppBuilder<TreeNames> {
     });
   }
 
-  private addTemplateCompiler(params: TemplateCompilerParams): boolean {
+  private addTemplateCompiler(params: NodeTemplateCompilerParams): boolean {
     let mod = templateCompilerModule(params, this.portableHints);
     writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
     return mod.isParallelSafe;
@@ -1063,6 +1064,13 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, vendor.js takes care of
+      // this bootstrapping. But when we're running with real ember modules,
+      // it's up to our entrypoint.
+      eagerModules.push('@ember/-internals/bootstrap');
+    }
+
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
@@ -1163,11 +1171,10 @@ export class AppBuilder<TreeNames> {
 
   private importPaths(engine: Engine, engineRelativePath: string, fromFile: string) {
     let appRelativePath = join(engine.appRelativePath, engineRelativePath);
-    let noJS = appRelativePath.replace(this.resolvableExtensionsPattern, '');
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
-      buildtime: explicitRelative(dirname(fromFile), noJS),
+      buildtime: explicitRelative(dirname(fromFile), appRelativePath),
     };
   }
 
@@ -1206,6 +1213,13 @@ export class AppBuilder<TreeNames> {
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
     ];
+
+    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
+      // when we're running with fake ember modules, the prebuilt test-support
+      // script takes care of this bootstrapping. But when we're running with
+      // real ember modules, it's up to our entrypoint.
+      eagerModules.push('ember-testing');
+    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
@@ -1263,7 +1277,10 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime: explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
+            buildtime:
+              this.options.implicitModulesStrategy === 'packageNames'
+                ? join(packageName, name)
+                : explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
           });
         }
       }

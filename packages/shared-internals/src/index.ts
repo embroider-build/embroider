@@ -6,3 +6,4 @@ export { default as PackageCache } from './package-cache';
 export { default as babelFilter } from './babel-filter';
 export { default as packageName } from './package-name';
 export * from './ember-cli-models';
+export * from './ember-standard-modules';

@@ -27,6 +27,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "ember-rfc176-data": "^0.3.17",
     "resolve-package-path": "^1.2.2",
     "pkg-up": "^3.1.0",
     "typescript-memoize": "^1.0.0-alpha.3",

@@ -58,6 +58,17 @@ export interface GlimmerSyntax {
   _Ember: { FEATURES: any; ENV: any };
 }
 
+const htmlbarPathMatches = [
+  ['htmlbars-inline-precompile', 'index.js'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
+  ['htmlbars-inline-precompile', 'index'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
+  ['ember-cli-htmlbars', 'index.js'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
+  ['ember-cli-htmlbars', 'index'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
+];
+
 export interface TemplateCompilerParams {
   // this should be the exports object from ember-template-compiler.js. It's
   // "unknown" here because it changes shape in different ember versions, we
@@ -223,8 +234,8 @@ export class TemplateCompiler {
   }
 }
 
-function matchesSourceFile(filename: string) {
-  return /(htmlbars-inline-precompile|ember-cli-htmlbars)\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
+export function matchesSourceFile(filename: string) {
+  return Boolean(htmlbarPathMatches.find(match => filename.endsWith(match)));
 }
 
 function hasProperties(item: any) {

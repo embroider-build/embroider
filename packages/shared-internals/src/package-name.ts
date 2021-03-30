@@ -1,5 +1,7 @@
+import { isAbsolute } from 'path';
+
 export default function absolutePackageName(specifier: string): string | undefined {
-  if (specifier[0] === '.' || specifier[0] === '/') {
+  if (specifier[0] === '.' || isAbsolute(specifier)) {
     // Not an absolute specifier
     return;
   }

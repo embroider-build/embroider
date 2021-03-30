@@ -1,7 +1,7 @@
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname } from 'path';
-import Funnel from 'broccoli-funnel';
+import { Funnel } from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';

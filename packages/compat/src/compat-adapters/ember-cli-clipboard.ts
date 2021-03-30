@@ -1,6 +1,6 @@
 import V1Addon from '../v1-addon';
 import { Memoize } from 'typescript-memoize';
-import Funnel from 'broccoli-funnel';
+import { Funnel } from 'broccoli-funnel';
 
 export default class EmberCLIClipboard extends V1Addon {
   @Memoize()

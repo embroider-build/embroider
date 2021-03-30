@@ -1,4 +1,4 @@
-import Funnel from 'broccoli-funnel';
+import { Funnel } from 'broccoli-funnel';
 import { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 

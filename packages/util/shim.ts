@@ -5,7 +5,7 @@ import {
   AddonInstance,
   isDeepAddonInstance,
 } from '@embroider/shared-internals';
-import Funnel from 'broccoli-funnel';
+import { Funnel } from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
 
 const MIN_SUPPORT_LEVEL = 1;

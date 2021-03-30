@@ -17,7 +17,8 @@
       "default": "./src/index.js"
     },
     "./src/messages": "./src/messages.js",
-    "./src/babel-plugin-inline-hbs": "./src/babel-plugin-inline-hbs.js"
+    "./src/babel-plugin-inline-hbs": "./src/babel-plugin-inline-hbs.js",
+    "./src/mini-modules-polyfill": "./src/mini-modules-polyfill.js"
   },
   "files": [
     "src/**/*.js",

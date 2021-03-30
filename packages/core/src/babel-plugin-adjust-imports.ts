@@ -1,12 +1,12 @@
 import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { join, dirname, resolve } from 'path';
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
-import { emberModulesPolyfill } from './mini-modules-polyfill';
+import { handleImportDeclaration } from './mini-modules-polyfill';
 
 interface State {
   adjustFile: AdjustFile;
@@ -418,7 +418,7 @@ function rewriteTopLevelImport(
   }
 
   if (opts.emberNeedsModulesPolyfill && path.isImportDeclaration()) {
-    let replacement = emberModulesPolyfill(t, path);
+    let replacement = handleImportDeclaration(t, path);
     if (replacement) {
       path.replaceWith(replacement);
       return;

@@ -2,7 +2,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname, isAbsolute, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
-import { Funnel, Options as FunnelOptions } from 'broccoli-funnel';
+import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';

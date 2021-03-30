@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import { UnwatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { Funnel } from 'broccoli-funnel';
+import Funnel from 'broccoli-funnel';
 
 export default class extends V1Addon {
   @Memoize()

@@ -1,5 +1,5 @@
 import V1Addon from '../v1-addon';
-import { Funnel } from 'broccoli-funnel';
+import Funnel from 'broccoli-funnel';
 import cloneDeep from 'lodash/cloneDeep';
 
 // ember-asset-loader's ManifestGenerator (which is used as the Addon base class

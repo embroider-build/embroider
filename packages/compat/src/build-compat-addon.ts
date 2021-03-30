@@ -4,7 +4,7 @@ import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Node } from 'broccoli-node-api';
 import OneShot from './one-shot';
-import { Funnel } from 'broccoli-funnel';
+import Funnel from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 

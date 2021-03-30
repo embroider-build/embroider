@@ -1,5 +1,5 @@
 import V1Addon from '../v1-addon';
-import { Funnel } from 'broccoli-funnel';
+import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AddToTree from '../add-to-tree';
 import { outputFileSync, unlinkSync } from 'fs-extra';

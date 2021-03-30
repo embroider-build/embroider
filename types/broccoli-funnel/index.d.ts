@@ -11,12 +11,9 @@ declare module 'broccoli-funnel' {
     getDestinationPath?: (relativePath: string) => string;
     annotation?: string;
   }
-
-  export class Funnel extends Plugin {
+  export default class Funnel extends Plugin {
     constructor(inputTree: BroccoliNode, options: Options);
     build(): Promise<void>;
     protected srcDir: string;
   }
-
-  export default function (inputTree: BroccoliNode, options: Options): Funnel;
 }

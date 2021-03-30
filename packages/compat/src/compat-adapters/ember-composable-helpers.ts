@@ -3,7 +3,7 @@ import { join } from 'path';
 import { Node } from 'broccoli-node-api';
 import { readdirSync, writeFileSync, readFileSync } from 'fs';
 import { pathExistsSync, removeSync } from 'fs-extra';
-import { Funnel } from 'broccoli-funnel';
+import Funnel from 'broccoli-funnel';
 import { transform } from '@babel/core';
 import { stripBadReexportsPlugin } from '../compat-utils';
 

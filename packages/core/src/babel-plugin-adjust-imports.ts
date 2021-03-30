@@ -1,4 +1,4 @@
-import getPackageName from './package-name';
+import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { join, dirname, resolve } from 'path';
 import { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';
@@ -227,6 +227,12 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   let relocatedPkg = sourceFile.relocatedIntoPackage();
   if (relocatedPkg) {
     // this file has been moved into another package (presumably the app).
+
+    // self-imports are legal in the app tree, even for v2 packages
+    if (packageName === pkg.name) {
+      return specifier;
+    }
+
     // first try to resolve from the destination package
     if (isResolvable(packageName, relocatedPkg)) {
       if (!pkg.meta['auto-upgraded']) {
@@ -271,6 +277,27 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   // externals.
   if (pkg.meta['auto-upgraded']) {
     return makeExternal(specifier, sourceFile, opts);
+  }
+
+  if (pkg.isV2Ember()) {
+    // native v2 packages don't automatically externalize *everything* the way
+    // auto-upgraded packages do, but they still externalize known and approved
+    // ember virtual packages (like @ember/component)
+    if (emberVirtualPackages.has(packageName)) {
+      return makeExternal(specifier, sourceFile, opts);
+    }
+
+    // native v2 packages don't automatically get to use every other addon as a
+    // peerDep, but they do get the known and approved ember virtual peer deps,
+    // like @glimmer/component
+    if (emberVirtualPeerDeps.has(packageName)) {
+      if (!opts.activeAddons[packageName]) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName}, which is supposed to be present in all ember apps but seems to be missing`
+        );
+      }
+      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+    }
   }
 
   // non-resolvable imports in dynamic positions become runtime errors, not

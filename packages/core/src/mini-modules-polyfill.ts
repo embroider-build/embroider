@@ -43,7 +43,27 @@ let replacements: { [moduleSpecifier: string]: { [name: string]: ((t: BabelTypes
   },
 };
 
-export function emberModulesPolyfill(t: BabelTypes, path: NodePath<t.ImportDeclaration>) {
+export default function miniModulesPolyfill(babel: unknown) {
+  let t = (babel as any).types as BabelTypes;
+  return {
+    visitor: {
+      Program: {
+        exit(path: NodePath<t.Program>) {
+          for (let child of path.get('body')) {
+            if (child.isImportDeclaration()) {
+              let replacement = handleImportDeclaration(t, child);
+              if (replacement) {
+                path.replaceWith(replacement);
+              }
+            }
+          }
+        },
+      },
+    },
+  };
+}
+
+export function handleImportDeclaration(t: BabelTypes, path: NodePath<t.ImportDeclaration>) {
   let match = replacements[path.node.source.value];
   if (match) {
     let specifiers = path.get('specifiers');

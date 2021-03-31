@@ -25,6 +25,7 @@ import SynthesizeTemplateOnlyComponents from './synthesize-template-only-compone
 import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from './detect-babel-plugins';
 import { ResolvedDep } from '@embroider/core/src/resolver';
 import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
+import { fromPairs } from 'lodash';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -797,9 +798,7 @@ export default class V1Addon {
     return new ObserveTree(tree, (outputPath: string) => {
       let dir = join(outputPath, localDir);
       if (existsSync(dir)) {
-        files = Object.fromEntries(
-          walkSync(dir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => [`./${f}`, `./${localDir}/${f}`])
-        );
+        files = fromPairs(walkSync(dir, { globs: ['**/*.js', '**/*.hbs'] }).map(f => [`./${f}`, `./${localDir}/${f}`]));
       } else {
         files = undefined;
       }

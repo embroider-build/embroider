@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
   "repository": {
@@ -30,7 +30,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/traverse": "^7.12.1",
     "@babel/types": "^7.12.1",
-    "@embroider/macros": "0.37.0",
+    "@embroider/macros": "0.38.0",
     "@types/babel__code-frame": "^7.0.2",
     "@types/yargs": "^15.0.9",
     "assert-never": "^1.1.0",
@@ -82,7 +82,7 @@
     "typescript": "~4.0.0"
   },
   "peerDependencies": {
-    "@embroider/core": "0.37.0"
+    "@embroider/core": "0.38.0"
   },
   "engines": {
     "node": "10.* || 12.* || >= 14"

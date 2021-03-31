@@ -1,5 +1,47 @@
 # Embroider Changelog
 
+Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
+Deprecated as of 10.7.0. Please use highlight(code, options) instead.
+https://github.com/highlightjs/highlight.js/issues/2277
+
+## v0.38.0 (2021-03-31)
+
+#### :rocket: Enhancement
+* `compat`, `core`, `shared-internals`, `util`
+  * [#732](https://github.com/embroider-build/embroider/pull/732) v2 addon shim ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#748](https://github.com/embroider-build/embroider/pull/748) Supporting more build environments ([@ef4](https://github.com/ef4))
+  * [#737](https://github.com/embroider-build/embroider/pull/737) reduce deps in macros and util packages ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `test-setup`, `util`, `webpack`
+  * [#740](https://github.com/embroider-build/embroider/pull/740) Use "real modules" for ember-source when possible (3.27+) ([@ef4](https://github.com/ef4))
+* `core`
+  * [#736](https://github.com/embroider-build/embroider/pull/736) silence warning about babel formatting while patching template compiler ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#721](https://github.com/embroider-build/embroider/pull/721) easier stage2-only config ([@ef4](https://github.com/ef4))
+  * [#715](https://github.com/embroider-build/embroider/pull/715) support EMBROIDER_REBUILD_ADDONS for pure v2 addons ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#720](https://github.com/embroider-build/embroider/pull/720) Improve error message when module cannot be found in webpack ([@thoov](https://github.com/thoov))
+
+#### :bug: Bug Fix
+* `core`, `shared-internals`
+  * [#742](https://github.com/embroider-build/embroider/pull/742) Improving Windows support ([@thoov](https://github.com/thoov))
+* `compat`
+  * [#747](https://github.com/embroider-build/embroider/pull/747) Add better support for skipping Stage 1 transforms that are not needed ([@ef4](https://github.com/ef4))
+* `hbs-loader`
+  * [#735](https://github.com/embroider-build/embroider/pull/735) fixing a typo in peerDep range in hbs-loader ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* [#716](https://github.com/embroider-build/embroider/pull/716) Add documentation about publicAssetURL to README ([@lukemelia](https://github.com/lukemelia))
+
+#### :house: Internal
+* [#743](https://github.com/embroider-build/embroider/pull/743) Migrate from rwjblue/setup-volta to volta-cli/action. ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 4
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
 ## v0.37.0 (2021-03-08)
 
 #### :rocket: Enhancement

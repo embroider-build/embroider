@@ -4,6 +4,19 @@ Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
 Deprecated as of 10.7.0. Please use highlight(code, options) instead.
 https://github.com/highlightjs/highlight.js/issues/2277
 
+Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
+Deprecated as of 10.7.0. Please use highlight(code, options) instead.
+https://github.com/highlightjs/highlight.js/issues/2277
+
+## v0.39.0 (2021-03-31)
+
+#### :rocket: Enhancement
+* `core`, `shared-internals`
+  * [#749](https://github.com/embroider-build/embroider/pull/749) exposing some features for browser-based build tools ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.38.0 (2021-03-31)
 
 #### :rocket: Enhancement

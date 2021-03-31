@@ -18,9 +18,9 @@
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test --test-port=0",
-    "test:ember-classic": "CLASSIC=true ember test --test-port=0",
-    "test:custom-root": "CUSTOM_ROOT_URL=/custom/ ember test --test-port=0",
-    "test:custom-relative-root": "CUSTOM_ROOT_URL=custom-relative-root-url/ ember test --test-port=0"
+    "test:ember-classic": "cross-env CLASSIC=true ember test --test-port=0",
+    "test:custom-root": "cross-env CUSTOM_ROOT_URL=/custom/ ember test --test-port=0",
+    "test:custom-relative-root": "cross-env CUSTOM_ROOT_URL=custom-relative-root-url/ ember test --test-port=0"
   },
   "devDependencies": {
     "@ember/jquery": "^0.5.2",

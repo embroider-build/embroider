@@ -25,7 +25,7 @@
     "test": "npm-run-all lint:* test:*",
     "test:all": "ember try:each",
     "test:ember": "ember test --test-port=0",
-    "test:classic": "CLASSIC=true ember test --test-port=0"
+    "test:classic": "cross-env CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
     "@embroider/macros": "0.39.1",
@@ -40,6 +40,7 @@
     "@types/ember__routing": "^3.16.9",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
+    "cross-env": "^7.0.3",
     "ember-cli": "~3.10.1",
     "ember-cli-dependency-checker": "^3.1.0",
     "ember-cli-eslint": "^5.1.0",

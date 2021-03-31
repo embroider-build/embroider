@@ -22,9 +22,9 @@ module.exports = function setup(hooks, buildArgs = []) {
     return dom.window.document;
   }
 
-  hooks.before(async function(assert) {
+  hooks.before(async function (assert) {
     if (!process.env.REUSE_FASTBOOT_BUILD) {
-      execFileSync('node', ['./node_modules/.bin/ember', 'build', ...buildArgs]);
+      execFileSync('node', ['../../node_modules/ember-cli/bin/ember', 'build', ...buildArgs]);
       process.env.REUSE_FASTBOOT_BUILD = 'true';
     }
     fastboot = new FastBoot({
@@ -33,7 +33,7 @@ module.exports = function setup(hooks, buildArgs = []) {
     });
     this.visit = visit.bind(this, assert);
   });
-  hooks.beforeEach(function(assert) {
+  hooks.beforeEach(function (assert) {
     this.visit = visit.bind(this, assert);
   });
 };

@@ -8,6 +8,19 @@ Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
 Deprecated as of 10.7.0. Please use highlight(code, options) instead.
 https://github.com/highlightjs/highlight.js/issues/2277
 
+Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
+Deprecated as of 10.7.0. Please use highlight(code, options) instead.
+https://github.com/highlightjs/highlight.js/issues/2277
+
+## v0.39.1 (2021-03-31)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#751](https://github.com/embroider-build/embroider/pull/751) Fix node 10 support ([@thoov](https://github.com/thoov))
+
+#### Committers: 1
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
 ## v0.39.0 (2021-03-31)
 
 #### :rocket: Enhancement

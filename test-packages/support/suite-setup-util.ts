@@ -112,12 +112,14 @@ export async function githubMatrix() {
       command: `${s.command} ${s.args.join(' ')}`,
       dir: s.dir,
     })),
-    ...suites.map(s => ({
-      name: `${s.name} windows`,
-      os: 'windows',
-      command: `${s.command} ${s.args.join(' ')}`,
-      dir: relativeToEmbroiderRoot(s.dir),
-    })),
+    ...suites
+      .filter(s => s.name !== 'node') // TODO: node tests do not work under windows yet
+      .map(s => ({
+        name: `${s.name} windows`,
+        os: 'windows',
+        command: `${s.command} ${s.args.join(' ')}`,
+        dir: relativeToEmbroiderRoot(s.dir),
+      })),
   ];
 
   return {

@@ -1271,8 +1271,9 @@ export class AppBuilder<TreeNames> {
           }
 
           let runtime = join(packageName, name).replace(this.resolvableExtensionsPattern, '');
-          if (renamedModules && renamedModules[runtime]) {
-            runtime = renamedModules[runtime];
+          let runtimeRenameLookup = runtime.split('\\').join('/');
+          if (renamedModules && renamedModules[runtimeRenameLookup]) {
+            runtime = renamedModules[runtimeRenameLookup];
           }
           runtime = runtime.split(sep).join('/');
           lazyModules.push({

@@ -8,7 +8,7 @@ import { relative, isAbsolute, dirname, join, basename } from 'path';
 //
 export function explicitRelative(fromDir: string, toFile: string) {
   let result = join(relative(fromDir, dirname(toFile)), basename(toFile));
-  if (!result.startsWith('/') && !result.startsWith('.')) {
+  if (!isAbsolute(result) && !result.startsWith('.')) {
     result = './' + result;
   }
   if (isAbsolute(toFile) && result.endsWith(toFile)) {

@@ -141,6 +141,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         hints: false,
       },
       plugins: [
+        //@ts-ignore
         new MiniCssExtractPlugin({
           filename: `chunk.[chunkhash].css`,
           chunkFilename: `chunk.[chunkhash].css`,

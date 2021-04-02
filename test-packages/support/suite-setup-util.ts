@@ -1,5 +1,5 @@
 import { tmpdir } from 'os';
-import { basename, join, resolve } from 'path';
+import { basename, join, relative, resolve } from 'path';
 import { readdirSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 
 // we sometimes run our various Ember app's test suites in parallel, and
@@ -81,6 +81,12 @@ export async function allSuites({ includeEmberTry } = { includeEmberTry: true })
   return suites;
 }
 
+function relativeToEmbroiderRoot(absolutePath: string): string {
+  let embroiderRoot = resolve(__dirname, '../..');
+
+  return relative(embroiderRoot, absolutePath);
+}
+
 export async function githubMatrix() {
   let suites = await allSuites();
 
@@ -92,21 +98,33 @@ export async function githubMatrix() {
     dir: resolve(__dirname, '..', '..'),
   });
 
-  // add our eslint
-  suites.unshift({
-    name: 'lint',
-    command: 'yarn',
-    args: ['lint'],
-    dir: resolve(__dirname, '..', '..'),
-  });
-
-  return {
-    name: suites.map(s => s.name),
-    include: suites.map(s => ({
-      name: s.name,
+  let include = [
+    // add our eslint
+    {
+      name: 'lint',
+      os: 'ubuntu',
+      command: 'yarn lint',
+      dir: resolve(__dirname, '..', '..'),
+    },
+    ...suites.map(s => ({
+      name: `${s.name} ubuntu`,
+      os: 'ubuntu',
       command: `${s.command} ${s.args.join(' ')}`,
       dir: s.dir,
     })),
+    ...suites
+      .filter(s => s.name !== 'node') // TODO: node tests do not work under windows yet
+      .map(s => ({
+        name: `${s.name} windows`,
+        os: 'windows',
+        command: `${s.command} ${s.args.join(' ')}`,
+        dir: relativeToEmbroiderRoot(s.dir),
+      })),
+  ];
+
+  return {
+    name: include.map(s => s.name),
+    include,
   };
 }
 

@@ -1,4 +1,5 @@
 import { PluginItem } from '@babel/core';
+import { join, sep } from 'path';
 
 export function isEmberAutoImportDynamic(item: PluginItem): boolean {
   let pluginPath: string;
@@ -9,7 +10,8 @@ export function isEmberAutoImportDynamic(item: PluginItem): boolean {
   } else {
     return false;
   }
-  return /(^|\/)ember-auto-import\//.test(pluginPath);
+
+  return pluginPath.includes(join(sep, 'ember-auto-import', sep));
 }
 
 export function isCompactReexports(item: PluginItem): boolean {
@@ -21,7 +23,8 @@ export function isCompactReexports(item: PluginItem): boolean {
   } else {
     return false;
   }
-  return /(^|\/)babel-plugin-compact-reexports\//.test(pluginPath);
+
+  return pluginPath.includes(join('babel-plugin-compact-reexports', sep));
 }
 
 export function isColocationPlugin(item: PluginItem): boolean {
@@ -33,5 +36,6 @@ export function isColocationPlugin(item: PluginItem): boolean {
   } else {
     return false;
   }
-  return /(^|\/)ember-cli-htmlbars\/lib\/colocated-babel-plugin/.test(pluginPath);
+
+  return pluginPath.includes(join('ember-cli-htmlbars', 'lib', 'colocated-babel-plugin', sep));
 }

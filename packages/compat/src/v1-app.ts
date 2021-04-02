@@ -1,6 +1,6 @@
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
-import { join, dirname } from 'path';
+import { join, dirname, isAbsolute } from 'path';
 import Funnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
@@ -532,7 +532,7 @@ export default class V1App {
     }
     // non node assets are local paths. They need an explicit `/` or `.` at
     // the start.
-    if (asset.startsWith('/') || asset.startsWith('.')) {
+    if (asset.startsWith('.') || isAbsolute(asset)) {
       return asset;
     }
     return './' + asset;

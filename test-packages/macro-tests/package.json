@@ -18,7 +18,7 @@
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test --test-port=0",
-    "test:ember-classic": "CLASSIC=true ember test --test-port=0"
+    "test:ember-classic": "cross-env CLASSIC=true ember test --test-port=0"
   },
   "devDependencies": {
     "@ember/jquery": "^0.6.0",

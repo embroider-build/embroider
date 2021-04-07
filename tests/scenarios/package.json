@@ -1,0 +1,32 @@
+{
+  "name": "@embroider/test-scenarios",
+  "version": "0.0.0",
+  "dependencies": {
+    "@types/qunit": "^2.11.1",
+    "fastboot": "^3.1.0",
+    "jsdom": "^16.2.2",
+    "lodash": "^4.17.20",
+    "qunit": "^2.6.1",
+    "scenario-tester": "^0.4.0",
+    "ts-node": "^9.1.1"
+  },
+  "scripts": {
+    "test": "qunit --require ts-node/register *-test.ts",
+    "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
+    "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@embroider/sample-lib": "link:../../test-packages/sample-lib",
+    "ember-cli-latest": "npm:ember-cli@latest",
+    "ember-cli-beta": "npm:ember-cli@beta",
+    "ember-cli-fastboot": "^2.2.3",
+    "ember-source-latest": "npm:ember-source@latest",
+    "ember-source-beta": "npm:ember-source@beta",
+    "fastboot-addon": "link:../../test-packages/fastboot-addon"
+  },
+  "volta": {
+    "node": "14.16.1",
+    "yarn": "1.22.5"
+  }
+}

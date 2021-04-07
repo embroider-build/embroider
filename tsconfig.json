@@ -3,7 +3,8 @@
     "./packages/*/src/**/*.ts",
     "./packages/*/tests/**/*.ts",
     "./test-packages/support/**/*.ts",
-    "./packages/util/shim.ts"
+    "./tests/scenarios/**/*.ts",
+    "./packages/util/shim.ts",
   ],
   "compilerOptions": {
     "target": "es2017",

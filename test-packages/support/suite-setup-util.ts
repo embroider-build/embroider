@@ -1,6 +1,7 @@
 import { tmpdir } from 'os';
 import { basename, join, relative, resolve } from 'path';
 import { readdirSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import execa from 'execa';
 
 // we sometimes run our various Ember app's test suites in parallel, and
 // unfortunately the shared persistent caching underneath various broccoli
@@ -78,6 +79,23 @@ export async function allSuites({ includeEmberTry } = { includeEmberTry: true })
       }
     }
   }
+
+  // while we convert over from test-packages to test-scenarios here we merge both together
+  let { stdout } = await execa('scenario-tester', ['list', '--require', 'ts-node/register', '--files=*-test.ts'], {
+    cwd: resolve(__dirname, '..', '..', 'tests', 'scenarios'),
+    preferLocal: true,
+  });
+
+  let testScenarios = stdout.split('\n');
+  testScenarios.forEach(scenario => {
+    suites.push({
+      name: scenario,
+      command: 'yarn',
+      args: ['test', '--filter', scenario],
+      dir: resolve(__dirname, '..', '..', 'tests', 'scenarios'),
+    });
+  });
+
   return suites;
 }
 

@@ -1,0 +1,42 @@
+{
+  "name": "@embroider/vite",
+  "version": "0.42.3",
+  "private": false,
+  "description": "Builds EmberJS apps with Vite",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/vite"
+  },
+  "license": "MIT",
+  "author": "Alex LaFroscia",
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {
+    "prepare": "tsc"
+  },
+  "dependencies": {
+    "@embroider/rollup-plugin-hbs": "0.42.3",
+    "@rollup/plugin-babel": "^5.3.0",
+    "fs-extra": "^7.0.0"
+  },
+  "peerDependencies": {
+    "@embroider/core": "^0.39.1",
+    "vite": "^2.0.0"
+  },
+  "devDependencies": {
+    "@embroider/core": "0.42.3",
+    "typescript": "~4.0.0",
+    "vite": "^2.3.8"
+  },
+  "engines": {
+    "node": "12.* || 14.* || >= 16"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

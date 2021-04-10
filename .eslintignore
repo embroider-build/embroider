@@ -12,6 +12,8 @@
 /packages/webpack/**/*.d.ts
 /packages/hbs-loader/**/*.js
 /packages/hbs-loader/**/*.d.ts
+/packages/rollup-plugin-hbs/**/*.js
+/packages/rollup-plugin-hbs/**/*.d.ts
 /test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 /tests/scenarios/**/*.js

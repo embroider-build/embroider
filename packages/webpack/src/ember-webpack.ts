@@ -9,7 +9,7 @@
   getting script vs module context correct).
 */
 
-import { getOrCreate, Variant, applyVariantToBabelConfig } from '@embroider/core';
+import { getOrCreate, Variant, applyVariantToBabelConfig, HTMLEntrypoint, StatSummary } from '@embroider/core';
 import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
@@ -22,8 +22,6 @@ import makeDebug from 'debug';
 import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
-import { HTMLEntrypoint } from './html-entrypoint';
-import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 

@@ -5,6 +5,8 @@ export {
   applyVariantToBabelConfig,
   applyVariantToTemplateCompiler,
 } from './packager';
+export { HTMLEntrypoint } from './html-entrypoint';
+export { StatSummary } from './stat-summary';
 export { Resolver } from './resolver';
 export { default as Stage } from './stage';
 export { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';

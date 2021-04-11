@@ -1,4 +1,4 @@
-import { Variant } from '@embroider/core';
+import { Variant } from './packager';
 
 export interface StatSummary {
   // entrypoints.get(inputAsset).get(variantIndex) === outputAssets

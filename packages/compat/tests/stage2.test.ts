@@ -717,10 +717,9 @@ describe('stage2 build', function () {
     });
 
     test('lazy engine css is imported', function () {
-      expectFile('assets/_engine_/lazy-engine.js')
-        .matches(`  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
-i(\"../../node_modules/lazy-engine/lazy-engine.css\");
-  }`);
+      expectFile('assets/_engine_/lazy-engine.js').matches(
+        /if \(macroCondition\(!getGlobalConfig\(\)\.fastboot\?\.isRunning\)\) \{[\n ]*i\("\.\.\/\.\.\/node_modules\/lazy-engine\/.*lazy-engine\.css/
+      );
     });
 
     test('eager engine css is merged with vendor.css', function () {

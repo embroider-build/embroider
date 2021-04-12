@@ -248,6 +248,12 @@ describe('stage2 build', function () {
             layout: hbs${'`'}{{first-choice}}${'`'}
           })
           `,
+            'uses-strict-template.js': `
+          import { setComponentTemplate } from '@ember/component';
+          import { precompileTemplate } from '@ember/template-compilation';
+          import Component from '@glimmer/component';
+          export default setComponentTemplate(precompileTemplate("<div></div>"), class extends Component{});
+          `,
           },
           'use-deep-addon.js': `import thing from 'deep-addon'`,
           'custom-babel-needed.js': `console.log('embroider-sample-transforms-target');`,
@@ -491,6 +497,12 @@ describe('stage2 build', function () {
       let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
       assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
+    });
+
+    test('uses-strict-template.js', function () {
+      let assertFile = expectFile('./components/uses-strict-template.js').transform(build.transpile);
+      // just check that precompileTemplate import has gone away
+      assertFile.doesNotMatch(/import \{ precompileTemplate \} from '@ember\/template-compilation'/);
     });
 
     test('component with relative import of arbitrarily placed template', function () {

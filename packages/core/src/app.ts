@@ -366,6 +366,22 @@ export class AppBuilder<TreeNames> {
       } as InlineBabelParams,
     ]);
 
+    babel.plugins.push([
+      require.resolve('babel-plugin-htmlbars-inline-precompile'),
+      {
+        ensureModuleApiPolyfill: true,
+        templateCompilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
+        modules: {
+          '@ember/template-compilation': {
+            export: 'precompileTemplate',
+            disableTemplateLiteral: true,
+            shouldParseScope: true,
+            isProduction: this.adapter.env === 'production',
+          },
+        },
+      },
+    ]);
+
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(this.macrosConfig.babelPluginConfig());
 

@@ -357,6 +357,9 @@ export class AppBuilder<TreeNames> {
       )
     );
 
+    // https://github.com/webpack/webpack/issues/12154
+    babel.plugins.push(require.resolve('./rename-require-plugin'));
+
     // this is our built-in support for the inline hbs macro
     babel.plugins.push([
       join(__dirname, 'babel-plugin-inline-hbs-node.js'),

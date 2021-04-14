@@ -414,9 +414,16 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         if (err) {
-          this.consoleWrite(stats.toString());
+          if (stats) {
+            this.consoleWrite(stats.toString());
+          }
           reject(err);
           return;
+        }
+        if (!stats) {
+          // this doesn't really happen, but webpack's types imply that it
+          // could, so we just satisfy typescript here
+          throw new Error('bug: no stats and no err');
         }
         if (stats.hasErrors()) {
           // the typing for MultiCompiler are all foobared.

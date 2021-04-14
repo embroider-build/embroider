@@ -42,8 +42,7 @@
     "source-map-url": "^0.4.0",
     "style-loader": "^2.0.0",
     "terser": "^5.5.1",
-    "thread-loader": "^3.0.1",
-    "webpack": "^5.10.0"
+    "thread-loader": "^3.0.1"
   },
   "devDependencies": {
     "@types/csso": "^3.5.1",
@@ -51,10 +50,12 @@
     "@types/lodash": "^4.14.116",
     "@types/mini-css-extract-plugin": "^1.2.1",
     "@types/node": "^10.5.2",
-    "typescript": "~4.0.0"
+    "typescript": "~4.0.0",
+    "webpack": "^5.10.0"
   },
   "peerDependencies": {
-    "@embroider/core": "0.39.1"
+    "@embroider/core": "0.39.1",
+    "webpack": "^5.0.0"
   },
   "engines": {
     "node": "10.* || 12.* || >= 14"

@@ -257,7 +257,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     }
   } else {
     if (isResolvable(packageName, pkg)) {
-      if (!pkg.meta['auto-upgraded'] && !pkg.hasDependency(packageName)) {
+      if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );
@@ -489,4 +489,21 @@ class AdjustFile {
       return packageCache.ownerOfFile(this.name);
     }
   }
+}
+
+// we don't want to allow things that resolve only by accident that are likely
+// to break in other setups. For example: import your dependencies'
+// dependencies, or importing your own name from within a monorepo (which will
+// work because of the symlinking) without setting up "exports" (which makes
+// your own name reliably resolvable)
+function reliablyResolvable(pkg: V2Package, packageName: string) {
+  if (pkg.hasDependency(packageName)) {
+    return true;
+  }
+
+  if (pkg.name === packageName && pkg.packageJSON.exports) {
+    return true;
+  }
+
+  return false;
 }

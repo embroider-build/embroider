@@ -18,6 +18,17 @@ export function explicitRelative(fromDir: string, toFile: string) {
     // but it's unnecessarily verbose.
     return toFile;
   }
+
+  // windows supports both "./" and ".\", but webpack 5 insists on "./"
+  if (result.startsWith('.\\')) {
+    return './' + result.slice(2);
+  }
+
+  // windows supports both "../" and "..\", but webpack 5 insists on "../"
+  if (result.startsWith('..\\')) {
+    return '../' + result.slice(3);
+  }
+
   return result;
 }
 

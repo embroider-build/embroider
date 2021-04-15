@@ -378,21 +378,39 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: any): StatSummary {
+  private summarizeStats(multiStats: webpack.StatsCompilation): StatSummary {
     let output: StatSummary = {
       entrypoints: new Map(),
       lazyBundles: new Set(),
       variants: this.variants,
     };
     for (let [variantIndex, variant] of this.variants.entries()) {
-      let stats = multiStats.children[variantIndex];
+      let { entrypoints, assets } = multiStats.children![variantIndex];
+
+      // webpack's types are written rather loosely, implying that these two
+      // properties may not be present. They really always are, as far as I can
+      // tell, but we need to check here anyway to satisfy the type checker.
+      if (!entrypoints) {
+        throw new Error(`unexpected webpack output: no entrypoints`);
+      }
+      if (!assets) {
+        throw new Error(`unexpected webpack output: no assets`);
+      }
+
       let nonLazyAssets: Set<string> = new Set();
-      for (let id of Object.keys(stats.entrypoints)) {
-        let entrypoint = stats.entrypoints[id];
-        let assets = (entrypoint.assets as string[]).map(asset => 'assets/' + asset);
-        getOrCreate(output.entrypoints, id, () => new Map()).set(variantIndex, assets);
-        for (let asset of entrypoint.assets as string[]) {
-          nonLazyAssets.add(asset);
+      for (let id of Object.keys(entrypoints)) {
+        let { assets: entrypointAssets } = entrypoints[id];
+        if (!entrypointAssets) {
+          throw new Error(`unexpected webpack output: no entrypoint.assets`);
+        }
+
+        getOrCreate(output.entrypoints, id, () => new Map()).set(
+          variantIndex,
+          entrypointAssets.map(asset => 'assets/' + asset.name)
+        );
+
+        for (let asset of entrypointAssets) {
+          nonLazyAssets.add(asset.name);
         }
       }
       if (variant.runtime !== 'browser') {
@@ -400,7 +418,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
         // handled automatically by webpack as needed), but in any other runtime
         // we need the ability to preload them
         output.lazyBundles = new Set();
-        for (let asset of stats.assets) {
+        for (let asset of assets) {
           if (!nonLazyAssets.has(asset.name)) {
             output.lazyBundles.add('assets/' + asset.name);
           }
@@ -410,13 +428,20 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return output;
   }
 
-  private runWebpack(webpack: webpack.MultiCompiler): Promise<any> {
+  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.StatsCompilation> {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         if (err) {
-          this.consoleWrite(stats.toString());
+          if (stats) {
+            this.consoleWrite(stats.toString());
+          }
           reject(err);
           return;
+        }
+        if (!stats) {
+          // this doesn't really happen, but webpack's types imply that it
+          // could, so we just satisfy typescript here
+          throw new Error('bug: no stats and no err');
         }
         if (stats.hasErrors()) {
           // the typing for MultiCompiler are all foobared.

@@ -20,15 +20,9 @@ async function release(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
 }
 
-async function beta(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-beta' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
-}
-
 export function supportMatrix(scenarios: Scenarios) {
   return scenarios.expand({
     release,
-    beta,
   });
 }
 

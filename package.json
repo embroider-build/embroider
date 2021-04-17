@@ -13,7 +13,9 @@
       "types/@babel__traverse",
       "types/broccoli-funnel",
       "types/broccoli-concat",
-      "types/ember-cli-htmlbars"
+      "types/ember-cli-htmlbars",
+      "tests/scenarios",
+      "tests/app-template"
     ],
     "nohoist": [
       "**/@types/broccoli-plugin"

@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
+    "@ember/string": "^1.0.0",
     "@embroider/compat": "0.39.1",
     "@embroider/core": "0.39.1",
     "@embroider/test-support": "0.36.0",

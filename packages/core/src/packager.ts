@@ -1,3 +1,7 @@
+import { AppMeta } from '@embroider/shared-internals';
+import { readFileSync } from 'fs-extra';
+import { join } from 'path';
+
 // This is a collection of flags that convey what kind of build you want. They
 // are intended to be generic across Packagers, and it's up to Packager authors
 // to support each option (or not).
@@ -86,4 +90,11 @@ export function applyVariantToTemplateCompiler(_variant: Variant, templateCompil
   // TODO: we don't actually consume the variant in the template macros yet, but
   // Packagers must call this function anyway because we will.
   return templateCompiler;
+}
+
+/**
+ * Get the app meta-data for a package
+ */
+export function getAppMeta(pathToVanillaApp: string): AppMeta {
+  return JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
 }

@@ -9,8 +9,17 @@
   getting script vs module context correct).
 */
 
-import { getOrCreate, Variant, applyVariantToBabelConfig, HTMLEntrypoint, StatSummary } from '@embroider/core';
-import { AppMeta, Packager, PackagerConstructor } from '@embroider/core';
+import {
+  AppMeta,
+  HTMLEntrypoint,
+  Packager,
+  PackagerConstructor,
+  StatSummary,
+  Variant,
+  applyVariantToBabelConfig,
+  getAppMeta,
+  getOrCreate,
+} from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
@@ -95,7 +104,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   }
 
   private examineApp(): AppInfo {
-    let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+    let meta = getAppMeta(this.pathToVanillaApp);
     let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];

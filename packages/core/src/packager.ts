@@ -23,7 +23,7 @@ export interface Variant {
   optimizeForProduction: boolean;
 }
 
-export interface Packager<Options> {
+export interface PackagerConstructor<Options> {
   new (
     // where on disk the packager will find the app it's supposed to build. The
     // app and its addons will necessarily already be in v2 format, which is
@@ -54,13 +54,13 @@ export interface Packager<Options> {
     // packager is based on a third-party tool, this is where that tool's
     // configuration can go.
     options?: Options
-  ): PackagerInstance;
+  ): Packager;
 
   // a description for this packager that aids debugging & profiling
   annotation: string;
 }
 
-export interface PackagerInstance {
+export interface Packager {
   build(): Promise<void>;
 }
 

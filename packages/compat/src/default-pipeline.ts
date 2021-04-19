@@ -1,5 +1,5 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
-import { toBroccoliPlugin, Packager, Variant } from '@embroider/core';
+import { toBroccoliPlugin, PackagerConstructor, Variant } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
@@ -12,7 +12,7 @@ export interface PipelineOptions<PackagerOptions> extends Options {
 
 export default function defaultPipeline<PackagerOptions>(
   emberApp: object,
-  packager?: Packager<PackagerOptions>,
+  packager?: PackagerConstructor<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Node {
   let outputPath: string;

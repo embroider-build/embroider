@@ -1,8 +1,8 @@
 import type { PipelineOptions } from '@embroider/compat';
-import type { Packager } from '@embroider/core';
+import type { PackagerConstructor } from '@embroider/core';
 import type { Webpack } from '@embroider/webpack';
 
-type EmberWebpackOptions = typeof Webpack extends Packager<infer Options> ? Options : never;
+type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const currentEmbroiderVersion = require('../package.json').version;

@@ -1,6 +1,6 @@
 export {
   Packager,
-  PackagerInstance,
+  PackagerConstructor,
   Variant,
   applyVariantToBabelConfig,
   applyVariantToTemplateCompiler,

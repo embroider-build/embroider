@@ -10,7 +10,7 @@
 */
 
 import { getOrCreate, Variant, applyVariantToBabelConfig, HTMLEntrypoint, StatSummary } from '@embroider/core';
-import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
+import { AppMeta, Packager, PackagerConstructor } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
@@ -66,7 +66,7 @@ interface Options {
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
 // correct type.
-const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
+const Webpack: PackagerConstructor<Options> = class Webpack implements Packager {
   static annotation = '@embroider/webpack';
 
   pathToVanillaApp: string;

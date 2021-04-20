@@ -5,6 +5,7 @@ export {
   applyVariantToBabelConfig,
   applyVariantToTemplateCompiler,
   getAppMeta,
+  getPackagerCacheDir,
 } from './packager';
 export { HTMLEntrypoint } from './html-entrypoint';
 export { StatSummary } from './stat-summary';

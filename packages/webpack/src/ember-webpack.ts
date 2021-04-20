@@ -18,6 +18,7 @@ import {
   Variant,
   applyVariantToBabelConfig,
   getAppMeta,
+  getPackagerCacheDir,
   getOrCreate,
 } from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
@@ -550,11 +551,7 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
 function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfigPath: string) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   let options = Object.assign({}, applyVariantToBabelConfig(variant, require(appBabelConfigPath)), {
-    // all stage3 packagers should keep persistent caches under
-    // `join(tmpdir(), 'embroider')`. An important reason is that
-    // they should have exactly the same lifetime as some of
-    // embroider's own caches.
-    cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+    cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
   });
   if (majorVersion === 7) {
     if (options.plugins) {

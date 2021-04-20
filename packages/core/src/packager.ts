@@ -1,6 +1,7 @@
 import { AppMeta } from '@embroider/shared-internals';
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
+import { tmpdir } from 'os';
 
 // This is a collection of flags that convey what kind of build you want. They
 // are intended to be generic across Packagers, and it's up to Packager authors
@@ -97,4 +98,13 @@ export function applyVariantToTemplateCompiler(_variant: Variant, templateCompil
  */
 export function getAppMeta(pathToVanillaApp: string): AppMeta {
   return JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+}
+
+/**
+ * Get the path to a cache directory in the recommended location
+ *
+ * This ensures they have exactly the same lifetime as some of embroider's own caches.
+ */
+export function getPackagerCacheDir(name: string): string {
+  return join(tmpdir(), 'embroider', name);
 }

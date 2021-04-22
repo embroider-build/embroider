@@ -1,7 +1,7 @@
 {
   "name": "@embroider/util",
   "version": "0.39.1",
-  "description": "The default blueprint for ember-cli addons.",
+  "description": "Utilities for app and addon authors.",
   "keywords": [
     "ember-addon"
   ],

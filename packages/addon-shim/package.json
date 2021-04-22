@@ -1,0 +1,43 @@
+{
+  "name": "@embroider/addon-shim",
+  "version": "0.39.1",
+  "description": "Make v2 addons work in non-Embroider apps.",
+  "keywords": [
+    "ember-addon"
+  ],
+  "repository": "",
+  "license": "MIT",
+  "author": "",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "scripts": {
+    "prepare": "tsc",
+    "build": "ember build --environment=production",
+    "lint": "npm-run-all --aggregate-output --continue-on-error --parallel 'lint:!(fix)'",
+    "lint:fix": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*:fix",
+    "lint:hbs": "ember-template-lint .",
+    "lint:hbs:fix": "ember-template-lint . --fix",
+    "lint:js": "eslint . --cache",
+    "lint:js:fix": "eslint . --fix",
+    "start": "ember serve",
+    "test": "npm-run-all lint test:*",
+    "test:ember": "cross-env EMBROIDER_TEST_SETUP_FORCE=embroider EMBROIDER_TEST_SETUP_OPTIONS=optimized ember test --test-port=0",
+    "test:classic": "cross-env EMBROIDER_TEST_SETUP_FORCE=classic ember test --test-port=0",
+    "test:ember-compatibility": "ember try:each"
+  },
+  "dependencies": {
+    "ember-auto-import": "^1.11.2"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": "10.* || >= 12"
+  },
+  "ember-addon": {
+    "main": "addon-main.js"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

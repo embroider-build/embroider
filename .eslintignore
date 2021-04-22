@@ -8,8 +8,6 @@
 /packages/macros/**/*.d.ts
 /packages/util/src/**/*.js
 /packages/util/src/**/*.d.ts
-/packages/util/shim.js
-/packages/util/shim.d.ts
 /packages/webpack/**/*.js
 /packages/webpack/**/*.d.ts
 /packages/hbs-loader/**/*.js

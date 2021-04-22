@@ -135,6 +135,11 @@ function isInside(parentDir: string, otherDir: string): boolean {
   return Boolean(rel) && !rel.startsWith('..') && !isAbsolute(rel);
 }
 
+// NEXT: move shim to its own package, so that it can depend on auto-import 2.0
+// (without making every user of @embroider/util depend on it). The build-in
+// behavior of 2.0 will replace these assertions: the app must have 2.0, and the
+// shim can bring whatever minor version it wants to rely on, and a verison at
+// leaset that new will lead.
 function ensureAutoImport(instance: AddonInstance) {
   let autoImport = instance.parent.addons.find(
     (a) => a.name === 'ember-auto-import'

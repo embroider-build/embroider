@@ -314,9 +314,6 @@ function packageProxy(pkg: Package, getMovedPackage: (pkg: Package) => Package) 
       if (prop === 'dependencies') {
         return pkg.dependencies.map(getMovedPackage);
       }
-      if (prop === 'addonDependencies') {
-        return pkg.addonDependencies.map(getMovedPackage);
-      }
       if (prop === 'nonResolvableDeps') {
         if (!pkg.nonResolvableDeps) {
           return pkg.nonResolvableDeps;

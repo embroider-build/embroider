@@ -43,23 +43,38 @@ export default class V1InstanceCache {
     });
   }
 
-  private adapterClass(packageName: string): V1AddonConstructor {
+  private adapterClass(addonInstance: any): V1AddonConstructor {
+    let packageName = addonInstance.pkg.name;
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
-    if (this.options.compatAdapters.has(packageName)) {
-      return this.options.compatAdapters.get(packageName) || V1Addon;
+    let AdapterClass = this.options.compatAdapters.get(packageName);
+
+    if (AdapterClass === null) {
+      return V1Addon;
     }
-    let path = `${__dirname}/compat-adapters/${packageName}.js`;
-    if (pathExistsSync(path)) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require(path).default;
+
+    if (!AdapterClass) {
+      let path = `${__dirname}/compat-adapters/${packageName}.js`;
+      if (pathExistsSync(path)) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        AdapterClass = require(path).default;
+      }
     }
-    return V1Addon;
+
+    if (!AdapterClass) {
+      return V1Addon;
+    }
+
+    if (AdapterClass.isEnabled) {
+      return AdapterClass.isEnabled(addonInstance) ? AdapterClass : V1Addon;
+    }
+
+    return AdapterClass;
   }
 
   private addAddon(addonInstance: any) {
     this.orderIdx += 1;
-    let Klass = this.adapterClass(addonInstance.pkg.name);
+    let Klass = this.adapterClass(addonInstance);
     let v1Addon = new Klass(addonInstance, this.options, this.app, this.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);

@@ -5,6 +5,7 @@
   "keywords": [
     "ember-addon"
   ],
+  "main": "./src/index.js",
   "repository": "",
   "license": "MIT",
   "author": "",
@@ -28,7 +29,7 @@
     "test:ember-compatibility": "ember try:each"
   },
   "dependencies": {
-    "ember-auto-import": "^1.11.2"
+    "ember-auto-import": "2.0.0-alpha.0"
   },
   "devDependencies": {},
   "engines": {

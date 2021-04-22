@@ -8,8 +8,6 @@ import {
 import Funnel from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
 
-const MIN_SUPPORT_LEVEL = 1;
-
 export interface ShimOptions {
   disabled?: (options: any) => boolean;
 }
@@ -44,8 +42,6 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     name: pkg.name,
     included(this: AddonInstance, ...args: unknown[]) {
       this._super.included.apply(this, args);
-
-      ensureAutoImport(this);
 
       let parentOptions: any;
       if (isDeepAddonInstance(this)) {
@@ -133,42 +129,4 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
 function isInside(parentDir: string, otherDir: string): boolean {
   let rel = relative(parentDir, otherDir);
   return Boolean(rel) && !rel.startsWith('..') && !isAbsolute(rel);
-}
-
-// NEXT: move shim to its own package, so that it can depend on auto-import 2.0
-// (without making every user of @embroider/util depend on it). The build-in
-// behavior of 2.0 will replace these assertions: the app must have 2.0, and the
-// shim can bring whatever minor version it wants to rely on, and a verison at
-// leaset that new will lead.
-function ensureAutoImport(instance: AddonInstance) {
-  let autoImport = instance.parent.addons.find(
-    (a) => a.name === 'ember-auto-import'
-  );
-  if (!autoImport) {
-    throw new Error(
-      `${
-        instance.name
-      } is a v2-formatted addon. To use it without Embroider, the package that depends on it (${parentName(
-        instance
-      )}) must have ember-auto-import.`
-    );
-  }
-  let level = (autoImport as any).v2AddonSupportLevel ?? 0;
-  if (level < MIN_SUPPORT_LEVEL) {
-    throw new Error(
-      `${
-        instance.name
-      } is using v2 addon features that require a newer ember-auto-import than the one that is present in ${parentName(
-        instance
-      )}`
-    );
-  }
-}
-
-function parentName(instance: AddonInstance): string {
-  if (isDeepAddonInstance(instance)) {
-    return instance.parent.name;
-  } else {
-    return instance.parent.name();
-  }
 }

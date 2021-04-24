@@ -18,6 +18,8 @@
 /tests/scenarios/**/*.d.ts
 /packages/test-setup/**/*.js
 /packages/test-setup/**/*.d.ts
+/packages/addon-shim/**/*.js
+/packages/addon-shim/**/*.d.ts
 
 # unconventional js
 /blueprints/*/files/

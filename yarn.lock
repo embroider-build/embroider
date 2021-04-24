@@ -1013,6 +1013,16 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
+"@ef4/fixturify-project@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@ef4/fixturify-project/-/fixturify-project-3.0.0.tgz#efbf85057b085c0f89079b8deae90794b6d82d7f"
+  integrity sha512-WnLkn15zawReUmlOYn8X4Mwi+iozNGvSL22GTRF0skviN89uDcf2pi88YhiSvoJf4qldRoybyJUX0SkwRyWszA==
+  dependencies:
+    fixturify "^2.1.0"
+    resolve-package-path "^3.1.0"
+    tmp "^0.0.33"
+    type-fest "^0.11.0"
+
 "@ember-data/adapter@3.26.0":
   version "3.26.0"
   resolved "https://registry.yarnpkg.com/@ember-data/adapter/-/adapter-3.26.0.tgz#c6e8f0e80edf798b573cf49a63857fa96547f354"
@@ -10544,15 +10554,6 @@ fixturify-project@^2.1.0, fixturify-project@^2.1.1:
     tmp "^0.0.33"
     type-fest "^0.11.0"
 
-fixturify-project@ef4/node-fixturify-project#dcad8d1a56c586a38f63772eb0dd70ab2751d4e6:
-  version "2.1.1"
-  resolved "https://codeload.github.com/ef4/node-fixturify-project/tar.gz/dcad8d1a56c586a38f63772eb0dd70ab2751d4e6"
-  dependencies:
-    fixturify "^2.1.0"
-    resolve-package-path "^3.1.0"
-    tmp "^0.0.33"
-    type-fest "^0.11.0"
-
 fixturify@^0.3.2:
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/fixturify/-/fixturify-0.3.4.tgz#c676de404a7f8ee8e64d0b76118e62ec95ab7b25"
@@ -16568,15 +16569,15 @@ saxes@^5.0.1:
   dependencies:
     xmlchars "^2.2.0"
 
-scenario-tester@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-0.4.0.tgz#164a6ea290fd817a9c304732912f18037174812e"
-  integrity sha512-2YKa+FrWuaRwQC8oVfIprE195hL7FzWEfXnnyD+PXYonrxchLnZoMhTInH7/6qkLqzM7YA3rtvCdPBL51vMTTA==
+scenario-tester@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-1.0.0.tgz#90158d9695b03fc92a48fba639f9ccb16070c07a"
+  integrity sha512-8JkfUwFwPx1wlzWlyod9CLRiFBxtL8fb3RSdpiwXl6tKRojGpn+C0G4e0uqmjMt/Zla8QClacO8uICHPKz4rxA==
   dependencies:
+    "@ef4/fixturify-project" "^3.0.0"
     "@types/fs-extra" "^9.0.7"
     "@types/tmp" "^0.2.0"
     "@types/yargs" "^16.0.0"
-    fixturify-project ef4/node-fixturify-project#dcad8d1a56c586a38f63772eb0dd70ab2751d4e6
     fs-extra "^9.1.0"
     glob "^7.1.6"
     tmp "^0.2.1"

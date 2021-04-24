@@ -7,6 +7,7 @@ import {
 } from '@embroider/shared-internals';
 import Funnel from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
+import { satisfies } from 'semver';
 
 export interface ShimOptions {
   disabled?: (options: any) => boolean;
@@ -41,19 +42,43 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
   return {
     name: pkg.name,
     included(this: AddonInstance, ...args: unknown[]) {
-      this._super.included.apply(this, args);
+      if (((this.parent.pkg as any)['ember-addon']?.version ?? 1) < 2) {
+        let autoImportVersion = this.parent.addons.find(
+          (a) => a.name === 'ember-auto-import'
+        )?.pkg.version;
 
-      let parentOptions: any;
+        if (!autoImportVersion) {
+          throw new Error(
+            `${this.parent.name} needs to depend on ember-auto-import in order to use ${this.name}`
+          );
+        }
+
+        if (
+          !satisfies(autoImportVersion, '>=2.0.0-alpha.0', {
+            includePrerelease: true,
+          })
+        ) {
+          throw new Error(
+            `${this.parent.name} has ember-auto-import ${autoImportVersion} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
+          );
+        }
+      }
+
+      let parentOptions;
       if (isDeepAddonInstance(this)) {
-        // our parent is an addon
         parentOptions = this.parent.options;
       } else {
-        // our parent is the app
         parentOptions = this.app.options;
       }
+
       if (options.disabled) {
         disabled = options.disabled(parentOptions);
       }
+
+      // this is here so that our possible exceptions above take precedence over
+      // the one that ember-auto-import will also throw if the app doesn't have
+      // ember-auto-import
+      this._super.included.apply(this, args);
     },
 
     treeForApp(this: AddonInstance) {

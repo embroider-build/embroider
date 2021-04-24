@@ -1360,6 +1360,18 @@
 "@embroider/sample-lib@link:test-packages/sample-lib":
   version "0.0.0"
 
+"@embroider/shared-internals@0.38.0-alpha.1":
+  version "0.38.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.38.0-alpha.1.tgz#aa03c6064369d8416ec81b900cb434d2e5954003"
+  integrity sha512-BKbriBvvzXgkfpsqi87LCW6QnP71NFQfPRqtipbGoH95vPl2OLP4TUYfcpVo2AOpvaL3JmA2V4RpIGZnFGyhIg==
+  dependencies:
+    fs-extra "^7.0.1"
+    lodash "^4.17.10"
+    pkg-up "^3.1.0"
+    resolve-package-path "^1.2.2"
+    semver "^7.3.2"
+    typescript-memoize "^1.0.0-alpha.3"
+
 "@eslint/eslintrc@^0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@eslint/eslintrc/-/eslintrc-0.4.0.tgz#99cc0a0584d72f1df38b900fb062ba995f395547"
@@ -7212,6 +7224,41 @@ ember-assign-polyfill@^2.6.0:
     ember-cli-babel "^7.20.5"
     ember-cli-version-checker "^2.0.0"
 
+ember-auto-import@2.0.0-alpha.0:
+  version "1.12.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-1.12.0-alpha.0.tgz#a84e77ba32849c66f8e089719e6e662356da1368"
+  integrity sha512-/aCSRFhvRQYAXMzHJ6WEYH6PJ0QCaUMVjneAtgJJfzIfHH1xds5ENxnL9dxTQHvz1C5tcRbBfPOS2uGt3yg/8A==
+  dependencies:
+    "@babel/core" "^7.1.6"
+    "@babel/preset-env" "^7.10.2"
+    "@babel/traverse" "^7.1.6"
+    "@babel/types" "^7.1.6"
+    "@embroider/shared-internals" "0.38.0-alpha.1"
+    babel-core "^6.26.3"
+    babel-loader "^8.0.6"
+    babel-plugin-syntax-dynamic-import "^6.18.0"
+    babylon "^6.18.0"
+    broccoli-debug "^0.6.4"
+    broccoli-node-api "^1.7.0"
+    broccoli-plugin "^4.0.0"
+    broccoli-source "^3.0.0"
+    debug "^3.1.0"
+    ember-cli-babel "^7.0.0"
+    enhanced-resolve "^4.0.0"
+    fs-extra "^6.0.1"
+    fs-tree-diff "^2.0.0"
+    handlebars "^4.3.1"
+    js-string-escape "^1.0.1"
+    lodash "^4.17.19"
+    mkdirp "^0.5.1"
+    resolve-package-path "^3.1.0"
+    rimraf "^2.6.2"
+    semver "^7.3.4"
+    symlink-or-copy "^1.2.0"
+    typescript-memoize "^1.0.0-alpha.3"
+    walk-sync "^0.3.3"
+    webpack "^4.43.0"
+
 ember-auto-import@^1.10.1, ember-auto-import@^1.11.2, ember-auto-import@^1.2.21, ember-auto-import@^1.5.3:
   version "1.11.2"
   resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-1.11.2.tgz#b6e9a0dddd88a10692830ffa4f5dfd8c137c8919"
@@ -7624,6 +7671,7 @@ ember-cli-is-package-missing@^1.0.0:
   integrity sha1-bmGEyvuSY13ZPKbJRrEEKS1OM5A=
 
 "ember-cli-latest@npm:ember-cli@latest", ember-cli@~3.26.0:
+  name ember-cli-latest
   version "3.26.0"
   resolved "https://registry.yarnpkg.com/ember-cli/-/ember-cli-3.26.0.tgz#19b3b9701df7ab78a23f7d0f44bf26e78f031f71"
   integrity sha512-zmwUS1i4w7nFIwNjPLNGPlH0lOZjbOfUt51FQsbS8zqRgbbA/oYGAfpiTzJfO3bONjiKy3irEQIqbdBQaXFA7w==
@@ -8806,6 +8854,7 @@ ember-source-channel-url@^3.0.0:
     node-fetch "^2.6.0"
 
 "ember-source-latest@npm:ember-source@latest", ember-source@~3.26.1:
+  name ember-source-latest
   version "3.26.1"
   resolved "https://registry.yarnpkg.com/ember-source/-/ember-source-3.26.1.tgz#8c9e8a314fb0da447b944d64f9d92a80a628d7b5"
   integrity sha512-5/NATBo5h9m1N52ITVksmjtGlYhGHLl4lDErAWv5/DC9zYe9ZR93NtymR6PEqrRilXc2x0KWd3NlOsWUoJRUOw==

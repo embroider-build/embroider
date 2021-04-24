@@ -6,9 +6,6 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('dynamic-import', project => {
-    // this fixes: Cannot find module 'abortcontroller-polyfill/dist/cjs-ponyfill'
-    //project.removeDependency('ember-fetch');
-
     project.linkDevDependency('ember-cli-sass', { baseDir: __dirname });
     project.linkDevDependency('ember-paper', { baseDir: __dirname });
     project.linkDevDependency('ember-inline-svg', { baseDir: __dirname });

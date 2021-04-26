@@ -1492,10 +1492,22 @@
     resolve "^1.8.1"
     semver "^7.3.2"
 
+"@embroider/macros@0.39.1":
+  version "0.39.1"
+  resolved "https://registry.yarnpkg.com/@embroider/macros/-/macros-0.39.1.tgz#d89596f649d171ed0c2f77f7d51ac523bcafd1b0"
+  integrity sha512-2T8g/M3JIfW+qf7HJ2zYBJ7EnxNyi3BzfAozAeqZhiUW0uppP5J9cKYevWAiAEaOFmVf1oGv5KrDgl0Tp9IKdQ==
+  dependencies:
+    "@embroider/shared-internals" "0.39.1"
+    assert-never "^1.1.0"
+    ember-cli-babel "^7.23.0"
+    lodash "^4.17.10"
+    resolve "^1.8.1"
+    semver "^7.3.2"
+
 "@embroider/sample-lib@link:test-packages/sample-lib":
   version "0.0.0"
 
-"@embroider/shared-internals@^0.39.1":
+"@embroider/shared-internals@0.39.1", "@embroider/shared-internals@^0.39.1":
   version "0.39.1"
   resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.39.1.tgz#33c88778fc7c42ba20dbe625b34abe51816dfc77"
   integrity sha512-fpENfZqPWd/JUlmpAW1pN967rxSoUg7dTGmkgtAt+UZQh/d4XMeyUGGHTkRToboKa0W19xRu64RZ9LT94xUkeQ==

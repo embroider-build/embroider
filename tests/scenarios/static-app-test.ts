@@ -6,8 +6,8 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('dynamic-import', project => {
-    project.linkDevDependency('ember-cli-sass', { baseDir: __dirname });
-    project.linkDevDependency('ember-paper', { baseDir: __dirname });
+    project.linkDevDependency('bootstrap', { baseDir: __dirname });
+    project.linkDevDependency('ember-bootstrap', { baseDir: __dirname });
     project.linkDevDependency('ember-inline-svg', { baseDir: __dirname });
     project.linkDevDependency('sass', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
@@ -60,11 +60,6 @@ appScenarios
             export default helper(loadedHelpers);
           `,
         },
-        styles: {
-          'app.scss': `
-            @import 'ember-paper';
-          `,
-        },
         templates: {
           components: {
             'default-title.hbs': `
@@ -78,8 +73,8 @@ appScenarios
             `,
           },
           'components-example.hbs': `
-            {{! this uses a component from ember-paper }}
-            <PaperButton @raised={{true}} @primary={{true}}>Primary</PaperButton>
+            {{! this uses a component from ember-bootstrap }}
+            <BsButton>Button</BsButton>
 
             {{! then this lists all the components loaded into our app.}}
             {{#each (loaded-components) as |name|}}
@@ -137,19 +132,19 @@ appScenarios
               test('static components', async function(assert) {
                 await visit('/components-example');
 
-                let button = document.querySelector('.md-button');
-                assert.ok(button, 'found paper-button');
+                let button = document.querySelector('.btn');
+                assert.ok(button, 'found ember-bootstrap button');
                 if (button) {
-                  assert.equal(getComputedStyle(button)['background-color'], "rgb(63, 81, 181)", "paper-button has its CSS");
+                  assert.equal(getComputedStyle(button)['background-color'], "rgb(108, 117, 125)", "bs-button has its CSS");
                 }
 
                 let components = [...document.querySelectorAll("[data-component-name]")].map(elt => elt.dataset.componentName);
-                assert.ok(components.includes('paper-button'), 'expected to find paper-button');
+                assert.ok(components.includes('bs-button'), 'expected to find bs-button');
 
                 if (getOwnConfig().isClassic) {
-                  assert.ok(components.includes('paper-dialog'), 'expected to find paper-dialog in classic build');
+                  assert.ok(components.includes('bs-carousel'), 'expected to find bs-carousel in classic build');
                 } else {
-                  assert.ok(!components.includes('paper-dialog'), 'expected not to find paper-dialog in embroider build');
+                  assert.ok(!components.includes('bs-carousel'), 'expected not to find bs-carousel in embroider build');
                 }
               });
             });
@@ -266,7 +261,12 @@ appScenarios
         const { MacrosConfig } = require('@embroider/macros/src/node');
 
         module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {});
+          let app = new EmberApp(defaults, {
+            'ember-bootstrap': {
+              bootstrapVersion: 4,
+              importBootstrapCSS: true
+            }
+          });
 
           MacrosConfig.for(app).setOwnConfig(__filename, {
             isClassic: Boolean(process.env.CLASSIC),

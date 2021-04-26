@@ -19,6 +19,8 @@
   "devDependencies": {
     "@embroider/sample-lib": "link:../../test-packages/sample-lib",
     "@embroider/macros": "0.39.1",
+    "bootstrap": "^4.3.1",
+    "ember-bootstrap": "^4.6.3",
     "ember-cli-latest": "npm:ember-cli@latest",
     "ember-cli-beta": "npm:ember-cli@beta",
     "ember-cli-3.16": "npm:ember-cli@~3.16.0",
@@ -34,7 +36,6 @@
     "ember-cli-sass": "^10.0.0",
     "sass": "^1.26.3",
     "ember-inline-svg": "^0.2.1",
-    "ember-paper": "^1.0.0-beta.24",
     "ember-composable-helpers": "^4.4.1"
   },
   "volta": {

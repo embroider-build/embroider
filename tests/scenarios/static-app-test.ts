@@ -8,8 +8,6 @@ appScenarios
   .map('dynamic-import', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.linkDevDependency('ember-bootstrap', { baseDir: __dirname });
-    project.linkDevDependency('ember-inline-svg', { baseDir: __dirname });
-    project.linkDevDependency('sass', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-composable-helpers', { baseDir: __dirname });
 

@@ -5,7 +5,7 @@ import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .map('dynamic-import', project => {
+  .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.linkDevDependency('ember-bootstrap', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });

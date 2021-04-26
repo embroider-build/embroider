@@ -65,8 +65,8 @@ export default class V1InstanceCache {
       return V1Addon;
     }
 
-    if (AdapterClass.isEnabled) {
-      return AdapterClass.isEnabled(addonInstance) ? AdapterClass : V1Addon;
+    if (AdapterClass.shouldApplyAdapter) {
+      return AdapterClass.shouldApplyAdapter(addonInstance) ? AdapterClass : V1Addon;
     }
 
     return AdapterClass;

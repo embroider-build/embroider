@@ -1010,7 +1010,7 @@ export interface V1AddonConstructor {
     orderIdx: number
   ): V1Addon;
 
-  isEnabled?(addonInstance: any): boolean;
+  shouldApplyAdapter?(addonInstance: any): boolean;
 }
 
 class IntermediateBuild {

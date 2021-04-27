@@ -7,7 +7,7 @@ import { join } from 'path';
 import semver from 'semver';
 
 export default class extends V1Addon {
-  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0', { includePrerelease: true });
+  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0-beta.0', { includePrerelease: true });
 
   get v2Tree() {
     return mergeTrees([super.v2Tree, new Funnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);

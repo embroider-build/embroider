@@ -48,7 +48,7 @@ The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the offic
 1. Add dependencies:
 
    ```
-   yarn add --dev @embroider/core @embroider/compat @embroider/webpack
+   yarn add --dev @embroider/core @embroider/compat @embroider/webpack webpack
    ```
 
 2. Edit `ember-cli-build.js`:

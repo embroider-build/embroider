@@ -26,6 +26,7 @@ import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
+import semverSatisfies from 'semver/functions/satisfies';
 
 const debug = makeDebug('embroider:debug');
 
@@ -83,6 +84,10 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     private consoleWrite: (msg: string) => void,
     options?: Options
   ) {
+    if (!semverSatisfies(webpack.version, '^5.0.0')) {
+      throw new Error(`@embroider/webpack requires webpack@^5.0.0, but found version ${webpack.version}`);
+    }
+
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;

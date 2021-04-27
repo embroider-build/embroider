@@ -54,6 +54,7 @@ export function embroiderSafe(extension?: object) {
           '@embroider/core': currentEmbroiderVersion,
           '@embroider/webpack': currentEmbroiderVersion,
           '@embroider/compat': currentEmbroiderVersion,
+          webpack: '^5.0.0',
         },
       },
       env: {
@@ -73,6 +74,7 @@ export function embroiderOptimized(extension?: object) {
           '@embroider/core': currentEmbroiderVersion,
           '@embroider/webpack': currentEmbroiderVersion,
           '@embroider/compat': currentEmbroiderVersion,
+          webpack: '^5.0.0',
         },
       },
       env: {

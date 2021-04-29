@@ -6,7 +6,7 @@ import { join } from 'path';
 import { removeSync } from 'fs-extra';
 
 const makeConfigurable = `
-if (Ember.ENV.EXTEND_PROTOTYPES === true || Ember.ENV.EXTEND_PROTOTYPES.String) {
+if (EmberENV.EXTEND_PROTOTYPES === true || EmberENV.EXTEND_PROTOTYPES.String) {
   Object.defineProperty(String.prototype, 'pluralize', { configurable: true });
   Object.defineProperty(String.prototype, 'singularize', { configurable: true });
   Object.defineProperty(Ember, 'Inflector', { configurable: true });

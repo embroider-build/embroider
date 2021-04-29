@@ -1009,6 +1009,8 @@ export interface V1AddonConstructor {
     packageCache: PackageCache,
     orderIdx: number
   ): V1Addon;
+
+  shouldApplyAdapter?(addonInstance: any): boolean;
 }
 
 class IntermediateBuild {

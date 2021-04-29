@@ -127,8 +127,12 @@ export default class V1App {
     return this.app.tests || false;
   }
 
+  configPath(): string {
+    return this.app.project.configPath();
+  }
+
   private get configTree() {
-    return new this.configLoader(dirname(this.app.project.configPath()), {
+    return new this.configLoader(dirname(this.configPath()), {
       env: this.app.env,
       tests: this.app.tests || false,
       project: this.app.project,

@@ -22,6 +22,7 @@ import makeDebug from 'debug';
 import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
+import Options from './options';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
@@ -54,17 +55,6 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   );
 }
 
-interface Options {
-  webpackConfig: Configuration;
-
-  // the base public URL for your assets in production. Use this when you want
-  // to serve all your assets from a different origin (like a CDN) than your
-  // actual index.html will be served on.
-  //
-  // This should be a URL ending in "/".
-  publicAssetURL?: string;
-}
-
 // we want to ensure that not only does our instance conform to
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
@@ -76,6 +66,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
+  private extraThreadLoaderOptions: object | false | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -91,7 +82,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
-    warmUp();
+    this.extraThreadLoaderOptions = options?.threadLoaderOptions;
+    warmUp(this.extraThreadLoaderOptions);
   }
 
   async build(): Promise<void> {
@@ -158,7 +150,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
           {
             test: /\.hbs$/,
             use: nonNullArray([
-              maybeThreadLoader(templateCompiler.isParallelSafe),
+              maybeThreadLoader(templateCompiler.isParallelSafe, this.extraThreadLoaderOptions),
               {
                 loader: require.resolve('@embroider/hbs-loader'),
                 options: hbsOptions,
@@ -169,7 +161,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
-              maybeThreadLoader(babel.isParallelSafe),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
               babelLoaderOptions(babel.majorVersion, variant, join(this.pathToVanillaApp, babel.filename)),
             ]),
           },
@@ -510,22 +502,30 @@ const threadLoaderOptions = {
   poolTimeout: Infinity,
 };
 
-function warmUp() {
-  threadLoaderWarmup(threadLoaderOptions, [
+function warmUp(extraOptions: object | false | undefined) {
+  // We don't know if we'll be parallel-safe or not, but if the environment sets
+  // JOBS to 1, or our extraOptions are set to false, we know we won't use
+  // thread-loader, so no need to consume extra resources warming the worker
+  // pool
+  if (process.env.JOBS === '1' || extraOptions === false) {
+    return null;
+  }
+
+  threadLoaderWarmup(Object.assign({}, threadLoaderOptions, extraOptions), [
     require.resolve('@embroider/hbs-loader'),
     require.resolve('babel-loader'),
     require.resolve('@embroider/babel-loader-7'),
   ]);
 }
 
-function maybeThreadLoader(isParallelSafe: boolean) {
-  if (process.env.JOBS === '1' || !isParallelSafe) {
+function maybeThreadLoader(isParallelSafe: boolean, extraOptions: object | false | undefined) {
+  if (process.env.JOBS === '1' || extraOptions === false || !isParallelSafe) {
     return null;
   }
 
   return {
     loader: 'thread-loader',
-    options: threadLoaderOptions,
+    options: Object.assign({}, threadLoaderOptions, extraOptions),
   };
 }
 

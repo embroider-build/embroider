@@ -89,7 +89,7 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
-The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts).
+The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts), [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts), and [Webpack Options](https://github.com/embroider-build/embroider/blob/master/packages/webpack/src/options.ts).
 
 The recommended steps when introducing Embroider into an existing app are:
 

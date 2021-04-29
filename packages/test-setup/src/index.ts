@@ -54,6 +54,9 @@ export function embroiderSafe(extension?: object) {
           '@embroider/core': currentEmbroiderVersion,
           '@embroider/webpack': currentEmbroiderVersion,
           '@embroider/compat': currentEmbroiderVersion,
+
+          // Webpack is a peer dependency of `@embroider/webpack`
+          webpack: '^5.0.0',
         },
       },
       env: {
@@ -73,6 +76,9 @@ export function embroiderOptimized(extension?: object) {
           '@embroider/core': currentEmbroiderVersion,
           '@embroider/webpack': currentEmbroiderVersion,
           '@embroider/compat': currentEmbroiderVersion,
+
+          // Webpack is a peer dependency of `@embroider/webpack`
+          webpack: '^5.0.0',
         },
       },
       env: {

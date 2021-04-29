@@ -113,7 +113,7 @@ export default class V1Addon {
   constructor(
     protected addonInstance: any,
     protected addonOptions: Required<Options>,
-    private app: V1App,
+    protected app: V1App,
     private packageCache: PackageCache,
     private orderIdx: number
   ) {

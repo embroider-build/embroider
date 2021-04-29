@@ -4,7 +4,7 @@ import { Configuration } from 'webpack';
 // This does not include the babel configuration, which is pulled from the app, only the
 // additional options that `babel-loader` supports.
 export interface BabelLoaderOptions {
-  cacheDirectory?: boolean | false;
+  cacheDirectory?: boolean | string;
   cacheIdentifier?: string;
   cacheCompression?: boolean;
   customize?: string;

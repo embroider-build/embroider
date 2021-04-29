@@ -1,6 +1,16 @@
 import { Configuration } from 'webpack';
 
-export default interface Options {
+// [babel-loader](https://webpack.js.org/loaders/babel-loader/#options) specific options.
+// This does not include the babel configuration, which is pulled from the app, only the
+// additional options that `babel-loader` supports.
+export interface BabelLoaderOptions {
+  cacheDirectory?: boolean | false;
+  cacheIdentifier?: string;
+  cacheCompression?: boolean;
+  customize?: string;
+}
+
+export interface Options {
   webpackConfig: Configuration;
 
   // the base public URL for your assets in production. Use this when you want
@@ -18,4 +28,6 @@ export default interface Options {
   // Note that setting `JOBS=1` in the environment will also disable
   // `thread-loader`.
   threadLoaderOptions?: object | false;
+
+  babelLoaderOptions?: BabelLoaderOptions;
 }

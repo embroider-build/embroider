@@ -1,6 +1,5 @@
 import V1Addon from '../v1-addon';
 import writeFile from 'broccoli-file-creator';
-import { join } from 'path';
 
 function createIndexContents(config: any): string {
   return `export default ${JSON.stringify(config)};`;
@@ -19,9 +18,8 @@ function createIndexContents(config: any): string {
  */
 export default class extends V1Addon {
   get v2Tree() {
-    const configModulePath = join(this.app.root, 'config/environment.js');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const configModule = require(configModulePath);
+    const configModule = require(this.app.configPath());
     const appEnvironmentConfig = configModule(this.app.env);
 
     return writeFile('index.js', createIndexContents(appEnvironmentConfig));

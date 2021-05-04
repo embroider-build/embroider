@@ -43,7 +43,7 @@
     "broccoli-funnel": "^3.0.5",
     "broccoli-merge-trees": "^3.0.0",
     "broccoli-persistent-filter": "^3.1.2",
-    "broccoli-plugin": "^4.0.0",
+    "broccoli-plugin": "^4.0.7",
     "broccoli-source": "^3.0.0",
     "chalk": "^4.1.0",
     "debug": "^3.1.0",

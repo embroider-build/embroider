@@ -22,7 +22,7 @@ import makeDebug from 'debug';
 import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
-import Options from './options';
+import { Options, BabelLoaderOptions } from './options';
 import { HTMLEntrypoint } from './html-entrypoint';
 import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
@@ -67,6 +67,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
   private extraThreadLoaderOptions: object | false | undefined;
+  private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -83,6 +84,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
+    this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     warmUp(this.extraThreadLoaderOptions);
   }
 
@@ -162,7 +164,12 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
-              babelLoaderOptions(babel.majorVersion, variant, join(this.pathToVanillaApp, babel.filename)),
+              babelLoaderOptions(
+                babel.majorVersion,
+                variant,
+                join(this.pathToVanillaApp, babel.filename),
+                this.extraBabelLoaderOptions
+              ),
             ]),
           },
           {
@@ -545,15 +552,25 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
   return array.filter(Boolean) as NonNullable<T>[];
 }
 
-function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfigPath: string) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let options = Object.assign({}, applyVariantToBabelConfig(variant, require(appBabelConfigPath)), {
-    // all stage3 packagers should keep persistent caches under
-    // `join(tmpdir(), 'embroider')`. An important reason is that
-    // they should have exactly the same lifetime as some of
-    // embroider's own caches.
-    cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
-  });
+function babelLoaderOptions(
+  majorVersion: 6 | 7,
+  variant: Variant,
+  appBabelConfigPath: string,
+  extraOptions: BabelLoaderOptions | undefined
+) {
+  let options = Object.assign(
+    {},
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
+    {
+      // Unless explicitly overridden, all stage3 packagers should keep
+      // persistent caches under `join(tmpdir(), 'embroider')`. An
+      // important reason is that they should have exactly the same
+      // lifetime as some of embroider's own caches.
+      cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+    },
+    extraOptions
+  );
   if (majorVersion === 7) {
     if (options.plugins) {
       options.plugins = options.plugins.slice();

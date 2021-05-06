@@ -1,4 +1,4 @@
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 
@@ -8,7 +8,7 @@ import mergeTrees from 'broccoli-merge-trees';
 
 export default function modulesCompat(tree: Node) {
   return mergeTrees([
-    new Funnel(tree, { exclude: ['modules'] }),
-    new Funnel(tree, { srcDir: 'modules', allowEmpty: true }),
+    buildFunnel(tree, { exclude: ['modules'] }),
+    buildFunnel(tree, { srcDir: 'modules', allowEmpty: true }),
   ]);
 }

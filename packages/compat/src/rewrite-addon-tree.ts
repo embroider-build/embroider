@@ -1,4 +1,4 @@
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
 import { Node } from 'broccoli-node-api';
@@ -77,7 +77,7 @@ export default function rewriteAddonTree(
       allowEmpty: true,
     }
   );
-  let badParts = new Funnel(tree, {
+  let badParts = buildFunnel(tree, {
     exclude: [`${moduleName}/**`],
   });
   return {

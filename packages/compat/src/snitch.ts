@@ -1,4 +1,4 @@
-import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
+import { Funnel, Options as FunnelOptions } from 'broccoli-funnel';
 import walkSync from 'walk-sync';
 import { Node } from 'broccoli-node-api';
 

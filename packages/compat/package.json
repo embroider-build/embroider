@@ -40,7 +40,7 @@
     "broccoli": "^3.4.2",
     "broccoli-concat": "^3.7.3",
     "broccoli-file-creator": "^2.1.1",
-    "broccoli-funnel": "ef4/broccoli-funnel#c70d060076e14793e8495571f304a976afc754ac",
+    "broccoli-funnel": "^3.0.5",
     "broccoli-merge-trees": "^3.0.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.0",

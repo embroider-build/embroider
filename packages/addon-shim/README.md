@@ -13,7 +13,7 @@ This allows addons to update to v2 without waiting for all their users to upgrad
 ## Installation
 
 ```
-ember install @embroider/util
+ember install @embroider/addon-shim
 ```
 
 ## Usage

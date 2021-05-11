@@ -296,9 +296,10 @@ appScenarios
                 },
               },
             ],
-            skipBabel: [{
-              package: 'qunit'
-            }],
+            skipBabel: [
+              { package: 'qunit' },
+              { package: 'macro-decorators' },
+            ],
           });
         };
       `,

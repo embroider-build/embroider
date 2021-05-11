@@ -437,8 +437,8 @@ export default class CompatResolver implements Resolver {
 
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
     let parts = path.split('@');
+    let cache = PackageCache.shared('embroider-stage3');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
       let packageName = parts[0];
       let renamed = this.params.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
@@ -446,7 +446,7 @@ export default class CompatResolver implements Resolver {
       }
       return this._tryComponent(parts[1], from, withRuleLookup, cache.resolve(packageName, cache.ownerOfFile(from)!));
     } else {
-      return this._tryComponent(path, from, withRuleLookup, this.appPackage);
+      return this._tryComponent(path, from, withRuleLookup, cache.ownerOfFile(from)!);
     }
   }
 

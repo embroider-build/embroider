@@ -18,12 +18,23 @@
   "license": "MIT",
   "devDependencies": {
     "@embroider/sample-lib": "link:../../test-packages/sample-lib",
+    "@embroider/macros": "0.39.1",
+    "bootstrap": "^4.3.1",
+    "ember-bootstrap": "^4.6.3",
     "ember-cli-latest": "npm:ember-cli@latest",
     "ember-cli-beta": "npm:ember-cli@beta",
+    "ember-cli-3.16": "npm:ember-cli@~3.16.0",
+    "ember-cli-3.20": "npm:ember-cli@~3.20.0",
+    "ember-cli-3.24": "npm:ember-cli@~3.24.0",
     "ember-cli-fastboot": "^2.2.3",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-source-beta": "npm:ember-source@beta",
-    "fastboot-addon": "link:../../test-packages/fastboot-addon"
+    "ember-source-3.16": "npm:ember-source@~3.16.0",
+    "ember-source-3.20": "npm:ember-source@~3.20.0",
+    "ember-source-3.24": "npm:ember-source@~3.24.0",
+    "fastboot-addon": "link:../../test-packages/fastboot-addon",
+    "ember-inline-svg": "^0.2.1",
+    "ember-composable-helpers": "^4.4.1"
   },
   "volta": {
     "node": "14.16.1",

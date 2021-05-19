@@ -1,11 +1,11 @@
-import { getOrCreate } from '@embroider/core';
+import { getOrCreate } from '@embroider/shared-internals';
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import partition from 'lodash/partition';
 import zip from 'lodash/zip';
 import Placeholder from './html-placeholder';
-import { StatSummary } from './stat-summary';
+import { Variant } from './packager';
 
 export class HTMLEntrypoint {
   private dom: JSDOM;
@@ -77,7 +77,7 @@ export class HTMLEntrypoint {
   }
 
   // bundles maps from input asset to a per-variant map of output assets
-  render(stats: StatSummary): string {
+  render(stats: BundleSummary): string {
     let insertedLazy = false;
     let fastbootVariant = stats.variants.findIndex(v => Boolean(v.runtime === 'fastboot'));
     let supportsFastboot = stats.variants.some(v => v.runtime === 'fastboot' || v.runtime === 'all');
@@ -127,6 +127,17 @@ export class HTMLEntrypoint {
     }
     return this.dom.serialize();
   }
+}
+
+export interface BundleSummary {
+  // entrypoints.get(inputAsset).get(variantIndex) === outputAssets
+  entrypoints: Map<string, Map<number, string[]>>;
+
+  // lazyBundles are tracked specifically for fastboot, so these always come
+  // from the fastboot variant, if any
+  lazyBundles: Set<string>;
+
+  variants: Variant[];
 }
 
 function isAbsoluteURL(url: string) {

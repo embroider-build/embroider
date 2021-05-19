@@ -1,14 +1,16 @@
 import Plugin from 'broccoli-plugin';
-import { Packager, PackagerInstance, Variant } from './packager';
+import { Packager, PackagerConstructor, Variant } from './packager';
 import Stage from './stage';
 
 interface BroccoliPackager<Options> {
   new (stage: Stage, variants: Variant[], options?: Options): Plugin;
 }
 
-export default function toBroccoliPlugin<Options>(packagerClass: Packager<Options>): BroccoliPackager<Options> {
+export default function toBroccoliPlugin<Options>(
+  packagerClass: PackagerConstructor<Options>
+): BroccoliPackager<Options> {
   class PackagerRunner extends Plugin {
-    private packager: PackagerInstance | undefined;
+    private packager: Packager | undefined;
     constructor(private stage: Stage, private variants: Variant[], private options?: Options) {
       super([stage.tree], {
         persistentOutput: true,

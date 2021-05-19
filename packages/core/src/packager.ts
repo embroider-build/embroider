@@ -1,3 +1,8 @@
+import { AppMeta } from '@embroider/shared-internals';
+import { readFileSync } from 'fs-extra';
+import { join } from 'path';
+import { tmpdir } from 'os';
+
 // This is a collection of flags that convey what kind of build you want. They
 // are intended to be generic across Packagers, and it's up to Packager authors
 // to support each option (or not).
@@ -23,7 +28,7 @@ export interface Variant {
   optimizeForProduction: boolean;
 }
 
-export interface Packager<Options> {
+export interface PackagerConstructor<Options> {
   new (
     // where on disk the packager will find the app it's supposed to build. The
     // app and its addons will necessarily already be in v2 format, which is
@@ -54,13 +59,13 @@ export interface Packager<Options> {
     // packager is based on a third-party tool, this is where that tool's
     // configuration can go.
     options?: Options
-  ): PackagerInstance;
+  ): Packager;
 
   // a description for this packager that aids debugging & profiling
   annotation: string;
 }
 
-export interface PackagerInstance {
+export interface Packager {
   build(): Promise<void>;
 }
 
@@ -86,4 +91,20 @@ export function applyVariantToTemplateCompiler(_variant: Variant, templateCompil
   // TODO: we don't actually consume the variant in the template macros yet, but
   // Packagers must call this function anyway because we will.
   return templateCompiler;
+}
+
+/**
+ * Get the app meta-data for a package
+ */
+export function getAppMeta(pathToVanillaApp: string): AppMeta {
+  return JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+}
+
+/**
+ * Get the path to a cache directory in the recommended location
+ *
+ * This ensures they have exactly the same lifetime as some of embroider's own caches.
+ */
+export function getPackagerCacheDir(name: string): string {
+  return join(tmpdir(), 'embroider', name);
 }

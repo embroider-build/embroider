@@ -1,10 +1,13 @@
 export {
   Packager,
-  PackagerInstance,
+  PackagerConstructor,
   Variant,
   applyVariantToBabelConfig,
   applyVariantToTemplateCompiler,
+  getAppMeta,
+  getPackagerCacheDir,
 } from './packager';
+export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
 export { Resolver } from './resolver';
 export { default as Stage } from './stage';
 export { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';

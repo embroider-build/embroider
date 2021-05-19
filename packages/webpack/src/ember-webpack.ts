@@ -9,8 +9,18 @@
   getting script vs module context correct).
 */
 
-import { getOrCreate, Variant, applyVariantToBabelConfig } from '@embroider/core';
-import { PackagerInstance, AppMeta, Packager } from '@embroider/core';
+import {
+  AppMeta,
+  HTMLEntrypoint,
+  BundleSummary,
+  Packager,
+  PackagerConstructor,
+  Variant,
+  applyVariantToBabelConfig,
+  getAppMeta,
+  getPackagerCacheDir,
+  getOrCreate,
+} from '@embroider/core';
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
@@ -23,8 +33,6 @@ import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { Options, BabelLoaderOptions } from './options';
-import { HTMLEntrypoint } from './html-entrypoint';
-import { StatSummary } from './stat-summary';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 import semverSatisfies from 'semver/functions/satisfies';
@@ -59,7 +67,7 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
 // correct type.
-const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
+const Webpack: PackagerConstructor<Options> = class Webpack implements Packager {
   static annotation = '@embroider/webpack';
 
   pathToVanillaApp: string;
@@ -96,7 +104,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
   }
 
   private examineApp(): AppInfo {
-    let meta = JSON.parse(readFileSync(join(this.pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+    let meta = getAppMeta(this.pathToVanillaApp);
     let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];
@@ -289,7 +297,7 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     }
   }
 
-  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
+  private async writeFiles(stats: BundleSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
@@ -382,8 +390,8 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.StatsCompilation): StatSummary {
-    let output: StatSummary = {
+  private summarizeStats(multiStats: webpack.StatsCompilation): BundleSummary {
+    let output: BundleSummary = {
       entrypoints: new Map(),
       lazyBundles: new Set(),
       variants: this.variants,
@@ -563,11 +571,7 @@ function babelLoaderOptions(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
     {
-      // Unless explicitly overridden, all stage3 packagers should keep
-      // persistent caches under `join(tmpdir(), 'embroider')`. An
-      // important reason is that they should have exactly the same
-      // lifetime as some of embroider's own caches.
-      cacheDirectory: join(tmpdir(), 'embroider', 'webpack-babel-loader'),
+      cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
     },
     extraOptions
   );

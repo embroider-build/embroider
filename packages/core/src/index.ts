@@ -7,8 +7,7 @@ export {
   getAppMeta,
   getPackagerCacheDir,
 } from './packager';
-export { HTMLEntrypoint } from './html-entrypoint';
-export { StatSummary } from './stat-summary';
+export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
 export { Resolver } from './resolver';
 export { default as Stage } from './stage';
 export { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';

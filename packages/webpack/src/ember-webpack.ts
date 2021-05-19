@@ -12,9 +12,9 @@
 import {
   AppMeta,
   HTMLEntrypoint,
+  BundleSummary,
   Packager,
   PackagerConstructor,
-  StatSummary,
   Variant,
   applyVariantToBabelConfig,
   getAppMeta,
@@ -293,7 +293,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     }
   }
 
-  private async writeFiles(stats: StatSummary, { entrypoints, otherAssets }: AppInfo) {
+  private async writeFiles(stats: BundleSummary, { entrypoints, otherAssets }: AppInfo) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
@@ -386,8 +386,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.StatsCompilation): StatSummary {
-    let output: StatSummary = {
+  private summarizeStats(multiStats: webpack.StatsCompilation): BundleSummary {
+    let output: BundleSummary = {
       entrypoints: new Map(),
       lazyBundles: new Set(),
       variants: this.variants,

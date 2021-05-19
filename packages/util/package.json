@@ -5,7 +5,7 @@
   "keywords": [
     "ember-addon"
   ],
-  "repository": "",
+  "repository": "https://github.com/embroider-build/embroider",
   "license": "MIT",
   "author": "",
   "directories": {

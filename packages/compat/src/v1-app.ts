@@ -1,7 +1,7 @@
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname, isAbsolute } from 'path';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
@@ -127,8 +127,12 @@ export default class V1App {
     return this.app.tests || false;
   }
 
+  configPath(): string {
+    return this.app.project.configPath();
+  }
+
   private get configTree() {
-    return new this.configLoader(dirname(this.app.project.configPath()), {
+    return new this.configLoader(dirname(this.configPath()), {
       env: this.app.env,
       tests: this.app.tests || false,
       project: this.app.project,
@@ -183,7 +187,7 @@ export default class V1App {
 
   private get indexTree() {
     let indexFilePath = this.app.options.outputPaths.app.html;
-    let index = new Funnel(this.app.trees.app, {
+    let index = buildFunnel(this.app.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
@@ -198,7 +202,7 @@ export default class V1App {
   }
 
   private get testIndexTree() {
-    let index = new Funnel(this.app.trees.tests, {
+    let index = buildFunnel(this.app.trees.tests, {
       allowEmpty: true,
       include: [`index.html`],
       destDir: 'tests',
@@ -321,17 +325,16 @@ export default class V1App {
   }
 
   private combinedVendor(addonTrees: Node[]): Node {
-    let trees = addonTrees.map(
-      tree =>
-        new Funnel(tree, {
-          allowEmpty: true,
-          srcDir: 'vendor',
-          destDir: 'vendor',
-        })
+    let trees = addonTrees.map(tree =>
+      buildFunnel(tree, {
+        allowEmpty: true,
+        srcDir: 'vendor',
+        destDir: 'vendor',
+      })
     );
     if (this.vendorTree) {
       trees.push(
-        new Funnel(this.vendorTree, {
+        buildFunnel(this.vendorTree, {
           destDir: 'vendor',
         })
       );
@@ -440,12 +443,11 @@ export default class V1App {
   }
 
   private combinedStyles(addonTrees: Node[]): Node {
-    let trees: Node[] = addonTrees.map(
-      tree =>
-        new Funnel(tree, {
-          allowEmpty: true,
-          srcDir: '_app_styles_',
-        })
+    let trees: Node[] = addonTrees.map(tree =>
+      buildFunnel(tree, {
+        allowEmpty: true,
+        srcDir: '_app_styles_',
+      })
     );
     let appStyles = this.app.trees.styles as Node | undefined;
     if (appStyles) {
@@ -474,7 +476,7 @@ export default class V1App {
       minifyCSS: this.app.options.minifyCSS.options,
     };
 
-    let nestedInput = new Funnel(this.combinedStyles(addonTrees), { destDir: 'app/styles' });
+    let nestedInput = buildFunnel(this.combinedStyles(addonTrees), { destDir: 'app/styles' });
     let styles = this.preprocessors.preprocessCss(nestedInput, 'app/styles', '/assets', options);
 
     return new AddToTree(styles, outputPath => {
@@ -505,7 +507,7 @@ export default class V1App {
       let transformName = customTransformEntry[0];
       let transformConfig = customTransformEntry[1];
 
-      let transformTree = new Funnel(externalTree, {
+      let transformTree = buildFunnel(externalTree, {
         files: transformConfig.files,
         annotation: `Funnel (custom transform: ${transformName})`,
       });
@@ -558,6 +560,23 @@ export default class V1App {
       // even if the app was using @embroider/macros, we drop it from the config
       // here in favor of our globally-configured one.
       options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+
+      // The parallelization protocol in ember-cli-htmlbars doesn't actually
+      // apply to the AST plugins, it applies to wrappers that
+      // ember-cli-htmlbars keeps around the plugins. Those wrappers aren't
+      // availble to us when we look at the template compiler configuration, so
+      // we need to find them directly out of the registry here. And we need to
+      // provide our own unwrapper shim to pull the real plugin out of the
+      // wrapper after deserializing.
+      for (let wrapper of this.app.registry.load('htmlbars-ast-plugin')) {
+        if (wrapper.parallelBabel && wrapper.plugin && !wrapper.plugin.parallelBabel) {
+          wrapper.plugin.parallelBabel = {
+            requireFile: join(__dirname, 'htmlbars-unwrapper.js'),
+            buildUsing: 'unwrapPlugin',
+            params: wrapper.parallelBabel,
+          };
+        }
+      }
     }
     return options.plugins;
   }
@@ -566,7 +585,7 @@ export default class V1App {
   // from all addons too.
   private get appTree(): Node {
     return this.preprocessJS(
-      new Funnel(this.app.trees.app, {
+      buildFunnel(this.app.trees.app, {
         exclude: ['styles/**', '*.html'],
       })
     );
@@ -575,7 +594,7 @@ export default class V1App {
   private get testsTree(): Node | undefined {
     if (this.shouldBuildTests && this.app.trees.tests) {
       return this.preprocessJS(
-        new Funnel(this.app.trees.tests, {
+        buildFunnel(this.app.trees.tests, {
           destDir: 'tests',
         })
       );

@@ -1,11 +1,11 @@
 {
   "name": "@embroider/util",
-  "version": "0.39.1",
-  "description": "The default blueprint for ember-cli addons.",
+  "version": "0.40.0",
+  "description": "Utilities for app and addon authors.",
   "keywords": [
     "ember-addon"
   ],
-  "repository": "",
+  "repository": "https://github.com/embroider-build/embroider",
   "license": "MIT",
   "author": "",
   "directories": {
@@ -28,18 +28,18 @@
     "test:ember-compatibility": "ember try:each"
   },
   "dependencies": {
-    "@embroider/macros": "0.39.1",
-    "broccoli-funnel": "ef4/broccoli-funnel#c70d060076e14793e8495571f304a976afc754ac",
+    "@embroider/macros": "0.40.0",
+    "broccoli-funnel": "^3.0.5",
     "ember-cli-babel": "^7.23.1"
   },
   "devDependencies": {
     "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^2.2.0",
-    "@embroider/compat": "0.39.1",
-    "@embroider/core": "0.39.1",
-    "@embroider/test-setup": "0.39.1",
+    "@embroider/compat": "0.40.0",
+    "@embroider/core": "0.40.0",
+    "@embroider/test-setup": "0.40.0",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "0.39.1",
+    "@embroider/webpack": "0.40.0",
     "@glimmer/component": "^1.0.3",
     "@glimmer/tracking": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^4.1.1",

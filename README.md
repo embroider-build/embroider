@@ -36,7 +36,7 @@ We are rapidly nearing a 1.0 release, and several large, heavily-tested Ember ap
 - you're likely to discover some Ember addons don't work or break your build
 - Embroider's own configuration options are subject to change, so you'll need
   to read the CHANGELOG.md when updating the Embroider packages.
-  
+
 Alternatively, it is totally safe to stick with the traditional build pipeline and wait for the official cutover point when EmberCLI starts generating new apps with Embroider by default.
 
 ## For Addon Authors
@@ -48,7 +48,7 @@ The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the offic
 1. Add dependencies:
 
    ```
-   yarn add --dev @embroider/core @embroider/compat @embroider/webpack
+   yarn add --dev @embroider/core @embroider/compat @embroider/webpack webpack
    ```
 
 2. Edit `ember-cli-build.js`:
@@ -89,7 +89,7 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
-The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts).
+The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts), [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts), and [Webpack Options](https://github.com/embroider-build/embroider/blob/master/packages/webpack/src/options.ts).
 
 The recommended steps when introducing Embroider into an existing app are:
 
@@ -108,7 +108,7 @@ this was accomplished by configuring the `fingerprint: { prepend: ... }` option 
 ```js
 return require('@embroider/compat').compatBuild(app, Webpack, {
   packagerOptions: {
-    publicAssetURL: 'https://your-cdn-here.com/', // This should be a URL ending in "/"
+    publicAssetURL: EmberApp.env() === 'production' ? 'https://your-cdn-here.com/' : '/', // This should be a URL ending in "/"
   },
 });
 ```

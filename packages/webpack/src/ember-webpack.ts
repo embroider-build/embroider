@@ -32,8 +32,10 @@ import makeDebug from 'debug';
 import { format } from 'util';
 import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
+import { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
+import semverSatisfies from 'semver/functions/satisfies';
 
 const debug = makeDebug('embroider:debug');
 
@@ -61,17 +63,6 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   );
 }
 
-interface Options {
-  webpackConfig: Configuration;
-
-  // the base public URL for your assets in production. Use this when you want
-  // to serve all your assets from a different origin (like a CDN) than your
-  // actual index.html will be served on.
-  //
-  // This should be a URL ending in "/".
-  publicAssetURL?: string;
-}
-
 // we want to ensure that not only does our instance conform to
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
@@ -83,6 +74,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
+  private extraThreadLoaderOptions: object | false | undefined;
+  private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -91,10 +84,16 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     private consoleWrite: (msg: string) => void,
     options?: Options
   ) {
+    if (!semverSatisfies(webpack.version, '^5.0.0')) {
+      throw new Error(`@embroider/webpack requires webpack@^5.0.0, but found version ${webpack.version}`);
+    }
+
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
-    warmUp();
+    this.extraThreadLoaderOptions = options?.threadLoaderOptions;
+    this.extraBabelLoaderOptions = options?.babelLoaderOptions;
+    warmUp(this.extraThreadLoaderOptions);
   }
 
   async build(): Promise<void> {
@@ -161,7 +160,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           {
             test: /\.hbs$/,
             use: nonNullArray([
-              maybeThreadLoader(templateCompiler.isParallelSafe),
+              maybeThreadLoader(templateCompiler.isParallelSafe, this.extraThreadLoaderOptions),
               {
                 loader: require.resolve('@embroider/hbs-loader'),
                 options: hbsOptions,
@@ -172,8 +171,13 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
-              maybeThreadLoader(babel.isParallelSafe),
-              babelLoaderOptions(babel.majorVersion, variant, join(this.pathToVanillaApp, babel.filename)),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
+              babelLoaderOptions(
+                babel.majorVersion,
+                variant,
+                join(this.pathToVanillaApp, babel.filename),
+                this.extraBabelLoaderOptions
+              ),
             ]),
           },
           {
@@ -513,22 +517,30 @@ const threadLoaderOptions = {
   poolTimeout: Infinity,
 };
 
-function warmUp() {
-  threadLoaderWarmup(threadLoaderOptions, [
+function warmUp(extraOptions: object | false | undefined) {
+  // We don't know if we'll be parallel-safe or not, but if the environment sets
+  // JOBS to 1, or our extraOptions are set to false, we know we won't use
+  // thread-loader, so no need to consume extra resources warming the worker
+  // pool
+  if (process.env.JOBS === '1' || extraOptions === false) {
+    return null;
+  }
+
+  threadLoaderWarmup(Object.assign({}, threadLoaderOptions, extraOptions), [
     require.resolve('@embroider/hbs-loader'),
     require.resolve('babel-loader'),
     require.resolve('@embroider/babel-loader-7'),
   ]);
 }
 
-function maybeThreadLoader(isParallelSafe: boolean) {
-  if (process.env.JOBS === '1' || !isParallelSafe) {
+function maybeThreadLoader(isParallelSafe: boolean, extraOptions: object | false | undefined) {
+  if (process.env.JOBS === '1' || extraOptions === false || !isParallelSafe) {
     return null;
   }
 
   return {
     loader: 'thread-loader',
-    options: threadLoaderOptions,
+    options: Object.assign({}, threadLoaderOptions, extraOptions),
   };
 }
 
@@ -548,11 +560,21 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
   return array.filter(Boolean) as NonNullable<T>[];
 }
 
-function babelLoaderOptions(majorVersion: 6 | 7, variant: Variant, appBabelConfigPath: string) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let options = Object.assign({}, applyVariantToBabelConfig(variant, require(appBabelConfigPath)), {
-    cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
-  });
+function babelLoaderOptions(
+  majorVersion: 6 | 7,
+  variant: Variant,
+  appBabelConfigPath: string,
+  extraOptions: BabelLoaderOptions | undefined
+) {
+  let options = Object.assign(
+    {},
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
+    {
+      cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
+    },
+    extraOptions
+  );
   if (majorVersion === 7) {
     if (options.plugins) {
       options.plugins = options.plugins.slice();

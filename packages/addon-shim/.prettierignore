@@ -5,8 +5,6 @@
 # compiled output
 /dist/
 /tmp/
-/src/**/*.js
-/src/**/*.d.ts
 
 # dependencies
 /bower_components/

@@ -1,5 +1,5 @@
 import V1Addon from '../v1-addon';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AddToTree from '../add-to-tree';
 import { outputFileSync, unlinkSync } from 'fs-extra';
@@ -7,10 +7,10 @@ import { join } from 'path';
 import semver from 'semver';
 
 export default class extends V1Addon {
-  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0', { includePrerelease: true });
+  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0-beta.0', { includePrerelease: true });
 
   get v2Tree() {
-    return mergeTrees([super.v2Tree, new Funnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
+    return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
   }
 
   // when using real modules, we're replacing treeForAddon and treeForVendor
@@ -37,10 +37,10 @@ export default class extends V1Addon {
   // supports that pattern of emitting modules into other package's namespaces.
   private customAddonTree() {
     return mergeTrees([
-      new Funnel(this.rootTree, {
+      buildFunnel(this.rootTree, {
         srcDir: 'dist/packages',
       }),
-      new Funnel(this.rootTree, {
+      buildFunnel(this.rootTree, {
         srcDir: 'dist/dependencies',
       }),
     ]);

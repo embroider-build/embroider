@@ -2,7 +2,7 @@ import { Memoize } from 'typescript-memoize';
 import { dirname, isAbsolute, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
-import Funnel, { Options as FunnelOptions } from 'broccoli-funnel';
+import buildFunnel, { Options as FunnelOptions } from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
@@ -113,7 +113,7 @@ export default class V1Addon {
   constructor(
     protected addonInstance: any,
     protected addonOptions: Required<Options>,
-    private app: V1App,
+    protected app: V1App,
     private packageCache: PackageCache,
     private orderIdx: number
   ) {
@@ -422,7 +422,7 @@ export default class V1Addon {
       // legacy root
       let srcDir = relative(this.root, join(this.addonInstance.root, this.addonInstance.treePaths[treeName]));
       let opts = Object.assign({ srcDir }, this.stockTreeFunnelOptions(treeName));
-      return new Funnel(this.rootTree, opts);
+      return buildFunnel(this.rootTree, opts);
     })!;
   }
 
@@ -686,7 +686,7 @@ export default class V1Addon {
       // this one doesn't go through transpile yet because it gets handled as
       // part of the consuming app. For example, imports should be relative to
       // the consuming app, not our own package.
-      return new Funnel(this.stockTree('test-support'), {
+      return buildFunnel(this.stockTree('test-support'), {
         destDir: `${appPublicationDir}/tests`,
       });
     }
@@ -745,7 +745,7 @@ export default class V1Addon {
       // around, which is actually what we want
       tree = this.invokeOriginalTreeFor('styles');
       if (tree) {
-        tree = new Funnel(tree, {
+        tree = buildFunnel(tree, {
           destDir: '_app_styles_',
           getDestinationPath(path) {
             return path.replace(/^app\/styles\//, '');
@@ -818,7 +818,7 @@ export default class V1Addon {
     if (this.customizes('treeForApp', 'treeForTemplates')) {
       let original = this.invokeOriginalTreeFor('app');
       if (original) {
-        appTree = new Funnel(original, {
+        appTree = buildFunnel(original, {
           destDir: appPublicationDir,
         });
       }
@@ -842,7 +842,7 @@ export default class V1Addon {
       if (hintTree) {
         hintTree = this.maybeSetDirectoryMeta(
           built,
-          new Funnel(hintTree, { destDir: appPublicationDir }),
+          buildFunnel(hintTree, { destDir: appPublicationDir }),
           appPublicationDir,
           'app-js'
         );
@@ -866,15 +866,15 @@ export default class V1Addon {
       // concept of "fastboot directory" because they can use the macro system to
       // conditionally import some things only in fastboot.)
       if (pathExistsSync(join(this.root, 'fastboot'))) {
-        tree = new Funnel(this.rootTree, { srcDir: 'fastboot' });
+        tree = buildFunnel(this.rootTree, { srcDir: 'fastboot' });
       }
       tree = this.addonInstance.treeForFastBoot(tree);
       if (tree) {
-        tree = new Funnel(tree, { destDir: fastbootPublicationDir });
+        tree = buildFunnel(tree, { destDir: fastbootPublicationDir });
       }
     } else {
       if (pathExistsSync(join(this.root, 'fastboot'))) {
-        tree = new Funnel(this.rootTree, { srcDir: 'fastboot', destDir: fastbootPublicationDir });
+        tree = buildFunnel(this.rootTree, { srcDir: 'fastboot', destDir: fastbootPublicationDir });
       }
     }
 
@@ -894,7 +894,7 @@ export default class V1Addon {
     if (this.customizes('treeForPublic') && !this.isEngine()) {
       let original = this.invokeOriginalTreeFor('public');
       if (original) {
-        publicTree = new Funnel(original, {
+        publicTree = buildFunnel(original, {
           destDir: 'public',
         });
       }
@@ -924,7 +924,7 @@ export default class V1Addon {
       let tree = this.invokeOriginalTreeFor('vendor');
       if (tree) {
         built.trees.push(
-          new Funnel(tree, {
+          buildFunnel(tree, {
             destDir: 'vendor',
           })
         );
@@ -1009,6 +1009,8 @@ export interface V1AddonConstructor {
     packageCache: PackageCache,
     orderIdx: number
   ): V1Addon;
+
+  shouldApplyAdapter?(addonInstance: any): boolean;
 }
 
 class IntermediateBuild {

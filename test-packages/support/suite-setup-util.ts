@@ -81,7 +81,7 @@ export async function allSuites({ includeEmberTry } = { includeEmberTry: true })
   }
 
   // while we convert over from test-packages to test-scenarios here we merge both together
-  let { stdout } = await execa('scenario-tester', ['list', '--require', 'ts-node/register', '--files=*-test.ts'], {
+  let { stdout } = await execa('scenario-tester', ['list', '--require', 'ts-node/register', '--files', '*-test.ts'], {
     cwd: resolve(__dirname, '..', '..', 'tests', 'scenarios'),
     preferLocal: true,
   });

@@ -1,68 +1,109 @@
 # Embroider Changelog
 
-Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
-Deprecated as of 10.7.0. Please use highlight(code, options) instead.
-https://github.com/highlightjs/highlight.js/issues/2277
+## v0.40.0 (2021-04-24)
 
-Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
-Deprecated as of 10.7.0. Please use highlight(code, options) instead.
-https://github.com/highlightjs/highlight.js/issues/2277
+#### :boom: Breaking Change
 
-Deprecated as of 10.7.0. highlight(lang, code, ...args) has been deprecated.
-Deprecated as of 10.7.0. Please use highlight(code, options) instead.
-https://github.com/highlightjs/highlight.js/issues/2277
+- `compat`, `core`, `hbs-loader`, `shared-internals`, `webpack`
+  - [#652](https://github.com/embroider-build/embroider/pull/652) webpack 5 ([@ef4](https://github.com/ef4)).
+    - If you have customized webpack config, you may need to update it for webpack 5.
+    - webpack is now a peerDependency of @embroider/webpack so you have more direct control over its version and can import any plugins out of it that you might need
+
+#### :rocket: Enhancement
+
+- `compat`
+  - [#754](https://github.com/embroider-build/embroider/pull/754) compatibility with ember-cli-htmlbars serialization for improved build performance ([@ef4](https://github.com/ef4))
+  - [#763](https://github.com/embroider-build/embroider/pull/763) Add Compat Adapter for `@html-next/vertical-collection` ([@alexlafroscia](https://github.com/alexlafroscia))
+- `addon-shim`, `shared-internals`, `util`
+  - [#773](https://github.com/embroider-build/embroider/pull/773) Updates to addon shim ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+
+- `compat`
+  - [#728](https://github.com/embroider-build/embroider/pull/728) Avoid building excessive copies of addons that appear in peerDependencies ([@charlespierce](https://github.com/charlespierce))
+- `compat`, `core`, `router`, `shared-internals`, `util`, `webpack`
+  - [#752](https://github.com/embroider-build/embroider/pull/752) add Windows support to CI matrix ([@thoov](https://github.com/thoov))
+
+#### :memo: Documentation
+
+- [#753](https://github.com/embroider-build/embroider/pull/753) Readme: Add splitAtRoutes to options ([@scottmessinger](https://github.com/scottmessinger))
+
+#### :house: Internal
+
+- Other
+  - [#775](https://github.com/embroider-build/embroider/pull/775) update scenario-tester ([@ef4](https://github.com/ef4))
+- `router`
+  - [#756](https://github.com/embroider-build/embroider/pull/756) Leverage test-scenarios from ember-auto-import ([@thoov](https://github.com/thoov))
+
+#### Committers: 6
+
+- Alex LaFroscia ([@alexlafroscia](https://github.com/alexlafroscia))
+- Charles Pierce ([@charlespierce](https://github.com/charlespierce))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Scott Ames-Messinger ([@scottmessinger](https://github.com/scottmessinger))
+- Travis Hoover ([@thoov](https://github.com/thoov))
 
 ## v0.39.1 (2021-03-31)
 
 #### :bug: Bug Fix
-* `compat`
-  * [#751](https://github.com/embroider-build/embroider/pull/751) Fix node 10 support ([@thoov](https://github.com/thoov))
+
+- `compat`
+  - [#751](https://github.com/embroider-build/embroider/pull/751) Fix node 10 support ([@thoov](https://github.com/thoov))
 
 #### Committers: 1
+
 - Travis Hoover ([@thoov](https://github.com/thoov))
 
 ## v0.39.0 (2021-03-31)
 
 #### :rocket: Enhancement
-* `core`, `shared-internals`
-  * [#749](https://github.com/embroider-build/embroider/pull/749) exposing some features for browser-based build tools ([@ef4](https://github.com/ef4))
+
+- `core`, `shared-internals`
+  - [#749](https://github.com/embroider-build/embroider/pull/749) exposing some features for browser-based build tools ([@ef4](https://github.com/ef4))
 
 #### Committers: 1
+
 - Edward Faulkner ([@ef4](https://github.com/ef4))
 
 ## v0.38.0 (2021-03-31)
 
 #### :rocket: Enhancement
-* `compat`, `core`, `shared-internals`, `util`
-  * [#732](https://github.com/embroider-build/embroider/pull/732) v2 addon shim ([@ef4](https://github.com/ef4))
-* `compat`, `core`, `macros`, `shared-internals`
-  * [#748](https://github.com/embroider-build/embroider/pull/748) Supporting more build environments ([@ef4](https://github.com/ef4))
-  * [#737](https://github.com/embroider-build/embroider/pull/737) reduce deps in macros and util packages ([@ef4](https://github.com/ef4))
-* `compat`, `core`, `test-setup`, `util`, `webpack`
-  * [#740](https://github.com/embroider-build/embroider/pull/740) Use "real modules" for ember-source when possible (3.27+) ([@ef4](https://github.com/ef4))
-* `core`
-  * [#736](https://github.com/embroider-build/embroider/pull/736) silence warning about babel formatting while patching template compiler ([@ef4](https://github.com/ef4))
-* `compat`
-  * [#721](https://github.com/embroider-build/embroider/pull/721) easier stage2-only config ([@ef4](https://github.com/ef4))
-  * [#715](https://github.com/embroider-build/embroider/pull/715) support EMBROIDER_REBUILD_ADDONS for pure v2 addons ([@ef4](https://github.com/ef4))
-* `webpack`
-  * [#720](https://github.com/embroider-build/embroider/pull/720) Improve error message when module cannot be found in webpack ([@thoov](https://github.com/thoov))
+
+- `compat`, `core`, `shared-internals`, `util`
+  - [#732](https://github.com/embroider-build/embroider/pull/732) v2 addon shim ([@ef4](https://github.com/ef4))
+- `compat`, `core`, `macros`, `shared-internals`
+  - [#748](https://github.com/embroider-build/embroider/pull/748) Supporting more build environments ([@ef4](https://github.com/ef4))
+  - [#737](https://github.com/embroider-build/embroider/pull/737) reduce deps in macros and util packages ([@ef4](https://github.com/ef4))
+- `compat`, `core`, `test-setup`, `util`, `webpack`
+  - [#740](https://github.com/embroider-build/embroider/pull/740) Use "real modules" for ember-source when possible (3.27+) ([@ef4](https://github.com/ef4))
+- `core`
+  - [#736](https://github.com/embroider-build/embroider/pull/736) silence warning about babel formatting while patching template compiler ([@ef4](https://github.com/ef4))
+- `compat`
+  - [#721](https://github.com/embroider-build/embroider/pull/721) easier stage2-only config ([@ef4](https://github.com/ef4))
+  - [#715](https://github.com/embroider-build/embroider/pull/715) support EMBROIDER_REBUILD_ADDONS for pure v2 addons ([@ef4](https://github.com/ef4))
+- `webpack`
+  - [#720](https://github.com/embroider-build/embroider/pull/720) Improve error message when module cannot be found in webpack ([@thoov](https://github.com/thoov))
 
 #### :bug: Bug Fix
-* `core`, `shared-internals`
-  * [#742](https://github.com/embroider-build/embroider/pull/742) Improving Windows support ([@thoov](https://github.com/thoov))
-* `compat`
-  * [#747](https://github.com/embroider-build/embroider/pull/747) Add better support for skipping Stage 1 transforms that are not needed ([@ef4](https://github.com/ef4))
-* `hbs-loader`
-  * [#735](https://github.com/embroider-build/embroider/pull/735) fixing a typo in peerDep range in hbs-loader ([@ef4](https://github.com/ef4))
+
+- `core`, `shared-internals`
+  - [#742](https://github.com/embroider-build/embroider/pull/742) Improving Windows support ([@thoov](https://github.com/thoov))
+- `compat`
+  - [#747](https://github.com/embroider-build/embroider/pull/747) Add better support for skipping Stage 1 transforms that are not needed ([@ef4](https://github.com/ef4))
+- `hbs-loader`
+  - [#735](https://github.com/embroider-build/embroider/pull/735) fixing a typo in peerDep range in hbs-loader ([@ef4](https://github.com/ef4))
 
 #### :memo: Documentation
-* [#716](https://github.com/embroider-build/embroider/pull/716) Add documentation about publicAssetURL to README ([@lukemelia](https://github.com/lukemelia))
+
+- [#716](https://github.com/embroider-build/embroider/pull/716) Add documentation about publicAssetURL to README ([@lukemelia](https://github.com/lukemelia))
 
 #### :house: Internal
-* [#743](https://github.com/embroider-build/embroider/pull/743) Migrate from rwjblue/setup-volta to volta-cli/action. ([@rwjblue](https://github.com/rwjblue))
+
+- [#743](https://github.com/embroider-build/embroider/pull/743) Migrate from rwjblue/setup-volta to volta-cli/action. ([@rwjblue](https://github.com/rwjblue))
 
 #### Committers: 4
+
 - Edward Faulkner ([@ef4](https://github.com/ef4))
 - Luke Melia ([@lukemelia](https://github.com/lukemelia))
 - Robert Jackson ([@rwjblue](https://github.com/rwjblue))
@@ -71,45 +112,48 @@ https://github.com/highlightjs/highlight.js/issues/2277
 ## v0.37.0 (2021-03-08)
 
 #### :rocket: Enhancement
-* `core`
-  * [#713](https://github.com/embroider-build/embroider/pull/713) Avoid monkey patching template compiler for 3.24.3 and 3.25.2+. ([@rwjblue](https://github.com/rwjblue))
-  * [#705](https://github.com/embroider-build/embroider/pull/705) Avoid patching the template compiler on Ember 3.26. ([@rwjblue](https://github.com/rwjblue))
-  * [#700](https://github.com/embroider-build/embroider/pull/700) TemplateCompiler fixes / improvements (avoid monkey patch for Ember 3.27+) ([@rwjblue](https://github.com/rwjblue))
-* `macros`
-  * [#712](https://github.com/embroider-build/embroider/pull/712) Allow macroCondition inside modifier ([@simonihmig](https://github.com/simonihmig))
-  * [#694](https://github.com/embroider-build/embroider/pull/694) Run importSync transform later, so ember-auto-import can support importSync ([@simonihmig](https://github.com/simonihmig))
+
+- `core`
+  - [#713](https://github.com/embroider-build/embroider/pull/713) Avoid monkey patching template compiler for 3.24.3 and 3.25.2+. ([@rwjblue](https://github.com/rwjblue))
+  - [#705](https://github.com/embroider-build/embroider/pull/705) Avoid patching the template compiler on Ember 3.26. ([@rwjblue](https://github.com/rwjblue))
+  - [#700](https://github.com/embroider-build/embroider/pull/700) TemplateCompiler fixes / improvements (avoid monkey patch for Ember 3.27+) ([@rwjblue](https://github.com/rwjblue))
+- `macros`
+  - [#712](https://github.com/embroider-build/embroider/pull/712) Allow macroCondition inside modifier ([@simonihmig](https://github.com/simonihmig))
+  - [#694](https://github.com/embroider-build/embroider/pull/694) Run importSync transform later, so ember-auto-import can support importSync ([@simonihmig](https://github.com/simonihmig))
 
 #### :bug: Bug Fix
-* `compat`
-  * [#710](https://github.com/embroider-build/embroider/pull/710) Fix case where `autoRun` is `false` but no other addon set content into the `{{content-for 'app-boot'}}` ([@thoov](https://github.com/thoov))
-  * [#674](https://github.com/embroider-build/embroider/pull/674) adjust paths seen by css preprocessors ([@ef4](https://github.com/ef4))
-  * [#702](https://github.com/embroider-build/embroider/pull/702) Handle case where node_modules are symlinked ([@thoov](https://github.com/thoov))
-  * [#690](https://github.com/embroider-build/embroider/pull/690) Exclude 'babel-plugin-compact-reexports' during Stage 1 build ([@charlespierce](https://github.com/charlespierce))
-  * [#687](https://github.com/embroider-build/embroider/pull/687) Strip `main` field from v1 addons' `package.json` once they are rewritten as V2 ([@ef4](https://github.com/ef4))
-* `compat`, `core`
-  * [#709](https://github.com/embroider-build/embroider/pull/709) Fix the path to the on-disk styles file for in-repo engines ([@charlespierce](https://github.com/charlespierce))
-* `core`
-  * [#686](https://github.com/embroider-build/embroider/pull/686) Prevent accidental duplication of babel plugin during rebuilds ([@ef4](https://github.com/ef4))
+
+- `compat`
+  - [#710](https://github.com/embroider-build/embroider/pull/710) Fix case where `autoRun` is `false` but no other addon set content into the `{{content-for 'app-boot'}}` ([@thoov](https://github.com/thoov))
+  - [#674](https://github.com/embroider-build/embroider/pull/674) adjust paths seen by css preprocessors ([@ef4](https://github.com/ef4))
+  - [#702](https://github.com/embroider-build/embroider/pull/702) Handle case where node_modules are symlinked ([@thoov](https://github.com/thoov))
+  - [#690](https://github.com/embroider-build/embroider/pull/690) Exclude 'babel-plugin-compact-reexports' during Stage 1 build ([@charlespierce](https://github.com/charlespierce))
+  - [#687](https://github.com/embroider-build/embroider/pull/687) Strip `main` field from v1 addons' `package.json` once they are rewritten as V2 ([@ef4](https://github.com/ef4))
+- `compat`, `core`
+  - [#709](https://github.com/embroider-build/embroider/pull/709) Fix the path to the on-disk styles file for in-repo engines ([@charlespierce](https://github.com/charlespierce))
+- `core`
+  - [#686](https://github.com/embroider-build/embroider/pull/686) Prevent accidental duplication of babel plugin during rebuilds ([@ef4](https://github.com/ef4))
 
 #### :house: Internal
-* `compat`
-  * [#706](https://github.com/embroider-build/embroider/pull/706) Remove `ember-cli-htmlbars` dependency in `@embroider/compat`. ([@rwjblue](https://github.com/rwjblue))
-* Other
-  * [#711](https://github.com/embroider-build/embroider/pull/711) Add release automation setup. ([@rwjblue](https://github.com/rwjblue))
-  * [#704](https://github.com/embroider-build/embroider/pull/704) Avoid running CI jobs on both push and pull_request events. ([@rwjblue](https://github.com/rwjblue))
-  * [#697](https://github.com/embroider-build/embroider/pull/697) Refactor suite-setup-util to avoid knock on errors. ([@rwjblue](https://github.com/rwjblue))
-* `core`, `macros`
-  * [#707](https://github.com/embroider-build/embroider/pull/707) Fixup types for newer @babel/types. ([@rwjblue](https://github.com/rwjblue))
-* `router`, `util`
-  * [#703](https://github.com/embroider-build/embroider/pull/703) Add 3.20 and 3.24 to list of matrix tests. ([@rwjblue](https://github.com/rwjblue))
+
+- `compat`
+  - [#706](https://github.com/embroider-build/embroider/pull/706) Remove `ember-cli-htmlbars` dependency in `@embroider/compat`. ([@rwjblue](https://github.com/rwjblue))
+- Other
+  - [#711](https://github.com/embroider-build/embroider/pull/711) Add release automation setup. ([@rwjblue](https://github.com/rwjblue))
+  - [#704](https://github.com/embroider-build/embroider/pull/704) Avoid running CI jobs on both push and pull_request events. ([@rwjblue](https://github.com/rwjblue))
+  - [#697](https://github.com/embroider-build/embroider/pull/697) Refactor suite-setup-util to avoid knock on errors. ([@rwjblue](https://github.com/rwjblue))
+- `core`, `macros`
+  - [#707](https://github.com/embroider-build/embroider/pull/707) Fixup types for newer @babel/types. ([@rwjblue](https://github.com/rwjblue))
+- `router`, `util`
+  - [#703](https://github.com/embroider-build/embroider/pull/703) Add 3.20 and 3.24 to list of matrix tests. ([@rwjblue](https://github.com/rwjblue))
 
 #### Committers: 5
+
 - Charles Pierce ([@charlespierce](https://github.com/charlespierce))
 - Edward Faulkner ([@ef4](https://github.com/ef4))
 - Robert Jackson ([@rwjblue](https://github.com/rwjblue))
 - Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
 - Travis Hoover ([@thoov](https://github.com/thoov))
-
 
 ## 0.36.0 (2021-01-21)
 

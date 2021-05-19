@@ -82,37 +82,40 @@ export class HTMLEntrypoint {
     let fastbootVariant = stats.variants.findIndex(v => Boolean(v.runtime === 'fastboot'));
     let supportsFastboot = stats.variants.some(v => v.runtime === 'fastboot' || v.runtime === 'all');
 
+    // We want to insert all CSS that webpack extracted before the CSS that was
+    // specified in the HTML. So, first we walk through our placeholders sorting
+    // them, and removing any that don't match content in the stats.
+    let css = [];
+    let extractedCss = [];
+    let js = [];
+
     for (let [src, placeholders] of this.placeholders) {
       let match = stats.entrypoints.get(src);
       if (match) {
         let firstVariant = stats.variants.findIndex((_, index) => Boolean(match!.get(index)));
         let matchingBundles = match.get(firstVariant)!;
-        let matchingFastbootBundles = fastbootVariant >= 0 ? match.get(fastbootVariant) || [] : [];
 
-        for (let placeholder of placeholders) {
-          if (supportsFastboot) {
-            // if there is any fastboot involved, we will emit the lazy bundles
-            // right before our first script.
-            insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, this.publicAssetURL);
+        if (src.endsWith('.css')) {
+          // CSS specified in the HTML, so associate each matching bundle with
+          // the placeholders
+          for (let bundle of matchingBundles) {
+            css.push({ bundle, placeholders });
           }
+        } else {
+          // JS, so collect the matching bundles & fastboot bundles according to
+          // whether they are CSS or JS
+          let matchingFastbootBundles = fastbootVariant >= 0 ? match.get(fastbootVariant) || [] : [];
           for (let [base, fastboot] of zip(matchingBundles, matchingFastbootBundles)) {
-            if (!base) {
-              // this bundle only exists in the fastboot variant
-              let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-              element.setAttribute('src', this.publicAssetURL + fastboot);
-              placeholder.insert(element);
-              placeholder.insertNewline();
-            } else if (!fastboot || base === fastboot) {
-              // no specialized fastboot variant
-              let src = this.publicAssetURL + base;
-              placeholder.insertURL(src);
+            if (base?.endsWith('.css')) {
+              // Extracted CSS, so we know there is only a base and no fastboot
+              // bundle. Store off the first JS placeholder so that in the edge
+              // case where there are no CSS placeholders on the whole document,
+              // we can just insert the extracted CSS before the first instance
+              // of the JS script element from which it was extracted
+              extractedCss.push({ bundle: base, placeholder: placeholders[0] });
             } else {
-              // we have both and they differ
-              let src = this.publicAssetURL + base;
-              let element = placeholder.insertURL(src);
-              if (element) {
-                element.setAttribute('data-fastboot-src', this.publicAssetURL + fastboot);
-              }
+              // JS, so might have base and/or fastboot bundle
+              js.push({ base, fastboot, placeholders });
             }
           }
         }
@@ -122,6 +125,73 @@ export class HTMLEntrypoint {
         // and it would be an empty list.)
         for (let placeholder of placeholders) {
           placeholder.reset();
+        }
+      }
+    }
+
+    // Handle extracted CSS first so it will end up before HTML-specified CSS
+    if (extractedCss.length > 0) {
+      // Find the first (in DOM order) CSS placeholder
+      let firstCssPlaceholder;
+      for (let { placeholders } of css) {
+        for (let placeholder of placeholders) {
+          if (
+            !firstCssPlaceholder ||
+            firstCssPlaceholder.start.compareDocumentPosition(placeholder.start) &
+              this.dom.window.Node.DOCUMENT_POSITION_PRECEDING
+          ) {
+            firstCssPlaceholder = placeholder;
+          }
+        }
+      }
+
+      // Now insert the extracted CSS into the first CSS placeholder (or if
+      // there are none, which would be kinda weird, before the placeholder
+      // from the JS from which the CSS was extracted)
+      for (let { bundle, placeholder } of extractedCss) {
+        let src = this.publicAssetURL + bundle;
+        if (firstCssPlaceholder) {
+          firstCssPlaceholder.insertURL(src);
+        } else {
+          placeholder.insertURL(src);
+        }
+      }
+    }
+
+    // Handle HTML-specified CSS
+    for (let { bundle, placeholders } of css) {
+      let src = this.publicAssetURL + bundle;
+      for (let placeholder of placeholders) {
+        placeholder.insertURL(src);
+      }
+    }
+
+    // Handle JS
+    for (let { base, fastboot, placeholders } of js) {
+      for (let placeholder of placeholders) {
+        if (supportsFastboot) {
+          // if there is any fastboot involved, we will emit the lazy bundles
+          // right before our first script.
+          insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, this.publicAssetURL);
+        }
+
+        if (!base) {
+          // this bundle only exists in the fastboot variant
+          let element = placeholder.start.ownerDocument.createElement('fastboot-script');
+          element.setAttribute('src', this.publicAssetURL + fastboot);
+          placeholder.insert(element);
+          placeholder.insertNewline();
+        } else if (!fastboot || base === fastboot) {
+          // no specialized fastboot variant
+          let src = this.publicAssetURL + base;
+          placeholder.insertURL(src);
+        } else {
+          // we have both and they differ
+          let src = this.publicAssetURL + base;
+          let element = placeholder.insertURL(src);
+          if (element) {
+            element.setAttribute('data-fastboot-src', this.publicAssetURL + fastboot);
+          }
         }
       }
     }

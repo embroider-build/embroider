@@ -464,7 +464,24 @@ const Webpack: Packager<Options> = class Webpack implements PackagerInstance {
     return [
       variant.optimizeForProduction
         ? MiniCssExtractPlugin.loader
-        : { loader: 'style-loader', options: { injectType: 'styleTag' } },
+        : {
+            loader: 'style-loader',
+            options: {
+              injectType: 'styleTag',
+              // When optimizing for production, we inject the CSS extracted by
+              // the MiniCssExtractPlugin before the first CSS <link> element
+              // that is specified in the HTML. This logic mirrors that behavor
+              // with the style-loader.
+              insert: (element: Element) => {
+                let firstStyleLink = document.querySelector('link[rel="stylesheet"]');
+                if (firstStyleLink) {
+                  firstStyleLink.parentElement?.insertBefore(element, firstStyleLink);
+                } else {
+                  document.querySelector('head')?.appendChild(element);
+                }
+              },
+            },
+          },
       {
         loader: 'css-loader',
         options: {

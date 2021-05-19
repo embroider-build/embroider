@@ -1,5 +1,5 @@
 import V1Addon from '../v1-addon';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import cloneDeep from 'lodash/cloneDeep';
 
 // ember-asset-loader's ManifestGenerator (which is used as the Addon base class
@@ -14,7 +14,7 @@ import cloneDeep from 'lodash/cloneDeep';
 // loading is a thing that is natively handled by embroider.
 export default class extends V1Addon {
   get v2Tree() {
-    return new Funnel(super.v2Tree, {
+    return buildFunnel(super.v2Tree, {
       exclude: ['_app_/config/asset-manifest.js', '_app_/instance-initializers/load-asset-manifest.js'],
     });
   }

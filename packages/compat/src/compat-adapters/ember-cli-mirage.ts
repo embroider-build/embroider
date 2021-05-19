@@ -1,5 +1,5 @@
 import V1Addon from '../v1-addon';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import { AddonMeta } from '@embroider/core';
 
 export default class extends V1Addon {
@@ -19,7 +19,7 @@ export default class extends V1Addon {
     if (this.addonInstance._shouldIncludeFiles()) {
       return tree;
     }
-    return new Funnel(tree, {
+    return buildFunnel(tree, {
       include: ['package.json'],
     });
   }

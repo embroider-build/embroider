@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import { UnwatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 
 export default class extends V1Addon {
   @Memoize()
@@ -18,7 +18,7 @@ export default class extends V1Addon {
     let polyfillDir = dirname(
       resolve.sync('ember-debug-handlers-polyfill/package.json', { basedir: this.addonInstance.root })
     );
-    let tree = new Funnel(new UnwatchedDir(join(polyfillDir, 'vendor')), {
+    let tree = buildFunnel(new UnwatchedDir(join(polyfillDir, 'vendor')), {
       destDir: 'vendor',
     });
     let trees = super.v2Trees;

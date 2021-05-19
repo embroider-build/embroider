@@ -16,9 +16,9 @@ describe('addon.styles tests', function () {
       'my-addon1',
       `
       treeForStyles() {
-        const Funnel = require('broccoli-funnel');
+        const buildFunnel = require('broccoli-funnel');
         const path = require('path');
-        let tree = new Funnel(path.join(__dirname, 'node_modules/third-party1'), {
+        let tree = buildFunnel(path.join(__dirname, 'node_modules/third-party1'), {
           destDir: '.'
         });
         return this._super.treeForStyles.call(this, tree);
@@ -34,9 +34,9 @@ describe('addon.styles tests', function () {
       'my-addon2',
       `
       treeForStyles() {
-        const Funnel = require('broccoli-funnel');
+        const buildFunnel = require('broccoli-funnel');
         const path = require('path');
-        return new Funnel(path.join(__dirname, 'node_modules/third-party2'), {
+        return buildFunnel(path.join(__dirname, 'node_modules/third-party2'), {
           destDir: '.'
         });
       }

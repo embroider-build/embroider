@@ -5,7 +5,7 @@ import {
   AddonInstance,
   isDeepAddonInstance,
 } from '@embroider/shared-internals';
-import Funnel from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
 import { satisfies } from 'semver';
 
@@ -88,7 +88,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       let maybeAppJS = meta['app-js'];
       if (maybeAppJS) {
         const appJS = maybeAppJS;
-        return new Funnel(rootTree(this), {
+        return buildFunnel(rootTree(this), {
           files: Object.values(appJS),
           getDestinationPath(relativePath: string): string {
             for (let [exteriorName, interiorName] of Object.entries(appJS)) {
@@ -120,7 +120,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       let maybeAssets = meta['public-assets'];
       if (maybeAssets) {
         const assets = maybeAssets;
-        return new Funnel(rootTree(this), {
+        return buildFunnel(rootTree(this), {
           files: Object.keys(assets),
           getDestinationPath(relativePath: string): string {
             for (let [interiorName, exteriorName] of Object.entries(assets)) {

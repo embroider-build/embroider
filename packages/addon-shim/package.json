@@ -6,7 +6,11 @@
     "ember-addon"
   ],
   "main": "./src/index.js",
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/addon-shim"
+  },
   "license": "MIT",
   "author": "",
   "directories": {

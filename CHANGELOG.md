@@ -1,5 +1,58 @@
 # Embroider Changelog
 
+## v0.41.0 (2021-05-20)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#812](https://github.com/embroider-build/embroider/pull/812) Update thread-loader to get RegExp serialization ([@bendemboski](https://github.com/bendemboski))
+  * [#796](https://github.com/embroider-build/embroider/pull/796) Allow customization of Webpack's babel loader options ([@charlespierce](https://github.com/charlespierce))
+  * [#795](https://github.com/embroider-build/embroider/pull/795) Allow `thread-loader` configuration ([@bendemboski](https://github.com/bendemboski))
+* `compat`
+  * [#770](https://github.com/embroider-build/embroider/pull/770) Add compat adapter for `ember-get-config` ([@alexlafroscia](https://github.com/alexlafroscia))
+  * [#772](https://github.com/embroider-build/embroider/pull/772) Allow compat adapter's to expose shouldApplyAdapter ([@thoov](https://github.com/thoov))
+
+#### :bug: Bug Fix
+* `addon-shim`, `compat`, `core`, `util`
+  * [#766](https://github.com/embroider-build/embroider/pull/766) Update to broccoli-funnel@3.0.5 ([@rwjblue](https://github.com/rwjblue))
+* `compat`
+  * [#797](https://github.com/embroider-build/embroider/pull/797) Use configPath to locate the configuration file, instead of assuming a fixed path ([@charlespierce](https://github.com/charlespierce))
+  * [#784](https://github.com/embroider-build/embroider/pull/784) Remove usage of the Ember global ([@sandydoo](https://github.com/sandydoo))
+  * [#785](https://github.com/embroider-build/embroider/pull/785) Improve semver checks for the modules polyfill ([@sandydoo](https://github.com/sandydoo))
+* `test-setup`
+  * [#792](https://github.com/embroider-build/embroider/pull/792) Install `webpack` alongside `@embroider/webpack` when using `@embroider/test-setup` ([@alexlafroscia](https://github.com/alexlafroscia))
+* `webpack`
+  * [#791](https://github.com/embroider-build/embroider/pull/791) Better error message with webpack v4 installed ([@bendemboski](https://github.com/bendemboski))
+
+#### :memo: Documentation
+* `addon-shim`
+  * [#804](https://github.com/embroider-build/embroider/pull/804) Fix installation instructions in @embroider/addon-shim ([@rwjblue](https://github.com/rwjblue))
+* `util`
+  * [#807](https://github.com/embroider-build/embroider/pull/807) Add repository entry for the @embroider/util package ([@mansona](https://github.com/mansona))
+* Other
+  * [#789](https://github.com/embroider-build/embroider/pull/789) Update README for webpack install requirement ([@bendemboski](https://github.com/bendemboski))
+  * [#782](https://github.com/embroider-build/embroider/pull/782) docs: for setting publicAssetUrl in non-production environments ([@timiyay](https://github.com/timiyay))
+
+#### :house: Internal
+* `compat`, `core`, `test-setup`, `webpack`
+  * [#765](https://github.com/embroider-build/embroider/pull/765) Packager Refactoring ([@alexlafroscia](https://github.com/alexlafroscia))
+* Other
+  * [#774](https://github.com/embroider-build/embroider/pull/774) Convert static-app to new test structure ([@thoov](https://github.com/thoov))
+  * [#816](https://github.com/embroider-build/embroider/pull/816) Limit CI jobs to 30 minutes ([@rwjblue](https://github.com/rwjblue))
+  * [#790](https://github.com/embroider-build/embroider/pull/790) Update app template dependency versions ([@bendemboski](https://github.com/bendemboski))
+* `addon-shim`
+  * [#776](https://github.com/embroider-build/embroider/pull/776) github actions failing silently ([@ef4](https://github.com/ef4))
+
+#### Committers: 9
+- Alex LaFroscia ([@alexlafroscia](https://github.com/alexlafroscia))
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Charles Pierce ([@charlespierce](https://github.com/charlespierce))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Sander Melnikov ([@sandydoo](https://github.com/sandydoo))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+- [@timiyay](https://github.com/timiyay)
+
 ## v0.40.0 (2021-04-24)
 
 #### :boom: Breaking Change

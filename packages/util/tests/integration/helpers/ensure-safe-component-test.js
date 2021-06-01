@@ -9,6 +9,8 @@ import { setupDeprecationAssertions } from '../../deprecation-assertions';
 import { ensureSafeComponent } from '@embroider/util';
 import SomeComponent from 'dummy/components/some-component';
 import ColocatedExample from 'dummy/components/colocated-example';
+import LegacyComponent from 'dummy/components/legacy-component';
+import LegacyWithTemplate from 'dummy/components/legacy-with-template';
 import { setOwner } from '@ember/application';
 
 module('Integration | Helper | ensure-safe-component', function (hooks) {
@@ -48,6 +50,24 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     assert.equal(
       this.element.textContent.trim(),
       'hello from colocated-example'
+    );
+  });
+
+  test('legacy component class value with associated template', async function (assert) {
+    this.set('thing', ensureSafeComponent(LegacyWithTemplate, this));
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(
+      this.element.textContent.trim(),
+      'hello from legacy-with-template'
+    );
+  });
+
+  test('legacy component class value throws assertion', async function (assert) {
+    assert.throws(
+      () => ensureSafeComponent(LegacyComponent, this),
+      /ensureSafeComponent cannot work with legacy components without associated templates. Received class "LegacyComponent". Consider migrating to co-located templates!/
     );
   });
 

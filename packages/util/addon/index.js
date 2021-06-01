@@ -5,6 +5,7 @@ import {
   lookupCurriedComponentDefinition,
 } from './ember-private-api';
 import Helper from '@ember/component/helper';
+import { getComponentTemplate } from '@ember/component';
 
 export function ensureSafeComponent(value, thingWithOwner) {
   if (typeof value === 'string') {
@@ -49,6 +50,11 @@ function ensureRegistered(klass, owner) {
 }
 
 function handleClass(klass, thingWithOwner) {
+  assert(
+    `ensureSafeComponent cannot work with legacy components without associated templates. Received class "${klass.name}". Consider migrating to co-located templates!`,
+    getComponentTemplate(klass)
+  );
+
   let owner = getOwner(thingWithOwner);
   let nonce = ensureRegistered(klass, owner);
   return lookupCurriedComponentDefinition(nonce, owner);

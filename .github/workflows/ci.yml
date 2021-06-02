@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  schedule:
+    - cron:  '0 7 * * *' # daily, 7am
+
   push:
     branches:
       - master
@@ -37,7 +40,7 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
     timeout-minutes: 30
-    
+
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.discover_matrix.outputs.matrix)}}

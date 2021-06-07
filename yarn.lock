@@ -1614,7 +1614,7 @@
 "@embroider/sample-lib@link:test-packages/sample-lib":
   version "0.0.0"
 
-"@embroider/shared-internals@0.39.1", "@embroider/shared-internals@^0.39.1":
+"@embroider/shared-internals@0.39.1":
   version "0.39.1"
   resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.39.1.tgz#33c88778fc7c42ba20dbe625b34abe51816dfc77"
   integrity sha512-fpENfZqPWd/JUlmpAW1pN967rxSoUg7dTGmkgtAt+UZQh/d4XMeyUGGHTkRToboKa0W19xRu64RZ9LT94xUkeQ==
@@ -1627,7 +1627,7 @@
     semver "^7.3.2"
     typescript-memoize "^1.0.0-alpha.3"
 
-"@embroider/shared-internals@0.40.0":
+"@embroider/shared-internals@0.40.0", "@embroider/shared-internals@^0.40.0":
   version "0.40.0"
   resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.40.0.tgz#2f768c60f4f35ba5f9228f046f70324851e8bfe2"
   integrity sha512-Ovr/i0Qgn6W6jdGXMvYJKlRoRpyBY9uhYozDSFKlBjeEmRJ0Plp7OST41+O5Td6Pqp+Rv2jVSnGzhA/MpC++NQ==
@@ -2463,7 +2463,7 @@
     "@types/estree" "*"
     "@types/json-schema" "*"
 
-"@types/estree@*", "@types/estree@^0.0.47":
+"@types/estree@*":
   version "0.0.47"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.47.tgz#d7a51db20f0650efec24cd04994f523d93172ed4"
   integrity sha512-c5ciR06jK8u9BstrmJyO97m+klJrrhCf9u3rLu3DEAJBirxRqSCvDQoYKmxuYwQI5SZChAWu+tq9oVlGRuzPAg==
@@ -7567,46 +7567,6 @@ ember-assign-polyfill@^2.6.0:
     ember-cli-babel "^7.20.5"
     ember-cli-version-checker "^2.0.0"
 
-ember-auto-import@2.0.0-alpha.0:
-  version "2.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-2.0.0-alpha.0.tgz#b4df7ef055cec226f122821c70e890018bf8f908"
-  integrity sha512-uLq6vCEfHYlFEjhJ7recE5djY9Nf73SgZSIVUqi8/dMNtvx656/ah6xYsDTS3SZj1lNtt0peRiCmbBNkkCKt6Q==
-  dependencies:
-    "@babel/core" "^7.1.6"
-    "@babel/plugin-proposal-class-properties" "^7.13.0"
-    "@babel/plugin-proposal-decorators" "^7.13.5"
-    "@babel/preset-env" "^7.10.2"
-    "@babel/traverse" "^7.1.6"
-    "@babel/types" "^7.1.6"
-    "@embroider/shared-internals" "^0.39.1"
-    babel-loader "^8.0.6"
-    babel-plugin-ember-modules-api-polyfill "^3.5.0"
-    babel-plugin-htmlbars-inline-precompile "^5.2.1"
-    babel-plugin-syntax-dynamic-import "^6.18.0"
-    broccoli-debug "^0.6.4"
-    broccoli-merge-trees "^4.2.0"
-    broccoli-node-api "^1.7.0"
-    broccoli-plugin "^4.0.0"
-    broccoli-source "^3.0.0"
-    css-loader "^5.2.0"
-    debug "^4.3.1"
-    ember-cli-babel "^7.0.0"
-    fs-extra "^6.0.1"
-    fs-tree-diff "^2.0.0"
-    handlebars "^4.3.1"
-    js-string-escape "^1.0.1"
-    lodash "^4.17.19"
-    mkdirp "^0.5.1"
-    parse5 "^6.0.1"
-    resolve-package-path "^3.1.0"
-    rimraf "^2.6.2"
-    semver "^7.3.4"
-    style-loader "^2.0.0"
-    symlink-or-copy "^1.2.0"
-    typescript-memoize "^1.0.0-alpha.3"
-    walk-sync "^0.3.3"
-    webpack "^5.31.0"
-
 ember-auto-import@^1.10.1, ember-auto-import@^1.11.2, ember-auto-import@^1.2.21, ember-auto-import@^1.5.3:
   version "1.11.2"
   resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-1.11.2.tgz#b6e9a0dddd88a10692830ffa4f5dfd8c137c8919"
@@ -7641,6 +7601,46 @@ ember-auto-import@^1.10.1, ember-auto-import@^1.11.2, ember-auto-import@^1.2.21,
     typescript-memoize "^1.0.0-alpha.3"
     walk-sync "^0.3.3"
     webpack "^4.43.0"
+
+ember-auto-import@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-2.0.1.tgz#3c993f2cee3a93758029bbc903302a951bd9e3f8"
+  integrity sha512-quJbesruo7Z1tZ8faKSuSBMcNHgQYwVsod3mw3qZY2rHeQz/D1gmOm61HBvPBo4kM43FpKIL+lrzkQS8WIihZQ==
+  dependencies:
+    "@babel/core" "^7.1.6"
+    "@babel/plugin-proposal-class-properties" "^7.13.0"
+    "@babel/plugin-proposal-decorators" "^7.13.5"
+    "@babel/preset-env" "^7.10.2"
+    "@babel/traverse" "^7.1.6"
+    "@babel/types" "^7.1.6"
+    "@embroider/shared-internals" "^0.40.0"
+    babel-loader "^8.0.6"
+    babel-plugin-ember-modules-api-polyfill "^3.5.0"
+    babel-plugin-htmlbars-inline-precompile "^5.2.1"
+    babel-plugin-syntax-dynamic-import "^6.18.0"
+    broccoli-debug "^0.6.4"
+    broccoli-merge-trees "^4.2.0"
+    broccoli-node-api "^1.7.0"
+    broccoli-plugin "^4.0.0"
+    broccoli-source "^3.0.0"
+    css-loader "^5.2.0"
+    debug "^4.3.1"
+    ember-cli-babel "^7.0.0"
+    fs-extra "^6.0.1"
+    fs-tree-diff "^2.0.0"
+    handlebars "^4.3.1"
+    js-string-escape "^1.0.1"
+    lodash "^4.17.19"
+    mkdirp "^0.5.1"
+    parse5 "^6.0.1"
+    resolve "^1.20.0"
+    resolve-package-path "^3.1.0"
+    rimraf "^2.6.2"
+    semver "^7.3.4"
+    style-loader "^2.0.0"
+    symlink-or-copy "^1.2.0"
+    typescript-memoize "^1.0.0-alpha.3"
+    walk-sync "^0.3.3"
 
 ember-bootstrap@^4.6.3:
   version "4.6.3"
@@ -10082,14 +10082,6 @@ enhanced-resolve@^5.7.0:
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-5.7.0.tgz#525c5d856680fbd5052de453ac83e32049958b5c"
   integrity sha512-6njwt/NsZFUKhM6j9U8hzVyD4E4r0x7NQzhTCbcWOJ0IQjNSAoalWmb0AE51Wn+fwan5qVESWi7t2ToBxs9vrw==
-  dependencies:
-    graceful-fs "^4.2.4"
-    tapable "^2.2.0"
-
-enhanced-resolve@^5.8.0:
-  version "5.8.0"
-  resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-5.8.0.tgz#d9deae58f9d3773b6a111a5a46831da5be5c9ac0"
-  integrity sha512-Sl3KRpJA8OpprrtaIswVki3cWPiPKxXuFxJXBp+zNb6s6VwNWwFRUdtmzd2ReUut8n+sCPx7QCtQ7w5wfJhSgQ==
   dependencies:
     graceful-fs "^4.2.4"
     tapable "^2.2.0"
@@ -19482,35 +19474,6 @@ webpack@^5:
     browserslist "^4.14.5"
     chrome-trace-event "^1.0.2"
     enhanced-resolve "^5.7.0"
-    es-module-lexer "^0.4.0"
-    eslint-scope "^5.1.1"
-    events "^3.2.0"
-    glob-to-regexp "^0.4.1"
-    graceful-fs "^4.2.4"
-    json-parse-better-errors "^1.0.2"
-    loader-runner "^4.2.0"
-    mime-types "^2.1.27"
-    neo-async "^2.6.2"
-    schema-utils "^3.0.0"
-    tapable "^2.1.1"
-    terser-webpack-plugin "^5.1.1"
-    watchpack "^2.0.0"
-    webpack-sources "^2.1.1"
-
-webpack@^5.31.0:
-  version "5.35.1"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.35.1.tgz#857670799465c8a5cbb94c4c175d60ac42d18ba3"
-  integrity sha512-uWKYStqJ23+N6/EnMEwUjPSSKUG1tFmcuKhALEh/QXoUxwN8eb3ATNIZB38A+fO6QZ0xfc7Cu7KNV9LXNhDCsw==
-  dependencies:
-    "@types/eslint-scope" "^3.7.0"
-    "@types/estree" "^0.0.47"
-    "@webassemblyjs/ast" "1.11.0"
-    "@webassemblyjs/wasm-edit" "1.11.0"
-    "@webassemblyjs/wasm-parser" "1.11.0"
-    acorn "^8.0.4"
-    browserslist "^4.14.5"
-    chrome-trace-event "^1.0.2"
-    enhanced-resolve "^5.8.0"
     es-module-lexer "^0.4.0"
     eslint-scope "^5.1.1"
     events "^3.2.0"

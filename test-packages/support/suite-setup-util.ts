@@ -117,13 +117,6 @@ export async function githubMatrix() {
   });
 
   let include = [
-    // add our eslint
-    {
-      name: 'lint',
-      os: 'ubuntu',
-      command: 'yarn lint',
-      dir: resolve(__dirname, '..', '..'),
-    },
     ...suites.map(s => ({
       name: `${s.name} ubuntu`,
       os: 'ubuntu',

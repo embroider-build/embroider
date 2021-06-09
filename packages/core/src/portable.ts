@@ -1,6 +1,8 @@
 import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
+import resolvePackagePath from 'resolve-package-path';
+import { readJSONSync } from 'fs-extra';
 
 export const protocol = '__embroider_portable_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -13,7 +15,21 @@ export interface PortableResult {
 
 export interface PortableHint {
   requireFile: string;
+  packageVersion: string | undefined;
   useMethod?: string;
+}
+
+const { findUpPackagePath } = resolvePackagePath;
+
+export function maybeNodeModuleVersion(path: string) {
+  const packagePath = findUpPackagePath(path);
+
+  if (packagePath === null) {
+    // no package was found
+    return undefined; // should this bust the cache or ... ?
+  } else {
+    return readJSONSync(packagePath).version;
+  }
 }
 
 export class Portable {
@@ -83,6 +99,7 @@ export class Portable {
           embroiderPlaceholder: true,
           type: 'broccoli-parallel',
           requireFile: found.requireFile,
+          packageVersion: maybeNodeModuleVersion(found.requireFile),
           useMethod: found.useMethod,
         },
         isParallelSafe: true,
@@ -154,6 +171,7 @@ interface BroccoliParallelPlaceholder {
   embroiderPlaceholder: true;
   type: 'broccoli-parallel';
   requireFile: string;
+  packageVersion: string | undefined;
   useMethod: string | undefined;
   buildUsing: string | undefined;
   params: any;
@@ -162,6 +180,7 @@ interface BroccoliParallelPlaceholder {
 interface HTMLBarsParallelPlaceholder {
   embroiderPlaceholder: true;
   type: 'htmlbars-parallel';
+  packageVersion: string | undefined;
   requireFile: string;
   buildUsing: string;
   params: any;
@@ -193,6 +212,7 @@ function maybeBroccoli(object: any): BroccoliParallelPlaceholder | undefined {
       embroiderPlaceholder: true,
       type: 'broccoli-parallel',
       requireFile: object._parallelBabel.requireFile,
+      packageVersion: maybeNodeModuleVersion(object._parallelBabel.requireFile),
       buildUsing: object._parallelBabel.buildUsing,
       useMethod: object._parallelBabel.useMethod,
       params: object._parallelBabel.params,
@@ -238,6 +258,7 @@ function maybeHTMLBars(object: any): HTMLBarsParallelPlaceholder | undefined {
       embroiderPlaceholder: true,
       type: 'htmlbars-parallel',
       requireFile: object.parallelBabel.requireFile,
+      packageVersion: maybeNodeModuleVersion(object.parallelBabel.requireFile),
       buildUsing: String(object.parallelBabel.buildUsing),
       params: object.parallelBabel.params,
     };

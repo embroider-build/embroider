@@ -57,7 +57,7 @@
     "lodash": "^4.17.10",
     "pkg-up": "^3.1.0",
     "resolve": "^1.8.1",
-    "resolve-package-path": "^1.2.2",
+    "resolve-package-path": "^4.0.1",
     "strip-bom": "^3.0.0",
     "typescript-memoize": "^1.0.0",
     "walk-sync": "^1.1.3",

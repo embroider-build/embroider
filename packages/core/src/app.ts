@@ -922,7 +922,12 @@ export class AppBuilder<TreeNames> {
         }
         cursor = resolve.sync(target, { basedir: dirname(cursor) });
       }
-      return { requireFile: cursor, useMethod: hint.useMethod };
+
+      return {
+        requireFile: cursor,
+        useMethod: hint.useMethod,
+        packageVersion: readJSONSync(cursor).version,
+      };
     });
   }
 

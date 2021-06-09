@@ -2,7 +2,6 @@ import mapValues from 'lodash/mapValues';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import resolvePackagePath from 'resolve-package-path';
-import { readJSONSync } from 'fs-extra';
 
 export const protocol = '__embroider_portable_values__';
 const { globalValues, nonce } = setupGlobals();
@@ -25,10 +24,9 @@ export function maybeNodeModuleVersion(path: string) {
   const packagePath = findUpPackagePath(path);
 
   if (packagePath === null) {
-    // no package was found
-    return undefined; // should this bust the cache or ... ?
+    throw new Error(`Could not find package.json for '${path}'`);
   } else {
-    return readJSONSync(packagePath).version;
+    return require(packagePath).version; // eslint-disable-line @typescript-eslint/no-require-imports
   }
 }
 

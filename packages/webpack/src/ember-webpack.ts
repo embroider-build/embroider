@@ -463,7 +463,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             this.consoleWrite(stats.toString());
           }
           resolve(stats.toJson());
-        } catch(e) {
+        } catch (e) {
           reject(e);
         }
       });

@@ -35,6 +35,7 @@ import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from 'os';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
+import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import semver from 'semver';
 
 interface TreeNames {
@@ -401,11 +402,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       adjustImportsOptions: this.makeAdjustImportOptions(false),
     });
 
+    const compilerPath = resolveSync(this.templateCompilerPath(), { basedir: this.root });
+    const { cacheKey: compilerChecksum } = getEmberExports(compilerPath);
     // It's ok that this isn't a fully configured template compiler. We're only
     // using it to parse component snippets out of rules.
     resolver.astTransformer(
       new NodeTemplateCompiler({
-        compilerPath: resolveSync(this.templateCompilerPath(), { basedir: this.root }),
+        compilerPath,
+        compilerChecksum,
+
         EmberENV: {},
         plugins: {},
       })

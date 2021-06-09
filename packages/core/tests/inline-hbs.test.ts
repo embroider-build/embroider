@@ -82,6 +82,7 @@ describe('inline-hbs', () => {
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
+          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
           EmberENV: {},
           plugins: {
             ast: [sampleTransform],
@@ -105,6 +106,7 @@ describe('inline-hbs', () => {
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
+          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
           EmberENV: {},
           plugins: {
             ast: [],
@@ -128,6 +130,7 @@ describe('inline-hbs', () => {
       babelConfig(major: number) {
         let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
+          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
           EmberENV: {},
           plugins: {
             ast: [],

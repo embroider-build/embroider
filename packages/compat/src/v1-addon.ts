@@ -26,6 +26,7 @@ import { isEmberAutoImportDynamic, isCompactReexports, isColocationPlugin } from
 import { ResolvedDep } from '@embroider/core/src/resolver';
 import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 import { fromPairs } from 'lodash';
+import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -132,8 +133,11 @@ export default class V1Addon {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         if (options.plugins.ast.length > 0) {
+          const { cacheKey: compilerChecksum } = getEmberExports(options.templateCompilerPath);
+
           return new NodeTemplateCompiler({
             compilerPath: options.templateCompilerPath,
+            compilerChecksum,
             EmberENV: {},
             plugins: options.plugins,
             resolver: this.templateResolver(),

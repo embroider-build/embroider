@@ -1,8 +1,11 @@
 import { NodeTemplateCompiler } from '@embroider/core';
+import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
+
 const compilerPath = emberTemplateCompilerPath();
+const { cacheKey: compilerChecksum } = getEmberExports(compilerPath);
 
 export { Project };
 
@@ -19,6 +22,7 @@ export function templateTests(createTests: CreateTestsWithConfig | CreateTests) 
   setConfig(config);
   let compiler = new NodeTemplateCompiler({
     compilerPath,
+    compilerChecksum,
     EmberENV: {},
     plugins: {
       ast: plugins,

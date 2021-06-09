@@ -37,6 +37,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node';
 import { PortableHint } from './portable';
 import escapeRegExp from 'escape-string-regexp';
+import { getEmberExports } from './load-ember-template-compiler';
 
 export type EmberENV = unknown;
 
@@ -898,9 +899,13 @@ export class AppBuilder<TreeNames> {
       plugins.ast.push(macroPlugin);
     }
 
+    const compilerPath = resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root });
+    const compilerChecksum = getEmberExports(compilerPath).cacheKey;
+
     return {
       plugins,
-      compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
+      compilerPath,
+      compilerChecksum,
       resolver: this.adapter.templateResolver(),
       EmberENV: config,
     };

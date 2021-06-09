@@ -10,6 +10,7 @@ import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
 
 const compilerPath = emberTemplateCompilerPath();
+const compilerChecksum = `mock-compiler-checksum${Math.random()}`;
 
 describe('compat-resolver', function () {
   let appDir: string;
@@ -45,7 +46,7 @@ describe('compat-resolver', function () {
         otherOptions.adjustImportsImports
       ),
     });
-    let compiler = new NodeTemplateCompiler({ compilerPath, resolver, EmberENV, plugins });
+    let compiler = new NodeTemplateCompiler({ compilerPath, compilerChecksum, resolver, EmberENV, plugins });
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(moduleName, contents);

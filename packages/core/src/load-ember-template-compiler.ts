@@ -34,26 +34,7 @@ export function getEmberExports(templateCompilerPath: string): EmbersExports {
   let stat = statSync(templateCompilerPath);
 
   let source = patch(readFileSync(templateCompilerPath, 'utf8'), templateCompilerPath);
-
-  // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
-  let sandbox = {
-    module: { require, exports: {} },
-    require,
-  };
-  if (typeof globalThis === 'undefined') {
-    // for Node 10 usage with Ember 3.27+ we have to define the `global` global
-    // in order for ember-template-compiler.js to evaluate properly
-    // due to this code https://git.io/Jtb7
-    (sandbox as any).global = sandbox;
-  }
-
-  // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
-  // so that any global mutation done within ember-template-compiler.js does not leak out
-  let context = createContext(sandbox);
-  let script = new Script(source, { filename: templateCompilerPath });
-
-  script.runInContext(context);
-  let theExports: any = context.module.exports;
+  let theExports: any = undefined;
 
   // cacheKey, theExports
   let cacheKey = createHash('md5').update(source).digest('hex');
@@ -61,7 +42,31 @@ export function getEmberExports(templateCompilerPath: string): EmbersExports {
   entry = Object.freeze({
     value: {
       cacheKey,
-      theExports,
+      get theExports() {
+        if (theExports) {
+          return theExports;
+        }
+
+        // matches (essentially) what ember-cli-htmlbars does in https://git.io/Jtbpj
+        let sandbox = {
+          module: { require, exports: {} },
+          require,
+        };
+
+        if (typeof globalThis === 'undefined') {
+          // for Node 10 usage with Ember 3.27+ we have to define the `global` global
+          // in order for ember-template-compiler.js to evaluate properly
+          // due to this code https://git.io/Jtb7
+          (sandbox as any).global = sandbox;
+        }
+        // using vm.createContext / vm.Script to ensure we evaluate in a fresh sandbox context
+        // so that any global mutation done within ember-template-compiler.js does not leak out
+        let context = createContext(sandbox);
+        let script = new Script(source, { filename: templateCompilerPath });
+
+        script.runInContext(context);
+        return (theExports = context.module.exports);
+      },
     },
     stat, // This is stored, so we can reload the templateCompiler if it changes mid-build.
   });

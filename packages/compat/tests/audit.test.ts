@@ -24,6 +24,7 @@ describe('audit', function () {
     let templateCompiler = templateCompilerModule(
       {
         compilerPath: emberTemplateCompilerPath(),
+        compilerChecksum: `mock-compiler-checksum${Math.random()}`,
         EmberENV: {},
         plugins: { ast: [] },
         resolver: new CompatResolver({

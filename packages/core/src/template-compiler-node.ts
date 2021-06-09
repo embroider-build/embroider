@@ -9,6 +9,7 @@ import adjustImportsPlugin from './babel-plugin-adjust-imports';
 
 export interface NodeTemplateCompilerParams {
   compilerPath: string;
+  compilerChecksum: string;
   resolver?: Resolver;
   EmberENV: unknown;
   plugins: Plugins;

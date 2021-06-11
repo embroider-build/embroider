@@ -40,7 +40,7 @@
     "**/qunit": "^2.14.1"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
     "cross-env": "^7.0.3",
@@ -49,7 +49,7 @@
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^24.9.0",
-    "prettier": "2.3.1",
+    "prettier": "^2.3.1",
     "release-it": "^14.2.1",
     "release-it-lerna-changelog": "^3.1.0",
     "release-it-yarn-workspaces": "^2.0.0"

@@ -1,20 +1,12 @@
 'use strict';
 
 const getChannelURL = require('ember-source-channel-url');
+const { embroiderSafe, embroiderOptimized } = require('@embroider/test-setup');
 
 module.exports = async function () {
   return {
     useYarn: true,
     scenarios: [
-      {
-        // this is the first release with co-located templates.
-        name: 'ember-3.13',
-        npm: {
-          devDependencies: {
-            'ember-source': '~3.13.0',
-          },
-        },
-      },
       {
         name: 'ember-lts-3.16',
         npm: {
@@ -28,14 +20,6 @@ module.exports = async function () {
         npm: {
           devDependencies: {
             'ember-source': '~3.20.5',
-          },
-        },
-      },
-      {
-        name: 'ember-lts-3.24',
-        npm: {
-          devDependencies: {
-            'ember-source': '~3.24.0',
           },
         },
       },
@@ -91,6 +75,8 @@ module.exports = async function () {
           },
         },
       },
+      embroiderSafe(),
+      embroiderOptimized(),
     ],
   };
 };

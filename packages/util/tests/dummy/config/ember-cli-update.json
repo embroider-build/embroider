@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "ember-cli",
-      "version": "3.25.2",
+      "version": "3.26.1",
       "blueprints": [
         {
           "name": "addon",
@@ -11,6 +11,7 @@
           "codemodsSource": "ember-addon-codemods-manifest@1",
           "isBaseBlueprint": true,
           "options": [
+            "--welcome",
             "--yarn"
           ]
         }

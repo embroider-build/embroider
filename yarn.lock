@@ -16642,6 +16642,13 @@ resolve-package-path@^3.1.0:
     path-root "^0.1.1"
     resolve "^1.17.0"
 
+resolve-package-path@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/resolve-package-path/-/resolve-package-path-4.0.1.tgz#0e77271e06c8cc41740d28ef974806a77fdc8880"
+  integrity sha512-2gb/yU2fSfX22pjDYyevzyOKK9q72XKUFqlAsrfPzZArM4JkIH/Qcme4n3EbaZttObWm/fIFLbPxrXIyiL8wdQ==
+  dependencies:
+    path-root "^0.1.1"
+
 resolve-path@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/resolve-path/-/resolve-path-1.4.0.tgz#c4bda9f5efb2fce65247873ab36bb4d834fe16f7"

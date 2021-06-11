@@ -35,7 +35,7 @@ import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node';
-import { PortableHint } from './portable';
+import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import { getEmberExports } from './load-ember-template-compiler';
 
@@ -142,6 +142,38 @@ export interface AppAdapter<TreeNames> {
 
 export function excludeDotFiles(files: string[]) {
   return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
+}
+
+export const CACHE_BUSTING_PLUGIN = {
+  path: require.resolve('./babel-plugin-cache-busting'),
+  version: readJSONSync(`${__dirname}/../package.json`).version,
+};
+
+export function addCachablePlugin(babelConfig: TransformOptions) {
+  if (Array.isArray(babelConfig.plugins) && babelConfig.plugins.length > 0) {
+    const plugins = Object.create(null);
+    plugins[CACHE_BUSTING_PLUGIN.path] = CACHE_BUSTING_PLUGIN.version;
+
+    for (const plugin of babelConfig.plugins) {
+      let absolutePathToPlugin: string;
+      if (Array.isArray(plugin) && typeof plugin[0] === 'string') {
+        absolutePathToPlugin = plugin[0] as string;
+      } else if (typeof plugin === 'string') {
+        absolutePathToPlugin = plugin;
+      } else {
+        throw new Error(`[Embroider] a babel plugin without an absolute path was from: ${plugin}`);
+      }
+
+      plugins[absolutePathToPlugin] = maybeNodeModuleVersion(absolutePathToPlugin);
+    }
+
+    babelConfig.plugins.push([
+      CACHE_BUSTING_PLUGIN.path,
+      {
+        plugins,
+      },
+    ]);
+  }
 }
 
 class ParsedEmberAsset {
@@ -383,7 +415,9 @@ export class AppBuilder<TreeNames> {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    return makePortable(babel, { basedir: this.root }, this.portableHints);
+    const portable = makePortable(babel, { basedir: this.root }, this.portableHints);
+    addCachablePlugin(portable.config);
+    return portable;
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
@@ -922,7 +956,12 @@ export class AppBuilder<TreeNames> {
         }
         cursor = resolve.sync(target, { basedir: dirname(cursor) });
       }
-      return { requireFile: cursor, useMethod: hint.useMethod };
+
+      return {
+        requireFile: cursor,
+        useMethod: hint.useMethod,
+        packageVersion: maybeNodeModuleVersion(cursor),
+      };
     });
   }
 

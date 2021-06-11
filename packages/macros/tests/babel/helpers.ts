@@ -41,10 +41,8 @@ export function makeRunner(transform: Transform) {
     }
     return runDefault(code, {
       dependencies: {
-        [explicitRelative(
-          dirname(optsWithDefaults.filename),
-          runtimeFilename.replace(/\.[tj]s$/, '')
-        )]: cachedMacrosPackage,
+        [explicitRelative(dirname(optsWithDefaults.filename), runtimeFilename.replace(/\.[tj]s$/, ''))]:
+          cachedMacrosPackage,
       },
     });
   };

@@ -7,7 +7,7 @@ import { Audit, AuditResults, Finding, isBuildError } from './audit';
 
 // slightly wacky because yargs types don't cover this, but you can't access the
 // other documented place to find `hideBin` on node < 12.17
-const { hideBin } = (yargs as any) as {
+const { hideBin } = yargs as any as {
   hideBin(argv: readonly string[]): readonly string[];
 };
 

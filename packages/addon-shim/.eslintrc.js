@@ -58,7 +58,7 @@ module.exports = {
         sourceType: 'module',
       },
       plugins: ['@typescript-eslint'],
-      extends: ['prettier/@typescript-eslint'],
+      extends: ['prettier'],
       rules: {
         '@typescript-eslint/naming-convention': [
           'error',

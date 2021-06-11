@@ -32,7 +32,7 @@ export default class MacrosConfig {
       return found;
     }
 
-    let g = (global as any) as { __embroider_macros_global__: GlobalSharedState | undefined };
+    let g = global as any as { __embroider_macros_global__: GlobalSharedState | undefined };
     if (!g.__embroider_macros_global__) {
       g.__embroider_macros_global__ = new WeakMap();
     }

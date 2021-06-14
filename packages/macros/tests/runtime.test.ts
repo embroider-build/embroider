@@ -9,7 +9,8 @@ import {
   moduleExists,
 } from '../src/index';
 
-const ERROR_REGEX = /this method is really implemented at compile time via a babel plugin. If you're seeing this exception, something went wrong/;
+const ERROR_REGEX =
+  /this method is really implemented at compile time via a babel plugin. If you're seeing this exception, something went wrong/;
 
 describe(`type-only exports`, function () {
   test('dependencySatisfies exists', function () {

@@ -187,7 +187,7 @@ interface HTMLBarsParallelPlaceholder {
 type Placeholder = GlobalPlaceholder | BroccoliParallelPlaceholder | HTMLBarsParallelPlaceholder;
 
 function setupGlobals() {
-  let G = (global as any) as { [protocol]: { globalValues: any[]; nonce: number } };
+  let G = global as any as { [protocol]: { globalValues: any[]; nonce: number } };
   if (!G[protocol]) {
     G[protocol] = { globalValues: [], nonce: Math.floor(Math.random() * Math.pow(2, 32)) };
   }

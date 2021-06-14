@@ -8,7 +8,7 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: ['import', 'prettier', '@typescript-eslint'],
-  extends: ['prettier', 'prettier/@typescript-eslint'],
+  extends: ['prettier'],
   rules: {
     eqeqeq: ['error', 'smart'],
     'no-debugger': 'error',

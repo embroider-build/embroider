@@ -128,7 +128,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
             kind: 'on-disk',
             relativePath: entry.relativePath,
             sourcePath: entry.fullPath,
-            mtime: (entry.mtime as unknown) as number, // https://github.com/joliss/node-walk-sync/pull/38
+            mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
             size: entry.size,
           });
         });

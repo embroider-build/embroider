@@ -10,7 +10,7 @@ export interface HbsLoaderConfig {
 type LoaderContext = any;
 
 export default function hbsLoader(this: LoaderContext, templateContent: string) {
-  let { templateCompilerFile, variant } = (getOptions(this) as unknown) as HbsLoaderConfig;
+  let { templateCompilerFile, variant } = getOptions(this) as unknown as HbsLoaderConfig;
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   let templateCompiler = applyVariantToTemplateCompiler(variant, require(templateCompilerFile)).compile;

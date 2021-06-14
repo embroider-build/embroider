@@ -58,7 +58,7 @@ export default class WaitForTrees<NamedTrees> extends BroccoliPlugin {
         });
       }
     }
-    return this.buildHook((result as unknown) as OutputPaths<NamedTrees>, changedMap);
+    return this.buildHook(result as unknown as OutputPaths<NamedTrees>, changedMap);
   }
 }
 

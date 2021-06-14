@@ -1,7 +1,7 @@
-<h2 id="title">Welcome to Ember</h2>
+{{page-title "Dummy"}}
 
-{{#link-to "index"}}Index{{/link-to}}
-{{#link-to "split-me"}}Split Index{{/link-to}}
-{{#link-to "split-me.child"}}Split Child{{/link-to}}
+<LinkTo @route="index"> Index</LinkTo> 
+<LinkTo @route="split-me"> Split Index</LinkTo> 
+<LinkTo @route="split-me.child"> Split Child</LinkTo> 
 
 {{outlet}}

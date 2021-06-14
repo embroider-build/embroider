@@ -6,8 +6,8 @@ const Router = EmberRouter.extend({
   rootURL: config.rootURL,
 });
 
-Router.map(function() {
-  this.route('split-me', function() {
+Router.map(function () {
+  this.route('split-me', function () {
     this.route('child');
   });
 });

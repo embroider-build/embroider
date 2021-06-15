@@ -1,5 +1,40 @@
 # Embroider Changelog
 
+## v0.42.0 (2021-06-15)
+
+#### :boom: Breaking Change
+* `addon-shim`, `babel-loader-7`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `test-setup`, `util`, `webpack`
+  * [#852](https://github.com/embroider-build/embroider/pull/852) Drop support for Node 10, 11, 13, and 15. ([@rwjblue](https://github.com/rwjblue))
+
+#### :bug: Bug Fix
+* `core`
+  * [#851](https://github.com/embroider-build/embroider/pull/851) Fix missing exports in @embroider/core `package.json` ([@thoov](https://github.com/thoov))
+  * [#841](https://github.com/embroider-build/embroider/pull/841) Ensure babel transpilation cache is invalided when changing versions of babel plugins or AST transforms ([@stefanpenner](https://github.com/stefanpenner))
+* `compat`, `core`, `macros`
+  * [#839](https://github.com/embroider-build/embroider/pull/839) Fix Babel-Loader Caching for ember-template-compiler ([@stefanpenner](https://github.com/stefanpenner))
+* `addon-shim`
+  * [#828](https://github.com/embroider-build/embroider/pull/828) Update addon-shim to use ember-auto-import v2 final ([@josemarluedke](https://github.com/josemarluedke))
+
+#### :house: Internal
+* `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `shared-internals`, `test-setup`, `util`, `webpack`
+  * [#844](https://github.com/embroider-build/embroider/pull/844) Upgrade dependencies/devDependencies ([@stefanpenner](https://github.com/stefanpenner))
+* Other
+  * [#842](https://github.com/embroider-build/embroider/pull/842) Re-roll `yarn.lock` ([@stefanpenner](https://github.com/stefanpenner))
+  * [#840](https://github.com/embroider-build/embroider/pull/840) Run linting in CI before running the full matrix of jobs ([@rwjblue](https://github.com/rwjblue))
+  * [#837](https://github.com/embroider-build/embroider/pull/837) Remove `ember-cli-htmlbars-inline-precompile` in test packages ([@stefanpenner](https://github.com/stefanpenner))
+  * [#832](https://github.com/embroider-build/embroider/pull/832) Schedule CI runs daily ([@rwjblue](https://github.com/rwjblue))
+* `webpack`
+  * [#838](https://github.com/embroider-build/embroider/pull/838) Ensure errors in `webpack.run` callback always reject ([@stefanpenner](https://github.com/stefanpenner))
+* `addon-shim`
+  * [#820](https://github.com/embroider-build/embroider/pull/820) Add `@embroider/addon-shim` repository data to package.json ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 4
+- Josemar Luedke ([@josemarluedke](https://github.com/josemarluedke))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.41.0 (2021-05-20)
 
 #### :rocket: Enhancement

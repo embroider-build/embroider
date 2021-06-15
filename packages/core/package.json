@@ -18,7 +18,8 @@
     },
     "./src/messages": "./src/messages.js",
     "./src/babel-plugin-inline-hbs": "./src/babel-plugin-inline-hbs.js",
-    "./src/mini-modules-polyfill": "./src/mini-modules-polyfill.js"
+    "./src/mini-modules-polyfill": "./src/mini-modules-polyfill.js",
+    "./src/load-ember-template-compiler": "./src/load-ember-template-compiler.js"
   },
   "files": [
     "src/**/*.js",

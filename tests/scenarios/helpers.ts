@@ -1,5 +1,8 @@
 import { PreparedApp } from 'scenario-tester';
-import { join } from 'path';
+import { join, sep } from 'path';
+import { readFileSync } from 'fs';
+import globby from 'globby';
+import { set } from 'lodash';
 
 export async function setupFastboot(app: PreparedApp, environment = 'development') {
   let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`);
@@ -27,4 +30,16 @@ export async function setupFastboot(app: PreparedApp, environment = 'development
   }
 
   return { visit };
+}
+
+export function loadFromFixtureData(fixtureNamespace: string) {
+  const root = join(__dirname, '..', 'fixtures', fixtureNamespace);
+  const paths = globby.sync('**', { cwd: root });
+  const fixtureStructure: any = {};
+
+  paths.forEach(path => {
+    set(fixtureStructure, path.split(sep), readFileSync(join(root, path), 'utf8'));
+  });
+
+  return fixtureStructure;
 }

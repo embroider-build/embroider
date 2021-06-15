@@ -128,7 +128,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
             kind: 'on-disk',
             relativePath: entry.relativePath,
             sourcePath: entry.fullPath,
-            mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
+            mtime: (entry.mtime as unknown) as number, // https://github.com/joliss/node-walk-sync/pull/38
             size: entry.size,
           });
         });
@@ -267,20 +267,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
           let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
 
           return {
-            javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts), 'app javascript', entrypoint),
-            styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles), 'app styles', entrypoint),
-            implicitScripts: definitelyReplace(
-              dom,
-              this.oldPackage.findVendorScript(scripts),
-              'vendor javascript',
-              entrypoint
-            ),
-            implicitStyles: definitelyReplace(
-              dom,
-              this.oldPackage.findVendorStyles(styles),
-              'vendor styles',
-              entrypoint
-            ),
+            javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts, entrypoint)),
+            styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles, entrypoint)),
+            implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts, entrypoint)),
+            implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles, entrypoint)),
             testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
             implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
             implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
@@ -462,14 +452,11 @@ export default class CompatApp extends BuildStage<TreeNames> {
 
 function maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
   if (element) {
-    return definitelyReplace(dom, element, '', '');
+    return definitelyReplace(dom, element);
   }
 }
 
-function definitelyReplace(dom: JSDOM, element: Element | undefined, description: string, file: string): Node {
-  if (!element) {
-    throw new Error(`could not find ${description} in ${file}`);
-  }
+function definitelyReplace(dom: JSDOM, element: Element): Node {
   let placeholder = dom.window.document.createTextNode('');
   element.replaceWith(placeholder);
   return placeholder;

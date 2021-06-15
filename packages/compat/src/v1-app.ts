@@ -680,7 +680,7 @@ export default class V1App {
     return throwIfMissing(
       appJS,
       this.app.options.outputPaths.app.js,
-      scripts.map(s => ' - ' + s.src),
+      scripts.map(s => s.src),
       entrypoint,
       'app javascript'
     );
@@ -743,9 +743,11 @@ function throwIfMissing<T>(
 ): T {
   if (!asset) {
     throw new Error(
-      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack.join(
-        '\n'
-      )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
+      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack
+        .map(asset => ` - ${asset}`)
+        .join(
+          '\n'
+        )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
     );
   }
 

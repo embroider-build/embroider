@@ -25,9 +25,9 @@ appScenarios
 
     macroSampleAddon.pkg.name = 'macro-sample-addon';
     eagerEngine.pkg.name = 'eager-engine';
-    eagerEngine.pkg.peerDependencies = { 'ember-engines': '0.8.5' };
+    eagerEngine.pkg.peerDependencies = { 'ember-engines': '*' };
     lazyEngine.pkg.name = 'lazy-engine';
-    lazyEngine.pkg.peerDependencies = { 'ember-engines': '0.8.5' };
+    lazyEngine.pkg.peerDependencies = { 'ember-engines': '*' };
 
     project.pkg['ember-addon'] = {
       paths: ['lib/lazy-in-repo-engine'],

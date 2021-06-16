@@ -70,7 +70,8 @@
         ],
         "additionalManifests": {
           "dependencyUpdates": [
-            "test-packages/*/package.json"
+            "test-packages/*/package.json",
+            "tests/*/package.json"
           ]
         }
       }

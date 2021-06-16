@@ -7643,7 +7643,7 @@ ember-cli-babel@^6.0.0-beta.4, ember-cli-babel@^6.12.0, ember-cli-babel@^6.16.0,
     ember-cli-version-checker "^2.1.2"
     semver "^5.5.0"
 
-ember-cli-babel@^7.0.0, ember-cli-babel@^7.1.0, ember-cli-babel@^7.1.3, ember-cli-babel@^7.10.0, ember-cli-babel@^7.11.0, ember-cli-babel@^7.11.1, ember-cli-babel@^7.12.0, ember-cli-babel@^7.13.0, ember-cli-babel@^7.13.2, ember-cli-babel@^7.17.2, ember-cli-babel@^7.18.0, ember-cli-babel@^7.19.0, ember-cli-babel@^7.20.5, ember-cli-babel@^7.21.0, ember-cli-babel@^7.22.1, ember-cli-babel@^7.23.0, ember-cli-babel@^7.23.1, ember-cli-babel@^7.26.2, ember-cli-babel@^7.26.3, ember-cli-babel@^7.26.4, ember-cli-babel@^7.26.6, ember-cli-babel@^7.4.0, ember-cli-babel@^7.4.1, ember-cli-babel@^7.5.0, ember-cli-babel@^7.7.0, ember-cli-babel@^7.7.3:
+ember-cli-babel@^7.0.0, ember-cli-babel@^7.1.0, ember-cli-babel@^7.1.3, ember-cli-babel@^7.10.0, ember-cli-babel@^7.11.0, ember-cli-babel@^7.12.0, ember-cli-babel@^7.13.0, ember-cli-babel@^7.13.2, ember-cli-babel@^7.17.2, ember-cli-babel@^7.18.0, ember-cli-babel@^7.19.0, ember-cli-babel@^7.20.5, ember-cli-babel@^7.21.0, ember-cli-babel@^7.22.1, ember-cli-babel@^7.23.0, ember-cli-babel@^7.23.1, ember-cli-babel@^7.26.2, ember-cli-babel@^7.26.3, ember-cli-babel@^7.26.4, ember-cli-babel@^7.26.6, ember-cli-babel@^7.4.0, ember-cli-babel@^7.4.1, ember-cli-babel@^7.5.0, ember-cli-babel@^7.7.0, ember-cli-babel@^7.7.3:
   version "7.26.6"
   resolved "https://registry.yarnpkg.com/ember-cli-babel/-/ember-cli-babel-7.26.6.tgz#322fbbd3baad9dd99e3276ff05bc6faef5e54b39"
   integrity sha512-040svtfj2RC35j/WMwdWJFusZaXmNoytLAMyBDGLMSlRvznudTxZjGlPV6UupmtTBApy58cEF8Fq4a+COWoEmQ==
@@ -7812,7 +7812,7 @@ ember-cli-eslint@^5.1.0:
     rsvp "^4.6.1"
     walk-sync "^1.0.0"
 
-ember-cli-fastboot@^2.2.2, ember-cli-fastboot@^2.2.3:
+ember-cli-fastboot@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/ember-cli-fastboot/-/ember-cli-fastboot-2.2.3.tgz#d32eba948b2790ec4b5429ff759a8dee932c1e55"
   integrity sha512-RdKzTOXHi59VW6a9RB0muCQd15BmY95pWkQ9eLslyeLR38/Uh1EVP+kgWxzJTxODywmMJ9SWW2HPpvxxLDfCEw==
@@ -7862,7 +7862,7 @@ ember-cli-htmlbars-inline-precompile@^2.1.0:
     heimdalljs-logger "^0.1.9"
     silent-error "^1.1.0"
 
-ember-cli-htmlbars@^4.0.0, ember-cli-htmlbars@^4.2.0, ember-cli-htmlbars@^4.2.3, ember-cli-htmlbars@^4.3.1:
+ember-cli-htmlbars@^4.2.0, ember-cli-htmlbars@^4.2.3, ember-cli-htmlbars@^4.3.1:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/ember-cli-htmlbars/-/ember-cli-htmlbars-4.5.0.tgz#d299e4f7eba6f30dc723ee086906cc550beb252e"
   integrity sha512-bYJpK1pqFu9AadDAGTw05g2LMNzY8xTCIqQm7dMJmKEoUpLRFbPf4SfHXrktzDh7Q5iggl6Skzf1M0bPlIxARw==
@@ -8073,7 +8073,7 @@ ember-cli-string-utils@^1.0.0, ember-cli-string-utils@^1.1.0:
   resolved "https://registry.yarnpkg.com/ember-cli-string-utils/-/ember-cli-string-utils-1.1.0.tgz#39b677fc2805f55173735376fcef278eaa4452a1"
   integrity sha1-ObZ3/CgF9VFzc1N2/O8njqpEUqE=
 
-ember-cli-template-lint@^1.0.0-beta.1, ember-cli-template-lint@^1.0.0-beta.3:
+ember-cli-template-lint@^1.0.0-beta.3:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/ember-cli-template-lint/-/ember-cli-template-lint-1.0.0.tgz#8ca8f5f05fdcad35c13f26b65fb93c016196bdc9"
   integrity sha512-acWyJUvRFo2aA/0kqeUxfCPwLtPk3ckZ/1I0BzBX9qW/Gi8qWqYnwnI/vEotIqmsQl+npbl0/SXeQHFrUdyB0g==
@@ -8740,15 +8740,15 @@ ember-element-helper@^0.5.0:
     ember-cli-babel "^7.17.2"
     ember-cli-htmlbars "^5.1.0"
 
-ember-engines@0.8.5:
-  version "0.8.5"
-  resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.5.tgz#7a21eec7ce77f5e6636cc9126b898aec8d9917c9"
-  integrity sha512-ezbH+OBjGSa6fPSHqpNSVGdz1k9rHpV7tiP1SaEkbHwfuikl28TRY8Am6fgdnL8K6pP5qcSrSl+yUIaGULqOSg==
+ember-engines@^0.8.15:
+  version "0.8.15"
+  resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.15.tgz#091cae2c1be8d871b0b037df2fd188f17e853194"
+  integrity sha512-X16c1w3fgFV5cBWDnaT4OQ/10usCN+peC1BxBE29/MYouKiFre70GrHvJYMbYYURVGhqRLRAdXkROhqUikGSXw==
   dependencies:
     amd-name-resolver "1.3.1"
     babel-plugin-compact-reexports "^1.1.0"
     broccoli-babel-transpiler "^7.2.0"
-    broccoli-concat "^3.7.3"
+    broccoli-concat "^4.2.5"
     broccoli-debug "^0.6.5"
     broccoli-dependency-funnel "^2.1.2"
     broccoli-file-creator "^2.1.1"
@@ -8757,11 +8757,12 @@ ember-engines@0.8.5:
     broccoli-test-helper "^2.0.0"
     calculate-cache-key-for-tree "^2.0.0"
     ember-asset-loader "^0.6.1"
-    ember-cli-babel "^7.11.1"
-    ember-cli-htmlbars "^4.0.0"
+    ember-cli-babel "^7.18.0"
+    ember-cli-htmlbars "^5.3.1"
     ember-cli-preprocess-registry "^3.3.0"
     ember-cli-string-utils "^1.1.0"
-    ember-cli-version-checker "^3.1.3"
+    ember-cli-version-checker "^5.1.2"
+    ember-compatibility-helpers "^1.2.2"
     lodash "^4.17.11"
 
 ember-engines@^0.8.16:
@@ -9031,7 +9032,7 @@ ember-resolver@^8.0.2:
     ember-cli-version-checker "^5.1.1"
     resolve "^1.17.0"
 
-ember-rfc176-data@^0.3.11, ember-rfc176-data@^0.3.12, ember-rfc176-data@^0.3.13, ember-rfc176-data@^0.3.15, ember-rfc176-data@^0.3.17:
+ember-rfc176-data@^0.3.12, ember-rfc176-data@^0.3.13, ember-rfc176-data@^0.3.15, ember-rfc176-data@^0.3.17:
   version "0.3.17"
   resolved "https://registry.yarnpkg.com/ember-rfc176-data/-/ember-rfc176-data-0.3.17.tgz#d4fc6c33abd6ef7b3440c107a28e04417b49860a"
   integrity sha512-EVzTTKqxv9FZbEh6Ktw56YyWRAA0MijKvl7H8C06wVF+8f/cRRz3dXxa4nkwjzyVwx4rzKGuIGq77hxJAQhWWw==
@@ -9480,13 +9481,6 @@ ember-test-waiters@^1.1.1:
     ember-cli-babel "^7.11.0"
     semver "^6.3.0"
 
-ember-truth-helpers@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/ember-truth-helpers/-/ember-truth-helpers-2.1.0.tgz#d4dab4eee7945aa2388126485977baeb33ca0798"
-  integrity sha512-BQlU8aTNl1XHKTYZ243r66yqtR9JU7XKWQcmMA+vkqfkE/c9WWQ9hQZM8YABihCmbyxzzZsngvldokmeX5GhAw==
-  dependencies:
-    ember-cli-babel "^6.6.0"
-
 ember-truth-helpers@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/ember-truth-helpers/-/ember-truth-helpers-3.0.0.tgz#86766bdca4ac9b86bce3d262dff2aabc4a0ea384"
@@ -9854,15 +9848,6 @@ eslint-plugin-ember@^10.2.0, eslint-plugin-ember@^10.3.0:
     lodash.kebabcase "^4.1.1"
     requireindex "^1.2.0"
     snake-case "^3.0.3"
-
-eslint-plugin-ember@^6.2.0:
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-ember/-/eslint-plugin-ember-6.10.1.tgz#ca7a5cc28b91a247c31b1686421a66281467f238"
-  integrity sha512-RZI0+UoR4xeD6UE3KQCUwbN2nZOIIPaFCCXqBIRXDr0rFuwvknAHqYtDPJVZicvTzNHa4TEZvAKqfbE8t7SztQ==
-  dependencies:
-    "@ember-data/rfc395-data" "^0.0.4"
-    ember-rfc176-data "^0.3.11"
-    snake-case "^2.1.0"
 
 eslint-plugin-ember@^7.0.0, eslint-plugin-ember@^7.10.1:
   version "7.13.0"
@@ -13884,11 +13869,6 @@ loose-envify@^1.0.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-lower-case@^1.1.1:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/lower-case/-/lower-case-1.1.4.tgz#9a2cabd1b9e8e0ae993a4bf7d5875c39c42e8eac"
-  integrity sha1-miyr0bno4K6ZOkv31YdcOcQujqw=
-
 lower-case@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/lower-case/-/lower-case-2.0.2.tgz#6fa237c63dbdc4a82ca0fd882e4722dc5e634e28"
@@ -14623,13 +14603,6 @@ nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
-
-no-case@^2.2.0:
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/no-case/-/no-case-2.3.2.tgz#60b813396be39b3f1288a4c1ed5d1e7d28b464ac"
-  integrity sha512-rmTZ9kz+f3rCvK2TD1Ue/oZlns7OGoIWP4fc3llxxRXlOkHKoWPPWJOfFYpITabSow43QJbRIoHQXtt10VldyQ==
-  dependencies:
-    lower-case "^1.1.1"
 
 no-case@^3.0.4:
   version "3.0.4"
@@ -17095,13 +17068,6 @@ smart-buffer@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/smart-buffer/-/smart-buffer-4.1.0.tgz#91605c25d91652f4661ea69ccf45f1b331ca21ba"
   integrity sha512-iVICrxOzCynf/SNaBQCw34eM9jROU/s5rzIhpOvzhzuYHfJR/DhZfDkXiZSgKXfgv26HT3Yni3AV/DGw0cGnnw==
-
-snake-case@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/snake-case/-/snake-case-2.1.0.tgz#41bdb1b73f30ec66a04d4e2cad1b76387d4d6d9f"
-  integrity sha1-Qb2xtz8w7GagTU4srRt2OH1NbZ8=
-  dependencies:
-    no-case "^2.2.0"
 
 snake-case@^3.0.3:
   version "3.0.4"

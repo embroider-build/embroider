@@ -20,6 +20,7 @@
 /packages/test-setup/**/*.d.ts
 /packages/addon-shim/**/*.js
 /packages/addon-shim/**/*.d.ts
+/tests/fixtures/
 
 # unconventional js
 /blueprints/*/files/

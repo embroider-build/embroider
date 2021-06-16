@@ -1,0 +1,9 @@
+{
+  "name": "eager-engine-helper",
+  "keywords": [
+    "ember-addon"
+  ],
+  "dependencies": {
+    "ember-cli-babel": "^7.20.5"
+  }
+}

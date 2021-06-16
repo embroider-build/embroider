@@ -675,20 +675,48 @@ export default class V1App {
     return src;
   }
 
-  findAppScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.app.js);
+  findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
+    let appJS = scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.app.js);
+    return throwIfMissing(
+      appJS,
+      this.app.options.outputPaths.app.js,
+      scripts.map(s => s.src),
+      entrypoint,
+      'app javascript'
+    );
   }
 
-  findAppStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.app.css.app);
+  findAppStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
+    let style = styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.app.css.app);
+    return throwIfMissing(
+      style,
+      this.app.options.outputPaths.app.css.app,
+      styles.map(s => s.href),
+      entrypoint,
+      'app css'
+    );
   }
 
-  findVendorScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.vendor.js);
+  findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
+    let vendor = scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.vendor.js);
+    return throwIfMissing(
+      vendor,
+      this.app.options.outputPaths.vendor.js,
+      scripts.map(s => s.src),
+      entrypoint,
+      'vendor javascript'
+    );
   }
 
-  findVendorStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.vendor.css);
+  findVendorStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
+    let vendorStyle = styles.find(style => this.withoutRootURL(style.href) === this.app.options.outputPaths.vendor.css);
+    return throwIfMissing(
+      vendorStyle,
+      this.app.options.outputPaths.vendor.css,
+      styles.map(s => s.href),
+      entrypoint,
+      'vendor css'
+    );
   }
 
   findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
@@ -704,6 +732,26 @@ export default class V1App {
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(script => this.withoutRootURL(script.src) === this.app.options.outputPaths.tests.js);
   }
+}
+
+function throwIfMissing<T>(
+  asset: T | undefined,
+  needle: string,
+  haystack: string[],
+  entryfile: string,
+  context: string
+): T {
+  if (!asset) {
+    throw new Error(
+      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack
+        .map(asset => ` - ${asset}`)
+        .join(
+          '\n'
+        )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
+    );
+  }
+
+  return asset;
 }
 
 class V1DummyApp extends V1App {

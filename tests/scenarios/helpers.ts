@@ -1,5 +1,5 @@
 import { PreparedApp } from 'scenario-tester';
-import { join, sep } from 'path';
+import { join } from 'path';
 import { readFileSync } from 'fs';
 import globby from 'globby';
 import { set } from 'lodash';
@@ -38,7 +38,7 @@ export function loadFromFixtureData(fixtureNamespace: string) {
   const fixtureStructure: any = {};
 
   paths.forEach(path => {
-    set(fixtureStructure, path.split(sep), readFileSync(join(root, path), 'utf8'));
+    set(fixtureStructure, path.split('/'), readFileSync(join(root, path), 'utf8'));
   });
 
   return fixtureStructure;

@@ -2,8 +2,8 @@
 import Component, { setComponentTemplate } from '@ember/component';
 import template from 'dummy/templates/components/legacy-with-template';
 
-class LegacyComponent extends Component {
+class LegacyWithTemplateComponent extends Component {
   tagName = '';
 }
 
-export default setComponentTemplate(template, LegacyComponent);
+export default setComponentTemplate(template, LegacyWithTemplateComponent);

@@ -50,7 +50,7 @@ appScenarios
     lazyEngine.linkDependency('ember-engines', { baseDir: __dirname });
     macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
 
-    let engineTestFiles = loadFromFixtureData('engines-test');
+    let engineTestFiles = loadFromFixtureData('engines-host-app');
     merge(project.files, engineTestFiles);
   })
   .forEachScenario(scenario => {
@@ -60,7 +60,7 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['production', 'development'].forEach(env => {
+      ['development'].forEach(env => {
         test(`yarn test: ${env}`, async function (assert) {
           let result = await app.execute('yarn test');
           assert.equal(result.exitCode, 0, result.output);
@@ -74,7 +74,7 @@ appScenarios
           });
 
           test('host-app', async function (assert) {
-            let doc = await visit('/');
+            let doc = (await visit('/')).window.document;
             assert.equal(
               doc.querySelector('[data-test-duplicated-helper]').textContent.trim(),
               'from-engines-host-app'
@@ -82,13 +82,13 @@ appScenarios
           });
 
           test('lazy-engine', async function (assert) {
-            let doc = await visit('/use-lazy-engine');
+            let doc = (await visit('/use-lazy-engine')).window.document;
             assert.equal(doc.querySelector('[data-test-lazy-engine-main] > h1').textContent.trim(), 'Lazy engine');
             assert.equal(doc.querySelector('[data-test-duplicated-helper]').textContent.trim(), 'from-lazy-engine');
           });
 
           test('eager-engine', async function (assert) {
-            let doc = await visit('/use-eager-engine');
+            let doc = (await visit('/use-eager-engine')).window.document;
             assert.equal(doc.querySelector('[data-test-eager-engine-main] > h1').textContent.trim(), 'Eager engine');
             assert.equal(
               doc.querySelector('[data-test-duplicated-helper]').textContent.trim(),

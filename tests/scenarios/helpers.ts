@@ -34,7 +34,7 @@ export async function setupFastboot(app: PreparedApp, environment = 'development
 
 export function loadFromFixtureData(fixtureNamespace: string) {
   const root = join(__dirname, '..', 'fixtures', fixtureNamespace);
-  const paths = globby.sync('**', { cwd: root });
+  const paths = globby.sync('**', { cwd: root, dot: true });
   const fixtureStructure: any = {};
 
   paths.forEach(path => {

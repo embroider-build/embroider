@@ -38,11 +38,14 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['production', 'development'].forEach(env => {
-        test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute('yarn test');
-          assert.equal(result.exitCode, 0, result.output);
-        });
+      test(`yarn test`, async function (assert) {
+        let result = await app.execute(`yarn test`);
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`CLASSIC=true yarn test`, async function (assert) {
+        let result = await app.execute(`CLASSIC=true yarn test`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

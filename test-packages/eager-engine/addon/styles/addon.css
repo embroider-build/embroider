@@ -1,6 +1,0 @@
-.shared-style-target {
-  border-left-width: 2px;
-  border-left-style: solid;
-  border-left-color: blue;
-  content: 'eager-engine/addon/styles/addon.css';
-}

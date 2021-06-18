@@ -36,6 +36,7 @@ import { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 import semverSatisfies from 'semver/functions/satisfies';
+import supportsColor from 'supports-color';
 
 const debug = makeDebug('embroider:debug');
 
@@ -456,11 +457,22 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             throw new Error('bug: no stats and no err');
           }
           if (stats.hasErrors()) {
+            // write all the stats output to the console
+            this.consoleWrite(
+              stats.toString({
+                color: Boolean(supportsColor.stdout),
+              })
+            );
+
             // the typing for MultiCompiler are all foobared.
             throw this.findBestError(flatMap((stats as any).stats, s => s.compilation.errors));
           }
           if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
-            this.consoleWrite(stats.toString());
+            this.consoleWrite(
+              stats.toString({
+                color: Boolean(supportsColor.stdout),
+              })
+            );
           }
           resolve(stats.toJson());
         } catch (e) {

@@ -21,6 +21,8 @@
     "@embroider/sample-lib": "link:../../test-packages/sample-lib",
     "@embroider/macros": "0.42.0",
     "bootstrap": "^4.3.1",
+    "broccoli-funnel": "^3.0.5",
+    "broccoli-merge-trees": "^3.0.2",
     "ember-bootstrap": "^4.6.3",
     "ember-cli-latest": "npm:ember-cli@latest",
     "ember-cli-beta": "npm:ember-cli@beta",

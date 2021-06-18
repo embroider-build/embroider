@@ -44,7 +44,7 @@ appScenarios
       });
 
       test(`CLASSIC=true yarn test`, async function (assert) {
-        let result = await app.execute(`CLASSIC=true yarn test`);
+        let result = await app.execute(`cross-env CLASSIC=true yarn test`);
         assert.equal(result.exitCode, 0, result.output);
       });
     });

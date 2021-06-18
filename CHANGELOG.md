@@ -1,5 +1,32 @@
 # Embroider Changelog
 
+## v0.42.1 (2021-06-18)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#860](https://github.com/embroider-build/embroider/pull/860) Ensure all errors are reported when an error occurs in webpack ([@rwjblue](https://github.com/rwjblue))
+
+#### :bug: Bug Fix
+* `util`
+  * [#863](https://github.com/embroider-build/embroider/pull/863) Restore typings for `@embroider/util` ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#853](https://github.com/embroider-build/embroider/pull/853) Better error message when an asset cannot be found in entry file ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* Other
+  * [#861](https://github.com/embroider-build/embroider/pull/861) Remove test-packages: macro-test and funky-sample-addon ([@thoov](https://github.com/thoov))
+  * [#859](https://github.com/embroider-build/embroider/pull/859) Convert macro-test to new test structure ([@thoov](https://github.com/thoov))
+  * [#858](https://github.com/embroider-build/embroider/pull/858) Remove ember-engines version pin ([@thoov](https://github.com/thoov))
+  * [#854](https://github.com/embroider-build/embroider/pull/854) Convert engines-host-app to new test structure ([@thoov](https://github.com/thoov))
+* `compat`
+  * [#856](https://github.com/embroider-build/embroider/pull/856) Remove eager-engine, lazy-engine, and engine-host-app ([@thoov](https://github.com/thoov))
+
+#### Committers: 3
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.42.0 (2021-06-15)
 
 #### :boom: Breaking Change

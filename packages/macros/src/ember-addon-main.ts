@@ -85,12 +85,22 @@ export = {
       let { plugins, setConfig } = MacrosConfig.astPlugins((this as any).parent.root);
       this.setMacrosConfig = setConfig;
       plugins.forEach((plugin, index) => {
+        let name = `@embroider/macros/${index}`;
+        let baseDir = join(__dirname, '..');
+
         registry.add('htmlbars-ast-plugin', {
           name: `@embroider/macros/${index}`,
           plugin,
-          baseDir() {
-            return join(__dirname, '..');
+          parallelBabel: {
+            requireFile: join(__dirname, 'glimmer', 'ast-transform.js'),
+            buildUsing: 'makePlugin',
+            params: {
+              name,
+              plugin,
+              baseDir,
+            },
           },
+          baseDir: () => baseDir,
         });
       });
     }

@@ -39,7 +39,7 @@ appScenarios
       });
 
       test(`yarn test`, async function (assert) {
-        let result = await app.execute(`yarn test`);
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 yarn test`);
         assert.equal(result.exitCode, 0, result.output);
       });
 

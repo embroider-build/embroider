@@ -39,6 +39,7 @@ import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import { getEmberExports } from './load-ember-template-compiler';
+import semver from 'semver';
 
 export type EmberENV = unknown;
 
@@ -405,6 +406,22 @@ export class AppBuilder<TreeNames> {
       require.resolve('@babel/plugin-transform-runtime'),
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
+
+    {
+      // this is required for backwards compatiblity when running an ember app
+      // with ember versions >=3.27.0-alpha.0 <4.0.0-alpha.0 without
+      // emberSourceRealModules enabled.
+      let emberSource = this.adapter.activeAddonChildren(this.app).find(a => a.name === 'ember-source')!;
+
+      if (
+        !this.options.emberSourceRealModules &&
+        semver.satisfies(emberSource.version, '>=3.27.0-alpha.0 <4.0.0-alpha.0', {
+          includePrerelease: true,
+        })
+      ) {
+        babel.plugins.push(...macroBabelPlugins());
+      }
+    }
 
     const portable = makePortable(babel, { basedir: this.root }, this.portableHints);
     addCachablePlugin(portable.config);
@@ -1475,4 +1492,59 @@ function combinePackageJSON(...layers: object[]) {
     }
   }
   return mergeWith({}, ...layers, custom);
+}
+
+function macroBabelPlugins() {
+  const isProduction = process.env.EMBER_ENV === 'production';
+  const isDebug = !isProduction;
+  // const ignore = {
+  //   '@ember/debug': ['assert', 'deprecate', 'warn'],
+  //   '@ember/application/deprecations': ['deprecate'],
+  // };
+
+  return [
+    // [
+    //   require.resolve('babel-plugin-ember-modules-api-polyfill'),
+    //   { ignore },
+    //   '@embroider/core:babel-plugin-ember-modules-api-polyfill',
+    // ],
+    [
+      require.resolve('babel-plugin-debug-macros'),
+      {
+        flags: [
+          {
+            source: '@glimmer/env',
+            flags: { DEBUG: isDebug, CI: !!process.env.CI },
+          },
+        ],
+
+        externalizeHelpers: {
+          global: 'Ember',
+        },
+
+        debugTools: {
+          isDebug,
+          source: '@ember/debug',
+          assertPredicateIndex: 1,
+        },
+      },
+      '@embroider/core:@ember/debug stripping',
+    ],
+    [
+      require.resolve('babel-plugin-debug-macros'),
+      {
+        // deprecated import path https://github.com/emberjs/ember.js/pull/17926#issuecomment-484987305
+        externalizeHelpers: {
+          global: 'Ember',
+        },
+
+        debugTools: {
+          isDebug,
+          source: '@ember/application/deprecations',
+          assertPredicateIndex: 1,
+        },
+      },
+      '@embroider/core:@ember/application/deprecations stripping',
+    ],
+  ];
 }

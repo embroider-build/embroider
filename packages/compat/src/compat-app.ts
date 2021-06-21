@@ -365,9 +365,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     }
 
     let emberSource = this.activeAddonChildren().find(a => a.name === 'ember-source')!;
-    let emberNeedsModulesPolyfill = semver.satisfies(emberSource.version, '<3.27.0-beta.0', {
-      includePrerelease: true,
-    });
+    let emberNeedsModulesPolyfill =
+      semver.satisfies(emberSource.version, '<4.0.0-alpha.0', {
+        includePrerelease: true,
+      }) && !this.options.emberSourceRealModules;
 
     return {
       activeAddons,

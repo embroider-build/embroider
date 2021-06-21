@@ -57,6 +57,18 @@ export default interface Options {
   // need transpilation to be safe in your target browsers.
   skipBabel?: { package: string; semverRange?: string }[];
 
+  // As of ember-source 3.27 Ember.js is optionally consumable as real
+  // JavaScript modules. This makes Ember.js's module graph visible to the
+  // optimizing compiler, enabling tree-shaking and other optimizations of
+  // ember itself.
+  //
+  // Unfortunately due to backwards compatibility constraints consuming
+  // ember-source this way wont be the default until ember-source@4.0.0.
+  //
+  // This flag provideds adventurous ember-source users & addon-authors the
+  // ability to test & begin preperation prior to this feature becomeing the
+  // default.
+  emberSourceRealModules?: boolean | null;
   // This is a performance optimization that can help you avoid the "Your build
   // is slower because some babel plugins are non-serializable" penalty. If you
   // provide the locations of known non-serializable objects, we can discover
@@ -104,6 +116,7 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
     packageRules: [],
     splitAtRoutes: [],
     splitControllers: false,
+    emberSourceRealModules: null,
     splitRouteClasses: false,
     staticAppPaths: [],
     skipBabel: [],

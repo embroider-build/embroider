@@ -5,9 +5,25 @@ import AddToTree from '../add-to-tree';
 import { outputFileSync, unlinkSync } from 'fs-extra';
 import { join } from 'path';
 import semver from 'semver';
+import Options from '../options';
+import V1App from '../v1-app';
+
+import { PackageCache } from '@embroider/core';
 
 export default class extends V1Addon {
-  private useRealModules = semver.satisfies(this.packageJSON.version, '>=3.27.0-beta.0', { includePrerelease: true });
+  private useRealModules: boolean;
+  constructor(
+    addonInstance: any,
+    addonOptions: Required<Options>,
+    app: V1App,
+    packageCache: PackageCache,
+    orderIdx: number
+  ) {
+    super(addonInstance, addonOptions, app, packageCache, orderIdx);
+    this.useRealModules =
+      addonOptions.emberSourceRealModules ||
+      semver.satisfies(this.packageJSON.version, '>=4.0.0-alpha.0', { includePrerelease: true });
+  }
 
   get v2Tree() {
     return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);

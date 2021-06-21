@@ -5,11 +5,19 @@ import { maybeAttrs } from './macro-maybe-attrs';
 import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
 import { failBuild } from './fail-build';
 
-export function makePlugin(params: { name: string; plugin: Function; baseDir: string }) {
+export function buildPlugin(params: {
+  name: string;
+  baseDir: string;
+  projectRoot: string;
+  methodName: string;
+  configs: any;
+}) {
   return {
     name: params.name,
-    parallelBabel: (params.plugin as any).parallelBabel,
-    plugin: params.plugin,
+    plugin:
+      params.methodName === 'makeFirstTransform'
+        ? makeFirstTransform({ userConfigs: params.configs, baseDir: params.projectRoot })
+        : makeSecondTransform(),
     baseDir: () => params.baseDir,
   };
 }
@@ -90,16 +98,6 @@ export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]:
     };
   }
   (embroiderFirstMacrosTransform as any).embroiderMacrosASTMarker = true;
-  (embroiderFirstMacrosTransform as any).parallelBabel = {
-    requireFile: __filename,
-    buildUsing: 'makeFirstTransform',
-    get params() {
-      return {
-        userConfigs: opts.userConfigs,
-        baseDir: opts.baseDir,
-      };
-    },
-  };
   return embroiderFirstMacrosTransform;
 }
 
@@ -190,11 +188,6 @@ export function makeSecondTransform() {
     };
   }
   (embroiderSecondMacrosTransform as any).embroiderMacrosASTMarker = true;
-  (embroiderSecondMacrosTransform as any).parallelBabel = {
-    requireFile: __filename,
-    buildUsing: 'makeSecondTransform',
-    params: undefined,
-  };
   return embroiderSecondMacrosTransform;
 }
 

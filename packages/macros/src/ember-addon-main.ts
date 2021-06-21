@@ -82,21 +82,26 @@ export = {
       // MacrosConfig.astPlugins is static because in classic ember-cli, at this
       // point there's not yet an appInstance, so we defer getting it and
       // calling setConfig until our included hook.
-      let { plugins, setConfig } = MacrosConfig.astPlugins((this as any).parent.root);
+      let { plugins, setConfig, getConfigForPlugin } = MacrosConfig.astPlugins((this as any).parent.root);
       this.setMacrosConfig = setConfig;
       plugins.forEach((plugin, index) => {
         let name = `@embroider/macros/${index}`;
         let baseDir = join(__dirname, '..');
+        let projectRoot = (this as any).parent.root;
 
         registry.add('htmlbars-ast-plugin', {
-          name: `@embroider/macros/${index}`,
+          name,
           plugin,
           parallelBabel: {
             requireFile: join(__dirname, 'glimmer', 'ast-transform.js'),
-            buildUsing: 'makePlugin',
+            buildUsing: 'buildPlugin',
             params: {
               name,
-              plugin,
+              get configs() {
+                return getConfigForPlugin();
+              },
+              methodName: index === 0 ? 'makeSecondTransform' : 'makeFirstTransform',
+              projectRoot: projectRoot,
               baseDir,
             },
           },
@@ -105,5 +110,6 @@ export = {
       });
     }
   },
+
   options: {},
 };

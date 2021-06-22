@@ -4,6 +4,7 @@ import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
 import type { Params as Stage1InlineBabelParams } from '../src/babel-plugin-stage1-inline-hbs-node';
+import type { Options as InlinePrecompileOptions } from 'babel-plugin-htmlbars-inline-precompile';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -126,7 +127,7 @@ describe('inline-hbs', () => {
     });
   });
 
-  describe('stage3 no presets', () => {
+  describe('stage3 non-module-ember no-presets', () => {
     allBabelVersions({
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
@@ -150,7 +151,7 @@ describe('inline-hbs', () => {
     });
   });
 
-  describe('stage3 with presets', () => {
+  describe('stage3 non-module-ember with-presets', () => {
     allBabelVersions({
       babelConfig(major: number) {
         let templateCompiler: NodeTemplateCompilerParams = {
@@ -177,6 +178,33 @@ describe('inline-hbs', () => {
                   ie: '11.0.0',
                 },
               },
+            ],
+          ],
+        };
+      },
+      createTests: stage3Tests,
+    });
+  });
+
+  describe('stage3 module-ember no-presets', () => {
+    allBabelVersions({
+      babelConfig() {
+        let templateCompiler: NodeTemplateCompilerParams = {
+          compilerPath: emberTemplateCompilerPath(),
+          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
+          EmberENV: {},
+          plugins: {
+            ast: [],
+          },
+        };
+        return {
+          plugins: [
+            [join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'), { templateCompiler }],
+            [
+              require.resolve('babel-plugin-htmlbars-inline-precompile'),
+              {
+                precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+              } as InlinePrecompileOptions,
             ],
           ],
         };

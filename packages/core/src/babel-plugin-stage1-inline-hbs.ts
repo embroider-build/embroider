@@ -8,16 +8,7 @@ import { TemplateCompiler } from './template-compiler-common';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
-
-// These are the known names that people are using to import the `hbs` macro
-// from. In theory the original plugin lets people customize these names, but
-// that is a terrible idea.
-const modulePaths = [
-  ['htmlbars-inline-precompile', 'default'],
-  ['ember-cli-htmlbars-inline-precompile', 'default'],
-  ['ember-cli-htmlbars', 'hbs'],
-  ['@ember/template-precompilation', 'precompileTemplate'],
-];
+import { templateCompilationModules } from '@embroider/shared-internals';
 
 export default function make<Opts>(getCompiler: (opts: Opts) => TemplateCompiler) {
   interface State {
@@ -36,15 +27,15 @@ export default function make<Opts>(getCompiler: (opts: Opts) => TemplateCompiler
     return {
       visitor: {
         TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>, state: State) {
-          for (let [modulePath, identifier] of modulePaths) {
-            if (path.get('tag').referencesImport(modulePath, identifier)) {
+          for (let { module, exportedName } of templateCompilationModules) {
+            if (path.get('tag').referencesImport(module, exportedName)) {
               handleTagged(path, state, t);
             }
           }
         },
         CallExpression(path: NodePath<t.CallExpression>, state: State) {
-          for (let [modulePath, identifier] of modulePaths) {
-            if (path.get('callee').referencesImport(modulePath, identifier)) {
+          for (let { module, exportedName } of templateCompilationModules) {
+            if (path.get('callee').referencesImport(module, exportedName)) {
               handleCalled(path, state, t);
             }
           }

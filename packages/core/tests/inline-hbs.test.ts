@@ -3,6 +3,7 @@ import { join } from 'path';
 import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
+import type { Params as Stage1InlineBabelParams } from '../src/babel-plugin-stage1-inline-hbs-node';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -77,7 +78,7 @@ function stage3Tests(transform: (code: string) => string) {
 }
 
 describe('inline-hbs', () => {
-  describe('stage1', () => {
+  describe('stage1 non-module-ember', () => {
     allBabelVersions({
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
@@ -93,6 +94,30 @@ describe('inline-hbs', () => {
             [
               join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
               { templateCompiler, stage: 1 } as InlineBabelParams,
+            ],
+          ],
+        };
+      },
+      createTests: stage1Tests,
+    });
+  });
+
+  describe('stage1 module-ember', () => {
+    allBabelVersions({
+      babelConfig() {
+        let templateCompiler: NodeTemplateCompilerParams = {
+          compilerPath: emberTemplateCompilerPath(),
+          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
+          EmberENV: {},
+          plugins: {
+            ast: [sampleTransform],
+          },
+        };
+        return {
+          plugins: [
+            [
+              join(__dirname, '../src/babel-plugin-stage1-inline-hbs-node.js'),
+              { templateCompiler } as Stage1InlineBabelParams,
             ],
           ],
         };

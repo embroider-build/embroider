@@ -1,3 +1,10 @@
+/*
+  This plugin is used only for Ember < 3.27. For newer Ember's we have a
+  different implementation that shares the standard
+  babel-plugin-htmlbars-inline-precompile and supports passing Javascript
+  lexically scoped names into templates.
+*/
+
 import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { join } from 'path';

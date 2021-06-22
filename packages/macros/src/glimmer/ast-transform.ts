@@ -98,6 +98,16 @@ export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]:
     };
   }
   (embroiderFirstMacrosTransform as any).embroiderMacrosASTMarker = true;
+  (embroiderFirstMacrosTransform as any).parallelBabel = {
+    requireFile: __filename,
+    buildUsing: 'makeFirstTransform',
+    get params() {
+      return {
+        userConfigs: opts.userConfigs,
+        baseDir: opts.baseDir,
+      };
+    },
+  };
   return embroiderFirstMacrosTransform;
 }
 
@@ -188,6 +198,11 @@ export function makeSecondTransform() {
     };
   }
   (embroiderSecondMacrosTransform as any).embroiderMacrosASTMarker = true;
+  (embroiderSecondMacrosTransform as any).parallelBabel = {
+    requireFile: __filename,
+    buildUsing: 'makeSecondTransform',
+    params: undefined,
+  };
   return embroiderSecondMacrosTransform;
 }
 

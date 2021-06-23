@@ -2,7 +2,7 @@ import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, r
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import sortBy from 'lodash/sortBy';
-import { tmpdir } from 'os';
+import { tmpdir } from '@embroider/shared-internals';
 import { NodeTemplateCompiler, throwOnWarnings } from '@embroider/core';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
@@ -21,7 +21,7 @@ describe('compat-resolver', function () {
   ) {
     let EmberENV = {};
     let plugins = { ast: [] };
-    appDir = realpathSync(mkdtempSync(join(tmpdir(), 'embroider-compat-tests-')));
+    appDir = realpathSync(mkdtempSync(join(tmpdir, 'embroider-compat-tests-')));
     writeJSONSync(join(appDir, 'package.json'), { name: 'the-app' });
     let resolver = new Resolver({
       root: appDir,

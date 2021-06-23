@@ -3,7 +3,7 @@ import { join, relative, dirname, isAbsolute } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
-import { tmpdir } from 'os';
+import { tmpdir } from '@embroider/shared-internals';
 import { MovedPackageCache } from './moved-package-cache';
 import { Memoize } from 'typescript-memoize';
 import buildCompatAddon from './build-compat-addon';
@@ -248,6 +248,6 @@ export default class CompatAddons implements Stage {
   private stableWorkspaceDir(app: V1App) {
     let hash = createHash('md5');
     hash.update(app.root);
-    return join(tmpdir(), 'embroider', hash.digest('hex').slice(0, 6));
+    return join(tmpdir, 'embroider', hash.digest('hex').slice(0, 6));
   }
 }

@@ -4,7 +4,7 @@ import { PluginItem, transform } from '@babel/core';
 import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { Plugins } from './ember-template-compiler-types';
 import { getEmberExports } from './load-ember-template-compiler';
-import { TemplateCompiler } from './template-compiler-common';
+import { TemplateCompiler, matchesSourceFile } from './template-compiler-common';
 import adjustImportsPlugin from './babel-plugin-adjust-imports';
 
 export interface NodeTemplateCompilerParams {
@@ -75,10 +75,6 @@ export class NodeTemplateCompiler extends TemplateCompiler {
     }
     return false;
   }
-}
-
-function matchesSourceFile(filename: string) {
-  return /(htmlbars-inline-precompile|ember-cli-htmlbars)\/(index|lib\/require-from-worker)(\.js)?$/.test(filename);
 }
 
 function hasProperties(item: any) {

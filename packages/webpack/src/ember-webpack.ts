@@ -21,6 +21,7 @@ import {
   getPackagerCacheDir,
   getOrCreate,
 } from '@embroider/core';
+import { tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
@@ -30,7 +31,6 @@ import flatMap from 'lodash/flatMap';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import makeDebug from 'debug';
 import { format } from 'util';
-import { tmpdir } from 'os';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
@@ -517,7 +517,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       // the tmpdir on OSX is horribly long and makes error messages hard to
       // read. This is doing the same as String.prototype.replaceAll, which node
       // doesn't have yet.
-      error.message = error.message.split(realpathSync(tmpdir())).join('$TMPDIR');
+      error.message = error.message.split(tmpdir).join('$TMPDIR');
     }
     return error;
   }

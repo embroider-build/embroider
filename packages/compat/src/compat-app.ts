@@ -33,7 +33,7 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
-import { tmpdir } from 'os';
+import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import semver from 'semver';
@@ -374,7 +374,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       // it's important that this is a persistent location, because we fill it
       // up as a side-effect of babel transpilation, and babel is subject to
       // persistent caching.
-      externalsDir: join(tmpdir(), 'embroider', 'externals'),
+      externalsDir: join(tmpdir, 'embroider', 'externals'),
       emberNeedsModulesPolyfill,
     };
   }

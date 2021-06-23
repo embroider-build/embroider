@@ -207,7 +207,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
           'thread-loader': require.resolve('thread-loader'),
-          'babel-loader-8': require.resolve('babel-loader'),
+          'babel-loader-8': require.resolve('@embroider/babel-loader-8'),
           'babel-loader-7': require.resolve('@embroider/babel-loader-7'),
           'css-loader': require.resolve('css-loader'),
           'style-loader': require.resolve('style-loader'),
@@ -542,8 +542,7 @@ function warmUp(extraOptions: object | false | undefined) {
 
   threadLoaderWarmup(Object.assign({}, threadLoaderOptions, extraOptions), [
     require.resolve('@embroider/hbs-loader'),
-    require.resolve('babel-loader'),
-    require.resolve('@embroider/babel-loader-7'),
+    require.resolve('@embroider/babel-loader-8'),
   ]);
 }
 
@@ -580,39 +579,27 @@ function babelLoaderOptions(
   appBabelConfigPath: string,
   extraOptions: BabelLoaderOptions | undefined
 ) {
-  let options = Object.assign(
-    {},
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
-    {
-      cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
-    },
-    extraOptions
-  );
-  if (majorVersion === 7) {
-    if (options.plugins) {
-      options.plugins = options.plugins.slice();
-    } else {
-      options.plugins = [];
-    }
-    // webpack uses acorn and acorn doesn't parse these features yet, so we
-    // always tranpile them away regardless of what preset-env is doing
-    if (!options.plugins.some(pluginMatches(/@babel\/plugin-proposal-optional-chaining/))) {
-      options.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
-    }
-    if (!options.plugins.some(pluginMatches(/@babel\/plugin-proposal-nullish-coalescing-operator/))) {
-      options.plugins.push(require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'));
-    }
+  const cacheDirectory = getPackagerCacheDir('webpack-babel-loader');
+  if (majorVersion === 6) {
+    return {
+      loader: 'babel-loader-7',
+      options: {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        ...applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
+        cacheDirectory,
+        ...extraOptions,
+      },
+    };
   }
-  return {
-    loader: majorVersion === 6 ? 'babel-loader-7' : 'babel-loader-8',
-    options,
+  const options: BabelLoaderOptions & { variant: Variant; appBabelConfigPath: string } = {
+    variant,
+    appBabelConfigPath,
+    cacheDirectory,
+    ...extraOptions,
   };
-}
-
-function pluginMatches(pattern: RegExp) {
-  return function (plugin: string | [string] | undefined) {
-    return plugin && pattern.test(Array.isArray(plugin) ? plugin[0] : plugin);
+  return {
+    loader: 'babel-loader-8',
+    options,
   };
 }
 

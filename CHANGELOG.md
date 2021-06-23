@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## v0.42.2 (2021-06-23)
+
+#### :bug: Bug Fix
+* `babel-loader-8`, `webpack`
+  * [#868](https://github.com/embroider-build/embroider/pull/868) Fix issue with thread-loader + babel-loader performance ([@krisselden](https://github.com/krisselden))
+
+#### :house: Internal
+* Other
+  * [#869](https://github.com/embroider-build/embroider/pull/869) Fix infinite loop in local testing scenario building ([@krisselden](https://github.com/krisselden))
+* `addon-shim`, `util`
+  * [#864](https://github.com/embroider-build/embroider/pull/864) Add missing typescript devDependency ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 2
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v0.42.1 (2021-06-18)
 
 #### :rocket: Enhancement

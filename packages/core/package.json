@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "0.42.1",
+  "version": "0.42.2",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -38,8 +38,8 @@
     "@babel/runtime": "^7.14.5",
     "@babel/traverse": "^7.14.5",
     "@babel/types": "^7.14.5",
-    "@embroider/macros": "0.42.1",
-    "@embroider/shared-internals": "0.42.1",
+    "@embroider/macros": "0.42.2",
+    "@embroider/shared-internals": "0.42.2",
     "assert-never": "^1.2.1",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "broccoli-node-api": "^1.7.0",

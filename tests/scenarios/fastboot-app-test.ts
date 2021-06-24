@@ -1,5 +1,5 @@
 import { appScenarios } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import { PreparedApp, Project } from 'scenario-tester';
 import { setupFastboot } from './helpers';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -7,7 +7,14 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('dynamic-import', project => {
-    project.linkDependency('@embroider/sample-lib', { baseDir: __dirname });
+    let sampleLib = new Project('@embroider/sample-lib', '0.0.0');
+    merge(sampleLib.files, {
+      'index.js': `export default function () {
+        return 'From sample-lib';
+      }`,
+    });
+
+    project.addDependency(sampleLib);
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot-addon', { baseDir: __dirname });
@@ -264,12 +271,12 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['production', 'development'].forEach(env => {
-        test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute('yarn test');
-          assert.equal(result.exitCode, 0, result.output);
-        });
+      test(`yarn test`, async function (assert) {
+        let result = await app.execute('yarn test');
+        assert.equal(result.exitCode, 0, result.output);
+      });
 
+      ['production', 'development'].forEach(env => {
         Qmodule(`fastboot: ${env}`, function (hooks) {
           let visit: any;
           let doc: any;

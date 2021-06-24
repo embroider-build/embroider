@@ -260,7 +260,11 @@ export default class MacrosConfig {
     return [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts];
   }
 
-  static astPlugins(owningPackageRoot?: string): { plugins: Function[]; setConfig: (config: MacrosConfig) => void } {
+  static astPlugins(owningPackageRoot?: string): {
+    plugins: Function[];
+    setConfig: (config: MacrosConfig) => void;
+    getConfigForPlugin(): any;
+  } {
     let configs: MacrosConfig | undefined;
     let plugins = [
       makeFirstTransform({
@@ -279,7 +283,14 @@ export default class MacrosConfig {
     function setConfig(c: MacrosConfig) {
       configs = c;
     }
-    return { plugins, setConfig };
+    function getConfigForPlugin() {
+      if (!configs) {
+        throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
+      }
+
+      return configs.userConfigs;
+    }
+    return { plugins, setConfig, getConfigForPlugin };
   }
 
   private mergerFor(pkgRoot: string) {

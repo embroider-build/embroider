@@ -272,7 +272,7 @@ appScenarios
       });
 
       ['production', 'development'].forEach(env => {
-        test(`yarn test`, async function (assert) {
+        test(`yarn test: ${env}`, async function (assert) {
           let result = await app.execute('yarn test');
           assert.equal(result.exitCode, 0, result.output);
         });

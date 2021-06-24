@@ -3,6 +3,8 @@ import { PreparedApp, Project } from 'scenario-tester';
 import { setupFastboot } from './helpers';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
+import { dirname } from 'path';
+import { loadFromFixtureData } from './helpers';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -17,7 +19,14 @@ appScenarios
     project.addDependency(sampleLib);
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
-    project.linkDependency('fastboot-addon', { baseDir: __dirname });
+
+    let fastbootAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
+      linkDeps: true,
+    });
+
+    fastbootAddon.pkg.name = 'fastboot-addon';
+    merge(fastbootAddon.files, loadFromFixtureData('fastboot-addon'));
+    project.addDependency(fastbootAddon);
 
     // this fixes: Cannot find module 'abortcontroller-polyfill/dist/cjs-ponyfill'
     project.removeDependency('ember-fetch');

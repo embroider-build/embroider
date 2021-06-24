@@ -522,6 +522,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 };
 
 const threadLoaderOptions = {
+  workers: 'JOBS' in process.env && Number(process.env.JOBS),
   // poolTimeout shuts down idle workers. The problem is, for
   // interactive rebuilds that means your startup cost for the
   // next rebuild is at least 600ms worse. So we insist on
@@ -531,7 +532,7 @@ const threadLoaderOptions = {
 
 function warmUp(extraOptions: object | false | undefined) {
   // We don't know if we'll be parallel-safe or not, but if the environment sets
-  // JOBS to 1, or our extraOptions are set to false, we know we won't use
+  // JOBS to 0, or our extraOptions are set to false, we know we won't use
   // thread-loader, so no need to consume extra resources warming the worker
   // pool
   if (process.env.JOBS === '1' || extraOptions === false) {
@@ -545,7 +546,7 @@ function warmUp(extraOptions: object | false | undefined) {
 }
 
 function maybeThreadLoader(isParallelSafe: boolean, extraOptions: object | false | undefined) {
-  if (process.env.JOBS === '1' || extraOptions === false || !isParallelSafe) {
+  if (process.env.JOBS === '0' || extraOptions === false || !isParallelSafe) {
     return null;
   }
 

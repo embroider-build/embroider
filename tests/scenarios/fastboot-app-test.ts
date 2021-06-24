@@ -271,12 +271,12 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test(`yarn test`, async function (assert) {
-        let result = await app.execute('yarn test');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
       ['production', 'development'].forEach(env => {
+        test(`yarn test`, async function (assert) {
+          let result = await app.execute('yarn test');
+          assert.equal(result.exitCode, 0, result.output);
+        });
+
         Qmodule(`fastboot: ${env}`, function (hooks) {
           let visit: any;
           let doc: any;

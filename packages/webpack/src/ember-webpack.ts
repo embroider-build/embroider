@@ -37,6 +37,7 @@ import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
+import inspector from 'inspector';
 
 const debug = makeDebug('embroider:debug');
 
@@ -524,6 +525,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 };
 
 const threadLoaderOptions = {
+  workerNodeArgs: inspector.url() !== undefined ? ['--inspect-brk=0'] : [],
+  workers: 'JOBS' in process.env && Number(process.env.JOBS),
   // poolTimeout shuts down idle workers. The problem is, for
   // interactive rebuilds that means your startup cost for the
   // next rebuild is at least 600ms worse. So we insist on

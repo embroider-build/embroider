@@ -1,4 +1,4 @@
-import { join, dirname, resolve, sep, isAbsolute } from 'path';
+import { join, sep, isAbsolute } from 'path';
 import { ensureSymlinkSync, readdirSync, realpathSync, lstatSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
@@ -102,8 +102,7 @@ export class MovedPackageCache extends PackageCache {
     [...this.candidateDirs()].map(path => {
       let links = symlinksInNodeModules(path);
       for (let { source, target } of links) {
-        let realTarget = realpathSync(resolve(dirname(source), target));
-        let pkg = roots.get(realTarget);
+        let pkg = roots.get(target);
         if (pkg) {
           // we found a symlink that points at a package that was copied.
           // Replicate it in the new structure pointing at the new package.

@@ -1,9 +1,8 @@
 import Package from './package';
-import { realpathSync } from 'fs';
+import { existsSync, realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
-import { sync as pkgUpSync } from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
@@ -67,15 +66,15 @@ export default class PackageCache {
         // any higher caches don't apply to us
         break;
       }
-      let candidate = segments.slice(0, length).join(sep);
+
+      let usedSegments = segments.slice(0, length);
+      let candidate = usedSegments.join(sep);
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }
-    }
-
-    let packageJSONPath = pkgUpSync({ cwd: filename });
-    if (packageJSONPath) {
-      return this.get(dirname(packageJSONPath));
+      if (existsSync([...usedSegments, 'package.json'].join(sep))) {
+        return this.get(candidate);
+      }
     }
   }
 

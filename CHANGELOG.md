@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## v0.42.3 (2021-06-28)
+
+#### :rocket: Enhancement
+* `core`
+  * [#875](https://github.com/embroider-build/embroider/pull/875) Improve Webpack logging output ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#865](https://github.com/embroider-build/embroider/pull/865) Enable parallelization of @embroider/macros in non-Embroider builds ([@thoov](https://github.com/thoov))
+* `core`
+  * [#872](https://github.com/embroider-build/embroider/pull/872) Template compiler plugin not removed due to bad path comparison on Windows ([@thoov](https://github.com/thoov))
+* `compat`, `core`, `shared-internals`, `webpack`
+  * [#870](https://github.com/embroider-build/embroider/pull/870) Ensure tmpdir usage internally is always the realpath ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :house: Internal
+* `compat`
+  * [#878](https://github.com/embroider-build/embroider/pull/878) redundant path resolution ([@ef4](https://github.com/ef4))
+* Other
+  * [#874](https://github.com/embroider-build/embroider/pull/874) Convert `sample-lib` to new test infra ([@thoov](https://github.com/thoov))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.42.2 (2021-06-23)
 
 #### :bug: Bug Fix

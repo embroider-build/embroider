@@ -60,7 +60,7 @@ export default class PackageCache {
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
-    for (let length = segments.length - 1; length >= 0; length--) {
+    for (let length = segments.length; length >= 0; length--) {
       if (segments[length - 1] === 'node_modules') {
         // once we hit a node_modules, we're leaving the package we were in, so
         // any higher caches don't apply to us

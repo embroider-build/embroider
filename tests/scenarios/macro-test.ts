@@ -43,8 +43,8 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`yarn test production`, async function (assert) {
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 EMBER_ENV='production' yarn test`);
+      test(`yarn build production`, async function (assert) {
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 yarn build:production`);
         assert.equal(result.exitCode, 0, result.output);
       });
 

@@ -15,12 +15,14 @@ export = {
     let source = parent.root || parent.project.root;
 
     if (ownOptions.setOwnConfig) {
-      MacrosConfig.for(appInstance).setOwnConfig(source, ownOptions.setOwnConfig);
+      MacrosConfig.for(appInstance).setOwnConfig(source, { priority: 0, config: ownOptions.setOwnConfig });
     }
 
     if (ownOptions.setConfig) {
+      let isDefinedInHostApp = parent === appInstance;
+
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        MacrosConfig.for(appInstance).setConfig(source, packageName, config);
+        MacrosConfig.for(appInstance).setConfig(source, packageName, { priority: isDefinedInHostApp ? 2 : 1, config });
       }
     }
 

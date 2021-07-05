@@ -4,16 +4,22 @@ import { MacrosConfig } from '../../src/node';
 describe(`macroGetConfig`, function () {
   templateTests(function (transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, {
-      mode: 'amazing',
-      count: 42,
-      inner: {
-        items: [{ name: 'Arthur', awesome: true }],
-        description: null,
+      priority: 0,
+      config: {
+        mode: 'amazing',
+        count: 42,
+        inner: {
+          items: [{ name: 'Arthur', awesome: true }],
+          description: null,
+        },
       },
     });
 
     config.setConfig(__filename, 'ember-source', {
-      color: 'orange',
+      priority: 0,
+      config: {
+        color: 'orange',
+      },
     });
 
     config.finalize();

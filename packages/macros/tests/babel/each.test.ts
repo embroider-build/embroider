@@ -15,7 +15,10 @@ describe('each', function () {
 
       beforeEach(function () {
         macrosConfig = MacrosConfig.for({});
-        macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
+        macrosConfig.setOwnConfig(__filename, {
+          priority: 0,
+          config: { plugins: ['alpha', 'beta'], flavor: 'chocolate' },
+        });
         applyMode(macrosConfig);
         macrosConfig.finalize();
       });

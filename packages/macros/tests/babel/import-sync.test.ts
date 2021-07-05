@@ -3,7 +3,7 @@ import { MacrosConfig } from '../../src/node';
 
 describe('importSync', function () {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
-    config.setOwnConfig(__filename, { target: 'my-plugin' });
+    config.setOwnConfig(__filename, { priority: 0, config: { target: 'my-plugin' } });
     config.finalize();
 
     test('importSync becomes require', () => {

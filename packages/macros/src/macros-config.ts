@@ -6,17 +6,22 @@ import State from './babel/state';
 
 const packageCache = new PackageCache();
 
-export type Merger = (configs: unknown[]) => unknown;
+export type Merger = (configs: MacroConfig[]) => unknown;
 
 // Do not change this type signature without pondering deeply the mysteries of
 // being compatible with unwritten future versions of this library.
 type GlobalSharedState = WeakMap<
   any,
   {
-    configs: Map<string, unknown[]>;
+    configs: Map<string, MacroConfig[]>;
     mergers: Map<string, { merger: Merger; fromPath: string }>;
   }
 >;
+
+interface MacroConfig {
+  priority: number;
+  config: unknown;
+}
 
 // this is a module-scoped cache. If multiple callers ask _this copy_ of
 // @embroider/macros for a shared MacrosConfig, they'll all get the same one.
@@ -132,20 +137,20 @@ export default class MacrosConfig {
   }
 
   private _configWritable = true;
-  private configs: Map<string, unknown[]> = new Map();
+  private configs: Map<string, MacroConfig[]> = new Map();
   private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to
   // `__filename`.
-  setConfig(fromPath: string, packageName: string, config: unknown) {
+  setConfig(fromPath: string, packageName: string, config: MacroConfig) {
     return this.internalSetConfig(fromPath, packageName, config);
   }
 
   // Registers a new source of configuration to be given to your own package.
   // Your config type must be json-serializable. You must always set fromPath to
   // `__filename`.
-  setOwnConfig(fromPath: string, config: unknown) {
+  setOwnConfig(fromPath: string, config: MacroConfig) {
     return this.internalSetConfig(fromPath, undefined, config);
   }
 
@@ -166,7 +171,7 @@ export default class MacrosConfig {
     this.globalConfig[key] = value;
   }
 
-  private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
+  private internalSetConfig(fromPath: string, packageName: string | undefined, config: MacroConfig) {
     if (!this._configWritable) {
       throw new Error(
         `[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`
@@ -210,7 +215,7 @@ export default class MacrosConfig {
         if (configs.length > 1) {
           combined = this.mergerFor(pkgRoot)(configs);
         } else {
-          combined = configs[0];
+          combined = configs[0].config;
         }
         userConfigs[pkgRoot] = combined;
       }
@@ -338,6 +343,18 @@ export default class MacrosConfig {
   }
 }
 
-function defaultMerger(configs: unknown[]): unknown {
-  return Object.assign({}, ...configs);
+function defaultMerger(configs: MacroConfig[]): unknown {
+  configs.sort((a, b) => {
+    let priorityA = a.priority;
+    let priorityB = b.priority;
+
+    if (priorityA === priorityB) {
+      return 0;
+    }
+
+    return priorityA > priorityB ? 1 : -1;
+  });
+
+  let sortedConfigs = configs.map(config => config.config);
+  return Object.assign({}, ...sortedConfigs);
 }

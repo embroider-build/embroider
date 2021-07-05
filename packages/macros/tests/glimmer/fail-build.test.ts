@@ -3,7 +3,7 @@ import { MacrosConfig } from '../../src/node';
 
 describe(`macroFailBuild`, function () {
   templateTests(function (transform: (code: string) => string, config: MacrosConfig) {
-    config.setOwnConfig(__filename, { failureMessage: 'I said so' });
+    config.setOwnConfig(__filename, { priority: 0, config: { failureMessage: 'I said so' } });
     config.finalize();
 
     test('it can fail the build, content position', () => {

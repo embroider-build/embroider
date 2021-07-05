@@ -19,6 +19,7 @@ module.exports = function (defaults) {
         },
         'macro-sample-addon': {
           configFromMacrosTests: 'exists',
+          shouldBeOverwritten: 'overwritten',
         },
       },
     },

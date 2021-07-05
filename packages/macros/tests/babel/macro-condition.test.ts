@@ -18,7 +18,10 @@ describe('macroCondition', function () {
       let run = makeRunner(transform);
       beforeEach(function () {
         config = MacrosConfig.for({});
-        config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
+        config.setConfig(__filename, 'qunit', {
+          priority: 0,
+          config: { items: [{ approved: true, other: null, size: 2.3 }] },
+        });
         applyMode(config);
         config.finalize();
       });

@@ -26,15 +26,21 @@ describe(`getConfig`, function () {
 
         config = MacrosConfig.for({});
         config.setOwnConfig(filename, {
-          beverage: 'coffee',
+          priority: 0,
+          config: {
+            beverage: 'coffee',
+          },
         });
         config.setConfig(filename, '@babel/traverse', {
-          sizes: [
-            { name: 'small', oz: 4 },
-            { name: 'medium', oz: 8 },
-          ],
+          priority: 0,
+          config: {
+            sizes: [
+              { name: 'small', oz: 4 },
+              { name: 'medium', oz: 8 },
+            ],
+          },
         });
-        config.setConfig(filename, '@babel/core', [1, 2, 3]);
+        config.setConfig(filename, '@babel/core', { priority: 0, config: [1, 2, 3] });
         config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });
         applyMode(config);
         config.finalize();

@@ -210,7 +210,9 @@ export default class MacrosConfig {
         if (configs.length > 1) {
           combined = this.mergerFor(pkgRoot)(configs);
         } else {
-          combined = configs[0];
+          let config = configs[0] as unknown & { __priority?: number };
+          delete config.__priority;
+          combined = config;
         }
         userConfigs[pkgRoot] = combined;
       }
@@ -339,5 +341,19 @@ export default class MacrosConfig {
 }
 
 function defaultMerger(configs: unknown[]): unknown {
-  return Object.assign({}, ...configs);
+  configs.sort((a, b) => {
+    let priorityA = (a as unknown & { __priority?: number }).__priority || 0;
+    let priorityB = (b as unknown & { __priority?: number }).__priority || 0;
+
+    if (priorityA === priorityB) {
+      return 0;
+    }
+
+    return priorityA > priorityB ? 1 : -1;
+  });
+
+  let mergedConfig = Object.assign({}, ...configs);
+  delete mergedConfig.__priority;
+
+  return mergedConfig;
 }

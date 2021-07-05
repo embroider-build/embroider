@@ -14,24 +14,13 @@ export = {
     // if parent is an addon it has root. If it's an app it has project.root.
     let source = parent.root || parent.project.root;
 
-    // In order to allow to overwrite config from consumed addons, we keep a priority
-    // This is stripped before being returned via getConfig/getOwnConfig
-    // Own config has lowest priority - e.g. default values for an addon
-    // Addons can overwrite other addon's config (priority 1)
-    // The host app has highest priority (priority 2)
     if (ownOptions.setOwnConfig) {
-      MacrosConfig.for(appInstance).setOwnConfig(source, Object.assign({ __priority: 0 }, ownOptions.setOwnConfig));
+      MacrosConfig.for(appInstance).setOwnConfig(source, ownOptions.setOwnConfig);
     }
 
     if (ownOptions.setConfig) {
-      let parentIsHostApp = parent === appInstance;
-
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        MacrosConfig.for(appInstance).setConfig(
-          source,
-          packageName,
-          Object.assign({ __priority: parentIsHostApp ? 2 : 1 }, config)
-        );
+        MacrosConfig.for(appInstance).setConfig(source, packageName, config as object);
       }
     }
 

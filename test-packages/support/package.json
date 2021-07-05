@@ -10,7 +10,6 @@
     "@glimmer/component": "^1.0.0",
     "@types/fs-extra": "^5.0.4",
     "@types/node": "^10.5.2",
-    "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
     "broccoli": "^3.4.2",
     "console-ui": "^3.0.0",

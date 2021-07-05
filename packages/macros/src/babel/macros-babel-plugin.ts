@@ -9,11 +9,11 @@ import { isEachPath, insertEach } from './each';
 import error from './error';
 import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
-import { BabelContext } from './babel-context';
+import type * as Babel from '@babel/core';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
-export default function main(context: BabelContext): unknown {
+export default function main(context: typeof Babel): unknown {
   let t = context.types;
   let visitor = {
     Program: {
@@ -238,7 +238,7 @@ function pruneMacroImports(path: NodePath) {
   }
 }
 
-function addRuntimeImports(path: NodePath<t.Program>, state: State, context: BabelContext) {
+function addRuntimeImports(path: NodePath<t.Program>, state: State, context: typeof Babel) {
   let t = context.types;
   if (state.neededRuntimeImports.size > 0) {
     path.node.body.push(
@@ -252,7 +252,7 @@ function addRuntimeImports(path: NodePath<t.Program>, state: State, context: Bab
   }
 }
 
-function addEagerImports(path: NodePath<t.Program>, state: State, t: BabelContext['types']) {
+function addEagerImports(path: NodePath<t.Program>, state: State, t: typeof Babel['types']) {
   let createdNames = new Set<string>();
   for (let [specifier, replacePaths] of state.neededEagerImports.entries()) {
     let local = unusedNameLike('a', replacePaths, createdNames);

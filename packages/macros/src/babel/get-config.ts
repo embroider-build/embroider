@@ -5,7 +5,7 @@ import { PackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 import assertNever from 'assert-never';
-import { BabelContext } from './babel-context';
+import type * as Babel from '@babel/core';
 
 const packageCache = PackageCache.shared('embroider-stage3');
 export type Mode = 'own' | 'getGlobalConfig' | 'package';
@@ -48,7 +48,7 @@ export default function getConfig(path: NodePath<CallExpression>, state: State, 
 // this is the imperative version that's invoked directly by the babel visitor
 // when we encounter getConfig. It's implemented in terms of getConfig so we can
 // be sure we have the same semantics.
-export function insertConfig(path: NodePath<CallExpression>, state: State, mode: Mode, context: BabelContext) {
+export function insertConfig(path: NodePath<CallExpression>, state: State, mode: Mode, context: typeof Babel) {
   if (state.opts.mode === 'compile-time') {
     let config = getConfig(path, state, mode);
     let collapsed = collapse(path, config);
@@ -100,7 +100,7 @@ function collapse(path: NodePath, config: any) {
   }
 }
 
-export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State, context: BabelContext) {
+export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: State, context: typeof Babel) {
   path.get('body').node.body = [
     context.types.returnStatement(
       buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
@@ -108,7 +108,7 @@ export function inlineRuntimeConfig(path: NodePath<FunctionDeclaration>, state: 
   ];
 }
 
-function calleeName(path: NodePath<CallExpression>, context: BabelContext): string {
+function calleeName(path: NodePath<CallExpression>, context: typeof Babel): string {
   let callee = path.node.callee;
   if (context.types.isIdentifier(callee)) {
     return callee.name;

@@ -1,6 +1,5 @@
 import { join } from 'path';
 import 'jest';
-import { transform as transform6, TransformOptions as Options6 } from 'babel-core';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
 import escapeRegExp from 'lodash/escapeRegExp';
 import { createContext, Script } from 'vm';
@@ -58,31 +57,11 @@ export interface Transform {
 }
 
 export function allBabelVersions(params: {
-  babelConfig(major: 6): Options6;
   babelConfig(major: 7): Options7;
   createTests(transform: Transform): void;
   includePresetsTests?: boolean;
 }) {
   function versions(usePresets: boolean) {
-    describe('babel6', function () {
-      function transform(code: string, opts?: { filename?: string }) {
-        let options6: Options6 = params.babelConfig(6);
-        if (!options6.filename) {
-          options6.filename = 'sample.js';
-        }
-        if (usePresets) {
-          options6.presets = presetsFor(6);
-        }
-        if (opts && opts.filename) {
-          options6.filename = opts.filename;
-        }
-        return transform6(code, options6).code!;
-      }
-      transform.babelMajorVersion = 6 as 6;
-      transform.usingPresets = usePresets;
-      params.createTests(transform);
-    });
-
     describe('babel7', function () {
       function transform(code: string, opts?: { filename?: string }) {
         let options7: Options7 = params.babelConfig(7);

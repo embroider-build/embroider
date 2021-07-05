@@ -16,7 +16,6 @@ import {
   Packager,
   PackagerConstructor,
   Variant,
-  applyVariantToBabelConfig,
   getAppMeta,
   getPackagerCacheDir,
   getOrCreate,
@@ -208,7 +207,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           // wants to control those.
           'thread-loader': require.resolve('thread-loader'),
           'babel-loader-8': require.resolve('@embroider/babel-loader-8'),
-          'babel-loader-7': require.resolve('@embroider/babel-loader-7'),
           'css-loader': require.resolve('css-loader'),
           'style-loader': require.resolve('style-loader'),
         },
@@ -574,23 +572,12 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
 }
 
 function babelLoaderOptions(
-  majorVersion: 6 | 7,
+  _majorVersion: 7,
   variant: Variant,
   appBabelConfigPath: string,
   extraOptions: BabelLoaderOptions | undefined
 ) {
   const cacheDirectory = getPackagerCacheDir('webpack-babel-loader');
-  if (majorVersion === 6) {
-    return {
-      loader: 'babel-loader-7',
-      options: {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        ...applyVariantToBabelConfig(variant, require(appBabelConfigPath)),
-        cacheDirectory,
-        ...extraOptions,
-      },
-    };
-  }
   const options: BabelLoaderOptions & { variant: Variant; appBabelConfigPath: string } = {
     variant,
     appBabelConfigPath,

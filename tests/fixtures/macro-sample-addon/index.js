@@ -5,7 +5,8 @@ module.exports = {
   options: {
     '@embroider/macros': {
       setOwnConfig: {
-        hello: 'world',
+        shouldBeOverwritten: 'not overwritten',
+        configFromAddonItself: 'this is the addon',
       },
     },
   },

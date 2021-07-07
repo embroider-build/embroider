@@ -11,18 +11,10 @@ import { join } from 'path';
 import { TemplateCompiler } from './template-compiler-common';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
-import { ImportAdder } from './babel-import-adder';
+import { ImportUtil } from 'babel-import-util';
+import { templateCompilationModules } from '@embroider/shared-internals';
 
 type BabelTypes = typeof t;
-
-// These are the known names that people are using to import the `hbs` macro
-// from. In theory the original plugin lets people customize these names, but
-// that is a terrible idea.
-const modulePaths = [
-  ['htmlbars-inline-precompile', 'default'],
-  ['ember-cli-htmlbars-inline-precompile', 'default'],
-  ['ember-cli-htmlbars', 'hbs'],
-];
 
 interface State {
   opts: {
@@ -41,7 +33,7 @@ interface State {
   };
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
-  adder: ImportAdder;
+  adder: ImportUtil;
 }
 
 export type Params = State['opts'];
@@ -54,11 +46,13 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
         Program: {
           enter(path: NodePath<t.Program>, state: State) {
             state.dependencies = new Map();
-            state.adder = new ImportAdder(t, path);
+            state.adder = new ImportUtil(t, path);
           },
           exit(path: NodePath<t.Program>, state: State) {
             if (state.opts.stage === 3) {
-              pruneImports(path);
+              for (let { module, exportedName } of templateCompilationModules) {
+                state.adder.removeImport(module, exportedName);
+              }
             }
             let counter = 0;
             for (let dep of state.dependencies.values()) {
@@ -73,15 +67,15 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
           },
         },
         TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>, state: State) {
-          for (let [modulePath, identifier] of modulePaths) {
-            if (path.get('tag').referencesImport(modulePath, identifier)) {
+          for (let { module, exportedName } of templateCompilationModules) {
+            if (path.get('tag').referencesImport(module, exportedName)) {
               handleTagged(path, state, t);
             }
           }
         },
         CallExpression(path: NodePath<t.CallExpression>, state: State) {
-          for (let [modulePath, identifier] of modulePaths) {
-            if (path.get('callee').referencesImport(modulePath, identifier)) {
+          for (let { module, exportedName } of templateCompilationModules) {
+            if (path.get('callee').referencesImport(module, exportedName)) {
               handleCalled(path, state, t);
             }
           }
@@ -169,20 +163,6 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
           jsonLiteral(compiled, t),
         ])
       );
-    }
-  }
-
-  function pruneImports(path: NodePath) {
-    if (!path.isProgram()) {
-      return;
-    }
-    for (let topLevelPath of path.get('body')) {
-      if (topLevelPath.isImportDeclaration()) {
-        let modulePath = topLevelPath.get('source').node.value;
-        if (modulePaths.find(p => p[0] === modulePath)) {
-          topLevelPath.remove();
-        }
-      }
     }
   }
 

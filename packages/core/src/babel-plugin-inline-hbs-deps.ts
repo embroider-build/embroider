@@ -5,7 +5,7 @@ import { join } from 'path';
 import { TemplateCompiler } from './template-compiler-common';
 import { ResolvedDep } from './resolver';
 import { templateCompilationModules } from '@embroider/shared-internals';
-import { ImportAdder } from './babel-import-adder';
+import { ImportUtil } from 'babel-import-util';
 
 // todo: this is not the right kind of key, because our precompile function
 // won't have access to the node. Instead we should use the actual arguments to
@@ -26,7 +26,7 @@ interface State {
   };
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
-  adder: ImportAdder;
+  adder: ImportUtil;
   emittedCallExpressions: Set<t.Node>;
 }
 
@@ -38,11 +38,19 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
         Program: {
           enter(path: NodePath<t.Program>, state: State) {
             state.dependencies = new Map();
-            state.adder = new ImportAdder(t, path);
+            state.adder = new ImportUtil(t, path);
             state.emittedCallExpressions = new Set();
           },
           exit(path: NodePath<t.Program>, state: State) {
-            pruneImports(path);
+            // we are responsible for rewriting all usages of all the
+            // templateCompilationModules to standardize on
+            // @ember/template-compilation, so all imports other than that one
+            // need to be cleaned up here.
+            for (let moduleConfig of templateCompilationModules) {
+              if (moduleConfig.module !== '@ember/template-compilation') {
+                state.adder.removeImport(moduleConfig.module, moduleConfig.exportedName);
+              }
+            }
             let counter = 0;
             for (let dep of state.dependencies.values()) {
               path.node.body.unshift(amdDefine(dep.runtimeName, counter, t));
@@ -197,21 +205,4 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
   }
 
   return inlineHBSTransform;
-}
-
-// we rewrite all inline templates to use `precompileTemplate` from
-// `@ember/template-precompilation` because that's the one that supports scope.
-// We need to remove all others.
-function pruneImports(path: NodePath<t.Program>) {
-  for (let topLevelPath of path.get('body')) {
-    if (topLevelPath.isImportDeclaration()) {
-      let modulePath = topLevelPath.get('source').node.value;
-      if (
-        modulePath !== '@ember/template-precompilation' &&
-        templateCompilationModules.find(p => p.module === modulePath)
-      ) {
-        topLevelPath.remove();
-      }
-    }
-  }
 }

@@ -1,7 +1,7 @@
 import { AppMeta, getAppMeta, getPackagerCacheDir } from '../src';
-import { writeJSONSync } from 'fs-extra';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { writeJSONSync, realpathSync } from 'fs-extra';
+import { join } from 'path';
 import * as tmp from 'tmp';
 
 tmp.setGracefulCleanup();
@@ -38,6 +38,6 @@ describe('getAppMeta', () => {
 describe('getPackagerCacheDir', () => {
   test('getting the path to a cache directory', () => {
     const cacheDir = getPackagerCacheDir('foo');
-    expect(cacheDir).toBe(join(tmpdir(), 'embroider', 'foo'));
+    expect(cacheDir).toBe(join(realpathSync(tmpdir()), 'embroider', 'foo'));
   });
 });

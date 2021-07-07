@@ -3,7 +3,7 @@ import { buildLiterals, Evaluator } from './evaluate-json';
 import type { CallExpression, ForOfStatement, Identifier } from '@babel/types';
 import error from './error';
 import State, { cloneDeep } from './state';
-import { BabelContext } from './babel-context';
+import type * as Babel from '@babel/core';
 
 type CallEachExpression = NodePath<CallExpression> & {
   get(callee: 'callee'): NodePath<Identifier>;
@@ -24,7 +24,7 @@ export function isEachPath(path: NodePath<ForOfStatement>): path is EachPath {
   return false;
 }
 
-export function insertEach(path: EachPath, state: State, context: BabelContext) {
+export function insertEach(path: EachPath, state: State, context: typeof Babel) {
   let args = path.get('right').get('arguments');
   if (args.length !== 1) {
     throw error(path, `the each() macro accepts exactly one argument, you passed ${args.length}`);

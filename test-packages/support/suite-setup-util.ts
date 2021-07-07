@@ -1,4 +1,4 @@
-import { tmpdir } from 'os';
+import { tmpdir } from '@embroider/shared-internals';
 import { basename, join, relative, resolve } from 'path';
 import { readdirSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 import execa from 'execa';
@@ -8,7 +8,7 @@ import execa from 'execa';
 // plugins is not parallel-safe. So we give each suite a separate TMPDIR to run
 // within.
 export function separateTemp(name = `separate${Math.floor(Math.random() * 100000)}`): string {
-  return join(tmpdir(), name);
+  return join(tmpdir, name);
 }
 
 export function testemConfig() {

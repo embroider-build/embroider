@@ -1,6 +1,7 @@
 import Plugin from 'broccoli-plugin';
 import { Packager, PackagerConstructor, Variant } from './packager';
 import Stage from './stage';
+import { tmpdir } from '@embroider/shared-internals';
 
 interface BroccoliPackager<Options> {
   new (stage: Stage, variants: Variant[], options?: Options): Plugin;
@@ -31,7 +32,7 @@ export default function toBroccoliPlugin<Options>(
           outputPath,
           this.outputPath,
           this.variants,
-          msg => console.log(msg),
+          msg => console.log(msg.split(tmpdir).join('$TMPDIR')),
           this.options
         );
       }

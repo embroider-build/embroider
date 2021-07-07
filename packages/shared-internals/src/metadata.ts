@@ -11,7 +11,7 @@ export interface AppMeta {
   babel: {
     filename: string;
     isParallelSafe: boolean;
-    majorVersion: 6 | 7;
+    majorVersion: 7;
     fileFilter: string;
   };
   'resolvable-extensions': string[];

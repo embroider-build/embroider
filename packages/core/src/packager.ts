@@ -1,7 +1,6 @@
-import { AppMeta } from '@embroider/shared-internals';
+import { AppMeta, tmpdir } from '@embroider/shared-internals';
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
-import { tmpdir } from 'os';
 
 // This is a collection of flags that convey what kind of build you want. They
 // are intended to be generic across Packagers, and it's up to Packager authors
@@ -106,5 +105,5 @@ export function getAppMeta(pathToVanillaApp: string): AppMeta {
  * This ensures they have exactly the same lifetime as some of embroider's own caches.
  */
 export function getPackagerCacheDir(name: string): string {
-  return join(tmpdir(), 'embroider', name);
+  return join(tmpdir, 'embroider', name);
 }

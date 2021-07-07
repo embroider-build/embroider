@@ -1,9 +1,0 @@
-{
-  "name": "@types/babel-core",
-  "version": "0.0.0-embroider.0",
-  "dependencies": {
-    "@types/babel-generator": "^6.25.3",
-    "@types/babel-template": "^6.25.2",
-    "@types/babel-traverse": "^6.25.5"
-  }
-}

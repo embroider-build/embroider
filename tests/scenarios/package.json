@@ -18,8 +18,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@embroider/sample-lib": "link:../../test-packages/sample-lib",
-    "@embroider/macros": "0.42.1",
+    "@embroider/macros": "0.42.3",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",
     "broccoli-merge-trees": "^3.0.2",

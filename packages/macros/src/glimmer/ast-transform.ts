@@ -5,6 +5,23 @@ import { maybeAttrs } from './macro-maybe-attrs';
 import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
 import { failBuild } from './fail-build';
 
+export function buildPlugin(params: {
+  name: string;
+  baseDir: string;
+  projectRoot: string;
+  methodName: string;
+  configs: any;
+}) {
+  return {
+    name: params.name,
+    plugin:
+      params.methodName === 'makeFirstTransform'
+        ? makeFirstTransform({ userConfigs: params.configs, baseDir: params.projectRoot })
+        : makeSecondTransform(),
+    baseDir: () => params.baseDir,
+  };
+}
+
 export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]: unknown }; baseDir?: string }) {
   function embroiderFirstMacrosTransform(env: {
     syntax: { builders: any };
@@ -97,7 +114,6 @@ export function makeFirstTransform(opts: { userConfigs: { [packageRoot: string]:
 export function makeSecondTransform() {
   function embroiderSecondMacrosTransform(env: { syntax: { builders: any } }) {
     let scopeStack: string[][] = [];
-
     return {
       name: '@embroider/macros/second',
 

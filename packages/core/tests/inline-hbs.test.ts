@@ -43,27 +43,31 @@ function stage1Tests(transform: (code: string) => string) {
 }
 
 function stage3Tests(transform: (code: string) => string) {
+  test('remember to test dep imports', () => {
+    throw new Error('oops');
+  });
+
   test('tagged template literal form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
-        return hbs${'`'}<div class={{embroider-sample-transforms-target}}></div>${'`'};
+        return hbs${'`'}<div></div>${'`'};
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
     expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
-    expect(code).toMatch(/return createTemplateFactory\({/);
+    expect(code).toMatch(/return createTemplateFactory\(/);
   });
   test('call form', () => {
     let code = transform(`
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
-        return hbs("<div class={{embroider-sample-transforms-target}}></div>");
+        return hbs("<div></div>");
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
     expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
-    expect(code).toMatch(/return createTemplateFactory\({/);
+    expect(code).toMatch(/return createTemplateFactory\(/);
   });
   test('runtime errors become exceptions in stage 3', () => {
     let code = transform(`
@@ -127,8 +131,9 @@ describe('inline-hbs', () => {
     });
   });
 
-  describe('stage3 non-module-ember no-presets', () => {
+  describe('stage3 non-module-ember', () => {
     allBabelVersions({
+      includePresetsTests: true,
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),
@@ -151,43 +156,9 @@ describe('inline-hbs', () => {
     });
   });
 
-  describe('stage3 non-module-ember with-presets', () => {
+  describe('stage3 module-ember', () => {
     allBabelVersions({
-      babelConfig(major: number) {
-        let templateCompiler: NodeTemplateCompilerParams = {
-          compilerPath: emberTemplateCompilerPath(),
-          compilerChecksum: `mock-compiler-checksum${Math.random()}`,
-          EmberENV: {},
-          plugins: {
-            ast: [],
-          },
-        };
-        return {
-          plugins: [
-            [
-              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
-              { templateCompiler, stage: 3, needsModulesPolyfill: true } as InlineBabelParams,
-            ],
-          ],
-          presets: [
-            [
-              require.resolve(major === 6 ? 'babel-preset-env' : '@babel/preset-env'),
-              {
-                modules: false,
-                targets: {
-                  ie: '11.0.0',
-                },
-              },
-            ],
-          ],
-        };
-      },
-      createTests: stage3Tests,
-    });
-  });
-
-  describe('stage3 module-ember no-presets', () => {
-    allBabelVersions({
+      includePresetsTests: false,
       babelConfig() {
         let templateCompiler: NodeTemplateCompilerParams = {
           compilerPath: emberTemplateCompilerPath(),

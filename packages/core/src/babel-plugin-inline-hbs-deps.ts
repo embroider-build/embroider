@@ -27,6 +27,7 @@ interface State {
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
   adder: ImportAdder;
+  emittedCallExpressions: Set<t.Node>;
 }
 
 export default function make(getCompiler: (opts: any) => TemplateCompiler) {
@@ -38,8 +39,10 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
           enter(path: NodePath<t.Program>, state: State) {
             state.dependencies = new Map();
             state.adder = new ImportAdder(t, path);
+            state.emittedCallExpressions = new Set();
           },
           exit(path: NodePath<t.Program>, state: State) {
+            pruneImports(path);
             let counter = 0;
             for (let dep of state.dependencies.values()) {
               path.node.body.unshift(amdDefine(dep.runtimeName, counter, t));
@@ -60,6 +63,9 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
           }
         },
         CallExpression(path: NodePath<t.CallExpression>, state: State) {
+          if (state.emittedCallExpressions.has(path.node)) {
+            return;
+          }
           for (let { module, exportedName } of templateCompilationModules) {
             if (path.get('callee').referencesImport(module, exportedName)) {
               handleCalled(path, state, t);
@@ -92,12 +98,16 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     let untranspiledTemplate = t.stringLiteral(template);
     precompileCache.set(untranspiledTemplate, compiled);
 
-    path.replaceWith(
-      t.callExpression(state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'), [
+    let newCallExpression = t.callExpression(
+      state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
+      [
         untranspiledTemplate,
         // NEXT: put the dependencies in scope here when a new flag is enabled
-      ])
+      ]
     );
+
+    state.emittedCallExpressions.add(newCallExpression);
+    path.replaceWith(newCallExpression);
   }
 
   // TODO: if the user provided scope and didn't set strict mode, that's an
@@ -134,11 +144,15 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     for (let dep of dependencies) {
       state.dependencies.set(dep.runtimeName, dep);
     }
-    path.replaceWith(
-      t.callExpression(state.adder.import(path, '@ember/template-factory', 'createTemplateFactory'), [
-        jsonLiteral(compiled, t),
-      ])
+
+    let untranspiledTemplate = t.stringLiteral(template);
+    let newCallExpression = t.callExpression(
+      state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
+      [untranspiledTemplate]
     );
+
+    state.emittedCallExpressions.add(newCallExpression);
+    path.replaceWith(newCallExpression);
   }
 
   function compiler(state: State) {
@@ -148,7 +162,7 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     return state.templateCompiler;
   }
 
-  function amdDefine(runtimeName: string, importCounter: number, t: BabelTypes) {
+  function amdDefine(runtimeName: string, importCounter: number, t: typeof Babel.types) {
     return t.expressionStatement(
       t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
         t.stringLiteral(runtimeName),
@@ -183,4 +197,21 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
   }
 
   return inlineHBSTransform;
+}
+
+// we rewrite all inline templates to use `precompileTemplate` from
+// `@ember/template-precompilation` because that's the one that supports scope.
+// We need to remove all others.
+function pruneImports(path: NodePath<t.Program>) {
+  for (let topLevelPath of path.get('body')) {
+    if (topLevelPath.isImportDeclaration()) {
+      let modulePath = topLevelPath.get('source').node.value;
+      if (
+        modulePath !== '@ember/template-precompilation' &&
+        templateCompilationModules.find(p => p.module === modulePath)
+      ) {
+        topLevelPath.remove();
+      }
+    }
+  }
 }

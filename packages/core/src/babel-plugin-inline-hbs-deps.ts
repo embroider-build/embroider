@@ -7,13 +7,33 @@ import { ResolvedDep } from './resolver';
 import { templateCompilationModules } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
 
-// todo: this is not the right kind of key, because our precompile function
-// won't have access to the node. Instead we should use the actual arguments to
-// precompile.
-const precompileCache = new WeakMap<t.StringLiteral, string>();
+/*
+  In order to coordinate with babel-plugin-htmlbars-inline-precompile, we need
+  to give it a `precompile` function that, as a side-effect, captures the
+  dependencies needed within the current file. We do this coordination via this
+  module-scoped variable, which is safe given Javascript's single-threaded
+  nature and babel's synchronicity.
+*/
+let currentState: State | undefined;
 
-export function precompile() {
-  //todo
+/*
+  This is the precompile function you should pass to
+  babel-plugin-htmlbars-inline-precompile.
+*/
+export function precompile(templateSource: string, options: Record<string, unknown>) {
+  if (!currentState) {
+    throw new Error(
+      `bug: babel-plugin-htmlbars-inline-precompile and babel-plugin-inline-hbs-deps aren't coordinating correctly`
+    );
+  }
+  let { compiled, dependencies } = compiler(currentState).precompile(templateSource, {
+    filename: currentState.file.opts.filename,
+    ...options,
+  });
+  for (let dep of dependencies) {
+    currentState.dependencies.set(dep.runtimeName, dep);
+  }
+  return compiled;
 }
 
 interface State {
@@ -25,6 +45,7 @@ interface State {
     };
   };
   dependencies: Map<string, ResolvedDep>;
+  getCompiler: (opts: any) => TemplateCompiler;
   templateCompiler: TemplateCompiler | undefined;
   adder: ImportUtil;
   emittedCallExpressions: Set<t.Node>;
@@ -40,6 +61,8 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
             state.dependencies = new Map();
             state.adder = new ImportUtil(t, path);
             state.emittedCallExpressions = new Set();
+            state.getCompiler = getCompiler;
+            currentState = state;
           },
           exit(path: NodePath<t.Program>, state: State) {
             // we are responsible for rewriting all usages of all the
@@ -61,6 +84,7 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
                 )
               );
             }
+            currentState = undefined;
           },
         },
         TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>, state: State) {
@@ -97,20 +121,11 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
       throw path.buildCodeFrameError('placeholders inside a tagged template string are not supported');
     }
     let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
-
-    let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
-    for (let dep of dependencies) {
-      state.dependencies.set(dep.runtimeName, dep);
-    }
-
-    let untranspiledTemplate = t.stringLiteral(template);
-    precompileCache.set(untranspiledTemplate, compiled);
-
     let newCallExpression = t.callExpression(
       state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
       [
-        untranspiledTemplate,
-        // NEXT: put the dependencies in scope here when a new flag is enabled
+        t.stringLiteral(template),
+        // TODO: here is where we will put scope once ember support that
       ]
     );
 
@@ -118,56 +133,13 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     path.replaceWith(newCallExpression);
   }
 
-  // TODO: if the user provided scope and didn't set strict mode, that's an
-  // error (because we don't merge scopes, but they're relying on us to lookup
-  // deps). If the user provided scope and did set strict mode, we just skip
-  // over doing any dep discovery because they don't need it. Else, they don't
-  // have a preexisting scope so we can add one if the new flag is set.
   function handleCalled(path: NodePath<t.CallExpression>, state: State, t: typeof Babel.types) {
-    let { template, insertRuntimeErrors } = getCallArguments(path);
-    let compilerInstance = compiler(state);
-
-    let result: ReturnType<TemplateCompiler['precompile']>;
-    try {
-      result = compilerInstance.precompile(state.file.opts.filename, template);
-    } catch (err) {
-      if (insertRuntimeErrors) {
-        path.replaceWith(
-          t.callExpression(
-            t.functionExpression(
-              null,
-              [],
-              t.blockStatement([
-                t.throwStatement(t.newExpression(t.identifier('Error'), [t.stringLiteral(err.message)])),
-              ])
-            ),
-            []
-          )
-        );
-        return;
-      }
-      throw err;
-    }
-    let { compiled, dependencies } = result;
-    for (let dep of dependencies) {
-      state.dependencies.set(dep.runtimeName, dep);
-    }
-
-    let untranspiledTemplate = t.stringLiteral(template);
     let newCallExpression = t.callExpression(
       state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
-      [untranspiledTemplate]
+      path.node.arguments
     );
-
     state.emittedCallExpressions.add(newCallExpression);
     path.replaceWith(newCallExpression);
-  }
-
-  function compiler(state: State) {
-    if (!state.templateCompiler) {
-      state.templateCompiler = getCompiler(state.opts);
-    }
-    return state.templateCompiler;
   }
 
   function amdDefine(runtimeName: string, importCounter: number, t: typeof Babel.types) {
@@ -178,31 +150,12 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
       ])
     );
   }
-
-  function getCallArguments(path: NodePath<t.CallExpression>): { template: string; insertRuntimeErrors: boolean } {
-    let [template, options] = path.node.arguments;
-
-    if (template?.type !== 'StringLiteral') {
-      throw path.buildCodeFrameError('hbs accepts only a string literal argument');
-    }
-
-    let insertRuntimeErrors =
-      options?.type === 'ObjectExpression' &&
-      options.properties.some(
-        prop =>
-          prop.type === 'ObjectProperty' &&
-          prop.computed === false &&
-          prop.key.type === 'Identifier' &&
-          prop.key.name === 'insertRuntimeErrors' &&
-          prop.value.type === 'BooleanLiteral' &&
-          prop.value.value
-      );
-
-    return {
-      template: template.value,
-      insertRuntimeErrors,
-    };
-  }
-
   return inlineHBSTransform;
+}
+
+function compiler(state: State) {
+  if (!state.templateCompiler) {
+    state.templateCompiler = state.getCompiler(state.opts);
+  }
+  return state.templateCompiler;
 }

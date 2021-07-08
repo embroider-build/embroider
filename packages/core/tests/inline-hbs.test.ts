@@ -5,6 +5,8 @@ import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
 import type { Params as Stage1InlineBabelParams } from '../src/babel-plugin-stage1-inline-hbs-node';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-htmlbars-inline-precompile';
+import { Resolver } from '../src';
+import { ResolvedDep } from '../src/resolver';
 
 function stage1Tests(transform: (code: string) => string) {
   test('template literal form', () => {
@@ -43,8 +45,15 @@ function stage1Tests(transform: (code: string) => string) {
 }
 
 function stage3Tests(transform: (code: string) => string) {
-  test('remember to test dep imports', () => {
-    throw new Error('oops');
+  test('discovered dependencies are added', () => {
+    let code = transform(`
+    import hbs from 'htmlbars-inline-precompile';
+    export default function() {
+      return hbs${'`'}<Foo />${'`'};
+    }
+    `);
+    expect(code).toMatch(/import a0 from "\.\/components\/foo\.js"/);
+    expect(code).toMatch(/window\.define\("my-app\/components\/foo", function/);
   });
 
   test('tagged template literal form', () => {
@@ -77,7 +86,6 @@ function stage3Tests(transform: (code: string) => string) {
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
-    expect(code).not.toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
     expect(code).toMatch(/throw new Error\("Unclosed element `div`/);
   });
 }
@@ -142,6 +150,7 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
+          resolver: new StubResolver(),
         };
         return {
           plugins: [
@@ -167,6 +176,7 @@ describe('inline-hbs', () => {
           plugins: {
             ast: [],
           },
+          resolver: new StubResolver(),
         };
         return {
           plugins: [
@@ -184,3 +194,25 @@ describe('inline-hbs', () => {
     });
   });
 });
+
+class StubResolver implements Resolver {
+  astTransformer(): unknown {
+    return undefined;
+  }
+  dependenciesOf(_moduleName: string): ResolvedDep[] {
+    return [{ runtimeName: 'my-app/components/foo', path: './components/foo.js', absPath: '/tmp/components/foo.js' }];
+  }
+
+  absPathToRuntimePath(absPath: string): string {
+    return absPath;
+  }
+
+  absPathToRuntimeName(absPath: string): string {
+    return absPath;
+  }
+
+  adjustImportsOptions = {
+    resolvableExtensions: ['.js', '.hbs'],
+    renamePackages: {},
+  };
+}

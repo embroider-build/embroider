@@ -21,5 +21,5 @@ export interface Resolver {
   // that module, as it would tradtionally be named within loader.js.
   absPathToRuntimeName(absPath: string): string;
 
-  adjustImportsOptions: Options;
+  adjustImportsOptions: Pick<Options, 'renamePackages' | 'resolvableExtensions'>;
 }

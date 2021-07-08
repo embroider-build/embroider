@@ -116,7 +116,7 @@ interface RehydrationParams {
   podModulePrefix?: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
-  adjustImportsOptions: AdjustImportsOptions;
+  adjustImportsOptions: Pick<AdjustImportsOptions, 'renamePackages' | 'resolvableExtensions'>;
 }
 
 export function rehydrate(params: RehydrationParams) {

@@ -101,7 +101,7 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
       let compiled = compiler(state).applyTransforms(state.file.opts.filename, template);
       path.get('quasi').replaceWith(t.templateLiteral([t.templateElement({ raw: compiled, cooked: compiled })], []));
     } else {
-      let { compiled, dependencies } = compiler(state).precompile(state.file.opts.filename, template);
+      let { compiled, dependencies } = compiler(state).precompile(template, { filename: state.file.opts.filename });
       for (let dep of dependencies) {
         state.dependencies.set(dep.runtimeName, dep);
       }
@@ -135,7 +135,7 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     } else {
       let result: ReturnType<TemplateCompiler['precompile']>;
       try {
-        result = compilerInstance.precompile(state.file.opts.filename, template);
+        result = compilerInstance.precompile(template, { filename: state.file.opts.filename, insertRuntimeErrors });
       } catch (err) {
         if (insertRuntimeErrors) {
           path.replaceWith(

@@ -212,7 +212,13 @@ class StubResolver implements Resolver {
   }
 
   adjustImportsOptions = {
-    resolvableExtensions: ['.js', '.hbs'],
     renamePackages: {},
+    renameModules: {},
+    extraImports: [],
+    externalsDir: '/tmp/embroider-externals',
+    activeAddons: {},
+    relocatedFiles: {},
+    resolvableExtensions: ['.js', '.hbs'],
+    emberNeedsModulesPolyfill: true,
   };
 }

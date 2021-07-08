@@ -34,7 +34,13 @@ describe('audit', function () {
           activePackageRules: [],
           adjustImportsOptions: {
             renamePackages: {},
+            renameModules: {},
+            extraImports: [],
+            externalsDir: '/tmp/embroider-externals',
+            activeAddons: {},
+            relocatedFiles: {},
             resolvableExtensions,
+            emberNeedsModulesPolyfill: true,
           },
         }),
       },

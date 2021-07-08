@@ -5,7 +5,7 @@ import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
 import { Plugins } from './ember-template-compiler-types';
 import { getEmberExports } from './load-ember-template-compiler';
 import { TemplateCompiler, matchesSourceFile } from './template-compiler-common';
-import adjustImportsPlugin from './babel-plugin-adjust-imports';
+import adjustImportsPlugin, { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 
 export interface NodeTemplateCompilerParams {
   compilerPath: string;
@@ -29,12 +29,13 @@ export class NodeTemplateCompiler extends TemplateCompiler {
     let src = super.compile(moduleName, contents);
     let resolver = this.params.resolver;
     if (resolver) {
+      let opts: AdjustImportsOptions = resolver.adjustImportsOptions;
       return transform(src, {
         filename: moduleName,
         generatorOpts: {
           compact: false,
         },
-        plugins: [[adjustImportsPlugin, resolver.adjustImportsOptions]],
+        plugins: [[adjustImportsPlugin, opts]],
       })!.code!;
     } else {
       return src;

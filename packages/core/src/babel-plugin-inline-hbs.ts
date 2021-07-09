@@ -5,7 +5,8 @@
   lexically scoped names into templates.
 */
 
-import type * as t from '@babel/types';
+import type { types as t } from '@babel/core';
+import type * as Babel from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import { join } from 'path';
 import { TemplateCompiler } from './template-compiler-common';
@@ -30,8 +31,8 @@ interface State<O> {
 }
 
 export default function make<O>(getCompiler: (opts: O) => TemplateCompiler) {
-  function inlineHBSTransform(babel: unknown): unknown {
-    let t = (babel as any).types as BabelTypes;
+  function inlineHBSTransform(babel: typeof Babel): Babel.PluginObj<State<O>> {
+    let t = babel.types;
     return {
       visitor: {
         Program: {

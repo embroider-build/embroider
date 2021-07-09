@@ -1,6 +1,6 @@
 import { parse, TransformOptions } from '@babel/core';
 import traverse, { NodePath } from '@babel/traverse';
-import { ExportNamedDeclaration, ExportDefaultDeclaration, isVariableDeclaration, isIdentifier } from '@babel/types';
+import { types as t } from '@babel/core';
 import assertNever from 'assert-never';
 
 export function describeExports(
@@ -15,7 +15,7 @@ export function describeExports(
   let hasDefaultExport = false;
 
   traverse(ast, {
-    ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {
+    ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>) {
       for (let spec of path.node.specifiers) {
         switch (spec.type) {
           case 'ExportSpecifier':
@@ -35,15 +35,15 @@ export function describeExports(
             assertNever(spec);
         }
       }
-      if (isVariableDeclaration(path.node.declaration)) {
+      if (t.isVariableDeclaration(path.node.declaration)) {
         for (let dec of path.node.declaration.declarations) {
-          if (isIdentifier(dec.id)) {
+          if (t.isIdentifier(dec.id)) {
             names.add(dec.id.name);
           }
         }
       }
     },
-    ExportDefaultDeclaration(_path: NodePath<ExportDefaultDeclaration>) {
+    ExportDefaultDeclaration(_path: NodePath<t.ExportDefaultDeclaration>) {
       hasDefaultExport = true;
     },
   });

@@ -7,7 +7,7 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.9
 
-import * as t from "@babel/types";
+import { types as t } from "@babel/core";
 
 export type Node = t.Node;
 

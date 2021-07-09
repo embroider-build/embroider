@@ -1,19 +1,5 @@
-import {
-  CallExpression,
-  FunctionDeclaration,
-  VariableDeclarator,
-  SwitchCase,
-  IfStatement,
-  ifStatement,
-  memberExpression,
-  identifier,
-  blockStatement,
-  callExpression,
-  expressionStatement,
-  stringLiteral,
-} from '@babel/types';
 import { NodePath } from '@babel/traverse';
-import { transform } from '@babel/core';
+import { transform, types as t } from '@babel/core';
 
 function parseVersion(templateCompilerPath: string, source: string): { major: number; minor: number; patch: number } {
   // ember-template-compiler.js contains a comment that indicates what version it is for
@@ -86,7 +72,7 @@ export function patch(source: string, templateCompilerPath: string): string {
         function () {
           return {
             visitor: {
-              VariableDeclarator(path: NodePath<VariableDeclarator>) {
+              VariableDeclarator(path: NodePath<t.VariableDeclarator>) {
                 let id = path.node.id;
                 if (id.type === 'Identifier' && id.name === 'Ember' && !replacedVar) {
                   replacedVar = true;
@@ -94,7 +80,7 @@ export function patch(source: string, templateCompilerPath: string): string {
                 }
               },
               CallExpression: {
-                enter(path: NodePath<CallExpression>, state: BabelState) {
+                enter(path: NodePath<t.CallExpression>, state: BabelState) {
                   let callee = path.get('callee');
                   if (!callee.isIdentifier() || callee.node.name !== 'define') {
                     return;
@@ -105,14 +91,14 @@ export function patch(source: string, templateCompilerPath: string): string {
                   }
                   state.definingGlimmerSyntax = path;
                 },
-                exit(path: NodePath<CallExpression>, state: BabelState) {
+                exit(path: NodePath<t.CallExpression>, state: BabelState) {
                   if (state.definingGlimmerSyntax === path) {
                     state.definingGlimmerSyntax = false;
                   }
                 },
               },
               FunctionDeclaration: {
-                enter(path: NodePath<FunctionDeclaration>, state: BabelState) {
+                enter(path: NodePath<t.FunctionDeclaration>, state: BabelState) {
                   if (!state.definingGlimmerSyntax) {
                     return;
                   }
@@ -121,14 +107,14 @@ export function patch(source: string, templateCompilerPath: string): string {
                     state.declaringBuildFunction = path;
                   }
                 },
-                exit(path: NodePath<FunctionDeclaration>, state: BabelState) {
+                exit(path: NodePath<t.FunctionDeclaration>, state: BabelState) {
                   if (state.declaringBuildFunction === path) {
                     state.declaringBuildFunction = false;
                   }
                 },
               },
               SwitchCase: {
-                enter(path: NodePath<SwitchCase>, state: BabelState) {
+                enter(path: NodePath<t.SwitchCase>, state: BabelState) {
                   if (!state.definingGlimmerSyntax) {
                     return;
                   }
@@ -137,13 +123,13 @@ export function patch(source: string, templateCompilerPath: string): string {
                     state.caseElementNode = path;
                   }
                 },
-                exit(path: NodePath<SwitchCase>, state: BabelState) {
+                exit(path: NodePath<t.SwitchCase>, state: BabelState) {
                   if (state.caseElementNode === path) {
                     state.caseElementNode = false;
                   }
                 },
               },
-              IfStatement(path: NodePath<IfStatement>, state: BabelState) {
+              IfStatement(path: NodePath<t.IfStatement>, state: BabelState) {
                 if (!state.caseElementNode) {
                   return;
                 }
@@ -151,12 +137,12 @@ export function patch(source: string, templateCompilerPath: string): string {
                 // the place we want is the only if with a computed member
                 // expression predicate.
                 if (test.isMemberExpression() && test.node.computed) {
-                  path.node.alternate = ifStatement(
-                    memberExpression(identifier('ast'), identifier('selfClosing')),
-                    blockStatement([
-                      expressionStatement(
-                        callExpression(memberExpression(identifier('output'), identifier('push')), [
-                          stringLiteral(' />'),
+                  path.node.alternate = t.ifStatement(
+                    t.memberExpression(t.identifier('ast'), t.identifier('selfClosing')),
+                    t.blockStatement([
+                      t.expressionStatement(
+                        t.callExpression(t.memberExpression(t.identifier('output'), t.identifier('push')), [
+                          t.stringLiteral(' />'),
                         ])
                       ),
                     ]),
@@ -184,7 +170,7 @@ export function patch(source: string, templateCompilerPath: string): string {
         function () {
           return {
             visitor: {
-              VariableDeclarator(path: NodePath<VariableDeclarator>) {
+              VariableDeclarator(path: NodePath<t.VariableDeclarator>) {
                 let id = path.node.id;
                 if (id.type === 'Identifier' && id.name === 'Ember' && !replacedVar) {
                   replacedVar = true;

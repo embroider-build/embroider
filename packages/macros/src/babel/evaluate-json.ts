@@ -1,15 +1,6 @@
 import type { NodePath } from '@babel/traverse';
-import type {
-  Identifier,
-  ObjectExpression,
-  MemberExpression,
-  Expression,
-  ExpressionStatement,
-  File,
-  CallExpression,
-  OptionalMemberExpression,
-} from '@babel/types';
 import type * as Babel from '@babel/core';
+import type { types as t } from '@babel/core';
 import State, { owningPackage } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
@@ -143,7 +134,10 @@ export class Evaluator {
     this.state = env.state;
   }
 
-  evaluateMember(path: NodePath<MemberExpression | OptionalMemberExpression>, optionalChain: boolean): EvaluateResult {
+  evaluateMember(
+    path: NodePath<t.MemberExpression | t.OptionalMemberExpression>,
+    optionalChain: boolean
+  ): EvaluateResult {
     let propertyPath = assertNotArray(path.get('property'));
     let property: EvaluateResult;
     if (path.node.computed) {
@@ -207,7 +201,7 @@ export class Evaluator {
     // Here we are glossing over the lack of a real OptionalMemberExpression type
     // in our @babel/traverse typings.
     if (path.node.type === 'OptionalMemberExpression') {
-      return this.evaluateMember(path as NodePath<OptionalMemberExpression>, true);
+      return this.evaluateMember(path as NodePath<t.OptionalMemberExpression>, true);
     }
 
     if (path.isStringLiteral()) {
@@ -293,9 +287,9 @@ export class Evaluator {
     if (path.isLogicalExpression() || path.isBinaryExpression()) {
       let operator = path.node.operator as string;
       if (binops[operator]) {
-        let leftOperand = this.evaluate(path.get('left') as NodePath<Expression>);
+        let leftOperand = this.evaluate(path.get('left') as NodePath<t.Expression>);
         if (leftOperand.confident) {
-          let rightOperand = this.evaluate(path.get('right') as NodePath<Expression>);
+          let rightOperand = this.evaluate(path.get('right') as NodePath<t.Expression>);
           if (leftOperand.confident && rightOperand.confident) {
             let value = binops[operator](leftOperand.value, rightOperand.value);
             return { confident: true, value };
@@ -318,7 +312,7 @@ export class Evaluator {
     if (path.isUnaryExpression()) {
       let operator = path.node.operator as string;
       if (unops[operator]) {
-        let operand = this.evaluate(path.get('argument') as NodePath<Expression>);
+        let operand = this.evaluate(path.get('argument') as NodePath<t.Expression>);
         if (operand.confident) {
           let value = unops[operator](operand.value);
           return { confident: true, value };
@@ -344,7 +338,7 @@ export class Evaluator {
   // actually want to calculate their value here because that has been deferred
   // to runtime. That's why we've made `value` lazy. It lets us check the
   // confidence without actually forcing the value.
-  private maybeEvaluateRuntimeConfig(path: NodePath<CallExpression>): EvaluateResult {
+  private maybeEvaluateRuntimeConfig(path: NodePath<t.CallExpression>): EvaluateResult {
     let callee = path.get('callee');
     if (callee.isIdentifier()) {
       let { name } = callee.node;
@@ -361,7 +355,7 @@ export class Evaluator {
     return { confident: false };
   }
 
-  evaluateMacroCall(path: NodePath<CallExpression>): EvaluateResult {
+  evaluateMacroCall(path: NodePath<t.CallExpression>): EvaluateResult {
     if (!this.state) {
       return { confident: false };
     }
@@ -422,11 +416,14 @@ export function assertArray<T>(input: T | T[]): T[] {
   return input;
 }
 
-export function buildLiterals(value: unknown | undefined, babelContext: typeof Babel): Identifier | ObjectExpression {
+export function buildLiterals(
+  value: unknown | undefined,
+  babelContext: typeof Babel
+): t.Identifier | t.ObjectExpression {
   if (typeof value === 'undefined') {
     return babelContext.types.identifier('undefined');
   }
-  let statement = babelContext.parse(`a(${JSON.stringify(value)})`) as File;
-  let expression = (statement.program.body[0] as ExpressionStatement).expression as CallExpression;
-  return expression.arguments[0] as ObjectExpression;
+  let statement = babelContext.parse(`a(${JSON.stringify(value)})`) as t.File;
+  let expression = (statement.program.body[0] as t.ExpressionStatement).expression as t.CallExpression;
+  return expression.arguments[0] as t.ObjectExpression;
 }

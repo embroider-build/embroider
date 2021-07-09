@@ -7,7 +7,7 @@ import main, {
 import { transformSync } from '@babel/core';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
-import * as t from '@babel/types';
+import { types as t } from '@babel/core';
 
 describe('babel-plugin-adjust-imports', function () {
   function getFirstCallExpresssionPath(source: string) {

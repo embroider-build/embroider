@@ -1,12 +1,11 @@
 import type { NodePath } from '@babel/traverse';
 import { existsSync } from 'fs';
-import type * as t from '@babel/types';
+import type * as Babel from '@babel/core';
+import type { types as t } from '@babel/core';
 import { dirname } from 'path';
 import { explicitRelative } from '@embroider/shared-internals';
 import { PackageCache } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
-
-type BabelTypes = typeof t;
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
@@ -20,8 +19,8 @@ function setComponentTemplate(target: NodePath<t.Node>, state: State) {
   return state.adder.import(target, '@ember/component', 'setComponentTemplate');
 }
 
-export default function main(babel: unknown) {
-  let t = (babel as any).types as BabelTypes;
+export default function main(babel: typeof Babel) {
+  let t = babel.types;
   return {
     visitor: {
       Program: {
@@ -90,7 +89,7 @@ export default function main(babel: unknown) {
               ),
             ]);
           }
-        } else if (isTSDeclareFunction(t, declaration)) {
+        } else if (t.isTSDeclareFunction(declaration)) {
           // we don't rewrite this
         } else {
           let local = importTemplate(path, state.adder, state.colocatedTemplate);
@@ -125,12 +124,6 @@ export default function main(babel: unknown) {
       },
     },
   };
-}
-
-// this is here because babel6 doesn't offer this function, but we still want it
-// to provide type exhaustiveness when it's missing
-function isTSDeclareFunction(t: BabelTypes, dec: any): dec is t.TSDeclareFunction {
-  return t.isTSDeclareFunction?.(dec);
 }
 
 function importTemplate(target: NodePath<t.Node>, adder: ImportUtil, colocatedTemplate: string) {

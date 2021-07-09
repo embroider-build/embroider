@@ -1,21 +1,5 @@
 import traverse, { NodePath, Node } from '@babel/traverse';
-import {
-  CallExpression,
-  ExportAllDeclaration,
-  ExportDefaultDeclaration,
-  ExportNamedDeclaration,
-  ExportNamespaceSpecifier,
-  ExportSpecifier,
-  Identifier,
-  ImportDeclaration,
-  ImportDefaultSpecifier,
-  ImportNamespaceSpecifier,
-  ImportSpecifier,
-  isImport,
-  isStringLiteral,
-  StringLiteral,
-} from '@babel/types';
-import { TransformOptions, transformSync } from '@babel/core';
+import { TransformOptions, transformSync, types as t } from '@babel/core';
 import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
 
 export class VisitorState {}
@@ -61,7 +45,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
   let saveCodeFrame = frames.forSource(rawSource);
 
   traverse(ast, {
-    Identifier(path: NodePath<Identifier>) {
+    Identifier(path: NodePath<t.Identifier>) {
       if (path.node.name === 'module' && isFreeVariable(path)) {
         sawModule = true;
       } else if (path.node.name === 'exports' && isFreeVariable(path)) {
@@ -73,9 +57,9 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
         exports.add(path.node.name);
       }
     },
-    CallExpression(path: NodePath<CallExpression>) {
+    CallExpression(path: NodePath<t.CallExpression>) {
       let callee = path.get('callee');
-      if (callee.referencesImport('@embroider/macros', 'importSync') || isImport(callee)) {
+      if (callee.referencesImport('@embroider/macros', 'importSync') || t.isImport(callee)) {
         let arg = path.node.arguments[0];
         if (arg.type === 'StringLiteral') {
           imports.push({
@@ -85,45 +69,45 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
           });
         } else {
           problems.push({
-            message: `audit tool is unable to understand this usage of ${isImport(callee) ? 'import' : 'importSync'}`,
+            message: `audit tool is unable to understand this usage of ${t.isImport(callee) ? 'import' : 'importSync'}`,
             detail: arg.type,
             codeFrameIndex: saveCodeFrame(arg),
           });
         }
       }
     },
-    ImportDeclaration(path: NodePath<ImportDeclaration>) {
+    ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
       imports.push({
         source: path.node.source.value,
         codeFrameIndex: saveCodeFrame(path.node.source),
         specifiers: [],
       });
     },
-    ImportDefaultSpecifier(path: NodePath<ImportDefaultSpecifier>) {
+    ImportDefaultSpecifier(path: NodePath<t.ImportDefaultSpecifier>) {
       imports[imports.length - 1].specifiers.push({
         name: 'default',
         local: path.node.local.name,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
-    ImportNamespaceSpecifier(path: NodePath<ImportNamespaceSpecifier>) {
+    ImportNamespaceSpecifier(path: NodePath<t.ImportNamespaceSpecifier>) {
       imports[imports.length - 1].specifiers.push({
         name: { isNamespace: true },
         local: path.node.local.name,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
-    ImportSpecifier(path: NodePath<ImportSpecifier>) {
+    ImportSpecifier(path: NodePath<t.ImportSpecifier>) {
       imports[imports.length - 1].specifiers.push({
         name: name(path.node.imported),
         local: path.node.local.name,
         codeFrameIndex: saveCodeFrame(path.node),
       });
     },
-    ExportDefaultDeclaration(_path: NodePath<ExportDefaultDeclaration>) {
+    ExportDefaultDeclaration(_path: NodePath<t.ExportDefaultDeclaration>) {
       exports.add('default');
     },
-    ExportSpecifier(path: NodePath<ExportSpecifier>) {
+    ExportSpecifier(path: NodePath<t.ExportSpecifier>) {
       exports.add(name(path.node.exported));
       if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
         imports[imports.length - 1].specifiers.push({
@@ -133,7 +117,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
         });
       }
     },
-    ExportNamespaceSpecifier(path: NodePath<ExportNamespaceSpecifier>) {
+    ExportNamespaceSpecifier(path: NodePath<t.ExportNamespaceSpecifier>) {
       exports.add(name(path.node.exported));
       if (path.parent.type === 'ExportNamedDeclaration' && path.parent.source) {
         imports[imports.length - 1].specifiers.push({
@@ -143,7 +127,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
         });
       }
     },
-    ExportAllDeclaration(path: NodePath<ExportAllDeclaration>) {
+    ExportAllDeclaration(path: NodePath<t.ExportAllDeclaration>) {
       exports.add({ all: path.node.source.value });
       imports.push({
         source: path.node.source.value,
@@ -157,7 +141,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
         ],
       });
     },
-    ExportNamedDeclaration(path: NodePath<ExportNamedDeclaration>) {
+    ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>) {
       if (path.node.source) {
         imports.push({
           source: path.node.source.value,
@@ -205,15 +189,15 @@ export class CodeFrameStorage {
   }
 }
 
-function name(node: StringLiteral | Identifier): string {
-  if (isStringLiteral(node)) {
+function name(node: t.StringLiteral | t.Identifier): string {
+  if (t.isStringLiteral(node)) {
     return node.value;
   } else {
     return node.name;
   }
 }
 
-function isFreeVariable(path: NodePath<Identifier>) {
+function isFreeVariable(path: NodePath<t.Identifier>) {
   return !path.scope.hasBinding(path.node.name);
 }
 

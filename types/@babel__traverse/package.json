@@ -33,7 +33,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "@babel/types": "^7.8.7"
+    "@babel/core": "^7.14.5"
   },
   "typesPublisherContentHash": "25da84650a4407dd7d7b3cc742518e1e39969ae2ada18af402601fb57c3cace6",
   "typeScriptVersion": "2.9"

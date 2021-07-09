@@ -1,7 +1,7 @@
 import { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';
-import make, { Params as CoreParams } from './babel-plugin-inline-hbs';
+import make from './babel-plugin-inline-hbs';
 
-export interface Params extends CoreParams {
+export interface Params {
   templateCompiler: NodeTemplateCompilerParams;
 }
 

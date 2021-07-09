@@ -1,7 +1,7 @@
 import { Resolver } from './resolver';
 import { join } from 'path';
 import { PluginItem, transform } from '@babel/core';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs';
+import type { Params as InlineBabelParams } from './babel-plugin-stage1-inline-hbs-node';
 import { Plugins } from './ember-template-compiler-types';
 import { getEmberExports } from './load-ember-template-compiler';
 import { TemplateCompiler, matchesSourceFile } from './template-compiler-common';
@@ -46,10 +46,9 @@ export class NodeTemplateCompiler extends TemplateCompiler {
   // Javascript.
   inlineTransformsBabelPlugin(): PluginItem {
     return [
-      join(__dirname, 'babel-plugin-inline-hbs-node.js'),
+      join(__dirname, 'babel-plugin-stage1-inline-hbs-node.js'),
       {
         templateCompiler: this.params,
-        stage: 1,
       } as InlineBabelParams,
     ];
   }

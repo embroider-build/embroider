@@ -975,10 +975,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@ef4/babel-plugin-htmlbars-inline-precompile@6.0.0-alpha.0":
-  version "6.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@ef4/babel-plugin-htmlbars-inline-precompile/-/babel-plugin-htmlbars-inline-precompile-6.0.0-alpha.0.tgz#28500a08d84c51d4f53b18b4afbf8384e58649c6"
-  integrity sha512-wKsuq63rWO3mrFYHCfzLbwRmUfdTWrXIs2orJOEJIuJUybay0fw2X0qU4KCKXIQkiD8ZxwUuHPpzhKHBxsiPlA==
+"@ef4/babel-plugin-htmlbars-inline-precompile@6.0.0-alpha.2":
+  version "6.0.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/@ef4/babel-plugin-htmlbars-inline-precompile/-/babel-plugin-htmlbars-inline-precompile-6.0.0-alpha.2.tgz#882b319fd90b03c95517d4cd4dc9eb1c47299be4"
+  integrity sha512-hintfZ/ede5YMapykYI81n8EIphsAECZEmwl9qXX3rRzLFGXVu42F/Cus7RIxvJX1djilOXx7GVhiPn+bwEvkA==
   dependencies:
     babel-import-util "^0.1.0"
     line-column "^1.0.2"

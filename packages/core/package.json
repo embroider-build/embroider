@@ -42,7 +42,7 @@
     "@embroider/shared-internals": "0.42.3",
     "assert-never": "^1.2.1",
     "babel-import-util": "^0.1.0",
-    "@ef4/babel-plugin-htmlbars-inline-precompile": "6.0.0-alpha.0",
+    "@ef4/babel-plugin-htmlbars-inline-precompile": "6.0.0-alpha.2",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.7",

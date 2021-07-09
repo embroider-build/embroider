@@ -182,7 +182,7 @@ describe('inline-hbs', () => {
           plugins: [
             [join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'), { templateCompiler }],
             [
-              require.resolve('babel-plugin-htmlbars-inline-precompile'),
+              require.resolve('@ef4/babel-plugin-htmlbars-inline-precompile'),
               {
                 precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
               } as InlinePrecompileOptions,

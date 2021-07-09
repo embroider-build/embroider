@@ -105,8 +105,8 @@ describe('inline-hbs', () => {
         return {
           plugins: [
             [
-              join(__dirname, '../src/babel-plugin-inline-hbs-node.js'),
-              { templateCompiler, stage: 1 } as InlineBabelParams,
+              join(__dirname, '../src/babel-plugin-stage1-inline-hbs-node.js'),
+              { templateCompiler } as Stage1InlineBabelParams,
             ],
           ],
         };

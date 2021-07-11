@@ -23,14 +23,11 @@
     "start": "ember serve",
     "test": "npm-run-all lint test:*",
     "test:ember": "ember test",
-    "test:ember-compatibility": "ember try:each",
-    "prepack": "ember ts:precompile",
-    "postpack": "ember ts:clean"
+    "test:ember-compatibility": "ember try:each"
   },
   "dependencies": {
     "ember-cli-babel": "^7.26.3",
-    "ember-cli-htmlbars": "^5.7.1",
-    "ember-cli-typescript": "^4.2.1"
+    "ember-cli-htmlbars": "^5.7.1"
   },
   "devDependencies": {
     "@ember/optional-features": "^2.0.0",

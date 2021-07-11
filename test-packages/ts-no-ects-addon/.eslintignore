@@ -1,7 +1,6 @@
 # unconventional js
 /blueprints/*/files/
 /vendor/
-/config/ember-try.js
 
 # compiled output
 /dist/

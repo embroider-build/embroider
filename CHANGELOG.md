@@ -1,5 +1,25 @@
 # Embroider Changelog
 
+## v0.43.0 (2021-07-13)
+
+#### :boom: Breaking Change
+* `macros`
+  * [#888](https://github.com/embroider-build/embroider/pull/888) Expose sourceOfConfig to macro config mergers ([@mydea](https://github.com/mydea))
+* `babel-loader-7`, `compat`, `core`, `macros`, `shared-internals`, `webpack`
+  * [#890](https://github.com/embroider-build/embroider/pull/890) Drop support for apps that use babel 6 ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#886](https://github.com/embroider-build/embroider/pull/886) `undefined` does not serialize with broccoli-babel-transpiler ([@thoov](https://github.com/thoov))
+* `core`, `shared-internals`, `webpack`
+  * [#881](https://github.com/embroider-build/embroider/pull/881) Fix race condition finding the owning package of a given file when using multiple workers ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.42.3 (2021-06-28)
 
 #### :rocket: Enhancement

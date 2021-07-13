@@ -35,13 +35,21 @@ async function release(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
 }
 
+async function packager_webpack(project: Project) {
+  project.linkDevDependency('@embroider/webpack', { baseDir: __dirname });
+}
+
 export function supportMatrix(scenarios: Scenarios) {
-  return scenarios.expand({
-    lts_3_16,
-    lts_3_20,
-    lts_3_24,
-    release,
-  });
+  return scenarios
+    .expand({
+      lts_3_16,
+      lts_3_20,
+      lts_3_24,
+      release,
+    })
+    .expand({
+      packager_webpack,
+    });
 }
 
 export const appScenarios = supportMatrix(Scenarios.fromDir(dirname(require.resolve('../app-template/package.json'))));

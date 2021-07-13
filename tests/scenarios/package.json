@@ -19,6 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "@embroider/macros": "0.42.3",
+    "@embroider/vite": "0.42.3",
     "@embroider/webpack": "0.42.3",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",

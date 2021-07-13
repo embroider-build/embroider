@@ -107,7 +107,7 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
   );
 }
 
-const PACKAGERS = ['@embroider/webpack'];
+const PACKAGERS = ['@embroider/vite', '@embroider/webpack'];
 
 export function fetchPackagerFromDependencies(app: any) {
   let Packager;

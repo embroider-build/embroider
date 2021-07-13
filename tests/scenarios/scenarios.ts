@@ -35,6 +35,10 @@ async function release(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
 }
 
+async function packager_vite(project: Project) {
+  project.linkDevDependency('@embroider/vite', { baseDir: __dirname });
+}
+
 async function packager_webpack(project: Project) {
   project.linkDevDependency('@embroider/webpack', { baseDir: __dirname });
 }
@@ -48,6 +52,7 @@ export function supportMatrix(scenarios: Scenarios) {
       release,
     })
     .expand({
+      packager_vite,
       packager_webpack,
     });
 }

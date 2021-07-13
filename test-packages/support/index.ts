@@ -107,6 +107,22 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
   );
 }
 
+const PACKAGERS = ['@embroider/webpack'];
+
+export function fetchPackagerFromDependencies(app: any) {
+  let Packager;
+
+  for (const packagerName of PACKAGERS) {
+    if (app.project.pkg.devDependencies[packagerName]) {
+      Packager = require(packagerName);
+    }
+  }
+
+  return {
+    Packager,
+  };
+}
+
 export { Project } from './project';
 export { default as BuildResult } from './build';
 export { expectFilesAt, ExpectFile } from './file-assertions';

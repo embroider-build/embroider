@@ -231,7 +231,7 @@ List of existing v1 public methods and properties on addons, and their dispositi
 - included: Unchanged, but it should be needed much more rarely. Today it is mostly used to `this.import()` things, which is not a thing anymore.
 - includedCommands: Unchanged.
 - init: Dropped in favor of `constructor`, since we’re now talking about a native class.
-- isDevelopingAddon: Dropped. This doesn’t belong in each addon’s code, it’s a runtime decision and control over it belongs in ember-cli proper.
+- isDevelopingAddon: Dropped. This doesn’t belong in each addon’s code, it’s a runtime decision and control over it belongs in ember-cli proper. Under embroider developers can set a comma-separated list of addon package names in the EMBROIDER_REBUILD_ADDONS environment variable instead.
 - isEnabled: Dropped. Rarely used. This decision doesn’t belong inside an addon, it belongs in the addon’s parent which will decide to activate it or not. Putting it here means every addon needs to invent its own API for how to tell it to activate or not.
 - lintTree: Kept. This is a legit runtime thing to do.
 - moduleName: Dropped. Using a moduleName that doesn’t match your NPM package name is a megatroll, and it won’t work with build tools that know how to follow the Node package resolution algorithm.

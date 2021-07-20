@@ -141,6 +141,12 @@ class RewriteManifest extends Plugin {
       extraVendorFiles,
     };
 
+    json['ember-addon'] = {
+      version: 2,
+      type: 'addon'
+    };
+
+
     outputJSONSync(join(this.outputPath, '_fastboot_', 'package.json'), json, { spaces: 2 });
   }
 }

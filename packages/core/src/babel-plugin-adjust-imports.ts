@@ -164,6 +164,7 @@ function isResolvable(packageName: string, fromPkg: Package): false | Package {
     if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
       return false;
     }
+    // throw new Error('boy oh boy');
     return dep;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
@@ -202,7 +203,17 @@ module.exports = m;
 
 function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options, isDynamic: boolean): string {
   let pkg = sourceFile.owningPackage();
+
+  if (specifier === 'ember') {
+    console.log('ember', JSON.stringify(pkg), pkg && JSON.stringify(pkg.packageJSON, null, 2), pkg && pkg.isV2Ember());
+  }
+
   if (!pkg || !pkg.isV2Ember()) {
+    if (specifier === 'ember') {
+      debugger;
+      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON) } ${pkg && pkg.isV2Ember()}`;
+    }
+
     return specifier;
   }
 
@@ -235,6 +246,9 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
     // self-imports are legal in the app tree, even for v2 packages
     if (packageName === pkg.name) {
+      if (specifier === 'ember') {
+        throw new Error('your my only hope');
+      }
       return specifier;
     }
 
@@ -245,7 +259,10 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
           `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
         );
       }
-      return specifier;
+      if (specifier === 'ember') {
+        throw 'FOO';
+      }
+      // return specifier;
     } else {
       // second try to resolve from the source package
       let targetPkg = isResolvable(packageName, pkg);
@@ -267,7 +284,10 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );
       }
-      return specifier;
+      if (specifier === 'ember') {
+        throw 'FOO';
+      }
+      // return specifier;
     }
   }
 
@@ -331,6 +351,7 @@ function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Opti
 }
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
+  // debugger;
   let target = join(opts.externalsDir, specifier + '.js');
   outputFileSync(
     target,
@@ -401,6 +422,9 @@ export default function main(babel: unknown) {
             continue;
           }
 
+          if (source.value === 'ember') {
+            // debugger;
+          }
           let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
 
           if (specifier !== source.value) {
@@ -431,9 +455,15 @@ function rewriteTopLevelImport(
     }
   }
 
+  if (source.value === 'ember') {
+    debugger;
+  }
   let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
   if (specifier !== source.value) {
     source.value = specifier;
+  } else if (source.value === 'ember') {
+    debugger
+    throw new Error(`EWUT! ${source.value} ${specifier}`);
   }
 }
 

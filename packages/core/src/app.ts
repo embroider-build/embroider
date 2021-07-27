@@ -111,6 +111,8 @@ export interface AppAdapter<TreeNames> {
   // compatibility
   adjustImportsOptions(): AdjustImportsOptions;
 
+  adjustImportsOptionsFile(): string;
+
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
 
@@ -417,7 +419,7 @@ export class AppBuilder<TreeNames> {
     }
     return [
       require.resolve('./babel-plugin-adjust-imports'),
-      Object.assign({}, this.adapter.adjustImportsOptions(), { relocatedFiles }),
+      { adjustImportsOptionsFile: this.adapter.adjustImportsOptionsFile(), relocatedFiles },
     ];
   }
 

@@ -50,7 +50,7 @@
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
     "qunit": "^2.14.1",
-    "qunit-dom": "^0.8.4"
+    "qunit-dom": "^1.6.0"
   },
   "engines": {
     "node": "8.* || >= 10.*"

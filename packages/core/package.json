@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "0.42.3",
+  "version": "0.43.1",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -37,8 +37,8 @@
     "@babel/plugin-transform-runtime": "^7.14.5",
     "@babel/runtime": "^7.14.5",
     "@babel/traverse": "^7.14.5",
-    "@embroider/macros": "0.42.3",
-    "@embroider/shared-internals": "0.42.3",
+    "@embroider/macros": "0.43.1",
+    "@embroider/shared-internals": "0.43.1",
     "assert-never": "^1.2.1",
     "babel-import-util": "^0.1.0",
     "@ef4/babel-plugin-htmlbars-inline-precompile": "6.0.0-alpha.3",

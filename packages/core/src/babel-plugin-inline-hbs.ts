@@ -161,12 +161,19 @@ export default function make<O>(getCompiler: (opts: O) => TemplateCompiler) {
     );
   }
 
+  function getTemplateString(template: any, path: NodePath<t.CallExpression>): string {
+    if (template?.type === 'StringLiteral') {
+      return template.value;
+    }
+    // treat inert TemplateLiteral (without subexpressions) like a StringLiteral
+    if (template?.type === 'TemplateLiteral' && !template.expressions.length) {
+      return template.quasis[0].value.cooked;
+    }
+    throw path.buildCodeFrameError('hbs accepts only a string literal argument');
+  }
+
   function getCallArguments(path: NodePath<t.CallExpression>): { template: string; insertRuntimeErrors: boolean } {
     let [template, options] = path.node.arguments;
-
-    if (template?.type !== 'StringLiteral') {
-      throw path.buildCodeFrameError('hbs accepts only a string literal argument');
-    }
 
     let insertRuntimeErrors =
       options?.type === 'ObjectExpression' &&
@@ -181,7 +188,7 @@ export default function make<O>(getCompiler: (opts: O) => TemplateCompiler) {
       );
 
     return {
-      template: template.value,
+      template: getTemplateString(template, path),
       insertRuntimeErrors,
     };
   }

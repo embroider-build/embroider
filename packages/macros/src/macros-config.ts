@@ -3,17 +3,30 @@ import type { PluginItem } from '@babel/core';
 import { PackageCache, getOrCreate } from '@embroider/shared-internals';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import State from './babel/state';
+import partition from 'lodash/partition';
 
 const packageCache = new PackageCache();
 
-export type Merger = (configs: unknown[]) => unknown;
+export type SourceOfConfig = (config: object) => {
+  readonly name: string;
+  readonly root: string;
+  readonly version: string;
+};
+
+export type Merger = (
+  configs: object[],
+  params: {
+    sourceOfConfig: SourceOfConfig;
+  }
+) => object;
 
 // Do not change this type signature without pondering deeply the mysteries of
 // being compatible with unwritten future versions of this library.
 type GlobalSharedState = WeakMap<
   any,
   {
-    configs: Map<string, unknown[]>;
+    configs: Map<string, object[]>;
+    configSources: WeakMap<object, string>;
     mergers: Map<string, { merger: Merger; fromPath: string }>;
   }
 >;
@@ -38,9 +51,16 @@ export default class MacrosConfig {
     }
 
     let shared = g.__embroider_macros_global__.get(key);
-    if (!shared) {
+    if (shared) {
+      // if an earlier version of @embroider/macros created the shared state, it
+      // would have configSources.
+      if (!shared.configSources) {
+        shared.configSources = new WeakMap();
+      }
+    } else {
       shared = {
         configs: new Map(),
+        configSources: new WeakMap(),
         mergers: new Map(),
       };
       g.__embroider_macros_global__.set(key, shared);
@@ -48,6 +68,7 @@ export default class MacrosConfig {
 
     let config = new MacrosConfig();
     config.configs = shared.configs;
+    config.configSources = shared.configSources;
     config.mergers = shared.mergers;
     localSharedState.set(key, config);
     return config;
@@ -132,20 +153,21 @@ export default class MacrosConfig {
   }
 
   private _configWritable = true;
-  private configs: Map<string, unknown[]> = new Map();
+  private configs: Map<string, object[]> = new Map();
+  private configSources: WeakMap<object, string> = new WeakMap();
   private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to
   // `__filename`.
-  setConfig(fromPath: string, packageName: string, config: unknown) {
+  setConfig(fromPath: string, packageName: string, config: object) {
     return this.internalSetConfig(fromPath, packageName, config);
   }
 
   // Registers a new source of configuration to be given to your own package.
   // Your config type must be json-serializable. You must always set fromPath to
   // `__filename`.
-  setOwnConfig(fromPath: string, config: unknown) {
+  setOwnConfig(fromPath: string, config: object) {
     return this.internalSetConfig(fromPath, undefined, config);
   }
 
@@ -157,7 +179,7 @@ export default class MacrosConfig {
   //
   // Your value must be json-serializable. You must always set fromPath to
   // `__filename`.
-  setGlobalConfig(fromPath: string, key: string, value: unknown) {
+  setGlobalConfig(fromPath: string, key: string, value: object) {
     if (!this._configWritable) {
       throw new Error(
         `[Embroider:MacrosConfig] attempted to set global config after configs have been finalized from: '${fromPath}'`
@@ -166,7 +188,7 @@ export default class MacrosConfig {
     this.globalConfig[key] = value;
   }
 
-  private internalSetConfig(fromPath: string, packageName: string | undefined, config: unknown) {
+  private internalSetConfig(fromPath: string, packageName: string | undefined, config: object) {
     if (!this._configWritable) {
       throw new Error(
         `[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`
@@ -176,6 +198,7 @@ export default class MacrosConfig {
     let targetPackage = this.resolvePackage(fromPath, packageName);
     let peers = getOrCreate(this.configs, targetPackage.root, () => []);
     peers.push(config);
+    this.configSources.set(config, fromPath);
   }
 
   // Allows you to set the merging strategy used for your package's config. The
@@ -196,7 +219,7 @@ export default class MacrosConfig {
     this.mergers.set(targetPackage.root, { merger, fromPath });
   }
 
-  private cachedUserConfigs: { [packageRoot: string]: unknown } | undefined;
+  private cachedUserConfigs: { [packageRoot: string]: object } | undefined;
 
   private get userConfigs() {
     if (this._configWritable) {
@@ -204,11 +227,12 @@ export default class MacrosConfig {
     }
 
     if (!this.cachedUserConfigs) {
-      let userConfigs: { [packageRoot: string]: unknown } = {};
+      let userConfigs: { [packageRoot: string]: object } = {};
+      let sourceOfConfig = makeConfigSourcer(this.configSources);
       for (let [pkgRoot, configs] of this.configs) {
-        let combined: unknown;
+        let combined: object;
         if (configs.length > 1) {
-          combined = this.mergerFor(pkgRoot)(configs);
+          combined = this.mergerFor(pkgRoot)(configs, { sourceOfConfig });
         } else {
           combined = configs[0];
         }
@@ -298,7 +322,7 @@ export default class MacrosConfig {
     if (entry) {
       return entry.merger;
     }
-    return defaultMerger;
+    return defaultMergerFor(pkgRoot);
   }
 
   // this exists because @embroider/compat rewrites and moves v1 addons, and
@@ -338,6 +362,36 @@ export default class MacrosConfig {
   }
 }
 
-function defaultMerger(configs: unknown[]): unknown {
-  return Object.assign({}, ...configs);
+function defaultMergerFor(pkgRoot: string) {
+  return function defaultMerger(configs: object[], { sourceOfConfig }: { sourceOfConfig: SourceOfConfig }): object {
+    let [ownConfigs, otherConfigs] = partition(configs, c => sourceOfConfig(c as object).root === pkgRoot);
+    return Object.assign({}, ...ownConfigs, ...otherConfigs);
+  };
+}
+
+function makeConfigSourcer(configSources: WeakMap<object, string>): SourceOfConfig {
+  return config => {
+    let fromPath = configSources.get(config);
+    if (!fromPath) {
+      throw new Error(`unknown object passed to sourceOfConfig(). You can only pass back the configs you were given.`);
+    }
+    let maybePkg = packageCache.ownerOfFile(fromPath);
+    if (!maybePkg) {
+      throw new Error(
+        `bug: unexpected error, we always check that fromPath is owned during internalSetConfig so this should never happen`
+      );
+    }
+    let pkg = maybePkg;
+    return {
+      get name() {
+        return pkg.name;
+      },
+      get version() {
+        return pkg.version;
+      },
+      get root() {
+        return pkg.root;
+      },
+    };
+  };
 }

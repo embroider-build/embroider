@@ -1,5 +1,46 @@
 # Embroider Changelog
 
+## v0.43.1 (2021-07-28)
+
+#### :rocket: Enhancement
+* `compat`, `core`
+  * [#907](https://github.com/embroider-build/embroider/pull/907) Deflate AdjustImportsOptions ([@krisselden](https://github.com/krisselden))
+
+#### :bug: Bug Fix
+* `core`
+  * [#899](https://github.com/embroider-build/embroider/pull/899) support inert TemplateLiteral in hbs plugin ([@eoneill](https://github.com/eoneill))
+* `compat`
+  * [#900](https://github.com/embroider-build/embroider/pull/900) Only patch `ember-cli-deprecation-workflow` releases before `2.0.0` ([@alexlafroscia](https://github.com/alexlafroscia))
+  * [#904](https://github.com/embroider-build/embroider/pull/904) Fix ember-test-selectors custom adapter for 6.x ([@mydea](https://github.com/mydea))
+
+#### Committers: 5
+- Alex LaFroscia ([@alexlafroscia](https://github.com/alexlafroscia))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.43.0 (2021-07-13)
+
+#### :boom: Breaking Change
+* `macros`
+  * [#888](https://github.com/embroider-build/embroider/pull/888) Expose sourceOfConfig to macro config mergers ([@mydea](https://github.com/mydea))
+* `babel-loader-7`, `compat`, `core`, `macros`, `shared-internals`, `webpack`
+  * [#890](https://github.com/embroider-build/embroider/pull/890) Drop support for apps that use babel 6 ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#886](https://github.com/embroider-build/embroider/pull/886) `undefined` does not serialize with broccoli-babel-transpiler ([@thoov](https://github.com/thoov))
+* `core`, `shared-internals`, `webpack`
+  * [#881](https://github.com/embroider-build/embroider/pull/881) Fix race condition finding the owning package of a given file when using multiple workers ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.42.3 (2021-06-28)
 
 #### :rocket: Enhancement

@@ -4,38 +4,43 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { outputFileSync } from 'fs-extra';
+import { outputFileSync, readFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { handleImportDeclaration } from './mini-modules-polyfill';
 
 interface State {
   adjustFile: AdjustFile;
-  opts: {
-    renamePackages: {
-      [fromName: string]: string;
-    };
-    renameModules: {
-      [fromName: string]: string;
-    };
-    extraImports: {
-      absPath: string;
-      target: string;
-      runtimeName?: string;
-    }[];
-    externalsDir: string;
-    activeAddons: {
-      [packageName: string]: string;
-    };
-    relocatedFiles: { [relativePath: string]: string };
-    resolvableExtensions: string[];
-    emberNeedsModulesPolyfill: boolean;
-  };
+  opts: Options | DeflatedOptions;
+}
+
+export interface DeflatedOptions {
+  adjustImportsOptionsFile: string;
+  relocatedFiles: { [relativePath: string]: string };
 }
 
 type BabelTypes = typeof t;
 
-export type Options = State['opts'];
+export interface Options {
+  renamePackages: {
+    [fromName: string]: string;
+  };
+  renameModules: {
+    [fromName: string]: string;
+  };
+  extraImports: {
+    absPath: string;
+    target: string;
+    runtimeName?: string;
+  }[];
+  externalsDir: string;
+  activeAddons: {
+    [packageName: string]: string;
+  };
+  relocatedFiles: { [relativePath: string]: string };
+  resolvableExtensions: string[];
+  emberNeedsModulesPolyfill: boolean;
+}
 
 const packageCache = PackageCache.shared('embroider-stage3');
 
@@ -100,7 +105,7 @@ function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options, isD
   return specifier;
 }
 
-function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: State['opts']) {
+function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: Options) {
   let packageName = getPackageName(specifier);
   if (!packageName) {
     return specifier;
@@ -343,8 +348,9 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
+          let opts = ensureOpts(state);
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
-          addExtraImports(t, path, state.opts.extraImports);
+          addExtraImports(t, path, opts.extraImports);
         },
         exit(path: NodePath<t.Program>, state: State) {
           for (let child of path.get('body')) {
@@ -357,7 +363,7 @@ export default function main(babel: typeof Babel) {
       CallExpression(path: NodePath<t.CallExpression>, state: State) {
         if (isImportSyncExpression(t, path) || isDynamicImportExpression(t, path)) {
           const [source] = path.get('arguments');
-          let { opts } = state;
+          let opts = ensureOpts(state);
           let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts, true);
           source.replaceWith(t.stringLiteral(specifier));
           return;
@@ -375,7 +381,7 @@ export default function main(babel: typeof Babel) {
           );
         }
 
-        let { opts } = state;
+        let opts = ensureOpts(state);
 
         const dependencies = path.node.arguments[1];
 
@@ -412,7 +418,7 @@ function rewriteTopLevelImport(
   path: NodePath<t.ImportDeclaration | t.ExportNamedDeclaration | t.ExportAllDeclaration>,
   state: State
 ) {
-  let { opts } = state;
+  let opts = ensureOpts(state);
   const { source } = path.node;
   if (source === null || source === undefined) {
     return;
@@ -436,11 +442,7 @@ function rewriteTopLevelImport(
   return join(__dirname, '..');
 };
 
-function addExtraImports(
-  t: BabelTypes,
-  path: NodePath<t.Program>,
-  extraImports: Required<State['opts']>['extraImports']
-) {
+function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, extraImports: Required<Options>['extraImports']) {
   let counter = 0;
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
@@ -490,6 +492,17 @@ class AdjustFile {
       return packageCache.ownerOfFile(this.name);
     }
   }
+}
+
+function ensureOpts(state: State): Options {
+  let { opts } = state;
+  if ('adjustImportsOptionsFile' in opts) {
+    let inflated = JSON.parse(readFileSync(opts.adjustImportsOptionsFile, 'utf8'));
+    inflated.relocatedFiles = opts.relocatedFiles;
+    state.opts = inflated;
+    return inflated;
+  }
+  return opts;
 }
 
 // we don't want to allow things that resolve only by accident that are likely

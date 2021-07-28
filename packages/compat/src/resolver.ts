@@ -22,7 +22,7 @@ import Options from './options';
 import { ResolvedDep } from '@embroider/core/src/resolver';
 import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
-import { pathExistsSync, readFileSync } from 'fs-extra';
+import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
 
 export interface ComponentResolution {
@@ -119,7 +119,7 @@ interface RehydrationParamsBase {
 }
 
 interface RehydrationParamsWithFile extends RehydrationParamsBase {
-  adjustImportsOptionsFile: string;
+  adjustImportsOptionsPath: string;
 }
 
 interface RehydrationParamsWithOptions extends RehydrationParamsBase {
@@ -201,8 +201,9 @@ export default class CompatResolver implements Resolver {
   @Memoize()
   get adjustImportsOptions(): AdjustImportsOptions {
     const { params } = this;
-    return 'adjustImportsOptionsFile' in params
-      ? JSON.parse(readFileSync(params.adjustImportsOptionsFile, 'utf8'))
+    return 'adjustImportsOptionsPath' in params
+      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require(params.adjustImportsOptionsPath)
       : params.adjustImportsOptions;
   }
 

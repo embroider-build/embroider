@@ -27,6 +27,17 @@ function stage1Tests(transform: (code: string) => string) {
     expect(code).toMatch(/return hbs\("<div/);
     expect(code).toMatch(/embroider-sample-transforms-result/);
   });
+  test('call form with template literal', () => {
+    let code = transform(`
+      import hbs from 'htmlbars-inline-precompile';
+      export default function() {
+        return hbs(\`<div class={{embroider-sample-transforms-target}}></div>\`);
+      }
+      `);
+    expect(code).toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/return hbs\("<div/);
+    expect(code).toMatch(/embroider-sample-transforms-result/);
+  });
 
   test('runtime errors are left in place in stage 1', () => {
     let code = transform(`
@@ -57,6 +68,17 @@ function stage3Tests(transform: (code: string) => string) {
       import hbs from 'htmlbars-inline-precompile';
       export default function() {
         return hbs("<div class={{embroider-sample-transforms-target}}></div>");
+      }
+      `);
+    expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
+    expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
+    expect(code).toMatch(/return createTemplateFactory\({/);
+  });
+  test('call form with template literal', () => {
+    let code = transform(`
+      import hbs from 'htmlbars-inline-precompile';
+      export default function() {
+        return hbs(\`<div class={{embroider-sample-transforms-target}}></div>\`);
       }
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);

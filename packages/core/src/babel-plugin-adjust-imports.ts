@@ -3,7 +3,7 @@ import { join, dirname, resolve } from 'path';
 import type { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { outputFileSync, readFileSync } from 'fs-extra';
+import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { handleImportDeclaration } from './mini-modules-polyfill';
@@ -14,8 +14,8 @@ interface State {
 }
 
 export interface DeflatedOptions {
-  adjustImportsOptionsFile: string;
-  relocatedFiles: { [relativePath: string]: string };
+  adjustImportsOptionsPath: string;
+  relocatedFilesPath: string;
 }
 
 type BabelTypes = typeof t;
@@ -348,7 +348,7 @@ export default function main(babel: unknown) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           let opts = ensureOpts(state);
-          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, state.opts.relocatedFiles);
+          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
           addExtraImports(t, path, opts.extraImports);
         },
         exit(path: NodePath<t.Program>, state: State) {
@@ -495,11 +495,9 @@ class AdjustFile {
 
 function ensureOpts(state: State): Options {
   let { opts } = state;
-  if ('adjustImportsOptionsFile' in opts) {
-    let inflated = JSON.parse(readFileSync(opts.adjustImportsOptionsFile, 'utf8'));
-    inflated.relocatedFiles = opts.relocatedFiles;
-    state.opts = inflated;
-    return inflated;
+  if ('adjustImportsOptionsPath' in opts) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return (state.opts = { ...require(opts.adjustImportsOptionsPath), ...require(opts.relocatedFilesPath) });
   }
   return opts;
 }

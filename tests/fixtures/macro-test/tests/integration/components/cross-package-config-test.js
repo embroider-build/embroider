@@ -13,14 +13,22 @@ module('Integration | cross-package-config', function (hooks) {
     this.owner.register(
       'helper:my-assertion',
       helper(function ([value]) {
-        assert.deepEqual(value, { hello: 'world', configFromMacrosTests: 'exists' });
+        assert.deepEqual(value, {
+          shouldBeOverwritten: 'overwritten',
+          configFromAddonItself: 'this is the addon',
+          configFromMacrosTests: 'exists',
+        });
       })
     );
     await render(hbs`{{my-assertion (reflect-config)}}`);
   });
 
   test(`app's JS can see addon's merged config`, async function (assert) {
-    assert.deepEqual(reflectAddonConfig(), { hello: 'world', configFromMacrosTests: 'exists' });
+    assert.deepEqual(reflectAddonConfig(), {
+      shouldBeOverwritten: 'overwritten',
+      configFromAddonItself: 'this is the addon',
+      configFromMacrosTests: 'exists',
+    });
   });
 
   test(`addon's HBS can see addon's merged config`, async function (assert) {
@@ -28,7 +36,11 @@ module('Integration | cross-package-config', function (hooks) {
     this.owner.register(
       'helper:my-assertion',
       helper(function ([value]) {
-        assert.deepEqual(value, { hello: 'world', configFromMacrosTests: 'exists' });
+        assert.deepEqual(value, {
+          shouldBeOverwritten: 'overwritten',
+          configFromAddonItself: 'this is the addon',
+          configFromMacrosTests: 'exists',
+        });
       })
     );
     await render(hbs`{{#reflect-hbs-config as |config|}} {{my-assertion config}} {{/reflect-hbs-config}}`);
@@ -39,7 +51,11 @@ module('Integration | cross-package-config', function (hooks) {
     this.owner.register(
       'helper:my-assertion',
       helper(function ([value]) {
-        assert.deepEqual(value, { hello: 'world', configFromMacrosTests: 'exists' });
+        assert.deepEqual(value, {
+          shouldBeOverwritten: 'overwritten',
+          configFromAddonItself: 'this is the addon',
+          configFromMacrosTests: 'exists',
+        });
       })
     );
     await render(hbs`{{my-assertion (macroGetConfig "macro-sample-addon" )}}`);

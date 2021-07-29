@@ -1,6 +1,6 @@
 {
   "name": "@embroider/router",
-  "version": "0.42.2",
+  "version": "0.43.1",
   "description": "Lazy loading router",
   "keywords": [
     "ember-addon"
@@ -28,20 +28,22 @@
     "test:classic": "cross-env CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
-    "@embroider/macros": "0.42.2",
+    "@embroider/macros": "0.43.1",
     "ember-cli-babel": "^7.23.0"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
+    "@ember/test-helpers": "^2.2.5",
     "@ember/string": "^1.0.0",
-    "@embroider/compat": "0.42.2",
-    "@embroider/core": "0.42.2",
+    "@embroider/compat": "0.43.1",
+    "@embroider/core": "0.43.1",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "0.42.2",
+    "@embroider/webpack": "0.43.1",
     "@types/ember__routing": "^3.16.9",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
     "cross-env": "^7.0.3",
+    "ember-auto-import": "^1.11.2",
     "ember-cli": "~3.10.1",
     "ember-cli-dependency-checker": "^3.1.0",
     "ember-cli-eslint": "^5.1.0",
@@ -55,7 +57,7 @@
     "ember-export-application-global": "^2.0.0",
     "ember-load-initializers": "^2.0.0",
     "ember-maybe-import-regenerator": "^0.1.6",
-    "ember-qunit": "^4.4.1",
+    "ember-qunit": "^5.1.4",
     "ember-resolver": "^5.0.1",
     "ember-source": "~3.16.0",
     "ember-source-channel-url": "^1.1.0",
@@ -63,10 +65,11 @@
     "eslint-plugin-ember": "^7.0.0",
     "eslint-plugin-node": "^9.0.1",
     "loader.js": "^4.7.0",
-    "qunit-dom": "^0.8.4"
+    "qunit": "^2.14.1",
+    "qunit-dom": "^1.6.0"
   },
   "peerDependencies": {
-    "@embroider/core": "0.42.2",
+    "@embroider/core": "0.43.1",
     "@types/ember__routing": "*"
   },
   "peerDependenciesMeta": {

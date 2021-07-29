@@ -277,12 +277,12 @@ export default class V1App {
   }
 
   @Memoize()
-  babelMajorVersion(): 6 | 7 {
+  babelMajorVersion(): 7 {
     let babelAddon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-babel');
     if (babelAddon) {
       let major = Number(babelAddon.pkg.version.split('.')[0]);
-      if (major !== 6 && major !== 7) {
-        throw new Error(`@embroider/compat only supports v1 addons that use babel 6 or 7`);
+      if (major !== 7) {
+        throw new Error(`@embroider/compat only supports v1 addons that use babel 7`);
       }
       return major;
     }

@@ -1,5 +1,72 @@
 # Embroider Changelog
 
+## v0.43.1 (2021-07-28)
+
+#### :rocket: Enhancement
+* `compat`, `core`
+  * [#907](https://github.com/embroider-build/embroider/pull/907) Deflate AdjustImportsOptions ([@krisselden](https://github.com/krisselden))
+
+#### :bug: Bug Fix
+* `core`
+  * [#899](https://github.com/embroider-build/embroider/pull/899) support inert TemplateLiteral in hbs plugin ([@eoneill](https://github.com/eoneill))
+* `compat`
+  * [#900](https://github.com/embroider-build/embroider/pull/900) Only patch `ember-cli-deprecation-workflow` releases before `2.0.0` ([@alexlafroscia](https://github.com/alexlafroscia))
+  * [#904](https://github.com/embroider-build/embroider/pull/904) Fix ember-test-selectors custom adapter for 6.x ([@mydea](https://github.com/mydea))
+
+#### Committers: 5
+- Alex LaFroscia ([@alexlafroscia](https://github.com/alexlafroscia))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.43.0 (2021-07-13)
+
+#### :boom: Breaking Change
+* `macros`
+  * [#888](https://github.com/embroider-build/embroider/pull/888) Expose sourceOfConfig to macro config mergers ([@mydea](https://github.com/mydea))
+* `babel-loader-7`, `compat`, `core`, `macros`, `shared-internals`, `webpack`
+  * [#890](https://github.com/embroider-build/embroider/pull/890) Drop support for apps that use babel 6 ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#886](https://github.com/embroider-build/embroider/pull/886) `undefined` does not serialize with broccoli-babel-transpiler ([@thoov](https://github.com/thoov))
+* `core`, `shared-internals`, `webpack`
+  * [#881](https://github.com/embroider-build/embroider/pull/881) Fix race condition finding the owning package of a given file when using multiple workers ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.42.3 (2021-06-28)
+
+#### :rocket: Enhancement
+* `core`
+  * [#875](https://github.com/embroider-build/embroider/pull/875) Improve Webpack logging output ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#865](https://github.com/embroider-build/embroider/pull/865) Enable parallelization of @embroider/macros in non-Embroider builds ([@thoov](https://github.com/thoov))
+* `core`
+  * [#872](https://github.com/embroider-build/embroider/pull/872) Template compiler plugin not removed due to bad path comparison on Windows ([@thoov](https://github.com/thoov))
+* `compat`, `core`, `shared-internals`, `webpack`
+  * [#870](https://github.com/embroider-build/embroider/pull/870) Ensure tmpdir usage internally is always the realpath ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :house: Internal
+* `compat`
+  * [#878](https://github.com/embroider-build/embroider/pull/878) redundant path resolution ([@ef4](https://github.com/ef4))
+* Other
+  * [#874](https://github.com/embroider-build/embroider/pull/874) Convert `sample-lib` to new test infra ([@thoov](https://github.com/thoov))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.42.2 (2021-06-23)
 
 #### :bug: Bug Fix

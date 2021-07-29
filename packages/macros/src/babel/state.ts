@@ -40,7 +40,7 @@ export default interface State {
     // the package root directory of the app, if the app is under active
     // development. Needed so that we can get consistent answers to
     // `isDevelopingApp` and `isDeveopingThisPackage`
-    appPackageRoot: string | undefined;
+    appPackageRoot: string;
 
     embroiderMacrosConfigMarker: true;
 

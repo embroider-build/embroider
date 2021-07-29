@@ -20,7 +20,7 @@ export = {
 
     if (ownOptions.setConfig) {
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        MacrosConfig.for(appInstance).setConfig(source, packageName, config);
+        MacrosConfig.for(appInstance).setConfig(source, packageName, config as object);
       }
     }
 

@@ -22,7 +22,7 @@ import walkSync from 'walk-sync';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
-import { statSync, readdirSync } from 'fs';
+import { statSync, readdirSync, writeFileSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import CompatResolver from './resolver';
 import { activePackageRules, PackageRules, expandModuleRules } from './dependency-rules';
@@ -36,6 +36,7 @@ import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
+
 import semver from 'semver';
 
 interface TreeNames {
@@ -337,8 +338,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
-      adjustImportsOptions: this.adjustImportsOptions(),
+      adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
     });
+  }
+
+  @Memoize()
+  adjustImportsOptionsPath(): string {
+    let file = join(this.root, '_adjust_imports.json');
+    writeFileSync(file, JSON.stringify(this.adjustImportsOptions()));
+    return file;
   }
 
   @Memoize()
@@ -346,6 +354,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return this.makeAdjustImportOptions(true);
   }
 
+  // this gets serialized out by babel plugin and ast plugin
   private makeAdjustImportOptions(outer: boolean): AdjustImportsOptions {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));

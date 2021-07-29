@@ -1,9 +1,8 @@
 import Package from './package';
-import { realpathSync } from 'fs';
+import { existsSync, realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
-import { sync as pkgUpSync } from 'pkg-up';
 
 export default class PackageCache {
   resolve(packageName: string, fromPackage: Package): Package {
@@ -61,21 +60,21 @@ export default class PackageCache {
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
-    for (let length = segments.length - 1; length >= 0; length--) {
+    for (let length = segments.length; length >= 0; length--) {
       if (segments[length - 1] === 'node_modules') {
         // once we hit a node_modules, we're leaving the package we were in, so
         // any higher caches don't apply to us
         break;
       }
-      let candidate = segments.slice(0, length).join(sep);
+
+      let usedSegments = segments.slice(0, length);
+      let candidate = usedSegments.join(sep);
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }
-    }
-
-    let packageJSONPath = pkgUpSync({ cwd: filename });
-    if (packageJSONPath) {
-      return this.get(dirname(packageJSONPath));
+      if (existsSync([...usedSegments, 'package.json'].join(sep))) {
+        return this.get(candidate);
+      }
     }
   }
 

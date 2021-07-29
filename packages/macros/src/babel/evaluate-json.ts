@@ -5,14 +5,15 @@ import type {
   MemberExpression,
   Expression,
   ExpressionStatement,
+  File,
   CallExpression,
   OptionalMemberExpression,
 } from '@babel/types';
+import type * as Babel from '@babel/core';
 import State, { owningPackage } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
-import { BabelContext } from './babel-context';
 
 type OpValue = string | boolean | number;
 
@@ -421,11 +422,11 @@ export function assertArray<T>(input: T | T[]): T[] {
   return input;
 }
 
-export function buildLiterals(value: unknown | undefined, babelContext: BabelContext): Identifier | ObjectExpression {
+export function buildLiterals(value: unknown | undefined, babelContext: typeof Babel): Identifier | ObjectExpression {
   if (typeof value === 'undefined') {
     return babelContext.types.identifier('undefined');
   }
-  let statement = babelContext.template(`a(${JSON.stringify(value)})`)() as ExpressionStatement;
-  let expression = statement.expression as CallExpression;
+  let statement = babelContext.parse(`a(${JSON.stringify(value)})`) as File;
+  let expression = (statement.program.body[0] as ExpressionStatement).expression as CallExpression;
   return expression.arguments[0] as ObjectExpression;
 }

@@ -43,6 +43,11 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      test(`yarn build production`, async function (assert) {
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 yarn build:production`);
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
       test(`CLASSIC=true yarn test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
         let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 CLASSIC=true yarn test`);

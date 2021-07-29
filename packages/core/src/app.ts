@@ -111,6 +111,8 @@ export interface AppAdapter<TreeNames> {
   // compatibility
   adjustImportsOptions(): AdjustImportsOptions;
 
+  adjustImportsOptionsPath(): string;
+
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
 
@@ -119,7 +121,7 @@ export interface AppAdapter<TreeNames> {
   babelConfig(): TransformOptions;
 
   // the babel version that works with your babelConfig.
-  babelMajorVersion(): 6 | 7;
+  babelMajorVersion(): 7;
 
   // The environment settings used to control Ember itself. In a classic app,
   // this comes from the EmberENV property returned by config/environment.js.
@@ -362,13 +364,7 @@ export class AppBuilder<TreeNames> {
 
     // Our stage3 code is always allowed to use dynamic import. We may emit it
     // ourself when splitting routes.
-    babel.plugins.push(
-      require.resolve(
-        this.adapter.babelMajorVersion() === 6
-          ? 'babel-plugin-syntax-dynamic-import'
-          : '@babel/plugin-syntax-dynamic-import'
-      )
-    );
+    babel.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
     return babel;
   }
 
@@ -382,13 +378,7 @@ export class AppBuilder<TreeNames> {
 
     // Our stage3 code is always allowed to use dynamic import. We may emit it
     // ourself when splitting routes.
-    babel.plugins.push(
-      require.resolve(
-        this.adapter.babelMajorVersion() === 6
-          ? 'babel-plugin-syntax-dynamic-import'
-          : '@babel/plugin-syntax-dynamic-import'
-      )
-    );
+    babel.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
 
     // https://github.com/webpack/webpack/issues/12154
     babel.plugins.push(require.resolve('./rename-require-plugin'));
@@ -427,9 +417,14 @@ export class AppBuilder<TreeNames> {
         relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
       }
     }
+    let relocatedFilesPath = join(this.root, '_relocated_files.json');
+    writeFileSync(relocatedFilesPath, JSON.stringify({ relocatedFiles }));
     return [
       require.resolve('./babel-plugin-adjust-imports'),
-      Object.assign({}, this.adapter.adjustImportsOptions(), { relocatedFiles }),
+      {
+        adjustImportsOptionsPath: this.adapter.adjustImportsOptionsPath(),
+        relocatedFilesPath,
+      },
     ];
   }
 

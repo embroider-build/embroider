@@ -18,6 +18,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@ember/string": "^1.0.0",
     "@embroider/macros": "0.43.1",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",

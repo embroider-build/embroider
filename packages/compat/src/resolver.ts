@@ -110,14 +110,23 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
   };
 }
 
-interface RehydrationParams {
+interface RehydrationParamsBase {
   root: string;
   modulePrefix: string;
   podModulePrefix?: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
+}
+
+interface RehydrationParamsWithFile extends RehydrationParamsBase {
+  adjustImportsOptionsPath: string;
+}
+
+interface RehydrationParamsWithOptions extends RehydrationParamsBase {
   adjustImportsOptions: AdjustImportsOptions;
 }
+
+type RehydrationParams = RehydrationParamsWithFile | RehydrationParamsWithOptions;
 
 export function rehydrate(params: RehydrationParams) {
   return new CompatResolver(params);
@@ -173,7 +182,7 @@ export default class CompatResolver implements Resolver {
     // "inherit" the rules that are attached to their corresonding JS module.
     if (absPath.endsWith('.hbs')) {
       let stem = absPath.slice(0, -4);
-      for (let ext of this.params.adjustImportsOptions.resolvableExtensions) {
+      for (let ext of this.adjustImportsOptions.resolvableExtensions) {
         if (ext !== '.hbs') {
           let rules = this.rules.components.get(stem + ext);
           if (rules) {
@@ -187,6 +196,15 @@ export default class CompatResolver implements Resolver {
 
   private isIgnoredComponent(dasherizedName: string) {
     return this.rules.ignoredComponents.includes(dasherizedName);
+  }
+
+  @Memoize()
+  get adjustImportsOptions(): AdjustImportsOptions {
+    const { params } = this;
+    return 'adjustImportsOptionsPath' in params
+      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require(params.adjustImportsOptionsPath)
+      : params.adjustImportsOptions;
   }
 
   @Memoize()
@@ -357,7 +375,7 @@ export default class CompatResolver implements Resolver {
     try {
       absPath = resolve.sync(path, {
         basedir: dirname(from),
-        extensions: this.params.adjustImportsOptions.resolvableExtensions,
+        extensions: this.adjustImportsOptions.resolvableExtensions,
       });
     } catch (err) {
       return;
@@ -372,14 +390,14 @@ export default class CompatResolver implements Resolver {
 
   @Memoize()
   private get resolvableExtensionsPattern() {
-    return extensionsPattern(this.params.adjustImportsOptions.resolvableExtensions);
+    return extensionsPattern(this.adjustImportsOptions.resolvableExtensions);
   }
 
   absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
     let pkg = owningPackage || PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
-      for (let [runtimeName, realName] of Object.entries(this.params.adjustImportsOptions.renamePackages)) {
+      for (let [runtimeName, realName] of Object.entries(this.adjustImportsOptions.renamePackages)) {
         if (realName === packageRuntimeName) {
           packageRuntimeName = runtimeName;
           break;
@@ -408,7 +426,7 @@ export default class CompatResolver implements Resolver {
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
-    for (let extension of this.params.adjustImportsOptions.resolvableExtensions) {
+    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(this.params.root, 'helpers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
@@ -426,10 +444,6 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
-  get adjustImportsOptions() {
-    return this.params.adjustImportsOptions;
-  }
-
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
     return { root: this.params.root, name: this.params.modulePrefix };
@@ -440,7 +454,7 @@ export default class CompatResolver implements Resolver {
     if (parts.length > 1 && parts[0].length > 0) {
       let cache = PackageCache.shared('embroider-stage3');
       let packageName = parts[0];
-      let renamed = this.params.adjustImportsOptions.renamePackages[packageName];
+      let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
         packageName = renamed;
       }
@@ -462,7 +476,7 @@ export default class CompatResolver implements Resolver {
     // as a key into the rules, and we want to be able to find our rules when
     // checking from our own template (among other times).
 
-    let extensions = ['.hbs', ...this.params.adjustImportsOptions.resolvableExtensions.filter(e => e !== '.hbs')];
+    let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter(e => e !== '.hbs')];
 
     let componentModules = [] as string[];
 

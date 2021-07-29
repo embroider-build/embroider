@@ -1,5 +1,25 @@
 # Embroider Changelog
 
+## v0.43.2 (2021-07-29)
+
+#### :rocket: Enhancement
+* `compat`, `core`
+  * [#912](https://github.com/embroider-build/embroider/pull/912) Use `require` for retrieving the adjust imports info ([@krisselden](https://github.com/krisselden))
+
+#### :bug: Bug Fix
+* `hbs-loader`
+  * [#831](https://github.com/embroider-build/embroider/pull/831) Replace loader-utils with built-in webpack 5 functionality ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `router`
+  * [#911](https://github.com/embroider-build/embroider/pull/911) Upgrade ember-qunit to address canary deprecations ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+
+
 ## v0.43.1 (2021-07-28)
 
 #### :rocket: Enhancement

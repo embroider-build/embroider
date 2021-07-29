@@ -98,7 +98,7 @@ function stage3Tests(transform: (code: string) => string) {
       `);
     expect(code).not.toMatch(/import hbs from 'htmlbars-inline-precompile'/);
     expect(code).toMatch(/import { createTemplateFactory } from ['"]@ember\/template-factory['"]/);
-    expect(code).toMatch(/return createTemplateFactory\({/);
+    expect(code).toMatch(/return createTemplateFactory\(/);
   });
   test('runtime errors become exceptions in stage 3', () => {
     let code = transform(`

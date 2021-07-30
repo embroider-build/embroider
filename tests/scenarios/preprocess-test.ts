@@ -31,7 +31,7 @@ appScenarios
     Qmodule(scenario.name, function () {
       test(`yarn test`, async function (assert) {
         let app: PreparedApp = await scenario.prepare();
-        await app.execute('./node_modules/ember-cli/bin/ember b');
+        await app.execute('node ./node_modules/ember-cli/bin/ember b');
 
         const data = fs.readFileSync(join(app.dir, 'dist', 'assets', 'app-template.css'), 'utf8');
         assert.equal(data, 'body { background: red; }');

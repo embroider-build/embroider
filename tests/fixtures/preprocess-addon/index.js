@@ -2,7 +2,7 @@
 
 const Filter = require('broccoli-persistent-filter');
 const funnel = require('broccoli-funnel');
-const path = require('path');
+const { join } = require('path').posix;
 
 class Awk extends Filter {
   constructor(inputNode, searchReplaceObj) {
@@ -29,18 +29,15 @@ module.exports = {
       name: this.name,
       ext: 'css',
       toTree: (tree, inputPath, outputPath) => {
-        console.log('inputPath: ' + inputPath);
         return funnel(new Awk(tree, { '%%%': inputPath === '/app/styles' ? 'red' : 'blue' }), {
           getDestinationPath(relativePath) {
             let relativePathWithPrefix = `/${relativePath}`;
-            console.log('relativePath: ' + relativePath);
-            console.log('relativePathWithPrefix: ' + relativePathWithPrefix);
 
             if (relativePathWithPrefix === `${inputPath}/app.css`) {
-              return path.join(outputPath, 'app-template.css');
+              return join(outputPath, 'app-template.css');
             }
 
-            return path.join(outputPath, relativePathWithPrefix.replace(inputPath, ''));
+            return join(outputPath, relativePathWithPrefix.replace(inputPath, ''));
           },
         });
       },

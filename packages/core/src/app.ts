@@ -112,7 +112,7 @@ export interface AppAdapter<TreeNames> {
   // compatibility
   adjustImportsOptions(): AdjustImportsOptions;
 
-  adjustImportsOptionsFile(): string;
+  adjustImportsOptionsPath(): string;
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): TemplateCompilerPlugins;
@@ -436,9 +436,14 @@ export class AppBuilder<TreeNames> {
         relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
       }
     }
+    let relocatedFilesPath = join(this.root, '_relocated_files.json');
+    writeFileSync(relocatedFilesPath, JSON.stringify({ relocatedFiles }));
     return [
       require.resolve('./babel-plugin-adjust-imports'),
-      { adjustImportsOptionsFile: this.adapter.adjustImportsOptionsFile(), relocatedFiles },
+      {
+        adjustImportsOptionsPath: this.adapter.adjustImportsOptionsPath(),
+        relocatedFilesPath,
+      },
     ];
   }
 

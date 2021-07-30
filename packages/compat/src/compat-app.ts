@@ -338,12 +338,12 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
-      adjustImportsOptionsFile: this.adjustImportsOptionsFile(),
+      adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
     });
   }
 
   @Memoize()
-  adjustImportsOptionsFile(): string {
+  adjustImportsOptionsPath(): string {
     let file = join(this.root, '_adjust_imports.json');
     writeFileSync(file, JSON.stringify(this.adjustImportsOptions()));
     return file;

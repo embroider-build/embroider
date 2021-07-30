@@ -11,7 +11,7 @@ import EmptyPackageTree from './empty-package-tree';
 export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
   let tree = buildCompatAddon(originalPackage, v1Cache);
   if (!originalPackage.mayRebuild) {
-    tree = new OneShot(tree);
+    tree = new OneShot(tree, originalPackage.name);
   }
   return tree;
 }

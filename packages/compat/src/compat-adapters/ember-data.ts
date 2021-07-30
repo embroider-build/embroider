@@ -1,19 +1,22 @@
 import V1Addon from '../v1-addon';
 import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
-import cloneDeep from 'lodash/cloneDeep';
-import { AddonMeta } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
 import { sync as resolveSync } from 'resolve';
 
-export default class EmberData extends V1Addon {
-  // ember-data customizes the addon tree, but we don't want to run that one
-  // because it breaks when we try to eliminate absolute self-imports. We'll
-  // take the stock behavior instead.
+export class EmberDataBase extends V1Addon {
+  // May of the ember-data packages use rollup to try to hide their internal
+  // structure. This is fragile and it breaks under embroider, and they should
+  // really move this kind of "build-within-a-build" to prepublish time.
+  //
+  // This disables any custom implementation of `treeForAddon`. The stock
+  // behavior is correct.
   customizes(...names: string[]) {
     return super.customizes(...names.filter(n => n !== 'treeForAddon'));
   }
+}
 
+export default class EmberData extends EmberDataBase {
   // ember-data needs its dynamically generated version module.
   @Memoize()
   get v2Trees() {
@@ -44,30 +47,6 @@ export default class EmberData extends V1Addon {
     trees.push(versionTree());
     return trees;
   }
-
-  // this is enough to make sure we drop the debug code in prod. This only
-  // matters when the app is running with staticAddonTrees=false, otherwise this
-  // kind of optimization is automatic.
-  get packageMeta(): Partial<AddonMeta> {
-    let meta = super.packageMeta;
-    if (isProductionEnv() && !isInstrumentedBuild()) {
-      meta = cloneDeep(meta);
-      if (meta['implicit-modules']) {
-        meta['implicit-modules'] = meta['implicit-modules'].filter(name => !name.startsWith('./-debug/'));
-      }
-    }
-    return meta;
-  }
-}
-
-function isProductionEnv() {
-  let isProd = /production/.test(process.env.EMBER_ENV!);
-  let isTest = process.env.EMBER_CLI_TEST_COMMAND;
-  return isProd && !isTest;
-}
-
-function isInstrumentedBuild() {
-  return process.argv.includes('--instrument');
 }
 
 function handleErr(err: any) {

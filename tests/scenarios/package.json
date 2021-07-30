@@ -19,7 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "@ember/string": "^1.0.0",
-    "@embroider/macros": "0.43.2",
+    "@embroider/macros": "0.43.3",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",
     "broccoli-merge-trees": "^3.0.2",
@@ -43,8 +43,6 @@
     "ember-source-3.16": "npm:ember-source@~3.16.0",
     "ember-source-3.20": "npm:ember-source@~3.20.0",
     "ember-source-3.24": "npm:ember-source@~3.24.0",
-    "ember-source-beta": "npm:ember-source@beta",
-    "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
     "fastboot-addon": "link:../../test-packages/fastboot-addon"
   },

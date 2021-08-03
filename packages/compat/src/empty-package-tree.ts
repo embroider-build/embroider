@@ -9,6 +9,7 @@ export default class extends Plugin {
     super([], {
       annotation: 'empty-package-tree',
       persistentOutput: true,
+      needsCache: false,
     });
   }
   build() {

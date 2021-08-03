@@ -4,7 +4,7 @@ import { Builder } from 'broccoli';
 import { copySync } from 'fs-extra';
 import heimdall from 'heimdalljs';
 
-class NerfHeimdallReparentingBuilder extends Builder {
+class NerfHeimdallBuilder extends Builder {
   /*
     Replace the code used to track heimdall nodes: https://github.com/broccolijs/broccoli/blob/v3.5.2/lib/builder.ts#L463-L503
 
@@ -20,17 +20,18 @@ class NerfHeimdallReparentingBuilder extends Builder {
 // Wraps a broccoli tree such that it (and everything it depends on) will only
 // build a single time.
 export default class OneShot extends Plugin {
-  private builder: NerfHeimdallReparentingBuilder | null;
+  private builder: NerfHeimdallBuilder | null;
 
   constructor(originalTree: Node, private addonName: string) {
     // from broccoli's perspective, we don't depend on any input trees!
     super([], {
       annotation: `@embroider/compat: ${addonName}`,
       persistentOutput: true,
+      needsCache: false,
     });
 
     // create a nested builder in order to isolate the specific addon
-    this.builder = new NerfHeimdallReparentingBuilder(originalTree);
+    this.builder = new NerfHeimdallBuilder(originalTree);
   }
 
   async build() {

@@ -98,7 +98,11 @@ export default class EmberCliFastboot extends V1Addon {
 
 class RewriteManifest extends Plugin {
   constructor(tree: Node, private scriptFilter: (file: string) => boolean, private extraAppFiles: string[]) {
-    super([tree], { annotation: 'embroider-compat-adapter-ember-cli-fastboot' });
+    super([tree], {
+      annotation: 'embroider-compat-adapter-ember-cli-fastboot',
+      persistentOutput: true,
+      needsCache: false,
+    });
   }
   build() {
     let json = readJSONSync(join(this.inputPaths[0], 'package.json'));

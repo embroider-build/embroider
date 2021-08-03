@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## v0.43.4 (2021-08-03)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#915](https://github.com/embroider-build/embroider/pull/915) Reduce memory pressure from compat layer by disabling Heimdall node gathering during OneShotPlugin ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 2
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+
+
 ## v0.43.3 (2021-07-30)
 
 #### :bug: Bug Fix

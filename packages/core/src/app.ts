@@ -147,7 +147,7 @@ export function excludeDotFiles(files: string[]) {
 }
 
 export const CACHE_BUSTING_PLUGIN = {
-  path: require.resolve('./babel-plugin-cache-busting'),
+  path: require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
   version: readJSONSync(`${__dirname}/../package.json`).version,
 };
 

@@ -75,6 +75,7 @@ export = {
 
       let yarnLockPath = join(appInstance.project.root, 'yarn.lock');
       let npmLockPath = join(appInstance.project.root, 'package-lock.json');
+      let pnpmLockPath = join(appInstance.project.root, 'pnpm-lock.yaml');
       let packagePath = join(appInstance.project.root, 'package.json');
       let lockFileBuffer;
 
@@ -82,6 +83,8 @@ export = {
         lockFileBuffer = fs.readFileSync(yarnLockPath);
       } else if (fs.existsSync(npmLockPath)) {
         lockFileBuffer = fs.readFileSync(npmLockPath);
+      } else if (fs.existsSync(pnpmLockPath)) {
+        lockFileBuffer = fs.readFileSync(pnpmLockPath);
       } else {
         // no lock file found, using package.json as a fall back
         lockFileBuffer = fs.readFileSync(packagePath);
@@ -95,7 +98,11 @@ export = {
       // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
       // more information in issue #906
       let cacheKey = crypto.createHash('sha256').update(lockFileBuffer).digest('hex');
-      babelPlugins.push([require.resolve('./babel-plugin-cache-busting'), { version: cacheKey }]);
+      babelPlugins.push([
+        require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
+        { version: cacheKey },
+        '@embroider/macros cache buster',
+      ]);
     }
   },
 

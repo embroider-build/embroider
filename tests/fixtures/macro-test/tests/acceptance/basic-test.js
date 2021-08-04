@@ -51,7 +51,7 @@ module('Acceptance | smoke tests', function (hooks) {
     ]);
   });
 
-  test('foobar', async function (assert) {
+  test('dependency satisfies works correctly', async function (assert) {
     await visit('/');
     assert.equal(currentURL(), '/');
 

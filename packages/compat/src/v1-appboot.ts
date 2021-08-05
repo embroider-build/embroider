@@ -8,6 +8,7 @@ export class WriteV1AppBoot extends Plugin {
   constructor() {
     super([], {
       persistentOutput: true,
+      needsCache: false,
     });
   }
   build() {
@@ -26,6 +27,7 @@ export class ReadV1AppBoot extends Plugin {
   constructor(appBootTree: Node) {
     super([appBootTree], {
       persistentOutput: true,
+      needsCache: false,
     });
   }
   build() {

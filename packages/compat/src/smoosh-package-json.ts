@@ -8,6 +8,8 @@ export default class SmooshPackageJSON extends Plugin {
   constructor(inputTrees: Node[], opts: { annotation?: string } = {}) {
     super(inputTrees, {
       annotation: `embroider:core:smoosh-package-json:${opts?.annotation}`,
+      persistentOutput: true,
+      needsCache: false,
     });
   }
 

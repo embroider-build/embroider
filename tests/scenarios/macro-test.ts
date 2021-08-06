@@ -47,8 +47,6 @@ appScenarios
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
-      let pkgJson: any;
-      let pkgJsonLodash: any;
 
       hooks.before(async () => {
         app = await scenario.prepare();

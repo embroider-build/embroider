@@ -91,9 +91,6 @@ appScenarios
         // simulate a different version being installed
         updateLodashVersion(app, '3.0.0');
 
-        fs.writeJsonSync(join(app.dir, 'package.json'), pkgJson);
-        fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
-
         let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three CLASSIC=true yarn test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });

@@ -7,6 +7,17 @@ import { loadFromFixtureData } from './helpers';
 import fs from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
 
+function updateLodashVersion(app: PreparedApp, version: string) {
+  let pkgJson = fs.readJsonSync(join(app.dir, 'package.json'));
+  let pkgJsonLodash = fs.readJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'));
+
+  pkgJson.devDependencies.lodash = version;
+  pkgJsonLodash.version = version;
+
+  fs.writeJsonSync(join(app.dir, 'package.json'), pkgJson);
+  fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
+}
+
 appScenarios
   .map('macro-tests', project => {
     let macroSampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
@@ -36,8 +47,12 @@ appScenarios
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
+      let pkgJson: any;
+      let pkgJsonLodash: any;
+
       hooks.before(async () => {
         app = await scenario.prepare();
+        updateLodashVersion(app, '4.0.0');
       });
 
       test(`yarn test`, async function (assert) {
@@ -56,27 +71,30 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`multiple dependency check`, async function (assert) {
-        let pkgJson = fs.readJsonSync(join(app.dir, 'package.json'));
-        let pkgJsonLodash = fs.readJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'));
-
-        pkgJson.devDependencies.lodash = '4.0.0';
-        pkgJsonLodash.version = '4.0.0';
-
-        fs.writeJsonSync(join(app.dir, 'package.json'), pkgJson);
-        fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
-
+      test(`@embroider/macros babel caching plugin works`, async function (assert) {
         let lodashFourRun = await app.execute(`yarn test`);
         assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
 
-        // downgrade lodash to 3.0.0
-        pkgJson.devDependencies.lodash = '3.0.0';
-        pkgJsonLodash.version = '3.0.0';
+        // simulate a different version being installed
+        updateLodashVersion(app, '3.0.0');
+
+        let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three yarn test`);
+        assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
+      });
+
+      test(`CLASSIC=true @embroider/macros babel caching plugin works`, async function (assert) {
+        updateLodashVersion(app, '4.0.1');
+
+        let lodashFourRun = await app.execute(`cross-env CLASSIC=true yarn test`);
+        assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
+
+        // simulate a different version being installed
+        updateLodashVersion(app, '3.0.0');
 
         fs.writeJsonSync(join(app.dir, 'package.json'), pkgJson);
         fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
 
-        let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three yarn test`);
+        let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three CLASSIC=true yarn test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
     });

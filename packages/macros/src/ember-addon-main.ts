@@ -1,6 +1,4 @@
-import fs from 'fs';
 import { join } from 'path';
-import crypto from 'crypto';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
 export = {
@@ -71,38 +69,7 @@ export = {
     if (!babelPlugins.some(isEmbroiderMacrosPlugin)) {
       let appInstance = this._findHost();
       let source = appOrAddonInstance.root || appOrAddonInstance.project.root;
-      babelPlugins.unshift(MacrosConfig.for(appInstance).babelPluginConfig(source));
-
-      let yarnLockPath = join(appInstance.project.root, 'yarn.lock');
-      let npmLockPath = join(appInstance.project.root, 'package-lock.json');
-      let pnpmLockPath = join(appInstance.project.root, 'pnpm-lock.yaml');
-      let packagePath = join(appInstance.project.root, 'package.json');
-      let lockFileBuffer;
-
-      if (fs.existsSync(yarnLockPath)) {
-        lockFileBuffer = fs.readFileSync(yarnLockPath);
-      } else if (fs.existsSync(npmLockPath)) {
-        lockFileBuffer = fs.readFileSync(npmLockPath);
-      } else if (fs.existsSync(pnpmLockPath)) {
-        lockFileBuffer = fs.readFileSync(pnpmLockPath);
-      } else {
-        // no lock file found, using package.json as a fall back
-        lockFileBuffer = fs.readFileSync(packagePath);
-      }
-
-      // @embroider/macros provides a macro called dependencySatisfies which checks if a given
-      // package name satisfies a given semver version range. Due to the way babel caches this can
-      // cause a problem where the macro plugin does not run (because it has been cached) but the version
-      // of the dependency being checked for changes (due to installing a different version). This will lead to
-      // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
-      // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
-      // more information in issue #906
-      let cacheKey = crypto.createHash('sha256').update(lockFileBuffer).digest('hex');
-      babelPlugins.push([
-        require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
-        { version: cacheKey },
-        '@embroider/macros cache buster',
-      ]);
+      babelOptions.plugins = babelPlugins.concat(MacrosConfig.for(appInstance).babelPluginConfig(source));
     }
   },
 

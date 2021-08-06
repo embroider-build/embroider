@@ -393,7 +393,7 @@ export class AppBuilder<TreeNames> {
     ]);
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(this.macrosConfig.babelPluginConfig());
+    babel.plugins = babel.plugins.concat(this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 

@@ -285,10 +285,10 @@ export default class MacrosConfig {
       importSyncImplementation: this.importSyncImplementation,
     };
 
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml']);
+    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: opts.appPackageRoot });
 
     if (!lockFilePath) {
-      lockFilePath = findUp.sync('package.json');
+      lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });
     }
 
     let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';

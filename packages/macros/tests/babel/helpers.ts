@@ -54,7 +54,7 @@ export function makeBabelConfig(_babelVersion: number, macroConfig: MacrosConfig
   return {
     filename: join(__dirname, 'sample.js'),
     presets: [],
-    plugins: [macroConfig.babelPluginConfig()],
+    plugins: macroConfig.babelPluginConfig(),
   };
 }
 
@@ -100,7 +100,7 @@ export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfi
       return {
         filename: join(__dirname, 'sample.js'),
         presets: [],
-        plugins: [config.babelPluginConfig()],
+        plugins: config.babelPluginConfig(),
       };
     },
 

@@ -1,6 +1,6 @@
 {
   "name": "@embroider/shared-internals",
-  "version": "0.43.4",
+  "version": "0.43.5",
   "private": false,
   "description": "Utilities shared among the other embroider packages",
   "repository": {

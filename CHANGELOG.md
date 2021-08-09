@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## v0.43.5 (2021-08-09)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#918](https://github.com/embroider-build/embroider/pull/918) Add `needsCache` and `persistentOutput` to internal broccoli-plugins. ([@rwjblue](https://github.com/rwjblue))
+
+#### :bug: Bug Fix
+* `core`, `macros`, `shared-internals`
+  * [#913](https://github.com/embroider-build/embroider/pull/913) Ensure `dependencySatisfies` invalidates when installed packages change ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* [#917](https://github.com/embroider-build/embroider/pull/917) Improve Heimdall Types ([@krisselden](https://github.com/krisselden))
+
+#### Committers: 3
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.43.4 (2021-08-03)
 
 #### :rocket: Enhancement

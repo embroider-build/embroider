@@ -69,7 +69,7 @@ export = {
     if (!babelPlugins.some(isEmbroiderMacrosPlugin)) {
       let appInstance = this._findHost();
       let source = appOrAddonInstance.root || appOrAddonInstance.project.root;
-      babelOptions.plugins = babelPlugins.concat(MacrosConfig.for(appInstance).babelPluginConfig(source));
+      babelPlugins.unshift(...MacrosConfig.for(appInstance).babelPluginConfig(source));
     }
   },
 

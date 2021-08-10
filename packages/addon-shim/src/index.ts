@@ -47,9 +47,14 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
           (a) => a.name === 'ember-auto-import'
         )?.pkg.version;
 
+        let name =
+          typeof this.parent.name === 'function'
+            ? this.parent.name()
+            : this.parent.name;
+
         if (!autoImportVersion) {
           throw new Error(
-            `${this.parent.name} needs to depend on ember-auto-import in order to use ${this.name}`
+            `${name} needs to depend on ember-auto-import in order to use ${this.name}`
           );
         }
 
@@ -59,7 +64,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
           })
         ) {
           throw new Error(
-            `${this.parent.name} has ember-auto-import ${autoImportVersion} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
+            `${name} has ember-auto-import ${autoImportVersion} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
           );
         }
       }

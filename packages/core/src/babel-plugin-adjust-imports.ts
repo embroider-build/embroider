@@ -263,7 +263,11 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     }
   } else {
     if (isResolvable(packageName, pkg)) {
-      if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
+      if (
+        !pkg.meta['auto-upgraded'] &&
+        !reliablyResolvable(pkg, packageName) &&
+        !emberVirtualPeerDeps.has(packageName)
+      ) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );

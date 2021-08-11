@@ -21,14 +21,16 @@ export default function RelativeImportsBabelPlugin(babel: typeof Babel) {
   return {
     visitor: {
       ImportDeclaration(path: NodePath<t.ImportDeclaration>, state: State) {
+        // if (path.node.source.value.includes('validator') && state.filename.includes('meta')) {
+        //   debugger;
+        // }
         let matchingImport = findMatchingImport(state.opts.emberDependencyPaths, path.node.source.value);
         if (!matchingImport) {
           return;
         }
         let { filename } = state;
         // Derp
-        debugger;
-        if (filename.replace(state.cwd, '').split(sep).length === 1) {
+        if (filename.replace(state.cwd + sep, '').split(sep).length === 1) {
           filename = join(filename.replace(/\.js$/, ''), 'index.js');
         }
         // blerp

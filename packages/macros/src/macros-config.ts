@@ -1,4 +1,7 @@
+import fs from 'fs';
 import { join } from 'path';
+import crypto from 'crypto';
+import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
 import { PackageCache, getOrCreate } from '@embroider/shared-internals';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
@@ -255,7 +258,7 @@ export default class MacrosConfig {
   // normal node_modules resolution can find their dependencies. In other words,
   // owningPackageRoot is needed when you use this inside classic ember-cli, and
   // it's not appropriate inside embroider.
-  babelPluginConfig(owningPackageRoot?: string): PluginItem {
+  babelPluginConfig(owningPackageRoot?: string): PluginItem[] {
     let self = this;
     let opts: State['opts'] = {
       // this is deliberately lazy because we want to allow everyone to finish
@@ -281,7 +284,31 @@ export default class MacrosConfig {
 
       importSyncImplementation: this.importSyncImplementation,
     };
-    return [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts];
+
+    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: opts.appPackageRoot });
+
+    if (!lockFilePath) {
+      lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });
+    }
+
+    let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';
+
+    // @embroider/macros provides a macro called dependencySatisfies which checks if a given
+    // package name satisfies a given semver version range. Due to the way babel caches this can
+    // cause a problem where the macro plugin does not run (because it has been cached) but the version
+    // of the dependency being checked for changes (due to installing a different version). This will lead to
+    // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
+    // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
+    // more information in issue #906
+    let cacheKey = crypto.createHash('sha256').update(lockFileBuffer).digest('hex');
+    return [
+      [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
+      [
+        require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
+        { version: cacheKey },
+        `@embroider/macros cache buster: ${owningPackageRoot}`,
+      ],
+    ];
   }
 
   static astPlugins(owningPackageRoot?: string): {

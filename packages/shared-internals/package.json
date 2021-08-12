@@ -1,6 +1,6 @@
 {
   "name": "@embroider/shared-internals",
-  "version": "0.43.2",
+  "version": "0.43.5",
   "private": false,
   "description": "Utilities shared among the other embroider packages",
   "repository": {
@@ -12,7 +12,8 @@
     ".": {
       "browser": "./src/browser-index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./src/babel-plugin-cache-busting.js": "./src/babel-plugin-cache-busting.js"
   },
   "license": "MIT",
   "author": "Edward Faulkner",

@@ -1,5 +1,50 @@
 # Embroider Changelog
 
+## v0.43.5 (2021-08-09)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#918](https://github.com/embroider-build/embroider/pull/918) Add `needsCache` and `persistentOutput` to internal broccoli-plugins. ([@rwjblue](https://github.com/rwjblue))
+
+#### :bug: Bug Fix
+* `core`, `macros`, `shared-internals`
+  * [#913](https://github.com/embroider-build/embroider/pull/913) Ensure `dependencySatisfies` invalidates when installed packages change ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* [#917](https://github.com/embroider-build/embroider/pull/917) Improve Heimdall Types ([@krisselden](https://github.com/krisselden))
+
+#### Committers: 3
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.43.4 (2021-08-03)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#915](https://github.com/embroider-build/embroider/pull/915) Reduce memory pressure from compat layer by disabling Heimdall node gathering during OneShotPlugin ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 2
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+
+
+## v0.43.3 (2021-07-30)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#910](https://github.com/embroider-build/embroider/pull/910) Fix arguments to `preprocessCss` (to match classic build) ([@thoov](https://github.com/thoov))
+  * [#880](https://github.com/embroider-build/embroider/pull/880) Fix compatibility with ember-data@3.27+ ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#914](https://github.com/embroider-build/embroider/pull/914) Remove transitive `loader-utils` dependency from `@embroider/webpack` ([@mydea](https://github.com/mydea))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.43.2 (2021-07-29)
 
 #### :rocket: Enhancement

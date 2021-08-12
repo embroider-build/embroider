@@ -7,6 +7,8 @@ export default class RewritePackageJSON extends Plugin {
   constructor(inputTree: Node, private getPackageJSON: () => any) {
     super([inputTree], {
       annotation: 'embroider:core:rewrite-package-json',
+      persistentOutput: true,
+      needsCache: false,
     });
   }
 

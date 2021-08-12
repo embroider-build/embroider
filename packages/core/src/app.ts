@@ -148,7 +148,7 @@ export function excludeDotFiles(files: string[]) {
 }
 
 export const CACHE_BUSTING_PLUGIN = {
-  path: require.resolve('./babel-plugin-cache-busting'),
+  path: require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
   version: readJSONSync(`${__dirname}/../package.json`).version,
 };
 
@@ -412,7 +412,7 @@ export class AppBuilder<TreeNames> {
     }
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(this.macrosConfig.babelPluginConfig());
+    babel.plugins.push(...this.macrosConfig.babelPluginConfig());
 
     babel.plugins.push([require.resolve('./template-colocation-plugin')]);
 

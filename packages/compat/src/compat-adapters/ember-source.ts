@@ -17,7 +17,10 @@ export default class extends V1Addon {
   @Memoize()
   get emberDependencyPaths() {
     let depsPath = join(this.root, 'dist/dependencies');
-    return walkSync(depsPath, { globs: ['**/*.js'] });
+    // rsvp gets special handling because even though it's in dist/dependencies,
+    // we want to treat it more like the things in dist/packages, because it
+    // gets exposed to apps.
+    return walkSync(depsPath, { globs: ['**/*.js'] }).filter(p => p !== 'rsvp.js');
   }
 
   get importPluginOptions(): BabelPluginOptions {
@@ -69,10 +72,25 @@ export default class extends V1Addon {
   // supports that pattern of emitting modules into other package's namespaces.
   private customAddonTree() {
     return mergeTrees([
+      // dist/packages moves to top-level in the v2 addon because they are
+      // things that should get exposed to the app via renaming rules
       buildFunnel(this.rootTree, {
         srcDir: 'dist/packages',
       }),
-      buildFunnel(this.rootTree, { srcDir: 'dist/dependencies', destDir: 'ember-source/dependencies' }),
+      // most of dist/dependencies only needs to work inside ember-source, so we
+      // keep it under a dependencies dir and avoid creating renaming rules
+      // (because those rules would conflict when someone tries to add one of
+      // these packages as a real dependency and use it)
+      buildFunnel(this.rootTree, {
+        srcDir: 'dist/dependencies',
+        destDir: 'ember-source/dependencies',
+        exclude: ['rsvp.js'],
+      }),
+      // rsvp lives in dist/dependencies but should get exposed to users
+      buildFunnel(this.rootTree, {
+        srcDir: 'dist/dependencies',
+        include: ['rsvp.js'],
+      }),
     ]);
   }
 

@@ -1297,6 +1297,192 @@ describe('compat-resolver', function () {
     ]);
   });
 
+  test('allow to pass `null` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{null}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
+  test('allow to pass `undefined` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{undefined}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
+  test('allow to pass `if` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{if @navbarComponent (ensure-safe-component @navbar) null}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
+  test('allow to pass nested `if` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{if @navbarComponent (ensure-safe-component @navbar) (if @defaultNull null undefined)}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
+  test('allow to pass `unless` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{unless @navbar (ensure-safe-component @navbar) null}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
+  test('allow to pass `ensure-safe-component` as argument for component', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+
+    expect(
+      findDependencies(
+        'templates/components/x.hbs',
+        `
+          <FormBuilder @navbar={{ensure-safe-component @navbar}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+      )
+    ).toEqual([
+      {
+        path: './form-builder.hbs',
+        runtimeName: 'the-app/templates/components/form-builder',
+      },
+    ]);
+  });
+
   test('yieldsArguments causes warning to propagate up lexically, angle', function () {
     let packageRules: PackageRules[] = [
       {
@@ -1316,6 +1502,40 @@ describe('compat-resolver', function () {
           'templates/components/x.hbs',
           `
           <FormBuilder @navbar={{this.unknown}} as |bar|>
+            {{component bar}}
+          </FormBuilder>
+          `
+        )
+      ).toEqual([
+        {
+          path: './form-builder.hbs',
+          runtimeName: 'the-app/templates/components/form-builder',
+        },
+      ]);
+    }).toThrow(
+      /argument "navbar" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
+    );
+  });
+
+  test('handle warnings inside of `if` for components', function () {
+    let packageRules: PackageRules[] = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<FormBuilder />': {
+            yieldsArguments: ['navbar'],
+          },
+        },
+      },
+    ];
+    let findDependencies = configure({ staticComponents: true, packageRules });
+    givenFile('templates/components/form-builder.hbs');
+    expect(() => {
+      expect(
+        findDependencies(
+          'templates/components/x.hbs',
+          `
+          <FormBuilder @navbar={{if true this.unknown}} as |bar|>
             {{component bar}}
           </FormBuilder>
           `

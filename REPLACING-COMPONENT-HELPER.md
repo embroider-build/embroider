@@ -210,3 +210,49 @@ export default class extends Component {
 This code will cause every modules under the `./feed-items/` directory to be eagerly included in your build.
 
 To instead _lazily_ include them, refactor to use asynchronous `import()` instead of `importSync`. BUT CAUTION: using `import()` of your own app code is one of the few things that works _only_ under Embroider and not in classic builds, so don't do it until you have committed to Embroider.
+
+## When using one-off components in tests
+
+If you find yourself defining custom, one-off components to be used in your tests, you might have been using a syntax like this:
+
+```js
+import { setComponentTemplate } from '@ember/component';
+import Component from '@glimmer/component';
+
+test('my test', async function(assert) {
+  class TestComponent extends Component {}
+
+  setComponentTemplate(
+    hbs`Test content: {{@message}}`,
+    TestComponent
+  );
+
+  this.owner.register('component:test-component', TestComponent);
+
+  await render(hbs`
+    <MyComponent @display={{component 'test-component'}} />
+  `);
+});
+```
+
+This will fail, as `test-component`cannot be statically found. Instead, you can directly reference the component class:
+
+```js
+import { setComponentTemplate } from '@ember/component';
+import Component from '@glimmer/component';
+
+test('my test', async function(assert) {
+  class TestComponent extends Component {}
+
+  setComponentTemplate(
+    hbs`Test content: {{@message}}`,
+    TestComponent
+  );
+
+  this.testComponent = TestComponent;
+
+  await render(hbs`
+    <MyComponent @display={{this.testComponent}} />
+  `);
+});
+```

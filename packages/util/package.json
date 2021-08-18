@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@ember/optional-features": "^2.0.0",
-    "@ember/test-helpers": "^2.2.0",
+    "@ember/test-helpers": "^2.4.1",
     "@embroider/compat": "0.43.5",
     "@embroider/core": "0.43.5",
     "@embroider/test-setup": "0.43.5",

@@ -27,6 +27,7 @@ import { ResolvedDep } from '@embroider/core/src/resolver';
 import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
 import { fromPairs } from 'lodash';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
+import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -132,6 +133,7 @@ export default class V1Addon {
       if (options.plugins && options.plugins.ast) {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+        prepHtmlbarsAstPluginsForUnwrap(this.addonInstance.registry);
         if (options.plugins.ast.length > 0) {
           const { cacheKey: compilerChecksum } = getEmberExports(options.templateCompilerPath);
 

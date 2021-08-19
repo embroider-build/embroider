@@ -14,7 +14,7 @@
     "broccoli": "^3.4.2",
     "console-ui": "^3.0.0",
     "ember-auto-import": "^1.2.21",
-    "ember-cli": "~3.15.1",
+    "ember-cli": "~3.17.0",
     "ember-cli-babel": "^7.20.5",
     "ember-cli-htmlbars": "^4.2.0",
     "ember-resolver": "^7.0.0",

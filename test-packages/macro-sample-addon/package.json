@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
-    "@ember/test-helpers": "^2.2.5",
+    "@ember/test-helpers": "^2.4.1",
     "@ember/string": "^1.0.0",
     "@embroider/compat": "0.43.5",
     "@embroider/core": "0.43.5",
@@ -39,7 +39,7 @@
     "broccoli-asset-rev": "^3.0.0",
     "ember-auto-import": "^1.11.2",
     "ember-cli-dependency-checker": "^3.1.0",
-    "ember-cli": "~3.26.1",
+    "ember-cli": "~3.27.0",
     "ember-cli-eslint": "^5.1.0",
     "ember-cli-inject-live-reload": "^1.8.2",
     "ember-cli-sri": "^2.1.1",

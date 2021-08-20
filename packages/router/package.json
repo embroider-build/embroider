@@ -28,6 +28,7 @@
     "test:classic": "cross-env CLASSIC=true ember test --test-port=0"
   },
   "dependencies": {
+    "@ember/test-waiters": "^3.0.0",
     "@embroider/macros": "0.43.5",
     "ember-cli-babel": "^7.23.0"
   },

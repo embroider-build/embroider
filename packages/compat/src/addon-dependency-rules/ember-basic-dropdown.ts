@@ -20,7 +20,7 @@ let rulesForV1: PackageRules = {
 
 let rulesForV2: PackageRules = {
   package: 'ember-basic-dropdown',
-  semverRange: '>=2.0.0',
+  semverRange: '>=2.0.0 <=3.0.18',
   addonModules: {
     'components/basic-dropdown.js': {
       dependsOnComponents: ['{{basic-dropdown-trigger}}', '{{basic-dropdown-content}}'],

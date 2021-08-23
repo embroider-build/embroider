@@ -24,6 +24,10 @@ In your `router.js` file, import our router instead of the stock one:
 +import EmberRouter from '@embroider/router';
 ```
 
+## Notes on usage with pods
+
+If you use the pod file layout for your routes, you have to make sure to set a non-undefined `podModulePrefix` in your `config/environment.js`. `podModulePrefix: ''` is also allowed. Otherwise, your pod routes will not be picked up by Embroider.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE.md).

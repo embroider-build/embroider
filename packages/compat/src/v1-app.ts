@@ -20,6 +20,8 @@ import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-babel-plugins';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import { readFileSync } from 'fs';
+import semver from 'semver';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -95,6 +97,11 @@ export default class V1App {
     }
 
     return dirname(emberCLIPackage);
+  }
+
+  @Memoize()
+  get hasCompiledStyles() {
+    return semver.gte(JSON.parse(readFileSync(`${this.emberCLILocation}/package.json`, 'utf8')).version, '3.18.0');
   }
 
   private requireFromEmberCLI(specifier: string) {

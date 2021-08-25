@@ -1,4 +1,4 @@
-import { appScenarios, appReleaseScenario } from './scenarios';
+import { appScenarios, appReleaseScenario, addonScenarios } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -109,6 +109,80 @@ appReleaseScenario
 
         let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three CLASSIC=true yarn test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
+      });
+    });
+  });
+
+addonScenarios
+  .map('macro-sample-addon', project => {
+    let addonFiles = loadFromFixtureData('macro-sample-addon');
+    project.name = 'macro-sample-addon';
+    project.linkDependency('@embroider/macros', { baseDir: __dirname });
+    project.linkDependency('@embroider/webpack', { baseDir: __dirname });
+    project.linkDependency('@embroider/compat', { baseDir: __dirname });
+    project.linkDependency('@embroider/core', { baseDir: __dirname });
+
+    addonFiles['index.js'] = `
+    module.exports = {
+      name: require('./package').name,
+      options: {
+        '@embroider/macros': {
+          setOwnConfig: {
+            hello: 'world',
+          },
+        },
+      },
+      included(app) {
+        app.options.autoRun = false;
+        this._super.included.apply(this, arguments);
+      },
+      contentFor(type, config, contents) {
+        if (type === 'config-module') {
+          const originalContents = contents.join('');
+          contents.splice(0, contents.length);
+          contents.push(
+            'let config = function() {' + originalContents + '}()',
+            "config.default.APP.fromConfigModule = 'hello new world';",
+            'return config;'
+          );
+          return;
+        }
+
+        if (type === 'app-boot') {
+          let appSuffix = 'app';
+          let prefix = config.modulePrefix;
+          let configAppAsString = JSON.stringify(config.APP || {});
+          return [
+            'if (!runningTests) {',
+            "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
+            '}',
+            'window.LoadedFromCustomAppBoot = true',
+          ]
+            .join('')
+            .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)
+            .replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
+        }
+      },
+    };`;
+
+    merge(project.files, addonFiles);
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let addon: PreparedApp;
+
+      hooks.before(async () => {
+        addon = await scenario.prepare();
+      });
+
+      test(`yarn test`, async function (assert) {
+        let result = await addon.execute('yarn test');
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`yarn test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
+        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic yarn test');
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

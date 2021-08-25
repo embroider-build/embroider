@@ -5,13 +5,17 @@ export default function prepHtmlbarsAstPluginsForUnwrap(registry: any): void {
     const { plugin, parallelBabel, baseDir, cacheKey } = wrapper;
     if (plugin) {
       // if the parallelBabel options were set on the wrapper, but not on the plugin, add it
-      if (parallelBabel && !plugin._parallelBabel) {
-        // NOTE: `_parallelBabel` (not `parallelBabel`) is expected by broccoli-babel-transpiler
-        plugin._parallelBabel = {
+      if (parallelBabel && !plugin.parallelBabel) {
+        plugin.parallelBabel = {
           requireFile: join(__dirname, 'htmlbars-unwrapper.js'),
           buildUsing: 'unwrapPlugin',
-          params: wrapper.parallelBabel,
+          params: parallelBabel,
         };
+      }
+
+      // NOTE: `_parallelBabel` (not `parallelBabel`) is expected by broccoli-babel-transpiler
+      if (plugin.parallelBabel && !plugin._parallelBabel) {
+        plugin._parallelBabel = plugin.parallelBabel;
       }
 
       // if the baseDir is set on the wrapper, but not on the plugin, add it

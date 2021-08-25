@@ -1,4 +1,4 @@
-import { appScenarios } from './scenarios';
+import { appScenarios, appReleaseScenario } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -18,31 +18,35 @@ function updateLodashVersion(app: PreparedApp, version: string) {
   fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
 }
 
+function scenarioSetup(project: Project) {
+  let macroSampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
+    linkDeps: true,
+  });
+  let funkySampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
+    linkDeps: true,
+  });
+
+  macroSampleAddon.pkg.name = 'macro-sample-addon';
+  funkySampleAddon.pkg.name = '@embroider/funky-sample-addon';
+
+  merge(macroSampleAddon.files, loadFromFixtureData('macro-sample-addon'));
+  merge(funkySampleAddon.files, loadFromFixtureData('funky-sample-addon'));
+  merge(project.files, loadFromFixtureData('macro-test'));
+
+  funkySampleAddon.linkDependency('broccoli-merge-trees', { baseDir: __dirname });
+  funkySampleAddon.linkDependency('broccoli-funnel', { baseDir: __dirname });
+  funkySampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
+  macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
+  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+  project.linkDevDependency('lodash', { baseDir: __dirname });
+
+  project.addDevDependency(macroSampleAddon);
+  project.addDevDependency(funkySampleAddon);
+}
+
 appScenarios
   .map('macro-tests', project => {
-    let macroSampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-      linkDeps: true,
-    });
-    let funkySampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-      linkDeps: true,
-    });
-
-    macroSampleAddon.pkg.name = 'macro-sample-addon';
-    funkySampleAddon.pkg.name = '@embroider/funky-sample-addon';
-
-    merge(macroSampleAddon.files, loadFromFixtureData('macro-sample-addon'));
-    merge(funkySampleAddon.files, loadFromFixtureData('funky-sample-addon'));
-    merge(project.files, loadFromFixtureData('macro-test'));
-
-    funkySampleAddon.linkDependency('broccoli-merge-trees', { baseDir: __dirname });
-    funkySampleAddon.linkDependency('broccoli-funnel', { baseDir: __dirname });
-    funkySampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
-    macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
-    project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-    project.linkDevDependency('lodash', { baseDir: __dirname });
-
-    project.addDevDependency(macroSampleAddon);
-    project.addDevDependency(funkySampleAddon);
+    scenarioSetup(project);
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -50,7 +54,6 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        updateLodashVersion(app, '4.0.0');
       });
 
       test(`yarn test`, async function (assert) {
@@ -67,6 +70,21 @@ appScenarios
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
         let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 CLASSIC=true yarn test`);
         assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+appReleaseScenario
+  .map('macro-babel-cache-busting', project => {
+    scenarioSetup(project);
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+        updateLodashVersion(app, '4.0.0');
       });
 
       test(`@embroider/macros babel caching plugin works`, async function (assert) {

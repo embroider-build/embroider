@@ -18,7 +18,7 @@
     "ember-cli-babel": "^7.20.5",
     "ember-cli-htmlbars": "^4.2.0",
     "ember-resolver": "^7.0.0",
-    "ember-source": "3.17.0",
+    "ember-source": "~3.22.0",
     "execa": "^4.0.3",
     "fixturify-project": "^2.1.0",
     "fs-extra": "^7.0.0",

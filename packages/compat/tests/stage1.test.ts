@@ -11,6 +11,7 @@ describe('stage1 build', function () {
     let expectFile: ExpectFile;
 
     beforeAll(async function () {
+      process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
       // A simple ember app with no tests
       let app = Project.emberNew();
 
@@ -107,6 +108,7 @@ describe('stage1 build', function () {
     });
 
     afterAll(async function () {
+      delete process.env.THROW_UNLESS_PARALLELIZABLE;
       await build.cleanup();
     });
 

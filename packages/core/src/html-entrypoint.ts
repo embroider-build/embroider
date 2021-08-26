@@ -51,7 +51,10 @@ export class HTMLEntrypoint {
   }
 
   private relativeToApp(rootRelativeURL: string) {
-    return rootRelativeURL.replace(this.rootURL, '');
+    // Check that the rootRelativeURL startsWith the rootURL before stripping it.
+    // If rootRelativeURL = 'assets/foo.js', and rootURL = '/', we do not want to
+    // incorrectly produce 'assetsfoo.js'
+    return rootRelativeURL.startsWith(this.rootURL) ? rootRelativeURL.replace(this.rootURL, '') : rootRelativeURL;
   }
 
   private handledScripts() {

@@ -652,12 +652,14 @@ export default class V1App {
 
   private withoutRootURL(src: string) {
     let rootURL = this.config.readConfig().rootURL;
+    // remove the leading slash for now
+    src = src.replace(/^\//, '');
+    // only remove the rootURL if the src startsWith it
     if (src.startsWith(rootURL)) {
-      src = '/' + src.slice(rootURL.length);
-    } else if (src.startsWith('/' + rootURL)) {
-      src = src.slice(rootURL.length);
+      src = src.replace(rootURL, '');
     }
-    return src;
+    // always add a leading slash
+    return '/' + src;
   }
 
   findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {

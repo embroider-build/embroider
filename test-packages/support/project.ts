@@ -70,7 +70,7 @@ function addonEnvironmentFile() {
   };`;
 }
 
-function indexFile(appName: string) {
+function indexFile(appName: string, assetPrefix = '{{rootURL}}') {
   return `
 <!DOCTYPE html>
 <html>
@@ -83,16 +83,16 @@ function indexFile(appName: string) {
 
     {{content-for "head"}}
 
-    <link integrity="" rel="stylesheet" href="{{rootURL}}assets/vendor.css">
-    <link integrity="" rel="stylesheet" href="{{rootURL}}assets/${appName}.css">
+    <link integrity="" rel="stylesheet" href="${assetPrefix}assets/vendor.css">
+    <link integrity="" rel="stylesheet" href="${assetPrefix}assets/${appName}.css">
 
     {{content-for "head-footer"}}
   </head>
   <body>
     {{content-for "body"}}
 
-    <script src="{{rootURL}}assets/vendor.js"></script>
-    <script src="{{rootURL}}assets/${appName}.js"></script>
+    <script src="${assetPrefix}assets/vendor.js"></script>
+    <script src="${assetPrefix}assets/${appName}.js"></script>
 
     {{content-for "body-footer"}}
   </body>
@@ -167,7 +167,7 @@ export class Project extends FixturifyProject {
   // FIXME: update fixturify-project to allow easier customization of `pkg`
   declare pkg: any;
 
-  static emberNew(name = 'my-app'): Project {
+  static emberNew(name = 'my-app', options?: any): Project {
     let app = new Project(name);
     app.files = {
       // you might think you want to pass params to customize cliBuildFile, but
@@ -179,7 +179,7 @@ export class Project extends FixturifyProject {
         'environment.js': environmentFile(name),
       },
       app: {
-        'index.html': indexFile(name),
+        'index.html': indexFile(name, options?.assetPrefix),
         styles: {
           'app.css': '',
         },

@@ -764,4 +764,36 @@ i(\"../../node_modules/lazy-engine/lazy-engine.css\");
   }`);
     });
   });
+
+  describe('asset paths without rootURL', function () {
+    let build: BuildResult;
+    let expectFile: ExpectFile;
+
+    beforeAll(async function () {
+      // setting `assetPrefix: ''` here will remove the `{{rootURL}}` from the generated `index.html`
+      let app = Project.emberNew(undefined, { assetPrefix: '' });
+      let buildOptions: Partial<BuildParams> = {
+        stage: 2,
+        type: 'app',
+        emberAppOptions: {
+          tests: false,
+          babel: {
+            plugins: [],
+          },
+        },
+        embroiderOptions: {},
+      };
+
+      build = await BuildResult.build(app, buildOptions);
+      expectFile = expectFilesAt(build.outputPath);
+    });
+
+    afterAll(async function () {
+      await build.cleanup();
+    });
+
+    test('should find app js correctly', function () {
+      expectFile('index.html').matches('<script src="/assets/my-app.js" type="module"></script>');
+    });
+  });
 });

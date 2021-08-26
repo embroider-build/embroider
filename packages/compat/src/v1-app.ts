@@ -19,6 +19,7 @@ import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-babel-plugins';
+import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -560,23 +561,7 @@ export default class V1App {
       // even if the app was using @embroider/macros, we drop it from the config
       // here in favor of our globally-configured one.
       options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-
-      // The parallelization protocol in ember-cli-htmlbars doesn't actually
-      // apply to the AST plugins, it applies to wrappers that
-      // ember-cli-htmlbars keeps around the plugins. Those wrappers aren't
-      // availble to us when we look at the template compiler configuration, so
-      // we need to find them directly out of the registry here. And we need to
-      // provide our own unwrapper shim to pull the real plugin out of the
-      // wrapper after deserializing.
-      for (let wrapper of this.app.registry.load('htmlbars-ast-plugin')) {
-        if (wrapper.parallelBabel && wrapper.plugin && !wrapper.plugin.parallelBabel) {
-          wrapper.plugin.parallelBabel = {
-            requireFile: join(__dirname, 'htmlbars-unwrapper.js'),
-            buildUsing: 'unwrapPlugin',
-            params: wrapper.parallelBabel,
-          };
-        }
-      }
+      prepHtmlbarsAstPluginsForUnwrap(this.app.registry);
     }
     return options.plugins;
   }

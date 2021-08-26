@@ -28,6 +28,7 @@ import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin'
 import { fromPairs } from 'lodash';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import getRealAddon from './get-real-addon';
 
 const stockTreeNames = Object.freeze([
   'addon',
@@ -357,13 +358,15 @@ export default class V1Addon {
   }
 
   protected customizes(...treeNames: string[]) {
+    // get the real addon as we're going to compare with __proto__
+    const realAddon = getRealAddon(this.addonInstance);
     return Boolean(
       treeNames.find(treeName => {
         return (
           // customized hook exists in actual code exported from their index.js
           this.mainModule[treeName] ||
           // addon instance doesn't match its own prototype
-          (this.addonInstance.__proto__ && this.addonInstance[treeName] !== this.addonInstance.__proto__[treeName])
+          (realAddon.__proto__ && realAddon[treeName] !== realAddon.__proto__[treeName])
         );
       })
     );
@@ -605,9 +608,11 @@ export default class V1Addon {
     if (!this.customizes('treeFor')) {
       return false;
     }
+    // get the real addon as we're going to patch and restore `_super`
+    const realAddon = getRealAddon(this.addonInstance);
     let origSuper = this.addonInstance._super;
     try {
-      this.addonInstance._super = stubbedSuper;
+      realAddon._super = stubbedSuper;
       let result = this.mainModule.treeFor?.call(this.addonInstance, name);
       if (result === markedEmptyTree) {
         // the method returns _super unchanged, so tree is not suppressed and we
@@ -623,8 +628,8 @@ export default class V1Addon {
       unsupported(`${this.name} has a custom treeFor() method that is doing some arbitrary broccoli processing.`);
       return false;
     } finally {
-      if (this.addonInstance._super === stubbedSuper) {
-        this.addonInstance._super = origSuper;
+      if (realAddon._super === stubbedSuper) {
+        realAddon._super = origSuper;
       }
     }
   }
@@ -634,11 +639,13 @@ export default class V1Addon {
     { neuterPreprocessors } = { neuterPreprocessors: false }
   ): Node | undefined {
     return this.throughTreeCache(name, 'original', () => {
+      // get the real addon as we're going to patch and restore `preprocessJs`
+      const realAddon = getRealAddon(this.addonInstance);
       let original;
       try {
         if (neuterPreprocessors) {
-          original = this.addonInstance.preprocessJs;
-          this.addonInstance.preprocessJs = function (tree: Node) {
+          original = realAddon.preprocessJs;
+          realAddon.preprocessJs = function (tree: Node) {
             return tree;
           };
         }
@@ -648,7 +655,7 @@ export default class V1Addon {
         return this.addonInstance._treeFor(name);
       } finally {
         if (neuterPreprocessors) {
-          this.addonInstance.preprocessJs = original;
+          realAddon.preprocessJs = original;
         }
       }
     });

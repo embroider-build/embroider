@@ -1,3 +1,3 @@
-import Component from '@glimmer/component';
+import Component from '@ember/component';
 
 export default class UsedInChiild extends Component {}

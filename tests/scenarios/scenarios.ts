@@ -62,7 +62,9 @@ export function onlyRunRelease(scenarios: Scenarios) {
 }
 
 export const appScenarios = supportMatrix(Scenarios.fromDir(dirname(require.resolve('../app-template/package.json'))));
-
+export const addonScenarios = supportMatrix(
+  Scenarios.fromDir(dirname(require.resolve('../addon-template/package.json')))
+);
 export const appReleaseScenario = onlyRunRelease(
   Scenarios.fromDir(dirname(require.resolve('../app-template/package.json')))
 );

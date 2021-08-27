@@ -739,11 +739,11 @@ export default class V1Addon {
     let addonStylesTree = this.addonStylesTree();
     if (addonStylesTree) {
       if (this.app.hasCompiledStyles) {
-        // >= ember-cli@4.18 store css files in <addon-name/__COMPILED_STYLES__
+        // >= ember-cli@3.18 store css files in <addon-name/__COMPILED_STYLES__
         // and for embroider to work correctly need to be moved back to `/`
         //
         // speaking with @rwjblue the ember-cli build is now frozen, and it is
-        // ok to assume that after the above version no changes will occure
+        // ok to assume that after the above version no changes will occur
         // makings this work-around safe.
         //
         // additional context: https://github.com/embroider-build/embroider/pull/934/files#r695269976

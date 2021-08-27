@@ -61,7 +61,7 @@ jobs:
     needs: ["discover_matrix", "linting"]
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false

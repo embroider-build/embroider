@@ -1,4 +1,5 @@
 import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
+import type { ASTv1 } from '@glimmer/syntax';
 
 // This is the AST transform that resolves components and helpers at build time
 // and puts them into `dependencies`.
@@ -13,14 +14,14 @@ export function makeResolverTransform(resolver: Resolver) {
 
       visitor: {
         Program: {
-          enter(node: any) {
+          enter(node: ASTv1.Program) {
             scopeStack.push(node.blockParams);
           },
           exit() {
             scopeStack.pop();
           },
         },
-        BlockStatement(node: any) {
+        BlockStatement(node: ASTv1.BlockStatement) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -45,10 +46,10 @@ export function makeResolverTransform(resolver: Resolver) {
           if (resolution && resolution.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
               for (let name of argumentsAreComponents) {
-                let pair = node.hash.pairs.find((pair: any) => pair.key === name);
+                let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
                 if (pair) {
                   handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                    componentName: node.path.original,
+                    componentName: (node.path as ASTv1.PathExpression).original,
                     argumentName: name,
                   });
                 }
@@ -56,7 +57,7 @@ export function makeResolverTransform(resolver: Resolver) {
             });
           }
         },
-        SubExpression(node: any) {
+        SubExpression(node: ASTv1.SubExpression) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -72,7 +73,7 @@ export function makeResolverTransform(resolver: Resolver) {
           }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
-        MustacheStatement(node: any) {
+        MustacheStatement(node: ASTv1.MustacheStatement) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -94,7 +95,7 @@ export function makeResolverTransform(resolver: Resolver) {
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
           if (resolution && resolution.type === 'component') {
             for (let name of resolution.argumentsAreComponents) {
-              let pair = node.hash.pairs.find((pair: any) => pair.key === name);
+              let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
               if (pair) {
                 handleComponentHelper(pair.value, resolver, filename, scopeStack, {
                   componentName: node.path.original,
@@ -105,13 +106,13 @@ export function makeResolverTransform(resolver: Resolver) {
           }
         },
         ElementNode: {
-          enter(node: any) {
+          enter(node: ASTv1.ElementNode) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
               const resolution = resolver.resolveElement(node.tag, filename, node.loc);
               if (resolution && resolution.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
                   for (let name of argumentsAreComponents) {
-                    let attr = node.attributes.find((attr: any) => attr.name === '@' + name);
+                    let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
                     if (attr) {
                       handleComponentHelper(attr.value, resolver, filename, scopeStack, {
                         componentName: node.tag,
@@ -240,7 +241,7 @@ class ScopeStack {
 }
 
 function handleComponentHelper(
-  param: any,
+  param: ASTv1.Node,
   resolver: Resolver,
   moduleName: string,
   scopeStack: ScopeStack,

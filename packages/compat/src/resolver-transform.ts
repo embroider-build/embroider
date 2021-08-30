@@ -60,6 +60,9 @@ export function makeResolverTransform(resolver: Resolver) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
+          if (node.path.this === true) {
+            return;
+          }
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }

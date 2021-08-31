@@ -1,10 +1,10 @@
 import cloneDeep from 'lodash/cloneDeep';
-import { AddonMeta } from '@embroider/core';
+import { AddonMeta, PackageInfo } from '@embroider/core';
 import resolve from 'resolve';
 import { resolve as pathResolve } from 'path';
 import { PluginItem } from '@babel/core';
 
-export function addPeerDependency(packageJSON: any, packageName: string, version = '*') {
+export function addPeerDependency(packageJSON: PackageInfo, packageName: string, version = '*') {
   let pkg = cloneDeep(packageJSON);
   if (!pkg.peerDependencies) {
     pkg.peerDependencies = {};

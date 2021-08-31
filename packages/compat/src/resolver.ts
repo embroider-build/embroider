@@ -24,6 +24,7 @@ import { dasherize } from './dasherize-component-name';
 import { makeResolverTransform } from './resolver-transform';
 import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
+import type { ASTv1 } from '@glimmer/syntax';
 
 export interface ComponentResolution {
   type: 'component';
@@ -45,6 +46,12 @@ export interface ResolutionFail {
   message: string;
   detail: string;
   loc: Loc;
+}
+
+interface ResolverDependencyError extends Error {
+  isTemplateResolverError?: boolean;
+  loc?: Loc;
+  moduleName?: string;
 }
 
 export type Resolution = ResolutionResult | ResolutionFail;
@@ -297,22 +304,26 @@ export default class CompatResolver implements Resolver {
     if (!this.templateCompiler) {
       throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
     }
-    let ast: any;
+    let ast: ASTv1.Template | ASTv1.Program;
     try {
-      ast = this.templateCompiler.parse('snippet.hbs', snippet);
+      ast = this.templateCompiler.parse('snippet.hbs', snippet) as unknown as ASTv1.Template | ASTv1.Program;
     } catch (err) {
       throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);
     }
     if ((ast.type === 'Program' || ast.type === 'Template') && ast.body.length > 0) {
       let first = ast.body[0];
       const isMustachePath = first.type === 'MustacheStatement' && first.path.type === 'PathExpression';
-      const isComponent = isMustachePath && first.path.original === 'component';
-      const hasStringParam = isComponent && Array.isArray(first.params) && first.params[0].type === 'StringLiteral';
+      const isComponent =
+        isMustachePath && ((first as ASTv1.MustacheStatement).path as ASTv1.PathExpression).original === 'component';
+      const hasStringParam =
+        isComponent &&
+        Array.isArray((first as ASTv1.MustacheStatement).params) &&
+        (first as ASTv1.MustacheStatement).params[0].type === 'StringLiteral';
       if (isMustachePath && isComponent && hasStringParam) {
-        return first.params[0].value;
+        return ((first as ASTv1.MustacheStatement).params[0] as ASTv1.StringLiteral).value;
       }
       if (isMustachePath) {
-        return first.path.original;
+        return ((first as ASTv1.MustacheStatement).path as ASTv1.PathExpression).original;
       }
       if (first.type === 'ElementNode') {
         return dasherize(first.tag);
@@ -351,9 +362,9 @@ export default class CompatResolver implements Resolver {
       for (let dep of deps) {
         if (dep.type === 'error') {
           if (!this.auditMode && !this.params.options.allowUnsafeDynamicComponents) {
-            let e = new Error(
+            let e: ResolverDependencyError = new Error(
               `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
-            ) as any;
+            );
             e.isTemplateResolverError = true;
             e.loc = dep.loc;
             e.moduleName = moduleName;
@@ -476,7 +487,7 @@ export default class CompatResolver implements Resolver {
     // as a key into the rules, and we want to be able to find our rules when
     // checking from our own template (among other times).
 
-    let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter(e => e !== '.hbs')];
+    let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter((e: string) => e !== '.hbs')];
 
     let componentModules = [] as string[];
 

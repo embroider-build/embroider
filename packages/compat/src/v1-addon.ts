@@ -11,7 +11,16 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, NodeTemplateCompiler, debug, PackageCache, Resolver, extensionsPattern } from '@embroider/core';
+import {
+  AddonMeta,
+  NodeTemplateCompiler,
+  debug,
+  PackageCache,
+  Resolver,
+  extensionsPattern,
+  AddonInstance,
+  AddonTreePath,
+} from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -30,7 +39,7 @@ import { getEmberExports } from '@embroider/core/src/load-ember-template-compile
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
 
-const stockTreeNames = Object.freeze([
+const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',
   'addon-styles',
   'styles',
@@ -41,7 +50,7 @@ const stockTreeNames = Object.freeze([
   'vendor',
   // 'addon-templates' and 'templates are trees too, but they live inside
   // 'addon' and 'app' and we handle them there.
-]);
+]) as AddonTreePath[];
 
 const dynamicTreeHooks = Object.freeze([
   'treeFor',
@@ -114,7 +123,7 @@ class V1AddonCompatResolver implements Resolver {
 // v1 addon instance.
 export default class V1Addon {
   constructor(
-    protected addonInstance: any,
+    protected addonInstance: AddonInstance,
     protected addonOptions: Required<Options>,
     protected app: V1App,
     private packageCache: PackageCache,
@@ -128,10 +137,10 @@ export default class V1Addon {
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
   private get templateCompiler(): NodeTemplateCompiler | undefined {
-    let htmlbars = this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    let htmlbars = this.addonInstance.addons.find(a => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
-      let options = htmlbars.htmlbarsOptions() as HTMLBarsOptions;
-      if (options.plugins && options.plugins.ast) {
+      let options = (htmlbars as any).htmlbarsOptions() as HTMLBarsOptions;
+      if (options?.plugins?.ast) {
         // our macros don't run here in stage1
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         prepHtmlbarsAstPluginsForUnwrap(this.addonInstance.registry);
@@ -288,7 +297,7 @@ export default class V1Addon {
     // shallow copy only! This is OK as long as we're only changing top-level
     // keys in this method
     let pkg = Object.assign({}, this.packageJSON);
-    let meta: AddonMeta = Object.assign({}, pkg.meta, this.packageMeta);
+    let meta: AddonMeta = Object.assign({}, this.packageCache.get(this.root).meta, this.packageMeta);
     pkg['ember-addon'] = meta;
 
     // classic addons don't get to customize their entrypoints like this. We
@@ -311,7 +320,7 @@ export default class V1Addon {
   @Memoize()
   private get mainModule() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require(this.addonInstance.constructor._meta_.modulePath);
+    const mod = require((this.addonInstance as unknown as any).constructor._meta_.modulePath);
 
     if (typeof mod === 'function') {
       return mod.prototype;
@@ -373,7 +382,7 @@ export default class V1Addon {
   }
 
   @Memoize()
-  private hasStockTree(treeName: string): boolean {
+  private hasStockTree(treeName: AddonTreePath): boolean {
     if (this.suppressesTree(treeName)) {
       return false;
     }
@@ -424,7 +433,7 @@ export default class V1Addon {
     }
   }
 
-  protected stockTree(treeName: string): Node {
+  protected stockTree(treeName: AddonTreePath): Node {
     return this.throughTreeCache(treeName, 'stock', () => {
       // adjust from the legacy "root" to our real root, because our rootTree
       // uses our real root but the stock trees are defined in terms of the
@@ -457,7 +466,7 @@ export default class V1Addon {
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
-    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template').length > 0) {
+    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template')?.length > 0) {
       tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
         registry: this.addonInstance.registry,
       });
@@ -574,7 +583,7 @@ export default class V1Addon {
           // a previous name was uncacheable, so we're entirely uncacheable
           return undefined;
         }
-        let key = this.addonInstance.cacheKeyForTree(name);
+        let key = this.addonInstance.cacheKeyForTree?.(name);
         if (key) {
           return accum + key;
         } else {
@@ -638,6 +647,7 @@ export default class V1Addon {
     name: string,
     { neuterPreprocessors } = { neuterPreprocessors: false }
   ): Node | undefined {
+    // @ts-expect-error have no idea why throughTreeCache overload is not working here..
     return this.throughTreeCache(name, 'original', () => {
       // get the real addon as we're going to patch and restore `preprocessJs`
       const realAddon = getRealAddon(this.addonInstance);
@@ -977,7 +987,7 @@ export default class V1Addon {
     // getEngineConfigContents is an arbitrary customizable module, so we can't
     // easily rewrite it to live inside our conditional, so it's safer in a
     // separate module.
-    built.trees.push(writeFile('config/_environment_browser_.js', this.addonInstance.getEngineConfigContents()));
+    built.trees.push(writeFile('config/_environment_browser_.js', this.addonInstance.getEngineConfigContents?.()));
     built.trees.push(
       writeFile(
         'config/environment.js',
@@ -985,7 +995,7 @@ export default class V1Addon {
       import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
       let config;
       if (macroCondition(getGlobalConfig().fastboot?.isRunning)){
-        config = ${JSON.stringify(this.addonInstance.engineConfig(this.app.env, {}), null, 2)};
+        config = ${JSON.stringify(this.addonInstance.engineConfig?.(this.app.env, {}), null, 2)};
       } else {
         config = importSync('./_environment_browser_.js').default;
       }

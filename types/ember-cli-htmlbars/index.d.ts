@@ -3,12 +3,15 @@ declare module 'ember-cli-htmlbars' {
   import { Node } from 'broccoli-node-api';
 
   export interface Options {
-    templateCompilerPath: string;
     name?: string;
     plugins?: {
+      ast?: never[];
       [type: string]: unknown[];
     };
-  }
+    templateCompiler: unknown;
+    templateCompilerPath: string;
+  };
+
 
   export default class HTMLBarsTransform extends Plugin {
     constructor(inputTree: Node, options: Options);

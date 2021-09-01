@@ -2,10 +2,9 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync, existsSync } from 'fs-extra';
 import { join, extname } from 'path';
 import get from 'lodash/get';
-import { AddonMeta, AppMeta } from './metadata';
+import { AddonMeta, AppMeta, PackageInfo } from './metadata';
 import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
-
 export default class Package {
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
@@ -35,7 +34,7 @@ export default class Package {
   }
 
   @Memoize()
-  get packageJSON() {
+  get packageJSON(): PackageInfo {
     let json = this.internalPackageJSON;
     if (this.nonResolvableDeps) {
       if (!json.dependencies) {
@@ -51,7 +50,7 @@ export default class Package {
   get meta(): AddonMeta | AppMeta | undefined {
     let m = this.packageJSON['ember-addon'];
     if (this.isV2App()) {
-      return m as AppMeta;
+      return m as unknown as AppMeta;
     }
     if (this.isV2Addon()) {
       return m as AddonMeta;
@@ -69,7 +68,7 @@ export default class Package {
   }
 
   isLazyEngine(): boolean {
-    return this.isEngine() && this.packageJSON['ember-addon']['lazy-engine'];
+    return this.isEngine() && get(this.packageJSON, 'ember-addon.lazy-engine');
   }
 
   isV2Ember(): this is V2Package {
@@ -197,7 +196,7 @@ export default class Package {
   hasDependency(name: string): boolean {
     for (let section of this.dependencyKeys) {
       if (this.packageJSON[section]) {
-        if (this.packageJSON[section][name]) {
+        if ((this.packageJSON[section] as Record<string, string>)[name]) {
           return true;
         }
       }

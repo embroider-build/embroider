@@ -1,5 +1,5 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
-import { toBroccoliPlugin, PackagerConstructor, Variant } from '@embroider/core';
+import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
@@ -11,7 +11,7 @@ export interface PipelineOptions<PackagerOptions> extends Options {
 }
 
 export default function defaultPipeline<PackagerOptions>(
-  emberApp: object,
+  emberApp: EmberAppInstance,
   packager?: PackagerConstructor<PackagerOptions>,
   options?: PipelineOptions<PackagerOptions>
 ): Node {
@@ -52,11 +52,11 @@ export default function defaultPipeline<PackagerOptions>(
   return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
 }
 
-function hasFastboot(emberApp: any) {
-  return emberApp.project.addons.find((a: any) => a.name === 'ember-cli-fastboot');
+function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {
+  return emberApp.project.addons.find(a => a.name === 'ember-cli-fastboot');
 }
 
-function defaultVariants(emberApp: any): Variant[] {
+function defaultVariants(emberApp: EmberAppInstance): Variant[] {
   let variants: Variant[] = [];
   if (emberApp.env === 'production') {
     variants.push({

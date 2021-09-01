@@ -4,6 +4,7 @@ import {
   AddonMeta,
   AddonInstance,
   isDeepAddonInstance,
+  PackageInfo,
 } from '@embroider/shared-internals';
 import buildFunnel from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
@@ -13,7 +14,7 @@ export interface ShimOptions {
   disabled?: (options: any) => boolean;
 }
 
-function addonMeta(pkgJSON: any): AddonMeta {
+function addonMeta(pkgJSON: PackageInfo): AddonMeta {
   let meta = pkgJSON['ember-addon'];
   if (meta?.version !== 2 || meta?.type !== 'addon') {
     throw new Error(`did not find valid v2 addon metadata in ${pkgJSON.name}`);
@@ -22,7 +23,7 @@ function addonMeta(pkgJSON: any): AddonMeta {
 }
 
 export function addonV1Shim(directory: string, options: ShimOptions = {}) {
-  let pkg = JSON.parse(
+  let pkg: PackageInfo = JSON.parse(
     readFileSync(resolve(directory, './package.json'), 'utf8')
   );
 
@@ -42,7 +43,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
   return {
     name: pkg.name,
     included(this: AddonInstance, ...args: unknown[]) {
-      if (((this.parent.pkg as any)['ember-addon']?.version ?? 1) < 2) {
+      if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
         let autoImportVersion = this.parent.addons.find(
           (a) => a.name === 'ember-auto-import'
         )?.pkg.version;

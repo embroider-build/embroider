@@ -5,6 +5,7 @@ import {
   AddonPackage,
   explicitRelative,
   extensionsPattern,
+  PackageInfo,
 } from '@embroider/shared-internals';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
@@ -624,7 +625,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get fastbootConfig():
-    | { packageJSON: object; extraAppFiles: string[]; extraVendorFiles: string[] }
+    | { packageJSON: PackageInfo; extraAppFiles: string[]; extraVendorFiles: string[] }
     | undefined {
     if (this.activeFastboot) {
       // this is relying on work done in stage1 by @embroider/compat/src/compat-adapters/ember-cli-fastboot.ts

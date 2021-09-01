@@ -210,8 +210,8 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
   if (!pkg || !pkg.isV2Ember()) {
     if (specifier === 'ember') {
-      debugger;
-      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON) } ${pkg && pkg.isV2Ember()}`;
+      // debugger;
+      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON)} ${pkg && pkg.isV2Ember()}`;
     }
 
     return specifier;
@@ -259,10 +259,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
           `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
         );
       }
-      if (specifier === 'ember') {
-        throw 'FOO';
-      }
-      // return specifier;
+      return specifier;
     } else {
       // second try to resolve from the source package
       let targetPkg = isResolvable(packageName, pkg);
@@ -284,10 +281,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );
       }
-      if (specifier === 'ember') {
-        throw 'FOO';
-      }
-      // return specifier;
+      return specifier;
     }
   }
 
@@ -456,13 +450,13 @@ function rewriteTopLevelImport(
   }
 
   if (source.value === 'ember') {
-    debugger;
+    // debugger;
   }
   let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
   if (specifier !== source.value) {
     source.value = specifier;
   } else if (source.value === 'ember') {
-    debugger
+    // debugger;
     throw new Error(`EWUT! ${source.value} ${specifier}`);
   }
 }

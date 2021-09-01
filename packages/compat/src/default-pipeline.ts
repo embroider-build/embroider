@@ -43,11 +43,11 @@ export default function defaultPipeline<PackagerOptions>(
 
   let embroiderApp = new App(emberApp, addons, options);
 
-  if (process.env.STAGE2_ONLY || !Packager) {
+  if (process.env.STAGE2_ONLY || !packager) {
     return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => outputPath)]);
   }
 
-  let BroccoliPackager = toBroccoliPlugin(Packager);
+  let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
   return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
 }

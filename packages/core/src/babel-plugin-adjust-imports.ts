@@ -210,8 +210,8 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
   if (!pkg || !pkg.isV2Ember()) {
     if (specifier === 'ember') {
-      debugger;
-      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON) } ${pkg && pkg.isV2Ember()}`;
+      // debugger;
+      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON)} ${pkg && pkg.isV2Ember()}`;
     }
 
     return specifier;
@@ -456,13 +456,13 @@ function rewriteTopLevelImport(
   }
 
   if (source.value === 'ember') {
-    debugger;
+    // debugger;
   }
   let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
   if (specifier !== source.value) {
     source.value = specifier;
   } else if (source.value === 'ember') {
-    debugger
+    // debugger;
     throw new Error(`EWUT! ${source.value} ${specifier}`);
   }
 }

@@ -1,5 +1,54 @@
 # Embroider Changelog
 
+## v0.44.0 (2021-09-02)
+
+#### :boom: Breaking Change
+* `webpack`
+  * [#877](https://github.com/embroider-build/embroider/pull/877) [BREAKING] Respect JOBS count if present ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :rocket: Enhancement
+* `compat`
+  * [#941](https://github.com/embroider-build/embroider/pull/941) Add support for ember-cli addon proxy (bundle caching) ([@eoneill](https://github.com/eoneill))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#953](https://github.com/embroider-build/embroider/pull/953) fixes: Local helpers not resolved in tests #894 ([@lifeart](https://github.com/lifeart))
+  * [#948](https://github.com/embroider-build/embroider/pull/948) Disable compat adapter for ember-inflector >= 4.0.0 (since it is not needed) ([@stefanpenner](https://github.com/stefanpenner))
+  * [#934](https://github.com/embroider-build/embroider/pull/934) Ensure style compilation works properly with ember-cli >= 3.18 ([@stefanpenner](https://github.com/stefanpenner))
+  * [#924](https://github.com/embroider-build/embroider/pull/924) Fix caching of template AST plugins (follow caching protocol of ember-cli-htmlbars) ([@eoneill](https://github.com/eoneill))
+  * [#928](https://github.com/embroider-build/embroider/pull/928) Update custom package rules for ember-basic-dropdown ([@mydea](https://github.com/mydea))
+* `router`
+  * [#929](https://github.com/embroider-build/embroider/pull/929) Use @ember/test-waiters in @embroider/router ([@mydea](https://github.com/mydea))
+
+#### :memo: Documentation
+* [#923](https://github.com/embroider-build/embroider/pull/923) Add documentation how to use safe components in tests ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#955](https://github.com/embroider-build/embroider/pull/955) chore: improve package json typings ([@lifeart](https://github.com/lifeart))
+* Other
+  * [#937](https://github.com/embroider-build/embroider/pull/937) Tighten CI job timeout down to 15min ([@stefanpenner](https://github.com/stefanpenner))
+  * [#944](https://github.com/embroider-build/embroider/pull/944) Fix SourceMaps when debugging published embroider ([@stefanpenner](https://github.com/stefanpenner))
+  * [#942](https://github.com/embroider-build/embroider/pull/942) Update ember data ([@stefanpenner](https://github.com/stefanpenner))
+  * [#940](https://github.com/embroider-build/embroider/pull/940) Limit linting and matrix discovery CI jobs to 5 minutes ([@stefanpenner](https://github.com/stefanpenner))
+  * [#938](https://github.com/embroider-build/embroider/pull/938) Moving cache busting tests to separate CI job ([@thoov](https://github.com/thoov))
+  * [#843](https://github.com/embroider-build/embroider/pull/843) [hygiene] Volta pin latest node / yarn ([@stefanpenner](https://github.com/stefanpenner))
+  * [#925](https://github.com/embroider-build/embroider/pull/925) upgrade @ember/test-helpers ([@stefanpenner](https://github.com/stefanpenner))
+* `router`
+  * [#949](https://github.com/embroider-build/embroider/pull/949) Convert macro-sample-addon to new test scenario infra ([@thoov](https://github.com/thoov))
+* `router`, `util`
+  * [#935](https://github.com/embroider-build/embroider/pull/935) Bump ember-source in test scenarios to at-least ~3.22.0 ([@stefanpenner](https://github.com/stefanpenner))
+  * [#933](https://github.com/embroider-build/embroider/pull/933) [Closes [#932](https://github.com/embroider-build/embroider/issues/932)] fix ember-canary test scenario ([@stefanpenner](https://github.com/stefanpenner))
+  * [#925](https://github.com/embroider-build/embroider/pull/925) upgrade @ember/test-helpers ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 5
+- Alex Kanunnikov ([@lifeart](https://github.com/lifeart))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.43.5 (2021-08-09)
 
 #### :rocket: Enhancement

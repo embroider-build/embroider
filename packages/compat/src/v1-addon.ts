@@ -760,7 +760,7 @@ export default class V1Addon {
         addonStylesTree = buildFunnel(addonStylesTree, {
           srcDir: `${this.name}/__COMPILED_STYLES__`,
           destDir: '/',
-          allowEmpty: true
+          allowEmpty: true,
         });
       }
 

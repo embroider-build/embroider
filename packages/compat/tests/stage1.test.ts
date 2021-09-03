@@ -80,6 +80,8 @@ describe('stage1 build', function () {
       addon.linkPackage('@embroider/macros');
       addon.linkPackage('ember-auto-import');
 
+      app.linkPackage('ember-auto-import');
+      app.linkPackage('webpack');
       // our app will include an in-repo addon
       app.pkg['ember-addon'] = {
         paths: ['lib/in-repo-addon'],

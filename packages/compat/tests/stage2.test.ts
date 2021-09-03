@@ -218,6 +218,7 @@ describe('stage2 build', function () {
       app = Project.emberNew();
       app.addDependency('some-library', '1.0.0');
       app.linkPackage('ember-auto-import');
+      app.linkPackage('webpack');
       app.linkPackage('@embroider/sample-transforms');
 
       merge(app.files, {

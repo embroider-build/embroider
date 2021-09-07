@@ -209,11 +209,6 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
   }
 
   if (!pkg || !pkg.isV2Ember()) {
-    if (specifier === 'ember') {
-      // debugger;
-      throw `OH NO ${JSON.stringify(pkg)} ${pkg && JSON.stringify(pkg.packageJSON)} ${pkg && pkg.isV2Ember()}`;
-    }
-
     return specifier;
   }
 
@@ -345,7 +340,6 @@ function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Opti
 }
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  // debugger;
   let target = join(opts.externalsDir, specifier + '.js');
   outputFileSync(
     target,
@@ -416,9 +410,6 @@ export default function main(babel: unknown) {
             continue;
           }
 
-          if (source.value === 'ember') {
-            // debugger;
-          }
           let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
 
           if (specifier !== source.value) {
@@ -449,15 +440,9 @@ function rewriteTopLevelImport(
     }
   }
 
-  if (source.value === 'ember') {
-    // debugger;
-  }
   let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
   if (specifier !== source.value) {
     source.value = specifier;
-  } else if (source.value === 'ember') {
-    // debugger;
-    throw new Error(`EWUT! ${source.value} ${specifier}`);
   }
 }
 

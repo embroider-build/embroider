@@ -7,7 +7,7 @@
 let TARGET_INSTANCE_SYMBOL: any;
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, import/no-extraneous-dependencies
   const targetInstanceModule = require('ember-cli/lib/models/per-bundle-addon-cache/target-instance');
 
   if (targetInstanceModule) {

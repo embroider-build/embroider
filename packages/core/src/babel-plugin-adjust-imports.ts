@@ -164,7 +164,6 @@ function isResolvable(packageName: string, fromPkg: Package): false | Package {
     if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
       return false;
     }
-    // throw new Error('boy oh boy');
     return dep;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
@@ -204,10 +203,6 @@ module.exports = m;
 function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options, isDynamic: boolean): string {
   let pkg = sourceFile.owningPackage();
 
-  if (specifier === 'ember') {
-    console.log('ember', JSON.stringify(pkg), pkg && JSON.stringify(pkg.packageJSON, null, 2), pkg && pkg.isV2Ember());
-  }
-
   if (!pkg || !pkg.isV2Ember()) {
     return specifier;
   }
@@ -241,9 +236,6 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 
     // self-imports are legal in the app tree, even for v2 packages
     if (packageName === pkg.name) {
-      if (specifier === 'ember') {
-        throw new Error('your my only hope');
-      }
       return specifier;
     }
 

@@ -1800,6 +1800,19 @@
     resolve "^1.8.1"
     semver "^7.3.2"
 
+"@embroider/macros@^0.43.5":
+  version "0.43.5"
+  resolved "https://registry.yarnpkg.com/@embroider/macros/-/macros-0.43.5.tgz#f846bb883482436611a58a3512c687d4f9fddfad"
+  integrity sha512-WmLa0T3dyG2XyN5Gr7k1RINDirFzAzh6CRvykRMcuahq1rCrav8ADrWgQzKpPWxdR6DgQCuoyimopJhLbYOpgQ==
+  dependencies:
+    "@embroider/shared-internals" "0.43.5"
+    assert-never "^1.2.1"
+    ember-cli-babel "^7.26.6"
+    find-up "^5.0.0"
+    lodash "^4.17.21"
+    resolve "^1.20.0"
+    semver "^7.3.2"
+
 "@embroider/shared-internals@0.41.0":
   version "0.41.0"
   resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.41.0.tgz#2553f026d4f48ea1fd11235501feb63bf49fa306"
@@ -1812,6 +1825,18 @@
     resolve-package-path "^1.2.2"
     semver "^7.3.2"
     typescript-memoize "^1.0.0-alpha.3"
+
+"@embroider/shared-internals@0.43.5":
+  version "0.43.5"
+  resolved "https://registry.yarnpkg.com/@embroider/shared-internals/-/shared-internals-0.43.5.tgz#4269208095452c23bfa4f08554fd8f7ed7b83a83"
+  integrity sha512-vydU3kRS5hH/hWOBHiHP06427d0C5t2p+UTPtbH09+Jlyj0WvvtgUfiNltEneY6jjpLXlqOfgs4LjsRdmBFksw==
+  dependencies:
+    ember-rfc176-data "^0.3.17"
+    fs-extra "^9.1.0"
+    lodash "^4.17.21"
+    resolve-package-path "^4.0.1"
+    semver "^7.3.5"
+    typescript-memoize "^1.0.1"
 
 "@embroider/shared-internals@^0.40.0":
   version "0.40.0"
@@ -8255,7 +8280,7 @@ ember-cli@~3.28.0:
     workerpool "^6.1.4"
     yam "^1.0.0"
 
-ember-compatibility-helpers@^1.1.1, ember-compatibility-helpers@^1.1.2, ember-compatibility-helpers@^1.2.0, ember-compatibility-helpers@^1.2.1, ember-compatibility-helpers@^1.2.2, ember-compatibility-helpers@^1.2.4:
+ember-compatibility-helpers@^1.1.1, ember-compatibility-helpers@^1.1.2, ember-compatibility-helpers@^1.2.0, ember-compatibility-helpers@^1.2.1, ember-compatibility-helpers@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/ember-compatibility-helpers/-/ember-compatibility-helpers-1.2.4.tgz#70e0fef7048969141626eed6006f3880df612cd1"
   integrity sha512-qjzQVtogyYJrSs6I4DuyCDwDCaj5JWBVNPoZDZBk8pt7caNoN0eBYRYJdin95QKaNMQODxTLPWaI4UUDQ1YWhg==
@@ -8420,11 +8445,12 @@ ember-element-helper@^0.5.0:
     ember-cli-babel "^7.17.2"
     ember-cli-htmlbars "^5.1.0"
 
-ember-engines@^0.8.15:
-  version "0.8.15"
-  resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.15.tgz#091cae2c1be8d871b0b037df2fd188f17e853194"
-  integrity sha512-X16c1w3fgFV5cBWDnaT4OQ/10usCN+peC1BxBE29/MYouKiFre70GrHvJYMbYYURVGhqRLRAdXkROhqUikGSXw==
+ember-engines@^0.8.17, ember-engines@^0.8.19:
+  version "0.8.19"
+  resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.19.tgz#b5c4d3a0f332172e279f7f68bab357a88ce09497"
+  integrity sha512-8IYHbW2z1zNCM2biREf2mHuXNpQoKc5P3yilXvGDLb5V1hujftXo5Bem038YKufp3DxRRNOHIomFKxHvDduNGQ==
   dependencies:
+    "@embroider/macros" "^0.43.5"
     amd-name-resolver "1.3.1"
     babel-plugin-compact-reexports "^1.1.0"
     broccoli-babel-transpiler "^7.2.0"
@@ -8438,36 +8464,9 @@ ember-engines@^0.8.15:
     calculate-cache-key-for-tree "^2.0.0"
     ember-asset-loader "^0.6.1"
     ember-cli-babel "^7.18.0"
-    ember-cli-htmlbars "^5.3.1"
     ember-cli-preprocess-registry "^3.3.0"
     ember-cli-string-utils "^1.1.0"
     ember-cli-version-checker "^5.1.2"
-    ember-compatibility-helpers "^1.2.2"
-    lodash "^4.17.11"
-
-ember-engines@^0.8.16:
-  version "0.8.16"
-  resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.16.tgz#1aaf97c5999881942c035a363ddc8c5adf9420ea"
-  integrity sha512-81ZEmBPAmop1yNIHtOtALAWkjSHuGMgc4i3nRhkB/da4d6b6nXXkZOOXVXyyTF6Ui3W9fwqLiM7XeB3gWv7C0A==
-  dependencies:
-    amd-name-resolver "1.3.1"
-    babel-plugin-compact-reexports "^1.1.0"
-    broccoli-babel-transpiler "^7.2.0"
-    broccoli-concat "^4.2.5"
-    broccoli-debug "^0.6.5"
-    broccoli-dependency-funnel "^2.1.2"
-    broccoli-file-creator "^2.1.1"
-    broccoli-funnel "^2.0.2"
-    broccoli-merge-trees "^3.0.2"
-    broccoli-test-helper "^2.0.0"
-    calculate-cache-key-for-tree "^2.0.0"
-    ember-asset-loader "^0.6.1"
-    ember-cli-babel "^7.18.0"
-    ember-cli-htmlbars "^5.3.1"
-    ember-cli-preprocess-registry "^3.3.0"
-    ember-cli-string-utils "^1.1.0"
-    ember-cli-version-checker "^5.1.2"
-    ember-compatibility-helpers "^1.2.2"
     lodash "^4.17.11"
 
 ember-export-application-global@^2.0.0, ember-export-application-global@^2.0.1:

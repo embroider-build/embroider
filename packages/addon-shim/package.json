@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/semver": "^7.3.6",
-    "typescript": "~4.0.0",
+    "typescript": "*",
     "webpack": "^5"
   },
   "engines": {

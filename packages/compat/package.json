@@ -83,7 +83,7 @@
     "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",
     "@glimmer/syntax": "0.80.0",
     "ember-engines": "^0.8.15",
-    "typescript": "~4.0.0"
+    "typescript": "*"
   },
   "peerDependencies": {
     "@embroider/core": "0.44.1"

@@ -53,7 +53,8 @@
     "prettier": "^2.3.1",
     "release-it": "^14.2.1",
     "release-it-lerna-changelog": "^3.1.0",
-    "release-it-yarn-workspaces": "^2.0.0"
+    "release-it-yarn-workspaces": "^2.0.0",
+    "typescript": "4.4.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"

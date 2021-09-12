@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## v0.44.1 (2021-09-07)
+
+#### :rocket: Enhancement
+* `addon-shim`, `compat`, `router`, `util`
+  * [#959](https://github.com/embroider-build/embroider/pull/959) Upgrade ember-auto-import to latest in `@embroider/addon-shim` ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#958](https://github.com/embroider-build/embroider/pull/958) Add allowEmpty to `__COMPILED_STYLES__` funnel ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* `router`, `util`
+  * [#960](https://github.com/embroider-build/embroider/pull/960) Upgrade qunit  ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 2
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.44.0 (2021-09-02)
 
 #### :boom: Breaking Change

@@ -975,10 +975,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@ef4/fixturify-project@4.0.0-alpha.0":
-  version "4.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@ef4/fixturify-project/-/fixturify-project-4.0.0-alpha.0.tgz#b0a3c8d4a6ce5f69aa1c731acc46000ef8861600"
-  integrity sha512-44MDk2S86npJMsxEe7It66M3SFqa9iizBIMrcwhkAD2FO4xKcRThpOU3Ur3dvquH15lK8QHs7kHmKSxaGWHcIg==
+"@ef4/fixturify-project@4.0.0-alpha.1":
+  version "4.0.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/@ef4/fixturify-project/-/fixturify-project-4.0.0-alpha.1.tgz#0ad61464c876bbcad3a059e996612e48cab956e3"
+  integrity sha512-rJWK9bmzsFtJZ0bAUWP1CmaB0Qdvcse3mecs6/AFoQ1b7Ndv0AVLosDtnCzUiR/hIcGJisCYWLI0nt3Z+XIBgQ==
   dependencies:
     fixturify "^2.1.1"
     resolve-package-path "^3.1.0"
@@ -15904,12 +15904,12 @@ saxes@^5.0.1:
   dependencies:
     xmlchars "^2.2.0"
 
-scenario-tester@1.0.3-alpha.1:
-  version "1.0.3-alpha.1"
-  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-1.0.3-alpha.1.tgz#909f05ff8c52317bbf7b736eb0e7403cb4fa5b79"
-  integrity sha512-WvCFkfKPxUnTcquiGRU1C0agZo4nidpSYTGWiJAsLOuoqzT6RPPEsUBOohT34xbu0IkkxAcRrJ9whp2tZ+oiDA==
+scenario-tester@1.0.3-alpha.2:
+  version "1.0.3-alpha.2"
+  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-1.0.3-alpha.2.tgz#645b50855e066e6a2f14baf7abb3e0ac8d5ad14e"
+  integrity sha512-LE03r6WD5JkF9SCZanl5Es2QJtOw+92c2pgQM7nS/9Fns4OlRgSUDsvhykYvUXdH3dxKRFODBn1MAbqeY16cEg==
   dependencies:
-    "@ef4/fixturify-project" "4.0.0-alpha.0"
+    "@ef4/fixturify-project" "4.0.0-alpha.1"
     fs-extra "^9.1.0"
     glob "^7.1.6"
     tmp "^0.2.1"

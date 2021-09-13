@@ -975,16 +975,6 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@ef4/fixturify-project@4.0.0-alpha.1":
-  version "4.0.0-alpha.1"
-  resolved "https://registry.yarnpkg.com/@ef4/fixturify-project/-/fixturify-project-4.0.0-alpha.1.tgz#0ad61464c876bbcad3a059e996612e48cab956e3"
-  integrity sha512-rJWK9bmzsFtJZ0bAUWP1CmaB0Qdvcse3mecs6/AFoQ1b7Ndv0AVLosDtnCzUiR/hIcGJisCYWLI0nt3Z+XIBgQ==
-  dependencies:
-    fixturify "^2.1.1"
-    resolve-package-path "^3.1.0"
-    tmp "^0.0.33"
-    type-fest "^0.11.0"
-
 "@ember-data/adapter@3.16.9":
   version "3.16.9"
   resolved "https://registry.yarnpkg.com/@ember-data/adapter/-/adapter-3.16.9.tgz#d4cb172b708c18ea077becae9ad8b784ce306c85"
@@ -10228,6 +10218,17 @@ fireworm@^0.7.0:
     lodash.flatten "^3.0.2"
     minimatch "^3.0.2"
 
+fixturify-project@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-4.0.0.tgz#a0710d27dd8cab51c0c6f2ebfe4df072c3c105db"
+  integrity sha512-nz5BmTE7luowWwaDyqFdPCu4iTRYJF5x53gaGLLw7wCmbiANZa8dUOH4GmRQQD+Lnvu44+LQ4GbpMBV8QKkOlg==
+  dependencies:
+    fixturify "^2.1.1"
+    resolve-package-path "^3.1.0"
+    tmp "^0.0.33"
+    type-fest "^0.11.0"
+    walk-sync "^3.0.0"
+
 fixturify-project@^1.10.0:
   version "1.10.0"
   resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-1.10.0.tgz#091c452a9bb15f09b6b9cc7cf5c0ad559f1d9aad"
@@ -15904,12 +15905,12 @@ saxes@^5.0.1:
   dependencies:
     xmlchars "^2.2.0"
 
-scenario-tester@1.0.3-alpha.2:
-  version "1.0.3-alpha.2"
-  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-1.0.3-alpha.2.tgz#645b50855e066e6a2f14baf7abb3e0ac8d5ad14e"
-  integrity sha512-LE03r6WD5JkF9SCZanl5Es2QJtOw+92c2pgQM7nS/9Fns4OlRgSUDsvhykYvUXdH3dxKRFODBn1MAbqeY16cEg==
+scenario-tester@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-2.0.0.tgz#4b40c20e3bd224d37192d94ef47c3bf31f18d909"
+  integrity sha512-PqtM4zfO4n7jggq3kQYfD3FnGS+11m47Zwh6t5O+NnjW4tLAxAozfeMr+NNhT8NK749Pk3IiqUWtbibOnFfZNg==
   dependencies:
-    "@ef4/fixturify-project" "4.0.0-alpha.1"
+    fixturify-project "4.0.0"
     fs-extra "^9.1.0"
     glob "^7.1.6"
     tmp "^0.2.1"

@@ -9,7 +9,7 @@
     "jsdom": "^16.2.2",
     "lodash": "^4.17.20",
     "qunit": "^2.16.0",
-    "scenario-tester": "^2.0.0",
+    "scenario-tester": "^2.0.1-alpha.0",
     "ts-node": "^9.1.1"
   },
   "scripts": {

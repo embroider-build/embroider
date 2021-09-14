@@ -2863,7 +2863,15 @@
   dependencies:
     "@types/node" "*"
 
-"@types/rimraf@^2.0.2", "@types/rimraf@^2.0.3":
+"@types/rimraf@^2.0.2":
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/@types/rimraf/-/rimraf-2.0.5.tgz#368fb04d59630b727fc05a74d2ca557f64a8ef98"
+  integrity sha512-YyP+VfeaqAyFmXoTh3HChxOQMyjByRMsHU7kc5KOJkSlXudhMhQIALbYV7rHh/l8d2lX3VUQzprrcAgWdRuU8g==
+  dependencies:
+    "@types/glob" "*"
+    "@types/node" "*"
+
+"@types/rimraf@^2.0.3":
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/@types/rimraf/-/rimraf-2.0.4.tgz#403887b0b53c6100a6c35d2ab24f6ccc042fec46"
   integrity sha512-8gBudvllD2A/c0CcEX/BivIDorHFt5UI5m46TsNj8DjWCCTTZT74kEe4g+QsY7P/B9WdO98d82zZgXO/RQzu2Q==
@@ -10222,6 +10230,17 @@ fixturify-project@4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-4.0.0.tgz#a0710d27dd8cab51c0c6f2ebfe4df072c3c105db"
   integrity sha512-nz5BmTE7luowWwaDyqFdPCu4iTRYJF5x53gaGLLw7wCmbiANZa8dUOH4GmRQQD+Lnvu44+LQ4GbpMBV8QKkOlg==
+  dependencies:
+    fixturify "^2.1.1"
+    resolve-package-path "^3.1.0"
+    tmp "^0.0.33"
+    type-fest "^0.11.0"
+    walk-sync "^3.0.0"
+
+fixturify-project@4.0.1-alpha.0:
+  version "4.0.1-alpha.0"
+  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-4.0.1-alpha.0.tgz#08ad92ca86c0b80edc49d0fe0d6dfc07849804a5"
+  integrity sha512-NVilesfxDK4yGEDHXc0hBltbs9c1lmO8xUpiTf7ijlYzvJe+Wj1sfpppLlpHWa0r7eI8VDfs7qdOHj4xyQAkdg==
   dependencies:
     fixturify "^2.1.1"
     resolve-package-path "^3.1.0"

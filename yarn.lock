@@ -10226,10 +10226,10 @@ fireworm@^0.7.0:
     lodash.flatten "^3.0.2"
     minimatch "^3.0.2"
 
-fixturify-project@4.0.1-alpha.0:
-  version "4.0.1-alpha.0"
-  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-4.0.1-alpha.0.tgz#08ad92ca86c0b80edc49d0fe0d6dfc07849804a5"
-  integrity sha512-NVilesfxDK4yGEDHXc0hBltbs9c1lmO8xUpiTf7ijlYzvJe+Wj1sfpppLlpHWa0r7eI8VDfs7qdOHj4xyQAkdg==
+fixturify-project@4.0.1-alpha.1:
+  version "4.0.1-alpha.1"
+  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-4.0.1-alpha.1.tgz#73160d5d6bf84e629033d9a750964e7c71d2d524"
+  integrity sha512-YsJ7Lo/P45b/Yc29pSz1BE5ng5MFCPC/uujECPkkWHPIy1RgzH+B5G6WU2sIiJtBCCBtXUQjix9M8npeX3fm1w==
   dependencies:
     fixturify "^2.1.1"
     resolve-package-path "^3.1.0"
@@ -15913,12 +15913,12 @@ saxes@^5.0.1:
   dependencies:
     xmlchars "^2.2.0"
 
-scenario-tester@^2.0.1-alpha.0:
-  version "2.0.1-alpha.0"
-  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-2.0.1-alpha.0.tgz#133155a69294dc02745cc7ae657cb965c0dbf4ab"
-  integrity sha512-/aVqW9QmHwknGyty+vx8OtkJ/kLm5+dyc5q7jt+4Gy6jX2imtuFEB60rmHYE7o9iC5nYZOq7V7we6rsrOVKBDg==
+scenario-tester@^2.0.1-alpha.1:
+  version "2.0.1-alpha.1"
+  resolved "https://registry.yarnpkg.com/scenario-tester/-/scenario-tester-2.0.1-alpha.1.tgz#8ee1506ff4bccb315d082ba818753d4e1d3e1627"
+  integrity sha512-ZTpUYO6JdiF2EhNKZlL3jumcaDYLxkEYQQ038YGhqqODh/GHsOeYzxrDqsK2bn5uFFS5wS+zv/KowrWihJWZnA==
   dependencies:
-    fixturify-project "4.0.1-alpha.0"
+    fixturify-project "4.0.1-alpha.1"
     fs-extra "^9.1.0"
     glob "^7.1.6"
     tmp "^0.2.1"

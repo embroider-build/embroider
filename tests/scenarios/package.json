@@ -9,7 +9,7 @@
     "jsdom": "^16.2.2",
     "lodash": "^4.17.20",
     "qunit": "^2.16.0",
-    "scenario-tester": "^1.0.2",
+    "scenario-tester": "^2.0.1",
     "ts-node": "^9.1.1"
   },
   "scripts": {
@@ -37,7 +37,7 @@
     "ember-data-3.20": "npm:ember-data@~3.20.0",
     "ember-data-3.24": "npm:ember-data@~3.24.0",
     "ember-data-latest": "npm:ember-data@latest",
-    "ember-engines": "^0.8.16",
+    "ember-engines": "^0.8.17",
     "ember-inline-svg": "^0.2.1",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-source-beta": "npm:ember-source@beta",

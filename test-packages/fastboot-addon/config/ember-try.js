@@ -64,7 +64,7 @@ module.exports = async function() {
         },
         npm: {
           devDependencies: {
-            '@ember/jquery': '^0.5.1'
+            '@ember/jquery': '^2.0.0'
           }
         }
       },

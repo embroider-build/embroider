@@ -1,17 +1,15 @@
-import { appScenarios } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
+import { appScenarios, baseAddon } from './scenarios';
+import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { loadFromFixtureData } from './helpers';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import fs from 'fs';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('preprocess', project => {
-    let preprocessAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-      linkDeps: true,
-    });
+    let preprocessAddon = baseAddon();
 
     merge(preprocessAddon.files, loadFromFixtureData('preprocess-addon'));
     preprocessAddon.linkDependency('broccoli-funnel', { baseDir: __dirname });

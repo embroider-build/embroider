@@ -1,8 +1,8 @@
-import { appScenarios, appReleaseScenario, addonScenarios } from './scenarios';
+import { appScenarios, appReleaseScenario, dummyAppScenarios, baseAddon } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { loadFromFixtureData } from './helpers';
 import fs from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
@@ -19,12 +19,8 @@ function updateLodashVersion(app: PreparedApp, version: string) {
 }
 
 function scenarioSetup(project: Project) {
-  let macroSampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-    linkDeps: true,
-  });
-  let funkySampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-    linkDeps: true,
-  });
+  let macroSampleAddon = baseAddon();
+  let funkySampleAddon = baseAddon();
 
   macroSampleAddon.pkg.name = 'macro-sample-addon';
   funkySampleAddon.pkg.name = '@embroider/funky-sample-addon';
@@ -113,7 +109,7 @@ appReleaseScenario
     });
   });
 
-addonScenarios
+dummyAppScenarios
   .map('macro-sample-addon', project => {
     let addonFiles = loadFromFixtureData('macro-sample-addon');
     project.name = 'macro-sample-addon';

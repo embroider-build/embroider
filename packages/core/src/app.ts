@@ -1497,17 +1497,17 @@ function combinePackageJSON(...layers: object[]) {
 function macroBabelPlugins() {
   const isProduction = process.env.EMBER_ENV === 'production';
   const isDebug = !isProduction;
-  // const ignore = {
-  //   '@ember/debug': ['assert', 'deprecate', 'warn'],
-  //   '@ember/application/deprecations': ['deprecate'],
-  // };
+  const ignore = {
+    '@ember/debug': ['assert', 'deprecate', 'warn'],
+    '@ember/application/deprecations': ['deprecate'],
+  };
 
   return [
-    // [
-    //   require.resolve('babel-plugin-ember-modules-api-polyfill'),
-    //   { ignore },
-    //   '@embroider/core:babel-plugin-ember-modules-api-polyfill',
-    // ],
+    [
+      require.resolve('babel-plugin-ember-modules-api-polyfill'),
+      { ignore },
+      '@embroider/core:babel-plugin-ember-modules-api-polyfill',
+    ],
     [
       require.resolve('babel-plugin-debug-macros'),
       {

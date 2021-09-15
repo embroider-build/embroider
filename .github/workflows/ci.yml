@@ -21,15 +21,28 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: volta-cli/action@v1
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v2
+        if: runner.os == 'Windows'
         id: yarn-cache
         with:
-          path: '**'
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package.json') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: yarn-cache
           restore-keys: |
-            ${{ runner.os }}-yarn-v2
+            yarn-cache
+
+      - uses: actions/cache@v2
+        id: build-cache
+        with:
+          path: '**'
+          key: build-${{ hashFiles('**') }}
+          restore-keys: |
+            build-
       - name: yarn --frozen-lockfile
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        if: steps.build-cache.outputs.cache-hit != 'true'
         run: yarn --frozen-lockfile
       - name: lint
         run: yarn lint
@@ -42,15 +55,28 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: volta-cli/action@v1
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v2
+        if: runner.os == 'Windows'
         id: yarn-cache
         with:
-          path: '**'
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package.json') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: yarn-cache
           restore-keys: |
-            ${{ runner.os }}-yarn-v2
+            yarn-cache
+
+
+      - uses: actions/cache@v2
+        id: build-cache
+        with:
+          path: '**'
+          key: build-${{ hashFiles('**') }}}
+          restore-keys: |
+            build-
       - name: yarn --frozen-lockfile
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        if: steps.build-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
       - id: set-matrix
         run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
@@ -64,21 +90,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.discover_matrix.outputs.matrix)}}
+
     steps:
       - uses: actions/checkout@v1
       - uses: volta-cli/action@v1
-      - uses: actions/cache@v2
-        if: runner.os != 'Windows'
-        id: yarn-cache
-        with:
-          path: '**'
-          key: ${{ runner.os }}-yarn-v2-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-v2
       - name: Get yarn cache directory path
         if: runner.os == 'Windows'
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+
       - uses: actions/cache@v2
         if: runner.os == 'Windows'
         id: yarn-cache-windows
@@ -87,9 +107,19 @@ jobs:
           key: yarn-cache-windows
           restore-keys: |
             yarn-cache-windows
+
+      - uses: actions/cache@v2
+        id: build-cache
+        if: runner.os != 'Windows'
+        with:
+          path: '**'
+          key: build-${{ hashFiles('**') }}}
+          restore-keys: |
+            build-
       - name: yarn --frozen-lockfile
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        if: steps.build-cache.outputs.cache-hit != 'true'
         run: yarn --frozen-lockfile
+
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

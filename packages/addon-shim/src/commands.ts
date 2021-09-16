@@ -14,7 +14,7 @@ yargs(process.argv.slice(2))
         .option('testAppDir', {
           type: 'string',
           description: 'Path to the test app',
-          default: 'tests',
+          default: 'test-app',
         })
         .option('addonDir', {
           type: 'string',
@@ -47,7 +47,7 @@ yargs(process.argv.slice(2))
         .option('testAppDir', {
           type: 'string',
           description: 'Path to the test app',
-          default: 'tests',
+          default: 'test-app',
         })
         .option('addonDir', {
           type: 'string',

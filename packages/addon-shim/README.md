@@ -55,6 +55,16 @@ module.exports = addonV1Shim(__dirname, {
 
 This option _only_ works in non-embroider builds. Under embroider, apps just won't import the parts of your addon they don't want.
 
+## addon-shim command
+
+The `addon-shim` command helps with common tasks in v2 addons.
+
+- linking up a test application that is embedded within your addon's repo
+- synchronizing `devDependencies` from an embedded test application out into
+  your addon's actual package.json
+
+(You can avoid the need for both of these if you keep your addon and its test app as separate packages in a monorepo instead.)
+
 ## Contributing
 
 See the top-level CONTRIBUTING.md in this monorepo.

@@ -6,7 +6,7 @@ import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .map('dynamic-import', project => {
+  .map('fastboot-app-test', project => {
     let sampleLib = new Project('@embroider/sample-lib', '0.0.0');
     merge(sampleLib.files, {
       'index.js': `export default function () {

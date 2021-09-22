@@ -59,7 +59,10 @@ yargs(process.argv.slice(2))
       let { testAppDir, addonDir } = opts;
       let addonPkg = readJSONSync(join(addonDir, 'package.json'));
       let testPkg = readJSONSync(join(testAppDir, 'package.json'));
-      let devDeps: { [name: string]: string } = {};
+      let devDeps: { [name: string]: string } = Object.assign(
+        {},
+        addonPkg.devDependencies
+      );
       for (let [name, range] of Object.entries(
         testPkg.devDependencies as { [name: string]: string }
       )) {

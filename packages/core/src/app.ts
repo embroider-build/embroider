@@ -910,11 +910,14 @@ export class AppBuilder<TreeNames> {
   }
 
   private combinePackageJSON(meta: AppMeta): object {
-    let pkgLayers = [this.app.packageJSON, { keywords: ['ember-addon'], 'ember-addon': meta }];
+    let pkgLayers: any[] = [this.app.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
+      // fastboot-specific package.json output is allowed to add to our original package.json
       pkgLayers.push(fastbootConfig.packageJSON);
     }
+    // but our own new v2 app metadata takes precedence over both
+    pkgLayers.push({ keywords: ['ember-addon'], 'ember-addon': meta });
     return combinePackageJSON(...pkgLayers);
   }
 

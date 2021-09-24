@@ -45,6 +45,8 @@
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
     "cross-env": "^7.0.3",
+    "ember-data": "^3.28.3",
+    "ember-data-latest": "npm:ember-data@latest",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.22.0",

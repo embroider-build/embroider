@@ -1,9 +1,8 @@
-import { appScenarios } from './scenarios';
+import { appScenarios, baseAddon } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import { setupFastboot, loadFromFixtureData } from './helpers';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -19,9 +18,7 @@ appScenarios
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
 
-    let fastbootAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-      linkDeps: true,
-    });
+    let fastbootAddon = baseAddon();
 
     fastbootAddon.pkg.name = 'fastboot-addon';
     merge(fastbootAddon.files, loadFromFixtureData('fastboot-addon'));

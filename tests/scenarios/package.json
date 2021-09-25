@@ -44,8 +44,7 @@
     "ember-source-3.16": "npm:ember-source@~3.16.0",
     "ember-source-3.20": "npm:ember-source@~3.20.0",
     "ember-source-3.24": "npm:ember-source@~3.24.0",
-    "ember-truth-helpers": "^3.0.0",
-    "fastboot-addon": "link:../../test-packages/fastboot-addon"
+    "ember-truth-helpers": "^3.0.0"
   },
   "volta": {
     "node": "14.16.1",

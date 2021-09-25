@@ -9,6 +9,7 @@
     "jsdom": "^16.2.2",
     "lodash": "^4.17.20",
     "qunit": "^2.16.0",
+    "resolve": "^1.20.0",
     "scenario-tester": "^2.0.1",
     "ts-node": "^9.1.1"
   },
@@ -30,6 +31,8 @@
     "ember-cli-3.20": "npm:ember-cli@~3.20.0",
     "ember-cli-3.24": "npm:ember-cli@~3.24.0",
     "ember-cli-beta": "npm:ember-cli@beta",
+    "ember-cli-htmlbars-inline-precompile": "^2.1.0",
+    "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",
     "ember-cli-latest": "npm:ember-cli@latest",
     "ember-cli-fastboot": "^2.2.3",
     "ember-composable-helpers": "^4.4.1",

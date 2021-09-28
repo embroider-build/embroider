@@ -26,6 +26,7 @@ export default function defaultPipeline<PackagerOptions>(
   options: PipelineOptions<PackagerOptions> = {}
 ): Node {
   let addons;
+  let appDestDir: string;
 
   if (process.env.REUSE_WORKSPACE) {
     addons = new PrebuiltAddons(emberApp, options, process.env.REUSE_WORKSPACE);
@@ -38,16 +39,19 @@ export default function defaultPipeline<PackagerOptions>(
 
     emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
     addons = new CompatAddons(emberApp, options);
+    addons.ready().then(result => {
+      appDestDir = result.outputPath;
+    });
   }
 
   if (process.env.STAGE1_ONLY) {
-    return mergeTrees([addons.tree, writeFile('.stage1-output', () => options.workspaceDir!)]);
+    return mergeTrees([addons.tree, writeFile('.stage1-output', () => appDestDir)]);
   }
 
   let embroiderApp = new App(emberApp, addons, options);
 
   if (process.env.STAGE2_ONLY || !packager) {
-    return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => options.workspaceDir!)]);
+    return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => appDestDir)]);
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);

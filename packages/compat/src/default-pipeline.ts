@@ -38,10 +38,6 @@ export default function defaultPipeline<PackagerOptions>(
 
     emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
     addons = new CompatAddons(emberApp, options);
-
-    if (options && options.onOutputPath) {
-      options.onOutputPath(options.workspaceDir);
-    }
   }
 
   if (process.env.STAGE1_ONLY) {

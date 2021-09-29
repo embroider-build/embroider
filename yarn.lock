@@ -8414,7 +8414,7 @@ ember-element-helper@^0.5.0:
     ember-cli-babel "^7.17.2"
     ember-cli-htmlbars "^5.1.0"
 
-ember-engines@^0.8.17, ember-engines@^0.8.19:
+ember-engines@^0.8.19:
   version "0.8.19"
   resolved "https://registry.yarnpkg.com/ember-engines/-/ember-engines-0.8.19.tgz#b5c4d3a0f332172e279f7f68bab357a88ce09497"
   integrity sha512-8IYHbW2z1zNCM2biREf2mHuXNpQoKc5P3yilXvGDLb5V1hujftXo5Bem038YKufp3DxRRNOHIomFKxHvDduNGQ==

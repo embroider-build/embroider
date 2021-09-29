@@ -14,6 +14,7 @@ import { Options } from '../../packages/compat/src';
 import { BoundExpectFile } from './file-assertions';
 import { TemplateCompiler, AppMeta } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
+import { stableWorkspaceDir } from '@embroider/compat/src/default-pipeline';
 
 export interface BuildParams {
   stage: 1 | 2;
@@ -48,6 +49,9 @@ export default class BuildResult {
       } else {
         instance = emberApp(project.baseDir, params.emberAppOptions);
       }
+
+      params.embroiderOptions.workspaceDir = stableWorkspaceDir(instance.project.root);
+
       let addons = new Addons(instance, params.embroiderOptions);
       let tree;
       if (params.stage === 1) {

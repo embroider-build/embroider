@@ -1,5 +1,36 @@
 # Embroider Changelog
 
+## v0.45.0 (2021-09-30)
+
+#### :boom: Breaking Change
+
+- `compat`
+  - [#976](https://github.com/embroider-build/embroider/pull/976) Restructure workspaceDir logic ([@thoov](https://github.com/thoov)). This removes an (undocumented) feature for the workspace dir from the build, it's unlikely to break in any normal usage.
+
+#### :rocket: Enhancement
+
+- `addon-shim`
+  - [#981](https://github.com/embroider-build/embroider/pull/981) v2 addon utility commands ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+
+- `core`
+  - [#985](https://github.com/embroider-build/embroider/pull/985) Fix an erroneous assertion in v2 addons ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+
+- `compat`
+  - [#976](https://github.com/embroider-build/embroider/pull/976) Restructure workspaceDir logic ([@thoov](https://github.com/thoov))
+  - [#980](https://github.com/embroider-build/embroider/pull/980) Convert stage-1 tests to test-scenarios ([@thoov](https://github.com/thoov))
+- Other
+  - [#986](https://github.com/embroider-build/embroider/pull/986) Ensure static test runs in production mode ([@thoov](https://github.com/thoov))
+
+#### Committers: 2
+
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.44.2 (2021-09-26)
 
 #### :bug: Bug Fix

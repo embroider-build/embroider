@@ -90,7 +90,7 @@ export default function main(babel: unknown) {
               ),
             ]);
           }
-        } else if (isTSDeclareFunction(t, declaration)) {
+        } else if (t.isTSDeclareFunction(declaration)) {
           // we don't rewrite this
         } else {
           let local = importTemplate(path, state.adder, state.colocatedTemplate);
@@ -125,12 +125,6 @@ export default function main(babel: unknown) {
       },
     },
   };
-}
-
-// this is here because babel6 doesn't offer this function, but we still want it
-// to provide type exhaustiveness when it's missing
-function isTSDeclareFunction(t: BabelTypes, dec: any): dec is t.TSDeclareFunction {
-  return t.isTSDeclareFunction?.(dec);
 }
 
 function importTemplate(target: NodePath<t.Node>, adder: ImportAdder, colocatedTemplate: string) {

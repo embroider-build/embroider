@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## v0.44.2 (2021-09-26)
+
+#### :bug: Bug Fix
+
+- `compat`, `core`, `router`, `shared-internals`, `util`
+  - [#978](https://github.com/embroider-build/embroider/pull/978) backing out ember real-modules mode (fixes some edge cases on ember 3.27 and 3.28) ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+
+- Other
+  - [#977](https://github.com/embroider-build/embroider/pull/977) Convert fastboot-addon to test scenarios ([@thoov](https://github.com/thoov))
+  - [#975](https://github.com/embroider-build/embroider/pull/975) Unify CI matrix generation and linting job ([@stefanpenner](https://github.com/stefanpenner))
+  - [#964](https://github.com/embroider-build/embroider/pull/964) Clean up fastboot app scenario test ([@thoov](https://github.com/thoov))
+- `compat`, `router`, `util`
+  - [#961](https://github.com/embroider-build/embroider/pull/961) Upgrade `ember-cli` to latest throughout test infrastructure ([@stefanpenner](https://github.com/stefanpenner))
+- `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `shared-internals`, `util`, `webpack`
+  - [#967](https://github.com/embroider-build/embroider/pull/967) Upgrade TypeScript ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 3
+
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.44.1 (2021-09-07)
 
 #### :rocket: Enhancement

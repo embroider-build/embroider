@@ -910,11 +910,14 @@ export class AppBuilder<TreeNames> {
   }
 
   private combinePackageJSON(meta: AppMeta): object {
-    let pkgLayers = [this.app.packageJSON, { keywords: ['ember-addon'], 'ember-addon': meta }];
+    let pkgLayers: any[] = [this.app.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
+      // fastboot-specific package.json output is allowed to add to our original package.json
       pkgLayers.push(fastbootConfig.packageJSON);
     }
+    // but our own new v2 app metadata takes precedence over both
+    pkgLayers.push({ keywords: ['ember-addon'], 'ember-addon': meta });
     return combinePackageJSON(...pkgLayers);
   }
 
@@ -1107,12 +1110,6 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
-    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
-      // when we're running with fake ember modules, vendor.js takes care of
-      // this bootstrapping. But when we're running with real ember modules,
-      // it's up to our entrypoint.
-      eagerModules.push('@ember/-internals/bootstrap');
-    }
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
@@ -1256,13 +1253,6 @@ export class AppBuilder<TreeNames> {
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
     ];
-
-    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
-      // when we're running with fake ember modules, the prebuilt test-support
-      // script takes care of this bootstrapping. But when we're running with
-      // real ember modules, it's up to our entrypoint.
-      eagerModules.push('ember-testing');
-    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of

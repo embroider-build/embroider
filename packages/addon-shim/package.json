@@ -17,16 +17,23 @@
     "doc": "doc",
     "test": "tests"
   },
+  "bin": {
+    "addon-shim": "./src/commands.js"
+  },
   "scripts": {
     "prepare": "tsc"
   },
   "dependencies": {
     "@embroider/shared-internals": "^0.44.2",
     "ember-auto-import": "^2.2.0",
-    "semver": "^7.3.5"
+    "fs-extra": "^10.0.0",
+    "semver": "^7.3.5",
+    "yargs": "^17.0.1"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.12",
     "@types/semver": "^7.3.6",
+    "@types/yargs": "^17.0.2",
     "typescript": "*",
     "webpack": "^5"
   },

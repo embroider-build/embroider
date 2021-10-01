@@ -272,7 +272,7 @@ export default class MacrosConfig {
   // it's not appropriate inside embroider.
   babelPluginConfig(appOrAddonInstance?: any): PluginItem[] {
     let self = this;
-    let owningPackageRoot = appOrAddonInstance ? appOrAddonInstance.root || appOrAddonInstance.project.root;
+    let owningPackageRoot = appOrAddonInstance ? appOrAddonInstance.root || appOrAddonInstance.project.root : null;
     let opts: State['opts'] = {
       // this is deliberately lazy because we want to allow everyone to finish
       // setting config before we generate the userConfigs

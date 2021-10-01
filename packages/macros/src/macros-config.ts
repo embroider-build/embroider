@@ -316,6 +316,10 @@ export default class MacrosConfig {
     let hash = crypto.createHash('sha256');
     hash = hash.update(lockFileBuffer);
     if (appOrAddonInstance) {
+      // ensure that the actual running addon names and versions are accounted
+      // for in the cache key; this ensures that we still invalidate the cache
+      // when linking another project (e.g. ember-source) which would normally
+      // not cause the lockfile to change;
       hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
     }
     let cacheKey = hash.digest('hex');

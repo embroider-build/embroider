@@ -41,6 +41,18 @@ type GlobalSharedState = WeakMap<
 // share the GlobalSharedState beneath.
 let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
+// creates a string representing all addons and their versions
+// (foo@1.0.0|bar@2.0.0) to use as a cachekey
+function gatherAddonCacheKey(item: any, memo = new Set()) {
+  item.addons.forEach((addon: any) => {
+    let key = `${addon.pkg.name}@${addon.pkg.version}`;
+    memo.add(key);
+    gatherAddonCacheKey(addon, memo);
+  });
+
+  return [...memo].join('|');
+}
+
 export default class MacrosConfig {
   static for(key: any): MacrosConfig {
     let found = localSharedState.get(key);
@@ -258,8 +270,9 @@ export default class MacrosConfig {
   // normal node_modules resolution can find their dependencies. In other words,
   // owningPackageRoot is needed when you use this inside classic ember-cli, and
   // it's not appropriate inside embroider.
-  babelPluginConfig(owningPackageRoot?: string): PluginItem[] {
+  babelPluginConfig(appOrAddonInstance?: any): PluginItem[] {
     let self = this;
+    let owningPackageRoot = appOrAddonInstance ? appOrAddonInstance.root || appOrAddonInstance.project.root;
     let opts: State['opts'] = {
       // this is deliberately lazy because we want to allow everyone to finish
       // setting config before we generate the userConfigs
@@ -300,7 +313,13 @@ export default class MacrosConfig {
     // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
     // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
     // more information in issue #906
-    let cacheKey = crypto.createHash('sha256').update(lockFileBuffer).digest('hex');
+    let hash = crypto.createHash('sha256');
+    hash = hash.update(lockFileBuffer);
+    if (appOrAddonInstance) {
+      hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
+    }
+    let cacheKey = hash.digest('hex');
+
     return [
       [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
       [

@@ -23,6 +23,7 @@
   "devDependencies": {
     "@ember/string": "^1.0.0",
     "@embroider/macros": "0.45.0",
+    "@embroider/util": "0.45.0",
     "@embroider/addon-shim": "0.45.0",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",

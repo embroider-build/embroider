@@ -41,6 +41,7 @@
     "@embroider/macros": "0.45.0",
     "@embroider/shared-internals": "0.45.0",
     "assert-never": "^1.2.1",
+    "babel-import-util": "^0.2.0",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.7",

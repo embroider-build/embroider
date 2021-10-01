@@ -4,7 +4,7 @@ import { join } from 'path';
 import { TemplateCompiler } from './template-compiler-common';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
-import { ImportAdder } from './babel-import-adder';
+import { ImportUtil } from 'babel-import-util';
 
 type BabelTypes = typeof t;
 
@@ -34,7 +34,7 @@ interface State {
   };
   dependencies: Map<string, ResolvedDep>;
   templateCompiler: TemplateCompiler | undefined;
-  adder: ImportAdder;
+  adder: ImportUtil;
 }
 
 export type Params = State['opts'];
@@ -47,7 +47,7 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
         Program: {
           enter(path: NodePath<t.Program>, state: State) {
             state.dependencies = new Map();
-            state.adder = new ImportAdder(t, path);
+            state.adder = new ImportUtil(t, path);
           },
           exit(path: NodePath<t.Program>, state: State) {
             if (state.opts.stage === 3) {

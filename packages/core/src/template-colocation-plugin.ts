@@ -4,7 +4,7 @@ import type * as t from '@babel/types';
 import { dirname } from 'path';
 import { explicitRelative } from '@embroider/shared-internals';
 import { PackageCache } from '@embroider/shared-internals';
-import { ImportAdder } from './babel-import-adder';
+import { ImportUtil } from 'babel-import-util';
 
 type BabelTypes = typeof t;
 
@@ -13,7 +13,7 @@ const packageCache = PackageCache.shared('embroider-stage3');
 interface State {
   colocatedTemplate: string | undefined;
   associate: { component: t.Identifier; template: t.Identifier } | undefined;
-  adder: ImportAdder;
+  adder: ImportUtil;
 }
 
 function setComponentTemplate(target: NodePath<t.Node>, state: State) {
@@ -26,7 +26,7 @@ export default function main(babel: unknown) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          state.adder = new ImportAdder(t, path);
+          state.adder = new ImportUtil(t, path);
           let filename = path.hub.file.opts.filename;
 
           let owningPackage = packageCache.ownerOfFile(filename);
@@ -127,6 +127,6 @@ export default function main(babel: unknown) {
   };
 }
 
-function importTemplate(target: NodePath<t.Node>, adder: ImportAdder, colocatedTemplate: string) {
+function importTemplate(target: NodePath<t.Node>, adder: ImportUtil, colocatedTemplate: string) {
   return adder.import(target, explicitRelative(dirname(colocatedTemplate), colocatedTemplate), 'default', 'TEMPLATE');
 }

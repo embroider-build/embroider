@@ -34,5 +34,4 @@ In the tests directory we derive our tests off of base app and addon templates (
 
 1. Clone this repo.
 2. Run `yarn compile` (or `yarn compile --watch`).
-3. In each of the `./packages/*` directories, run `yarn link`.
-4. In your app, `yarn link @embroider/core` and any other embroider packages that appear in your package.json.
+3. From the root of this repo, run `yarn link:all ../path/to/your/project`

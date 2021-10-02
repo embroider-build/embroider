@@ -26,6 +26,7 @@
     "clean": "git clean -x -f",
     "compile": "tsc",
     "lint": "eslint . --cache",
+    "link:all": "./link-all.sh",
     "prepare": "tsc",
     "test": "node ./test-packages/support/suite-setup-util.js --emit && jest"
   },

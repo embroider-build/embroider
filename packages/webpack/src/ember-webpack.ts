@@ -99,6 +99,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   async build(): Promise<void> {
     let appInfo = this.examineApp();
     let webpack = this.getWebpack(appInfo);
+    debugger;
     let stats = this.summarizeStats(await this.runWebpack(webpack));
     await this.writeFiles(stats, appInfo);
   }
@@ -366,6 +367,21 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         });
       }
     }
+
+    this.writeManifest(stats);
+  }
+
+  private writeManifest(stats: BundleSummary) {
+    let json: Record<string, string | string[]> = {};
+
+    for (let [source, fileMap] of stats.entrypoints.entries()) {
+      // TS environment is not configured to have .flat on Array
+      let fileList = ([...fileMap.values()] as any).flat() as string[];
+
+      json[source] = fileList.length > 1 ? fileList : fileList[0];
+    }
+
+    outputFileSync(join(this.outputPath, 'manifest.json'), JSON.stringify(json), 'utf8');
   }
 
   private copyThrough(relativePath: string) {

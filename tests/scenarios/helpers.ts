@@ -1,5 +1,5 @@
-import { PreparedApp } from 'scenario-tester';
-import { join } from 'path';
+import { PreparedApp, Project } from 'scenario-tester';
+import { join, dirname } from 'path';
 import { readFileSync } from 'fs';
 import globby from 'globby';
 import { set } from 'lodash';
@@ -42,4 +42,45 @@ export function loadFromFixtureData(fixtureNamespace: string) {
   });
 
   return fixtureStructure;
+}
+
+export function fixturifyInRepoAddon(addonName: string) {
+  return {
+    lib: {
+      [addonName]: {
+        'index.js': `module.exports = {
+          name: require('./package').name,
+        };`,
+        'package.json': `
+          {
+            "name": "${addonName}",
+            "keywords": ["ember-addon"]
+          }`,
+      },
+    },
+  };
+}
+
+// Both ember-engines and its dependency ember-asset-loader have undeclared
+// peerDependencies on ember-cli.
+export function createEmberEngine(): Project {
+  let enginesPath = dirname(require.resolve('ember-engines/package.json'));
+  let engines = Project.fromDir(enginesPath, { linkDeps: true });
+  engines.pkg.peerDependencies = Object.assign(
+    {
+      'ember-cli': '*',
+    },
+    engines.pkg.peerDependencies
+  );
+  let assetLoader = Project.fromDir(dirname(require.resolve('ember-asset-loader', { paths: [enginesPath] })), {
+    linkDeps: true,
+  });
+  assetLoader.pkg.peerDependencies = Object.assign(
+    {
+      'ember-cli': '*',
+    },
+    assetLoader.pkg.peerDependencies
+  );
+  engines.addDependency(assetLoader);
+  return engines;
 }

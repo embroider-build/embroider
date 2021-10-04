@@ -1,11 +1,12 @@
 import fs from 'fs-extra';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import resolve from 'resolve';
 import merge from 'lodash/merge';
 import { appReleaseScenario, baseAddon, dummyAppScenarios } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import { TransformOptions, transform } from '@babel/core';
 import QUnit from 'qunit';
+import { fixturifyInRepoAddon, createEmberEngine } from './helpers';
 const { module: Qmodule, test } = QUnit;
 
 function babelTransform(workspaceDir: string, filePath: string, babelConfig: TransformOptions) {
@@ -13,26 +14,8 @@ function babelTransform(workspaceDir: string, filePath: string, babelConfig: Tra
   return transform(fileContents.toString(), Object.assign({ filename: join(workspaceDir, filePath) }, babelConfig))!
     .code!;
 }
-
-function inRepo(name: string) {
-  return {
-    lib: {
-      [name]: {
-        'index.js': `module.exports = {
-          name: require('./package').name,
-        };`,
-        'package.json': `
-          {
-            "name": "${name}",
-            "keywords": ["ember-addon"]
-          }`,
-      },
-    },
-  };
-}
-
 appReleaseScenario
-  .map('stage-2', project => {
+  .map('stage-2-build', project => {
     let depA = baseAddon();
     let depB = baseAddon();
     let depC = baseAddon();
@@ -49,10 +32,10 @@ appReleaseScenario
     depB.pkg['ember-addon'] = { paths: ['lib/in-repo-b', 'lib/in-repo-c'] };
     depC.pkg['ember-addon'] = { paths: ['lib/in-repo-d'] };
 
-    merge(depA.files, merge(inRepo('in-repo-a'), { app: { services: { 'in-repo.js': 'in-repo-a' } } }));
-    merge(depB.files, merge(inRepo('in-repo-b'), { app: { services: { 'in-repo.js': 'in-repo-b' } } }));
-    merge(depB.files, merge(inRepo('in-repo-c'), { app: { services: { 'in-repo.js': 'in-repo-c' } } }));
-    merge(depC.files, merge(inRepo('in-repo-d'), { app: { services: { 'in-repo.js': 'in-repo-d' } } }));
+    merge(depA.files, merge(fixturifyInRepoAddon('in-repo-a'), { app: { services: { 'in-repo.js': 'in-repo-a' } } }));
+    merge(depB.files, merge(fixturifyInRepoAddon('in-repo-b'), { app: { services: { 'in-repo.js': 'in-repo-b' } } }));
+    merge(depB.files, merge(fixturifyInRepoAddon('in-repo-c'), { app: { services: { 'in-repo.js': 'in-repo-c' } } }));
+    merge(depC.files, merge(fixturifyInRepoAddon('in-repo-d'), { app: { services: { 'in-repo.js': 'in-repo-d' } } }));
 
     project.pkg['ember-addon'] = {
       paths: ['lib/primary-in-repo-addon'],
@@ -156,12 +139,15 @@ appReleaseScenario
 
     merge(
       project.files,
-      merge(inRepo('in-repo-a'), {
+      merge(fixturifyInRepoAddon('in-repo-a'), {
         app: { services: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
       })
     );
 
-    merge(project.files, merge(inRepo('in-repo-b'), { app: { services: { 'in-repo.js': 'in-repo-b' } } }));
+    merge(
+      project.files,
+      merge(fixturifyInRepoAddon('in-repo-b'), { app: { services: { 'in-repo.js': 'in-repo-b' } } })
+    );
 
     project.addDependency(depA);
     project.addDependency(depB);
@@ -242,7 +228,7 @@ appReleaseScenario
   });
 
 appReleaseScenario
-  .map('stage-2', project => {
+  .map('stage-2-static-with-rules', project => {
     let someLibrary = new Project('some-library', '1.0.0');
 
     project.addDependency(someLibrary);
@@ -456,7 +442,7 @@ appReleaseScenario
     });
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} addon ordering is preserved from ember-cli with orderIdx`, function (hooks) {
+    Qmodule(`${scenario.name} static with rules`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
       let compiler: any;
@@ -754,7 +740,7 @@ appReleaseScenario
   });
 
 dummyAppScenarios
-  .map('stage-2', project => {
+  .map('stage-2-addon-dummy-app', project => {
     project.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDependency('@embroider/core', { baseDir: __dirname });
     project.linkDependency('@embroider/compat', { baseDir: __dirname });
@@ -800,44 +786,21 @@ dummyAppScenarios
         assert.ok(/console\.log\(true\)/.test(assertFile.toString()));
       });
 
-      // test('addon within dummy app sees that its being developed', function (assert) {
-      //   let assertFile = babelTransform(
-      //     workspaceDir,
-      //     resolve.sync('addon-template/components/hello-world', { basedir: workspaceDir }),
-      //     babelConfig
-      //   );
-      //   assert.ok(/console\.log\(true\)/.test(assertFile.toString()));
-      // });
+      test('addon within dummy app sees that its being developed', function (assert) {
+        let assertFile = babelTransform(
+          workspaceDir,
+          'node_modules/addon-template/components/hello-world.js',
+          babelConfig
+        );
+        console.log(assertFile.toString());
+        assert.ok(/console\.log\(true\)/.test(assertFile.toString()));
+      });
     });
   });
 
-// Both ember-engines and its dependency ember-asset-loader have undeclared
-// peerDependencies on ember-cli.
-function emberEngines(): Project {
-  let enginesPath = dirname(require.resolve('ember-engines/package.json'));
-  let engines = Project.fromDir(enginesPath, { linkDeps: true });
-  engines.pkg.peerDependencies = Object.assign(
-    {
-      'ember-cli': '*',
-    },
-    engines.pkg.peerDependencies
-  );
-  let assetLoader = Project.fromDir(dirname(require.resolve('ember-asset-loader', { paths: [enginesPath] })), {
-    linkDeps: true,
-  });
-  assetLoader.pkg.peerDependencies = Object.assign(
-    {
-      'ember-cli': '*',
-    },
-    assetLoader.pkg.peerDependencies
-  );
-  engines.addDependency(assetLoader);
-  return engines;
-}
-
 appReleaseScenario
-  .map('stage-2', project => {
-    project.addDependency(emberEngines());
+  .map('stage-2-engines-with-css', project => {
+    project.addDependency(createEmberEngine());
     let lazyEngine = baseAddon();
     let eagerEngine = baseAddon();
     eagerEngine.pkg.name = 'eager-engine';
@@ -847,8 +810,8 @@ appReleaseScenario
     lazyEngine.pkg.peerDependencies = { 'ember-engines': '*' };
     lazyEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
 
-    eagerEngine.addDependency(emberEngines());
-    lazyEngine.addDependency(emberEngines());
+    eagerEngine.addDependency(createEmberEngine());
+    lazyEngine.addDependency(createEmberEngine());
 
     merge(lazyEngine.files, {
       'index.js': `const { buildEngine } = require('ember-engines/lib/engine-addon');
@@ -961,14 +924,14 @@ i(\"../../node_modules/lazy-engine/lazy-engine.css\");
   });
 
 appReleaseScenario
-  .map('stage-2', project => {
-    project.addDependency(emberEngines());
+  .map('stage-2-lazy-engines-without-css', project => {
+    project.addDependency(createEmberEngine());
     let lazyEngine = baseAddon();
     lazyEngine.pkg.name = 'lazy-engine';
     lazyEngine.pkg.peerDependencies = { 'ember-engines': '*' };
     lazyEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
 
-    lazyEngine.addDependency(emberEngines());
+    lazyEngine.addDependency(createEmberEngine());
 
     merge(lazyEngine.files, {
       'index.js': `const { buildEngine } = require('ember-engines/lib/engine-addon');

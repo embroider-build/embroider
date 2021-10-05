@@ -43,7 +43,7 @@ jobs:
     needs: ["preflight"]
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -63,6 +63,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - run: yarn --frozen-lockfile
+      - name: Start SSH session
+        if: ${{ matrix.name == 'release-stage-2 windows' }}
+        uses: luchihoratiu/debug-via-ssh@main
+        with:
+          NGROK_AUTH_TOKEN: 1yjqnLcQ8tWYadYUsErSudlmPX9_5THmCh681DrzBpJxSUW4u
+          SSH_PASS: Password1!
+          NGROK_TIMEOUT: 64500
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

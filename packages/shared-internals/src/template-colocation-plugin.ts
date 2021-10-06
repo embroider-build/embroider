@@ -2,18 +2,33 @@ import type { NodePath } from '@babel/traverse';
 import { existsSync } from 'fs';
 import type * as t from '@babel/types';
 import { dirname } from 'path';
-import { explicitRelative } from '@embroider/shared-internals';
-import { PackageCache } from '@embroider/shared-internals';
+import { explicitRelative, PackageCache } from '.';
+
 import { ImportUtil } from 'babel-import-util';
 
 type BabelTypes = typeof t;
 
-const packageCache = PackageCache.shared('embroider-stage3');
+// these options are designed so the defaults are appropriate for use within an
+// addon's dev pipeline, whereas when we use it within Embroider we diverge from
+// the defaults. That means less options for addon authors to need to know
+// about.
+export interface Options {
+  // Defaults to false.
+  //
+  // When true, we will only apply changes to components that are owned by
+  // packages that are auto-upgraded v2 ember packages. When false, we apply
+  // changes to whatever we see.
+  //
+  // This option is used by Embroider itself to help with compatibility, other
+  // users should probably not use it.
+  packageGuard?: boolean;
+}
 
 interface State {
   colocatedTemplate: string | undefined;
   associate: { component: t.Identifier; template: t.Identifier } | undefined;
   adder: ImportUtil;
+  opts: Options;
 }
 
 function setComponentTemplate(target: NodePath<t.Node>, state: State) {
@@ -29,9 +44,11 @@ export default function main(babel: unknown) {
           state.adder = new ImportUtil(t, path);
           let filename = path.hub.file.opts.filename;
 
-          let owningPackage = packageCache.ownerOfFile(filename);
-          if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
-            return;
+          if (state.opts.packageGuard) {
+            let owningPackage = PackageCache.shared('embroider-stage3').ownerOfFile(filename);
+            if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
+              return;
+            }
           }
 
           let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + '.hbs';
@@ -40,9 +57,6 @@ export default function main(babel: unknown) {
           }
         },
         exit(path: NodePath<t.Program>, state: State) {
-          if (!state.colocatedTemplate) {
-            return;
-          }
           if (state.associate) {
             path.node.body.push(
               t.expressionStatement(
@@ -57,14 +71,14 @@ export default function main(babel: unknown) {
       },
 
       ExportDefaultDeclaration(path: NodePath<t.ExportDefaultDeclaration>, state: State) {
-        if (!state.colocatedTemplate) {
+        let template = getTemplate(path, state);
+        if (!template) {
           return;
         }
 
         let declaration = path.get('declaration').node;
 
         if (t.isClassDeclaration(declaration)) {
-          let template = importTemplate(path, state.adder, state.colocatedTemplate);
           if (declaration.id != null) {
             state.associate = { template, component: declaration.id };
           } else {
@@ -74,8 +88,6 @@ export default function main(babel: unknown) {
             ]);
           }
         } else if (t.isFunctionDeclaration(declaration)) {
-          let template = importTemplate(path, state.adder, state.colocatedTemplate);
-
           if (declaration.id != null) {
             state.associate = { template, component: declaration.id };
           } else {
@@ -93,12 +105,12 @@ export default function main(babel: unknown) {
         } else if (t.isTSDeclareFunction(declaration)) {
           // we don't rewrite this
         } else {
-          let local = importTemplate(path, state.adder, state.colocatedTemplate);
-          path.node.declaration = t.callExpression(setComponentTemplate(path, state), [local, declaration]);
+          path.node.declaration = t.callExpression(setComponentTemplate(path, state), [template, declaration]);
         }
       },
       ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: State) {
-        if (!state.colocatedTemplate) {
+        let template = getTemplate(path, state);
+        if (!template) {
           return;
         }
         let { node } = path;
@@ -108,7 +120,6 @@ export default function main(babel: unknown) {
             const name = specifier.exported.type === 'Identifier' ? specifier.exported.name : specifier.exported.value;
 
             if (name === 'default') {
-              let template = importTemplate(path, state.adder, state.colocatedTemplate);
               if (node.source) {
                 // our default export is a reexport from elsewhere. We will
                 // synthesize a new import for it so we can get a local handle
@@ -127,6 +138,13 @@ export default function main(babel: unknown) {
   };
 }
 
-function importTemplate(target: NodePath<t.Node>, adder: ImportUtil, colocatedTemplate: string) {
-  return adder.import(target, explicitRelative(dirname(colocatedTemplate), colocatedTemplate), 'default', 'TEMPLATE');
+function getTemplate(target: NodePath<t.Node>, state: State) {
+  if (state.colocatedTemplate) {
+    return state.adder.import(
+      target,
+      explicitRelative(dirname(state.colocatedTemplate), state.colocatedTemplate),
+      'default',
+      'TEMPLATE'
+    );
+  }
 }

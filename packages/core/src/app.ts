@@ -39,6 +39,7 @@ import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import { getEmberExports } from './load-ember-template-compiler';
+import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
 
 export type EmberENV = unknown;
 
@@ -396,7 +397,13 @@ export class AppBuilder<TreeNames> {
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
 
-    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+    let colocationOptions: ColocationOptions = {
+      packageGuard: true,
+    };
+    babel.plugins.push([
+      require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),
+      colocationOptions,
+    ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
 

@@ -9,8 +9,4 @@ module.exports = {
       .find((a) => a.name === 'ember-auto-import')
       .registerV2Addon(this.parent.name, this.parent.pkg.root);
   },
-
-  includedCommands() {
-    return require('./src/commands').default;
-  },
 };

@@ -20,7 +20,7 @@ function commonArgs(yargs: Argv) {
 }
 
 yargs(process.argv.slice(2))
-  .scriptName('addon-shim')
+  .scriptName('addon-dev')
   .command(
     'link-test-app',
     'Ensures that a test app (that lives a subdir under an addon) has access to the addon and all appropriate deps',

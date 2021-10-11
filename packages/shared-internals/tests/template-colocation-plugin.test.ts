@@ -11,11 +11,13 @@ describe('template-colocation-plugin', () => {
   jest.setTimeout(120000);
 
   let filename: string;
+  let plugins: any = [];
+
   allBabelVersions({
     babelConfig() {
       return {
         filename,
-        plugins: [[join(__dirname, '../src/template-colocation-plugin.js'), { needsModulesPolyfill: true }]],
+        plugins,
       };
     },
     createTests(transform) {
@@ -29,6 +31,14 @@ describe('template-colocation-plugin', () => {
         let name;
         ({ name, removeCallback } = tmp.dirSync());
         filename = join(name, 'sample.js');
+        plugins = [
+          [
+            join(__dirname, '../src/template-colocation-plugin.js'),
+            {
+              templateMode: 'imported',
+            },
+          ],
+        ];
         writeJSONSync(join(name, 'package.json'), {
           name: 'sample-package',
           keywords: ['ember-addon'],

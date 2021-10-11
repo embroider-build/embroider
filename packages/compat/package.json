@@ -33,7 +33,7 @@
     "@embroider/macros": "0.45.0",
     "@embroider/shared-internals": "0.45.0",
     "@types/babel__code-frame": "^7.0.2",
-    "@types/yargs": "^17.0.0",
+    "@types/yargs": "^17.0.3",
     "assert-never": "^1.1.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babylon": "^6.18.0",

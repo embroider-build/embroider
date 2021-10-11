@@ -16,9 +16,12 @@
     "./template-colocation-plugin": "./src/template-colocation-plugin.js",
     "./rollup": "./src/rollup.js"
   },
-  "scripts": {
-    "prepare": "tsc"
-  },
+  "files": [
+    "sample-rollup.config.js",
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
   "dependencies": {
     "@embroider/shared-internals": "^0.46.1",
     "@rollup/pluginutils": "^4.1.1",

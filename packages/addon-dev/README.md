@@ -4,11 +4,16 @@ Utilities for working on v2 addons.
 
 ## Rollup Utilities
 
-`@embroider/addon-dev/rollup` exports utilities for building addons with rollup:
+`@embroider/addon-dev/rollup` exports utilities for building addons with rollup. To use them:
 
-- `hbs` a rollup plugin that converts standalone `.hbs` files to valid Javascript.
-- `publicEntrypoints` a rollup plugin that allows you to list globs for all the modules that are considered public entrypoints to your addon.
-- `clean` the rollup-plugin-delete utility for cleaning your output directory between builds
+1. Add the following `devDependencies` to your addon:
+
+   - @embroider/addon-dev
+   - rollup
+   - @babel/core
+   - @rollup/plugin-babel
+
+2. Copy the `./sample-rollup.config.js` in this repo to your own `rollup.config.js`.
 
 ## addon-dev command
 

@@ -1,5 +1,14 @@
 # Embroider Changelog
 
+## v0.46.2 (2021-10-11)
+
+#### :bug: Bug Fix
+* `addon-dev`
+  * [#1003](https://github.com/embroider-build/embroider/pull/1003) addon-dev: list published files explicitly ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.46.1 (2021-10-11)
 
 #### :bug: Bug Fix

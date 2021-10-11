@@ -1,5 +1,35 @@
 # Embroider Changelog
 
+## v0.46.0 (2021-10-11)
+
+#### :boom: Breaking Change
+* `addon-dev`, `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#1001](https://github.com/embroider-build/embroider/pull/1001) Create addon-dev package ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `addon-dev`, `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#1001](https://github.com/embroider-build/embroider/pull/1001) Create addon-dev package ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `core`
+  * [#974](https://github.com/embroider-build/embroider/pull/974) Production fastboot builds were incorrectly getting server code in the browser ([@thoov](https://github.com/thoov))
+* `macros`
+  * [#990](https://github.com/embroider-build/embroider/pull/990) Invalidate @embroider/macro's babel cache when addon version's change without mutating lock file (e.g. linking) ([@thoov](https://github.com/thoov))
+
+#### :memo: Documentation
+* `router`
+  * [#930](https://github.com/embroider-build/embroider/pull/930) add note on route splitting with pods in readme ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `core`
+  * [#989](https://github.com/embroider-build/embroider/pull/989) use babel-import-util ([@ef4](https://github.com/ef4))
+  * [#988](https://github.com/embroider-build/embroider/pull/988) Remove leftover Babel 6 compatibility code ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
 ## v0.45.0 (2021-09-30)
 
 #### :boom: Breaking Change

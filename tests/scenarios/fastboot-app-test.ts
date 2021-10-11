@@ -17,6 +17,7 @@ appScenarios
     project.addDependency(sampleLib);
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
+    project.linkDependency('@embroider/util', { baseDir: __dirname });
 
     let fastbootAddon = baseAddon();
 
@@ -57,6 +58,9 @@ appScenarios
 
           test('content is rendered', async function (assert) {
             assert.equal(doc.querySelector('[data-test="hello"]').textContent, 'Hello from fastboot-app');
+          });
+          test('ensureSafeComponent works', async function (assert) {
+            assert.equal(doc.querySelector('[data-safe-component]').textContent, 'Safe Component here!!');
           });
           test('found server implementation of in-app module', async function (assert) {
             assert.equal(doc.querySelector('[data-test="example"]').textContent, 'This is the server implementation');

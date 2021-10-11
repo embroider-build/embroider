@@ -36,9 +36,25 @@ if (!isCurriedComponentDefinition) {
 export { isCurriedComponentDefinition };
 
 function runtimeResolver(owner) {
-  let resolver = owner.lookup('renderer:-dom')._runtimeResolver;
-  if (resolver) {
-    return resolver;
+  if (macroCondition(dependencySatisfies('ember-source', '>=3.25.0-alpha.1'))) {
+    let resolver = owner.lookup('renderer:-dom')._runtimeResolver;
+    if (resolver) {
+      return resolver;
+    }
+  } else {
+    // on ember-source < 3.25 there were two different renderer implementations
+    // this ensures that we use the correct version when running in FastBoot
+    let env = owner.lookup('-environment:main');
+    let resolver;
+    if (env.isInteractive) {
+      resolver = owner.lookup('renderer:-dom')._runtimeResolver;
+    } else {
+      resolver = owner.lookup('renderer:-inert')._runtimeResolver;
+    }
+
+    if (resolver) {
+      return resolver;
+    }
   }
 
   let entry = Object.entries(owner.__container__.cache).find((e) =>

@@ -1,5 +1,222 @@
 # Embroider Changelog
 
+## v0.46.2 (2021-10-11)
+
+#### :bug: Bug Fix
+* `addon-dev`
+  * [#1003](https://github.com/embroider-build/embroider/pull/1003) addon-dev: list published files explicitly ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v0.46.1 (2021-10-11)
+
+#### :bug: Bug Fix
+* `addon-dev`
+  * [#1002](https://github.com/embroider-build/embroider/pull/1002) addon-dev needs a prepare script ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v0.46.0 (2021-10-11)
+
+#### :boom: Breaking Change
+* `addon-dev`, `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#1001](https://github.com/embroider-build/embroider/pull/1001) Create addon-dev package ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `addon-dev`, `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#1001](https://github.com/embroider-build/embroider/pull/1001) Create addon-dev package ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `core`
+  * [#974](https://github.com/embroider-build/embroider/pull/974) Production fastboot builds were incorrectly getting server code in the browser ([@thoov](https://github.com/thoov))
+* `macros`
+  * [#990](https://github.com/embroider-build/embroider/pull/990) Invalidate @embroider/macro's babel cache when addon version's change without mutating lock file (e.g. linking) ([@thoov](https://github.com/thoov))
+
+#### :memo: Documentation
+* `router`
+  * [#930](https://github.com/embroider-build/embroider/pull/930) add note on route splitting with pods in readme ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `core`
+  * [#989](https://github.com/embroider-build/embroider/pull/989) use babel-import-util ([@ef4](https://github.com/ef4))
+  * [#988](https://github.com/embroider-build/embroider/pull/988) Remove leftover Babel 6 compatibility code ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+## v0.45.0 (2021-09-30)
+
+#### :boom: Breaking Change
+
+- `compat`
+  - [#976](https://github.com/embroider-build/embroider/pull/976) Restructure workspaceDir logic ([@thoov](https://github.com/thoov)). This removes an (undocumented) feature for the workspace dir from the build, it's unlikely to break in any normal usage.
+
+#### :rocket: Enhancement
+
+- `addon-shim`
+  - [#981](https://github.com/embroider-build/embroider/pull/981) v2 addon utility commands ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+
+- `core`
+  - [#985](https://github.com/embroider-build/embroider/pull/985) Fix an erroneous assertion in v2 addons ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+
+- `compat`
+  - [#976](https://github.com/embroider-build/embroider/pull/976) Restructure workspaceDir logic ([@thoov](https://github.com/thoov))
+  - [#980](https://github.com/embroider-build/embroider/pull/980) Convert stage-1 tests to test-scenarios ([@thoov](https://github.com/thoov))
+- Other
+  - [#986](https://github.com/embroider-build/embroider/pull/986) Ensure static test runs in production mode ([@thoov](https://github.com/thoov))
+
+#### Committers: 2
+
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.44.2 (2021-09-26)
+
+#### :bug: Bug Fix
+
+- `compat`, `core`, `router`, `shared-internals`, `util`
+  - [#978](https://github.com/embroider-build/embroider/pull/978) backing out ember real-modules mode (fixes some edge cases on ember 3.27 and 3.28) ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+
+- Other
+  - [#977](https://github.com/embroider-build/embroider/pull/977) Convert fastboot-addon to test scenarios ([@thoov](https://github.com/thoov))
+  - [#975](https://github.com/embroider-build/embroider/pull/975) Unify CI matrix generation and linting job ([@stefanpenner](https://github.com/stefanpenner))
+  - [#964](https://github.com/embroider-build/embroider/pull/964) Clean up fastboot app scenario test ([@thoov](https://github.com/thoov))
+- `compat`, `router`, `util`
+  - [#961](https://github.com/embroider-build/embroider/pull/961) Upgrade `ember-cli` to latest throughout test infrastructure ([@stefanpenner](https://github.com/stefanpenner))
+- `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `shared-internals`, `util`, `webpack`
+  - [#967](https://github.com/embroider-build/embroider/pull/967) Upgrade TypeScript ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 3
+
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.44.1 (2021-09-07)
+
+#### :rocket: Enhancement
+* `addon-shim`, `compat`, `router`, `util`
+  * [#959](https://github.com/embroider-build/embroider/pull/959) Upgrade ember-auto-import to latest in `@embroider/addon-shim` ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#958](https://github.com/embroider-build/embroider/pull/958) Add allowEmpty to `__COMPILED_STYLES__` funnel ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* `router`, `util`
+  * [#960](https://github.com/embroider-build/embroider/pull/960) Upgrade qunit  ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 2
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.44.0 (2021-09-02)
+
+#### :boom: Breaking Change
+* `webpack`
+  * [#877](https://github.com/embroider-build/embroider/pull/877) [BREAKING] Respect JOBS count if present ([@stefanpenner](https://github.com/stefanpenner))
+
+#### :rocket: Enhancement
+* `compat`
+  * [#941](https://github.com/embroider-build/embroider/pull/941) Add support for ember-cli addon proxy (bundle caching) ([@eoneill](https://github.com/eoneill))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#953](https://github.com/embroider-build/embroider/pull/953) fixes: Local helpers not resolved in tests #894 ([@lifeart](https://github.com/lifeart))
+  * [#948](https://github.com/embroider-build/embroider/pull/948) Disable compat adapter for ember-inflector >= 4.0.0 (since it is not needed) ([@stefanpenner](https://github.com/stefanpenner))
+  * [#934](https://github.com/embroider-build/embroider/pull/934) Ensure style compilation works properly with ember-cli >= 3.18 ([@stefanpenner](https://github.com/stefanpenner))
+  * [#924](https://github.com/embroider-build/embroider/pull/924) Fix caching of template AST plugins (follow caching protocol of ember-cli-htmlbars) ([@eoneill](https://github.com/eoneill))
+  * [#928](https://github.com/embroider-build/embroider/pull/928) Update custom package rules for ember-basic-dropdown ([@mydea](https://github.com/mydea))
+* `router`
+  * [#929](https://github.com/embroider-build/embroider/pull/929) Use @ember/test-waiters in @embroider/router ([@mydea](https://github.com/mydea))
+
+#### :memo: Documentation
+* [#923](https://github.com/embroider-build/embroider/pull/923) Add documentation how to use safe components in tests ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `addon-shim`, `compat`, `core`, `shared-internals`
+  * [#955](https://github.com/embroider-build/embroider/pull/955) chore: improve package json typings ([@lifeart](https://github.com/lifeart))
+* Other
+  * [#937](https://github.com/embroider-build/embroider/pull/937) Tighten CI job timeout down to 15min ([@stefanpenner](https://github.com/stefanpenner))
+  * [#944](https://github.com/embroider-build/embroider/pull/944) Fix SourceMaps when debugging published embroider ([@stefanpenner](https://github.com/stefanpenner))
+  * [#942](https://github.com/embroider-build/embroider/pull/942) Update ember data ([@stefanpenner](https://github.com/stefanpenner))
+  * [#940](https://github.com/embroider-build/embroider/pull/940) Limit linting and matrix discovery CI jobs to 5 minutes ([@stefanpenner](https://github.com/stefanpenner))
+  * [#938](https://github.com/embroider-build/embroider/pull/938) Moving cache busting tests to separate CI job ([@thoov](https://github.com/thoov))
+  * [#843](https://github.com/embroider-build/embroider/pull/843) [hygiene] Volta pin latest node / yarn ([@stefanpenner](https://github.com/stefanpenner))
+  * [#925](https://github.com/embroider-build/embroider/pull/925) upgrade @ember/test-helpers ([@stefanpenner](https://github.com/stefanpenner))
+* `router`
+  * [#949](https://github.com/embroider-build/embroider/pull/949) Convert macro-sample-addon to new test scenario infra ([@thoov](https://github.com/thoov))
+* `router`, `util`
+  * [#935](https://github.com/embroider-build/embroider/pull/935) Bump ember-source in test scenarios to at-least ~3.22.0 ([@stefanpenner](https://github.com/stefanpenner))
+  * [#933](https://github.com/embroider-build/embroider/pull/933) [Closes [#932](https://github.com/embroider-build/embroider/issues/932)] fix ember-canary test scenario ([@stefanpenner](https://github.com/stefanpenner))
+  * [#925](https://github.com/embroider-build/embroider/pull/925) upgrade @ember/test-helpers ([@stefanpenner](https://github.com/stefanpenner))
+
+#### Committers: 5
+- Alex Kanunnikov ([@lifeart](https://github.com/lifeart))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Stefan Penner ([@stefanpenner](https://github.com/stefanpenner))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.43.5 (2021-08-09)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#918](https://github.com/embroider-build/embroider/pull/918) Add `needsCache` and `persistentOutput` to internal broccoli-plugins. ([@rwjblue](https://github.com/rwjblue))
+
+#### :bug: Bug Fix
+* `core`, `macros`, `shared-internals`
+  * [#913](https://github.com/embroider-build/embroider/pull/913) Ensure `dependencySatisfies` invalidates when installed packages change ([@thoov](https://github.com/thoov))
+
+#### :house: Internal
+* [#917](https://github.com/embroider-build/embroider/pull/917) Improve Heimdall Types ([@krisselden](https://github.com/krisselden))
+
+#### Committers: 3
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
+## v0.43.4 (2021-08-03)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#915](https://github.com/embroider-build/embroider/pull/915) Reduce memory pressure from compat layer by disabling Heimdall node gathering during OneShotPlugin ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 2
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+
+
+## v0.43.3 (2021-07-30)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#910](https://github.com/embroider-build/embroider/pull/910) Fix arguments to `preprocessCss` (to match classic build) ([@thoov](https://github.com/thoov))
+  * [#880](https://github.com/embroider-build/embroider/pull/880) Fix compatibility with ember-data@3.27+ ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#914](https://github.com/embroider-build/embroider/pull/914) Remove transitive `loader-utils` dependency from `@embroider/webpack` ([@mydea](https://github.com/mydea))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.43.2 (2021-07-29)
 
 #### :rocket: Enhancement

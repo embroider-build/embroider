@@ -8,7 +8,17 @@ import resolve from 'resolve';
 import { Node } from 'broccoli-node-api';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import { PackageCache, TemplateCompiler, TemplateCompilerPlugins, AddonMeta, Package } from '@embroider/core';
+import {
+  PackageCache,
+  TemplateCompiler,
+  TemplateCompilerPlugins,
+  AddonMeta,
+  Package,
+  EmberAppInstance,
+  OutputFileToInputFileMap,
+  PackageInfo,
+  AddonInstance,
+} from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage, { OwningAddon } from './dummy-package';
@@ -19,31 +29,17 @@ import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic } from './detect-babel-plugins';
+import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import { readFileSync } from 'fs';
+import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
+import semver from 'semver';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
 
-type FilePath = string;
-type OutputFileToInputFileMap = { [filePath: string]: FilePath[] };
-
-interface EmberApp {
-  env: string;
-  name: string;
-  _scriptOutputFiles: OutputFileToInputFileMap;
-  _styleOutputFiles: OutputFileToInputFileMap;
-  legacyTestFilesToAppend: FilePath[];
-  vendorTestStaticStyles: FilePath[];
-  _customTransformsMap: Map<string, any>;
-  _nodeModules: Map<string, { name: string; path: FilePath }>;
-  options: any;
-  tests: boolean;
-  trees: any;
-  project: any;
-  registry: any;
-  testIndex(): Node;
-  getLintTests(): Node;
-  otherAssetPaths: any[];
-}
+type EmberCliHTMLBarsAddon = AddonInstance & {
+  htmlbarsOptions(): HTMLBarsOptions;
+};
 
 interface Group {
   outputFiles: OutputFileToInputFileMap;
@@ -55,8 +51,8 @@ export default class V1App {
   // used to signal that this is a dummy app owned by a particular addon
   owningAddon: Package | undefined;
 
-  static create(app: EmberApp, packageCache: PackageCache): V1App {
-    if (app.project.pkg.keywords && app.project.pkg.keywords.includes('ember-addon')) {
+  static create(app: EmberAppInstance, packageCache: PackageCache): V1App {
+    if (app.project.pkg.keywords?.includes('ember-addon')) {
       // we are a dummy app, which is unfortunately weird and special
       return new V1DummyApp(app, packageCache);
     } else {
@@ -68,7 +64,7 @@ export default class V1App {
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
-  protected constructor(protected app: EmberApp, protected packageCache: PackageCache) {}
+  protected constructor(protected app: EmberAppInstance, protected packageCache: PackageCache) {}
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
@@ -94,6 +90,11 @@ export default class V1App {
     }
 
     return dirname(emberCLIPackage);
+  }
+
+  @Memoize()
+  get hasCompiledStyles() {
+    return semver.gte(JSON.parse(readFileSync(`${this.emberCLILocation}/package.json`, 'utf8')).version, '3.18.0');
   }
 
   private requireFromEmberCLI(specifier: string) {
@@ -428,10 +429,10 @@ export default class V1App {
         'implicit-test-styles': this.app.vendorTestStaticStyles.map(remapAsset),
         'public-assets': mapKeys(this._publicAssets, (_, key) => remapAsset(key)),
       };
-      let meta = {
+      let meta: PackageInfo = {
         name: '@embroider/synthesized-vendor',
         version: '0.0.0',
-        keywords: 'ember-addon',
+        keywords: ['ember-addon'],
         'ember-addon': addonMeta,
       };
       writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
@@ -477,7 +478,7 @@ export default class V1App {
     };
 
     let nestedInput = buildFunnel(this.combinedStyles(addonTrees), { destDir: 'app/styles' });
-    let styles = this.preprocessors.preprocessCss(nestedInput, 'app/styles', '/assets', options);
+    let styles = this.preprocessors.preprocessCss(nestedInput, '/app/styles', '/assets', options);
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
@@ -491,10 +492,10 @@ export default class V1App {
           addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
         }
       }
-      let meta = {
+      let meta: PackageInfo = {
         name: '@embroider/synthesized-styles',
         version: '0.0.0',
-        keywords: 'ember-addon',
+        keywords: ['ember-addon'],
         'ember-addon': addonMeta,
       };
       writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
@@ -554,31 +555,17 @@ export default class V1App {
   }
 
   get htmlbarsPlugins(): TemplateCompilerPlugins {
-    let addon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-htmlbars');
+    let addon = this.app.project.addons.find(
+      (a: AddonInstance) => a.name === 'ember-cli-htmlbars'
+    ) as unknown as EmberCliHTMLBarsAddon;
     let options = addon.htmlbarsOptions();
-    if (options.plugins.ast) {
+    if (options?.plugins?.ast) {
       // even if the app was using @embroider/macros, we drop it from the config
       // here in favor of our globally-configured one.
       options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-
-      // The parallelization protocol in ember-cli-htmlbars doesn't actually
-      // apply to the AST plugins, it applies to wrappers that
-      // ember-cli-htmlbars keeps around the plugins. Those wrappers aren't
-      // availble to us when we look at the template compiler configuration, so
-      // we need to find them directly out of the registry here. And we need to
-      // provide our own unwrapper shim to pull the real plugin out of the
-      // wrapper after deserializing.
-      for (let wrapper of this.app.registry.load('htmlbars-ast-plugin')) {
-        if (wrapper.parallelBabel && wrapper.plugin && !wrapper.plugin.parallelBabel) {
-          wrapper.plugin.parallelBabel = {
-            requireFile: join(__dirname, 'htmlbars-unwrapper.js'),
-            buildUsing: 'unwrapPlugin',
-            params: wrapper.parallelBabel,
-          };
-        }
-      }
+      prepHtmlbarsAstPluginsForUnwrap(this.app.registry);
     }
-    return options.plugins;
+    return options.plugins ?? {};
   }
 
   // our own appTree. Not to be confused with the one that combines the app js
@@ -755,7 +742,7 @@ function throwIfMissing<T>(
 }
 
 class V1DummyApp extends V1App {
-  constructor(app: EmberApp, packageCache: PackageCache) {
+  constructor(app: EmberAppInstance, packageCache: PackageCache) {
     super(app, packageCache);
     this.owningAddon = new OwningAddon(this.app.project.root, packageCache);
     this.packageCache.seed(this.owningAddon);

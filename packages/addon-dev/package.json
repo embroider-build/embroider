@@ -1,0 +1,47 @@
+{
+  "name": "@embroider/addon-dev",
+  "version": "0.46.2",
+  "description": "Utilities for addon authors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/addon-dev"
+  },
+  "license": "MIT",
+  "author": "Edward Faulkner <edward@eaf4.com>",
+  "bin": {
+    "addon-dev": "./src/commands.js"
+  },
+  "exports": {
+    "./template-colocation-plugin": "./src/template-colocation-plugin.js",
+    "./rollup": "./src/rollup.js"
+  },
+  "files": [
+    "sample-rollup.config.js",
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "dependencies": {
+    "@embroider/shared-internals": "^0.46.2",
+    "@rollup/pluginutils": "^4.1.1",
+    "fs-extra": "^10.0.0",
+    "minimatch": "^3.0.4",
+    "rollup-plugin-copy-assets": "^2.0.3",
+    "rollup-plugin-delete": "^2.0.0",
+    "walk-sync": "^3.0.0",
+    "yargs": "^17.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.12",
+    "@types/minimatch": "^3.0.4",
+    "@types/yargs": "^17.0.3",
+    "rollup": "^2.58.0"
+  },
+  "engines": {
+    "node": "12.* || 14.* || >= 16"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

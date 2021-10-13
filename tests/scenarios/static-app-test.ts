@@ -314,7 +314,7 @@ appScenarios
 
       ['production', 'development'].forEach(env => {
         test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute('yarn test');
+          let result = await app.execute(`cross-env EMBER_ENV=${env} yarn test`);
           assert.equal(result.exitCode, 0, result.output);
         });
       });

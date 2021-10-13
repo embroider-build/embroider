@@ -1,4 +1,4 @@
-import { appScenarios } from './scenarios';
+import { appScenarios, baseAddon } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -6,13 +6,35 @@ import { setupFastboot, loadFromFixtureData } from './helpers';
 import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
+// Both ember-engines and its dependency ember-asset-loader have undeclared
+// peerDependencies on ember-cli.
+function emberEngines(): Project {
+  let enginesPath = dirname(require.resolve('ember-engines/package.json'));
+  let engines = Project.fromDir(enginesPath, { linkDeps: true });
+  engines.pkg.peerDependencies = Object.assign(
+    {
+      'ember-cli': '*',
+    },
+    engines.pkg.peerDependencies
+  );
+  let assetLoader = Project.fromDir(dirname(require.resolve('ember-asset-loader', { paths: [enginesPath] })), {
+    linkDeps: true,
+  });
+  assetLoader.pkg.peerDependencies = Object.assign(
+    {
+      'ember-cli': '*',
+    },
+    assetLoader.pkg.peerDependencies
+  );
+  engines.addDependency(assetLoader);
+  return engines;
+}
+
 appScenarios
   .map('engines', project => {
-    let eagerEngine = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), { linkDeps: true });
-    let lazyEngine = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), { linkDeps: true });
-    let macroSampleAddon = Project.fromDir(dirname(require.resolve('../addon-template/package.json')), {
-      linkDeps: true,
-    });
+    let eagerEngine = baseAddon();
+    let lazyEngine = baseAddon();
+    let macroSampleAddon = baseAddon();
 
     merge(eagerEngine.files, loadFromFixtureData('eager-engine'));
     merge(lazyEngine.files, loadFromFixtureData('lazy-engine'));
@@ -43,11 +65,11 @@ appScenarios
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
     project.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    project.linkDependency('ember-engines', { baseDir: __dirname });
+    project.addDependency(emberEngines());
     eagerEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    eagerEngine.linkDependency('ember-engines', { baseDir: __dirname });
+    eagerEngine.addDependency(emberEngines());
     lazyEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    lazyEngine.linkDependency('ember-engines', { baseDir: __dirname });
+    lazyEngine.addDependency(emberEngines());
     macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
 
     let engineTestFiles = loadFromFixtureData('engines-host-app');

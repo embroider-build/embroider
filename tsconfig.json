@@ -14,10 +14,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "sourceMap": true,
+    "inlineSources": true,
     "experimentalDecorators": true,
     "allowUnreachableCode": false,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": false
   },
   "exclude": [
     "node_modules",

@@ -5,6 +5,7 @@ import {
   AddonPackage,
   explicitRelative,
   extensionsPattern,
+  PackageInfo,
 } from '@embroider/shared-internals';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
@@ -38,7 +39,8 @@ import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import { getEmberExports } from './load-ember-template-compiler';
-import type { Options as InlinePrecompileOptions } from '@ef4/babel-plugin-htmlbars-inline-precompile';
+import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
+import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
 
 export type EmberENV = unknown;
 
@@ -148,7 +150,7 @@ export function excludeDotFiles(files: string[]) {
 }
 
 export const CACHE_BUSTING_PLUGIN = {
-  path: require.resolve('./babel-plugin-cache-busting'),
+  path: require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
   version: readJSONSync(`${__dirname}/../package.json`).version,
 };
 
@@ -412,9 +414,15 @@ export class AppBuilder<TreeNames> {
     }
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(this.macrosConfig.babelPluginConfig());
+    babel.plugins.push(...this.macrosConfig.babelPluginConfig());
 
-    babel.plugins.push([require.resolve('./template-colocation-plugin')]);
+    let colocationOptions: ColocationOptions = {
+      packageGuard: true,
+    };
+    babel.plugins.push([
+      require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),
+      colocationOptions,
+    ]);
 
     babel.plugins.push(this.adjustImportsPlugin(appFiles));
 
@@ -643,7 +651,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get fastbootConfig():
-    | { packageJSON: object; extraAppFiles: string[]; extraVendorFiles: string[] }
+    | { packageJSON: PackageInfo; extraAppFiles: string[]; extraVendorFiles: string[] }
     | undefined {
     if (this.activeFastboot) {
       // this is relying on work done in stage1 by @embroider/compat/src/compat-adapters/ember-cli-fastboot.ts
@@ -928,11 +936,14 @@ export class AppBuilder<TreeNames> {
   }
 
   private combinePackageJSON(meta: AppMeta): object {
-    let pkgLayers = [this.app.packageJSON, { keywords: ['ember-addon'], 'ember-addon': meta }];
+    let pkgLayers: any[] = [this.app.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
+      // fastboot-specific package.json output is allowed to add to our original package.json
       pkgLayers.push(fastbootConfig.packageJSON);
     }
+    // but our own new v2 app metadata takes precedence over both
+    pkgLayers.push({ keywords: ['ember-addon'], 'ember-addon': meta });
     return combinePackageJSON(...pkgLayers);
   }
 
@@ -1125,12 +1136,6 @@ export class AppBuilder<TreeNames> {
     }
 
     let eagerModules = [];
-    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
-      // when we're running with fake ember modules, vendor.js takes care of
-      // this bootstrapping. But when we're running with real ember modules,
-      // it's up to our entrypoint.
-      eagerModules.push('@ember/-internals/bootstrap');
-    }
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
@@ -1274,13 +1279,6 @@ export class AppBuilder<TreeNames> {
     let eagerModules: string[] = [
       explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
     ];
-
-    if (!this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
-      // when we're running with fake ember modules, the prebuilt test-support
-      // script takes care of this bootstrapping. But when we're running with
-      // real ember modules, it's up to our entrypoint.
-      eagerModules.push('ember-testing');
-    }
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of

@@ -2,13 +2,14 @@
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
 import EmberRouter from '@ember/routing/router';
-import { registerWaiter, unregisterWaiter } from '@ember/test';
-import { DEBUG } from '@glimmer/env';
+import { buildWaiter } from '@ember/test-waiters';
 import { macroCondition, getGlobalConfig } from '@embroider/macros';
 
 let Router;
 
 if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
+  const waiter = buildWaiter('@embroider/router:lazy-route-waiter');
+
   let newSetup = true;
 
   const lazyBundle = function lazyBundle(routeName, engineInfoByRoute) {
@@ -33,11 +34,6 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
   };
 
   Router = EmberRouter.extend({
-    init(...args) {
-      this._super(...args);
-      this._inFlightLazyRoutes = 0;
-    },
-
     // This is necessary in order to prevent the premature loading of lazy routes
     // when we are merely trying to render a link-to that points at them.
     // Unfortunately the stock query parameter behavior pulls on routes just to
@@ -83,34 +79,23 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
         if (!bundle || bundle.loaded) {
           return original(name);
         }
-        this._inFlightLazyRoutes++;
+
+        let token = waiter.beginAsync();
+
         return bundle.load().then(
           () => {
-            this._inFlightLazyRoutes--;
+            waiter.endAsync(token);
             bundle.loaded = true;
             return original(name);
           },
           err => {
-            this._inFlightLazyRoutes--;
+            waiter.endAsync(token);
             throw err;
           }
         );
       };
     },
   });
-
-  if (DEBUG) {
-    Router.reopen({
-      init(...args) {
-        this._super(...args);
-        this._doneLoadingLazyRoutes = () => this._inFlightLazyRoutes < 1;
-        registerWaiter(this._doneLoadingLazyRoutes);
-      },
-      willDestroy() {
-        unregisterWaiter(this._doneLoadingLazyRoutes);
-      },
-    });
-  }
 } else {
   Router = EmberRouter;
 }

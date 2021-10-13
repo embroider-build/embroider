@@ -1,5 +1,6 @@
 import { AppMeta, tmpdir } from '@embroider/shared-internals';
 import { readFileSync } from 'fs-extra';
+import { cloneDeep } from 'lodash';
 import { join } from 'path';
 
 // This is a collection of flags that convey what kind of build you want. They
@@ -80,7 +81,9 @@ export function applyVariantToBabelConfig(variant: Variant, babelConfig: any) {
       (p: any) => Array.isArray(p) && p[1] && p[1].embroiderMacrosConfigMarker
     );
     if (macroPlugin) {
-      macroPlugin[1].globalConfig.fastboot = { isRunning: true };
+      let modifiedMacroPlugin = cloneDeep(macroPlugin);
+      modifiedMacroPlugin[1].globalConfig.fastboot = { isRunning: true };
+      babelConfig.plugins.splice(babelConfig.plugins.indexOf(macroPlugin), 1, modifiedMacroPlugin);
     }
   }
   return babelConfig;

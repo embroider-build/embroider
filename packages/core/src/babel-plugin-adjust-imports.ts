@@ -517,5 +517,9 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
     return true;
   }
 
+  if (emberVirtualPeerDeps.has(packageName)) {
+    return true;
+  }
+
   return false;
 }

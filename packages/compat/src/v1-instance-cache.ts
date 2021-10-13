@@ -5,7 +5,7 @@
 import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
-import { getOrCreate } from '@embroider/core';
+import { AddonInstance, getOrCreate } from '@embroider/core';
 import { MovablePackageCache } from './moved-package-cache';
 import Options from './options';
 import isEqual from 'lodash/isEqual';
@@ -38,12 +38,12 @@ export default class V1InstanceCache {
 
     // no reason to do this on demand because oldApp already eagerly loaded
     // all descendants
-    (oldApp.project.addons as any[]).forEach(addon => {
+    (oldApp.project.addons as AddonInstance[]).forEach(addon => {
       this.addAddon(addon);
     });
   }
 
-  private adapterClass(addonInstance: any): V1AddonConstructor {
+  private adapterClass(addonInstance: AddonInstance): V1AddonConstructor {
     let packageName = addonInstance.pkg.name;
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
@@ -72,13 +72,13 @@ export default class V1InstanceCache {
     return AdapterClass;
   }
 
-  private addAddon(addonInstance: any) {
+  private addAddon(addonInstance: AddonInstance) {
     this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance);
     let v1Addon = new Klass(addonInstance, this.options, this.app, this.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);
-    (addonInstance.addons as any[]).forEach(a => this.addAddon(a));
+    addonInstance.addons.forEach(a => this.addAddon(a));
   }
 
   getAddons(root: string): V1Addon[] {

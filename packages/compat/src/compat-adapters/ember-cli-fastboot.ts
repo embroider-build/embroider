@@ -6,6 +6,7 @@ import { join } from 'path';
 import writeFile from 'broccoli-file-creator';
 import { Memoize } from 'typescript-memoize';
 import bind from 'bind-decorator';
+import { AddonMeta } from '@embroider/shared-internals';
 
 export default class EmberCliFastboot extends V1Addon {
   customizes(...trees: string[]): boolean {
@@ -98,7 +99,11 @@ export default class EmberCliFastboot extends V1Addon {
 
 class RewriteManifest extends Plugin {
   constructor(tree: Node, private scriptFilter: (file: string) => boolean, private extraAppFiles: string[]) {
-    super([tree], { annotation: 'embroider-compat-adapter-ember-cli-fastboot' });
+    super([tree], {
+      annotation: 'embroider-compat-adapter-ember-cli-fastboot',
+      persistentOutput: true,
+      needsCache: false,
+    });
   }
   build() {
     let json = readJSONSync(join(this.inputPaths[0], 'package.json'));
@@ -136,6 +141,17 @@ class RewriteManifest extends Plugin {
       extraAppFiles,
       extraVendorFiles,
     };
+
+    // because we contain a subdir with its own package.json, that subdir
+    // becomes a "package" from emroider's perspective, and if we want it to get
+    // treated as ember code it needs to have v2 addon metadata
+    json.keywords = [...(json.keywords ?? []), 'ember-addon'];
+    let meta: AddonMeta = {
+      type: 'addon',
+      version: 2,
+      'auto-upgraded': true,
+    };
+    json['ember-addon'] = meta;
 
     outputJSONSync(join(this.outputPath, '_fastboot_', 'package.json'), json, { spaces: 2 });
   }

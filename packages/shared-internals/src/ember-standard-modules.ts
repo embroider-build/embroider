@@ -24,7 +24,7 @@ export const emberVirtualPackages = new Set<string>(mappings.map((m: any) => m.m
 // makes the migration from v1 to v2 addons more painful than necessary, because
 // a v1 addon in between the app and a v2 addon might not declare the peerDep,
 // breaking the deeper v2 addon.
-export const emberVirtualPeerDeps = new Set<string>(['@glimmer/component']);
+export const emberVirtualPeerDeps = new Set<string>(['@glimmer/component', '@glimmer/tracking']);
 
 // this is a real package, even though it's still listed in rfc176
 emberVirtualPackages.delete('@ember/string');

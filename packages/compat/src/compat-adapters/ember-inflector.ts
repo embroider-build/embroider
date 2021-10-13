@@ -4,6 +4,7 @@ import { Node } from 'broccoli-node-api';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { removeSync } from 'fs-extra';
+import semver from 'semver';
 
 const makeConfigurable = `
 if (EmberENV.EXTEND_PROTOTYPES === true || EmberENV.EXTEND_PROTOTYPES.String) {
@@ -28,5 +29,9 @@ export default class extends V1Addon {
       writeFileSync(target, patch + source);
       writeFileSync(join(outputDir, 'make-configurable.js'), makeConfigurable);
     });
+  }
+
+  static shouldApplyAdapter(addonInstance: any) {
+    return semver.lt(addonInstance.pkg.version, '4.0.0');
   }
 }

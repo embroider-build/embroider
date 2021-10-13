@@ -33,6 +33,7 @@ export class WriteV1Config extends Plugin {
   constructor(private inputTree: V1Config, private storeConfigInMeta: boolean) {
     super([inputTree], {
       persistentOutput: true,
+      needsCache: false,
     });
   }
   build() {

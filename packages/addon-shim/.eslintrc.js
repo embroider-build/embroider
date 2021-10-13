@@ -57,6 +57,10 @@ module.exports = {
         ecmaVersion: 2017,
         sourceType: 'module',
       },
+      env: {
+        browser: false,
+        node: true,
+      },
       plugins: ['@typescript-eslint'],
       extends: ['prettier'],
       rules: {

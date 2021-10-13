@@ -3,13 +3,11 @@ import { join, relative, dirname, isAbsolute } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
-import { tmpdir } from '@embroider/shared-internals';
 import { MovedPackageCache } from './moved-package-cache';
 import { Memoize } from 'typescript-memoize';
 import buildCompatAddon from './build-compat-addon';
 import Options, { optionsWithDefaults } from './options';
 import V1App from './v1-app';
-import { createHash } from 'crypto';
 import TreeSync from 'tree-sync';
 import { WatchedDir } from 'broccoli-source';
 
@@ -24,17 +22,13 @@ export default class CompatAddons implements Stage {
   constructor(legacyEmberAppInstance: object, maybeOptions?: Options) {
     let options = optionsWithDefaults(maybeOptions);
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
-    if (options && options.workspaceDir) {
-      ensureDirSync(options.workspaceDir);
-      this.destDir = realpathSync(options.workspaceDir);
-    } else {
-      // we want this to be stable across builds, because it becomes part of the
-      // path to all of the files that the stage3 packager sees, and we want to
-      // benefit from on-disk caching in stage3 packagers.
-      let dir = this.stableWorkspaceDir(v1Cache.app);
-      ensureDirSync(dir);
-      this.destDir = realpathSync(dir);
-    }
+
+    // we want this to be stable across builds, because it becomes part of the
+    // path to all of the files that the stage3 packager sees, and we want to
+    // benefit from on-disk caching in stage3 packagers.
+    ensureDirSync(options.workspaceDir!);
+    this.destDir = realpathSync(options.workspaceDir!);
+
     this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
     this.inputPath = v1Cache.app.root;
     this.treeSyncMap = new WeakMap();
@@ -243,11 +237,5 @@ export default class CompatAddons implements Stage {
         ensureSymlinkSync(dep.root, join(destRoot, 'node_modules', dep.packageJSON.name));
       }
     }
-  }
-
-  private stableWorkspaceDir(app: V1App) {
-    let hash = createHash('md5');
-    hash.update(app.root);
-    return join(tmpdir, 'embroider', hash.digest('hex').slice(0, 6));
   }
 }

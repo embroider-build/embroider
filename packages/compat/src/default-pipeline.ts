@@ -1,8 +1,12 @@
 import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
-import { toBroccoliPlugin, PackagerConstructor, Variant } from '@embroider/core';
+import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
+import { tmpdir } from '@embroider/shared-internals';
 import { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
+import { createHash } from 'crypto';
+import { join, dirname } from 'path';
+import { sync as pkgUpSync } from 'pkg-up';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
@@ -10,29 +14,32 @@ export interface PipelineOptions<PackagerOptions> extends Options {
   variants?: Variant[];
 }
 
+export function stableWorkspaceDir(appRoot: string) {
+  let hash = createHash('md5');
+  hash.update(dirname(pkgUpSync({ cwd: appRoot })!));
+  return join(tmpdir, 'embroider', hash.digest('hex').slice(0, 6));
+}
+
 export default function defaultPipeline<PackagerOptions>(
-  emberApp: object,
+  emberApp: EmberAppInstance,
   packager?: PackagerConstructor<PackagerOptions>,
-  options?: PipelineOptions<PackagerOptions>
+  options: PipelineOptions<PackagerOptions> = {}
 ): Node {
   let outputPath: string;
   let addons;
+
   if (process.env.REUSE_WORKSPACE) {
     addons = new PrebuiltAddons(emberApp, options, process.env.REUSE_WORKSPACE);
   } else {
     if (process.env.SAVE_WORKSPACE) {
-      if (!options) {
-        options = {};
-      }
       options.workspaceDir = process.env.SAVE_WORKSPACE;
+    } else {
+      options.workspaceDir = stableWorkspaceDir(emberApp.project.root);
     }
+
+    emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
     addons = new CompatAddons(emberApp, options);
     addons.ready().then(result => {
-      if (options && options.onOutputPath) {
-        options.onOutputPath(result.outputPath);
-      } else {
-        console.log(`Building into ${result.outputPath}`);
-      }
       outputPath = result.outputPath;
     });
   }
@@ -52,11 +59,11 @@ export default function defaultPipeline<PackagerOptions>(
   return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
 }
 
-function hasFastboot(emberApp: any) {
-  return emberApp.project.addons.find((a: any) => a.name === 'ember-cli-fastboot');
+function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {
+  return emberApp.project.addons.find(a => a.name === 'ember-cli-fastboot');
 }
 
-function defaultVariants(emberApp: any): Variant[] {
+function defaultVariants(emberApp: EmberAppInstance): Variant[] {
   let variants: Variant[] = [];
   if (emberApp.env === 'production') {
     variants.push({

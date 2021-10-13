@@ -406,7 +406,7 @@ export class AppBuilder<TreeNames> {
         { templateCompiler: templateCompilerParams },
       ]);
       babel.plugins.push([
-        require.resolve('@ef4/babel-plugin-htmlbars-inline-precompile'),
+        require.resolve('babel-plugin-ember-template-compilation'),
         {
           precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
         } as InlinePrecompileOptions,

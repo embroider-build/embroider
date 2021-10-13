@@ -4,7 +4,7 @@ import { NodeTemplateCompilerParams } from '../src/template-compiler-node';
 import sampleTransform from '@embroider/sample-transforms/lib/glimmer-plugin';
 import type { Params as InlineBabelParams } from '../src/babel-plugin-inline-hbs-node';
 import type { Params as Stage1InlineBabelParams } from '../src/babel-plugin-stage1-inline-hbs-node';
-import type { Options as InlinePrecompileOptions } from '@ef4/babel-plugin-htmlbars-inline-precompile';
+import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 import { Resolver } from '../src';
 import { ResolvedDep } from '../src/resolver';
 
@@ -204,7 +204,7 @@ describe('inline-hbs', () => {
           plugins: [
             [join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'), { templateCompiler }],
             [
-              require.resolve('@ef4/babel-plugin-htmlbars-inline-precompile'),
+              require.resolve('babel-plugin-ember-template-compilation'),
               {
                 precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
               } as InlinePrecompileOptions,

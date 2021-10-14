@@ -1,5 +1,14 @@
 # Embroider Changelog
 
+## v0.47.0 (2021-10-14)
+
+#### :rocket: Enhancement
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#893](https://github.com/embroider-build/embroider/pull/893) Support strict mode templates ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.46.2 (2021-10-11)
 
 #### :bug: Bug Fix

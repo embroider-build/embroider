@@ -1,8 +1,8 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
-import { VariableDeclarator, isIdentifier, Expression } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
+import { types as t } from '@babel/core';
 
 describe('evaluation', function () {
   allBabelVersions({
@@ -111,17 +111,17 @@ describe('evaluation', function () {
   });
 });
 
-function isNodePathPresent(path: NodePath<Expression | null | undefined>): path is NodePath<Expression> {
+function isNodePathPresent(path: NodePath<t.Expression | null | undefined>): path is NodePath<t.Expression> {
   return path.node != null;
 }
 
 function testEval(babelContext: typeof Babel) {
   let visitor = {
     VariableDeclarator: {
-      exit(path: NodePath<VariableDeclarator>) {
+      exit(path: NodePath<t.VariableDeclarator>) {
         let id = path.get('id').node;
         let value = path.get('init');
-        if (isIdentifier(id) && id.name === 'result' && isNodePathPresent(value)) {
+        if (t.isIdentifier(id) && id.name === 'result' && isNodePathPresent(value)) {
           let evaluator = new Evaluator({
             locals: {
               knownValue: 2,

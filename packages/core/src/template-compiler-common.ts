@@ -119,17 +119,21 @@ export class TemplateCompiler {
   }
 
   // Compiles to the wire format plus dependency list.
-  precompile(moduleName: string, contents: string): { compiled: string; dependencies: ResolvedDep[] } {
+  precompile(
+    templateSource: string,
+    options: Record<string, unknown> & { filename: string }
+  ): { compiled: string; dependencies: ResolvedDep[] } {
     let dependencies: ResolvedDep[];
     let runtimeName: string;
+    let filename: string = options.filename;
 
     if (this.resolver) {
-      runtimeName = this.resolver.absPathToRuntimePath(moduleName);
+      runtimeName = this.resolver.absPathToRuntimePath(filename);
     } else {
-      runtimeName = moduleName;
+      runtimeName = filename;
     }
 
-    let opts = this.syntax.defaultOptions({ contents, moduleName });
+    let opts = this.syntax.defaultOptions({ contents: templateSource, moduleName: filename });
     let plugins: Plugins = {
       ...opts?.plugins,
 
@@ -142,15 +146,15 @@ export class TemplateCompiler {
       ].filter(Boolean),
     };
 
-    let compiled = this.syntax.precompile(stripBom(contents), {
-      contents,
+    let compiled = this.syntax.precompile(stripBom(templateSource), {
+      contents: templateSource,
       moduleName: runtimeName,
-      filename: moduleName,
       plugins,
+      ...options,
     });
 
     if (this.resolver) {
-      dependencies = this.resolver.dependenciesOf(moduleName);
+      dependencies = this.resolver.dependenciesOf(filename);
     } else {
       dependencies = [];
     }
@@ -160,7 +164,7 @@ export class TemplateCompiler {
 
   // Compiles all the way from a template string to a javascript module string.
   compile(moduleName: string, contents: string) {
-    let { compiled, dependencies } = this.precompile(moduleName, contents);
+    let { compiled, dependencies } = this.precompile(contents, { filename: moduleName });
     let lines = [];
     let counter = 0;
     for (let { runtimeName, path } of dependencies) {

@@ -1,7 +1,8 @@
 import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { join, dirname, resolve } from 'path';
 import type { NodePath } from '@babel/traverse';
-import type * as t from '@babel/types';
+import type * as Babel from '@babel/core';
+import type { types as t } from '@babel/core';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
@@ -341,8 +342,8 @@ function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options):
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
 }
 
-export default function main(babel: unknown) {
-  let t = (babel as any).types as BabelTypes;
+export default function main(babel: typeof Babel) {
+  let t = babel.types;
   return {
     visitor: {
       Program: {

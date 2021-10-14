@@ -1,19 +1,19 @@
 import type { NodePath } from '@babel/traverse';
 import { buildLiterals, Evaluator } from './evaluate-json';
-import type { CallExpression, ForOfStatement, Identifier } from '@babel/types';
+import type { types as t } from '@babel/core';
 import error from './error';
 import State, { cloneDeep } from './state';
 import type * as Babel from '@babel/core';
 
-type CallEachExpression = NodePath<CallExpression> & {
-  get(callee: 'callee'): NodePath<Identifier>;
+type CallEachExpression = NodePath<t.CallExpression> & {
+  get(callee: 'callee'): NodePath<t.Identifier>;
 };
 
-export type EachPath = NodePath<ForOfStatement> & {
+export type EachPath = NodePath<t.ForOfStatement> & {
   get(right: 'right'): CallEachExpression;
 };
 
-export function isEachPath(path: NodePath<ForOfStatement>): path is EachPath {
+export function isEachPath(path: NodePath<t.ForOfStatement>): path is EachPath {
   let right = path.get('right');
   if (right.isCallExpression()) {
     let callee = right.get('callee');
@@ -36,7 +36,7 @@ export function insertEach(path: EachPath, state: State, context: typeof Babel) 
   }
 
   let body = path.get('body');
-  let varName = (left.get('declarations')[0].get('id') as NodePath<Identifier>).node.name;
+  let varName = (left.get('declarations')[0].get('id') as NodePath<t.Identifier>).node.name;
   let nameRefs = body.scope.getBinding(varName)!.referencePaths;
 
   let [arrayPath] = args;

@@ -1,14 +1,16 @@
 import type { NodePath } from '@babel/traverse';
 import { Evaluator } from './evaluate-json';
-import type { IfStatement, ConditionalExpression, CallExpression, Identifier } from '@babel/types';
+import type { types as t } from '@babel/core';
 import error from './error';
 import State from './state';
 
-export type MacroConditionPath = NodePath<IfStatement | ConditionalExpression> & {
-  get(test: 'test'): NodePath<CallExpression> & { get(callee: 'callee'): NodePath<Identifier> };
+export type MacroConditionPath = NodePath<t.IfStatement | t.ConditionalExpression> & {
+  get(test: 'test'): NodePath<t.CallExpression> & { get(callee: 'callee'): NodePath<t.Identifier> };
 };
 
-export function isMacroConditionPath(path: NodePath<IfStatement | ConditionalExpression>): path is MacroConditionPath {
+export function isMacroConditionPath(
+  path: NodePath<t.IfStatement | t.ConditionalExpression>
+): path is MacroConditionPath {
   let test = path.get('test');
   if (test.isCallExpression()) {
     let callee = test.get('callee');

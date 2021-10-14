@@ -1,12 +1,10 @@
 import type { NodePath } from '@babel/traverse';
 import { existsSync } from 'fs';
-import type * as t from '@babel/types';
+import type * as Babel from '@babel/core';
+import type { types as t } from '@babel/core';
 import { dirname } from 'path';
 import { explicitRelative, PackageCache } from '.';
-
 import { ImportUtil } from 'babel-import-util';
-
-type BabelTypes = typeof t;
 
 // these options are designed so the defaults are appropriate for use within an
 // addon's dev pipeline, whereas when we use it within Embroider we diverge from
@@ -35,8 +33,8 @@ function setComponentTemplate(target: NodePath<t.Node>, state: State) {
   return state.adder.import(target, '@ember/component', 'setComponentTemplate');
 }
 
-export default function main(babel: unknown) {
-  let t = (babel as any).types as BabelTypes;
+export default function main(babel: typeof Babel) {
+  let t = babel.types;
   return {
     visitor: {
       Program: {

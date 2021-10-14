@@ -49,7 +49,7 @@ describe('compat-resolver', function () {
     let compiler = new NodeTemplateCompiler({ compilerPath, compilerChecksum, resolver, EmberENV, plugins });
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
-      let { dependencies } = compiler.precompile(moduleName, contents);
+      let { dependencies } = compiler.precompile(contents, { filename: moduleName });
       return sortBy(dependencies, d => d.runtimeName).map(d => ({
         path: d.path,
         runtimeName: d.runtimeName,

@@ -1,12 +1,12 @@
 import type { NodePath } from '@babel/traverse';
-import type { CallExpression } from '@babel/types';
+import type { types as t } from '@babel/core';
 import State, { sourceFile } from './state';
 import error from './error';
 import { assertArray } from './evaluate-json';
 import resolve from 'resolve';
 import { dirname } from 'path';
 
-export default function moduleExists(path: NodePath<CallExpression>, state: State): boolean {
+export default function moduleExists(path: NodePath<t.CallExpression>, state: State): boolean {
   if (path.node.arguments.length !== 1) {
     throw error(path, `moduleExists takes exactly one argument, you passed ${path.node.arguments.length}`);
   }

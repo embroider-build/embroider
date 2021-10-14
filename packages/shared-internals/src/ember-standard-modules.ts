@@ -36,3 +36,12 @@ emberVirtualPeerDeps.add('@ember/string');
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
 emberVirtualPackages.add('@embroider/macros');
+
+// These are the known names that people use to import template precomiplation
+// macros from.
+export const templateCompilationModules = Object.freeze([
+  { module: 'htmlbars-inline-precompile', exportedName: 'default' },
+  { module: 'ember-cli-htmlbars-inline-precompile', exportedName: 'default' },
+  { module: 'ember-cli-htmlbars', exportedName: 'hbs' },
+  { module: '@ember/template-precompilation', exportedName: 'precompileTemplate' },
+]);

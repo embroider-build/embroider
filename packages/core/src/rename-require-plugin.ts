@@ -1,4 +1,4 @@
-import type * as t from '@babel/types';
+import type { types as t } from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 
 export default function inlineHBSTransform(): unknown {

@@ -1,11 +1,11 @@
 import type { NodePath } from '@babel/traverse';
 import { Evaluator, ConfidentResult } from './evaluate-json';
-import type { CallExpression } from '@babel/types';
+import type { types as t } from '@babel/core';
 import error from './error';
 import { format } from 'util';
 import State from './state';
 
-export default function failBuild(path: NodePath<CallExpression>, state: State) {
+export default function failBuild(path: NodePath<t.CallExpression>, state: State) {
   let args = path.get('arguments');
   if (args.length < 1) {
     throw error(path, `failBuild needs at least one argument`);
@@ -28,7 +28,7 @@ export default function failBuild(path: NodePath<CallExpression>, state: State) 
   });
 }
 
-function maybeEmitError(path: NodePath<CallExpression>, argValues: { value: any }[]) {
+function maybeEmitError(path: NodePath<t.CallExpression>, argValues: { value: any }[]) {
   let [message, ...rest] = argValues;
   throw error(path, format(`failBuild: ${message.value}`, ...rest.map(r => r.value)));
 }

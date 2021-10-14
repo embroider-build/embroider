@@ -1,5 +1,5 @@
 import type { NodePath } from '@babel/traverse';
-import type * as t from '@babel/types';
+import type { types as t } from '@babel/core';
 import { PackageCache } from '@embroider/shared-internals';
 import State, { sourceFile, pathToRuntime } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';

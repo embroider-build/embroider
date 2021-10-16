@@ -31,18 +31,13 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import makeDebug from 'debug';
 import { format } from 'util';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
-import { Options, BabelLoaderOptions } from './options';
+import { Options, BabelLoaderOptions, EsbuildMinifyOptions } from './options';
 import crypto from 'crypto';
 import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
 
 const debug = makeDebug('embroider:debug');
-
-// This is a type-only import, so it gets compiled away. At runtime, we load
-// terser lazily so it's only loaded for production builds that use it. Don't
-// add any non-type-only imports here.
-import type { MinifyOptions } from 'terser';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -76,6 +71,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private publicAssetURL: string | undefined;
   private extraThreadLoaderOptions: object | false | undefined;
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
+  private extraEsbuildMinifyOptions: EsbuildMinifyOptions | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -93,12 +89,13 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
+    this.extraEsbuildMinifyOptions = options?.esbuildMinifyOptions;
     warmUp(this.extraThreadLoaderOptions);
   }
 
   async build(): Promise<void> {
     let appInfo = this.examineApp();
-    let webpack = this.getWebpack(appInfo);
+    let webpack = await this.getWebpack(appInfo);
     let stats = this.summarizeStats(await this.runWebpack(webpack));
     await this.writeFiles(stats, appInfo);
   }
@@ -124,10 +121,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicAssetURL };
   }
 
-  private configureWebpack(
+  private async configureWebpack(
     { entrypoints, templateCompiler, babel, resolvableExtensions, publicAssetURL }: AppInfo,
     variant: Variant
-  ): Configuration {
+  ): Promise<Configuration> {
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -140,7 +137,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       variant,
     };
 
-    return {
+    const config: Configuration = {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
       entry,
@@ -212,19 +209,45 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         },
       },
     };
+
+    if (variant.optimizeForProduction) {
+      let [esBuildLoader, esbuild] = await Promise.all([import('esbuild-loader'), import('esbuild')]);
+
+      let optimization = config.optimization as Required<Configuration>['optimization'];
+
+      optimization.minimizer = [
+        // there are settings to this plugin that might be very important,
+        // depending upon the app -- legalComments, sourcemap, exclude, etc.
+        // if an app wishes to customize those, they'll have to override
+        // the minimizer plugin and re-declare this whole array
+        new esBuildLoader.ESBuildMinifyPlugin({
+          minify: variant.optimizeForProduction,
+          css: true,
+          // So we can contral when esbuild updates
+          implementation: esbuild,
+          exclude: this.extraEsbuildMinifyOptions?.exclude || [],
+          legalComments: this.extraEsbuildMinifyOptions?.legalComments,
+        }),
+      ];
+    }
+
+    return config;
   }
 
   private lastAppInfo: AppInfo | undefined;
   private lastWebpack: webpack.MultiCompiler | undefined;
 
-  private getWebpack(appInfo: AppInfo) {
+  private async getWebpack(appInfo: AppInfo) {
     if (this.lastWebpack && this.lastAppInfo && equalAppInfo(appInfo, this.lastAppInfo)) {
       debug(`reusing webpack config`);
       return this.lastWebpack;
     }
     debug(`configuring webpack`);
-    let config = this.variants.map(variant =>
-      mergeWith({}, this.configureWebpack(appInfo, variant), this.extraConfig, appendArrays)
+
+    let config = await Promise.all(
+      this.variants.map(async variant =>
+        mergeWith({}, await this.configureWebpack(appInfo, variant), this.extraConfig, appendArrays)
+      )
     );
     this.lastAppInfo = appInfo;
     return (this.lastWebpack = webpack(config));
@@ -238,15 +261,20 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     // loading these lazily here so they never load in non-production builds.
     // The node cache will ensures we only load them once.
-    const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
+    let [esbuild, srcURL] = await Promise.all([import('esbuild'), import('source-map-url')]);
 
-    let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
-    let terserOpts: MinifyOptions = {};
+    let inFile = join(this.pathToVanillaApp, script);
+    let inCode = readFileSync(inFile, 'utf8');
+    let esbuildMinifyOptions: EsbuildMinifyOptions = {
+      ...this.extraEsbuildMinifyOptions,
+    };
     let fileRelativeSourceMapURL;
     let appRelativeSourceMapURL;
+
     if (srcURL.default.existsIn(inCode)) {
       fileRelativeSourceMapURL = srcURL.default.getFrom(inCode)!;
       appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
+
       let content;
       try {
         content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
@@ -255,17 +283,39 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         // the map out.
       }
       if (content) {
-        terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
+        esbuildMinifyOptions.sourcemap = 'external';
+        esbuildMinifyOptions.sourceRoot = fileRelativeSourceMapURL;
       }
     }
-    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
+
+    let outFile = inFile + '.out';
+    // convention from esbuild: https://esbuild.github.io/api/#sourcemap
+    let outMapFile = outFile + '.map';
+    // NOTE: the awaited return value from the build api only contains lists of errors and/or warnings
+    //       (no output file info)
+    await esbuild.build({
+      entryPoints: [inFile],
+      outfile: outFile,
+      // gives us (not very helpful) info about the output files
+      metafile: true,
+      // code is alreday as bundled as it needs to be
+      bundle: false,
+      minify: true,
+      // treeShaking: true, // should only be enabled on full static builds
+      ...esbuildMinifyOptions,
+    });
+
+    let outCode = readFileSync(outFile, 'utf-8');
+    let outMap = readFileSync(outMapFile, 'utf-8');
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
     outputFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);
+
     if (appRelativeSourceMapURL && outMap) {
       outputFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
       written.add(appRelativeSourceMapURL);
     }
+
     return finalFilename;
   }
 

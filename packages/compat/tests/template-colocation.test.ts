@@ -223,3 +223,92 @@ describe('template colocation with staticComponents', function () {
     assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
   });
 });
+
+describe('not to be confused with the pod component', function () {
+  jest.setTimeout(120000);
+  let expectFile: ExpectFile;
+  let build: BuildResult;
+  let app: Project;
+
+  throwOnWarnings();
+
+  beforeAll(async function () {
+    app = Project.emberNew();
+
+    merge(app.files, {
+      config: {
+        'environment.js': `module.exports = function(environment) {
+  let ENV = {
+    modulePrefix: 'my-app',
+    podModulePrefix: '',
+    environment,
+    rootURL: '/',
+    locationType: 'auto',
+    EmberENV: {
+      FEATURES: {
+      },
+      EXTEND_PROTOTYPES: {
+        Date: false
+      }
+    },
+    APP: {}
+  };
+  return ENV;
+};`,
+      },
+      app: {
+        templates: {
+          'index.hbs': `
+              <PodComponent />
+              <TemplateOnly />
+            `,
+        },
+        components: {
+          'pod-component': {
+            'component.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {}
+            `,
+            'template.hbs': `<div>{{this.title}}</div>`,
+          },
+          'template-only': {
+            'template.hbs': `<div>I am template only</div>`,
+          },
+        },
+      },
+    });
+
+    let options: Options = {
+      // our tests are going to check for how the components get implicitly
+      // included, so this must be false.
+      staticComponents: false,
+    };
+
+    build = await BuildResult.build(app, {
+      stage: 2,
+      type: 'app',
+      emberAppOptions: {
+        tests: false,
+      },
+      embroiderOptions: options,
+    });
+    expectFile = expectFilesAt(build.outputPath);
+  });
+
+  afterAll(async function () {
+    await build.cleanup();
+  });
+
+  test(`app's pod components and templates are implicitly included correctly`, function () {
+    let assertFile = expectFile('assets/my-app.js');
+    assertFile.matches(
+      /d\(["']my-app\/components\/pod-component\/component["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/pod-component\/component\.js['"]\);\}\)/
+    );
+    assertFile.matches(
+      /d\(["']my-app\/components\/pod-component\/template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/pod-component\/template\.hbs['"]\);\}\)/
+    );
+    assertFile.matches(
+      /d\(["']my-app\/components\/template-only\/template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/template-only\/template\.hbs['"]\);\s*\}/
+    );
+  });
+});

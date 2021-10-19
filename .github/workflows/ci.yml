@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: volta-cli/action@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"

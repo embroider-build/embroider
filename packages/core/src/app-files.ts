@@ -44,8 +44,10 @@ export class AppFiles {
       }
 
       if (relativePath.startsWith('components/')) {
-        // hbs files are resolvable, but not when they're inside the components
-        // directory and used for colocation
+        // hbs files are resolvable, but not when they're used via co-location.
+        // An hbs file is used via colocation when it's inside the components
+        // directory, and also not named "template.hbs" (because that is an
+        // older pattern used with pods-like layouts).
         if (!relativePath.endsWith('.hbs') || relativePath.endsWith('/template.hbs')) {
           components.push(relativePath);
         }

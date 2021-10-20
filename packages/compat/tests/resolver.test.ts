@@ -474,6 +474,41 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('helper with @ syntax', function () {
+    let findDependencies = configure({
+      staticHelpers: true,
+    });
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon" }`);
+    givenFile('node_modules/my-addon/helpers/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{my-addon@thing}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/helpers/thing.js',
+        runtimeName: 'my-addon/helpers/thing',
+      },
+    ]);
+  });
+  test('helper with @ syntax and direct addon package reference to a renamed package', function () {
+    let findDependencies = configure(
+      {
+        staticHelpers: true,
+      },
+      {
+        adjustImportsImports: {
+          renamePackages: {
+            'has-been-renamed': 'my-addon',
+          },
+        },
+      }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/helpers/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{has-been-renamed@thing}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/helpers/thing.js',
+        runtimeName: 'has-been-renamed/helpers/thing',
+      },
+    ]);
+  });
   test('string literal passed to component helper with block', function () {
     let findDependencies = configure({
       staticComponents: true,

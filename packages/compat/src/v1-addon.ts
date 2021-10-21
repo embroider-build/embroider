@@ -696,7 +696,10 @@ export default class V1Addon {
 
   protected addonStylesTree(): Node | undefined {
     if (this.customizes('treeForAddonStyles')) {
-      return this.invokeOriginalTreeFor('addon-styles');
+      let custom = this.invokeOriginalTreeFor('addon-styles');
+      if (custom) {
+        return this.addonInstance.compileStyles(custom);
+      }
     } else if (this.hasStockTree('addon-styles')) {
       return this.addonInstance.compileStyles(this.stockTree('addon-styles'));
     }

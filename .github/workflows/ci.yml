@@ -2,7 +2,7 @@ name: CI
 
 on:
   schedule:
-    - cron:  '0 7 * * *' # daily, 7am
+    - cron: '0 7 * * *' # daily, 7am
 
   push:
     branches:
@@ -42,7 +42,7 @@ jobs:
         run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
 
   test:
-    needs: ["preflight"]
+    needs: ['preflight']
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
     timeout-minutes: 15
@@ -54,6 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: volta-cli/action@v1
+        env:
+          ACTIONS_STEP_DEBUG: true
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"

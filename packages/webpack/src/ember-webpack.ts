@@ -160,7 +160,13 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           {
             test: /\.hbs$/,
             use: nonNullArray([
-              maybeThreadLoader(templateCompiler.isParallelSafe, this.extraThreadLoaderOptions),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
+              babelLoaderOptions(
+                babel.majorVersion,
+                variant,
+                join(this.pathToVanillaApp, babel.filename),
+                this.extraBabelLoaderOptions
+              ),
               {
                 loader: require.resolve('@embroider/hbs-loader'),
                 options: hbsOptions,

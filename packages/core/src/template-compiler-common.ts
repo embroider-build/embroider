@@ -4,6 +4,7 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
+import jsStringEscape from 'js-string-escape';
 
 export interface Plugins {
   ast?: unknown[];
@@ -163,19 +164,10 @@ export class TemplateCompiler {
   }
 
   // Compiles all the way from a template string to a javascript module string.
-  compile(moduleName: string, contents: string) {
-    let { compiled, dependencies } = this.precompile(contents, { filename: moduleName });
-    let lines = [];
-    let counter = 0;
-    for (let { runtimeName, path } of dependencies) {
-      lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
-      lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
-    }
-
-    lines.push(`import { createTemplateFactory } from '@ember/template-factory';`);
-    lines.push(`export default createTemplateFactory(${compiled});`);
-
-    return lines.join('\n');
+  compile(_moduleName: string, contents: string) {
+    return [`import { hbs } from 'ember-cli-htmlbars';`, `export default hbs("${jsStringEscape(contents)}")`].join(
+      '\n'
+    );
   }
 
   // Applies all custom AST transforms and emits the results still as

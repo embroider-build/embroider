@@ -1,6 +1,6 @@
 {
   "name": "@embroider/router",
-  "version": "0.47.0",
+  "version": "0.47.1",
   "description": "Lazy loading router",
   "keywords": [
     "ember-addon"
@@ -29,17 +29,17 @@
   },
   "dependencies": {
     "@ember/test-waiters": "^3.0.0",
-    "@embroider/macros": "0.47.0",
+    "@embroider/macros": "0.47.1",
     "ember-cli-babel": "^7.23.0"
   },
   "devDependencies": {
     "@ember/optional-features": "^0.7.0",
     "@ember/string": "^1.0.0",
     "@ember/test-helpers": "^2.4.2",
-    "@embroider/compat": "0.47.0",
-    "@embroider/core": "0.47.0",
+    "@embroider/compat": "0.47.1",
+    "@embroider/core": "0.47.1",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "0.47.0",
+    "@embroider/webpack": "0.47.1",
     "@types/ember__routing": "^3.16.9",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
@@ -69,7 +69,7 @@
     "webpack": "^5"
   },
   "peerDependencies": {
-    "@embroider/core": "0.47.0",
+    "@embroider/core": "0.47.1",
     "@types/ember__routing": "*"
   },
   "peerDependenciesMeta": {

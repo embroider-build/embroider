@@ -437,14 +437,29 @@ export default class CompatResolver implements Resolver {
   }
 
   private tryHelper(path: string, from: string): Resolution | null {
+    let parts = path.split('@');
+    if (parts.length > 1 && parts[0].length > 0) {
+      let cache = PackageCache.shared('embroider-stage3');
+      let packageName = parts[0];
+      let renamed = this.adjustImportsOptions.renamePackages[packageName];
+      if (renamed) {
+        packageName = renamed;
+      }
+      return this._tryHelper(parts[1], from, cache.resolve(packageName, cache.ownerOfFile(from)!));
+    } else {
+      return this._tryHelper(path, from, this.appPackage);
+    }
+  }
+
+  private _tryHelper(path: string, from: string, targetPackage: Package | AppPackagePlaceholder): Resolution | null {
     for (let extension of this.adjustImportsOptions.resolvableExtensions) {
-      let absPath = join(this.params.root, 'helpers', path) + extension;
+      let absPath = join(targetPackage.root, 'helpers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
           type: 'helper',
           modules: [
             {
-              runtimeName: `${this.params.modulePrefix}/helpers/${path}`,
+              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
               path: explicitRelative(dirname(from), absPath),
               absPath,
             },

@@ -8,19 +8,84 @@ import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
+import type { TemplateCompilerPlugins } from '@embroider/core';
+import type { AST, ASTPluginEnvironment } from '@glimmer/syntax';
 
 const compilerPath = emberTemplateCompilerPath();
 const compilerChecksum = `mock-compiler-checksum${Math.random()}`;
+
+function emberHolyFuturisticNamespacingBatmanTransform(env: ASTPluginEnvironment) {
+  let sigil = '$';
+  let b = env.syntax.builders;
+
+  function rewriteOrWrapComponentParam(node: AST.MustacheStatement | AST.SubExpression | AST.BlockStatement) {
+    if (!node.params.length) {
+      return;
+    }
+
+    let firstParam = node.params[0];
+    if (firstParam.type !== 'StringLiteral') {
+      // note: does not support dynamic / runtime strings
+      return;
+    }
+
+    node.params[0] = b.string(firstParam.original.replace(sigil, '@'));
+  }
+
+  return {
+    name: 'ember-holy-futuristic-template-namespacing-batman:namespacing-transform',
+
+    visitor: {
+      PathExpression(node: AST.PathExpression) {
+        if (node.parts.length > 1 || !node.original.includes(sigil)) {
+          return;
+        }
+
+        return b.path(node.original.replace(sigil, '@'), node.loc);
+      },
+      ElementNode(node: AST.ElementNode) {
+        if (node.tag.indexOf(sigil) > -1) {
+          node.tag = node.tag.replace(sigil, '@');
+        }
+      },
+      MustacheStatement(node: AST.MustacheStatement) {
+        if (node.path.type === 'PathExpression' && node.path.original === 'component') {
+          // we don't care about non-component expressions
+          return;
+        }
+        rewriteOrWrapComponentParam(node);
+      },
+      SubExpression(node: AST.SubExpression) {
+        if (node.path.type === 'PathExpression' && node.path.original !== 'component') {
+          // we don't care about non-component expressions
+          return;
+        }
+        rewriteOrWrapComponentParam(node);
+      },
+      BlockStatement(node: AST.BlockStatement) {
+        if (node.path.type === 'PathExpression' && node.path.original !== 'component') {
+          // we don't care about blocks not using component
+          return;
+        }
+        rewriteOrWrapComponentParam(node);
+      },
+    },
+  };
+}
 
 describe('compat-resolver', function () {
   let appDir: string;
 
   function configure(
     compatOptions: Options,
-    otherOptions: { podModulePrefix?: string; adjustImportsImports?: Partial<AdjustImportsOptions> } = {}
+    otherOptions: {
+      podModulePrefix?: string;
+      adjustImportsImports?: Partial<AdjustImportsOptions>;
+      plugins?: TemplateCompilerPlugins;
+    } = {}
   ) {
     let EmberENV = {};
-    let plugins = { ast: [] };
+    let plugins: TemplateCompilerPlugins = otherOptions.plugins ?? { ast: [] };
     appDir = realpathSync(mkdtempSync(join(tmpdir, 'embroider-compat-tests-')));
     writeJSONSync(join(appDir, 'package.json'), { name: 'the-app' });
     let resolver = new Resolver({
@@ -471,6 +536,45 @@ describe('compat-resolver', function () {
       {
         path: '../node_modules/my-addon/components/thing.js',
         runtimeName: 'has-been-renamed/components/thing',
+      },
+    ]);
+  });
+  test('helper with @ syntax', function () {
+    let findDependencies = configure(
+      {
+        staticHelpers: true,
+      },
+      { plugins: { ast: [emberHolyFuturisticNamespacingBatmanTransform] } }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon" }`);
+    givenFile('node_modules/my-addon/helpers/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{my-addon$thing}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/helpers/thing.js',
+        runtimeName: 'my-addon/helpers/thing',
+      },
+    ]);
+  });
+  test('helper with @ syntax and direct addon package reference to a renamed package', function () {
+    let findDependencies = configure(
+      {
+        staticHelpers: true,
+      },
+      {
+        adjustImportsImports: {
+          renamePackages: {
+            'has-been-renamed': 'my-addon',
+          },
+        },
+        plugins: { ast: [emberHolyFuturisticNamespacingBatmanTransform] },
+      }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/helpers/thing.js');
+    expect(findDependencies('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqual([
+      {
+        path: '../node_modules/my-addon/helpers/thing.js',
+        runtimeName: 'has-been-renamed/helpers/thing',
       },
     ]);
   });

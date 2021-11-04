@@ -43,7 +43,6 @@
     "source-map-url": "^0.4.1",
     "style-loader": "^2.0.0",
     "supports-color": "^8.1.0",
-    "terser": "^5.7.0",
     "thread-loader": "^3.0.4"
   },
   "devDependencies": {

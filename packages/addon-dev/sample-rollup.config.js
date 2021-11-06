@@ -26,7 +26,13 @@ export default {
     // template colocation.
     babel({
       plugins: ['@embroider/addon-dev/template-colocation-plugin'],
+      babelHelpers: 'bundled',
     }),
+
+    // Follow the V2 Addon rules about dependencies. Your code can import from
+    // `dependencies` and `peerDependencies` as well as standard Ember-provided
+    // package names.
+    addon.dependencies(),
 
     // Ensure that standalone .hbs files are properly integrated as Javascript.
     addon.hbs(),

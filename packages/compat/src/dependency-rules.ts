@@ -47,7 +47,7 @@ export interface ActivePackageRules extends PackageRules {
 
 export interface TemplateRules {
   // Tells embroider which list of components may be needed for a given path.
-  // For example, if your temlate says `{{component this.panel}}` and you know
+  // For example, if your template says `{{component this.panel}}` and you know
   // that `this.panel` can be either "light-panel" or "dark-panel", you would
   // say: `invokes: { "this.panel": ["<LightPanel/>", "<DarkPanel/>"] }`
   invokes?: {

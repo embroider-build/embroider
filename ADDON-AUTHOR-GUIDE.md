@@ -6,18 +6,7 @@ This document lays out the recommended best practices for addon authors who want
 
 The best thing for all addons authors to do right now is to achieve the "Embroider Safe" support level. Follow the instructions in the [@embroider/test-setup README](https://github.com/embroider-build/embroider/tree/master/packages/test-setup) to add the `embroider-safe` scenario to your ember-try config.
 
-## Beyond "Embroider Safe"
-
 There are other levels of support beyond "Embroider Safe", but as long as you get that far you unblock the ability of your users to use Embroider. And the good news is that many addons are already Embroider Safe without doing any work, and all they really need to do is verify by adding a new scenario to their test suite.
-
-As of this writing, we **do not** recommend trying to jump all the way to the "Embroider Native" format, because the shared tooling that will make it pleasant to work with native v2 addons is not really shipped yet. Examples of what I mean by "shared tooling" include:
-
-- blueprints
-- lints and analysis to check for patterns that aren't supported in v2
-- a publishing command that makes it convenient to author your code in a format less verbose than the **v2** publication format.
-- a shim library that makes your v2 addon function like a v1 addon in apps without Embroider
-
-Adventurous souls are welcome to ignore this blocker if they want to be on the bleeding edge, but unless you're excited to participate in making and testing the tooling itself you might want to wait for more stable tools.
 
 ## Big Picture
 
@@ -45,7 +34,7 @@ The best way to see if your addon is Embroider safe is to add the `@embroider/te
 
 If your tests _don't_ work under Embroider when you try this, please file an issue on the Embroider repo. We can help you triage whether there's a missing feature in `@embroider/compat` that would allow your addon to work unchanged, or whether there is a better way to refactor your addon to avoid incompatible behavior.
 
-If your addon does work under Embroider, congrats! It is Embroider Safe. Please keep running the tests in your CI so you will notice if a future change to either Embroider or your addon breaks compatibility. You can also move on to trying to achieve the Optimized Embroider Safe support level.
+If your addon does work under Embroider, congrats! It is Embroider Safe. Please keep running the tests in your CI so you will notice if a future change to either Embroider or your addon breaks compatibility. You can also move on to achieving the Optimized Embroider Safe support level.
 
 ## Support Level: Optimized Embroider Safe
 
@@ -65,29 +54,21 @@ Once you achieve Optimized Embroider Safe, you should enable the `embroider-opti
 
 ## Support Level: Embroider Native
 
-An addon achieves the "Embroider Native" support level by publishing to NPM in the **v2 format**, as defined by [the RFC](https://github.com/emberjs/rfcs/pull/507). As of this writing, we **do not** recommend trying to jump all the way to the "Embroider Native" format, because the shared tooling that will make it pleasant to work with native v2 addons is not really shipped yet. Examples of what I mean by "shared tooling" include:
+An addon achieves the "Embroider Native" support level by publishing to NPM in the **v2 format**, as defined by [the RFC](https://github.com/emberjs/rfcs/pull/507).
 
-- blueprints
-- lints and analysis to check for patterns that aren't supported in v2
-- a publishing command that makes it convenient to author your code in a format less verbose than the **v2** publication format.
-- a shim library that makes your v2 addon function like a v1 addon in apps without Embroider
+A good way to learn about V2 addons is to look at some examples:
 
-Adventurous souls are welcome to ignore this blocker if they want to be on the bleeding edge, but unless you're excited to participate in making and testing the tooling itself you might want to wait for more stable tools.
+- [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page)
+- [ember-resources](https://github.com/NullVoxPopuli/ember-resources)
+- [ember-stargate](https://github.com/kaliber5/ember-stargate)
+- [glimmer-apollo](https://github.com/josemarluedke/glimmer-apollo)
 
-Embroider doesn't care what format you use to _author_ your addon, it cares what format you publish to NPM. In **v1** apps there isn't a strong distinction between those two, which is convenient for addon authors but moves a large amount of complexity into every app's build.
+Several of these examples use a monorepo as a way to keep a clean separation between the addon and the application that holds their test suite. If you're comfortable working with monorepos this is a good solution. On the other hand, monorepos have some tradeoffs and are not always well-supported by all tools, so it's also OK to keep your test app in a subdirectory of your addon. This is closer to how V1 addons work, where `tests/dummy` serves this purpose. See [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page) for an example of not using a monorepo -- instead it has a `test-app` subdirectory and uses the `addon-dev` command from `@embroider/addon-dev` to manage linkage between the addon and the test-app and to manage combining of dependencies from both into a single top-level package.json
 
-For a simple addon, you might choose to author directly in **v2** format. The main limitations this imposes are:
+We support some tools to make V2 addon development more convenient:
 
-- you get no preprocessors like TypesScript or Sass
-- you can only use Javascript features that are part of the Ember Language Standard (see [the RFC](https://github.com/emberjs/rfcs/pull/507))
-- you must explicitly link components and their co-located templates together via Ember's `setComponentTemplate`.
-
-To avoid these limitations, you will want to have a build step that allows you to author more comfortably and compile to the **v2** format before publishing. We intend to ship shared tooling to help with this. Since many addons can already be compiled automatically from v1 to v2 by `@embroider/compat`, this tooling is likely to be pretty smart and you won't be obligated to refactor your whole addon, but there are a couple gotchas we will need to watch out for:
-
-- When automatically upgrading addons to **v2**, `@embroider/compat` as used currently in Embroider deliberately allows some sloppiness that we won't allow from native **v2** addons. For example, native **v2** packages can't import from packages that aren't explicitly listed in their dependencies.
-- When automatically upgrading addons to **v2**, `@embroider/compat` already has the full application available to examine, so any configuration-dependent transformations will run with the right configuration. For example, any polyfills that behave differently under different Ember versions will see the app's Ember version and do the right thing. But when publishing a native **v2** package, you _don't_ have that information available so if you want to emit different code for different Ember versions the polyfill needs to use `@embroider/macros`.
-
-While it's important that we ship good shared tooling, a nice thing about having a stable **v2** format standard is that the community is free to experiment with alternative addon build tooling, and it won't impact compatibility or stability.
+- [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/master/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
+- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how your author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
 
 ## Replacing the {{component}} helper
 

@@ -1,5 +1,28 @@
 # Embroider Changelog
 
+## v0.47.1 (2021-10-25)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1008](https://github.com/embroider-build/embroider/pull/1008) Support @ syntax in helpers ([@thoov](https://github.com/thoov))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1009](https://github.com/embroider-build/embroider/pull/1009) Apply compileStyles to custom treeForAddonStyles ([@ef4](https://github.com/ef4))
+* `compat`, `core`
+  * [#1007](https://github.com/embroider-build/embroider/pull/1007) Fix exclusion of the hbs file of the pod components when `podModulePrefix === ''` ([@dcyriller](https://github.com/dcyriller))
+
+#### :memo: Documentation
+* `addon-shim`
+  * [#1005](https://github.com/embroider-build/embroider/pull/1005) Remove command documentation from `addon-shim` package ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 4
+- Cyrille ([@dcyriller](https://github.com/dcyriller))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.47.0 (2021-10-14)
 
 #### :rocket: Enhancement

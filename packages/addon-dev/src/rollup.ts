@@ -3,6 +3,7 @@ import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
 import { default as clean } from 'rollup-plugin-delete';
 import { default as keepAssets } from './rollup-keep-assets';
+import { default as dependencies } from './rollup-addon-dependencies';
 import type { Plugin } from 'rollup';
 
 export class Addon {
@@ -62,5 +63,9 @@ export class Addon {
   // above).
   output() {
     return { dir: this.#destDir, format: 'es', entryFileNames: '[name]' };
+  }
+
+  dependencies() {
+    return dependencies();
   }
 }

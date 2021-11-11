@@ -28,6 +28,9 @@ export function makeResolverTransform(resolver: Resolver) {
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
+          if (node.path.this === true) {
+            return;
+          }
           if (node.path.parts.length > 1) {
             // paths with a dot in them (which therefore split into more than
             // one "part") are classically understood by ember to be contextual
@@ -78,6 +81,9 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
             return;
           }
           if (node.path.parts.length > 1) {

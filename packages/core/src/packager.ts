@@ -89,12 +89,6 @@ export function applyVariantToBabelConfig(variant: Variant, babelConfig: any) {
   return babelConfig;
 }
 
-export function applyVariantToTemplateCompiler(_variant: Variant, templateCompiler: any) {
-  // TODO: we don't actually consume the variant in the template macros yet, but
-  // Packagers must call this function anyway because we will.
-  return templateCompiler;
-}
-
 /**
  * Get the app meta-data for a package
  */

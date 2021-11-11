@@ -1,9 +1,8 @@
-import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
-import { AppMeta, templateCompilerModule, throwOnWarnings } from '@embroider/core';
+import { Project } from '@embroider/test-support';
+import { AppMeta, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
-import CompatResolver from '../src/resolver';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -21,32 +20,6 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
-    let templateCompiler = templateCompilerModule(
-      {
-        compilerPath: emberTemplateCompilerPath(),
-        compilerChecksum: `mock-compiler-checksum${Math.random()}`,
-        EmberENV: {},
-        plugins: { ast: [] },
-        resolver: new CompatResolver({
-          root: app.baseDir,
-          modulePrefix: 'audit-this-app',
-          options: { staticComponents: false, staticHelpers: false, allowUnsafeDynamicComponents: false },
-          activePackageRules: [],
-          adjustImportsOptions: {
-            renamePackages: {},
-            renameModules: {},
-            extraImports: [],
-            externalsDir: '/tmp/embroider-externals',
-            activeAddons: {},
-            relocatedFiles: {},
-            resolvableExtensions,
-            emberNeedsModulesPolyfill: true,
-          },
-        }),
-      },
-      []
-    );
-
     merge(app.files, {
       'index.html': `<script type="module" src="./app.js"></script>`,
       'app.js': `import Hello from './hello.hbs';`,
@@ -55,7 +28,6 @@ describe('audit', function () {
         babelrc: false,
         plugins: [],
       }`,
-      'template_compiler.js': templateCompiler.src,
     });
     let appMeta: AppMeta = {
       type: 'app',
@@ -69,10 +41,6 @@ describe('audit', function () {
       },
       'resolvable-extensions': resolvableExtensions,
       'root-url': '/',
-      'template-compiler': {
-        filename: 'template_compiler.js',
-        isParallelSafe: true,
-      },
     };
     merge(app.pkg, {
       'ember-addon': appMeta,
@@ -290,7 +258,7 @@ describe('audit', function () {
     expect(Object.keys(result.modules).length).toBe(2);
   });
 
-  test('finds missing component', async function () {
+  test('finds missing component in standalone hbs', async function () {
     merge(app.files, {
       'hello.hbs': `<NoSuchThing />`,
     });
@@ -300,6 +268,25 @@ describe('audit', function () {
         message: 'Missing component',
         detail: 'NoSuchThing',
         filename: './hello.hbs',
+      },
+    ]);
+    expect(result.findings[0].codeFrame).toBeDefined();
+    expect(Object.keys(result.modules).length).toBe(3);
+  });
+
+  test('finds missing component in inline hbs', async function () {
+    merge(app.files, {
+      'app.js': `
+        import { hbs } from 'ember-cli-htmlbars';
+        hbs("<NoSuchThing />");
+      `,
+    });
+    let result = await audit();
+    expect(withoutCodeFrames(result.findings)).toEqual([
+      {
+        message: 'Missing component',
+        detail: 'NoSuchThing',
+        filename: './app.js',
       },
     ]);
     expect(result.findings[0].codeFrame).toBeDefined();
@@ -337,6 +324,17 @@ describe('audit', function () {
       { filename: './has-parse-error.js', message: 'failed to parse' },
     ]);
     expect(Object.keys(result.modules).length).toBe(4);
+  });
+
+  test('failure to parse HBS is reported and does not cause cascading errors', async function () {
+    merge(app.files, {
+      'hello.hbs': `{{broken`,
+    });
+    let result = await audit();
+    expect(result.findings.map(f => ({ filename: f.filename, message: f.message }))).toEqual([
+      { filename: './hello.hbs', message: 'failed to compile template' },
+    ]);
+    expect(Object.keys(result.modules).length).toBe(3);
   });
 });
 

@@ -17,10 +17,6 @@ export interface AppMeta {
   };
   'resolvable-extensions': string[];
   'root-url': string;
-  'template-compiler': {
-    filename: string;
-    isParallelSafe: boolean;
-  };
   version: 2;
 }
 

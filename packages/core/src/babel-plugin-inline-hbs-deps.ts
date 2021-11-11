@@ -8,7 +8,7 @@ import { templateCompilationModules } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
 
 /*
-  In order to coordinate with babel-plugin-htmlbars-inline-precompile, we need
+  In order to coordinate with babel-plugin-ember-template-compilation, we need
   to give it a `precompile` function that, as a side-effect, captures the
   dependencies needed within the current file. We do this coordination via this
   module-scoped variable, which is safe given Javascript's single-threaded
@@ -18,12 +18,12 @@ let currentState: State | undefined;
 
 /*
   This is the precompile function you should pass to
-  babel-plugin-htmlbars-inline-precompile.
+  babel-plugin-ember-template-compilation.
 */
 export function precompile(templateSource: string, options: Record<string, unknown>) {
   if (!currentState) {
     throw new Error(
-      `bug: babel-plugin-htmlbars-inline-precompile and babel-plugin-inline-hbs-deps aren't coordinating correctly`
+      `bug: babel-plugin-ember-template-compilation and babel-plugin-inline-hbs-deps aren't coordinating correctly`
     );
   }
   let { compiled, dependencies } = compiler(currentState).precompile(templateSource, {

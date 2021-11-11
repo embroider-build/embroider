@@ -1,7 +1,7 @@
 /*
   This plugin is used only for Ember < 3.27. For newer Ember's we have a
   different implementation that shares the standard
-  babel-plugin-htmlbars-inline-precompile and supports passing Javascript
+  babel-plugin-ember-template-compilation and supports passing Javascript
   lexically scoped names into templates.
 */
 

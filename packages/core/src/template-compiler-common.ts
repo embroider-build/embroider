@@ -4,7 +4,6 @@ import { join, sep } from 'path';
 import type { PluginItem } from '@babel/core';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
-import jsStringEscape from 'js-string-escape';
 
 export interface Plugins {
   ast?: unknown[];
@@ -91,10 +90,6 @@ export class TemplateCompiler {
     this.resolver = params.resolver;
     this.EmberENV = params.EmberENV;
     this.plugins = params.plugins;
-
-    // stage3 packagers don't need to know about our instance, they can just
-    // grab the compile function and use it.
-    this.compile = this.compile.bind(this);
   }
 
   private get syntax(): GlimmerSyntax {
@@ -161,13 +156,6 @@ export class TemplateCompiler {
     }
 
     return { compiled, dependencies };
-  }
-
-  // Compiles all the way from a template string to a javascript module string.
-  compile(_moduleName: string, contents: string) {
-    return [`import { hbs } from 'ember-cli-htmlbars';`, `export default hbs("${jsStringEscape(contents)}")`].join(
-      '\n'
-    );
   }
 
   // Applies all custom AST transforms and emits the results still as

@@ -187,7 +187,7 @@ export default class V1Addon {
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Node): Node {
         if (this._addon.templateCompiler) {
-          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler, 1);
+          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.

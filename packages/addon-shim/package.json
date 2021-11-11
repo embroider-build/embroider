@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-shim",
-  "version": "0.47.1",
+  "version": "0.47.2",
   "description": "Make v2 addons work in non-Embroider apps.",
   "keywords": [
     "ember-addon"
@@ -21,7 +21,7 @@
     "prepare": "tsc"
   },
   "dependencies": {
-    "@embroider/shared-internals": "^0.47.1",
+    "@embroider/shared-internals": "^0.47.2",
     "ember-auto-import": "^2.2.0",
     "semver": "^7.3.5"
   },

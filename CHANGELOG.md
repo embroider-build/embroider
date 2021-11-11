@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## v0.47.2 (2021-11-11)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1017](https://github.com/embroider-build/embroider/pull/1017) Ensure components + helpers can work from `this` paths with `staticComponents = true` & `staticHelpers = true` ([@thoov](https://github.com/thoov))
+* `addon-dev`
+  * [#1015](https://github.com/embroider-build/embroider/pull/1015) Address misleading warnings from rollup about externals ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `compat`
+  * [#1011](https://github.com/embroider-build/embroider/pull/1011) Minor typo fix ([@thoov](https://github.com/thoov))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.47.1 (2021-10-25)
 
 #### :rocket: Enhancement

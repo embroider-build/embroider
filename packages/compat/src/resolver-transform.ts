@@ -64,9 +64,6 @@ export function makeResolverTransform(resolver: Resolver) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (node.path.original.includes('liquidif')) {
-            debugger;
-          }
           if (node.path.this === true) {
             return;
           }
@@ -82,9 +79,6 @@ export function makeResolverTransform(resolver: Resolver) {
         MustacheStatement(node: ASTv1.MustacheStatement) {
           if (node.path.type !== 'PathExpression') {
             return;
-          }
-          if (node.path.original.includes('liquidif')) {
-            debugger;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
             return;

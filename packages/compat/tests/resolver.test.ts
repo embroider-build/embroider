@@ -476,9 +476,9 @@ describe('compat-resolver', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(findDependencies('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqual([]);
   });
-  test('class defined component not failing if there is no arguments', function () {
+  test('helper defined in component not failing if there is no arguments', function () {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{this.myComponent}}`)).toEqual([]);
+    expect(findDependencies('templates/application.hbs', `{{#if (this.myHelper)}}{{/if}}`)).toEqual([]);
   });
   test('class defined component not failing if there is a block', function () {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });

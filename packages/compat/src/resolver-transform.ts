@@ -28,7 +28,7 @@ export function makeResolverTransform(resolver: Resolver) {
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
-          if (node.path.head.type === 'ThisHead') {
+          if (node.path.head && node.path.head.type === 'ThisHead') {
             return;
           }
           if (node.path.parts.length > 1) {

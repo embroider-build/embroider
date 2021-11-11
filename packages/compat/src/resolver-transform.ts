@@ -28,6 +28,9 @@ export function makeResolverTransform(resolver: Resolver) {
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
+          if (node.path.head.type === 'ThisHead') {
+            return;
+          }
           if (node.path.parts.length > 1) {
             // paths with a dot in them (which therefore split into more than
             // one "part") are classically understood by ember to be contextual
@@ -61,6 +64,9 @@ export function makeResolverTransform(resolver: Resolver) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
+          if (node.path.original.includes('liquidif')) {
+            debugger;
+          }
           if (node.path.this === true) {
             return;
           }
@@ -76,6 +82,9 @@ export function makeResolverTransform(resolver: Resolver) {
         MustacheStatement(node: ASTv1.MustacheStatement) {
           if (node.path.type !== 'PathExpression') {
             return;
+          }
+          if (node.path.original.includes('liquidif')) {
+            debugger;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
             return;

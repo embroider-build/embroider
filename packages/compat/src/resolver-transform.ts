@@ -28,7 +28,7 @@ export function makeResolverTransform(resolver: Resolver) {
           if (scopeStack.inScope(node.path.parts[0])) {
             return;
           }
-          if (node.path.head && node.path.head.type === 'ThisHead') {
+          if (node.path.this === true) {
             return;
           }
           if (node.path.parts.length > 1) {
@@ -81,6 +81,9 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
             return;
           }
           if (node.path.parts.length > 1) {

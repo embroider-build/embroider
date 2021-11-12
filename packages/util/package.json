@@ -30,7 +30,7 @@
   "dependencies": {
     "@embroider/macros": "0.47.2",
     "broccoli-funnel": "^3.0.5",
-    "ember-cli-babel": "^7.23.1"
+    "ember-cli-babel": "^7.26.6"
   },
   "devDependencies": {
     "@ember/jquery": "^2.0.0",

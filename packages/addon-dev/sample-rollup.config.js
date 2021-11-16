@@ -1,5 +1,6 @@
 import babel from '@rollup/plugin-babel';
 import { Addon } from '@embroider/addon-dev/rollup';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 const addon = new Addon({
   srcDir: 'src',
@@ -12,6 +13,8 @@ export default {
   output: addon.output(),
 
   plugins: [
+    nodeResolve({ resolveOnly: ['./'] }),
+
     // These are the modules that users should be able to import from your
     // addon. Anything not listed here may get optimized away.
     addon.publicEntrypoints(['components/**/*.js', 'index.js']),

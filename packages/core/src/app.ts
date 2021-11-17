@@ -1144,6 +1144,9 @@ export class AppBuilder<TreeNames> {
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
+    if (!this.options.staticModifiers) {
+      requiredAppFiles.push(appFiles.modifiers);
+    }
 
     let styles = [];
     // only import styles from engines with a parent (this excludeds the parent application) as their styles

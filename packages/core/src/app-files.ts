@@ -13,6 +13,7 @@ export class AppFiles {
   readonly tests: ReadonlyArray<string>;
   readonly components: ReadonlyArray<string>;
   readonly helpers: ReadonlyArray<string>;
+  readonly modifiers: ReadonlyArray<string>;
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
   readonly relocatedFiles: Map<string, string>;
@@ -22,6 +23,7 @@ export class AppFiles {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
+    let modifiers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
     for (let relativePath of appDiffer.files.keys()) {
@@ -64,6 +66,11 @@ export class AppFiles {
         continue;
       }
 
+      if (relativePath.startsWith('modifiers/')) {
+        modifiers.push(relativePath);
+        continue;
+      }
+
       if (
         this.handleClassicRouteFile(relativePath) ||
         (podModulePrefix !== undefined && this.handlePodsRouteFile(relativePath, podModulePrefix))
@@ -76,6 +83,7 @@ export class AppFiles {
     this.tests = tests;
     this.components = components;
     this.helpers = helpers;
+    this.modifiers = modifiers;
     this.otherAppFiles = otherAppFiles;
 
     let relocatedFiles: Map<string, string> = new Map();

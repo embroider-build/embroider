@@ -17,6 +17,7 @@ module.exports = function (defaults) {
     staticAddonTrees: true,
     staticComponents: true,
     staticHelpers: true,
+    staticModifiers: true,
     splitRouteClasses: true,
     splitAtRoutes: ['split-me'],
   });

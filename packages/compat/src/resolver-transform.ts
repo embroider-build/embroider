@@ -1,7 +1,7 @@
 import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
 import type { ASTv1 } from '@glimmer/syntax';
 
-// This is the AST transform that resolves components and helpers at build time
+// This is the AST transform that resolves components, helpers and modifiers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
   function resolverTransform({ filename }: { filename: string }) {
@@ -110,6 +110,30 @@ export function makeResolverTransform(resolver: Resolver) {
               }
             }
           }
+        },
+        ElementModifierStatement(node: ASTv1.ElementModifierStatement) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
+            return;
+          }
+          if (node.path.data === true) {
+            return;
+          }
+          if (node.path.parts.length > 1) {
+            // paths with a dot in them (which therefore split into more than
+            // one "part") are classically understood by ember to be contextual
+            // components. With the introduction of `Template strict mode` in Ember 3.25
+            // it is also possible to pass modifiers this way which means there's nothing
+            // to resolve at this location.
+            return;
+          }
+
+          resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
         },
         ElementNode: {
           enter(node: ASTv1.ElementNode) {

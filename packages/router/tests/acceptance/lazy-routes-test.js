@@ -69,14 +69,17 @@ module('Acceptance | lazy routes', function (hooks) {
     });
   }
 
-  test('can see @embroider/core config', async function (assert) {
-    let config = getGlobalConfig()['@embroider/core'];
-    if (ENV.isClassic) {
+  if (ENV.isClassic) {
+    test('classic builds can not see @embroider/core config', async function (assert) {
+      let config = getGlobalConfig()['@embroider/core'];
       assert.equal(config, undefined, 'expected no embroider core config');
-    } else {
+    });
+  } else {
+    test('can see @embroider/core config', async function (assert) {
+      let config = getGlobalConfig()['@embroider/core'];
       assert.true(config.active, 'expected to see active @embroider/core');
-    }
-  });
+    });
+  }
 
   test('can enter a lazy route', async function (assert) {
     await visit('/split-me');

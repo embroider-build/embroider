@@ -1,3 +1,4 @@
+/* eslint-disable ember/no-private-routing-service */
 /*
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */

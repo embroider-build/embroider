@@ -23,11 +23,15 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
     // mappings from routeName to the engines "original name" (which we know at build time).
     let engine = engineInfoByRoute[routeName];
     if (engine && window._embroiderEngineBundles_) {
-      return window._embroiderEngineBundles_.find(bundle => bundle.names.indexOf(engine.name) !== -1);
+      return window._embroiderEngineBundles_.find(
+        (bundle) => bundle.names.indexOf(engine.name) !== -1
+      );
     }
 
     if (window._embroiderRouteBundles_) {
-      return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+      return window._embroiderRouteBundles_.find(
+        (bundle) => bundle.names.indexOf(routeName) !== -1
+      );
     }
 
     return false;
@@ -74,7 +78,7 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
     },
 
     _handlerResolver(original) {
-      return name => {
+      return (name) => {
         let bundle = lazyBundle(name, this._engineInfoByRoute);
         if (!bundle || bundle.loaded) {
           return original(name);
@@ -88,7 +92,7 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
             bundle.loaded = true;
             return original(name);
           },
-          err => {
+          (err) => {
             waiter.endAsync(token);
             throw err;
           }

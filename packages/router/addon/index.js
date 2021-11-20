@@ -37,7 +37,7 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
     return false;
   };
 
-  Router = EmberRouter.extend({
+  class EmbroiderRouter extends EmberRouter {
     // This is necessary in order to prevent the premature loading of lazy routes
     // when we are merely trying to render a link-to that points at them.
     // Unfortunately the stock query parameter behavior pulls on routes just to
@@ -47,20 +47,20 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
       if (bundle && !bundle.loaded) {
         return undefined;
       }
-      return this._super(...arguments);
-    },
+      return super._getQPMeta(...arguments);
+    }
 
     // On older versions of Ember, this is a framework method that we're
     // overriding to provide our own handlerResolver.
     _getHandlerFunction() {
       newSetup = false;
       return this._handlerResolver();
-    },
+    }
 
     // On newer versions of Ember, this is the framework method that we're
     // overriding to provide our own handlerResolver.
     setupRouter() {
-      let isSetup = this._super(...arguments);
+      let isSetup = super.setupRouter(...arguments);
       if (newSetup) {
         // Different versions of routerMicrolib use the names `getRoute` vs
         // `getHandler`.
@@ -75,7 +75,7 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
         }
       }
       return isSetup;
-    },
+    }
 
     _handlerResolver(original) {
       return (name) => {
@@ -98,8 +98,10 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
           }
         );
       };
-    },
-  });
+    }
+  }
+
+  Router = EmbroiderRouter;
 } else {
   Router = EmberRouter;
 }

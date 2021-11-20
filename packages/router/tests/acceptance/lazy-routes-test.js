@@ -27,10 +27,8 @@ module('Acceptance | lazy routes', function (hooks) {
     );
   }
 
-  function hasComponentTemplate(name) {
-    return Boolean(
-      requirejs.entries[`${ENV.modulePrefix}/templates/components/${name}`]
-    );
+  function hasComponent(name) {
+    return Boolean(requirejs.entries[`${ENV.modulePrefix}/components/${name}`]);
   }
 
   if (ENV.isClassic) {
@@ -49,7 +47,7 @@ module('Acceptance | lazy routes', function (hooks) {
         'classic build has child template'
       );
       assert.ok(
-        hasComponentTemplate('used-in-child'),
+        hasComponent('used-in-child'),
         'classic build has all components'
       );
     });
@@ -63,7 +61,7 @@ module('Acceptance | lazy routes', function (hooks) {
       assert.notOk(hasRoute('split-me/child'), 'child route is lazy');
       assert.notOk(hasTemplate('split-me/child'), 'child template is lazy');
       assert.notOk(
-        hasComponentTemplate('used-in-child'),
+        hasComponent('used-in-child'),
         'descendant components are lazy'
       );
     });

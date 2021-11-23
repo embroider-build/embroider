@@ -1,8 +1,12 @@
-import { Project } from '@embroider/test-support';
+import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
 import { AppMeta, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
+import CompatResolver from '../src/resolver';
+import { join } from 'path';
+import type { TransformOptions } from '@babel/core';
+import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -20,14 +24,49 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
+    let templateCompilerParams = {
+      compilerPath: emberTemplateCompilerPath(),
+      compilerChecksum: `mock-compiler-checksum${Math.random()}`,
+      EmberENV: {},
+      plugins: { ast: [] },
+      resolver: new CompatResolver({
+        root: app.baseDir,
+        modulePrefix: 'audit-this-app',
+        options: { staticComponents: false, staticHelpers: false, allowUnsafeDynamicComponents: false },
+        activePackageRules: [],
+        adjustImportsOptions: {
+          renamePackages: {},
+          renameModules: {},
+          extraImports: [],
+          externalsDir: '/tmp/embroider-externals',
+          activeAddons: {},
+          relocatedFiles: {},
+          resolvableExtensions,
+          emberNeedsModulesPolyfill: true,
+        },
+      }),
+    };
+    let babel: TransformOptions = {
+      babelrc: false,
+      plugins: [],
+    };
+
+    babel.plugins!.push([
+      join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      { templateCompiler: templateCompilerParams },
+    ]);
+    babel.plugins!.push([
+      require.resolve('babel-plugin-ember-template-compilation'),
+      {
+        precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      } as InlinePrecompileOptions,
+    ]);
+
     merge(app.files, {
       'index.html': `<script type="module" src="./app.js"></script>`,
       'app.js': `import Hello from './hello.hbs';`,
       'hello.hbs': ``,
-      'babel_config.js': `module.exports = {
-        babelrc: false,
-        plugins: [],
-      }`,
+      'babel_config.js': `module.exports = ${JSON.stringify(babel)}`,
     });
     let appMeta: AppMeta = {
       type: 'app',

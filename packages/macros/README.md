@@ -92,7 +92,7 @@ Macros can also be used inside of templates:
 Starting with Ember 3.25 you can also use it to conditionally apply modifiers:
 
 ```hbs
-<button {{(if (macroCondition true) on) "click" this.something}}>Submit</button>
+<button {{(if (macroCondition true) (on "click" this.something)}}>Submit</button>
 ```
 
 However, in all cases the argument to `macroCondition` must be statically analyzable:

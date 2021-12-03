@@ -1,3 +1,4 @@
+/* eslint-disable ember/no-private-routing-service */
 /*
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
@@ -23,17 +24,21 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
     // mappings from routeName to the engines "original name" (which we know at build time).
     let engine = engineInfoByRoute[routeName];
     if (engine && window._embroiderEngineBundles_) {
-      return window._embroiderEngineBundles_.find(bundle => bundle.names.indexOf(engine.name) !== -1);
+      return window._embroiderEngineBundles_.find(
+        (bundle) => bundle.names.indexOf(engine.name) !== -1
+      );
     }
 
     if (window._embroiderRouteBundles_) {
-      return window._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+      return window._embroiderRouteBundles_.find(
+        (bundle) => bundle.names.indexOf(routeName) !== -1
+      );
     }
 
     return false;
   };
 
-  Router = EmberRouter.extend({
+  class EmbroiderRouter extends EmberRouter {
     // This is necessary in order to prevent the premature loading of lazy routes
     // when we are merely trying to render a link-to that points at them.
     // Unfortunately the stock query parameter behavior pulls on routes just to
@@ -43,20 +48,20 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
       if (bundle && !bundle.loaded) {
         return undefined;
       }
-      return this._super(...arguments);
-    },
+      return super._getQPMeta(...arguments);
+    }
 
     // On older versions of Ember, this is a framework method that we're
     // overriding to provide our own handlerResolver.
     _getHandlerFunction() {
       newSetup = false;
       return this._handlerResolver();
-    },
+    }
 
     // On newer versions of Ember, this is the framework method that we're
     // overriding to provide our own handlerResolver.
     setupRouter() {
-      let isSetup = this._super(...arguments);
+      let isSetup = super.setupRouter(...arguments);
       if (newSetup) {
         // Different versions of routerMicrolib use the names `getRoute` vs
         // `getHandler`.
@@ -71,10 +76,10 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
         }
       }
       return isSetup;
-    },
+    }
 
     _handlerResolver(original) {
-      return name => {
+      return (name) => {
         let bundle = lazyBundle(name, this._engineInfoByRoute);
         if (!bundle || bundle.loaded) {
           return original(name);
@@ -88,14 +93,16 @@ if (macroCondition(getGlobalConfig()['@embroider/core']?.active)) {
             bundle.loaded = true;
             return original(name);
           },
-          err => {
+          (err) => {
             waiter.endAsync(token);
             throw err;
           }
         );
       };
-    },
-  });
+    }
+  }
+
+  Router = EmbroiderRouter;
 } else {
   Router = EmberRouter;
 }

@@ -281,6 +281,7 @@ appScenarios
             staticAddonTrees: true,
             staticComponents: true,
             staticHelpers: true,
+            staticModifiers: true,
             packageRules: [
               {
                 package: 'app-template',

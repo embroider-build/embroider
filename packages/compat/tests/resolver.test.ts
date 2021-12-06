@@ -745,6 +745,59 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('missing modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(() => {
+      findDependencies('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
+    }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
+  });
+  test('emits no modifiers when staticModifiers is off', function () {
+    let findDependencies = configure({ staticModifiers: false });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([]);
+  });
+  test('modifier on html element', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier on component', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier on contextual component', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<Form as |f|> <f.Input {{auto-focus}} /></Form>`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier provided as an argument', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('components/test.hbs', `<input {{@auto-focus}} />`)).toEqual([]);
+  });
+  test('contextual modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqual(
+      []
+    );
+  });
   test('local binding takes precedence over helper in bare mustache', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
@@ -759,6 +812,16 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
     ).toEqual([]);
   });
+  test('local binding takes precedence over modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/some-modifier.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}`
+      )
+    ).toEqual([]);
+  });
   test('angle components can establish local bindings', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
@@ -767,17 +830,25 @@ describe('compat-resolver', function () {
     );
   });
   test('local binding only applies within block', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let findDependencies = configure({ staticHelpers: true, staticModifiers: true });
     givenFile('helpers/capitalize.js');
+    givenFile('modifiers/validate.js');
     expect(
       findDependencies(
         'templates/application.hbs',
-        `{{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}`
+        `
+        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}
+        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
+        `
       )
     ).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
         path: '../helpers/capitalize.js',
+      },
+      {
+        runtimeName: 'the-app/modifiers/validate',
+        path: '../modifiers/validate.js',
       },
     ]);
   });
@@ -792,10 +863,12 @@ describe('compat-resolver', function () {
         {{#with (hash submit=(action doit)) as |thing| }}
         {{/with}}
         <LinkTo @route="index"/>
+        <form {{on "submit" doit}}></form>
       `
       )
     ).toEqual([]);
   });
+
   test('ignores dot-rule curly component invocation, inline', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
     expect(

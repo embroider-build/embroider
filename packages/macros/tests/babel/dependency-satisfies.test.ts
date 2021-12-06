@@ -123,5 +123,24 @@ describe(`dependencySatisfies`, function () {
       );
       expect(runDefault(code)).toBe(true);
     });
+
+    test('it considers alpha releases as allowed', () => {
+      project = new Project('test-app', '1.0.0');
+      project.addDevDependency('ember-source', '4.2.0-alpha.2');
+      project.writeSync();
+
+      process.chdir(project.baseDir);
+
+      let code = transform(
+        `
+          import { dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return dependencySatisfies('ember-source', '>= 3.27.0-canary || >= 3.27.0-beta');
+          }
+        `,
+        { filename: path.join(project.baseDir, 'foo.js') }
+      );
+      expect(runDefault(code)).toBe(true);
+    });
   });
 });

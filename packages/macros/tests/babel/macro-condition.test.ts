@@ -1,4 +1,4 @@
-import { makeRunner, makeBabelConfig, allModes } from './helpers';
+import { Project, makeRunner, makeBabelConfig, allModes } from './helpers';
 import { allBabelVersions } from '@embroider/test-support';
 import { MacrosConfig } from '../../src/node';
 
@@ -339,6 +339,28 @@ describe('macroCondition', function () {
       `);
         expect(run(code)).toBe('alpha');
         expect(code).not.toMatch(/beta/);
+      });
+
+      buildTimeTest('can evaluate pre-release dependency expressions', () => {
+        let project = new Project('test-app', '1.0.0');
+        project.addDevDependency('ember-source', '4.2.0-alpha.2');
+        project.writeSync();
+
+        process.chdir(project.baseDir);
+
+        let code = transform(`
+          import { macroCondition, dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return macroCondition(
+              dependencySatisfies('ember-source', '>=3.27.0-canary || >=3.27.0-beta')
+            )
+              ? 'success'
+              : 'failure'
+          }
+        `);
+
+        expect(run(code)).toBe('success');
+        expect(code).not.toMatch(/failure/);
       });
 
       buildTimeTest('can see booleans inside getConfig', () => {

@@ -5,6 +5,10 @@ of lazy route bundles and loads them when needed.
 
 ## Compatibility
 
+- Ember.js v3.16 or above
+- Ember CLI v3.16 or above
+- Node.js v12 or above
+
 To get code-splitting, your app must build with Embroider. It's safe to use
 this router in apps that aren't building with Embroider, but it won't do
 anything.

@@ -186,6 +186,28 @@ if (macroCondition(getOwnConfig().shouldIncludeMinifiedLibrary)) {
 <button class="{{macroGetOwnConfig "themeColor"}}">My Themed Button</button>
 ```
 
+### isTesting, isDevelopingApp
+
+These methods can be used in conjunction with `macroCondition` to tree-shake code for specific environments.
+
+```js
+import { isTesting, isDevelopingApp, macroCondition } from '@embroider/macros';
+
+if (macroCondition(isTesting()) {
+  // some test code - stripped out when not running tests
+} else {
+  // some none-test code
+}
+
+if (macroCondition(isDevelopingApp()) {
+  // some code when app is in development environment - stripped out in production builds
+} else {
+  // some production code
+}
+```
+
+Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
+
 ## Real world examples
 
 Below are a list of addons that have started using `@embroider/macros` so that you can get a feel for common use cases that can be solved via the macro system.

@@ -1,4 +1,3 @@
 import Controller from '@ember/controller';
 
-export default Controller.extend({
-});
+export default class SplitMeChildController extends Controller {}

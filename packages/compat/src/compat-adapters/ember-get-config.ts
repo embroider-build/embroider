@@ -1,5 +1,6 @@
 import V1Addon from '../v1-addon';
 import writeFile from 'broccoli-file-creator';
+import mergeTrees from 'broccoli-merge-trees';
 
 function createIndexContents(config: any): string {
   return `export default ${JSON.stringify(config)};`;
@@ -22,6 +23,9 @@ export default class extends V1Addon {
     const configModule = require(this.app.configPath());
     const appEnvironmentConfig = configModule(this.app.env);
 
-    return writeFile('index.js', createIndexContents(appEnvironmentConfig));
+    return mergeTrees([
+      writeFile('index.js', createIndexContents(appEnvironmentConfig)),
+      writeFile('package.json', JSON.stringify(this.newPackageJSON, null, 2)),
+    ]);
   }
 }

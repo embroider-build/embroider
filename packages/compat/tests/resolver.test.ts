@@ -518,6 +518,21 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('built-in components are ignored when used with the component helper', function () {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      {{component "input"}}
+      {{component "link-to"}}
+      {{component "textarea"}}
+    `
+      )
+    ).toEqual([]);
+  });
   test('component helper with direct addon package reference', function () {
     let findDependencies = configure({
       staticComponents: true,

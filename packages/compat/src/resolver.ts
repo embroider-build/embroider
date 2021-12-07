@@ -802,6 +802,11 @@ export default class CompatResolver implements Resolver {
         from
       );
     }
+
+    if (builtInComponents.includes(component.path)) {
+      return null;
+    }
+
     let found = this.tryComponent(component.path, from);
     if (found) {
       return this.add(found, from);

@@ -45,7 +45,7 @@ jobs:
     needs: ['preflight']
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false

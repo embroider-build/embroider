@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## v0.48.0 (2021-12-07)
+
+#### :rocket: Enhancement
+* `compat`, `core`, `router`
+  * [#1021](https://github.com/embroider-build/embroider/pull/1021) Add `staticModifiers` option ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1029](https://github.com/embroider-build/embroider/pull/1029) Don't resolve built-in components when used with the component helper ([@Windvis](https://github.com/Windvis))
+  * [#1030](https://github.com/embroider-build/embroider/pull/1030) fix the ember-get-config compat adapter ([@ef4](https://github.com/ef4))
+  * [#1035](https://github.com/embroider-build/embroider/pull/1035) Optimize ember-cli-babel handling ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `macros`
+  * [#1031](https://github.com/embroider-build/embroider/pull/1031) Add `isTesting` and `isDevelopingApp` to readme ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `router`
+  * [#1027](https://github.com/embroider-build/embroider/pull/1027) `@embroider/router` Ember 4 CI job compatibility ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
 ## v0.47.2 (2021-11-11)
 
 #### :bug: Bug Fix

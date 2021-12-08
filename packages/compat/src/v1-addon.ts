@@ -134,6 +134,26 @@ export default class V1Addon {
     }
   }
 
+  // Optional extensible hook for pruning down the list of redundant addon
+  // instances produces by the classic ember-cli architecture. ember-cli
+  // instantiates each addon *per consumer*, not per package. So a given package
+  // will have many addon instances, and Embroider dutifully produces a V1Addon
+  // instance for each one, and then needs to mimic the classic smooshing
+  // behavior between them.
+  //
+  // But some packages (and ember-cli-babel is the motivating example) produce a
+  // huge number of instances that do nothing useful and incur significant cost.
+  // This hook allows their compat adapter to prune down the set, using
+  // addon-specific knowledge of which instance(s) are actually important.
+  //
+  // The order of the instances is significant. The first one is the one with
+  // the highest precedence, meaning its files would win under classic
+  // smooshing.
+  reduceInstances(instances: V1Addon[]): V1Addon[] {
+    // the default beahvior is that all copies matter
+    return instances;
+  }
+
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
   private get templateCompiler(): NodeTemplateCompiler | undefined {

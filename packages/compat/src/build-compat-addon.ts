@@ -27,6 +27,13 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
 
+  if (oldPackages.length > 1) {
+    // extensibility hook that allows a compat adapter to optimize its own
+    // smooshing. We do it early so that if it reduces all the way to zero, the
+    // next check will handle that.
+    oldPackages = oldPackages[0].reduceInstances(oldPackages);
+  }
+
   if (oldPackages.length === 0) {
     // this happens when the v1 addon wasn't actually getting instantiated at
     // all, which can happen if the app uses `addons.blacklist` or another addon
@@ -39,7 +46,7 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
     return new EmptyPackageTree(originalPackage.name);
   }
 
-  let needsSmooshing = oldPackages[0].hasAnyTrees();
+  let needsSmooshing = oldPackages.length > 1 && oldPackages[0].hasAnyTrees();
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees, { annotation: originalPackage.name });

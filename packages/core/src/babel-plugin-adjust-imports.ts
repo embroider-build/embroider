@@ -462,10 +462,11 @@ function addExtraImports(
 }
 
 function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
+  let value = t.callExpression(adder.import(path, '@embroider/macros', 'importSync'), [t.stringLiteral(target)]);
   return t.expressionStatement(
     t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
       t.stringLiteral(runtimeName),
-      t.functionExpression(null, [], t.blockStatement([t.returnStatement(adder.import(path, target, '*', 'a'))])),
+      t.functionExpression(null, [], t.blockStatement([t.returnStatement(value)])),
     ])
   );
 }

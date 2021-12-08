@@ -242,7 +242,7 @@ function fileAssertionsMatcher(
   let pass = this.isNot ? !state.result : state.result;
   let message = () =>
     `${path}\n` +
-    `Exected: ${this.utils.printExpected(state.expected)}\n` +
+    `Expected: ${this.utils.printExpected(state.expected)}\n` +
     `Received: ${this.utils.printReceived(state.actual)}`;
   return { actual: state.actual, pass, message };
 }

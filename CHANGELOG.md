@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## v0.48.1 (2021-12-08)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1042](https://github.com/embroider-build/embroider/pull/1042) Fix ember-cli-babel optimization ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+
 ## v0.48.0 (2021-12-07)
 
 #### :rocket: Enhancement

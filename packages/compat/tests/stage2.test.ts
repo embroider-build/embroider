@@ -460,9 +460,9 @@ describe('stage2 build', function () {
 
     test('addon/hello-world.js', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
-      assertFile.matches(/import \* as a. from ["']\.\.\/synthetic-import-1/);
+      assertFile.matches(/import \* as a\d? from ["']\.\.\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
-      assertFile.matches(/import \* as a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
+      assertFile.matches(/import \* as a\d? from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
       assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
       assertFile.matches(
         /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,
@@ -472,7 +472,7 @@ describe('stage2 build', function () {
 
     test('app/hello-world.js', function () {
       let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
-      assertFile.matches(/import \* as a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
+      assertFile.matches(/import \* as a\d? from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
       assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
       assertFile.matches(
         /export \{ default \} from ['"]\.\.\/node_modules\/my-addon\/components\/hello-world['"]/,
@@ -490,7 +490,7 @@ describe('stage2 build', function () {
 
     test('uses-inline-template.js', function () {
       let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
-      assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
+      assertFile.matches(/import a\d? from ["']\.\.\/templates\/components\/first-choice.hbs/);
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
     });
 

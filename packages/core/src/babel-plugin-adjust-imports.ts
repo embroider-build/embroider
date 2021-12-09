@@ -8,6 +8,7 @@ import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { handleImportDeclaration } from './mini-modules-polyfill';
+import { ImportUtil } from 'babel-import-util';
 
 interface State {
   adjustFile: AdjustFile;
@@ -350,7 +351,8 @@ export default function main(babel: typeof Babel) {
         enter(path: NodePath<t.Program>, state: State) {
           let opts = ensureOpts(state);
           state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
-          addExtraImports(t, path, opts.extraImports);
+          let adder = new ImportUtil(t, path);
+          addExtraImports(adder, t, path, opts.extraImports);
         },
         exit(path: NodePath<t.Program>, state: State) {
           for (let child of path.get('body')) {
@@ -442,27 +444,29 @@ function rewriteTopLevelImport(
   return join(__dirname, '..');
 };
 
-function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, extraImports: Required<Options>['extraImports']) {
-  let counter = 0;
+function addExtraImports(
+  adder: ImportUtil,
+  t: BabelTypes,
+  path: NodePath<t.Program>,
+  extraImports: Required<Options>['extraImports']
+) {
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
       if (runtimeName) {
-        path.node.body.unshift(amdDefine(t, runtimeName, counter));
-        path.node.body.unshift(
-          t.importDeclaration([t.importNamespaceSpecifier(t.identifier(`a${counter++}`))], t.stringLiteral(target))
-        );
+        path.node.body.unshift(amdDefine(t, adder, path, target, runtimeName));
       } else {
-        path.node.body.unshift(t.importDeclaration([], t.stringLiteral(target)));
+        adder.importForSideEffect(target);
       }
     }
   }
 }
 
-function amdDefine(t: BabelTypes, runtimeName: string, importCounter: number) {
+function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
+  let value = t.callExpression(adder.import(path, '@embroider/macros', 'importSync'), [t.stringLiteral(target)]);
   return t.expressionStatement(
     t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
       t.stringLiteral(runtimeName),
-      t.functionExpression(null, [], t.blockStatement([t.returnStatement(t.identifier(`a${importCounter}`))])),
+      t.functionExpression(null, [], t.blockStatement([t.returnStatement(value)])),
     ])
   );
 }

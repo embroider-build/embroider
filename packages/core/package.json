@@ -40,7 +40,7 @@
     "@embroider/macros": "0.48.1",
     "@embroider/shared-internals": "0.48.1",
     "assert-never": "^1.2.1",
-    "babel-import-util": "^0.2.0",
+    "babel-import-util": "^1.1.0",
     "babel-plugin-ember-template-compilation": "^1.0.0",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",

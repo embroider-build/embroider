@@ -7,9 +7,16 @@ const addon = new Addon({
 });
 
 export default {
+  input: [
+    path.join('src', 'index.js'),
+    // additional entrypoints / top-level files here
+    path.join('src', 'registration.js'),
+  ],
+
   // This provides defaults that work well alongside `publicEntrypoints` below.
   // You can augment this if you need to.
-  output: addon.output(),
+  output: { ...addon.output(), entryFileNames: '[name].js' },
+
 
   plugins: [
     // These are the modules that users should be able to import from your

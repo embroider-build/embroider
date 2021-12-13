@@ -93,14 +93,20 @@ export class HTMLEntrypoint {
           if (supportsFastboot) {
             // if there is any fastboot involved, we will emit the lazy bundles
             // right before our first script.
-            insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, this.publicAssetURL);
+            insertedLazy = maybeInsertLazyBundles(
+              insertedLazy,
+              stats.lazyBundles,
+              placeholder,
+              this.publicAssetURL,
+              this.rootURL
+            );
           }
           for (let [base, fastboot] of zip(matchingBundles, matchingFastbootBundles)) {
             if (!base) {
               // this bundle only exists in the fastboot variant
               let element = placeholder.start.ownerDocument.createElement('fastboot-script');
               // HACK: actual URL in `publicAssetURL` breaks fastboot loading; only absolute path works
-              let src = this.publicAssetURL.match(/^http/) ? '/' : this.publicAssetURL;
+              let src = this.publicAssetURL.match(/^http/) ? this.rootURL : this.publicAssetURL;
               element.setAttribute('src', src + fastboot);
               placeholder.insert(element);
               placeholder.insertNewline();
@@ -111,7 +117,7 @@ export class HTMLEntrypoint {
               // so even if there is not specialized fastboot variant, we need to add one without the URL
               let element = placeholder.insertURL(src);
               if (element && this.publicAssetURL.match(/^http/)) {
-                element.setAttribute('data-fastboot-src', '/' + base);
+                element.setAttribute('data-fastboot-src', this.rootURL + base);
               }
             } else {
               // we have both and they differ
@@ -119,7 +125,7 @@ export class HTMLEntrypoint {
               let element = placeholder.insertURL(src);
               if (element) {
                 // HACK: actual URL in `publicAssetURL` breaks fastboot loading; only absolute path works
-                let src = this.publicAssetURL.match(/^http/) ? '/' : this.publicAssetURL;
+                let src = this.publicAssetURL.match(/^http/) ? this.rootURL : this.publicAssetURL;
                 element.setAttribute('data-fastboot-src', src + fastboot);
               }
             }
@@ -159,13 +165,14 @@ function maybeInsertLazyBundles(
   insertedLazy: boolean,
   lazyBundles: Set<string>,
   placeholder: Placeholder,
-  publicAssetURL: string
+  publicAssetURL: string,
+  rootURL: string
 ): boolean {
   if (!insertedLazy && placeholder.isScript()) {
     for (let bundle of lazyBundles) {
       let element = placeholder.start.ownerDocument.createElement('fastboot-script');
       // HACK: actual URL in `publicAssetURL` breaks fastboot loading; only absolute path works
-      let src = publicAssetURL.match(/^http/) ? '/' : publicAssetURL;
+      let src = publicAssetURL.match(/^http/) ? rootURL : publicAssetURL;
       element.setAttribute('src', src + bundle);
       placeholder.insert(element);
       placeholder.insertNewline();

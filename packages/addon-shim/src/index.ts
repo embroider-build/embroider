@@ -7,6 +7,7 @@ import {
   PackageInfo,
 } from '@embroider/shared-internals';
 import buildFunnel from 'broccoli-funnel';
+import cacheKeyForTree from 'calculate-cache-key-for-tree';
 import type { Node } from 'broccoli-node-api';
 import { satisfies } from 'semver';
 
@@ -137,6 +138,10 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
           },
         });
       }
+    },
+
+    cacheKeyForTree(this: AddonInstance, treeType: string): string {
+      return cacheKeyForTree(treeType, this);
     },
 
     isDevelopingAddon(this: AddonInstance) {

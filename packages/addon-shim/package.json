@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@embroider/shared-internals": "^0.48.1",
+    "calculate-cache-key-for-tree": "^2.0.0",
     "ember-auto-import": "^2.2.0",
     "semver": "^7.3.5"
   },

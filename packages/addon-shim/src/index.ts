@@ -139,6 +139,10 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
     },
 
+    cacheKeyForTree(this: AddonInstance, treeType: string): string {
+      return `embroider-addon-shim/${treeType}/${directory}`;
+    },
+
     isDevelopingAddon(this: AddonInstance) {
       // if the app is inside our own directory, we must be under development.
       // This setting controls whether ember-cli will watch for changes in the

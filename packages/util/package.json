@@ -32,6 +32,9 @@
     "broccoli-funnel": "^3.0.5",
     "ember-cli-babel": "^7.23.1"
   },
+  "peerDependencies": {
+    "ember-source": "*"
+  },
   "devDependencies": {
     "@ember/jquery": "^2.0.0",
     "@ember/optional-features": "^2.0.0",

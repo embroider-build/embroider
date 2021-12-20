@@ -25,7 +25,7 @@ describe(`type-only exports`, function () {
 
   test('each exists', function () {
     expect(each).toBeDefined();
-    expect(macroCondition).toThrow(ERROR_REGEX);
+    expect(each).toThrow(ERROR_REGEX);
   });
 
   test('importSync exists', function () {
@@ -35,12 +35,12 @@ describe(`type-only exports`, function () {
 
   test('getConfig exists', function () {
     expect(getConfig).toBeDefined();
-    expect(importSync).toThrow(ERROR_REGEX);
+    expect(getConfig).toThrow(ERROR_REGEX);
   });
 
   test('getOwnConfig exists', function () {
     expect(getOwnConfig).toBeDefined();
-    expect(importSync).toThrow(ERROR_REGEX);
+    expect(getOwnConfig).toThrow(ERROR_REGEX);
   });
 
   test('failBuild exists', function () {

@@ -154,10 +154,12 @@ function maybeInsertLazyBundles(
 ): boolean {
   if (!insertedLazy && placeholder.isScript()) {
     for (let bundle of lazyBundles) {
-      let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-      element.setAttribute('src', publicAssetURL + bundle);
-      placeholder.insert(element);
-      placeholder.insertNewline();
+      if (bundle.endsWith('.js')) {
+        let element = placeholder.start.ownerDocument.createElement('fastboot-script');
+        element.setAttribute('src', publicAssetURL + bundle);
+        placeholder.insert(element);
+        placeholder.insertNewline();
+      }
     }
     return true;
   }

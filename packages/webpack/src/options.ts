@@ -1,5 +1,7 @@
 import { Configuration } from 'webpack';
 
+import type * as esbuild from 'esbuild';
+
 // [babel-loader](https://webpack.js.org/loaders/babel-loader/#options) specific options.
 // This does not include the babel configuration, which is pulled from the app, only the
 // additional options that `babel-loader` supports.
@@ -8,6 +10,14 @@ export interface BabelLoaderOptions {
   cacheIdentifier?: string;
   cacheCompression?: boolean;
   customize?: string;
+}
+
+export interface EsbuildMinifyOptions {
+  publicPath?: string;
+  sourceRoot?: string;
+  sourcemap?: esbuild.BuildOptions['sourcemap'];
+  exclude?: Array<string | RegExp>;
+  legalComments?: esbuild.BuildOptions['legalComments'];
 }
 
 export interface Options {
@@ -30,4 +40,5 @@ export interface Options {
   threadLoaderOptions?: object | false;
 
   babelLoaderOptions?: BabelLoaderOptions;
+  esbuildMinifyOptions?: EsbuildMinifyOptions;
 }

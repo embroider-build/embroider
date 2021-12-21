@@ -76,6 +76,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private publicAssetURL: string | undefined;
   private extraThreadLoaderOptions: object | false | undefined;
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
+  private extraCssLoaderOptions: object | undefined;
+  private extraStyleLoaderOptions: object | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -93,6 +95,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
+    this.extraCssLoaderOptions = options?.cssLoaderOptions;
+    this.extraStyleLoaderOptions = options?.styleLoaderOptions;
     warmUp(this.extraThreadLoaderOptions);
   }
 
@@ -484,13 +488,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return [
       variant.optimizeForProduction
         ? MiniCssExtractPlugin.loader
-        : { loader: 'style-loader', options: { injectType: 'styleTag' } },
+        : { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
       {
         loader: 'css-loader',
         options: {
           url: true,
           import: true,
           modules: 'global',
+          ...this.extraCssLoaderOptions,
         },
       },
     ];

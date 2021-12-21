@@ -1,5 +1,35 @@
 # Embroider Changelog
 
+## v0.49.0 (2021-12-21)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#1055](https://github.com/embroider-build/embroider/pull/1055) Accept custom `css-loader` and `style-loader` config in `@embroider/webpack` ([@dfreeman](https://github.com/dfreeman))
+* `addon-shim`
+  * [#1052](https://github.com/embroider-build/embroider/pull/1052) restore tree caching via `cacheKeyForTree` ([@RuslanZavacky](https://github.com/RuslanZavacky))
+
+#### :bug: Bug Fix
+* `core`
+  * [#1048](https://github.com/embroider-build/embroider/pull/1048) Fix imported CSS with FastBoot ([@simonihmig](https://github.com/simonihmig))
+  * [#1045](https://github.com/embroider-build/embroider/pull/1045) Append styles imported in JS to end of `document.head` ([@simonihmig](https://github.com/simonihmig))
+* `macros`
+  * [#1059](https://github.com/embroider-build/embroider/pull/1059) cleanup test copy-paste errors ([@ef4](https://github.com/ef4))
+* `compat`, `util`
+  * [#1053](https://github.com/embroider-build/embroider/pull/1053) resolve failed macro condition in ember-private-api ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `compat`, `core`, `shared-internals`
+  * [#1043](https://github.com/embroider-build/embroider/pull/1043) Make extraImports lazy ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1044](https://github.com/embroider-build/embroider/pull/1044) Fix typo in file assertion test matcher ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 6
+- Dan Freeman ([@dfreeman](https://github.com/dfreeman))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Ruslan Zavacky ([@RuslanZavacky](https://github.com/RuslanZavacky))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## v0.48.1 (2021-12-08)
 
 #### :bug: Bug Fix

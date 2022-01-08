@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## v0.50.0 (2022-01-08)
+
+#### :rocket: Enhancement
+* `addon-shim`, `core`, `shared-internals`
+  * [#1069](https://github.com/embroider-build/embroider/pull/1069) Make addon-shim a non-ember-addon ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1068](https://github.com/embroider-build/embroider/pull/1068) Widen the node_modules exclude pattern when copying v2 addons ([@ef4](https://github.com/ef4))
+  * [#1064](https://github.com/embroider-build/embroider/pull/1064) Fix unsafe reuse of broccoli trees in OneShot ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.49.0 (2021-12-21)
 
 #### :rocket: Enhancement

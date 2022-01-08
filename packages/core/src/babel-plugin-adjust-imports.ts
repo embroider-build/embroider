@@ -231,6 +231,31 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return makeExternal(specifier, sourceFile, opts);
   }
 
+  // both auto-upgraded and native v2 packages access the known and approved
+  // ember virtual packages (like @ember/component) at runtime
+  if (emberVirtualPackages.has(packageName)) {
+    return makeExternal(specifier, sourceFile, opts);
+  }
+
+  // both auto-upgraded and native v2 packages access the emberVirtualPeerDeps
+  // directly out of the active addons, because access to the
+  // emberVirtualPeerDeps does not necessarily obey real node_modules
+  // resolution.
+  //
+  // In the case of a native v2 addon, it's important that this happens before
+  // checking isResolvable below, because we *don't* want to resolve the real
+  // copy of one of these packages, because native v2 addons don't necessarily
+  // get moved out of the true node_modules, and there they will see
+  // un-converted copies of the ember virtual peer deps.
+  if (emberVirtualPeerDeps.has(packageName)) {
+    if (!opts.activeAddons[packageName]) {
+      throw new Error(
+        `${pkg.name} is trying to import from ${packageName}, which is supposed to be present in all ember apps but seems to be missing`
+      );
+    }
+    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+  }
+
   let relocatedPkg = sourceFile.relocatedIntoPackage();
   if (relocatedPkg) {
     // this file has been moved into another package (presumably the app).
@@ -278,33 +303,12 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
   }
 
-  // auto-upgraded packages can fall back to attmpeting to find dependencies at
+  // auto-upgraded packages can fall back to attempting to find dependencies at
   // runtime. Native v2 packages can only get this behavior in the
   // isExplicitlyExternal case above because they need to explicitly ask for
   // externals.
   if (pkg.meta['auto-upgraded']) {
     return makeExternal(specifier, sourceFile, opts);
-  }
-
-  if (pkg.isV2Ember()) {
-    // native v2 packages don't automatically externalize *everything* the way
-    // auto-upgraded packages do, but they still externalize known and approved
-    // ember virtual packages (like @ember/component)
-    if (emberVirtualPackages.has(packageName)) {
-      return makeExternal(specifier, sourceFile, opts);
-    }
-
-    // native v2 packages don't automatically get to use every other addon as a
-    // peerDep, but they do get the known and approved ember virtual peer deps,
-    // like @glimmer/component
-    if (emberVirtualPeerDeps.has(packageName)) {
-      if (!opts.activeAddons[packageName]) {
-        throw new Error(
-          `${pkg.name} is trying to import from ${packageName}, which is supposed to be present in all ember apps but seems to be missing`
-        );
-      }
-      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-    }
   }
 
   // non-resolvable imports in dynamic positions become runtime errors, not

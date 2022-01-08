@@ -17,7 +17,7 @@ import mappings from 'ember-rfc176-data/mappings.json';
 // map them into real modules within ember-source.
 export const emberVirtualPackages = new Set<string>(mappings.map((m: any) => m.module));
 
-// these are *real* packages that every ember addon is allow to resolve *as if
+// these are *real* packages that every ember addon is allowed to resolve *as if
 // they were peerDepenedencies, because the host application promises to have
 // these packages. In principle, we could force every addon to declare these as
 // real peerDeps all the way down the dependency graph, but in practice that

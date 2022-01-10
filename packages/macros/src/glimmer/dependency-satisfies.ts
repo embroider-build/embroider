@@ -30,6 +30,12 @@ export default function dependencySatisfies(
 
   let pkg;
   try {
+    let hasPackage = us.dependencies.find(dep => dep.name === packageName);
+
+    if (!hasPackage) {
+      return false;
+    }
+
     pkg = packageCache.resolve(packageName, us);
   } catch (err) {
     // it's not an error if we can't resolve it, we just don't satisfy it.

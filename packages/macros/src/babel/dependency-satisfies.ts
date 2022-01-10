@@ -12,7 +12,7 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
   if (path.node.arguments.length !== 2) {
     throw error(path, `dependencySatisfies takes exactly two arguments, you passed ${path.node.arguments.length}`);
   }
-  let [packageName, range] = path.node.arguments;
+  const [packageName, range] = path.node.arguments;
   if (packageName.type !== 'StringLiteral') {
     throw error(
       assertArray(path.get('arguments'))[0],
@@ -31,6 +31,13 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
     if (!us) {
       return false;
     }
+
+    let hasPackage = us.dependencies.find(dep => dep.name === packageName.value);
+
+    if (!hasPackage) {
+      return false;
+    }
+
     let version = packageCache.resolve(packageName.value, us).version;
     return satisfies(version, range.value, {
       includePrerelease: true,

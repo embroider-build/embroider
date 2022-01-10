@@ -123,5 +123,25 @@ describe(`dependencySatisfies`, function () {
       );
       expect(runDefault(code)).toBe(true);
     });
+
+    test('monorepo resolutions resolve correctly', () => {
+      project = new Project('test-app', '1.0.0');
+      project.addDependency('@embroider/util', '*');
+      project.writeSync();
+
+      process.chdir(project.baseDir);
+
+      let code = transform(`
+        import { dependencySatisfies } from '@embroider/macros';
+
+        // specified in dependencies
+        export const util = dependencySatisfies('@embroider/util', '*');
+        // not specified as any kind of dep
+        export const webpack = dependencySatisfies('@embroider/webpack', '*');
+      `);
+
+      expect(code).toMatch(/util = true/);
+      expect(code).toMatch(/webpack = false/);
+    });
   });
 });

@@ -1,9 +1,23 @@
 import { makeRunner, makeBabelConfig, allModes } from './helpers';
-import { allBabelVersions } from '@embroider/test-support';
+import { allBabelVersions, Project } from '@embroider/test-support';
 import { MacrosConfig } from '../../src/node';
+import { join } from 'path';
 
 describe('macroCondition', function () {
   let config: MacrosConfig;
+  let project: Project;
+  let filename: string;
+
+  beforeAll(() => {
+    project = new Project('test-app');
+    project.addDependency('qunit', '2.0.0');
+    project.writeSync();
+    filename = join(project.baseDir, 'sample.js');
+  });
+
+  afterAll(() => {
+    project?.dispose();
+  });
 
   allBabelVersions({
     babelConfig(version: number) {
@@ -11,6 +25,7 @@ describe('macroCondition', function () {
       if (version === 7) {
         babelConfig.plugins.push('@babel/plugin-proposal-class-properties');
       }
+      babelConfig.filename = filename;
       return babelConfig;
     },
     includePresetsTests: true,
@@ -18,7 +33,9 @@ describe('macroCondition', function () {
       let run = makeRunner(transform);
       beforeEach(function () {
         config = MacrosConfig.for({});
-        config.setConfig(__filename, 'qunit', { items: [{ approved: true, other: null, size: 2.3 }] });
+        config.setConfig(join(project.baseDir, 'sample.js'), 'qunit', {
+          items: [{ approved: true, other: null, size: 2.3 }],
+        });
         applyMode(config);
         config.finalize();
       });
@@ -34,7 +51,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/beta/);
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
@@ -53,7 +70,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).toMatch(/beta/);
         expect(code).toMatch(/macroCondition/);
         expect(code).toMatch(/if/);
@@ -69,7 +86,7 @@ describe('macroCondition', function () {
           return 'alpha';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/beta/);
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
@@ -88,7 +105,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('beta');
+        expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/if/);
@@ -103,7 +120,7 @@ describe('macroCondition', function () {
         return macroCondition(true) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/beta/);
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/\?/);
@@ -118,7 +135,7 @@ describe('macroCondition', function () {
         return macroCondition(true) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).toMatch(/beta/);
         expect(code).toMatch(/macroCondition/);
         expect(code).toMatch(/\?/);
@@ -133,7 +150,7 @@ describe('macroCondition', function () {
         return macroCondition(false) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('beta');
+        expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/\?/);
@@ -150,7 +167,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/macroCondition/);
         expect(code).not.toMatch(/@embroider\/macros/);
         expect(code).not.toMatch(/\/runtime/);
@@ -165,7 +182,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe(undefined);
+        expect(run(code, { filename })).toBe(undefined);
       });
 
       buildTimeTest('else if consequent', () => {
@@ -181,7 +198,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('beta');
+        expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
         expect(code).not.toMatch(/gamma/);
       });
@@ -199,7 +216,7 @@ describe('macroCondition', function () {
         }
       }
       `);
-        expect(run(code)).toBe('gamma');
+        expect(run(code, { filename })).toBe('gamma');
         expect(code).not.toMatch(/alpha/);
         expect(code).not.toMatch(/beta/);
       });
@@ -281,7 +298,7 @@ describe('macroCondition', function () {
         return macroCondition(dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/beta/);
       });
 
@@ -292,7 +309,7 @@ describe('macroCondition', function () {
         return macroCondition(dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).toMatch(/beta/);
       });
 
@@ -315,7 +332,7 @@ describe('macroCondition', function () {
         return { qunit, notARealPackage };
       }
       `);
-        expect(run(code)).toEqual({ qunit: 'found', notARealPackage: 'not found' });
+        expect(run(code, { filename })).toEqual({ qunit: 'found', notARealPackage: 'not found' });
         expect(code).not.toMatch(/beta/);
       });
 
@@ -326,7 +343,7 @@ describe('macroCondition', function () {
         return macroCondition((2 > 1) && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).toMatch(/beta/);
       });
 
@@ -337,7 +354,7 @@ describe('macroCondition', function () {
         return macroCondition((2 > 1) && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('alpha');
+        expect(run(code, { filename })).toBe('alpha');
         expect(code).not.toMatch(/beta/);
       });
 
@@ -350,7 +367,7 @@ describe('macroCondition', function () {
         return macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('beta');
+        expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
       });
 
@@ -363,7 +380,7 @@ describe('macroCondition', function () {
         return macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
       }
       `);
-        expect(run(code)).toBe('beta');
+        expect(run(code, { filename })).toBe('beta');
         expect(code).toMatch(/alpha/);
       });
 
@@ -379,7 +396,7 @@ describe('macroCondition', function () {
               return test.version;
             }
           `);
-          expect(run(code)).toBe('beta');
+          expect(run(code, { filename })).toBe('beta');
           expect(code).not.toMatch(/alpha/);
         });
 
@@ -394,7 +411,7 @@ describe('macroCondition', function () {
               return test.version;
             }
           `);
-          expect(run(code)).toBe('beta');
+          expect(run(code, { filename })).toBe('beta');
           expect(code).toMatch(/alpha/);
         });
       }

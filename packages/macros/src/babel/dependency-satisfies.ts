@@ -32,15 +32,7 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
       return false;
     }
 
-    let hasPackage = us.dependencies.find(dep => dep.name === packageName.value);
-    console.log('babel', {
-      name: packageName.value,
-      host: us.name,
-      deps: us.dependencies.map(x => x.name),
-      missing: [...(us.nonResolvableDeps?.values() || [])].map(x => x.name),
-    });
-
-    if (!hasPackage) {
+    if (us.dependencies.every(dep => dep.name !== packageName.value)) {
       return false;
     }
 

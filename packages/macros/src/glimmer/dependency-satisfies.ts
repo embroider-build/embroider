@@ -32,6 +32,10 @@ export default function dependencySatisfies(
   try {
     let hasPackage = us.dependencies.find(dep => dep.name === packageName);
 
+    console.log('glimmer', packageName, {
+      deps: us.dependencies.map(x => x.name),
+      missing: [...(us.nonResolvableDeps?.values() || [])].map(x => x.name),
+    });
     if (!hasPackage) {
       return false;
     }

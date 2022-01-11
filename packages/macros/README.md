@@ -106,6 +106,26 @@ if (macroCondition(foo)) {
 }
 ```
 
+### each
+
+The `each` macro can be used to unroll `for ... of` loops, replacing entire loop with each iteration of the body. This can be useful when importing an array of files with `importSync` below. Doing so will ensure only the files needed are included in the build output, rather than lazy loading all possible file inclusions. This macro requires one argument, a statically analyzable array.
+
+```js
+import { each, getOwnConfig, importSync } from "@embroider/macros";
+
+for (let asset of each(getOwnConfig().importAssets)) {
+  importSync(asset);
+}
+
+// Compiles to the following, given getOwnConfig() returns;
+// { importAssets: ["pkg-name/assets/foo", "pkg-name/assets/bar"]}
+
+importSync("pkg-name/assets/foo");
+importSync("pkg-name/assets/bar");
+```
+
+Note that variable names in the loop body are simply replaced with the element value as-is. Ex: `importSync(``pkg-name/assets/${asset}``);` becomes `importSync(``pkg-name/assets/${"foo"}``);` and `importSync("pkg-name/assets/" + asset);` becomes `importSync("pkg-name/assets/" + "foo");`
+
 ### importSync
 
 The primary reason for Embroider's existence is to create statically analyzable builds. An under pinning of this

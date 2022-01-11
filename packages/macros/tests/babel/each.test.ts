@@ -13,12 +13,16 @@ describe('each', function () {
     createTests: allModes(function (transform, { applyMode }) {
       beforeEach(function () {
         macrosConfig = MacrosConfig.for({});
-        macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
+        macrosConfig.setOwnConfig(__filename, {
+          importAssets: ['pkg-name/assets/foo', 'pkg-name/assets/bar'],
+          plugins: ['alpha', 'beta'],
+          flavor: 'chocolate',
+        });
         applyMode(macrosConfig);
         macrosConfig.finalize();
       });
 
-      test('plugins example unrolls correctly', () => {
+      test('rfc example unrolls correctly', () => {
         let code = transform(`
       import { each, getOwnConfig, importSync } from '@embroider/macros';
       let plugins = [];
@@ -28,6 +32,18 @@ describe('each', function () {
       `);
         expect(code).toMatch(/plugins\.push\(require\(["']beta['"]\)\)/);
         expect(code).toMatch(/plugins\.push\(require\(["']alpha['"]\)\)/);
+        expect(code).not.toMatch(/for/);
+      });
+
+      test('documentation example unrolls correctly', () => {
+        let code = transform(`
+      import { each, getOwnConfig, importSync } from "@embroider/macros";
+      for (let asset of each(getOwnConfig().importAssets)) {
+        importSync(asset);
+      }
+      `);
+        expect(code).toMatch(/require\(["']pkg-name\/assets\/foo['"]\)/);
+        expect(code).toMatch(/require\(["']pkg-name\/assets\/bar['"]\)/);
         expect(code).not.toMatch(/for/);
       });
 

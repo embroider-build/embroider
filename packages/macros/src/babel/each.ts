@@ -45,21 +45,16 @@ export function insertEach(path: EachPath, state: State, context: typeof Babel) 
     throw error(args[0], `the argument to the each() macro must be statically known`);
   }
 
-  if (state.opts.mode === 'compile-time' && !Array.isArray(array.value)) {
+  if (!Array.isArray(array.value)) {
     throw error(args[0], `the argument to the each() macro must be an array`);
   }
 
-  if (state.opts.mode === 'run-time') {
-    let callee = path.get('right').get('callee');
-    state.neededRuntimeImports.set(callee.node.name, 'each');
-  } else {
-    for (let element of array.value) {
-      let literalElement = buildLiterals(element, context);
-      for (let target of nameRefs) {
-        target.replaceWith(literalElement);
-      }
-      path.insertBefore(cloneDeep(path.get('body').node, state));
+  for (let element of array.value) {
+    let literalElement = buildLiterals(element, context);
+    for (let target of nameRefs) {
+      target.replaceWith(literalElement);
     }
-    path.remove();
+    path.insertBefore(cloneDeep(path.get('body').node, state));
   }
+  path.remove();
 }

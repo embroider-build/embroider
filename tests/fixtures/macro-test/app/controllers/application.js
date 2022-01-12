@@ -8,10 +8,10 @@ export default class Application extends Controller {
     this.isTesting = isTesting();
     this.isDeveloping = isDevelopingApp();
 
-    if (macroCondition(dependencySatisfies('lodash', '^4'))) {
-      this.lodashVersion = 'four';
+    if (macroCondition(dependencySatisfies('version-changer', '^4'))) {
+      this.versionChangerVersion = 'four';
     } else {
-      this.lodashVersion = 'three';
+      this.versionChangerVersion = 'three';
     }
   }
 }

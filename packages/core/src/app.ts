@@ -1468,7 +1468,7 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 }
 
 const babelFilterTemplate = compile(`
-const { babelFilter } = require('@embroider/core');
+const { babelFilter } = require(${JSON.stringify(require.resolve('./index.js'))});
 module.exports = babelFilter({{{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 

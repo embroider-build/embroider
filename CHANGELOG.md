@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## v0.50.1 (2022-01-12)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1074](https://github.com/embroider-build/embroider/pull/1074) Ensure `babelFilter` config comes from fully qualified `@embroider/core` path in Stage 2 ([@krisselden](https://github.com/krisselden))
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#1070](https://github.com/embroider-build/embroider/pull/1070) Ensure `dependencySatisfies` only considers actual dependencies (includes a fix for invalid results within monorepo scenarios) ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+
 ## v0.50.0 (2022-01-08)
 
 #### :rocket: Enhancement

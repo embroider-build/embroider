@@ -28,9 +28,8 @@ export default interface Stage {
     // to not change once you get it.
     readonly outputPath: string;
 
-    // This optionally allows the Stage to share a PackageCache with the next
-    // Stage, as an optimization. If the Stage uses a PackageCache, it _should_
-    // share it here.
-    readonly packageCache?: PackageCache;
+    // Stages must propagate their PackageCache forward to the next stage so we
+    // don't repeat a lot of resolving work.
+    readonly packageCache: PackageCache;
   }>;
 }

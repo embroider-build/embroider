@@ -242,5 +242,6 @@ class StubResolver implements Resolver {
     relocatedFiles: {},
     resolvableExtensions: ['.js', '.hbs'],
     emberNeedsModulesPolyfill: true,
+    appRoot: '/tmp/nonexistent',
   };
 }

@@ -4,11 +4,9 @@ import crypto from 'crypto';
 import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
 import { PackageCache, getOrCreate } from '@embroider/shared-internals';
-import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
+import { FirstTransformParams, makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import State from './babel/state';
 import partition from 'lodash/partition';
-
-const packageCache = new PackageCache();
 
 export type SourceOfConfig = (config: object) => {
   readonly name: string;
@@ -54,7 +52,7 @@ function gatherAddonCacheKey(item: any, memo = new Set()) {
 }
 
 export default class MacrosConfig {
-  static for(key: any): MacrosConfig {
+  static for(key: any, appRoot: string): MacrosConfig {
     let found = localSharedState.get(key);
     if (found) {
       return found;
@@ -81,7 +79,7 @@ export default class MacrosConfig {
       g.__embroider_macros_global__.set(key, shared);
     }
 
-    let config = new MacrosConfig();
+    let config = new MacrosConfig(appRoot);
     config.configs = shared.configs;
     config.configSources = shared.configSources;
     config.mergers = shared.mergers;
@@ -93,7 +91,6 @@ export default class MacrosConfig {
   private globalConfig: { [key: string]: unknown } = {};
 
   private isDevelopingPackageRoots: Set<string> = new Set();
-  private appPackageRoot: string | undefined;
 
   enableRuntimeMode() {
     if (this.mode !== 'run-time') {
@@ -101,23 +98,6 @@ export default class MacrosConfig {
         throw new Error(`[Embroider:MacrosConfig] attempted to enableRuntimeMode after configs have been finalized`);
       }
       this.mode = 'run-time';
-    }
-  }
-
-  enableAppDevelopment(appPackageRoot: string) {
-    if (!appPackageRoot) {
-      throw new Error(`must provide appPackageRoot`);
-    }
-    if (this.appPackageRoot) {
-      if (this.appPackageRoot !== appPackageRoot && this.moves.get(this.appPackageRoot) !== appPackageRoot) {
-        throw new Error(`bug: conflicting appPackageRoots ${this.appPackageRoot} vs ${appPackageRoot}`);
-      }
-    } else {
-      if (!this._configWritable) {
-        throw new Error(`[Embroider:MacrosConfig] attempted to enableAppDevelopment after configs have been finalized`);
-      }
-      this.appPackageRoot = appPackageRoot;
-      this.isDevelopingPackageRoots.add(appPackageRoot);
     }
   }
 
@@ -147,7 +127,9 @@ export default class MacrosConfig {
     this._importSyncImplementation = value;
   }
 
-  private constructor() {
+  private packageCache: PackageCache;
+
+  private constructor(private appRoot: string) {
     // this uses globalConfig because these things truly are global. Even if a
     // package doesn't have a dep or peerDep on @embroider/macros, it's legit
     // for them to want to know the answer to these questions, and there is only
@@ -165,6 +147,7 @@ export default class MacrosConfig {
       //    true to distinguish the two.
       isTesting: false,
     };
+    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
   }
 
   private _configWritable = true;
@@ -243,7 +226,7 @@ export default class MacrosConfig {
 
     if (!this.cachedUserConfigs) {
       let userConfigs: { [packageRoot: string]: object } = {};
-      let sourceOfConfig = makeConfigSourcer(this.configSources);
+      let sourceOfConfig = this.makeConfigSourcer(this.configSources);
       for (let [pkgRoot, configs] of this.configs) {
         let combined: object;
         if (configs.length > 1) {
@@ -260,6 +243,35 @@ export default class MacrosConfig {
     }
 
     return this.cachedUserConfigs;
+  }
+
+  private makeConfigSourcer(configSources: WeakMap<object, string>): SourceOfConfig {
+    return config => {
+      let fromPath = configSources.get(config);
+      if (!fromPath) {
+        throw new Error(
+          `unknown object passed to sourceOfConfig(). You can only pass back the configs you were given.`
+        );
+      }
+      let maybePkg = this.packageCache.ownerOfFile(fromPath);
+      if (!maybePkg) {
+        throw new Error(
+          `bug: unexpected error, we always check that fromPath is owned during internalSetConfig so this should never happen`
+        );
+      }
+      let pkg = maybePkg;
+      return {
+        get name() {
+          return pkg.name;
+        },
+        get version() {
+          return pkg.version;
+        },
+        get root() {
+          return pkg.root;
+        },
+      };
+    };
   }
 
   // to be called from within your build system. Returns the thing you should
@@ -285,7 +297,7 @@ export default class MacrosConfig {
       owningPackageRoot,
 
       isDevelopingPackageRoots: [...this.isDevelopingPackageRoots].map(root => this.moves.get(root) || root),
-      appPackageRoot: this.appPackageRoot ? this.moves.get(this.appPackageRoot) || this.appPackageRoot : '',
+      appPackageRoot: this.moves.get(this.appRoot) ?? this.appRoot,
 
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.
@@ -337,34 +349,33 @@ export default class MacrosConfig {
   static astPlugins(owningPackageRoot?: string): {
     plugins: Function[];
     setConfig: (config: MacrosConfig) => void;
-    getConfigForPlugin(): any;
+    lazyParams: FirstTransformParams;
   } {
     let configs: MacrosConfig | undefined;
-    let plugins = [
-      makeFirstTransform({
-        // this is deliberately lazy because we want to allow everyone to finish
-        // setting config before we generate the userConfigs
-        get userConfigs() {
-          if (!configs) {
-            throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
-          }
-          return configs.userConfigs;
-        },
-        baseDir: owningPackageRoot,
-      }),
-      makeSecondTransform(),
-    ].reverse();
+
+    let lazyParams = {
+      // this is deliberately lazy because we want to allow everyone to finish
+      // setting config before we generate the userConfigs
+      get configs() {
+        if (!configs) {
+          throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
+        }
+        return configs.userConfigs;
+      },
+      packageRoot: owningPackageRoot,
+      get appRoot() {
+        if (!configs) {
+          throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
+        }
+        return configs.appRoot;
+      },
+    };
+
+    let plugins = [makeFirstTransform(lazyParams), makeSecondTransform()].reverse();
     function setConfig(c: MacrosConfig) {
       configs = c;
     }
-    function getConfigForPlugin() {
-      if (!configs) {
-        throw new Error(`Bug: @embroider/macros ast-transforms were not plugged into a MacrosConfig`);
-      }
-
-      return configs.userConfigs;
-    }
-    return { plugins, setConfig, getConfigForPlugin };
+    return { plugins, setConfig, lazyParams };
   }
 
   private mergerFor(pkgRoot: string) {
@@ -387,21 +398,13 @@ export default class MacrosConfig {
 
   private moves: Map<string, string> = new Map();
 
-  getConfig(fromPath: string, packageName: string) {
-    return this.userConfigs[this.resolvePackage(fromPath, packageName).root];
-  }
-
-  getOwnConfig(fromPath: string) {
-    return this.userConfigs[this.resolvePackage(fromPath, undefined).root];
-  }
-
   private resolvePackage(fromPath: string, packageName?: string | undefined) {
-    let us = packageCache.ownerOfFile(fromPath);
+    let us = this.packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`[Embroider:MacrosConfig] unable to determine which npm package owns the file ${fromPath}`);
     }
     if (packageName) {
-      return packageCache.resolve(packageName, us);
+      return this.packageCache.resolve(packageName, us);
     } else {
       return us;
     }
@@ -416,32 +419,5 @@ function defaultMergerFor(pkgRoot: string) {
   return function defaultMerger(configs: object[], { sourceOfConfig }: { sourceOfConfig: SourceOfConfig }): object {
     let [ownConfigs, otherConfigs] = partition(configs, c => sourceOfConfig(c as object).root === pkgRoot);
     return Object.assign({}, ...ownConfigs, ...otherConfigs);
-  };
-}
-
-function makeConfigSourcer(configSources: WeakMap<object, string>): SourceOfConfig {
-  return config => {
-    let fromPath = configSources.get(config);
-    if (!fromPath) {
-      throw new Error(`unknown object passed to sourceOfConfig(). You can only pass back the configs you were given.`);
-    }
-    let maybePkg = packageCache.ownerOfFile(fromPath);
-    if (!maybePkg) {
-      throw new Error(
-        `bug: unexpected error, we always check that fromPath is owned during internalSetConfig so this should never happen`
-      );
-    }
-    let pkg = maybePkg;
-    return {
-      get name() {
-        return pkg.name;
-      },
-      get version() {
-        return pkg.version;
-      },
-      get root() {
-        return pkg.root;
-      },
-    };
   };
 }

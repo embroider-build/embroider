@@ -107,6 +107,7 @@ describe('compat-resolver', function () {
           relocatedFiles: {},
           resolvableExtensions: ['.js', '.hbs'],
           emberNeedsModulesPolyfill: false,
+          appRoot: appDir,
         },
         otherOptions.adjustImportsImports
       ),

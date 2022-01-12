@@ -19,6 +19,8 @@ export default interface State {
   // module value.
   neededEagerImports: Map<string, NodePath[]>;
 
+  packageCache: PackageCache;
+
   opts: {
     userConfigs: {
       [pkgRoot: string]: unknown;
@@ -37,9 +39,9 @@ export default interface State {
     // path to their package root directory
     isDevelopingPackageRoots: string[];
 
-    // the package root directory of the app, if the app is under active
-    // development. Needed so that we can get consistent answers to
-    // `isDevelopingApp` and `isDeveopingThisPackage`
+    // the package root directory of the app. Needed so that we can get
+    // consistent answers to `isDevelopingApp` and `isDeveopingThisPackage`, as
+    // well as consistent handling of Package devDependencies vs dependencies.
     appPackageRoot: string;
 
     embroiderMacrosConfigMarker: true;
@@ -74,11 +76,9 @@ export function sourceFile(path: NodePath, state: State): string {
   return state.opts.owningPackageRoot || path.hub.file.opts.filename;
 }
 
-const packageCache = PackageCache.shared('embroider-stage3');
-
 export function owningPackage(path: NodePath, state: State): Package {
   let file = sourceFile(path, state);
-  let pkg = packageCache.ownerOfFile(file);
+  let pkg = state.packageCache.ownerOfFile(file);
   if (!pkg) {
     throw new Error(`unable to determine which npm package owns the file ${file}`);
   }

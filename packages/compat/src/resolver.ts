@@ -416,7 +416,7 @@ export default class CompatResolver implements Resolver {
   }
 
   absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
-    let pkg = owningPackage || PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
+    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
       for (let [runtimeName, realName] of Object.entries(this.adjustImportsOptions.renamePackages)) {
@@ -454,7 +454,7 @@ export default class CompatResolver implements Resolver {
   private tryHelper(path: string, from: string): Resolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
       let packageName = parts[0];
       let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
@@ -488,7 +488,7 @@ export default class CompatResolver implements Resolver {
   private tryModifier(path: string, from: string): Resolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
       let packageName = parts[0];
       let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
@@ -527,7 +527,7 @@ export default class CompatResolver implements Resolver {
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
       let packageName = parts[0];
       let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {

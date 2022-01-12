@@ -7,15 +7,15 @@ import { loadFromFixtureData } from './helpers';
 import fs from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
 
-function updateLodashVersion(app: PreparedApp, version: string) {
-  let pkgJson = fs.readJsonSync(join(app.dir, 'package.json'));
-  let pkgJsonLodash = fs.readJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'));
+function updateVersionChanger(app: PreparedApp, version: string) {
+  let pkgJsonApp = fs.readJsonSync(join(app.dir, 'package.json'));
+  let pkgJsonLib = fs.readJsonSync(join(app.dir, 'node_modules', 'version-changer', 'package.json'));
 
-  pkgJson.devDependencies.lodash = version;
-  pkgJsonLodash.version = version;
+  pkgJsonApp.devDependencies['version-changer'] = version;
+  pkgJsonLib.version = version;
 
-  fs.writeJsonSync(join(app.dir, 'package.json'), pkgJson);
-  fs.writeJsonSync(join(app.dir, 'node_modules', 'lodash', 'package.json'), pkgJsonLodash);
+  fs.writeJsonSync(join(app.dir, 'package.json'), pkgJsonApp);
+  fs.writeJsonSync(join(app.dir, 'node_modules', 'version-changer', 'package.json'), pkgJsonLib);
 }
 
 function scenarioSetup(project: Project) {
@@ -34,7 +34,7 @@ function scenarioSetup(project: Project) {
   funkySampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
   macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-  project.linkDevDependency('lodash', { baseDir: __dirname });
+  project.addDevDependency('version-changer', '4.0.0');
 
   project.addDevDependency(macroSampleAddon);
   project.addDevDependency(funkySampleAddon);
@@ -80,30 +80,29 @@ appReleaseScenario
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        updateLodashVersion(app, '4.0.0');
       });
 
       test(`@embroider/macros babel caching plugin works`, async function (assert) {
-        let lodashFourRun = await app.execute(`yarn test`);
-        assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
+        let fourRun = await app.execute(`yarn test`);
+        assert.equal(fourRun.exitCode, 0, fourRun.output);
 
         // simulate a different version being installed
-        updateLodashVersion(app, '3.0.0');
+        updateVersionChanger(app, '3.0.0');
 
-        let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three yarn test`);
+        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three yarn test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
 
       test(`CLASSIC=true @embroider/macros babel caching plugin works`, async function (assert) {
-        updateLodashVersion(app, '4.0.1');
+        updateVersionChanger(app, '4.0.1');
 
         let lodashFourRun = await app.execute(`cross-env CLASSIC=true yarn test`);
         assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
 
         // simulate a different version being installed
-        updateLodashVersion(app, '3.0.0');
+        updateVersionChanger(app, '3.0.0');
 
-        let lodashThreeRun = await app.execute(`cross-env LODASH_VERSION=three CLASSIC=true yarn test`);
+        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three CLASSIC=true yarn test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
     });

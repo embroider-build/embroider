@@ -71,7 +71,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
-    let appPackage = packageCache.getApp(appSrcDir);
+    let appPackage = packageCache.get(appSrcDir);
     let adapter = new CompatAppAdapter(
       root,
       appPackage,
@@ -82,7 +82,13 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
-    return new AppBuilder<TreeNames>(root, appPackage, adapter, options, MacrosConfig.for(legacyEmberAppInstance));
+    return new AppBuilder<TreeNames>(
+      root,
+      appPackage,
+      adapter,
+      options,
+      MacrosConfig.for(legacyEmberAppInstance, appSrcDir)
+    );
   };
 
   return { inTrees, instantiate };
@@ -387,6 +393,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       // persistent caching.
       externalsDir: join(tmpdir, 'embroider', 'externals'),
       emberNeedsModulesPolyfill,
+      appRoot: this.root,
     };
   }
 

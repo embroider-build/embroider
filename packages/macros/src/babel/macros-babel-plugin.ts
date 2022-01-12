@@ -11,8 +11,6 @@ import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
 import type * as Babel from '@babel/core';
 
-const packageCache = PackageCache.shared('embroider-stage3');
-
 export default function main(context: typeof Babel): unknown {
   let t = context.types;
   let visitor = {
@@ -24,6 +22,7 @@ export default function main(context: typeof Babel): unknown {
         state.calledIdentifiers = new Set();
         state.neededRuntimeImports = new Map();
         state.neededEagerImports = new Map();
+        state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
       },
       exit(path: NodePath<t.Program>, state: State) {
         pruneMacroImports(path);
@@ -54,7 +53,7 @@ export default function main(context: typeof Babel): unknown {
       enter(path: NodePath<t.FunctionDeclaration>, state: State) {
         let id = path.get('id');
         if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
-          let pkg = packageCache.ownerOfFile(sourceFile(path, state));
+          let pkg = state.packageCache.ownerOfFile(sourceFile(path, state));
           if (pkg && pkg.name === '@embroider/macros') {
             inlineRuntimeConfig(path, state, context);
           }
@@ -268,7 +267,7 @@ function addEagerImports(path: NodePath<t.Program>, state: State, t: typeof Babe
 
 function ownedByEmberPackage(path: NodePath, state: State) {
   let filename = sourceFile(path, state);
-  let pkg = packageCache.ownerOfFile(filename);
+  let pkg = state.packageCache.ownerOfFile(filename);
   return pkg && pkg.isEmberPackage();
 }
 

@@ -31,12 +31,12 @@ export default class PrebuiltAddons implements Stage {
 }
 
 class RehomedPackageCache extends PackageCache {
-  constructor(private appSrcDir: string, private appDestDir: string) {
-    super();
+  constructor(private appSrcDir: string, appDestDir: string) {
+    super(appDestDir);
   }
   basedir(pkg: Package): string {
     if (pkg.root === this.appSrcDir) {
-      return this.appDestDir;
+      return this.appRoot;
     }
     return super.basedir(pkg);
   }

@@ -1,6 +1,4 @@
-import { PackageCache } from '@embroider/shared-internals';
-
-let packageCache = PackageCache.shared('embroider-stage3');
+import type { PackageCache } from '@embroider/shared-internals';
 
 export default function getConfig(
   node: any,
@@ -11,7 +9,8 @@ export default function getConfig(
   // unconfigured and moduleName will be the full path to the source file.
   baseDir: string | undefined,
   moduleName: string,
-  own: boolean
+  own: boolean,
+  packageCache: PackageCache
 ) {
   let targetConfig;
   let params = node.params.slice();

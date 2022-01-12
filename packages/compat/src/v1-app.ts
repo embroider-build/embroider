@@ -9,7 +9,6 @@ import { Node } from 'broccoli-node-api';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import {
-  PackageCache,
   TemplateCompiler,
   TemplateCompilerPlugins,
   AddonMeta,
@@ -23,7 +22,7 @@ import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, ex
 import AddToTree from './add-to-tree';
 import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
-import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
+import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
@@ -33,6 +32,7 @@ import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
+import { MovablePackageCache } from './moved-package-cache';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -51,12 +51,12 @@ export default class V1App {
   // used to signal that this is a dummy app owned by a particular addon
   owningAddon: Package | undefined;
 
-  static create(app: EmberAppInstance, packageCache: PackageCache): V1App {
+  static create(app: EmberAppInstance): V1App {
     if (app.project.pkg.keywords?.includes('ember-addon')) {
       // we are a dummy app, which is unfortunately weird and special
-      return new V1DummyApp(app, packageCache);
+      return new V1DummyApp(app);
     } else {
-      return new V1App(app, packageCache);
+      return new V1App(app);
     }
   }
 
@@ -64,7 +64,11 @@ export default class V1App {
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
-  protected constructor(protected app: EmberAppInstance, protected packageCache: PackageCache) {}
+  packageCache: MovablePackageCache;
+
+  protected constructor(protected app: EmberAppInstance) {
+    this.packageCache = new MovablePackageCache(MacrosConfig.for(app, this.root), this.root);
+  }
 
   // always the name from package.json. Not the one that apps may have weirdly
   // customized.
@@ -742,9 +746,9 @@ function throwIfMissing<T>(
 }
 
 class V1DummyApp extends V1App {
-  constructor(app: EmberAppInstance, packageCache: PackageCache) {
-    super(app, packageCache);
-    this.owningAddon = new OwningAddon(this.app.project.root, packageCache);
+  constructor(app: EmberAppInstance) {
+    super(app);
+    this.owningAddon = new OwningAddon(this.app.project.root, this.packageCache);
     this.packageCache.seed(this.owningAddon);
     this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
   }

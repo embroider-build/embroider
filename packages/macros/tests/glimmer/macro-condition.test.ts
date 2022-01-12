@@ -1,7 +1,15 @@
-import { templateTests } from './helpers';
+import { Project } from '@embroider/test-support';
+import { join } from 'path';
+import { templateTests, TemplateTransformOptions } from './helpers';
 
 describe(`macroCondition`, function () {
-  templateTests(function (transform: (code: string) => string) {
+  let project: Project;
+
+  afterEach(() => {
+    project?.dispose();
+  });
+
+  templateTests(function (transform: (code: string, opts?: TemplateTransformOptions) => string) {
     test('leaves regular if-block untouched', function () {
       let code = transform(`{{#if this.error}}red{{else}}blue{{/if}}`);
       expect(code).toEqual(`{{#if this.error}}red{{else}}blue{{/if}}`);
@@ -55,15 +63,23 @@ describe(`macroCondition`, function () {
     });
 
     test('macroCondition composes with other macros, true case', function () {
+      project = new Project('app');
+      project.addDependency('ember-source', '3.1.2');
+      project.writeSync();
       let code = transform(
-        `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x')) 'red' 'blue') }}`
+        `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x')) 'red' 'blue') }}`,
+        { filename: join(project.baseDir, 'sample.js') }
       );
       expect(code).toMatch(/\{\{my-assertion ["']red["']\}\}/);
     });
 
     test('macroCondition composes with other macros, false case', function () {
+      project = new Project('app');
+      project.addDependency('ember-source', '3.1.2');
+      project.writeSync();
       let code = transform(
-        `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`
+        `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`,
+        { filename: join(project.baseDir, 'sample.js') }
       );
       expect(code).toMatch(/\{\{my-assertion ["']blue["']\}\}/);
     });

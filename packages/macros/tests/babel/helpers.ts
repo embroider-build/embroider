@@ -105,7 +105,7 @@ export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfi
     },
 
     createTests(transform) {
-      config = MacrosConfig.for({});
+      config = MacrosConfig.for({}, __dirname);
       if (createTests.length === 1) {
         // The caller will not be using `config`, so we finalize it for them.
         config.finalize();

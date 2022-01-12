@@ -46,6 +46,7 @@ describe('audit', function () {
             relocatedFiles: {},
             resolvableExtensions,
             emberNeedsModulesPolyfill: true,
+            appRoot: app.baseDir,
           },
         }),
       },

@@ -28,11 +28,7 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
   let sourceFileName = sourceFile(path, state);
   try {
     let us = packageCache.ownerOfFile(sourceFileName);
-    if (!us) {
-      return false;
-    }
-
-    if (us.dependencies.every(dep => dep.name !== packageName.value)) {
+    if (!us || us.dependencies.every(dep => dep.name !== packageName.value)) {
       return false;
     }
 

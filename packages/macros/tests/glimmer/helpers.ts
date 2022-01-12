@@ -12,7 +12,7 @@ export { Project };
 type CreateTestsWithConfig = (transform: (templateContents: string) => string, config: MacrosConfig) => void;
 type CreateTests = (transform: (templateContents: string) => string) => void;
 
-interface TemplateTransformOptions {
+export interface TemplateTransformOptions {
   filename?: string;
 }
 

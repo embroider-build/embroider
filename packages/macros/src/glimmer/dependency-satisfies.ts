@@ -24,22 +24,12 @@ export default function dependencySatisfies(
   let range = node.params[1].value;
 
   let us = packageCache.ownerOfFile(baseDir || moduleName);
-  if (!us) {
+  if (!us || us.dependencies.every(dep => dep.name !== packageName)) {
     return false;
   }
 
   let pkg;
   try {
-    let hasPackage = us.dependencies.find(dep => dep.name === packageName);
-
-    console.log('glimmer', packageName, {
-      deps: us.dependencies.map(x => x.name),
-      missing: [...(us.nonResolvableDeps?.values() || [])].map(x => x.name),
-    });
-    if (!hasPackage) {
-      return false;
-    }
-
     pkg = packageCache.resolve(packageName, us);
   } catch (err) {
     // it's not an error if we can't resolve it, we just don't satisfy it.

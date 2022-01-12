@@ -6,11 +6,8 @@ const ROOT = process.cwd();
 
 describe(`dependencySatisfies`, function () {
   let project: Project;
-  let config: MacrosConfig;
 
   beforeEach(() => {
-    config = MacrosConfig.for({});
-    config.finalize();
     project = new Project('test-app');
   });
 
@@ -23,6 +20,8 @@ describe(`dependencySatisfies`, function () {
     includePresetsTests: true,
     babelConfig() {
       project.writeSync();
+      let config = MacrosConfig.for({}, project.baseDir);
+      config.finalize();
       return {
         filename: join(project.baseDir, 'sample.js'),
         plugins: config.babelPluginConfig(),

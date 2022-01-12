@@ -18,7 +18,7 @@ export interface TemplateTransformOptions {
 
 export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
   let { plugins, setConfig } = MacrosConfig.astPlugins();
-  let config = MacrosConfig.for({});
+  let config = MacrosConfig.for({}, '/nonexistent');
   setConfig(config);
   let compiler = new NodeTemplateCompiler({
     compilerPath,

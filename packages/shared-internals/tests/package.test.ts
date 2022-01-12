@@ -16,7 +16,7 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     let packageInstance = new Package(tmpLocation, packageCache);
 
     let originalProcessValue = process.env['BROCCOLI_ENABLED_MEMOIZE'];
@@ -59,7 +59,7 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     let packageInstance = new Package(tmpLocation, packageCache);
     let nonResolvableDeps = packageInstance.nonResolvableDeps;
 
@@ -101,7 +101,7 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     let packageInstance = new Package(tmpLocation, packageCache);
     let dependencies = packageInstance.dependencies;
 

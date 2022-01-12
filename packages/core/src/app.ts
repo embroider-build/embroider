@@ -418,6 +418,7 @@ export class AppBuilder<TreeNames> {
 
     let colocationOptions: ColocationOptions = {
       packageGuard: true,
+      appRoot: this.root,
     };
     babel.plugins.push([
       require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),
@@ -872,7 +873,7 @@ export class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     if (this.adapter.env !== 'production') {
-      this.macrosConfig.enableAppDevelopment(this.root);
+      this.macrosConfig.enablePackageDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
     }
     for (let pkgRoot of this.adapter.developingAddons()) {
@@ -1007,7 +1008,7 @@ export class AppBuilder<TreeNames> {
     );
     writeFileSync(
       join(this.root, '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel }),
+      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.root }),
       'utf8'
     );
   }
@@ -1468,8 +1469,8 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 
 const babelFilterTemplate = compile(`
 const { babelFilter } = require('@embroider/core');
-module.exports = babelFilter({{{json-stringify skipBabel}}});
-`) as (params: { skipBabel: Options['skipBabel'] }) => string;
+module.exports = babelFilter({{{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}}");
+`) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path

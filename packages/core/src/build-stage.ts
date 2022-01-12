@@ -28,9 +28,6 @@ export default class BuildStage<NamedTrees> implements Stage {
     return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
       if (!this.active) {
         let { outputPath, packageCache } = await this.prevStage.ready();
-        if (!packageCache) {
-          packageCache = new PackageCache();
-        }
         this.outputPath = outputPath;
         this.packageCache = packageCache;
         this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);

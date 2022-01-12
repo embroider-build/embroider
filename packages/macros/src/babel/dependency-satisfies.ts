@@ -2,11 +2,8 @@ import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
 import State, { sourceFile } from './state';
 import { satisfies } from 'semver';
-import { PackageCache } from '@embroider/shared-internals';
 import error from './error';
 import { assertArray } from './evaluate-json';
-
-const packageCache = PackageCache.shared('embroider-stage3');
 
 export default function dependencySatisfies(path: NodePath<t.CallExpression>, state: State): boolean {
   if (path.node.arguments.length !== 2) {
@@ -27,12 +24,12 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
   }
   let sourceFileName = sourceFile(path, state);
   try {
-    let us = packageCache.ownerOfFile(sourceFileName);
+    let us = state.packageCache.ownerOfFile(sourceFileName);
     if (!us || us.dependencies.every(dep => dep.name !== packageName.value)) {
       return false;
     }
 
-    let version = packageCache.resolve(packageName.value, us).version;
+    let version = state.packageCache.resolve(packageName.value, us).version;
     return satisfies(version, range.value, {
       includePrerelease: true,
     });

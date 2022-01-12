@@ -34,7 +34,7 @@ function scenarioSetup(project: Project) {
   funkySampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
   macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-  project.addDevDependency('version-change-tester', '4.0.0');
+  project.addDevDependency('version-changer', '4.0.0');
 
   project.addDevDependency(macroSampleAddon);
   project.addDevDependency(funkySampleAddon);

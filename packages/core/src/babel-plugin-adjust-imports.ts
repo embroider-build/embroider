@@ -41,9 +41,8 @@ export interface Options {
   relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
   emberNeedsModulesPolyfill: boolean;
+  appRoot: string;
 }
-
-const packageCache = PackageCache.shared('embroider-stage3');
 
 type DefineExpressionPath = NodePath<t.CallExpression> & {
   node: t.CallExpression & {
@@ -160,9 +159,9 @@ function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
   return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
-function isResolvable(packageName: string, fromPkg: Package): false | Package {
+function isResolvable(packageName: string, fromPkg: Package, appRoot: string): false | Package {
   try {
-    let dep = packageCache.resolve(packageName, fromPkg);
+    let dep = PackageCache.shared('embroider-stage3', appRoot).resolve(packageName, fromPkg);
     if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
       return false;
     }
@@ -262,7 +261,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     }
 
     // first try to resolve from the destination package
-    if (isResolvable(packageName, relocatedPkg)) {
+    if (isResolvable(packageName, relocatedPkg, opts.appRoot)) {
       if (!pkg.meta['auto-upgraded']) {
         throw new Error(
           `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
@@ -271,7 +270,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
       return specifier;
     } else {
       // second try to resolve from the source package
-      let targetPkg = isResolvable(packageName, pkg);
+      let targetPkg = isResolvable(packageName, pkg, opts.appRoot);
       if (targetPkg) {
         if (!pkg.meta['auto-upgraded']) {
           throw new Error(
@@ -284,7 +283,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
       }
     }
   } else {
-    if (isResolvable(packageName, pkg)) {
+    if (isResolvable(packageName, pkg, opts.appRoot)) {
       if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
@@ -357,7 +356,7 @@ export default function main(babel: typeof Babel) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           let opts = ensureOpts(state);
-          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
+          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles, opts.appRoot);
           let adder = new ImportUtil(t, path);
           addExtraImports(adder, t, path, opts.extraImports);
         },
@@ -480,8 +479,10 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
 
 class AdjustFile {
   readonly originalFile: string;
+  private packageCache: PackageCache;
 
-  constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
+  constructor(public name: string, relocatedFiles: Options['relocatedFiles'], appRoot: string) {
+    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
     if (!name) {
       throw new Error(`bug: adjust-imports plugin was run without a filename`);
     }
@@ -494,13 +495,13 @@ class AdjustFile {
 
   @Memoize()
   owningPackage(): Package | undefined {
-    return packageCache.ownerOfFile(this.originalFile);
+    return this.packageCache.ownerOfFile(this.originalFile);
   }
 
   @Memoize()
   relocatedIntoPackage(): Package | undefined {
     if (this.isRelocated) {
-      return packageCache.ownerOfFile(this.name);
+      return this.packageCache.ownerOfFile(this.name);
     }
   }
 }

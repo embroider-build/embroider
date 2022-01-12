@@ -32,7 +32,7 @@ describe('macroCondition', function () {
     createTests: allModes((transform, { applyMode, buildTimeTest, runTimeTest }) => {
       let run = makeRunner(transform);
       beforeEach(function () {
-        config = MacrosConfig.for({});
+        config = MacrosConfig.for({}, project.baseDir);
         config.setConfig(join(project.baseDir, 'sample.js'), 'qunit', {
           items: [{ approved: true, other: null, size: 2.3 }],
         });

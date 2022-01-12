@@ -29,7 +29,7 @@ export default class CompatAddons implements Stage {
     ensureDirSync(options.workspaceDir!);
     this.destDir = realpathSync(options.workspaceDir!);
 
-    this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
+    this.packageCache = v1Cache.app.packageCache.moveAddons(this.destDir);
     this.inputPath = v1Cache.app.root;
     this.treeSyncMap = new WeakMap();
     this.v1Cache = v1Cache;
@@ -57,16 +57,16 @@ export default class CompatAddons implements Stage {
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
     await this.deferReady.promise;
     writeJSONSync(join(this.destDir, '.embroider-reuse.json'), {
-      appDestDir: relative(this.destDir, this.packageCache.appDestDir),
+      appDestDir: relative(this.destDir, this.packageCache.appRoot),
     });
     return {
-      outputPath: this.packageCache.appDestDir,
+      outputPath: this.packageCache.appRoot,
       packageCache: this.packageCache,
     };
   }
 
   private get appDestDir(): string {
-    return this.packageCache.appDestDir;
+    return this.packageCache.appRoot;
   }
 
   private get app(): Package {

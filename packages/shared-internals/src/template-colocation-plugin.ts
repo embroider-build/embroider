@@ -20,6 +20,8 @@ export interface Options {
   // This option is used by Embroider itself to help with compatibility, other
   // users should probably not use it.
   packageGuard?: boolean;
+
+  appRoot: string;
 }
 
 interface State {
@@ -43,7 +45,7 @@ export default function main(babel: typeof Babel) {
           let filename = path.hub.file.opts.filename;
 
           if (state.opts.packageGuard) {
-            let owningPackage = PackageCache.shared('embroider-stage3').ownerOfFile(filename);
+            let owningPackage = PackageCache.shared('embroider-stage3', state.opts.appRoot).ownerOfFile(filename);
             if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
               return;
             }

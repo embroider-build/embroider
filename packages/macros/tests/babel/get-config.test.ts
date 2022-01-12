@@ -24,7 +24,7 @@ describe(`getConfig`, function () {
         // we know it will be available.
         filename = `${dirname(require.resolve('@embroider/core/package.json'))}/sample.js`;
 
-        config = MacrosConfig.for({});
+        config = MacrosConfig.for({}, dirname(require.resolve('@embroider/core/package.json')));
         config.setOwnConfig(filename, {
           beverage: 'coffee',
         });

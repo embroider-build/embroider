@@ -7,7 +7,6 @@ import assertNever from 'assert-never';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 
-const packageCache = PackageCache.shared('embroider-stage3');
 export type Mode = 'own' | 'getGlobalConfig' | 'package';
 
 function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
@@ -29,7 +28,7 @@ function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' 
   } else {
     assertNever(mode);
   }
-  return targetPackage(sourceFile(path, state), packageName, packageCache);
+  return targetPackage(sourceFile(path, state), packageName, state.packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.

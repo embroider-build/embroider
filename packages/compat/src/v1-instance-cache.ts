@@ -6,10 +6,8 @@ import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import { AddonInstance, getOrCreate } from '@embroider/core';
-import { MovablePackageCache } from './moved-package-cache';
 import Options from './options';
 import isEqual from 'lodash/isEqual';
-import { MacrosConfig } from '@embroider/macros/src/node';
 
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
@@ -28,12 +26,10 @@ export default class V1InstanceCache {
   private addons: Map<string, V1Addon[]> = new Map();
 
   app: V1App;
-  packageCache: MovablePackageCache;
   orderIdx: number;
 
   private constructor(oldApp: any, private options: Required<Options>) {
-    this.packageCache = new MovablePackageCache(MacrosConfig.for(oldApp));
-    this.app = V1App.create(oldApp, this.packageCache);
+    this.app = V1App.create(oldApp);
     this.orderIdx = 0;
 
     // no reason to do this on demand because oldApp already eagerly loaded
@@ -75,7 +71,7 @@ export default class V1InstanceCache {
   private addAddon(addonInstance: AddonInstance) {
     this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance);
-    let v1Addon = new Klass(addonInstance, this.options, this.app, this.packageCache, this.orderIdx);
+    let v1Addon = new Klass(addonInstance, this.options, this.app, this.app.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);
     addonInstance.addons.forEach(a => this.addAddon(a));

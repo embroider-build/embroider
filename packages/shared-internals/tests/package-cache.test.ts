@@ -24,7 +24,7 @@ describe('package-cache', () => {
       },
     };
     fixturify.writeSync(tmpLocation, projectJSON);
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     expect(packageCache.ownerOfFile(join(tmpLocation, 'inner', 'index.js'))!.root).toBe(join(tmpLocation, 'inner'));
   });
 
@@ -45,7 +45,7 @@ describe('package-cache', () => {
       },
     };
     fixturify.writeSync(tmpLocation, projectJSON);
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     packageCache.ownerOfFile(join(tmpLocation, 'index.js'));
     expect(packageCache.ownerOfFile(join(tmpLocation, 'inner', 'index.js'))!.root).toBe(join(tmpLocation, 'inner'));
   });
@@ -66,7 +66,7 @@ describe('package-cache', () => {
       },
     };
     fixturify.writeSync(tmpLocation, projectJSON);
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     expect(packageCache.ownerOfFile(join(tmpLocation, 'inner', 'index.js'))!.root).toBe(join(tmpLocation, 'inner'));
   });
 
@@ -87,7 +87,7 @@ describe('package-cache', () => {
       },
     };
     fixturify.writeSync(tmpLocation, projectJSON);
-    let packageCache = new PackageCache();
+    let packageCache = new PackageCache(tmpLocation);
     expect(packageCache.ownerOfFile(join(tmpLocation, 'inner'))!.root).toBe(join(tmpLocation, 'inner'));
   });
 });

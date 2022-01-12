@@ -14,7 +14,7 @@ describe('each', function () {
       let run = makeRunner(transform);
 
       beforeEach(function () {
-        macrosConfig = MacrosConfig.for({});
+        macrosConfig = MacrosConfig.for({}, __dirname);
         macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
         applyMode(macrosConfig);
         macrosConfig.finalize();

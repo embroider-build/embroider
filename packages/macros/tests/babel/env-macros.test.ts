@@ -1,7 +1,7 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
-import { PackageCache } from '@embroider/core';
 import { MacrosConfig } from '../../src/node';
+import { resolve } from 'path';
 
 describe(`env macros`, function () {
   let macrosConfig: MacrosConfig;
@@ -16,9 +16,9 @@ describe(`env macros`, function () {
 
       describe(`true cases`, function () {
         beforeEach(function () {
-          macrosConfig = MacrosConfig.for({});
+          macrosConfig = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: true });
-          macrosConfig.enableAppDevelopment(PackageCache.shared('embroider-stage3').ownerOfFile(__filename)!.root);
+          macrosConfig.enablePackageDevelopment(resolve(__dirname, '..', '..'));
           applyMode(macrosConfig);
           macrosConfig.finalize();
           run = makeRunner(transform);
@@ -121,7 +121,7 @@ describe(`env macros`, function () {
 
       describe(`false cases`, function () {
         beforeEach(function () {
-          macrosConfig = MacrosConfig.for({});
+          macrosConfig = MacrosConfig.for({}, '/nonexistent');
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: false });
           applyMode(macrosConfig);
           macrosConfig.finalize();

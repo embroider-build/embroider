@@ -142,7 +142,7 @@ export default function main(context: typeof Babel): unknown {
           } else {
             let r = t.identifier('require');
             state.generatedRequires.add(r);
-            callee.replaceWith(r);
+            path.replaceWith(es6Compat(t, t.callExpression(r, path.node.arguments)));
           }
           return;
         }
@@ -278,4 +278,23 @@ function unusedNameLike(name: string, paths: NodePath<unknown>[], banned: Set<st
     candidate = `${name}${counter++}`;
   }
   return candidate;
+}
+
+function es6Compat(t: typeof Babel['types'], expr: t.CallExpression): t.Node {
+  return t.callExpression(
+    t.arrowFunctionExpression(
+      [],
+      t.blockStatement([
+        t.variableDeclaration('let', [t.variableDeclarator(t.identifier('m'), expr)]),
+        t.returnStatement(
+          t.conditionalExpression(
+            t.memberExpression(t.identifier('m'), t.identifier('__esModule'), false, true),
+            t.identifier('m'),
+            t.objectExpression([t.objectProperty(t.identifier('default'), t.identifier('m'))])
+          )
+        ),
+      ])
+    ),
+    []
+  );
 }

@@ -1,5 +1,5 @@
 import type { NodePath } from '@babel/traverse';
-import State, { sourceFile, unusedNameLike } from './state';
+import State, { pathToAddon, sourceFile } from './state';
 import { PackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
@@ -55,7 +55,7 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
     collapsed.path.replaceWith(literalResult);
   } else {
     if (mode === 'getGlobalConfig') {
-      state.neededRuntimeImports.set(calleeName(path, context), 'getGlobalConfig');
+      path.replaceWith(state.importUtil.import(path, pathToAddon('runtime', path, state), 'getGlobalConfig'));
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;
@@ -64,9 +64,11 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
       } else {
         pkgRoot = context.types.identifier('undefined');
       }
-      let name = unusedNameLike('config', path);
-      path.replaceWith(context.types.callExpression(context.types.identifier(name), [pkgRoot]));
-      state.neededRuntimeImports.set(name, 'config');
+      path.replaceWith(
+        context.types.callExpression(state.importUtil.import(path, pathToAddon('runtime', path, state), 'config'), [
+          pkgRoot,
+        ])
+      );
     }
   }
 }
@@ -105,12 +107,4 @@ export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state
       buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
     ),
   ];
-}
-
-function calleeName(path: NodePath<t.CallExpression>, context: typeof Babel): string {
-  let callee = path.node.callee;
-  if (context.types.isIdentifier(callee)) {
-    return callee.name;
-  }
-  throw new Error(`bug: our macros should only be invoked as identifiers`);
 }

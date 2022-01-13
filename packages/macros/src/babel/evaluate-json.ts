@@ -1,7 +1,7 @@
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
-import State, { owningPackage } from './state';
+import State, { owningPackage, pathToAddon } from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
@@ -339,11 +339,13 @@ export class Evaluator {
   // to runtime. That's why we've made `value` lazy. It lets us check the
   // confidence without actually forcing the value.
   private maybeEvaluateRuntimeConfig(path: NodePath<t.CallExpression>): EvaluateResult {
+    if (!this.state) {
+      return { confident: false };
+    }
     let callee = path.get('callee');
     if (callee.isIdentifier()) {
-      let { name } = callee.node;
       // Does the identifier refer to our runtime config?
-      if (this.state?.neededRuntimeImports.get(name) === 'config') {
+      if (callee.referencesImport(pathToAddon('runtime', callee, this.state), 'config')) {
         return {
           confident: true,
           get value() {

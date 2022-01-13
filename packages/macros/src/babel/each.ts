@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import { buildLiterals, Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
-import State, { cloneDeep } from './state';
+import State, { cloneDeep, pathToAddon } from './state';
 import type * as Babel from '@babel/core';
 
 type CallEachExpression = NodePath<t.CallExpression> & {
@@ -51,7 +51,7 @@ export function insertEach(path: EachPath, state: State, context: typeof Babel) 
 
   if (state.opts.mode === 'run-time') {
     let callee = path.get('right').get('callee');
-    state.neededRuntimeImports.set(callee.node.name, 'each');
+    callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', callee, state), 'each'));
   } else {
     for (let element of array.value) {
       let literalElement = buildLiterals(element, context);

@@ -3,22 +3,14 @@ import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
 import { explicitRelative, Package, PackageCache } from '@embroider/shared-internals';
+import type { ImportUtil } from 'babel-import-util';
 
 export default interface State {
+  importUtil: ImportUtil;
   generatedRequires: Set<Node>;
   removed: Set<Node>;
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
-
-  // map from local name to imported name from @embroider/macros own runtime
-  // implementations.
-  neededRuntimeImports: Map<string, string>;
-
-  // when we're running with importSync's eager implementation, this maps from
-  // module specifier to the set of nodes that should be replaced with the
-  // module value.
-  neededEagerImports: Map<string, NodePath[]>;
-
   packageCache: PackageCache;
 
   opts: {
@@ -52,13 +44,15 @@ export default interface State {
   };
 }
 
-const runtimePath = resolve(join(__dirname, '..', 'addon', 'runtime'));
+const runtimeAddonPath = resolve(join(__dirname, '..', 'addon'));
 
-export function pathToRuntime(path: NodePath, state: State): string {
+// todo: put a method on state instead?
+// todo: maybe state should already know the file so we don't need to pass path too?
+export function pathToAddon(moduleName: string, path: NodePath, state: State): string {
   if (!state.opts.owningPackageRoot) {
     // running inside embroider, so make a relative path to the module
     let source = sourceFile(path, state);
-    return explicitRelative(dirname(source), runtimePath);
+    return explicitRelative(dirname(source), join(runtimeAddonPath, moduleName));
   } else {
     // running inside a classic build, so use a classic-compatible runtime
     // specifier.
@@ -68,7 +62,7 @@ export function pathToRuntime(path: NodePath, state: State): string {
     // introducing incompatible changes to its API, you need to change this name
     // (by tacking on a version number, etc) and rename the corresponding file
     // in ../addon.
-    return '@embroider/macros/runtime';
+    return `@embroider/macros/${moduleName}`;
   }
 }
 
@@ -93,13 +87,4 @@ export function cloneDeep(node: Node, state: State): Node {
       return cloned;
     }
   });
-}
-
-export function unusedNameLike(name: string, path: NodePath<unknown>) {
-  let candidate = name;
-  let counter = 0;
-  while (path.scope.getBinding(candidate)) {
-    candidate = `${name}${counter++}`;
-  }
-  return candidate;
 }

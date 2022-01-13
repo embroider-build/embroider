@@ -1,10 +1,11 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
 import { PackageCache } from '@embroider/shared-internals';
-import State, { sourceFile, pathToRuntime } from './state';
+import State, { sourceFile, pathToAddon } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
+import { ImportUtil } from 'babel-import-util';
 
 import error from './error';
 import failBuild from './fail-build';
@@ -15,19 +16,17 @@ export default function main(context: typeof Babel): unknown {
   let t = context.types;
   let visitor = {
     Program: {
-      enter(_: NodePath<t.Program>, state: State) {
+      enter(path: NodePath<t.Program>, state: State) {
+        state.importUtil = new ImportUtil(t, path);
         state.generatedRequires = new Set();
         state.jobs = [];
         state.removed = new Set();
         state.calledIdentifiers = new Set();
-        state.neededRuntimeImports = new Map();
-        state.neededEagerImports = new Map();
         state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
       },
-      exit(path: NodePath<t.Program>, state: State) {
-        pruneMacroImports(path);
-        addRuntimeImports(path, state, context);
-        addEagerImports(path, state, t);
+      exit(_: NodePath<t.Program>, state: State) {
+        // @embroider/macros itself has no runtime behaviors and should always be removed
+        state.importUtil.removeAllImports('@embroider/macros');
         for (let handler of state.jobs) {
           handler();
         }
@@ -106,7 +105,7 @@ export default function main(context: typeof Babel): unknown {
         // instead falls through to evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'isTesting') && state.opts.mode === 'run-time') {
           state.calledIdentifiers.add(callee.node);
-          state.neededRuntimeImports.set(callee.node.name, 'isTesting');
+          callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', path, state), 'isTesting'));
           return;
         }
 
@@ -132,12 +131,7 @@ export default function main(context: typeof Babel): unknown {
             if (specifier?.type !== 'StringLiteral') {
               throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
             }
-            let replacePaths = state.neededEagerImports.get(specifier.value);
-            if (!replacePaths) {
-              replacePaths = [];
-              state.neededEagerImports.set(specifier.value, replacePaths);
-            }
-            replacePaths.push(path);
+            path.replaceWith(state.importUtil.import(path, specifier.value, '*'));
             state.calledIdentifiers.add(callee.node);
           } else {
             let r = t.identifier('require');
@@ -224,60 +218,10 @@ export default function main(context: typeof Babel): unknown {
   return { visitor };
 }
 
-// This removes imports from "@embroider/macros" itself, because we have no
-// runtime behavior at all.
-function pruneMacroImports(path: NodePath) {
-  if (!path.isProgram()) {
-    return;
-  }
-  for (let topLevelPath of path.get('body')) {
-    if (topLevelPath.isImportDeclaration() && topLevelPath.get('source').node.value === '@embroider/macros') {
-      topLevelPath.remove();
-    }
-  }
-}
-
-function addRuntimeImports(path: NodePath<t.Program>, state: State, context: typeof Babel) {
-  let t = context.types;
-  if (state.neededRuntimeImports.size > 0) {
-    path.node.body.push(
-      t.importDeclaration(
-        [...state.neededRuntimeImports].map(([local, imported]) =>
-          t.importSpecifier(t.identifier(local), t.identifier(imported))
-        ),
-        t.stringLiteral(pathToRuntime(path, state))
-      )
-    );
-  }
-}
-
-function addEagerImports(path: NodePath<t.Program>, state: State, t: typeof Babel['types']) {
-  let createdNames = new Set<string>();
-  for (let [specifier, replacePaths] of state.neededEagerImports.entries()) {
-    let local = unusedNameLike('a', replacePaths, createdNames);
-    createdNames.add(local);
-    path.node.body.push(
-      t.importDeclaration([t.importNamespaceSpecifier(t.identifier(local))], t.stringLiteral(specifier))
-    );
-    for (let nodePath of replacePaths) {
-      nodePath.replaceWith(t.identifier(local));
-    }
-  }
-}
-
 function ownedByEmberPackage(path: NodePath, state: State) {
   let filename = sourceFile(path, state);
   let pkg = state.packageCache.ownerOfFile(filename);
   return pkg && pkg.isEmberPackage();
-}
-
-function unusedNameLike(name: string, paths: NodePath<unknown>[], banned: Set<string>) {
-  let candidate = name;
-  let counter = 0;
-  while (banned.has(candidate) || paths.some(path => path.scope.getBinding(candidate))) {
-    candidate = `${name}${counter++}`;
-  }
-  return candidate;
 }
 
 function es6Compat(t: typeof Babel['types'], expr: t.CallExpression): t.Node {

@@ -55,7 +55,8 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
     collapsed.path.replaceWith(literalResult);
   } else {
     if (mode === 'getGlobalConfig') {
-      path.replaceWith(state.importUtil.import(path, pathToAddon('runtime', path, state), 'getGlobalConfig'));
+      let callee = path.get('callee');
+      callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', callee, state), 'getGlobalConfig'));
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;

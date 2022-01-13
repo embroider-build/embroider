@@ -23,7 +23,7 @@ export default function dependencySatisfies(
   let range = node.params[1].value;
 
   let us = packageCache.ownerOfFile(baseDir || moduleName);
-  if (!us || us.dependencies.every(dep => dep.name !== packageName)) {
+  if (!us?.hasDependency(packageName)) {
     return false;
   }
 

@@ -3,23 +3,20 @@ import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
 import { explicitRelative, Package, PackageCache } from '@embroider/shared-internals';
+import { ImportUtil } from 'babel-import-util';
+import type * as Babel from '@babel/core';
 
 export default interface State {
+  importUtil: ImportUtil;
   generatedRequires: Set<Node>;
   removed: Set<Node>;
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
-
-  // map from local name to imported name from @embroider/macros own runtime
-  // implementations.
-  neededRuntimeImports: Map<string, string>;
-
-  // when we're running with importSync's eager implementation, this maps from
-  // module specifier to the set of nodes that should be replaced with the
-  // module value.
-  neededEagerImports: Map<string, NodePath[]>;
-
   packageCache: PackageCache;
+  sourceFile: string;
+  pathToOurAddon(moduleName: string): string;
+  owningPackage(): Package;
+  cloneDeep(node: Node): Node;
 
   opts: {
     userConfigs: {
@@ -52,13 +49,25 @@ export default interface State {
   };
 }
 
-const runtimePath = resolve(join(__dirname, '..', 'addon', 'runtime'));
+export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Program>, state: State) {
+  state.importUtil = new ImportUtil(t, path);
+  state.generatedRequires = new Set();
+  state.jobs = [];
+  state.removed = new Set();
+  state.calledIdentifiers = new Set();
+  state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
+  state.sourceFile = state.opts.owningPackageRoot || path.hub.file.opts.filename;
+  state.pathToOurAddon = pathToAddon;
+  state.owningPackage = owningPackage;
+  state.cloneDeep = cloneDeep;
+}
 
-export function pathToRuntime(path: NodePath, state: State): string {
-  if (!state.opts.owningPackageRoot) {
+const runtimeAddonPath = resolve(join(__dirname, '..', 'addon'));
+
+function pathToAddon(this: State, moduleName: string): string {
+  if (!this.opts.owningPackageRoot) {
     // running inside embroider, so make a relative path to the module
-    let source = sourceFile(path, state);
-    return explicitRelative(dirname(source), runtimePath);
+    return explicitRelative(dirname(this.sourceFile), join(runtimeAddonPath, moduleName));
   } else {
     // running inside a classic build, so use a classic-compatible runtime
     // specifier.
@@ -68,24 +77,20 @@ export function pathToRuntime(path: NodePath, state: State): string {
     // introducing incompatible changes to its API, you need to change this name
     // (by tacking on a version number, etc) and rename the corresponding file
     // in ../addon.
-    return '@embroider/macros/runtime';
+    return `@embroider/macros/${moduleName}`;
   }
 }
 
-export function sourceFile(path: NodePath, state: State): string {
-  return state.opts.owningPackageRoot || path.hub.file.opts.filename;
-}
-
-export function owningPackage(path: NodePath, state: State): Package {
-  let file = sourceFile(path, state);
-  let pkg = state.packageCache.ownerOfFile(file);
+function owningPackage(this: State): Package {
+  let pkg = this.packageCache.ownerOfFile(this.sourceFile);
   if (!pkg) {
-    throw new Error(`unable to determine which npm package owns the file ${file}`);
+    throw new Error(`unable to determine which npm package owns the file ${this.sourceFile}`);
   }
   return pkg;
 }
 
-export function cloneDeep(node: Node, state: State): Node {
+function cloneDeep(this: State, node: Node): Node {
+  let state = this;
   return cloneDeepWith(node, function (value: any) {
     if (state.generatedRequires.has(value)) {
       let cloned = lodashCloneDeep(value);
@@ -93,13 +98,4 @@ export function cloneDeep(node: Node, state: State): Node {
       return cloned;
     }
   });
-}
-
-export function unusedNameLike(name: string, path: NodePath<unknown>) {
-  let candidate = name;
-  let counter = 0;
-  while (path.scope.getBinding(candidate)) {
-    candidate = `${name}${counter++}`;
-  }
-  return candidate;
 }

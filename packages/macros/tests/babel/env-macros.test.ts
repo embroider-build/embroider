@@ -81,7 +81,7 @@ describe(`env macros`, function () {
             }
           `);
           expect(run(code)).toBe(true);
-          expect(code).toMatch(/return isTesting\(\)/);
+          expect(code).toMatch(/return isTesting\d*\(\)/);
         });
 
         buildTimeTest('isTesting: use within conditional', () => {
@@ -98,7 +98,7 @@ describe(`env macros`, function () {
           expect(run(code)).toBe('yes');
           expect(code).toMatch(/return 'yes'/);
           expect(code).not.toMatch(/return 'no'/);
-          expect(code).not.toMatch(/isTesting\(\)/);
+          expect(code).not.toMatch(/isTesting\d*\(\)/);
         });
 
         runTimeTest('isTesting: use within conditional', () => {
@@ -115,7 +115,7 @@ describe(`env macros`, function () {
           expect(run(code)).toBe('yes');
           expect(code).toMatch(/return 'yes'/);
           expect(code).toMatch(/return 'no'/);
-          expect(code).toMatch(/isTesting\(\)/);
+          expect(code).toMatch(/isTesting\d*\(\)/);
         });
       });
 

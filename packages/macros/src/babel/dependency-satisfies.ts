@@ -1,6 +1,6 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import State, { sourceFile } from './state';
+import State from './state';
 import { satisfies } from 'semver';
 import error from './error';
 import { assertArray } from './evaluate-json';
@@ -22,9 +22,8 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
       `the second argument to dependencySatisfies must be a string literal`
     );
   }
-  let sourceFileName = sourceFile(path, state);
   try {
-    let us = state.packageCache.ownerOfFile(sourceFileName);
+    let us = state.packageCache.ownerOfFile(state.sourceFile);
     if (!us?.hasDependency(packageName.value)) {
       return false;
     }

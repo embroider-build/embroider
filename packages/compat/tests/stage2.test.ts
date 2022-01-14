@@ -461,10 +461,10 @@ describe('stage2 build', function () {
     test('addon/hello-world.js', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
       assertFile.matches(
-        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+require\(["']\.\.\/synthetic-import-1/
+        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/synthetic-import-1/
       );
       assertFile.matches(
-        /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
+        /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
       );
       assertFile.matches(
         /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,
@@ -475,7 +475,7 @@ describe('stage2 build', function () {
     test('app/hello-world.js', function () {
       let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
       assertFile.matches(
-        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
+        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
       );
       assertFile.matches(
         /export \{ default \} from ['"]\.\.\/node_modules\/my-addon\/components\/hello-world['"]/,

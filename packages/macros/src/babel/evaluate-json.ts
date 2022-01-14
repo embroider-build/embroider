@@ -1,7 +1,7 @@
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
-import State, { owningPackage } from './state';
+import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
@@ -339,11 +339,13 @@ export class Evaluator {
   // to runtime. That's why we've made `value` lazy. It lets us check the
   // confidence without actually forcing the value.
   private maybeEvaluateRuntimeConfig(path: NodePath<t.CallExpression>): EvaluateResult {
+    if (!this.state) {
+      return { confident: false };
+    }
     let callee = path.get('callee');
     if (callee.isIdentifier()) {
-      let { name } = callee.node;
       // Does the identifier refer to our runtime config?
-      if (this.state?.neededRuntimeImports.get(name) === 'config') {
+      if (callee.referencesImport(this.state.pathToOurAddon('runtime'), 'config')) {
         return {
           confident: true,
           get value() {
@@ -387,7 +389,7 @@ export class Evaluator {
     if (callee.referencesImport('@embroider/macros', 'isDevelopingThisPackage')) {
       return {
         confident: true,
-        value: this.state.opts.isDevelopingPackageRoots.includes(owningPackage(path, this.state).root),
+        value: this.state.opts.isDevelopingPackageRoots.includes(this.state.owningPackage().root),
       };
     }
     if (callee.referencesImport('@embroider/macros', 'isTesting')) {

@@ -1,6 +1,6 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import State, { sourceFile } from './state';
+import State from './state';
 import error from './error';
 import { assertArray } from './evaluate-json';
 import resolve from 'resolve';
@@ -14,9 +14,8 @@ export default function moduleExists(path: NodePath<t.CallExpression>, state: St
   if (moduleSpecifier.type !== 'StringLiteral') {
     throw error(assertArray(path.get('arguments'))[0], `the first argument to moduleExists must be a string literal`);
   }
-  let sourceFileName = sourceFile(path, state);
   try {
-    resolve.sync(moduleSpecifier.value, { basedir: dirname(sourceFileName) });
+    resolve.sync(moduleSpecifier.value, { basedir: dirname(state.sourceFile) });
     return true;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {

@@ -159,10 +159,14 @@ function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
   return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
-function isResolvable(packageName: string, fromPkg: Package, appRoot: string): false | Package {
+function isResolvable(packageName: string, fromPkg: V2Package, appRoot: string): false | Package {
   try {
     let dep = PackageCache.shared('embroider-stage3', appRoot).resolve(packageName, fromPkg);
-    if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
+    if (!dep.isEmberPackage() && fromPkg.meta['auto-upgraded'] && !fromPkg.hasDependency('ember-auto-import')) {
+      // classic ember addons can only import non-ember dependencies if they
+      // have ember-auto-import.
+      //
+      // whereas native v2 packages can always import any dependency
       return false;
     }
     return dep;
@@ -499,9 +503,13 @@ class AdjustFile {
   }
 
   @Memoize()
-  relocatedIntoPackage(): Package | undefined {
+  relocatedIntoPackage(): V2Package | undefined {
     if (this.isRelocated) {
-      return this.packageCache.ownerOfFile(this.name);
+      let owning = this.packageCache.ownerOfFile(this.name);
+      if (owning && !owning.isV2Ember()) {
+        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
+      }
+      return owning;
     }
   }
 }

@@ -46,9 +46,24 @@ appScenarios
               setComponentTemplate(TEMPLATE, ExampleComponent);
             `,
         },
+        'import-from-npm.js': `
+          export default async function() { 
+            let { message } = await import('third-party');
+            return message() 
+          }
+        `,
       },
     });
     addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
+    addon.addDependency('third-party', {
+      files: {
+        'index.js': `
+          export function message() {
+            return 'content from third-party';
+          }
+        `,
+      },
+    });
 
     project.addDevDependency(addon);
 
@@ -76,6 +91,17 @@ appScenarios
                 assert.ok(document.querySelector('[data-test-example]'), 'it worked');
               });
             });
+          `,
+        },
+        unit: {
+          'import-test.js': `
+           import { module, test } from 'qunit';
+           import example from 'v2-addon/import-from-npm';
+           module('Unit | import', function(hooks) {
+             test('v2 addons can import() from NPM', async function(assert) {
+              assert.equal(await example(), 'content from third-party');
+             });
+           });
           `,
         },
       },

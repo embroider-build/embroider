@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## v0.50.2 (2022-01-14)
+
+#### :bug: Bug Fix
+* `compat`, `macros`
+  * [#1076](https://github.com/embroider-build/embroider/pull/1076) add non-es6-compat to importSync ([@ef4](https://github.com/ef4))
+* `core`, `macros`
+  * [#1075](https://github.com/embroider-build/embroider/pull/1075) native v2 addons can always import from NPM ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.50.1 (2022-01-12)
 
 #### :bug: Bug Fix

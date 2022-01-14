@@ -3,7 +3,8 @@ import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
 import { explicitRelative, Package, PackageCache } from '@embroider/shared-internals';
-import type { ImportUtil } from 'babel-import-util';
+import { ImportUtil } from 'babel-import-util';
+import type * as Babel from '@babel/core';
 
 export default interface State {
   importUtil: ImportUtil;
@@ -12,6 +13,10 @@ export default interface State {
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
   packageCache: PackageCache;
+  sourceFile: string;
+  pathToOurAddon(moduleName: string): string;
+  owningPackage(): Package;
+  cloneDeep(node: Node): Node;
 
   opts: {
     userConfigs: {
@@ -44,15 +49,25 @@ export default interface State {
   };
 }
 
+export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Program>, state: State) {
+  state.importUtil = new ImportUtil(t, path);
+  state.generatedRequires = new Set();
+  state.jobs = [];
+  state.removed = new Set();
+  state.calledIdentifiers = new Set();
+  state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
+  state.sourceFile = state.opts.owningPackageRoot || path.hub.file.opts.filename;
+  state.pathToOurAddon = pathToAddon;
+  state.owningPackage = owningPackage;
+  state.cloneDeep = cloneDeep;
+}
+
 const runtimeAddonPath = resolve(join(__dirname, '..', 'addon'));
 
-// todo: put a method on state instead?
-// todo: maybe state should already know the file so we don't need to pass path too?
-export function pathToAddon(moduleName: string, path: NodePath, state: State): string {
-  if (!state.opts.owningPackageRoot) {
+function pathToAddon(this: State, moduleName: string): string {
+  if (!this.opts.owningPackageRoot) {
     // running inside embroider, so make a relative path to the module
-    let source = sourceFile(path, state);
-    return explicitRelative(dirname(source), join(runtimeAddonPath, moduleName));
+    return explicitRelative(dirname(this.sourceFile), join(runtimeAddonPath, moduleName));
   } else {
     // running inside a classic build, so use a classic-compatible runtime
     // specifier.
@@ -66,20 +81,16 @@ export function pathToAddon(moduleName: string, path: NodePath, state: State): s
   }
 }
 
-export function sourceFile(path: NodePath, state: State): string {
-  return state.opts.owningPackageRoot || path.hub.file.opts.filename;
-}
-
-export function owningPackage(path: NodePath, state: State): Package {
-  let file = sourceFile(path, state);
-  let pkg = state.packageCache.ownerOfFile(file);
+function owningPackage(this: State): Package {
+  let pkg = this.packageCache.ownerOfFile(this.sourceFile);
   if (!pkg) {
-    throw new Error(`unable to determine which npm package owns the file ${file}`);
+    throw new Error(`unable to determine which npm package owns the file ${this.sourceFile}`);
   }
   return pkg;
 }
 
-export function cloneDeep(node: Node, state: State): Node {
+function cloneDeep(this: State, node: Node): Node {
+  let state = this;
   return cloneDeepWith(node, function (value: any) {
     if (state.generatedRequires.has(value)) {
       let cloned = lodashCloneDeep(value);

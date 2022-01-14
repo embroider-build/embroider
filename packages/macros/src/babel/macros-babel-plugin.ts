@@ -1,11 +1,10 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
 import { PackageCache } from '@embroider/shared-internals';
-import State, { sourceFile, pathToAddon } from './state';
+import State, { initState } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
-import { ImportUtil } from 'babel-import-util';
 
 import error from './error';
 import failBuild from './fail-build';
@@ -17,11 +16,8 @@ export default function main(context: typeof Babel): unknown {
   let visitor = {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
-        state.importUtil = new ImportUtil(t, path);
-        state.generatedRequires = new Set();
-        state.jobs = [];
-        state.removed = new Set();
-        state.calledIdentifiers = new Set();
+        initState(t, path, state);
+
         state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
       },
       exit(_: NodePath<t.Program>, state: State) {
@@ -52,7 +48,7 @@ export default function main(context: typeof Babel): unknown {
       enter(path: NodePath<t.FunctionDeclaration>, state: State) {
         let id = path.get('id');
         if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
-          let pkg = state.packageCache.ownerOfFile(sourceFile(path, state));
+          let pkg = state.owningPackage();
           if (pkg && pkg.name === '@embroider/macros') {
             inlineRuntimeConfig(path, state, context);
           }
@@ -105,7 +101,7 @@ export default function main(context: typeof Babel): unknown {
         // instead falls through to evaluateMacroCall.
         if (callee.referencesImport('@embroider/macros', 'isTesting') && state.opts.mode === 'run-time') {
           state.calledIdentifiers.add(callee.node);
-          callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', path, state), 'isTesting'));
+          callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'isTesting'));
           return;
         }
 
@@ -136,7 +132,11 @@ export default function main(context: typeof Babel): unknown {
           } else {
             let r = t.identifier('require');
             state.generatedRequires.add(r);
-            path.replaceWith(es6Compat(t, t.callExpression(r, path.node.arguments)));
+            path.replaceWith(
+              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat'), 'default', 'esc'), [
+                t.callExpression(r, path.node.arguments),
+              ])
+            );
           }
           return;
         }
@@ -189,7 +189,7 @@ export default function main(context: typeof Babel): unknown {
         path.node.name === 'require' &&
         !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&
-        ownedByEmberPackage(path, state)
+        state.owningPackage().isEmberPackage()
       ) {
         // Our importSync macro has been compiled to `require`. But we want to
         // distinguish that from any pre-existing, user-written `require` in an
@@ -216,29 +216,4 @@ export default function main(context: typeof Babel): unknown {
   }
 
   return { visitor };
-}
-
-function ownedByEmberPackage(path: NodePath, state: State) {
-  let filename = sourceFile(path, state);
-  let pkg = state.packageCache.ownerOfFile(filename);
-  return pkg && pkg.isEmberPackage();
-}
-
-function es6Compat(t: typeof Babel['types'], expr: t.CallExpression): t.Node {
-  return t.callExpression(
-    t.arrowFunctionExpression(
-      [],
-      t.blockStatement([
-        t.variableDeclaration('let', [t.variableDeclarator(t.identifier('m'), expr)]),
-        t.returnStatement(
-          t.conditionalExpression(
-            t.memberExpression(t.identifier('m'), t.identifier('__esModule'), false, true),
-            t.identifier('m'),
-            t.objectExpression([t.objectProperty(t.identifier('default'), t.identifier('m'))])
-          )
-        ),
-      ])
-    ),
-    []
-  );
 }

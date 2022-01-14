@@ -1,5 +1,5 @@
 import type { NodePath } from '@babel/traverse';
-import State, { pathToAddon, sourceFile } from './state';
+import State from './state';
 import { PackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
@@ -28,7 +28,7 @@ function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' 
   } else {
     assertNever(mode);
   }
-  return targetPackage(sourceFile(path, state), packageName, state.packageCache);
+  return targetPackage(state.sourceFile, packageName, state.packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
@@ -56,7 +56,7 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
   } else {
     if (mode === 'getGlobalConfig') {
       let callee = path.get('callee');
-      callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', callee, state), 'getGlobalConfig'));
+      callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'getGlobalConfig'));
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;
@@ -66,7 +66,7 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
         pkgRoot = context.types.identifier('undefined');
       }
       path.replaceWith(
-        context.types.callExpression(state.importUtil.import(path, pathToAddon('runtime', path, state), 'config'), [
+        context.types.callExpression(state.importUtil.import(path, state.pathToOurAddon('runtime'), 'config'), [
           pkgRoot,
         ])
       );

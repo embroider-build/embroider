@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import { buildLiterals, Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
-import State, { cloneDeep, pathToAddon } from './state';
+import State from './state';
 import type * as Babel from '@babel/core';
 
 type CallEachExpression = NodePath<t.CallExpression> & {
@@ -51,14 +51,14 @@ export function insertEach(path: EachPath, state: State, context: typeof Babel) 
 
   if (state.opts.mode === 'run-time') {
     let callee = path.get('right').get('callee');
-    callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', callee, state), 'each'));
+    callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'each'));
   } else {
     for (let element of array.value) {
       let literalElement = buildLiterals(element, context);
       for (let target of nameRefs) {
         target.replaceWith(literalElement);
       }
-      path.insertBefore(cloneDeep(path.get('body').node, state));
+      path.insertBefore(state.cloneDeep(path.get('body').node));
     }
     path.remove();
   }

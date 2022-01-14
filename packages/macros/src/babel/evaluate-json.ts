@@ -1,7 +1,7 @@
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
-import State, { owningPackage, pathToAddon } from './state';
+import State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
@@ -345,7 +345,7 @@ export class Evaluator {
     let callee = path.get('callee');
     if (callee.isIdentifier()) {
       // Does the identifier refer to our runtime config?
-      if (callee.referencesImport(pathToAddon('runtime', callee, this.state), 'config')) {
+      if (callee.referencesImport(this.state.pathToOurAddon('runtime'), 'config')) {
         return {
           confident: true,
           get value() {
@@ -389,7 +389,7 @@ export class Evaluator {
     if (callee.referencesImport('@embroider/macros', 'isDevelopingThisPackage')) {
       return {
         confident: true,
-        value: this.state.opts.isDevelopingPackageRoots.includes(owningPackage(path, this.state).root),
+        value: this.state.opts.isDevelopingPackageRoots.includes(this.state.owningPackage().root),
       };
     }
     if (callee.referencesImport('@embroider/macros', 'isTesting')) {

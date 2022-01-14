@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import { Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
-import State, { pathToAddon } from './state';
+import State from './state';
 
 export type MacroConditionPath = NodePath<t.IfStatement | t.ConditionalExpression> & {
   get(test: 'test'): NodePath<t.CallExpression> & { get(callee: 'callee'): NodePath<t.Identifier> };
@@ -38,7 +38,7 @@ export default function macroCondition(conditionalPath: MacroConditionPath, stat
 
   if (state.opts.mode === 'run-time') {
     let callee = conditionalPath.get('test').get('callee');
-    callee.replaceWith(state.importUtil.import(callee, pathToAddon('runtime', callee, state), 'macroCondition'));
+    callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'macroCondition'));
   } else {
     let [kept, removed] = predicate.value ? [consequent.node, alternate.node] : [alternate.node, consequent.node];
     if (kept) {

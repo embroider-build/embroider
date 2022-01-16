@@ -134,13 +134,39 @@ describe(`dependencySatisfies`, function () {
         expect(runDefault(code)).toBe(true);
       });
 
+      test(`it considers a project's used pre-releases as allowed`, () => {
+        project.addDependency('foo', '4.2.0-beta.1');
+        let code = transform(
+          `
+          import { dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return dependencySatisfies('foo', '>= 3.27.0-alpha.1 || >= 3.27.0-beta.1');
+          }
+        `
+        );
+        expect(runDefault(code)).toBe(true);
+      });
+
+      test(`it considers a project's star-releases as allowed`, () => {
+        project.addDependency('foo', '*');
+        let code = transform(
+          `
+          import { dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return dependencySatisfies('foo', '>= 3.27.0-alpha.1 || >= 3.27.0-beta.1');
+          }
+        `
+        );
+        expect(runDefault(code)).toBe(true);
+      });
+
       test('monorepo resolutions resolve correctly', () => {
         project.addDependency('@embroider/util', '1.2.3');
         let code = transform(`
         import { dependencySatisfies } from '@embroider/macros';
 
         export default function() {
-          return { 
+          return {
             // specified in dependencies
             util: dependencySatisfies('@embroider/util', '*'),
 

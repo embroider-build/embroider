@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## v1.0.0 (2022-01-19)
+
+Declaring this as 1.0 to signifiy general level of stability and to give us more flexibility to distinguish minor and patch releases.
+
+#### :internal: Internal
+
+* Renamed default branch from master to main. 
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1081](https://github.com/embroider-build/embroider/pull/1081) fix importSync scope collision ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v0.50.2 (2022-01-14)
 
 #### :bug: Bug Fix

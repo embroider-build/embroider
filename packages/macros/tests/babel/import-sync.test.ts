@@ -15,6 +15,17 @@ describe('importSync', function () {
       expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
       expect(code).not.toMatch(/window/);
     });
+    test('importSync leaves existing binding for require alone', () => {
+      let code = transform(`
+      import { importSync } from '@embroider/macros';
+      import require from 'require';
+      importSync('foo');
+      require('x');
+      `);
+      expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
+      expect(code).toMatch(/import _require from 'require'/);
+      expect(code).toMatch(/_require\(['"]x['"]\)/);
+    });
     test('aliased importSync becomes require', () => {
       let code = transform(`
       import { importSync as i } from '@embroider/macros';

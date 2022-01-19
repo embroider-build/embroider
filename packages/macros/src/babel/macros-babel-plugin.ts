@@ -130,6 +130,9 @@ export default function main(context: typeof Babel): unknown {
             path.replaceWith(state.importUtil.import(path, specifier.value, '*'));
             state.calledIdentifiers.add(callee.node);
           } else {
+            if (path.scope.hasBinding('require')) {
+              path.scope.rename('require');
+            }
             let r = t.identifier('require');
             state.generatedRequires.add(r);
             path.replaceWith(

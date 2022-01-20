@@ -193,6 +193,12 @@ export default class MacrosConfig {
       );
     }
 
+    if (!isSerializable(config)) {
+      throw new Error(
+        `[Embroider:MacrosConfig] the given config from '${fromPath}' for packageName '${packageName}' is not JSON serializable.`
+      );
+    }
+
     let targetPackage = this.resolvePackage(fromPath, packageName);
     let peers = getOrCreate(this.configs, targetPackage.root, () => []);
     peers.push(config);
@@ -420,4 +426,41 @@ function defaultMergerFor(pkgRoot: string) {
     let [ownConfigs, otherConfigs] = partition(configs, c => sourceOfConfig(c as object).root === pkgRoot);
     return Object.assign({}, ...ownConfigs, ...otherConfigs);
   };
+}
+
+function isSerializable(obj: object): boolean {
+  if (isScalar(obj)) {
+    return true;
+  }
+
+  if (Array.isArray(obj)) {
+    return !obj.some((arrayItem: any) => !isSerializable(arrayItem));
+  }
+
+  if (isPlainObject(obj)) {
+    for (let property in obj) {
+      let value = obj[property] as any;
+      if (!isSerializable(value)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+function isScalar(val: any): boolean {
+  return (
+    typeof val === 'undefined' ||
+    typeof val === 'string' ||
+    typeof val === 'boolean' ||
+    typeof val === 'number' ||
+    val === null
+  );
+}
+
+function isPlainObject(obj: any): obj is Record<string, any> {
+  return typeof obj === 'object' && obj.constructor === Object && obj.toString() === '[object Object]';
 }

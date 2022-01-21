@@ -22,8 +22,6 @@ let seen = new WeakMap<Node, Node>();
 // Wraps a broccoli tree such that it (and everything it depends on) will only
 // build a single time.
 export default class OneShot extends Plugin {
-  private builder: NerfHeimdallBuilder | null;
-
   static create(originalTree: Node, privateAddonName: string) {
     let output = seen.get(originalTree);
     if (!output) {
@@ -33,46 +31,41 @@ export default class OneShot extends Plugin {
     return output;
   }
 
-  private constructor(originalTree: Node, private addonName: string) {
+  private constructor(private inner: Node | null, private addonName: string) {
     // from broccoli's perspective, we don't depend on any input trees!
     super([], {
       annotation: `@embroider/compat: ${addonName}`,
       persistentOutput: true,
       needsCache: false,
     });
-
-    // create a nested builder in order to isolate the specific addon
-    this.builder = new NerfHeimdallBuilder(originalTree);
   }
 
   async build() {
-    const { builder } = this;
+    const { inner } = this;
+    if (inner === null) return;
+    this.inner = null;
 
-    // only build the first time
-    if (builder === null) {
-      return;
-    }
-    this.builder = null;
-
-    // Make a heimdall node so that we know for sure, all nodes created during our
-    // inner builder can be remove easily
-    const oneshotCookie = heimdall.start({
-      name: `@embroider/compat: OneShot (${this.addonName})`,
+    await suppressNestedHeimdall(`OneShot(${this.addonName})`, async () => {
+      const builder = new NerfHeimdallBuilder(inner);
+      try {
+        await builder.build();
+        copySync(builder.outputPath, this.outputPath, { dereference: true });
+      } finally {
+        await builder.cleanup();
+      }
     });
-    const oneshotHeimdallNode = heimdall.current;
+  }
+}
 
-    try {
-      await builder.build();
-      copySync(builder.outputPath, this.outputPath, { dereference: true });
-      await builder.cleanup();
-    } finally {
-      oneshotCookie.stop();
-      /*
-        Remove any of the current node's direct children, this ensures that we do not bloat the
-        current Broccoli builder's heimdall node graph (e.g. the one that is calling
-        OneShotPlugin; **not** the one that the OneShotPlugin internally creates).
-      */
-      oneshotHeimdallNode.remove();
-    }
+async function suppressNestedHeimdall(name: string, using: () => Promise<void>): Promise<void> {
+  // Make a heimdall node so that we know for sure, all nodes created during our
+  // inner builder can be remove easily
+  const token = heimdall.start({ name });
+  const node = heimdall.current;
+  try {
+    await using();
+  } finally {
+    token.stop();
+    node.remove();
   }
 }

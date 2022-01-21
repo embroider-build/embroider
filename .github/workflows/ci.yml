@@ -6,12 +6,12 @@ on:
 
   push:
     branches:
-      - master
+      - main
       - 'v*' # prior release branches (e.g. `v0.30.x` branch)
     tags:
       - 'v*'
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   preflight:

@@ -24,15 +24,6 @@ async function lts_3_16(project: Project) {
   project.linkDevDependency('@ember/string', { baseDir: __dirname });
 }
 
-async function lts_3_20(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.20' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.20' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-3.20' });
-
-  // needed because the ember-inflector used by this ember-data version blows up without it
-  project.linkDevDependency('@ember/string', { baseDir: __dirname });
-}
-
 async function lts_3_24(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.24' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.24' });
@@ -40,6 +31,12 @@ async function lts_3_24(project: Project) {
 
   // needed because the ember-inflector used by this ember-data version blows up without it
   project.linkDevDependency('@ember/string', { baseDir: __dirname });
+}
+
+async function lts_3_28(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.28' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-3.38' });
 }
 
 async function release(project: Project) {
@@ -51,8 +48,8 @@ async function release(project: Project) {
 export function supportMatrix(scenarios: Scenarios) {
   return scenarios.expand({
     lts_3_16,
-    lts_3_20,
     lts_3_24,
+    lts_3_28,
     release,
   });
 }

@@ -147,6 +147,19 @@ describe(`dependencySatisfies`, function () {
         expect(runDefault(code)).toBe(true);
       });
 
+      test(`in monorepos, the * dep is commonly used to mean "latest"`, () => {
+        project.addDependency('foo', '*');
+        let code = transform(
+          `
+          import { dependencySatisfies } from '@embroider/macros';
+          export default function() {
+            return dependencySatisfies('foo', '>= 3.27.0-alpha.1 || >= 3.27.0-beta.1');
+          }
+        `
+        );
+        expect(runDefault(code)).toBe(true);
+      });
+
       test('monorepo resolutions resolve correctly', () => {
         project.addDependency('@embroider/util', '1.2.3');
         let code = transform(`

@@ -20,7 +20,7 @@ class RedirectToEmber extends Plugin {
       outputFileSync(join(this.outputPath, 'index.js'), `export { tracked } from '@ember/-internals/metal';`);
       outputFileSync(
         join(this.outputPath, 'primitives', 'cache.js'),
-        `export { createCache, getValue, isConst } from "@ember/-internals/metal";`
+        `export { cached, createCache, getValue, isConst } from "@ember/-internals/metal";`
       );
       this.didBuild = true;
     }

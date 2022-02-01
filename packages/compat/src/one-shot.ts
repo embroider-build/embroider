@@ -17,21 +17,10 @@ class NerfHeimdallBuilder extends Builder {
   buildHeimdallTree() {}
 }
 
-let seen = new WeakMap<Node, Node>();
-
 // Wraps a broccoli tree such that it (and everything it depends on) will only
 // build a single time.
 export default class OneShot extends Plugin {
-  static create(originalTree: Node, privateAddonName: string) {
-    let output = seen.get(originalTree);
-    if (!output) {
-      output = new this(originalTree, privateAddonName);
-      seen.set(originalTree, output);
-    }
-    return output;
-  }
-
-  private constructor(private inner: Node | null, private addonName: string) {
+  constructor(private inner: Node | null, private addonName: string) {
     // from broccoli's perspective, we don't depend on any input trees!
     super([], {
       annotation: `@embroider/compat: ${addonName}`,

@@ -393,14 +393,18 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.StatsCompilation): BundleSummary {
+  private summarizeStats(multiStats: webpack.MultiStats): BundleSummary {
     let output: BundleSummary = {
       entrypoints: new Map(),
       lazyBundles: new Set(),
       variants: this.variants,
     };
     for (let [variantIndex, variant] of this.variants.entries()) {
-      let { entrypoints, assets } = multiStats.children![variantIndex];
+      let { entrypoints, assets } = multiStats.stats[variantIndex].toJson({
+        all: false,
+        entrypoints: true,
+        assets: true,
+      });
 
       // webpack's types are written rather loosely, implying that these two
       // properties may not be present. They really always are, as far as I can
@@ -443,7 +447,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return output;
   }
 
-  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.StatsCompilation> {
+  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.MultiStats> {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         try {
@@ -476,7 +480,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               })
             );
           }
-          resolve(stats.toJson());
+          resolve(stats);
         } catch (e) {
           reject(e);
         }

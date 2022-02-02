@@ -16,6 +16,8 @@ Tests can be run per-package, or combined all together.
 
 Per-package test suites are defined as the `yarn test` command within each `packages/*` or `test-packages/*`.
 
+Scenario tests can be ran in `tests/scenarios` with `yarn test --filter "scenario name"`.
+
 The combined suite can be run via the top-level `yarn test` command. It's defined by combining
 
 - all the `yarn test:*` commands within each `packages/*` or `test-packages/*`. These are typically complete Ember apps that need to get built and tested in the browser.

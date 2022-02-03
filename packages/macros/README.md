@@ -121,6 +121,10 @@ let foo = importSync('foo');
 let foo = require('foo');
 ```
 
+#### hint
+
+When using `importSync` on non ember-addon packages both the package being imported from *and* `ember-auto-import` *must* be in the `dependencies` of your addons `package.json`.
+
 ### dependencySatisfies
 
 Tests whether a given dependency is present and satisfies the given semver range. Both arguments must be strings and the second argument will be passed into [semver's satisfies](https://github.com/npm/node-semver#usage) method.

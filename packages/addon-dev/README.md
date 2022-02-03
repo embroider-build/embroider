@@ -2,6 +2,8 @@
 
 Utilities for working on v2 addons.
 
+For a guide on porting a V1 addon to V2, see https://github.com/embroider-build/embroider/blob/main/PORTING-ADDONS-TO-V2.md
+
 ## Rollup Utilities
 
 `@embroider/addon-dev/rollup` exports utilities for building addons with rollup. To use them:
@@ -14,6 +16,7 @@ Utilities for working on v2 addons.
    - @rollup/plugin-babel
 
 2. Copy the `./sample-rollup.config.js` in this repo to your own `rollup.config.js`.
+3. Copy the `./sample-babel.config..json` in this repo to your own `babel.config.json`.
 
 ## addon-dev command
 

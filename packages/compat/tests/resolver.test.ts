@@ -874,7 +874,7 @@ describe('compat-resolver', function () {
       findDependencies(
         'templates/application.hbs',
         `
-        {{outlet "foo"}}
+        {{outlet}}
         {{yield bar}}
         {{#with (hash submit=(action doit)) as |thing| }}
         {{/with}}

@@ -148,7 +148,13 @@ describe(`dependencySatisfies`, function () {
       });
 
       test(`in monorepos, the * dep is commonly used to mean "latest"`, () => {
-        project.addDependency('foo', '*');
+        project.addDependency('foo', '4.2.0-beta.1', project => {
+          project.pkg.dependencies = {
+            ...project.pkg.dependencies,
+            foo: '*',
+          };
+        });
+
         let code = transform(
           `
           import { dependencySatisfies } from '@embroider/macros';

@@ -39,16 +39,34 @@ type GlobalSharedState = WeakMap<
 // share the GlobalSharedState beneath.
 let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
-// creates a string representing all addons and their versions
-// (foo@1.0.0|bar@2.0.0) to use as a cachekey
-function gatherAddonCacheKey(item: any, memo = new Set()) {
+function gatherAddonCacheKeyWorker(item: any, memo: Set<string>) {
   item.addons.forEach((addon: any) => {
     let key = `${addon.pkg.name}@${addon.pkg.version}`;
     memo.add(key);
-    gatherAddonCacheKey(addon, memo);
+    gatherAddonCacheKeyWorker(addon, memo);
+  });
+}
+
+let addonCacheKey: WeakMap<any, string> = new WeakMap();
+// creates a string representing all addons and their versions
+// (foo@1.0.0|bar@2.0.0) to use as a cachekey
+function gatherAddonCacheKey(project: any): string {
+  let cacheKey = addonCacheKey.get(project);
+  if (cacheKey) {
+    return cacheKey;
+  }
+
+  let memo: Set<string> = new Set();
+  project.addons.forEach((addon: any) => {
+    let key = `${addon.pkg.name}@${addon.pkg.version}`;
+    memo.add(key);
+    gatherAddonCacheKeyWorker(addon, memo);
   });
 
-  return [...memo].join('|');
+  cacheKey = [...memo].join('|');
+  addonCacheKey.set(project, cacheKey);
+
+  return cacheKey;
 }
 
 export default class MacrosConfig {

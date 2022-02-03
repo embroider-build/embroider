@@ -1,12 +1,3 @@
-/**
-  *  This file should live at ./config/rollup.config.js
-  *  and the babel config at ./config/babel.config.js (if the babel config is ESM)
-  *    _if the babel config is CJS, it can be at the addon root_
-  *
-  *  The command to build:
-  *
-  *    `rollup -c ./config/rollup.config.js`
-  */
 import path from 'path';
 
 import alias from '@rollup/plugin-alias';

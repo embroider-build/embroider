@@ -196,6 +196,10 @@ In this Part we address potential blockers before we actually switch to V2. This
 
 ## Part 4: Convert addon to v2
 
+In this part we actually convert our addon from v1 to v2 format by reorganizing it and setting up a default toolchain for building and publishing it.
+
+For an example of a complete PR that applies these steps to a real addon, see https://github.com/ember-cli/ember-page-title/pull/229
+
 Now that we've separated the test-app and docs app concerns from the addon, we can focus on reorganizing the addon itself to V2 format.
 
 1. Rename the `addon/addon` directory to `addon/src`.

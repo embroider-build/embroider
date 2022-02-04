@@ -56,7 +56,9 @@ Once you achieve Optimized Embroider Safe, you should enable the `embroider-opti
 
 An addon achieves the "Embroider Native" support level by publishing to NPM in the **v2 format**, as defined by [the RFC](https://github.com/emberjs/rfcs/pull/507).
 
-A good way to learn about V2 addons is to look at some examples:
+For full details on porting an addon to V2, see [the V2 porting guide](https://github.com/embroider-build/embroider/blob/main/PORTING-ADDONS-TO-V2.md)
+
+Another good way to learn about V2 addons is to look at some examples:
 
 - [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page)
 - [ember-resources](https://github.com/NullVoxPopuli/ember-resources)

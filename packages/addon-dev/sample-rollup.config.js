@@ -24,8 +24,10 @@ export default {
     // This babel config should *not* apply presets or compile away ES modules.
     // It exists only to provide development niceties for you, like automatic
     // template colocation.
+    //
+    // By default, this will load the actual babel config from the file
+    // babel.config.json.
     babel({
-      plugins: ['@embroider/addon-dev/template-colocation-plugin'],
       babelHelpers: 'bundled',
     }),
 

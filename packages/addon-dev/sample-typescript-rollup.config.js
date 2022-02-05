@@ -1,11 +1,8 @@
 import path from 'path';
 
-import alias from '@rollup/plugin-alias';
 import ts from 'rollup-plugin-ts';
 import { defineConfig } from 'rollup';
 import { Addon } from '@embroider/addon-dev/rollup';
-
-import packageJson from './package.json';
 
 const addon = new Addon({
   srcDir: 'src',
@@ -31,27 +28,6 @@ export default defineConfig({
     // This generates an `_app_/` directory in your output directory
     // and updates an 'ember-addon.app-js' entry in your package.json
     addon.appReexports([...globallyAvailable]),
-
-    // Allow top-level imports (what folks are used to from v1 addons)
-    // During the build, anything referencing a top-level import will be
-    // replaced with a relative import.
-    // DANGER: it's somewhat easy to cause circular references with this tool
-    alias({
-      entries: [
-        {
-          find: '#types',
-          replacement: path.resolve('src', '-private', 'types.ts'),
-        },
-        {
-          find: packageJson.name,
-          replacement: path.resolve('src'),
-        },
-        {
-          find: `${packageJson.name}/(.*)`,
-          replacement: path.resolve('src/$1'),
-        },
-      ],
-    }),
 
     // This babel config should *not* apply presets or compile away ES modules.
     // It exists only to provide development niceties for you, like automatic

@@ -70,7 +70,7 @@ Several of these examples use a monorepo as a way to keep a clean separation bet
 We support some tools to make V2 addon development more convenient:
 
 - [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/master/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
-- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how your author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
+- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how you author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
 
 ## Replacing the {{component}} helper
 

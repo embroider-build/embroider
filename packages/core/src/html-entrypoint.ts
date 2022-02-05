@@ -78,7 +78,7 @@ export class HTMLEntrypoint {
 
   // bundles maps from input asset to a per-variant map of output assets
   render(stats: BundleSummary): string {
-    let insertedLazy = false;
+    let insertedLazy = new Set<string>();
     let fastbootVariant = stats.variants.findIndex(v => Boolean(v.runtime === 'fastboot'));
     let supportsFastboot = stats.variants.some(v => v.runtime === 'fastboot' || v.runtime === 'all');
 
@@ -90,10 +90,14 @@ export class HTMLEntrypoint {
         let matchingFastbootBundles = fastbootVariant >= 0 ? match.get(fastbootVariant) || [] : [];
 
         for (let placeholder of placeholders) {
-          if (supportsFastboot) {
+          if (supportsFastboot && placeholder.isScript()) {
             // if there is any fastboot involved, we will emit the lazy bundles
             // right before our first script.
-            insertedLazy = maybeInsertLazyBundles(insertedLazy, stats.lazyBundles, placeholder, this.publicAssetURL);
+            let lazyMatch = stats.lazyBundles.get(src);
+            if (lazyMatch && !insertedLazy.has(src)) {
+              insertLazyBundles(lazyMatch, placeholder, this.publicAssetURL);
+              insertedLazy.add(src);
+            }
           }
           for (let [base, fastboot] of zip(matchingBundles, matchingFastbootBundles)) {
             if (!base) {
@@ -131,11 +135,19 @@ export class HTMLEntrypoint {
 
 export interface BundleSummary {
   // entrypoints.get(inputAsset).get(variantIndex) === outputAssets
+  //
+  // these are the output assets that are needed eagerly to boot the given input
+  // asset
   entrypoints: Map<string, Map<number, string[]>>;
 
-  // lazyBundles are tracked specifically for fastboot, so these always come
-  // from the fastboot variant, if any
-  lazyBundles: Set<string>;
+  // lazyBundles.get(inputAsset) === lazyOutputAssets
+  //
+  // these are the output assets that might be loaded lazyily at runtime by the
+  // given input asset.
+  //
+  // These are tracked specifically for the fastboot variant, because that's
+  // where we need to be responsble for them.
+  lazyBundles: Map<string, string[]>;
 
   variants: Variant[];
 }
@@ -146,22 +158,13 @@ function isAbsoluteURL(url: string) {
 
 // we (somewhat arbitrarily) decide to put the lazy bundles before the very
 // first <script> that we have rewritten
-function maybeInsertLazyBundles(
-  insertedLazy: boolean,
-  lazyBundles: Set<string>,
-  placeholder: Placeholder,
-  publicAssetURL: string
-): boolean {
-  if (!insertedLazy && placeholder.isScript()) {
-    for (let bundle of lazyBundles) {
-      if (bundle.endsWith('.js')) {
-        let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-        element.setAttribute('src', publicAssetURL + bundle);
-        placeholder.insert(element);
-        placeholder.insertNewline();
-      }
+function insertLazyBundles(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
+  for (let bundle of lazyBundles) {
+    if (bundle.endsWith('.js')) {
+      let element = placeholder.start.ownerDocument.createElement('fastboot-script');
+      element.setAttribute('src', publicAssetURL + bundle);
+      placeholder.insert(element);
+      placeholder.insertNewline();
     }
-    return true;
   }
-  return insertedLazy;
 }

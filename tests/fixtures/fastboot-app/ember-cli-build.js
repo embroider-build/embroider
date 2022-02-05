@@ -12,5 +12,17 @@ module.exports = function (defaults) {
         package: 'qunit',
       },
     ],
+    packagerOptions: {
+      webpackConfig: {
+        optimization: {
+          splitChunks: {
+            // In these tests we want to guarantee that the lazily imported
+            // things really get handled lazily by webpack, even if they're too
+            // small for the optimizer to normally bother with
+            minSize: 1,
+          },
+        },
+      },
+    },
   });
 };

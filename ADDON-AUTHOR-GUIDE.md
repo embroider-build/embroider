@@ -56,7 +56,9 @@ Once you achieve Optimized Embroider Safe, you should enable the `embroider-opti
 
 An addon achieves the "Embroider Native" support level by publishing to NPM in the **v2 format**, as defined by [the RFC](https://github.com/emberjs/rfcs/pull/507).
 
-A good way to learn about V2 addons is to look at some examples:
+For full details on porting an addon to V2, see [the V2 porting guide](https://github.com/embroider-build/embroider/blob/main/PORTING-ADDONS-TO-V2.md)
+
+Another good way to learn about V2 addons is to look at some examples:
 
 - [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page)
 - [ember-resources](https://github.com/NullVoxPopuli/ember-resources)
@@ -68,7 +70,7 @@ Several of these examples use a monorepo as a way to keep a clean separation bet
 We support some tools to make V2 addon development more convenient:
 
 - [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/master/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
-- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how your author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
+- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how you author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
 
 ## Replacing the {{component}} helper
 

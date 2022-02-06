@@ -393,14 +393,18 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.StatsCompilation): BundleSummary {
+  private summarizeStats(multiStats: webpack.MultiStats): BundleSummary {
     let output: BundleSummary = {
       entrypoints: new Map(),
-      lazyBundles: new Set(),
+      lazyBundles: new Map(),
       variants: this.variants,
     };
     for (let [variantIndex, variant] of this.variants.entries()) {
-      let { entrypoints, assets } = multiStats.children![variantIndex];
+      let { entrypoints, chunks } = multiStats.stats[variantIndex].toJson({
+        all: false,
+        entrypoints: true,
+        chunks: true,
+      });
 
       // webpack's types are written rather loosely, implying that these two
       // properties may not be present. They really always are, as far as I can
@@ -408,11 +412,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       if (!entrypoints) {
         throw new Error(`unexpected webpack output: no entrypoints`);
       }
-      if (!assets) {
-        throw new Error(`unexpected webpack output: no assets`);
+      if (!chunks) {
+        throw new Error(`unexpected webpack output: no chunks`);
       }
 
-      let nonLazyAssets: Set<string> = new Set();
       for (let id of Object.keys(entrypoints)) {
         let { assets: entrypointAssets } = entrypoints[id];
         if (!entrypointAssets) {
@@ -423,27 +426,23 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           variantIndex,
           entrypointAssets.map(asset => 'assets/' + asset.name)
         );
-
-        for (let asset of entrypointAssets) {
-          nonLazyAssets.add(asset.name);
-        }
-      }
-      if (variant.runtime !== 'browser') {
-        // in the browser we don't need to worry about lazy assets (they will be
-        // handled automatically by webpack as needed), but in any other runtime
-        // we need the ability to preload them
-        output.lazyBundles = new Set();
-        for (let asset of assets) {
-          if (!nonLazyAssets.has(asset.name)) {
-            output.lazyBundles.add('assets/' + asset.name);
-          }
+        if (variant.runtime !== 'browser') {
+          // in the browser we don't need to worry about lazy assets (they will be
+          // handled automatically by webpack as needed), but in any other runtime
+          // we need the ability to preload them
+          output.lazyBundles.set(
+            id,
+            chunks
+              .filter(chunk => chunk.runtime?.includes(id) && !entrypointAssets?.find(a => a.name === chunk.files?.[0]))
+              .map(chunk => `assets/${chunk.files?.[0]}`)
+          );
         }
       }
     }
     return output;
   }
 
-  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.StatsCompilation> {
+  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.MultiStats> {
     return new Promise((resolve, reject) => {
       webpack.run((err, stats) => {
         try {
@@ -476,7 +475,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               })
             );
           }
-          resolve(stats.toJson());
+          resolve(stats);
         } catch (e) {
           reject(e);
         }

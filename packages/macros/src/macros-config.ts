@@ -39,16 +39,34 @@ type GlobalSharedState = WeakMap<
 // share the GlobalSharedState beneath.
 let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
-// creates a string representing all addons and their versions
-// (foo@1.0.0|bar@2.0.0) to use as a cachekey
-function gatherAddonCacheKey(item: any, memo = new Set()) {
+function gatherAddonCacheKeyWorker(item: any, memo: Set<string>) {
   item.addons.forEach((addon: any) => {
     let key = `${addon.pkg.name}@${addon.pkg.version}`;
     memo.add(key);
-    gatherAddonCacheKey(addon, memo);
+    gatherAddonCacheKeyWorker(addon, memo);
+  });
+}
+
+let addonCacheKey: WeakMap<any, string> = new WeakMap();
+// creates a string representing all addons and their versions
+// (foo@1.0.0|bar@2.0.0) to use as a cachekey
+function gatherAddonCacheKey(project: any): string {
+  let cacheKey = addonCacheKey.get(project);
+  if (cacheKey) {
+    return cacheKey;
+  }
+
+  let memo: Set<string> = new Set();
+  project.addons.forEach((addon: any) => {
+    let key = `${addon.pkg.name}@${addon.pkg.version}`;
+    memo.add(key);
+    gatherAddonCacheKeyWorker(addon, memo);
   });
 
-  return [...memo].join('|');
+  cacheKey = [...memo].join('|');
+  addonCacheKey.set(project, cacheKey);
+
+  return cacheKey;
 }
 
 export default class MacrosConfig {
@@ -190,6 +208,12 @@ export default class MacrosConfig {
     if (!this._configWritable) {
       throw new Error(
         `[Embroider:MacrosConfig] attempted to set config after configs have been finalized from: '${fromPath}'`
+      );
+    }
+
+    if (!isSerializable(config)) {
+      throw new Error(
+        `[Embroider:MacrosConfig] the given config from '${fromPath}' for packageName '${packageName}' is not JSON serializable.`
       );
     }
 
@@ -420,4 +444,41 @@ function defaultMergerFor(pkgRoot: string) {
     let [ownConfigs, otherConfigs] = partition(configs, c => sourceOfConfig(c as object).root === pkgRoot);
     return Object.assign({}, ...ownConfigs, ...otherConfigs);
   };
+}
+
+function isSerializable(obj: object): boolean {
+  if (isScalar(obj)) {
+    return true;
+  }
+
+  if (Array.isArray(obj)) {
+    return !obj.some((arrayItem: any) => !isSerializable(arrayItem));
+  }
+
+  if (isPlainObject(obj)) {
+    for (let property in obj) {
+      let value = obj[property] as any;
+      if (!isSerializable(value)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+function isScalar(val: any): boolean {
+  return (
+    typeof val === 'undefined' ||
+    typeof val === 'string' ||
+    typeof val === 'boolean' ||
+    typeof val === 'number' ||
+    val === null
+  );
+}
+
+function isPlainObject(obj: any): obj is Record<string, any> {
+  return typeof obj === 'object' && obj.constructor === Object && obj.toString() === '[object Object]';
 }

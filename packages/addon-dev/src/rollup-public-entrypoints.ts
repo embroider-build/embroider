@@ -2,6 +2,10 @@ import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 import { join } from 'path';
 
+function normalizeFileExt(fileName: string) {
+  return fileName.replace(/\.ts|\.gts|\.gjs$/, '.js');
+}
+
 export default function publicEntrypoints(args: {
   srcDir: string;
   include: string[];
@@ -15,7 +19,7 @@ export default function publicEntrypoints(args: {
         this.emitFile({
           type: 'chunk',
           id: join(args.srcDir, name),
-          fileName: name,
+          fileName: normalizeFileExt(name),
         });
       }
     },

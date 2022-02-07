@@ -181,3 +181,47 @@ dummyAppScenarios
       });
     });
   });
+
+appReleaseScenario
+  .map('@embroider/util and macros handle pre-release ember-source', project => {
+    project.pkg.devDependencies = {
+      ...project.pkg.devDependencies,
+      'ember-source': '4.2.0-beta.1',
+    };
+    project.writeSync();
+
+    merge(project.files, {
+      tests: {
+        unit: {
+          'util-test.js': `
+            // make util/addon/ember-private-api be evaluated
+            import { ensureSafeComponent } from '@embroider/util';
+
+            import { module, test } from 'qunit';
+
+            module('private-util', function () {
+              test('it works', function (assert) {
+                // Test is mostly just to have "something" to run.
+                // If the test fails, we'll see a global error about window.Ember being undefined
+                assert.ok(ensureSafeComponent);
+              });
+            });
+          `,
+        },
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`yarn test`, async function (assert) {
+        let result = await app.execute('yarn test');
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });

@@ -188,7 +188,6 @@ appReleaseScenario
       ...project.pkg.devDependencies,
       'ember-source': '4.2.0-beta.1',
     };
-    project.writeSync();
 
     merge(project.files, {
       tests: {

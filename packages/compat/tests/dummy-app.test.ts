@@ -123,6 +123,7 @@ describe('dummy app tests', function () {
   test('rebuilds addon code', async function () {
     expectFile('../../components/example.hbs').matches(/hello/);
     writeFileSync(join(project.baseDir, 'addon/components/example.hbs'), 'goodbye');
+    build.didChange(project.baseDir);
     await build.rebuild();
     expectFile('../../components/example.hbs').matches(/goodbye/);
   });

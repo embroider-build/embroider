@@ -89,6 +89,20 @@ export default class BuildResult {
     }
   }
 
+  // This allows our tests to simulate what a real Watcher would do, without
+  // managing all the asynchrony of a real Watcher.
+  //
+  // This is necessary once you have BROCCOLI_ENABLED_MEMOIZE=true.
+  async didChange(dir: string) {
+    let node = this.builder.watchedSourceNodeWrappers.find(nw => nw.nodeInfo.sourceDirectory === dir);
+    if (!node) {
+      throw new Error(
+        `test tried to simulated a watched file change in ${dir}, but we could not find the corresponding watched broccoli node`
+      );
+    }
+    node.revise();
+  }
+
   async rebuild() {
     let origDir = process.cwd();
     try {

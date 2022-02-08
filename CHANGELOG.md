@@ -1,5 +1,50 @@
 # Embroider Changelog
 
+## v1.1.0 (2022-02-08)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1085](https://github.com/embroider-build/embroider/pull/1085) Updates for LTS 3.28 including ember-data ([@ef4](https://github.com/ef4))
+  * [#1115](https://github.com/embroider-build/embroider/pull/1115) Use broccoli memoization by default ([@ef4](https://github.com/ef4))
+* `addon-dev`
+  * [#1106](https://github.com/embroider-build/embroider/pull/1106) Addon Dev - Allow ts,gts,gjs files as publicEntrypoints ([@josemarluedke](https://github.com/josemarluedke))
+* `macros`
+  * [#1083](https://github.com/embroider-build/embroider/pull/1083) Throw error when setting non-serializable macro config ([@mydea](https://github.com/mydea))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1102](https://github.com/embroider-build/embroider/pull/1102) Optimize addonCacheKey computation ([@SergeAstapov](https://github.com/SergeAstapov))
+* `core`, `webpack`
+  * [#1109](https://github.com/embroider-build/embroider/pull/1109) fastboot chunk preloading fix ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#1098](https://github.com/embroider-build/embroider/pull/1098) Improve performance of emitting stats during incremental build ([@krisselden](https://github.com/krisselden))
+* `compat`
+  * [#1100](https://github.com/embroider-build/embroider/pull/1100) Fix cacheKeyForTree & OneShot incompatibility ([@ef4](https://github.com/ef4))
+  * [#1088](https://github.com/embroider-build/embroider/pull/1088) Support "cache" from @glimmer/tracking ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1084](https://github.com/embroider-build/embroider/pull/1084) Ensure OneShot tmp dir cleanup ([@krisselden](https://github.com/krisselden))
+
+#### :memo: Documentation
+* Other
+  * [#1110](https://github.com/embroider-build/embroider/pull/1110) fix small typo in addon author guides ([@jelhan](https://github.com/jelhan))
+* `addon-dev`
+  * [#1107](https://github.com/embroider-build/embroider/pull/1107) Creating v2 addon guide ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1096](https://github.com/embroider-build/embroider/pull/1096) Add section on package requirements to importSync documentation ([@jrjohnson](https://github.com/jrjohnson))
+
+#### :house: Internal
+* [#1105](https://github.com/embroider-build/embroider/pull/1105) Cancel workflows when they become outdated ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 9
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Jeldrik Hanschke ([@jelhan](https://github.com/jelhan))
+- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))
+- Josemar Luedke ([@josemarluedke](https://github.com/josemarluedke))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+- Sergey Astapov ([@SergeAstapov](https://github.com/SergeAstapov))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## v1.0.0 (2022-01-19)
 
 Declaring this as 1.0 to signifiy general level of stability and to give us more flexibility to distinguish minor and patch releases.

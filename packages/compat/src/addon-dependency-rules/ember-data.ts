@@ -7,6 +7,9 @@ let rules: PackageRules[] = [
       '-private.js': {
         dependsOnModules: ['@ember-data/record-data/-private'],
       },
+      '-private/system/core-store.js': {
+        dependsOnModules: ['@ember-data/record-data/-private'],
+      },
     },
   },
 ];

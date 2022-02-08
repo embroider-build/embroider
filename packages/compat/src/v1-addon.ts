@@ -14,6 +14,7 @@ import { mergeWithAppend } from './merges';
 import {
   AddonMeta,
   NodeTemplateCompiler,
+  debug,
   PackageCache,
   Resolver,
   extensionsPattern,
@@ -149,24 +150,8 @@ export default class V1Addon {
   // the highest precedence, meaning its files would win under classic
   // smooshing.
   reduceInstances(instances: V1Addon[]): V1Addon[] {
-    // Our default implementation will deduplicate instances that have the same
-    // cacheKeyForTree for *all* the known tree names.
-    let seenKeys = new Set<string>();
-    let keptInstances: V1Addon[] = [];
-    for (let instance of instances) {
-      let key = cacheKeyForAddon(instance.addonInstance);
-      if (!key) {
-        // entirely uncacheable
-        keptInstances.push(instance);
-      } else if (!seenKeys.has(key)) {
-        // cacheable and new
-        keptInstances.push(instance);
-        seenKeys.add(key);
-      } else {
-        // dropped as redundant
-      }
-    }
-    return keptInstances;
+    // the default beahvior is that all copies matter
+    return instances;
   }
 
   // this is only defined when there are custom AST transforms that need it
@@ -469,12 +454,14 @@ export default class V1Addon {
   }
 
   protected stockTree(treeName: AddonTreePath): Node {
-    // adjust from the legacy "root" to our real root, because our rootTree
-    // uses our real root but the stock trees are defined in terms of the
-    // legacy root
-    let srcDir = relative(this.root, join(this.addonInstance.root, this.addonInstance.treePaths[treeName]));
-    let opts = Object.assign({ srcDir }, this.stockTreeFunnelOptions(treeName));
-    return buildFunnel(this.rootTree, opts);
+    return this.throughTreeCache(treeName, 'stock', () => {
+      // adjust from the legacy "root" to our real root, because our rootTree
+      // uses our real root but the stock trees are defined in terms of the
+      // legacy root
+      let srcDir = relative(this.root, join(this.addonInstance.root, this.addonInstance.treePaths[treeName]));
+      let opts = Object.assign({ srcDir }, this.stockTreeFunnelOptions(treeName));
+      return buildFunnel(this.rootTree, opts);
+    })!;
   }
 
   @Memoize()
@@ -560,7 +547,25 @@ export default class V1Addon {
   }
 
   get v2Tree(): Node {
-    return mergeTrees(this.v2Trees, { overwrite: true });
+    return this.throughTreeCache(
+      // these are all the kinds of trees that ember-cli's tree cache
+      // understands. We need them all here because if *any* of these are
+      // uncacheable, we want our whole v2 tree to be treated as uncacheable.
+      [
+        'app',
+        'addon',
+        'addon-styles',
+        'addon-templates',
+        'addon-test-support',
+        'public',
+        'styles',
+        'templates',
+        'test-support',
+        'vendor',
+      ],
+      'v2Tree',
+      () => mergeTrees(this.v2Trees, { overwrite: true })
+    );
   }
 
   // this is split out so that compatibility shims can override it to add more
@@ -582,6 +587,44 @@ export default class V1Addon {
   protected get v2Trees() {
     let { trees } = this.build();
     return trees;
+  }
+
+  protected throughTreeCache(nameOrNames: string | string[], category: string, fn: () => Node): Node;
+  protected throughTreeCache(
+    nameOrNames: string | string[],
+    category: string,
+    fn: () => Node | undefined
+  ): Node | undefined {
+    let cacheKey: string | undefined;
+    if (typeof this.addonInstance.cacheKeyForTree === 'function') {
+      let names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
+      cacheKey = names.reduce((accum: string | undefined, name) => {
+        if (accum == null) {
+          // a previous name was uncacheable, so we're entirely uncacheable
+          return undefined;
+        }
+        let key = this.addonInstance.cacheKeyForTree?.(name);
+        if (key) {
+          return accum + key;
+        } else {
+          return undefined;
+        }
+      }, '');
+      if (cacheKey) {
+        cacheKey = cacheKey + category;
+        let cachedTree = this.app.addonTreeCache.get(cacheKey);
+        if (cachedTree) {
+          debug('cache hit %s %s %s', this.name, nameOrNames, category);
+          return cachedTree;
+        }
+      }
+    }
+    debug('cache miss %s %s %s', this.name, nameOrNames, category);
+    let tree = fn();
+    if (tree && cacheKey) {
+      this.app.addonTreeCache.set(cacheKey, tree);
+    }
+    return tree;
   }
 
   // In general, we can't reliably run addons' custom `treeFor()` methods,
@@ -624,25 +667,28 @@ export default class V1Addon {
     name: string,
     { neuterPreprocessors } = { neuterPreprocessors: false }
   ): Node | undefined {
-    // get the real addon as we're going to patch and restore `preprocessJs`
-    const realAddon = getRealAddon(this.addonInstance);
-    let original;
-    try {
-      if (neuterPreprocessors) {
-        original = realAddon.preprocessJs;
-        realAddon.preprocessJs = function (tree: Node) {
-          return tree;
-        };
+    // @ts-expect-error have no idea why throughTreeCache overload is not working here..
+    return this.throughTreeCache(name, 'original', () => {
+      // get the real addon as we're going to patch and restore `preprocessJs`
+      const realAddon = getRealAddon(this.addonInstance);
+      let original;
+      try {
+        if (neuterPreprocessors) {
+          original = realAddon.preprocessJs;
+          realAddon.preprocessJs = function (tree: Node) {
+            return tree;
+          };
+        }
+        if (this.suppressesTree(name)) {
+          return undefined;
+        }
+        return this.addonInstance._treeFor(name);
+      } finally {
+        if (neuterPreprocessors) {
+          realAddon.preprocessJs = original;
+        }
       }
-      if (this.suppressesTree(name)) {
-        return undefined;
-      }
-      return this.addonInstance._treeFor(name);
-    } finally {
-      if (neuterPreprocessors) {
-        realAddon.preprocessJs = original;
-      }
-    }
+    });
   }
 
   protected treeForAddon(built: IntermediateBuild): Node | undefined {
@@ -1086,38 +1132,3 @@ const stubbedSuper = () => {
 stubbedSuper.treeFor = () => {
   return markedEmptyTree;
 };
-
-function cacheKeyForAddon(instance: AddonInstance): string | undefined {
-  // these are all the kinds of trees that ember-cli's tree cache understands.
-  // We deduplicate at the level of whole instances, not individual trees, so
-  // our cache key in the combination of all of these.
-  let names = [
-    'app',
-    'addon',
-    'addon-styles',
-    'addon-templates',
-    'addon-test-support',
-    'public',
-    'styles',
-    'templates',
-    'test-support',
-    'vendor',
-  ];
-
-  let cacheKey: string | undefined;
-  if (typeof instance.cacheKeyForTree === 'function') {
-    cacheKey = names.reduce((accum: string | undefined, name) => {
-      if (accum == null) {
-        // a previous name was uncacheable, so we're entirely uncacheable
-        return undefined;
-      }
-      let key = instance.cacheKeyForTree?.(name);
-      if (key) {
-        return accum + key;
-      } else {
-        return undefined;
-      }
-    }, '');
-  }
-  return cacheKey;
-}

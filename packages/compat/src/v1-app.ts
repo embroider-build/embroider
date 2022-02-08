@@ -119,6 +119,11 @@ export default class V1App {
   }
 
   @Memoize()
+  get addonTreeCache(): Map<string, Node> {
+    return new Map();
+  }
+
+  @Memoize()
   get preprocessRegistry() {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }

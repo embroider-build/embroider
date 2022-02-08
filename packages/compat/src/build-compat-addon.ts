@@ -3,20 +3,11 @@ import { Package } from '@embroider/core';
 import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Node } from 'broccoli-node-api';
-import OneShot from './one-shot';
 import buildFunnel from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
-export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
-  let tree = buildCompatAddon(originalPackage, v1Cache);
-  if (!originalPackage.mayRebuild) {
-    tree = new OneShot(tree, originalPackage.name);
-  }
-  return tree;
-}
-
-function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
+export default function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
   if (originalPackage.isV2Addon()) {
     // this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and

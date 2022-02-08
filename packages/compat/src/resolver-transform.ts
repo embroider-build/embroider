@@ -74,6 +74,10 @@ export function makeResolverTransform(resolver: Resolver) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
+            return;
+          }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: ASTv1.MustacheStatement) {
@@ -95,6 +99,10 @@ export function makeResolverTransform(resolver: Resolver) {
           }
           if (node.path.original === 'component' && node.params.length > 0) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            return;
+          }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
@@ -349,4 +357,52 @@ function handleComponentHelper(
   // }
 
   // resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
+}
+
+function handleDynamicHelper(
+  param: ASTv1.Node,
+  resolver: Resolver,
+  moduleName: string
+  // scopeStack: ScopeStack,
+): void {
+  // let locator: ComponentLocator;
+  // switch (param.type) {
+  //   case 'StringLiteral':
+  //     locator = { type: 'literal', path: param.value };
+  //     break;
+  //   case 'PathExpression':
+  //     locator = { type: 'path', path: param.original };
+  //     break;
+  //   case 'MustacheStatement':
+  //     if (param.hash.pairs.length === 0 && param.params.length === 0) {
+  //       handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
+  //       return;
+  //     } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+  //       // safe because we will handle this inner `{{component ...}}` mustache on its own
+  //       return;
+  //     } else {
+  //       locator = { type: 'other' };
+  //     }
+  //     break;
+  //   case 'TextNode':
+  //     locator = { type: 'literal', path: param.chars };
+  //     break;
+  //   case 'SubExpression':
+  //     if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+  //       // safe because we will handle this inner `(component ...)` subexpression on its own
+  //       return;
+  //     }
+  //     if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
+  //       // safe because we trust ensure-safe-component
+  //       return;
+  //     }
+  //     locator = { type: 'other' };
+  //     break;
+  //   default:
+  //     locator = { type: 'other' };
+  // }
+
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicHelper(param.value, moduleName, param.loc);
+  }
 }

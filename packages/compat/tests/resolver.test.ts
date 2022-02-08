@@ -519,6 +519,18 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('string literal passed to `helper` helper in content position', function () {
+    let findDependencies = configure({
+      staticHelpers: true,
+    });
+    givenFile('helpers/hello-world.js');
+    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
   test('built-in components are ignored when used with the component helper', function () {
     let findDependencies = configure({
       staticComponents: true,
@@ -530,6 +542,21 @@ describe('compat-resolver', function () {
       {{component "input"}}
       {{component "link-to"}}
       {{component "textarea"}}
+    `
+      )
+    ).toEqual([]);
+  });
+  test('built-in helpers are ignored when used with the "helper" helper', function () {
+    let findDependencies = configure({
+      staticHelpers: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      {{helper "fn"}}
+      {{helper "array"}}
+      {{helper "concat"}}
     `
       )
     ).toEqual([]);
@@ -635,6 +662,25 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('string literal passed to "helper" helper in helper position', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/hello-world.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (helper "hello-world") as |helloWorld|}}
+          {{helloWorld}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
   test('string literal passed to component helper fails to resolve', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
@@ -642,10 +688,20 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
+  test('string literal passed to "helper" helper fails to resolve', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    expect(() => {
+      findDependencies('templates/application.hbs', `{{helper "hello-world"}}`);
+    }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
+  });
   test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
+  });
+  test('string literal passed to "helper" helper fails to resolve when staticHelpers is off', function () {
+    let findDependencies = configure({ staticHelpers: false });
+    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([]);
   });
   test('dynamic component helper error in content position', function () {
     let findDependencies = configure({ staticComponents: true });

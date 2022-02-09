@@ -2,19 +2,19 @@
 
 This is a guide for addon authors who want to publish their addon in **v2 format**.
 
-> The actual V2 Format RFC only cares what format you **publish** to NPM. It doesn't necessarily care about your **authoring** format or toolchain. But in this guide we are picking good defaults, and we hope to polish this experience until it's ready to become a new RFC as the default new Ember Addon authoring blueprint.
+> The actual V2 Format RFC only cares what format you **publish** to NPM. It doesn't necessarily care about your **authoring** format or toolchain. But in this guide, we are picking good defaults, and we hope to polish this experience until it's ready to become a new RFC as the default new Ember Addon authoring blueprint.
 
 ## What Addons should and should not be converted to V2?
 
-The best candidates to convert to V2 are addons that provide only runtime features, like components, helpers, modifiers, and services. That kind of addon should definitely port to V2.
+The best candidates to convert to V2 are addons that provide only run-time features, like components, helpers, modifiers, and services. That kind of addon should definitely port to V2.
 
 In contrast, addons that are primarily an extension to the build system (like `ember-cli-sass` or `ember-cli-typescript`) are not good candidates to be V2 addons, at least at present. As V1 addons, they will continue to work through `@embroider/compat` even for apps with Embroider.
 
-If your addon is a mix of both build-time and run-time features, consider trying to replace the build-time features with `@embroider/macros`. This would let you drop all your custom build-time code and port to V2. Alternatively, if you really need build customizations, you can provide users instructions and utilities (like a webpack rule or plugin) to add those customizations to their Embroider build. We do _not_ let V2 addons automatically manipulate the app's build pipeline. Thar be dragons.
+If your addon is a mix of both build-time and run-time features, consider replacing the build-time features with `@embroider/macros`. This would let you drop all your custom build-time code and port to V2. Alternatively, if you really need build customizations, you can provide users instructions and utilities (like a webpack rule or plugin) to add those customizations to their Embroider build. We do _not_ let V2 addons automatically manipulate the app's build pipeline. Thar be dragons.
 
 ## Monorepo Organization
 
-Traditionally, an Ember addon is a single NPM package that combines both the actual addon code _and_ a "dummy" app for hosting tests and docs. This was [problematic for several reasons](https://github.com/ember-cli/rfcs/issues/119). V2 addons instead require clean separation between addon and app, so you're going to be working with more than one distinct NPM package: one for the addon, one for the test-app, and optionally one for a documentation site.
+Traditionally, an Ember addon is a single NPM package that combines both the actual addon code _and_ a "dummy" app for hosting tests and docs. This was [problematic for several reasons](https://github.com/ember-cli/rfcs/issues/119). V2 addons instead require clean separation between addon and app, so you're going to be working with more than one distinct NPM package: one for the addon, one for the test-app, and optionally one for the documentation site.
 
 Our recommended way to manage these multiple packages is using a monorepo, via Yarn Workspaces or NPM Workspaces. The example in this guide assumes a Yarn Workspaces monorepo.
 
@@ -41,7 +41,7 @@ The steps:
 
 1. Now you can rename `_addon` to `addon` without a name collision.
 
-   - yes, this means you will have an `addon/addon` directory. This looks silly but it will go away when we finish porting the addon to v2.
+   - yes, this means you will have an `addon/addon` directory. This looks silly, but it will go away when we finish porting the addon to v2.
 
 1. These things stay at the top level:
 
@@ -54,7 +54,7 @@ The steps:
 1. Move everything under `test-app/tests/dummy` to directly under `test-app` instead.
 
    - for example, `test-app/tests/dummy/app` becomes `test-app/app`
-   - you will be merging config directories, because both `test-app/config` and `test-app/tests/dummy/config` will exist at the start of this step. They shouldn't have any file collisions though, because you already moved the one colliding file (`environment.js`) to `addon/config/environment.js` in a previous step.
+   - you will be merging config directories because both `test-app/config` and `test-app/tests/dummy/config` will exist at the start of this step. They shouldn't have any file collisions because you already moved the one colliding file (`environment.js`) to `addon/config/environment.js` in a previous step.
 
 1. Make a new top-level package.json for our new monorepo:
 
@@ -99,7 +99,7 @@ The steps:
    ```
 
 1. `In test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
-1. At the top-level of the project run `yarn install`.
+1. At the top-level of the project, run `yarn install`.
 1. In `test-app/ember-cli-build.js` switch from the dummy app build pipeline to the normal app build pipeline:
 
    ```diff
@@ -133,7 +133,7 @@ The steps:
 
    Test that `yarn lint` works inside the `addon` workspace.
 
-1. Remove `test-app/config/ember-cli-update.json` because it still says you're using the **addon** blueprint and next time you run ember-cli-update in `test-app` it use the **app** blueprint instead.
+1. Remove `test-app/config/ember-cli-update.json` because it still says you're using the **addon** blueprint and next time you run ember-cli-update in `test-app` it uses the **app** blueprint instead.
 
 1. Edit `.github/workflows/ci.yml` to run tests in the right directory. For example:
 
@@ -163,25 +163,25 @@ The steps:
    }
    ```
 
-At this point you should still have a fully-working V1 Addon, and if you want you can test, review, and merge this work before moving on.
+At this point, you should still have a fully-working V1 Addon, and if you want you can test, review, and merge this work before moving on.
 
 ## Part 2 (Optional): Split docs from tests
 
 Many addons have a deployable documentation app. Usually it is the same app as the test suite.
 
-This causes a lot of pain, because the test suite needs to support every Ember version your addon supports, and when your docs site is mixed in with your test suite, your docs site _also_ needs to support every Ember version, and that's unnecessarily difficult. Documentation apps deal with lots of typical production app concerns (deployment, styling, server-side rendering) that mean they benefit from using many additional addons, which makes broad version compatibility challenging.
+This causes a lot of pain because the test suite needs to support every Ember version your addon supports, and when your docs site is mixed in with your test suite, your docs site _also_ needs to support every Ember version, and that's unnecessarily difficult. Documentation apps deal with lots of typical production app concerns (deployment, styling, server-side rendering) that mean they benefit from using many additional addons, which makes broad version compatibility challenging.
 
 The solution is to split the docs from the test suite. The docs app can pick a _single_ Ember version, and it can stay on older, deprecated patterns as long as you like _without_ impacting your ability to test your addon against the latest Ember canary. When you get test failures on Ember Canary, they will be real failures that impact your users, not irrelevant failures caused by forcing your docs app and all its dependencies to upgrade to Canary.
 
 To split out the docs, you could start by just copying all of `test-app` into a new `docs` directory. Add your new `docs` workspace to the top-level package.json. Then edit both apps down to eliminate documentation and deployment features from `test-app` and eliminate test-suite concerns from `docs`. It's still appropriate for `docs` to have its own tests of course, to prove that the docs pages themselves render correctly.
 
-When the docs app is ready ready, expand the CI settings to cover linting and testing of the docs app, just like we did when we expanded it to cover linting of both `addon` and `test-app` above.
+When the docs app is ready, expand the CI settings to cover linting and testing of the docs app, just like we did when we expanded it to cover linting of both `addon` and `test-app` above.
 
 For a complete example of a PR that splits docs from test-app, see https://github.com/ember-cli/ember-page-title/pull/228.
 
 ## Part 3: Prerequisites for V2 addon
 
-In this Part we address potential blockers before we actually switch to V2. This lets you test your changes and make sure they're still working before we move on to V2 format.
+In this part, we address potential blockers before we actually switch to V2. This lets you test your changes and make sure they're still working before we move on to V2 format.
 
 1. Make sure your test-app (and docs app if you have one) has `ember-auto-import` >= 2. Once you convert your addon to v2 format, it can only be consumed by apps that have ember-auto-import >= 2. This also means you should plan to make a semver major release to communicate this new requirement to your users.
 
@@ -261,4 +261,4 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 12. In the `addon` directory, run `yarn start` to start building the addon.
 13. In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see your tests passing.
 
-When all test are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.
+When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

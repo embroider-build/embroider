@@ -36,7 +36,7 @@
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
     "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",
     "ember-cli-latest": "npm:ember-cli@latest",
-    "ember-cli-fastboot": "^2.2.3",
+    "ember-cli-fastboot": "^3.2.0",
     "ember-composable-helpers": "^4.4.1",
     "ember-data-3.16": "npm:ember-data@~3.16.0",
     "ember-data-3.24": "npm:ember-data@~3.24.0",

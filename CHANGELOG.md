@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+
+## v1.2.0 (2022-02-10)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1124](https://github.com/embroider-build/embroider/pull/1124) improving ember-data compatibility & test coverage ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1119](https://github.com/embroider-build/embroider/pull/1119) Reuse the `loc` of the macroMaybeAttrs hashes for the created attributes ([@Windvis](https://github.com/Windvis))
+
+#### :memo: Documentation
+* [#1122](https://github.com/embroider-build/embroider/pull/1122) small nitpicking edits in doc ([@angelayanpan](https://github.com/angelayanpan))
+
+#### :house: Internal
+* `macros`
+  * [#1123](https://github.com/embroider-build/embroider/pull/1123) Regenerate yarn.lock ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Angela Pan ([@angelayanpan](https://github.com/angelayanpan))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
 ## v1.1.0 (2022-02-08)
 
 #### :rocket: Enhancement

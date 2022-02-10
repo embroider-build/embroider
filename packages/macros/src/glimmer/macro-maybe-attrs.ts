@@ -20,11 +20,11 @@ export function maybeAttrs(elementNode: any, node: any, builders: any) {
 
   if (result.value) {
     for (let bareAttr of bareAttrs) {
-      elementNode.attributes.push(builders.attr(bareAttr.original, builders.text('')));
+      elementNode.attributes.push(builders.attr(bareAttr.original, builders.text(''), bareAttr.loc));
     }
 
     for (let attr of node.hash.pairs) {
-      elementNode.attributes.push(builders.attr(attr.key, builders.mustache(attr.value)));
+      elementNode.attributes.push(builders.attr(attr.key, builders.mustache(attr.value), attr.loc));
     }
   }
 }

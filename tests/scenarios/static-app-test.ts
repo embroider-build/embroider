@@ -13,6 +13,16 @@ appScenarios
 
     merge(project.files, {
       app: {
+        adapters: {
+          'post.js': `
+            import JSONAPIAdapter from '@ember-data/adapter/json-api';
+            export default class PostAdapter extends JSONAPIAdapter {
+              findRecord(store, type, id, snapshot) {
+                return { data: { type: 'posts', id: '0 ', attributes: { title: 'Hello world' } } };
+              }
+            }
+          `,
+        },
         components: {
           'fancy-box.js': `
             import Component from '@glimmer/component';
@@ -138,19 +148,6 @@ appScenarios
             this.route('ember-data-example');
           });
         `,
-      },
-      public: {
-        posts: {
-          '0': JSON.stringify({
-            data: {
-              type: 'posts',
-              id: '0 ',
-              attributes: {
-                title: 'Hello world',
-              },
-            },
-          }),
-        },
       },
       tests: {
         acceptance: {

@@ -1,9 +1,10 @@
 import walkSync from 'walk-sync';
-import type { Plugin } from 'rollup';
 import { join } from 'path';
 
+import type { Plugin } from 'rollup';
+
 function normalizeFileExt(fileName: string) {
-  return fileName.replace(/\.ts|\.gts|\.gjs$/, '.js');
+  return fileName.replace(/\.ts|\.hbs|\.gts|\.gjs$/, '.js');
 }
 
 export default function publicEntrypoints(args: {
@@ -12,10 +13,12 @@ export default function publicEntrypoints(args: {
 }): Plugin {
   return {
     name: 'addon-modules',
-    buildStart() {
-      for (let name of walkSync(args.srcDir, {
-        globs: args.include,
-      })) {
+    async buildStart() {
+      let matches = walkSync(args.srcDir, {
+        globs: [...args.include],
+      });
+
+      for (let name of matches) {
         this.emitFile({
           type: 'chunk',
           id: join(args.srcDir, name),

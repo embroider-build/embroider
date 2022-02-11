@@ -2,7 +2,7 @@ import { allBabelVersions } from '@embroider/test-support';
 import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
-import { writeJSONSync } from 'fs-extra';
+import { readFileSync, writeJSONSync } from 'fs-extra';
 import { AppMeta } from '../src';
 
 tmp.setGracefulCleanup();
@@ -12,6 +12,60 @@ describe('template-colocation-plugin', () => {
 
   let filename: string;
   let plugins: any = [];
+
+  describe('template-only components', () => {
+    allBabelVersions({
+      babelConfig() {
+        return {
+          filename,
+          plugins,
+        };
+      },
+      createTests(transform) {
+        let removeCallback: tmp.DirResult['removeCallback'];
+
+        function writeTemplate() {
+          writeFileSync(filename, 'this is the template', 'utf8');
+        }
+        beforeEach(function () {
+          let name;
+          ({ name, removeCallback } = tmp.dirSync());
+          filename = join(name, 'sample.hbs');
+          plugins = [
+            [
+              join(__dirname, '../src/template-colocation-plugin.js'),
+              {
+                templateMode: 'imported',
+              },
+            ],
+          ];
+          writeJSONSync(join(name, 'package.json'), {
+            name: 'sample-package',
+            keywords: ['ember-addon'],
+            'ember-addon': {
+              version: 2,
+              type: 'app',
+              'auto-upgraded': true,
+            } as AppMeta,
+          });
+        });
+
+        afterEach(function () {
+          removeCallback();
+        });
+
+        test('it works', () => {
+          writeTemplate();
+
+          let code = readFileSync(filename);
+
+          expect(code).toMatch(/import TEMPLATE from ['"]\.\/sample.hbs['"];/);
+          expect(code).toMatch(/import { setComponentTemplate } from ['"]@ember\/component['"];/);
+          expect(code).toMatch(/export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/);
+        });
+      },
+    });
+  });
 
   allBabelVersions({
     babelConfig() {

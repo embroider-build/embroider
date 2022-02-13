@@ -292,6 +292,12 @@ function handleComponentHelper(
       } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
         // safe because we will handle this inner `{{component ...}}` mustache on its own
         return;
+      } else if(param.path.type === 'PathExpression' && param.path.original === 'if') {
+        //<Profile @analyticsComponent={{if @analyticsComponent (component...) (component...)}} />
+        //{{#let (if @analyticsComponent (component...) (component...)) as |AnalyticsComp|}}{{/let}}
+        //safe because it will be handled?
+        return;
+    
       } else {
         locator = { type: 'other' };
       }

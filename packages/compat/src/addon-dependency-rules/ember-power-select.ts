@@ -24,7 +24,7 @@ let rules: PackageRules = {
       },
       acceptsComponentArguments: [
         'afterOptionsComponent',
-        'beforeOptionsComponent',
+        // 'beforeOptionsComponent',
         'optionsComponent',
         'placeholderComponent',
         'searchMessageComponent',
@@ -38,7 +38,7 @@ let rules: PackageRules = {
       },
       acceptsComponentArguments: [
         'afterOptionsComponent',
-        'beforeOptionsComponent',
+        // 'beforeOptionsComponent',
         'groupComponent',
         'optionsComponent',
         'placeholderComponent',

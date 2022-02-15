@@ -1,23 +1,44 @@
 (function() {
 /*!
  * @overview  Ember - JavaScript Application Framework
- * @copyright Copyright 2011-2020 Tilde Inc. and contributors
+ * @copyright Copyright 2011-2021 Tilde Inc. and contributors
  *            Portions Copyright 2006-2011 Strobe Inc.
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   3.25.0
+ * @version   4.1.0
  */
 
-/*globals process */
-let define, require, Ember;
-
-// Used in @ember/-internals/environment/lib/global.js
-mainContext = this; // eslint-disable-line no-undef
+/* eslint-disable no-var */
+/* globals global globalThis self */
+/* eslint-disable-next-line no-unused-vars */
+var define, require;
 
 (function () {
-  let registry;
-  let seen;
+  var globalObj =
+    typeof globalThis !== 'undefined'
+      ? globalThis
+      : typeof self !== 'undefined'
+      ? self
+      : typeof window !== 'undefined'
+      ? window
+      : typeof global !== 'undefined'
+      ? global
+      : null;
+
+  if (globalObj === null) {
+    throw new Error('unable to locate global object');
+  }
+
+  if (typeof globalObj.define === 'function' && typeof globalObj.require === 'function') {
+    define = globalObj.define;
+    require = globalObj.require;
+
+    return;
+  }
+
+  var registry = Object.create(null);
+  var seen = Object.create(null);
 
   function missingModule(name, referrerName) {
     if (referrerName) {
@@ -28,15 +49,15 @@ mainContext = this; // eslint-disable-line no-undef
   }
 
   function internalRequire(_name, referrerName) {
-    let name = _name;
-    let mod = registry[name];
+    var name = _name;
+    var mod = registry[name];
 
     if (!mod) {
       name = name + '/index';
       mod = registry[name];
     }
 
-    let exports = seen[name];
+    var exports = seen[name];
 
     if (exports !== undefined) {
       return exports;
@@ -48,17 +69,17 @@ mainContext = this; // eslint-disable-line no-undef
       missingModule(_name, referrerName);
     }
 
-    let deps = mod.deps;
-    let callback = mod.callback;
-    let reified = new Array(deps.length);
+    var deps = mod.deps;
+    var callback = mod.callback;
+    var reified = new Array(deps.length);
 
-    for (let i = 0; i < deps.length; i++) {
+    for (var i = 0; i < deps.length; i++) {
       if (deps[i] === 'exports') {
         reified[i] = exports;
       } else if (deps[i] === 'require') {
         reified[i] = require;
       } else {
-        reified[i] = internalRequire(deps[i], name);
+        reified[i] = require(deps[i], name);
       }
     }
 
@@ -67,59 +88,23 @@ mainContext = this; // eslint-disable-line no-undef
     return exports;
   }
 
-  let isNode =
-    typeof window === 'undefined' &&
-    typeof process !== 'undefined' &&
-    {}.toString.call(process) === '[object process]';
+  require = function (name) {
+    return internalRequire(name, null);
+  };
 
-  if (!isNode) {
-    Ember = this.Ember = this.Ember || {};
-  }
+  // eslint-disable-next-line no-unused-vars
+  define = function (name, deps, callback) {
+    registry[name] = { deps: deps, callback: callback };
+  };
 
-  if (typeof Ember === 'undefined') {
-    Ember = {};
-  }
+  // setup `require` module
+  require['default'] = require;
 
-  if (typeof Ember.__loader === 'undefined') {
-    registry = Object.create(null);
-    seen = Object.create(null);
+  require.has = function registryHas(moduleName) {
+    return Boolean(registry[moduleName]) || Boolean(registry[moduleName + '/index']);
+  };
 
-    define = function (name, deps, callback) {
-      let value = {};
-
-      if (!callback) {
-        value.deps = [];
-        value.callback = deps;
-      } else {
-        value.deps = deps;
-        value.callback = callback;
-      }
-
-      registry[name] = value;
-    };
-
-    require = function (name) {
-      return internalRequire(name, null);
-    };
-
-    // setup `require` module
-    require['default'] = require;
-
-    require.has = function registryHas(moduleName) {
-      return Boolean(registry[moduleName]) || Boolean(registry[moduleName + '/index']);
-    };
-
-    require._eak_seen = registry;
-
-    Ember.__loader = {
-      define: define,
-      require: require,
-      registry: registry,
-    };
-  } else {
-    define = Ember.__loader.define;
-    require = Ember.__loader.require;
-  }
+  require._eak_seen = require.entries = registry;
 })();
 
 define("@ember/-internals/browser-environment/index", ["exports"], function (_exports) {
@@ -128,7 +113,7 @@ define("@ember/-internals/browser-environment/index", ["exports"], function (_ex
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
-  _exports.hasDOM = _exports.isFirefox = _exports.isChrome = _exports.userAgent = _exports.history = _exports.location = _exports.window = void 0;
+  _exports.hasDOM = _exports.isIE = _exports.isFirefox = _exports.isChrome = _exports.userAgent = _exports.history = _exports.location = _exports.window = void 0;
   // check if window exists and actually is the global
   var hasDom = typeof self === 'object' && self !== null && self.Object === Object && typeof Window !== 'undefined' && self.constructor === Window && typeof document === 'object' && document !== null && self.document === document && typeof location === 'object' && location !== null && self.location === location && typeof history === 'object' && history !== null && self.history === history && typeof navigator === 'object' && navigator !== null && self.navigator === navigator && typeof navigator.userAgent === 'string';
   _exports.hasDOM = hasDom;
@@ -144,8 +129,10 @@ define("@ember/-internals/browser-environment/index", ["exports"], function (_ex
   _exports.isChrome = isChrome;
   var isFirefox = hasDom ? typeof InstallTrigger !== 'undefined' : false;
   _exports.isFirefox = isFirefox;
+  var isIE = hasDom ? typeof MSInputMethodContext !== 'undefined' && typeof documentMode !== 'undefined' : false;
+  _exports.isIE = isIE;
 });
-define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-features"], function (_exports, _deprecatedFeatures) {
+define("@ember/-internals/environment/index", ["exports"], function (_exports) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -213,7 +200,7 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
     ENABLE_OPTIONAL_FEATURES: false,
 
     /**
-      Determines whether Ember should add to `Array`, `Function`, and `String`
+      Determines whether Ember should add to `Array`
       native object prototypes, a few extra methods in order to provide a more
       friendly API.
          We generally recommend leaving this option set to true however, if you need
@@ -229,9 +216,7 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
       @public
     */
     EXTEND_PROTOTYPES: {
-      Array: true,
-      Function: true,
-      String: true
+      Array: true
     },
 
     /**
@@ -312,18 +297,6 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
     ,
 
     /**
-      Whether the app is using jQuery. See RFC #294.
-         This is not intended to be set directly, as the implementation may change in
-      the future. Use `@ember/optional-features` instead.
-         @property _JQUERY_INTEGRATION
-      @for EmberENV
-      @type Boolean
-      @default true
-      @private
-    */
-    _JQUERY_INTEGRATION: true,
-
-    /**
       Whether the app defaults to using async observers.
          This is not intended to be set directly, as the implementation may change in
       the future. Use `@ember/optional-features` instead.
@@ -351,7 +324,7 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
   };
   _exports.ENV = ENV;
 
-  (function (EmberENV) {
+  (EmberENV => {
     if (typeof EmberENV !== 'object' || EmberENV === null) return;
 
     for (var flag in EmberENV) {
@@ -365,32 +338,23 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
       }
     }
 
-    var EXTEND_PROTOTYPES = EmberENV.EXTEND_PROTOTYPES;
+    var {
+      EXTEND_PROTOTYPES
+    } = EmberENV;
 
     if (EXTEND_PROTOTYPES !== undefined) {
       if (typeof EXTEND_PROTOTYPES === 'object' && EXTEND_PROTOTYPES !== null) {
-        ENV.EXTEND_PROTOTYPES.String = EXTEND_PROTOTYPES.String !== false;
-
-        if (_deprecatedFeatures.FUNCTION_PROTOTYPE_EXTENSIONS) {
-          ENV.EXTEND_PROTOTYPES.Function = EXTEND_PROTOTYPES.Function !== false;
-        }
-
         ENV.EXTEND_PROTOTYPES.Array = EXTEND_PROTOTYPES.Array !== false;
       } else {
-        var isEnabled = EXTEND_PROTOTYPES !== false;
-        ENV.EXTEND_PROTOTYPES.String = isEnabled;
-
-        if (_deprecatedFeatures.FUNCTION_PROTOTYPE_EXTENSIONS) {
-          ENV.EXTEND_PROTOTYPES.Function = isEnabled;
-        }
-
-        ENV.EXTEND_PROTOTYPES.Array = isEnabled;
+        ENV.EXTEND_PROTOTYPES.Array = EXTEND_PROTOTYPES !== false;
       }
     } // TODO this does not seem to be used by anything,
     //      can we remove it? do we need to deprecate it?
 
 
-    var EMBER_LOAD_HOOKS = EmberENV.EMBER_LOAD_HOOKS;
+    var {
+      EMBER_LOAD_HOOKS
+    } = EmberENV;
 
     if (typeof EMBER_LOAD_HOOKS === 'object' && EMBER_LOAD_HOOKS !== null) {
       for (var hookName in EMBER_LOAD_HOOKS) {
@@ -398,14 +362,14 @@ define("@ember/-internals/environment/index", ["exports", "@ember/deprecated-fea
         var hooks = EMBER_LOAD_HOOKS[hookName];
 
         if (Array.isArray(hooks)) {
-          ENV.EMBER_LOAD_HOOKS[hookName] = hooks.filter(function (hook) {
-            return typeof hook === 'function';
-          });
+          ENV.EMBER_LOAD_HOOKS[hookName] = hooks.filter(hook => typeof hook === 'function');
         }
       }
     }
 
-    var FEATURES = EmberENV.FEATURES;
+    var {
+      FEATURES
+    } = EmberENV;
 
     if (typeof FEATURES === 'object' && FEATURES !== null) {
       for (var feature in FEATURES) {
@@ -445,7 +409,6 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   _exports.inspect = inspect;
   _exports.lookupDescriptor = lookupDescriptor;
   _exports.canInvoke = canInvoke;
-  _exports.tryInvoke = tryInvoke;
   _exports.makeArray = makeArray;
   _exports.getName = getName;
   _exports.setName = setName;
@@ -455,7 +418,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   _exports.setProxy = setProxy;
   _exports.setEmberArray = setEmberArray;
   _exports.isEmberArray = isEmberArray;
-  _exports.setWithMandatorySetter = _exports.teardownMandatorySetter = _exports.setupMandatorySetter = _exports.Cache = _exports.HAS_NATIVE_PROXY = _exports.HAS_NATIVE_SYMBOL = _exports.ROOT = _exports.checkHasSuper = _exports.GUID_KEY = _exports.getDebugName = _exports.symbol = void 0;
+  _exports.setWithMandatorySetter = _exports.teardownMandatorySetter = _exports.setupMandatorySetter = _exports.Cache = _exports.ROOT = _exports.checkHasSuper = _exports.GUID_KEY = _exports.getDebugName = _exports.symbol = void 0;
 
   /**
     Strongly hint runtimes to intern the provided string.
@@ -529,9 +492,6 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   */
 
   /**
-   Previously we used `Ember.$.uuid`, however `$.uuid` has been removed from
-   jQuery master. We'll just bootstrap our own uuid now.
-  
    @private
    @return {Number} the uuid
    */
@@ -601,11 +561,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
 
   _exports.GUID_KEY = GUID_KEY;
 
-  function generateGuid(obj, prefix) {
-    if (prefix === void 0) {
-      prefix = GUID_PREFIX;
-    }
-
+  function generateGuid(obj, prefix = GUID_PREFIX) {
     var guid = prefix + uuid();
 
     if (isObject(obj)) {
@@ -663,15 +619,6 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return guid;
   }
 
-  var HAS_NATIVE_SYMBOL = function () {
-    if (typeof Symbol !== 'function') {
-      return false;
-    }
-
-    return typeof Symbol() === 'symbol';
-  }();
-
-  _exports.HAS_NATIVE_SYMBOL = HAS_NATIVE_SYMBOL;
   var GENERATED_SYMBOLS = [];
 
   function isInternalSymbol(possibleSymbol) {
@@ -697,7 +644,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return symbol;
   }
 
-  var symbol = HAS_NATIVE_SYMBOL ? Symbol : enumerableSymbol; // the delete is meant to hint at runtimes that this object should remain in
+  var symbol = Symbol; // the delete is meant to hint at runtimes that this object should remain in
   // dictionary mode. This is clearly a runtime specific hack, but currently it
   // appears worthwhile in some usecases. Please note, these deletes do increase
   // the cost of creation dramatically over a plain Object.create. And as this
@@ -717,7 +664,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   if (true
   /* DEBUG */
   ) {
-    var getFunctionName = function getFunctionName(fn) {
+    var getFunctionName = fn => {
       var functionName = fn.name;
 
       if (functionName === undefined) {
@@ -728,7 +675,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
       return functionName.replace(/^bound /, '');
     };
 
-    var getObjectName = function getObjectName(obj) {
+    var getObjectName = obj => {
       var name;
       var className;
 
@@ -751,11 +698,11 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
       return name || className;
     };
 
-    var getPrimitiveName = function getPrimitiveName(value) {
+    var getPrimitiveName = value => {
       return String(value);
     };
 
-    getDebugName = function getDebugName(value) {
+    getDebugName = value => {
       if (typeof value === 'function') {
         return getFunctionName(value) || "(unknown function)";
       } else if (typeof value === 'object' && value !== null) {
@@ -771,7 +718,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   var HAS_SUPER_PATTERN = /\.(_super|call\(this|apply\(this)/;
   var fnToString = Function.prototype.toString;
 
-  var checkHasSuper = function () {
+  var checkHasSuper = (() => {
     var sourceAvailable = fnToString.call(function () {
       return this;
     }).indexOf('return this') > -1;
@@ -785,7 +732,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return function checkHasSuper() {
       return true;
     };
-  }();
+  })();
 
   _exports.checkHasSuper = checkHasSuper;
   var HAS_SUPER_MAP = new WeakMap();
@@ -804,10 +751,13 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return hasSuper;
   }
 
-  var ObserverListenerMeta = function ObserverListenerMeta() {
-    this.listeners = undefined;
-    this.observers = undefined;
-  };
+  class ObserverListenerMeta {
+    constructor() {
+      this.listeners = undefined;
+      this.observers = undefined;
+    }
+
+  }
 
   var OBSERVERS_LISTENERS_MAP = new WeakMap();
 
@@ -882,11 +832,21 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return superWrapper;
   }
 
-  var objectToString = Object.prototype.toString;
-  var functionToString = Function.prototype.toString;
-  var isArray = Array.isArray;
-  var objectKeys = Object.keys;
-  var stringify = JSON.stringify;
+  var {
+    toString: objectToString
+  } = Object.prototype;
+  var {
+    toString: functionToString
+  } = Function.prototype;
+  var {
+    isArray
+  } = Array;
+  var {
+    keys: objectKeys
+  } = Object;
+  var {
+    stringify
+  } = JSON;
   var LIST_LIMIT = 100;
   var DEPTH_LIMIT = 4;
   var SAFE_KEY = /^[\w$]+$/;
@@ -1056,50 +1016,10 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     @module @ember/utils
   */
 
-  /**
-    Checks to see if the `methodName` exists on the `obj`,
-    and if it does, invokes it with the arguments passed.
-  
-    ```javascript
-    import { tryInvoke } from '@ember/utils';
-  
-    let d = new Date('03/15/2013');
-  
-    tryInvoke(d, 'getTime');              // 1363320000000
-    tryInvoke(d, 'setFullYear', [2014]);  // 1394856000000
-    tryInvoke(d, 'noSuchMethod', [2014]); // undefined
-    ```
-  
-    @method tryInvoke
-    @for @ember/utils
-    @static
-    @param {Object} obj The object to check for the method
-    @param {String} methodName The method name to check for
-    @param {Array} [args] The arguments to pass to the method
-    @return {*} the return value of the invoked method or undefined if it cannot be invoked
-    @public
-    @deprecated Use Javascript's optional chaining instead.
-  */
 
-
-  function tryInvoke(obj, methodName, args) {
-    (true && !(false) && (0, _debug.deprecate)("Use of tryInvoke is deprecated. Instead, consider using JavaScript's optional chaining.", false, {
-      id: 'ember-utils.try-invoke',
-      until: '4.0.0',
-      for: 'ember-source',
-      since: {
-        enabled: '3.24.0'
-      },
-      url: 'https://deprecations.emberjs.com/v3.x#toc_ember-utils-try-invoke'
-    }));
-
-    if (canInvoke(obj, methodName)) {
-      var method = obj[methodName];
-      return method.apply(obj, args);
-    }
-  }
-
-  var isArray$1 = Array.isArray;
+  var {
+    isArray: isArray$1
+  } = Array;
 
   function makeArray(obj) {
     if (obj === null || obj === undefined) {
@@ -1163,8 +1083,6 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     return objectToString$1.call(obj);
   }
 
-  var HAS_NATIVE_PROXY = typeof Proxy === 'function';
-  _exports.HAS_NATIVE_PROXY = HAS_NATIVE_PROXY;
   var PROXIES = new _util._WeakSet();
 
   function isProxy(value) {
@@ -1181,8 +1099,8 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     }
   }
 
-  var Cache = /*#__PURE__*/function () {
-    function Cache(limit, func, store) {
+  class Cache {
+    constructor(limit, func, store) {
       this.limit = limit;
       this.func = func;
       this.store = store;
@@ -1192,9 +1110,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
       this.store = store || new Map();
     }
 
-    var _proto = Cache.prototype;
-
-    _proto.get = function get(key) {
+    get(key) {
       if (this.store.has(key)) {
         this.hits++;
         return this.store.get(key);
@@ -1202,26 +1118,25 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
         this.misses++;
         return this.set(key, this.func(key));
       }
-    };
+    }
 
-    _proto.set = function set(key, value) {
+    set(key, value) {
       if (this.limit > this.size) {
         this.size++;
         this.store.set(key, value);
       }
 
       return value;
-    };
+    }
 
-    _proto.purge = function purge() {
+    purge() {
       this.store.clear();
       this.size = 0;
       this.hits = 0;
       this.misses = 0;
-    };
+    }
 
-    return Cache;
-  }();
+  }
 
   _exports.Cache = Cache;
   var EMBER_ARRAYS = new _util._WeakSet();
@@ -1260,11 +1175,11 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
     var SEEN_TAGS = new _util._WeakSet();
     var MANDATORY_SETTERS = new WeakMap();
 
-    var _propertyIsEnumerable = function _propertyIsEnumerable(obj, key) {
+    var _propertyIsEnumerable = function (obj, key) {
       return Object.prototype.propertyIsEnumerable.call(obj, key);
     };
 
-    _exports.setupMandatorySetter = setupMandatorySetter = function setupMandatorySetter(tag, obj, keyName) {
+    _exports.setupMandatorySetter = setupMandatorySetter = function (tag, obj, keyName) {
       if (SEEN_TAGS.has(tag)) {
         return;
       }
@@ -1302,20 +1217,23 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
       Object.defineProperty(obj, keyName, {
         configurable: true,
         enumerable: _propertyIsEnumerable(obj, keyName),
-        get: function get() {
+
+        get() {
           if (desc.get) {
             return desc.get.call(this);
           } else {
             return desc.value;
           }
         },
-        set: function set(value) {
+
+        set(value) {
           (true && !(false) && (0, _debug.assert)("You attempted to update " + this + "." + String(keyName) + " to \"" + String(value) + "\", but it is being tracked by a tracking context, such as a template, computed property, or observer. In order to make sure the context updates properly, you must invalidate the property when updating it. You can mark the property as `@tracked`, or use `@ember/object#set` to do this."));
         }
+
       });
     };
 
-    _exports.teardownMandatorySetter = teardownMandatorySetter = function teardownMandatorySetter(obj, keyName) {
+    _exports.teardownMandatorySetter = teardownMandatorySetter = function (obj, keyName) {
       var setters = MANDATORY_SETTERS.get(obj);
 
       if (setters !== undefined && setters[keyName] !== undefined) {
@@ -1324,7 +1242,7 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
       }
     };
 
-    _exports.setWithMandatorySetter = setWithMandatorySetter = function setWithMandatorySetter(obj, keyName, value) {
+    _exports.setWithMandatorySetter = setWithMandatorySetter = function (obj, keyName, value) {
       var setters = MANDATORY_SETTERS.get(obj);
 
       if (setters !== undefined && setters[keyName] !== undefined) {
@@ -1359,14 +1277,14 @@ define("@ember/-internals/utils/index", ["exports", "@glimmer/util", "@ember/deb
   */
 
 });
-define("@ember/canary-features/index", ["exports", "@ember/-internals/environment", "@ember/polyfills"], function (_exports, _environment, _polyfills) {
+define("@ember/canary-features/index", ["exports", "@ember/-internals/environment"], function (_exports, _environment) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
   _exports.isEnabled = isEnabled;
-  _exports.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = _exports.EMBER_STRICT_MODE = _exports.EMBER_MODERNIZED_BUILT_IN_COMPONENTS = _exports.EMBER_GLIMMER_INVOKE_HELPER = _exports.EMBER_GLIMMER_HELPER_MANAGER = _exports.EMBER_NAMED_BLOCKS = _exports.EMBER_IMPROVED_INSTRUMENTATION = _exports.EMBER_LIBRARIES_ISREGISTERED = _exports.FEATURES = _exports.DEFAULT_FEATURES = void 0;
+  _exports.EMBER_CACHED = _exports.EMBER_ROUTING_ROUTER_SERVICE_REFRESH = _exports.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = _exports.EMBER_STRICT_MODE = _exports.EMBER_GLIMMER_INVOKE_HELPER = _exports.EMBER_GLIMMER_HELPER_MANAGER = _exports.EMBER_NAMED_BLOCKS = _exports.EMBER_IMPROVED_INSTRUMENTATION = _exports.EMBER_LIBRARIES_ISREGISTERED = _exports.FEATURES = _exports.DEFAULT_FEATURES = void 0;
 
   /**
     Set `EmberENV.FEATURES` in your application's `config/environment.js` file
@@ -1384,9 +1302,10 @@ define("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
     EMBER_NAMED_BLOCKS: true,
     EMBER_GLIMMER_HELPER_MANAGER: true,
     EMBER_GLIMMER_INVOKE_HELPER: true,
-    EMBER_MODERNIZED_BUILT_IN_COMPONENTS: false,
     EMBER_STRICT_MODE: true,
-    EMBER_DYNAMIC_HELPERS_AND_MODIFIERS: false
+    EMBER_DYNAMIC_HELPERS_AND_MODIFIERS: true,
+    EMBER_ROUTING_ROUTER_SERVICE_REFRESH: true,
+    EMBER_CACHED: true
   };
   /**
     The hash of enabled Canary features. Add to this, any canary features
@@ -1399,7 +1318,7 @@ define("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   */
 
   _exports.DEFAULT_FEATURES = DEFAULT_FEATURES;
-  var FEATURES = (0, _polyfills.assign)(DEFAULT_FEATURES, _environment.ENV.FEATURES);
+  var FEATURES = Object.assign(DEFAULT_FEATURES, _environment.ENV.FEATURES);
   /**
     Determine whether the specified `feature` is enabled. Used by Ember's
     build tools to exclude experimental features from beta/stable builds.
@@ -1448,14 +1367,42 @@ define("@ember/canary-features/index", ["exports", "@ember/-internals/environmen
   _exports.EMBER_GLIMMER_HELPER_MANAGER = EMBER_GLIMMER_HELPER_MANAGER;
   var EMBER_GLIMMER_INVOKE_HELPER = featureValue(FEATURES.EMBER_GLIMMER_INVOKE_HELPER);
   _exports.EMBER_GLIMMER_INVOKE_HELPER = EMBER_GLIMMER_INVOKE_HELPER;
-  var EMBER_MODERNIZED_BUILT_IN_COMPONENTS = featureValue(FEATURES.EMBER_MODERNIZED_BUILT_IN_COMPONENTS);
-  _exports.EMBER_MODERNIZED_BUILT_IN_COMPONENTS = EMBER_MODERNIZED_BUILT_IN_COMPONENTS;
   var EMBER_STRICT_MODE = featureValue(FEATURES.EMBER_STRICT_MODE);
   _exports.EMBER_STRICT_MODE = EMBER_STRICT_MODE;
   var EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = featureValue(FEATURES.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS);
   _exports.EMBER_DYNAMIC_HELPERS_AND_MODIFIERS = EMBER_DYNAMIC_HELPERS_AND_MODIFIERS;
+  var EMBER_ROUTING_ROUTER_SERVICE_REFRESH = featureValue(FEATURES.EMBER_ROUTING_ROUTER_SERVICE_REFRESH);
+  _exports.EMBER_ROUTING_ROUTER_SERVICE_REFRESH = EMBER_ROUTING_ROUTER_SERVICE_REFRESH;
+  var EMBER_CACHED = featureValue(FEATURES.EMBER_CACHED);
+  _exports.EMBER_CACHED = EMBER_CACHED;
 });
-define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment", "@ember/error", "@ember/debug/lib/deprecate", "@ember/debug/lib/testing", "@ember/debug/lib/warn", "@ember/debug/lib/capture-render-tree"], function (_exports, _browserEnvironment, _error, _deprecate2, _testing, _warn2, _captureRenderTree) {
+define("@ember/debug/container-debug-adapter", ["exports", "@ember/-internals/extension-support"], function (_exports, _extensionSupport) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  Object.defineProperty(_exports, "default", {
+    enumerable: true,
+    get: function () {
+      return _extensionSupport.ContainerDebugAdapter;
+    }
+  });
+});
+define("@ember/debug/data-adapter", ["exports", "@ember/-internals/extension-support"], function (_exports, _extensionSupport) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  Object.defineProperty(_exports, "default", {
+    enumerable: true,
+    get: function () {
+      return _extensionSupport.DataAdapter;
+    }
+  });
+});
+define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment", "@ember/error", "@ember/debug/lib/deprecate", "@ember/debug/lib/testing", "@ember/debug/lib/warn", "@ember/-internals/utils", "@ember/debug/lib/capture-render-tree"], function (_exports, _browserEnvironment, _error, _deprecate2, _testing, _warn2, _utils, _captureRenderTree) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -1463,38 +1410,44 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   });
   Object.defineProperty(_exports, "registerDeprecationHandler", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _deprecate2.registerHandler;
     }
   });
   Object.defineProperty(_exports, "isTesting", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _testing.isTesting;
     }
   });
   Object.defineProperty(_exports, "setTesting", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _testing.setTesting;
     }
   });
   Object.defineProperty(_exports, "registerWarnHandler", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _warn2.registerHandler;
+    }
+  });
+  Object.defineProperty(_exports, "inspect", {
+    enumerable: true,
+    get: function () {
+      return _utils.inspect;
     }
   });
   Object.defineProperty(_exports, "captureRenderTree", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _captureRenderTree.default;
     }
   });
   _exports._warnIfUsingStrippedFeatureFlags = _exports.getDebugFunction = _exports.setDebugFunction = _exports.deprecateFunc = _exports.runInDebug = _exports.debugFreeze = _exports.debugSeal = _exports.deprecate = _exports.debug = _exports.warn = _exports.info = _exports.assert = void 0;
 
   // These are the default production build versions:
-  var noop = function noop() {};
+  var noop = () => {};
 
   var assert = noop;
   _exports.assert = assert;
@@ -1517,7 +1470,7 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   var getDebugFunction = noop;
   _exports.getDebugFunction = getDebugFunction;
 
-  var deprecateFunc = function deprecateFunc() {
+  var deprecateFunc = function () {
     return arguments[arguments.length - 1];
   };
 
@@ -1526,7 +1479,7 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   if (true
   /* DEBUG */
   ) {
-    _exports.setDebugFunction = setDebugFunction = function setDebugFunction(type, callback) {
+    _exports.setDebugFunction = setDebugFunction = function (type, callback) {
       switch (type) {
         case 'assert':
           return _exports.assert = assert = callback;
@@ -1557,7 +1510,7 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
       }
     };
 
-    _exports.getDebugFunction = getDebugFunction = function getDebugFunction(type) {
+    _exports.getDebugFunction = getDebugFunction = function (type) {
       switch (type) {
         case 'assert':
           return assert;
@@ -1663,11 +1616,8 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
     */
 
     setDebugFunction('info', function info() {
-      var _console;
-
-      (_console = console).info.apply(_console, arguments);
+      console.info(...arguments);
       /* eslint-disable-line no-console */
-
     });
     /**
      @module @ember/debug
@@ -1695,27 +1645,15 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
       @private
     */
 
-    setDebugFunction('deprecateFunc', function deprecateFunc() {
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
+    setDebugFunction('deprecateFunc', function deprecateFunc(...args) {
       if (args.length === 3) {
-        var message = args[0],
-            options = args[1],
-            func = args[2];
-        return function () {
+        var [message, options, func] = args;
+        return function (...args) {
           deprecate(message, false, options);
-
-          for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-            args[_key2] = arguments[_key2];
-          }
-
           return func.apply(this, args);
         };
       } else {
-        var _message = args[0],
-            _func = args[1];
+        var [_message, _func] = args;
         return function () {
           deprecate(_message);
           return _func.apply(this, arguments);
@@ -1778,7 +1716,7 @@ define("@ember/debug/index", ["exports", "@ember/-internals/browser-environment"
   /* DEBUG */
   && !(0, _testing.isTesting)()) {
     if (typeof window !== 'undefined' && (_browserEnvironment.isFirefox || _browserEnvironment.isChrome) && window.addEventListener) {
-      window.addEventListener('load', function () {
+      window.addEventListener('load', () => {
         if (document.documentElement && document.documentElement.dataset && !document.documentElement.dataset.emberExtension) {
           var downloadURL;
 
@@ -1830,7 +1768,7 @@ define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
-  _exports.SINCE_MISSING_DEPRECATIONS = _exports.FOR_MISSING_DEPRECATIONS = _exports.missingOptionsSinceDeprecation = _exports.missingOptionsForDeprecation = _exports.missingOptionsUntilDeprecation = _exports.missingOptionsIdDeprecation = _exports.missingOptionsDeprecation = _exports.registerHandler = _exports.default = void 0;
+  _exports.missingOptionDeprecation = _exports.missingOptionsIdDeprecation = _exports.missingOptionsDeprecation = _exports.registerHandler = _exports.default = void 0;
 
   /**
    @module @ember/debug
@@ -1875,34 +1813,19 @@ define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     @param handler {Function} A function to handle deprecation calls.
     @since 2.1.0
   */
-  var registerHandler = function registerHandler() {};
+  var registerHandler = () => {};
 
   _exports.registerHandler = registerHandler;
   var missingOptionsDeprecation;
   _exports.missingOptionsDeprecation = missingOptionsDeprecation;
   var missingOptionsIdDeprecation;
   _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation;
-  var missingOptionsUntilDeprecation;
-  _exports.missingOptionsUntilDeprecation = missingOptionsUntilDeprecation;
 
-  var missingOptionsForDeprecation = function missingOptionsForDeprecation() {
-    return '';
-  };
+  var missingOptionDeprecation = () => '';
 
-  _exports.missingOptionsForDeprecation = missingOptionsForDeprecation;
+  _exports.missingOptionDeprecation = missingOptionDeprecation;
 
-  var missingOptionsSinceDeprecation = function missingOptionsSinceDeprecation() {
-    return '';
-  };
-
-  _exports.missingOptionsSinceDeprecation = missingOptionsSinceDeprecation;
-
-  var deprecate = function deprecate() {};
-
-  var FOR_MISSING_DEPRECATIONS = new Set();
-  _exports.FOR_MISSING_DEPRECATIONS = FOR_MISSING_DEPRECATIONS;
-  var SINCE_MISSING_DEPRECATIONS = new Set();
-  _exports.SINCE_MISSING_DEPRECATIONS = SINCE_MISSING_DEPRECATIONS;
+  var deprecate = () => {};
 
   if (true
   /* DEBUG */
@@ -1932,11 +1855,9 @@ define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     var captureErrorForStack;
 
     if (new Error().stack) {
-      captureErrorForStack = function captureErrorForStack() {
-        return new Error();
-      };
+      captureErrorForStack = () => new Error();
     } else {
-      captureErrorForStack = function captureErrorForStack() {
+      captureErrorForStack = () => {
         try {
           __fail__.fail();
         } catch (e) {
@@ -1980,14 +1901,9 @@ define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     });
     _exports.missingOptionsDeprecation = missingOptionsDeprecation = 'When calling `deprecate` you ' + 'must provide an `options` hash as the third parameter.  ' + '`options` should include `id` and `until` properties.';
     _exports.missingOptionsIdDeprecation = missingOptionsIdDeprecation = 'When calling `deprecate` you must provide `id` in options.';
-    _exports.missingOptionsUntilDeprecation = missingOptionsUntilDeprecation = 'When calling `deprecate` you must provide `until` in options.';
 
-    _exports.missingOptionsForDeprecation = missingOptionsForDeprecation = function missingOptionsForDeprecation(id) {
-      return "When calling `deprecate` you must provide `for` in options. Missing options.for in \"" + id + "\" deprecation";
-    };
-
-    _exports.missingOptionsSinceDeprecation = missingOptionsSinceDeprecation = function missingOptionsSinceDeprecation(id) {
-      return "When calling `deprecate` you must provide `since` in options. Missing options.since in \"" + id + "\" deprecation";
+    _exports.missingOptionDeprecation = missingOptionDeprecation = (id, missingOption) => {
+      return "When calling `deprecate` you must provide `" + missingOption + "` in options. Missing options." + missingOption + " in \"" + id + "\" deprecation";
     };
     /**
      @module @ember/debug
@@ -2023,32 +1939,9 @@ define("@ember/debug/lib/deprecate", ["exports", "@ember/-internals/environment"
     deprecate = function deprecate(message, test, options) {
       (0, _index.assert)(missingOptionsDeprecation, Boolean(options && (options.id || options.until)));
       (0, _index.assert)(missingOptionsIdDeprecation, Boolean(options.id));
-      (0, _index.assert)(missingOptionsUntilDeprecation, Boolean(options.until));
-
-      if (!options.for && !FOR_MISSING_DEPRECATIONS.has(options.id)) {
-        FOR_MISSING_DEPRECATIONS.add(options.id);
-        deprecate(missingOptionsForDeprecation(options.id), Boolean(options.for), {
-          id: 'ember-source.deprecation-without-for',
-          until: '4.0.0',
-          for: 'ember-source',
-          since: {
-            enabled: '3.24.0'
-          }
-        });
-      }
-
-      if (!options.since && !SINCE_MISSING_DEPRECATIONS.has(options.id)) {
-        SINCE_MISSING_DEPRECATIONS.add(options.id);
-        deprecate(missingOptionsSinceDeprecation(options.id), Boolean(options.since), {
-          id: 'ember-source.deprecation-without-since',
-          until: '4.0.0',
-          for: 'ember-source',
-          since: {
-            enabled: '3.24.0'
-          }
-        });
-      }
-
+      (0, _index.assert)(missingOptionDeprecation(options.id, 'until'), Boolean(options.until));
+      (0, _index.assert)(missingOptionDeprecation(options.id, 'for'), Boolean(options.for));
+      (0, _index.assert)(missingOptionDeprecation(options.id, 'since'), Boolean(options.since));
       (0, _handlers.invoke)('deprecate', message, test, options);
     };
   }
@@ -2066,11 +1959,11 @@ define("@ember/debug/lib/handlers", ["exports"], function (_exports) {
   var HANDLERS = {};
   _exports.HANDLERS = HANDLERS;
 
-  var registerHandler = function registerHandler() {};
+  var registerHandler = () => {};
 
   _exports.registerHandler = registerHandler;
 
-  var invoke = function invoke() {};
+  var invoke = () => {};
 
   _exports.invoke = invoke;
 
@@ -2078,9 +1971,9 @@ define("@ember/debug/lib/handlers", ["exports"], function (_exports) {
   /* DEBUG */
   ) {
     _exports.registerHandler = registerHandler = function registerHandler(type, callback) {
-      var nextHandler = HANDLERS[type] || function () {};
+      var nextHandler = HANDLERS[type] || (() => {});
 
-      HANDLERS[type] = function (message, options) {
+      HANDLERS[type] = (message, options) => {
         callback(message, options, nextHandler);
       };
     };
@@ -2124,11 +2017,11 @@ define("@ember/debug/lib/warn", ["exports", "@ember/debug/index", "@ember/debug/
   });
   _exports.missingOptionsDeprecation = _exports.missingOptionsIdDeprecation = _exports.registerHandler = _exports.default = void 0;
 
-  var registerHandler = function registerHandler() {};
+  var registerHandler = () => {};
 
   _exports.registerHandler = registerHandler;
 
-  var warn = function warn() {};
+  var warn = () => {};
 
   var missingOptionsDeprecation;
   _exports.missingOptionsDeprecation = missingOptionsDeprecation;
@@ -2226,39 +2119,13 @@ define("@ember/deprecated-features/index", ["exports"], function (_exports) {
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
-  _exports.GLOBALS_RESOLVER = _exports.PARTIALS = _exports.EMBER_COMPONENT_IS_VISIBLE = _exports.MOUSE_ENTER_LEAVE_MOVE_EVENTS = _exports.FUNCTION_PROTOTYPE_EXTENSIONS = _exports.APP_CTRL_ROUTER_PROPS = _exports.ALIAS_METHOD = _exports.JQUERY_INTEGRATION = _exports.COMPONENT_MANAGER_STRING_LOOKUP = _exports.ROUTER_EVENTS = _exports.MERGE = _exports.LOGGER = _exports.EMBER_EXTEND_PROTOTYPES = _exports.SEND_ACTION = void 0;
+  _exports.ASSIGN = void 0;
 
   /* eslint-disable no-implicit-coercion */
   // These versions should be the version that the deprecation was _introduced_,
   // not the version that the feature will be removed.
-  var SEND_ACTION = !!'3.4.0';
-  _exports.SEND_ACTION = SEND_ACTION;
-  var EMBER_EXTEND_PROTOTYPES = !!'3.2.0-beta.5';
-  _exports.EMBER_EXTEND_PROTOTYPES = EMBER_EXTEND_PROTOTYPES;
-  var LOGGER = !!'3.2.0-beta.1';
-  _exports.LOGGER = LOGGER;
-  var MERGE = !!'3.6.0-beta.1';
-  _exports.MERGE = MERGE;
-  var ROUTER_EVENTS = !!'4.0.0';
-  _exports.ROUTER_EVENTS = ROUTER_EVENTS;
-  var COMPONENT_MANAGER_STRING_LOOKUP = !!'3.8.0';
-  _exports.COMPONENT_MANAGER_STRING_LOOKUP = COMPONENT_MANAGER_STRING_LOOKUP;
-  var JQUERY_INTEGRATION = !!'3.9.0';
-  _exports.JQUERY_INTEGRATION = JQUERY_INTEGRATION;
-  var ALIAS_METHOD = !!'3.9.0';
-  _exports.ALIAS_METHOD = ALIAS_METHOD;
-  var APP_CTRL_ROUTER_PROPS = !!'3.10.0-beta.1';
-  _exports.APP_CTRL_ROUTER_PROPS = APP_CTRL_ROUTER_PROPS;
-  var FUNCTION_PROTOTYPE_EXTENSIONS = !!'3.11.0-beta.1';
-  _exports.FUNCTION_PROTOTYPE_EXTENSIONS = FUNCTION_PROTOTYPE_EXTENSIONS;
-  var MOUSE_ENTER_LEAVE_MOVE_EVENTS = !!'3.13.0-beta.1';
-  _exports.MOUSE_ENTER_LEAVE_MOVE_EVENTS = MOUSE_ENTER_LEAVE_MOVE_EVENTS;
-  var EMBER_COMPONENT_IS_VISIBLE = !!'3.15.0-beta.1';
-  _exports.EMBER_COMPONENT_IS_VISIBLE = EMBER_COMPONENT_IS_VISIBLE;
-  var PARTIALS = !!'3.15.0-beta.1';
-  _exports.PARTIALS = PARTIALS;
-  var GLOBALS_RESOLVER = !!'3.16.0-beta.1';
-  _exports.GLOBALS_RESOLVER = GLOBALS_RESOLVER;
+  var ASSIGN = !!'4.0.0-beta.1';
+  _exports.ASSIGN = ASSIGN;
 });
 define("@ember/error/index", ["exports"], function (_exports) {
   "use strict";
@@ -2284,7 +2151,7 @@ define("@ember/error/index", ["exports"], function (_exports) {
   var _default = Error;
   _exports.default = _default;
 });
-define("@ember/polyfills/index", ["exports", "@ember/deprecated-features", "@ember/polyfills/lib/merge", "@ember/polyfills/lib/assign"], function (_exports, _deprecatedFeatures, _merge, _assign) {
+define("@ember/polyfills/index", ["exports", "@ember/polyfills/lib/assign"], function (_exports, _assign) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -2292,33 +2159,21 @@ define("@ember/polyfills/index", ["exports", "@ember/deprecated-features", "@emb
   });
   Object.defineProperty(_exports, "assign", {
     enumerable: true,
-    get: function get() {
-      return _assign.default;
-    }
-  });
-  Object.defineProperty(_exports, "assignPolyfill", {
-    enumerable: true,
-    get: function get() {
+    get: function () {
       return _assign.assign;
     }
   });
-  _exports.merge = void 0;
-  var merge = _deprecatedFeatures.MERGE ? _merge.default : undefined; // Export `assignPolyfill` for testing
-
-  _exports.merge = merge;
+  _exports.hasPropertyAccessors = void 0;
+  var hasPropertyAccessors = true;
+  _exports.hasPropertyAccessors = hasPropertyAccessors;
 });
-define("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
+define("@ember/polyfills/lib/assign", ["exports", "@ember/debug"], function (_exports, _debug) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
   _exports.assign = assign;
-  _exports.default = void 0;
-
-  /**
-   @module @ember/polyfills
-  */
 
   /**
     Copy properties from a source object to a target object. Source arguments remain unchanged.
@@ -2341,94 +2196,20 @@ define("@ember/polyfills/lib/assign", ["exports"], function (_exports) {
     @public
     @static
   */
-  function assign(target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var arg = arguments[i];
-
-      if (!arg) {
-        continue;
-      }
-
-      var updates = Object.keys(arg);
-
-      for (var _i = 0; _i < updates.length; _i++) {
-        var prop = updates[_i];
-        target[prop] = arg[prop];
-      }
-    }
-
-    return target;
-  } // Note: We use the bracket notation so
-  //       that the babel plugin does not
-  //       transform it.
-  // https://www.npmjs.com/package/babel-plugin-transform-object-assign
-
-
-  var _assign = Object.assign;
-
-  var _default = _assign || assign;
-
-  _exports.default = _default;
-});
-define("@ember/polyfills/lib/merge", ["exports", "@ember/debug"], function (_exports, _debug) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = void 0;
-
-  /**
-    Merge the contents of two objects together into the first object.
-  
-    ```javascript
-    import { merge } from '@ember/polyfills';
-  
-    merge({ first: 'Tom' }, { last: 'Dale' }); // { first: 'Tom', last: 'Dale' }
-    var a = { first: 'Yehuda' };
-    var b = { last: 'Katz' };
-    merge(a, b); // a == { first: 'Yehuda', last: 'Katz' }, b == { last: 'Katz' }
-    ```
-  
-    @method merge
-    @static
-    @for @ember/polyfills
-    @param {Object} original The object to merge into
-    @param {Object} updates The object to copy properties from
-    @return {Object}
-    @deprecated
-    @public
-  */
-  function merge(original, updates) {
-    (true && !(false) && (0, _debug.deprecate)('Use of `merge` has been deprecated. Please use `assign` instead.', false, {
-      id: 'ember-polyfills.deprecate-merge',
-      until: '4.0.0',
-      url: 'https://emberjs.com/deprecations/v3.x/#toc_ember-polyfills-deprecate-merge',
+  function assign(target, ...rest) {
+    (true && !(false) && (0, _debug.deprecate)('Use of `assign` has been deprecated. Please use `Object.assign` or the spread operator instead.', false, {
+      id: 'ember-polyfills.deprecate-assign',
+      until: '5.0.0',
+      url: 'https://deprecations.emberjs.com/v4.x/#toc_ember-polyfills-deprecate-assign',
       for: 'ember-source',
       since: {
-        enabled: '3.6.0-beta.1'
+        enabled: '4.0.0'
       }
     }));
-
-    if (updates === null || typeof updates !== 'object') {
-      return original;
-    }
-
-    var props = Object.keys(updates);
-    var prop;
-
-    for (var i = 0; i < props.length; i++) {
-      prop = props[i];
-      original[prop] = updates[prop];
-    }
-
-    return original;
+    return Object.assign(target, ...rest);
   }
-
-  var _default = merge;
-  _exports.default = _default;
 });
-define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/syntax", "@glimmer/util"], function (_exports, _emberBabel, _nodeModule, _syntax, _util) {
+define("@glimmer/compiler", ["exports", "@glimmer/syntax", "@glimmer/util"], function (_exports, _syntax, _util) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -2443,532 +2224,164 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   _exports.unicode = unicode;
   _exports.WireFormatDebugger = _exports.NEWLINE = _exports.ProgramSymbols = _exports.defaultId = void 0;
 
-  var _CurriedTypeToReadabl;
+  class Template extends (0, _syntax.node)('Template').fields() {}
 
-  var Template = /*#__PURE__*/function (_node$fields) {
-    (0, _emberBabel.inheritsLoose)(Template, _node$fields);
+  class InElement extends (0, _syntax.node)('InElement').fields() {}
 
-    function Template() {
-      return _node$fields.apply(this, arguments) || this;
-    }
+  class Not extends (0, _syntax.node)('Not').fields() {}
 
-    return Template;
-  }((0, _syntax.node)('Template').fields());
+  class If extends (0, _syntax.node)('If').fields() {}
 
-  var InElement = /*#__PURE__*/function (_node$fields2) {
-    (0, _emberBabel.inheritsLoose)(InElement, _node$fields2);
+  class IfInline extends (0, _syntax.node)('IfInline').fields() {}
 
-    function InElement() {
-      return _node$fields2.apply(this, arguments) || this;
-    }
+  class Each extends (0, _syntax.node)('Each').fields() {}
 
-    return InElement;
-  }((0, _syntax.node)('InElement').fields());
+  class With extends (0, _syntax.node)('With').fields() {}
 
-  var Not = /*#__PURE__*/function (_node$fields3) {
-    (0, _emberBabel.inheritsLoose)(Not, _node$fields3);
+  class Let extends (0, _syntax.node)('Let').fields() {}
 
-    function Not() {
-      return _node$fields3.apply(this, arguments) || this;
-    }
+  class WithDynamicVars extends (0, _syntax.node)('WithDynamicVars').fields() {}
 
-    return Not;
-  }((0, _syntax.node)('Not').fields());
+  class GetDynamicVar extends (0, _syntax.node)('GetDynamicVar').fields() {}
 
-  var If = /*#__PURE__*/function (_node$fields4) {
-    (0, _emberBabel.inheritsLoose)(If, _node$fields4);
+  class Log extends (0, _syntax.node)('Log').fields() {}
 
-    function If() {
-      return _node$fields4.apply(this, arguments) || this;
-    }
+  class InvokeComponent extends (0, _syntax.node)('InvokeComponent').fields() {}
 
-    return If;
-  }((0, _syntax.node)('If').fields());
+  class NamedBlocks extends (0, _syntax.node)('NamedBlocks').fields() {}
 
-  var IfInline = /*#__PURE__*/function (_node$fields5) {
-    (0, _emberBabel.inheritsLoose)(IfInline, _node$fields5);
+  class NamedBlock extends (0, _syntax.node)('NamedBlock').fields() {}
 
-    function IfInline() {
-      return _node$fields5.apply(this, arguments) || this;
-    }
+  class EndBlock extends (0, _syntax.node)('EndBlock').fields() {}
 
-    return IfInline;
-  }((0, _syntax.node)('IfInline').fields());
+  class AppendTrustedHTML extends (0, _syntax.node)('AppendTrustedHTML').fields() {}
 
-  var Each = /*#__PURE__*/function (_node$fields6) {
-    (0, _emberBabel.inheritsLoose)(Each, _node$fields6);
+  class AppendTextNode extends (0, _syntax.node)('AppendTextNode').fields() {}
 
-    function Each() {
-      return _node$fields6.apply(this, arguments) || this;
-    }
+  class AppendComment extends (0, _syntax.node)('AppendComment').fields() {}
 
-    return Each;
-  }((0, _syntax.node)('Each').fields());
+  class Component extends (0, _syntax.node)('Component').fields() {}
 
-  var With = /*#__PURE__*/function (_node$fields7) {
-    (0, _emberBabel.inheritsLoose)(With, _node$fields7);
+  class StaticAttr extends (0, _syntax.node)('StaticAttr').fields() {}
 
-    function With() {
-      return _node$fields7.apply(this, arguments) || this;
-    }
+  class DynamicAttr extends (0, _syntax.node)('DynamicAttr').fields() {}
 
-    return With;
-  }((0, _syntax.node)('With').fields());
+  class SimpleElement extends (0, _syntax.node)('SimpleElement').fields() {}
 
-  var Let = /*#__PURE__*/function (_node$fields8) {
-    (0, _emberBabel.inheritsLoose)(Let, _node$fields8);
+  class ElementParameters extends (0, _syntax.node)('ElementParameters').fields() {}
 
-    function Let() {
-      return _node$fields8.apply(this, arguments) || this;
-    }
+  class Yield extends (0, _syntax.node)('Yield').fields() {}
 
-    return Let;
-  }((0, _syntax.node)('Let').fields());
+  class Debugger extends (0, _syntax.node)('Debugger').fields() {}
 
-  var WithDynamicVars = /*#__PURE__*/function (_node$fields9) {
-    (0, _emberBabel.inheritsLoose)(WithDynamicVars, _node$fields9);
+  class CallExpression extends (0, _syntax.node)('CallExpression').fields() {}
 
-    function WithDynamicVars() {
-      return _node$fields9.apply(this, arguments) || this;
-    }
+  class DeprecatedCallExpression extends (0, _syntax.node)('DeprecatedCallExpression').fields() {}
 
-    return WithDynamicVars;
-  }((0, _syntax.node)('WithDynamicVars').fields());
+  class Modifier extends (0, _syntax.node)('Modifier').fields() {}
 
-  var GetDynamicVar = /*#__PURE__*/function (_node$fields10) {
-    (0, _emberBabel.inheritsLoose)(GetDynamicVar, _node$fields10);
+  class InvokeBlock extends (0, _syntax.node)('InvokeBlock').fields() {}
 
-    function GetDynamicVar() {
-      return _node$fields10.apply(this, arguments) || this;
-    }
+  class SplatAttr extends (0, _syntax.node)('SplatAttr').fields() {}
 
-    return GetDynamicVar;
-  }((0, _syntax.node)('GetDynamicVar').fields());
+  class PathExpression extends (0, _syntax.node)('PathExpression').fields() {}
 
-  var Log = /*#__PURE__*/function (_node$fields11) {
-    (0, _emberBabel.inheritsLoose)(Log, _node$fields11);
+  class GetWithResolver extends (0, _syntax.node)('GetWithResolver').fields() {}
 
-    function Log() {
-      return _node$fields11.apply(this, arguments) || this;
-    }
+  class GetSymbol extends (0, _syntax.node)('GetSymbol').fields() {}
 
-    return Log;
-  }((0, _syntax.node)('Log').fields());
-
-  var InvokeComponent = /*#__PURE__*/function (_node$fields12) {
-    (0, _emberBabel.inheritsLoose)(InvokeComponent, _node$fields12);
-
-    function InvokeComponent() {
-      return _node$fields12.apply(this, arguments) || this;
-    }
-
-    return InvokeComponent;
-  }((0, _syntax.node)('InvokeComponent').fields());
-
-  var _NamedBlocks = /*#__PURE__*/function (_node$fields13) {
-    (0, _emberBabel.inheritsLoose)(NamedBlocks, _node$fields13);
-
-    function NamedBlocks() {
-      return _node$fields13.apply(this, arguments) || this;
-    }
-
-    return NamedBlocks;
-  }((0, _syntax.node)('NamedBlocks').fields());
-
-  var _NamedBlock = /*#__PURE__*/function (_node$fields14) {
-    (0, _emberBabel.inheritsLoose)(NamedBlock, _node$fields14);
-
-    function NamedBlock() {
-      return _node$fields14.apply(this, arguments) || this;
-    }
-
-    return NamedBlock;
-  }((0, _syntax.node)('NamedBlock').fields());
-
-  var EndBlock = /*#__PURE__*/function (_node$fields15) {
-    (0, _emberBabel.inheritsLoose)(EndBlock, _node$fields15);
-
-    function EndBlock() {
-      return _node$fields15.apply(this, arguments) || this;
-    }
-
-    return EndBlock;
-  }((0, _syntax.node)('EndBlock').fields());
-
-  var AppendTrustedHTML = /*#__PURE__*/function (_node$fields16) {
-    (0, _emberBabel.inheritsLoose)(AppendTrustedHTML, _node$fields16);
-
-    function AppendTrustedHTML() {
-      return _node$fields16.apply(this, arguments) || this;
-    }
-
-    return AppendTrustedHTML;
-  }((0, _syntax.node)('AppendTrustedHTML').fields());
-
-  var AppendTextNode = /*#__PURE__*/function (_node$fields17) {
-    (0, _emberBabel.inheritsLoose)(AppendTextNode, _node$fields17);
-
-    function AppendTextNode() {
-      return _node$fields17.apply(this, arguments) || this;
-    }
-
-    return AppendTextNode;
-  }((0, _syntax.node)('AppendTextNode').fields());
-
-  var AppendComment = /*#__PURE__*/function (_node$fields18) {
-    (0, _emberBabel.inheritsLoose)(AppendComment, _node$fields18);
-
-    function AppendComment() {
-      return _node$fields18.apply(this, arguments) || this;
-    }
-
-    return AppendComment;
-  }((0, _syntax.node)('AppendComment').fields());
-
-  var Component = /*#__PURE__*/function (_node$fields19) {
-    (0, _emberBabel.inheritsLoose)(Component, _node$fields19);
-
-    function Component() {
-      return _node$fields19.apply(this, arguments) || this;
-    }
-
-    return Component;
-  }((0, _syntax.node)('Component').fields());
-
-  var StaticAttr = /*#__PURE__*/function (_node$fields20) {
-    (0, _emberBabel.inheritsLoose)(StaticAttr, _node$fields20);
-
-    function StaticAttr() {
-      return _node$fields20.apply(this, arguments) || this;
-    }
-
-    return StaticAttr;
-  }((0, _syntax.node)('StaticAttr').fields());
-
-  var DynamicAttr = /*#__PURE__*/function (_node$fields21) {
-    (0, _emberBabel.inheritsLoose)(DynamicAttr, _node$fields21);
-
-    function DynamicAttr() {
-      return _node$fields21.apply(this, arguments) || this;
-    }
-
-    return DynamicAttr;
-  }((0, _syntax.node)('DynamicAttr').fields());
-
-  var SimpleElement = /*#__PURE__*/function (_node$fields22) {
-    (0, _emberBabel.inheritsLoose)(SimpleElement, _node$fields22);
-
-    function SimpleElement() {
-      return _node$fields22.apply(this, arguments) || this;
-    }
-
-    return SimpleElement;
-  }((0, _syntax.node)('SimpleElement').fields());
-
-  var ElementParameters = /*#__PURE__*/function (_node$fields23) {
-    (0, _emberBabel.inheritsLoose)(ElementParameters, _node$fields23);
-
-    function ElementParameters() {
-      return _node$fields23.apply(this, arguments) || this;
-    }
-
-    return ElementParameters;
-  }((0, _syntax.node)('ElementParameters').fields());
-
-  var Yield = /*#__PURE__*/function (_node$fields24) {
-    (0, _emberBabel.inheritsLoose)(Yield, _node$fields24);
-
-    function Yield() {
-      return _node$fields24.apply(this, arguments) || this;
-    }
-
-    return Yield;
-  }((0, _syntax.node)('Yield').fields());
-
-  var Partial = /*#__PURE__*/function (_node$fields25) {
-    (0, _emberBabel.inheritsLoose)(Partial, _node$fields25);
-
-    function Partial() {
-      return _node$fields25.apply(this, arguments) || this;
-    }
-
-    return Partial;
-  }((0, _syntax.node)('Partial').fields());
-
-  var Debugger = /*#__PURE__*/function (_node$fields26) {
-    (0, _emberBabel.inheritsLoose)(Debugger, _node$fields26);
-
-    function Debugger() {
-      return _node$fields26.apply(this, arguments) || this;
-    }
-
-    return Debugger;
-  }((0, _syntax.node)('Debugger').fields());
-
-  var _CallExpression = /*#__PURE__*/function (_node$fields27) {
-    (0, _emberBabel.inheritsLoose)(CallExpression, _node$fields27);
-
-    function CallExpression() {
-      return _node$fields27.apply(this, arguments) || this;
-    }
-
-    return CallExpression;
-  }((0, _syntax.node)('CallExpression').fields());
-
-  var Modifier = /*#__PURE__*/function (_node$fields28) {
-    (0, _emberBabel.inheritsLoose)(Modifier, _node$fields28);
-
-    function Modifier() {
-      return _node$fields28.apply(this, arguments) || this;
-    }
-
-    return Modifier;
-  }((0, _syntax.node)('Modifier').fields());
-
-  var _InvokeBlock = /*#__PURE__*/function (_node$fields29) {
-    (0, _emberBabel.inheritsLoose)(InvokeBlock, _node$fields29);
-
-    function InvokeBlock() {
-      return _node$fields29.apply(this, arguments) || this;
-    }
-
-    return InvokeBlock;
-  }((0, _syntax.node)('InvokeBlock').fields());
-
-  var SplatAttr = /*#__PURE__*/function (_node$fields30) {
-    (0, _emberBabel.inheritsLoose)(SplatAttr, _node$fields30);
-
-    function SplatAttr() {
-      return _node$fields30.apply(this, arguments) || this;
-    }
-
-    return SplatAttr;
-  }((0, _syntax.node)('SplatAttr').fields());
-
-  var _PathExpression = /*#__PURE__*/function (_node$fields31) {
-    (0, _emberBabel.inheritsLoose)(PathExpression, _node$fields31);
-
-    function PathExpression() {
-      return _node$fields31.apply(this, arguments) || this;
-    }
-
-    return PathExpression;
-  }((0, _syntax.node)('PathExpression').fields());
-
-  var GetWithResolver = /*#__PURE__*/function (_node$fields32) {
-    (0, _emberBabel.inheritsLoose)(GetWithResolver, _node$fields32);
-
-    function GetWithResolver() {
-      return _node$fields32.apply(this, arguments) || this;
-    }
-
-    return GetWithResolver;
-  }((0, _syntax.node)('GetWithResolver').fields());
-
-  var GetSymbol = /*#__PURE__*/function (_node$fields33) {
-    (0, _emberBabel.inheritsLoose)(GetSymbol, _node$fields33);
-
-    function GetSymbol() {
-      return _node$fields33.apply(this, arguments) || this;
-    }
-
-    return GetSymbol;
-  }((0, _syntax.node)('GetSymbol').fields());
-
-  var GetFreeWithContext = /*#__PURE__*/function (_node$fields34) {
-    (0, _emberBabel.inheritsLoose)(GetFreeWithContext, _node$fields34);
-
-    function GetFreeWithContext() {
-      return _node$fields34.apply(this, arguments) || this;
-    }
-
-    return GetFreeWithContext;
-  }((0, _syntax.node)('GetFreeWithContext').fields());
+  class GetFreeWithContext extends (0, _syntax.node)('GetFreeWithContext').fields() {}
   /** strict mode */
 
 
-  var GetFree = /*#__PURE__*/function (_node$fields35) {
-    (0, _emberBabel.inheritsLoose)(GetFree, _node$fields35);
+  class GetFree extends (0, _syntax.node)('GetFree').fields() {}
 
-    function GetFree() {
-      return _node$fields35.apply(this, arguments) || this;
-    }
+  class Missing extends (0, _syntax.node)('Missing').fields() {}
 
-    return GetFree;
-  }((0, _syntax.node)('GetFree').fields());
+  class InterpolateExpression extends (0, _syntax.node)('InterpolateExpression').fields() {}
 
-  var Missing = /*#__PURE__*/function (_node$fields36) {
-    (0, _emberBabel.inheritsLoose)(Missing, _node$fields36);
+  class HasBlock extends (0, _syntax.node)('HasBlock').fields() {}
 
-    function Missing() {
-      return _node$fields36.apply(this, arguments) || this;
-    }
+  class HasBlockParams extends (0, _syntax.node)('HasBlockParams').fields() {}
 
-    return Missing;
-  }((0, _syntax.node)('Missing').fields());
+  class Curry extends (0, _syntax.node)('Curry').fields() {}
 
-  var InterpolateExpression = /*#__PURE__*/function (_node$fields37) {
-    (0, _emberBabel.inheritsLoose)(InterpolateExpression, _node$fields37);
+  class Positional extends (0, _syntax.node)('Positional').fields() {}
 
-    function InterpolateExpression() {
-      return _node$fields37.apply(this, arguments) || this;
-    }
+  class NamedArguments extends (0, _syntax.node)('NamedArguments').fields() {}
 
-    return InterpolateExpression;
-  }((0, _syntax.node)('InterpolateExpression').fields());
+  class NamedArgument extends (0, _syntax.node)('NamedArgument').fields() {}
 
-  var HasBlock = /*#__PURE__*/function (_node$fields38) {
-    (0, _emberBabel.inheritsLoose)(HasBlock, _node$fields38);
+  class Args extends (0, _syntax.node)('Args').fields() {}
 
-    function HasBlock() {
-      return _node$fields38.apply(this, arguments) || this;
-    }
+  class Tail extends (0, _syntax.node)('Tail').fields() {}
 
-    return HasBlock;
-  }((0, _syntax.node)('HasBlock').fields());
-
-  var HasBlockParams = /*#__PURE__*/function (_node$fields39) {
-    (0, _emberBabel.inheritsLoose)(HasBlockParams, _node$fields39);
-
-    function HasBlockParams() {
-      return _node$fields39.apply(this, arguments) || this;
-    }
-
-    return HasBlockParams;
-  }((0, _syntax.node)('HasBlockParams').fields());
-
-  var Curry = /*#__PURE__*/function (_node$fields40) {
-    (0, _emberBabel.inheritsLoose)(Curry, _node$fields40);
-
-    function Curry() {
-      return _node$fields40.apply(this, arguments) || this;
-    }
-
-    return Curry;
-  }((0, _syntax.node)('Curry').fields());
-
-  var _Positional = /*#__PURE__*/function (_node$fields41) {
-    (0, _emberBabel.inheritsLoose)(Positional, _node$fields41);
-
-    function Positional() {
-      return _node$fields41.apply(this, arguments) || this;
-    }
-
-    return Positional;
-  }((0, _syntax.node)('Positional').fields());
-
-  var _NamedArguments = /*#__PURE__*/function (_node$fields42) {
-    (0, _emberBabel.inheritsLoose)(NamedArguments, _node$fields42);
-
-    function NamedArguments() {
-      return _node$fields42.apply(this, arguments) || this;
-    }
-
-    return NamedArguments;
-  }((0, _syntax.node)('NamedArguments').fields());
-
-  var NamedArgument = /*#__PURE__*/function (_node$fields43) {
-    (0, _emberBabel.inheritsLoose)(NamedArgument, _node$fields43);
-
-    function NamedArgument() {
-      return _node$fields43.apply(this, arguments) || this;
-    }
-
-    return NamedArgument;
-  }((0, _syntax.node)('NamedArgument').fields());
-
-  var _Args = /*#__PURE__*/function (_node$fields44) {
-    (0, _emberBabel.inheritsLoose)(Args, _node$fields44);
-
-    function Args() {
-      return _node$fields44.apply(this, arguments) || this;
-    }
-
-    return Args;
-  }((0, _syntax.node)('Args').fields());
-
-  var Tail = /*#__PURE__*/function (_node$fields45) {
-    (0, _emberBabel.inheritsLoose)(Tail, _node$fields45);
-
-    function Tail() {
-      return _node$fields45.apply(this, arguments) || this;
-    }
-
-    return Tail;
-  }((0, _syntax.node)('Tail').fields());
-
-  var PresentList = /*#__PURE__*/function () {
-    function PresentList(list) {
+  class PresentList {
+    constructor(list) {
       this.list = list;
     }
 
-    var _proto = PresentList.prototype;
-
-    _proto.toArray = function toArray() {
+    toArray() {
       return this.list;
-    };
+    }
 
-    _proto.map = function map(callback) {
+    map(callback) {
       var result = (0, _util.mapPresent)(this.list, callback);
       return new PresentList(result);
-    };
+    }
 
-    _proto.filter = function filter(predicate) {
+    filter(predicate) {
       var out = [];
 
-      for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(this.list), _step; !(_step = _iterator()).done;) {
-        var _item = _step.value;
-
-        if (predicate(_item)) {
-          out.push(_item);
+      for (var item of this.list) {
+        if (predicate(item)) {
+          out.push(item);
         }
       }
 
       return OptionalList(out);
-    };
+    }
 
-    _proto.toPresentArray = function toPresentArray() {
+    toPresentArray() {
       return this.list;
-    };
+    }
 
-    _proto.into = function into(_ref) {
-      var ifPresent = _ref.ifPresent;
+    into({
+      ifPresent
+    }) {
       return ifPresent(this);
-    };
+    }
 
-    return PresentList;
-  }();
+  }
 
-  var EmptyList = /*#__PURE__*/function () {
-    function EmptyList() {
+  class EmptyList {
+    constructor() {
       this.list = [];
     }
 
-    var _proto2 = EmptyList.prototype;
-
-    _proto2.map = function map(_callback) {
+    map(_callback) {
       return new EmptyList();
-    };
+    }
 
-    _proto2.filter = function filter(_predicate) {
+    filter(_predicate) {
       return new EmptyList();
-    };
+    }
 
-    _proto2.toArray = function toArray() {
+    toArray() {
       return this.list;
-    };
+    }
 
-    _proto2.toPresentArray = function toPresentArray() {
+    toPresentArray() {
       return null;
-    };
+    }
 
-    _proto2.into = function into(_ref2) {
-      var ifEmpty = _ref2.ifEmpty;
+    into({
+      ifEmpty
+    }) {
       return ifEmpty();
-    };
+    }
 
-    return EmptyList;
-  }(); // export type OptionalList<T> = PresentList<T> | EmptyList<T>;
+  } // export type OptionalList<T> = PresentList<T> | EmptyList<T>;
 
 
   function OptionalList(value) {
@@ -2979,123 +2392,98 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
   }
 
-  var ResultImpl = /*#__PURE__*/function () {
-    function ResultImpl() {}
-
-    ResultImpl.all = function all() {
+  class ResultImpl {
+    static all(...results) {
       var out = [];
 
-      for (var _len = arguments.length, results = new Array(_len), _key = 0; _key < _len; _key++) {
-        results[_key] = arguments[_key];
-      }
-
-      for (var _i = 0, _results = results; _i < _results.length; _i++) {
-        var _result = _results[_i];
-
-        if (_result.isErr) {
-          return _result.cast();
+      for (var result of results) {
+        if (result.isErr) {
+          return result.cast();
         } else {
-          out.push(_result.value);
+          out.push(result.value);
         }
       }
 
       return Ok(out);
-    };
+    }
 
-    return ResultImpl;
-  }();
+  }
 
   var Result = ResultImpl;
 
-  var OkImpl = /*#__PURE__*/function (_ResultImpl) {
-    (0, _emberBabel.inheritsLoose)(OkImpl, _ResultImpl);
-
-    function OkImpl(value) {
-      var _this;
-
-      _this = _ResultImpl.call(this) || this;
-      _this.value = value;
-      _this.isOk = true;
-      _this.isErr = false;
-      return _this;
+  class OkImpl extends ResultImpl {
+    constructor(value) {
+      super();
+      this.value = value;
+      this.isOk = true;
+      this.isErr = false;
     }
 
-    var _proto3 = OkImpl.prototype;
-
-    _proto3.expect = function expect(_message) {
+    expect(_message) {
       return this.value;
-    };
+    }
 
-    _proto3.ifOk = function ifOk(callback) {
+    ifOk(callback) {
       callback(this.value);
       return this;
-    };
-
-    _proto3.andThen = function andThen(callback) {
-      return callback(this.value);
-    };
-
-    _proto3.mapOk = function mapOk(callback) {
-      return Ok(callback(this.value));
-    };
-
-    _proto3.ifErr = function ifErr(_callback) {
-      return this;
-    };
-
-    _proto3.mapErr = function mapErr(_callback) {
-      return this;
-    };
-
-    return OkImpl;
-  }(ResultImpl);
-
-  var ErrImpl = /*#__PURE__*/function (_ResultImpl2) {
-    (0, _emberBabel.inheritsLoose)(ErrImpl, _ResultImpl2);
-
-    function ErrImpl(reason) {
-      var _this2;
-
-      _this2 = _ResultImpl2.call(this) || this;
-      _this2.reason = reason;
-      _this2.isOk = false;
-      _this2.isErr = true;
-      return _this2;
     }
 
-    var _proto4 = ErrImpl.prototype;
+    andThen(callback) {
+      return callback(this.value);
+    }
 
-    _proto4.expect = function expect(message) {
-      throw new Error(message || 'expected an Ok, got Err');
-    };
+    mapOk(callback) {
+      return Ok(callback(this.value));
+    }
 
-    _proto4.andThen = function andThen(_callback) {
-      return this.cast();
-    };
-
-    _proto4.mapOk = function mapOk(_callback) {
-      return this.cast();
-    };
-
-    _proto4.ifOk = function ifOk(_callback) {
+    ifErr(_callback) {
       return this;
-    };
+    }
 
-    _proto4.mapErr = function mapErr(callback) {
+    mapErr(_callback) {
+      return this;
+    }
+
+  }
+
+  class ErrImpl extends ResultImpl {
+    constructor(reason) {
+      super();
+      this.reason = reason;
+      this.isOk = false;
+      this.isErr = true;
+    }
+
+    expect(message) {
+      throw new Error(message || 'expected an Ok, got Err');
+    }
+
+    andThen(_callback) {
+      return this.cast();
+    }
+
+    mapOk(_callback) {
+      return this.cast();
+    }
+
+    ifOk(_callback) {
+      return this;
+    }
+
+    mapErr(callback) {
       return Err(callback(this.reason));
-    };
+    }
 
-    _proto4.ifErr = function ifErr(callback) {
+    ifErr(callback) {
       callback(this.reason);
       return this;
-    };
+    }
 
-    _proto4.cast = function cast() {
+    cast() {
       return this;
-    };
+    }
 
-    return ErrImpl;
-  }(ResultImpl);
+  }
 
   function Ok(value) {
     return new OkImpl(value);
@@ -3105,87 +2493,52 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return new ErrImpl(reason);
   }
 
-  var ResultArray = /*#__PURE__*/function () {
-    function ResultArray(items) {
-      if (items === void 0) {
-        items = [];
-      }
-
+  class ResultArray {
+    constructor(items = []) {
       this.items = items;
     }
 
-    var _proto5 = ResultArray.prototype;
-
-    _proto5.add = function add(item) {
+    add(item) {
       this.items.push(item);
-    };
+    }
 
-    _proto5.toArray = function toArray() {
-      var err = this.items.filter(function (item) {
-        return item instanceof ErrImpl;
-      })[0];
+    toArray() {
+      var err = this.items.filter(item => item instanceof ErrImpl)[0];
 
       if (err !== undefined) {
         return err.cast();
       } else {
-        return Ok(this.items.map(function (item) {
-          return item.value;
-        }));
+        return Ok(this.items.map(item => item.value));
       }
-    };
-
-    _proto5.toOptionalList = function toOptionalList() {
-      return this.toArray().mapOk(function (arr) {
-        return OptionalList(arr);
-      });
-    };
-
-    return ResultArray;
-  }();
-
-  var __classPrivateFieldSet = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
     }
 
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var __classPrivateFieldGet = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
+    toOptionalList() {
+      return this.toArray().mapOk(arr => OptionalList(arr));
     }
 
-    return privateMap.get(receiver);
-  };
+  }
 
-  var _keywords, _type;
-
-  var KeywordImpl = /*#__PURE__*/function () {
-    function KeywordImpl(keyword, type, delegate) {
+  class KeywordImpl {
+    constructor(keyword, type, delegate) {
       this.keyword = keyword;
       this.delegate = delegate;
       var nodes = new Set();
 
-      for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(KEYWORD_NODES[type]), _step2; !(_step2 = _iterator2()).done;) {
-        var _nodeType = _step2.value;
-        nodes.add(_nodeType);
+      for (var nodeType of KEYWORD_NODES[type]) {
+        nodes.add(nodeType);
       }
 
       this.types = nodes;
     }
 
-    var _proto6 = KeywordImpl.prototype;
-
-    _proto6.match = function match(node$$1) {
+    match(node$$1) {
       if (!this.types.has(node$$1.type)) {
         return false;
       }
 
-      var path = getPathExpression(node$$1);
+      var path = getCalleeExpression(node$$1);
 
-      if (path !== null && path.ref.type === 'Free') {
+      if (path !== null && path.type === 'Path' && path.ref.type === 'Free') {
         if (path.tail.length > 0) {
           if (path.ref.resolution.serialize() === 'Loose') {
             // cannot be a keyword reference, keywords do not allow paths (must be
@@ -3198,32 +2551,27 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       } else {
         return false;
       }
-    };
+    }
 
-    _proto6.translate = function translate(node$$1, state) {
-      var _this3 = this;
-
+    translate(node$$1, state) {
       if (this.match(node$$1)) {
-        var path = getPathExpression(node$$1);
+        var path = getCalleeExpression(node$$1);
 
-        if (path !== null && path.tail.length > 0) {
+        if (path !== null && path.type === 'Path' && path.tail.length > 0) {
           return Err((0, _syntax.generateSyntaxError)("The `" + this.keyword + "` keyword was used incorrectly. It was used as `" + path.loc.asString() + "`, but it cannot be used with additional path segments. \n\nError caused by", node$$1.loc));
         }
 
         var param = this.delegate.assert(node$$1, state);
-        return param.andThen(function (param) {
-          return _this3.delegate.translate({
-            node: node$$1,
-            state: state
-          }, param);
-        });
+        return param.andThen(param => this.delegate.translate({
+          node: node$$1,
+          state
+        }, param));
       } else {
         return null;
       }
-    };
+    }
 
-    return KeywordImpl;
-  }();
+  }
 
   var KEYWORD_NODES = {
     Call: ['Call'],
@@ -3236,7 +2584,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return new KeywordImpl(keyword, type, delegate);
   }
 
-  function getPathExpression(node$$1) {
+  function getCalleeExpression(node$$1) {
     switch (node$$1.type) {
       // This covers the inside of attributes and expressions, as well as the callee
       // of call nodes
@@ -3244,53 +2592,46 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         return node$$1;
 
       case 'AppendContent':
-        return getPathExpression(node$$1.value);
+        return getCalleeExpression(node$$1.value);
 
       case 'Call':
       case 'InvokeBlock':
       case 'ElementModifier':
-        return getPathExpression(node$$1.callee);
+        return node$$1.callee;
 
       default:
         return null;
     }
   }
 
-  var Keywords = /*#__PURE__*/function () {
-    function Keywords(type) {
-      _keywords.set(this, []);
-
-      _type.set(this, void 0);
-
-      __classPrivateFieldSet(this, _type, type);
+  class Keywords {
+    constructor(type) {
+      this._keywords = [];
+      this._type = type;
     }
 
-    var _proto7 = Keywords.prototype;
-
-    _proto7.kw = function kw(name, delegate) {
-      __classPrivateFieldGet(this, _keywords).push(keyword(name, __classPrivateFieldGet(this, _type), delegate));
+    kw(name, delegate) {
+      this._keywords.push(keyword(name, this._type, delegate));
 
       return this;
-    };
+    }
 
-    _proto7.translate = function translate(node$$1, state) {
-      for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(__classPrivateFieldGet(this, _keywords)), _step3; !(_step3 = _iterator3()).done;) {
-        var _keyword2 = _step3.value;
+    translate(node$$1, state) {
+      for (var _keyword of this._keywords) {
+        var result = _keyword.translate(node$$1, state);
 
-        var _result2 = _keyword2.translate(node$$1, state);
-
-        if (_result2 !== null) {
-          return _result2;
+        if (result !== null) {
+          return result;
         }
       }
 
-      var path = getPathExpression(node$$1);
+      var path = getCalleeExpression(node$$1);
 
-      if (path && path.ref.type === 'Free' && (0, _syntax.isKeyword)(path.ref.name)) {
-        var name = path.ref.name;
-
-        var usedType = __classPrivateFieldGet(this, _type);
-
+      if (path && path.type === 'Path' && path.ref.type === 'Free' && (0, _syntax.isKeyword)(path.ref.name)) {
+        var {
+          name
+        } = path.ref;
+        var usedType = this._type;
         var validTypes = _syntax.KEYWORDS_TYPES[name];
 
         if (validTypes.indexOf(usedType) === -1) {
@@ -3299,12 +2640,10 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return null;
-    };
+    }
 
-    return Keywords;
-  }();
+  }
 
-  _keywords = new WeakMap(), _type = new WeakMap();
   var typesToReadableName = {
     Append: 'an append statement',
     Block: 'a block statement',
@@ -3313,7 +2652,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   };
 
   function generateTypesMessage(name, types) {
-    return types.map(function (type) {
+    return types.map(type => {
       switch (type) {
         case 'Append':
           return "- As an append statement, as in: {{" + name + "}}";
@@ -3433,8 +2772,10 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
   function isSimplePath(path) {
     if (path.type === 'Path') {
-      var head = path.ref,
-          parts = path.tail;
+      var {
+        ref: head,
+        tail: parts
+      } = path;
       return head.type === 'Free' && head.resolution !== _syntax.ASTv2.STRICT_RESOLUTION && parts.length === 0;
     } else {
       return false;
@@ -3469,14 +2810,15 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       case 'Path':
         {
           var printedPath = [printPathHead(path.ref)];
-          printedPath.push.apply(printedPath, path.tail.map(function (t) {
-            return t.chars;
-          }));
+          printedPath.push(...path.tail.map(t => t.chars));
           return printedPath.join('.');
         }
 
       case 'Call':
         return "(" + printPath(path.callee) + " ...)";
+
+      case 'DeprecatedCall':
+        return "" + path.callee.name;
 
       case 'Interpolate':
         throw (0, _util.unreachable)('a concat statement cannot appear as the head of an expression');
@@ -3497,12 +2839,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
   }
 
-  var NormalizeExpressions = /*#__PURE__*/function () {
-    function NormalizeExpressions() {}
-
-    var _proto8 = NormalizeExpressions.prototype;
-
-    _proto8.visit = function visit(node$$1, state) {
+  class NormalizeExpressions {
+    visit(node$$1, state) {
       switch (node$$1.type) {
         case 'Literal':
           return Ok(this.Literal(node$$1));
@@ -3521,13 +2859,14 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           }
 
           return this.CallExpression(node$$1, state);
-      }
-    };
 
-    _proto8.visitList = function visitList(nodes, state) {
-      return new ResultArray(nodes.map(function (e) {
-        return VISIT_EXPRS.visit(e, state);
-      })).toOptionalList();
+        case 'DeprecatedCall':
+          return this.DeprecaedCallExpression(node$$1, state);
+      }
+    }
+
+    visitList(nodes, state) {
+      return new ResultArray(nodes.map(e => VISIT_EXPRS.visit(e, state))).toOptionalList();
     }
     /**
      * Normalize paths into `hir.Path` or a `hir.Expr` that corresponds to the ref.
@@ -3535,15 +2874,17 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
      * TODO since keywords don't support tails anyway, distinguish PathExpression from
      * VariableReference in ASTv2.
      */
-    ;
 
-    _proto8.PathExpression = function PathExpression(path) {
+
+    PathExpression(path) {
       var ref = this.VariableReference(path.ref);
-      var tail = path.tail;
+      var {
+        tail
+      } = path;
 
       if ((0, _util.isPresent)(tail)) {
         var tailLoc = tail[0].loc.extend(tail[tail.length - 1].loc);
-        return Ok(new _PathExpression({
+        return Ok(new PathExpression({
           loc: path.loc,
           head: ref,
           tail: new Tail({
@@ -3554,87 +2895,83 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       } else {
         return Ok(ref);
       }
-    };
+    }
 
-    _proto8.VariableReference = function VariableReference(ref) {
+    VariableReference(ref) {
       return ref;
-    };
+    }
 
-    _proto8.Literal = function Literal(literal) {
+    Literal(literal) {
       return literal;
-    };
+    }
 
-    _proto8.Interpolate = function Interpolate(expr, state) {
+    Interpolate(expr, state) {
       var parts = expr.parts.map(convertPathToCallIfKeyword);
-      return VISIT_EXPRS.visitList(parts, state).mapOk(function (parts) {
-        return new InterpolateExpression({
-          loc: expr.loc,
-          parts: parts
-        });
-      });
-    };
+      return VISIT_EXPRS.visitList(parts, state).mapOk(parts => new InterpolateExpression({
+        loc: expr.loc,
+        parts: parts
+      }));
+    }
 
-    _proto8.CallExpression = function CallExpression(expr, state) {
+    CallExpression(expr, state) {
       if (!hasPath(expr)) {
         throw new Error("unimplemented subexpression at the head of a subexpression");
       } else {
-        return Result.all(VISIT_EXPRS.visit(expr.callee, state), VISIT_EXPRS.Args(expr.args, state)).mapOk(function (_ref3) {
-          var callee = _ref3[0],
-              args = _ref3[1];
-          return new _CallExpression({
-            loc: expr.loc,
-            callee: callee,
-            args: args
-          });
-        });
+        return Result.all(VISIT_EXPRS.visit(expr.callee, state), VISIT_EXPRS.Args(expr.args, state)).mapOk(([callee, args]) => new CallExpression({
+          loc: expr.loc,
+          callee,
+          args
+        }));
       }
-    };
+    }
 
-    _proto8.Args = function Args(_ref4, state) {
-      var positional = _ref4.positional,
-          named = _ref4.named,
-          loc = _ref4.loc;
-      return Result.all(this.Positional(positional, state), this.NamedArguments(named, state)).mapOk(function (_ref5) {
-        var positional = _ref5[0],
-            named = _ref5[1];
-        return new _Args({
-          loc: loc,
-          positional: positional,
-          named: named
-        });
-      });
-    };
+    DeprecaedCallExpression({
+      arg,
+      callee,
+      loc
+    }, _state) {
+      return Ok(new DeprecatedCallExpression({
+        loc,
+        arg,
+        callee
+      }));
+    }
 
-    _proto8.Positional = function Positional(positional, state) {
-      return VISIT_EXPRS.visitList(positional.exprs, state).mapOk(function (list) {
-        return new _Positional({
-          loc: positional.loc,
-          list: list
-        });
-      });
-    };
+    Args({
+      positional,
+      named,
+      loc
+    }, state) {
+      return Result.all(this.Positional(positional, state), this.NamedArguments(named, state)).mapOk(([positional, named]) => new Args({
+        loc,
+        positional,
+        named
+      }));
+    }
 
-    _proto8.NamedArguments = function NamedArguments(named, state) {
-      var pairs = named.entries.map(function (arg) {
+    Positional(positional, state) {
+      return VISIT_EXPRS.visitList(positional.exprs, state).mapOk(list => new Positional({
+        loc: positional.loc,
+        list
+      }));
+    }
+
+    NamedArguments(named, state) {
+      var pairs = named.entries.map(arg => {
         var value = convertPathToCallIfKeyword(arg.value);
-        return VISIT_EXPRS.visit(value, state).mapOk(function (value) {
-          return new NamedArgument({
-            loc: arg.loc,
-            key: arg.name,
-            value: value
-          });
-        });
+        return VISIT_EXPRS.visit(value, state).mapOk(value => new NamedArgument({
+          loc: arg.loc,
+          key: arg.name,
+          value
+        }));
       });
-      return new ResultArray(pairs).toOptionalList().mapOk(function (pairs) {
-        return new _NamedArguments({
-          loc: named.loc,
-          entries: pairs
-        });
-      });
-    };
+      return new ResultArray(pairs).toOptionalList().mapOk(pairs => new NamedArguments({
+        loc: named.loc,
+        entries: pairs
+      }));
+    }
 
-    return NormalizeExpressions;
-  }();
+  }
 
   function convertPathToCallIfKeyword(path) {
     if (path.type === 'Path' && path.ref.type === 'Free' && path.ref.name in _syntax.KEYWORDS_TYPES) {
@@ -3649,21 +2986,27 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   var VISIT_EXPRS = new NormalizeExpressions();
-  var CurriedTypeToReadableType = (_CurriedTypeToReadabl = {}, _CurriedTypeToReadabl[0
-  /* Component */
-  ] = 'component', _CurriedTypeToReadabl[1
-  /* Helper */
-  ] = 'helper', _CurriedTypeToReadabl[2
-  /* Modifier */
-  ] = 'modifier', _CurriedTypeToReadabl);
+  var CurriedTypeToReadableType = {
+    [0
+    /* Component */
+    ]: 'component',
+    [1
+    /* Helper */
+    ]: 'helper',
+    [2
+    /* Modifier */
+    ]: 'modifier'
+  };
 
   function assertCurryKeyword(curriedType) {
-    return function (node$$1, state) {
+    return (node$$1, state) => {
       var readableType = CurriedTypeToReadableType[curriedType];
       var stringsAllowed = curriedType === 0
       /* Component */
       ;
-      var args = node$$1.args;
+      var {
+        args
+      } = node$$1;
       var definition = args.nth(0);
 
       if (definition === null) {
@@ -3687,30 +3030,28 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         loc: args.loc
       });
       return Ok({
-        definition: definition,
-        args: args
+        definition,
+        args
       });
     };
   }
 
   function translateCurryKeyword(curriedType) {
-    return function (_ref6, _ref7) {
-      var node$$1 = _ref6.node,
-          state = _ref6.state;
-      var definition = _ref7.definition,
-          args = _ref7.args;
+    return ({
+      node: node$$1,
+      state
+    }, {
+      definition,
+      args
+    }) => {
       var definitionResult = VISIT_EXPRS.visit(definition, state);
       var argsResult = VISIT_EXPRS.Args(args, state);
-      return Result.all(definitionResult, argsResult).mapOk(function (_ref8) {
-        var definition = _ref8[0],
-            args = _ref8[1];
-        return new Curry({
-          loc: node$$1.loc,
-          curriedType: curriedType,
-          definition: definition,
-          args: args
-        });
-      });
+      return Result.all(definitionResult, argsResult).mapOk(([definition, args]) => new Curry({
+        loc: node$$1.loc,
+        curriedType,
+        definition,
+        args
+      }));
     };
   }
 
@@ -3743,15 +3084,14 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return Ok(varName);
   }
 
-  function translateGetDynamicVarKeyword(_ref9, name) {
-    var node$$1 = _ref9.node,
-        state = _ref9.state;
-    return VISIT_EXPRS.visit(name, state).mapOk(function (name) {
-      return new GetDynamicVar({
-        name: name,
-        loc: node$$1.loc
-      });
-    });
+  function translateGetDynamicVarKeyword({
+    node: node$$1,
+    state
+  }, name) {
+    return VISIT_EXPRS.visit(name, state).mapOk(name => new GetDynamicVar({
+      name,
+      loc: node$$1.loc
+    }));
   }
 
   var getDynamicVarKeyword = {
@@ -3760,7 +3100,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   };
 
   function assertHasBlockKeyword(type) {
-    return function (node$$1) {
+    return node$$1 => {
       var call = node$$1.type === 'AppendContent' ? node$$1.value : node$$1;
       var named = call.type === 'Call' ? call.args.named : null;
       var positionals = call.type === 'Call' ? call.args.positional : null;
@@ -3786,16 +3126,19 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function translateHasBlockKeyword(type) {
-    return function (_ref10, target) {
-      var node$$1 = _ref10.node,
-          scope = _ref10.state.scope;
+    return ({
+      node: node$$1,
+      state: {
+        scope
+      }
+    }, target) => {
       var block = type === 'has-block' ? new HasBlock({
         loc: node$$1.loc,
-        target: target,
+        target,
         symbol: scope.allocateBlock(target.chars)
       }) : new HasBlockParams({
         loc: node$$1.loc,
-        target: target,
+        target,
         symbol: scope.allocateBlock(target.chars)
       });
       return Ok(block);
@@ -3810,7 +3153,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function assertIfUnlessInlineKeyword(type) {
-    return function (originalNode) {
+    return originalNode => {
       var _a;
 
       var inverted = type === 'unless';
@@ -3819,9 +3162,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       var positional = node$$1.type === 'Call' ? node$$1.args.positional : null;
 
       if (named && !named.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("(" + type + ") cannot receive named parameters, received " + named.entries.map(function (e) {
-          return e.name.chars;
-        }).join(', '), originalNode.loc));
+        return Err((0, _syntax.generateSyntaxError)("(" + type + ") cannot receive named parameters, received " + named.entries.map(e => e.name.chars).join(', '), originalNode.loc));
       }
 
       var condition = positional === null || positional === void 0 ? void 0 : positional.nth(0);
@@ -3842,29 +3183,27 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return Ok({
-        condition: condition,
-        truthy: truthy,
-        falsy: falsy
+        condition,
+        truthy,
+        falsy
       });
     };
   }
 
   function translateIfUnlessInlineKeyword(type) {
     var inverted = type === 'unless';
-    return function (_ref11, _ref12) {
-      var node$$1 = _ref11.node,
-          state = _ref11.state;
-      var condition = _ref12.condition,
-          truthy = _ref12.truthy,
-          falsy = _ref12.falsy;
+    return ({
+      node: node$$1,
+      state
+    }, {
+      condition,
+      truthy,
+      falsy
+    }) => {
       var conditionResult = VISIT_EXPRS.visit(condition, state);
       var truthyResult = VISIT_EXPRS.visit(truthy, state);
       var falsyResult = falsy ? VISIT_EXPRS.visit(falsy, state) : Ok(null);
-      return Result.all(conditionResult, truthyResult, falsyResult).mapOk(function (_ref13) {
-        var condition = _ref13[0],
-            truthy = _ref13[1],
-            falsy = _ref13[2];
-
+      return Result.all(conditionResult, truthyResult, falsyResult).mapOk(([condition, truthy, falsy]) => {
         if (inverted) {
           condition = new Not({
             value: condition,
@@ -3874,9 +3213,9 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
         return new IfInline({
           loc: node$$1.loc,
-          condition: condition,
-          truthy: truthy,
-          falsy: falsy
+          condition,
+          truthy,
+          falsy
         });
       });
     };
@@ -3890,9 +3229,12 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function assertLogKeyword(node$$1) {
-    var _node$$1$args = node$$1.args,
-        named = _node$$1$args.named,
-        positional = _node$$1$args.positional;
+    var {
+      args: {
+        named,
+        positional
+      }
+    } = node$$1;
 
     if (named && !named.isEmpty()) {
       return Err((0, _syntax.generateSyntaxError)("(log) does not take any named arguments", node$$1.loc));
@@ -3901,15 +3243,14 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return Ok(positional);
   }
 
-  function translateLogKeyword(_ref14, positional) {
-    var node$$1 = _ref14.node,
-        state = _ref14.state;
-    return VISIT_EXPRS.Positional(positional, state).mapOk(function (positional) {
-      return new Log({
-        positional: positional,
-        loc: node$$1.loc
-      });
-    });
+  function translateLogKeyword({
+    node: node$$1,
+    state
+  }, positional) {
+    return VISIT_EXPRS.Positional(positional, state).mapOk(positional => new Log({
+      positional,
+      loc: node$$1.loc
+    }));
   }
 
   var logKeyword = {
@@ -3924,33 +3265,35 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   /* Modifier */
   ));
 
-  function toAppend(_ref15) {
-    var assert = _ref15.assert,
-        _translate = _ref15.translate;
+  function toAppend({
+    assert,
+    translate
+  }) {
     return {
-      assert: assert,
-      translate: function translate(_ref16, value) {
-        var node$$1 = _ref16.node,
-            state = _ref16.state;
+      assert,
 
-        var result = _translate({
+      translate({
+        node: node$$1,
+        state
+      }, value) {
+        var result = translate({
           node: node$$1,
-          state: state
+          state
         }, value);
-
-        return result.mapOk(function (text) {
-          return new AppendTextNode({
-            text: text,
-            loc: node$$1.loc
-          });
-        });
+        return result.mapOk(text => new AppendTextNode({
+          text,
+          loc: node$$1.loc
+        }));
       }
+
     };
   }
 
   var APPEND_KEYWORDS = keywords('Append').kw('has-block', toAppend(hasBlockKeyword('has-block'))).kw('has-block-params', toAppend(hasBlockKeyword('has-block-params'))).kw('-get-dynamic-var', toAppend(getDynamicVarKeyword)).kw('log', toAppend(logKeyword)).kw('if', toAppend(ifUnlessInlineKeyword('if'))).kw('unless', toAppend(ifUnlessInlineKeyword('unless'))).kw('yield', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
 
       if (args.named.isEmpty()) {
         return Ok({
@@ -3974,67 +3317,30 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         }
       }
     },
-    translate: function translate(_ref17, _ref18) {
-      var node$$1 = _ref17.node,
-          state = _ref17.state;
-      var target = _ref18.target,
-          positional = _ref18.positional;
-      return VISIT_EXPRS.Positional(positional, state).mapOk(function (positional) {
-        return new Yield({
-          loc: node$$1.loc,
-          target: target,
-          to: state.scope.allocateBlock(target.chars),
-          positional: positional
-        });
-      });
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      target,
+      positional
+    }) {
+      return VISIT_EXPRS.Positional(positional, state).mapOk(positional => new Yield({
+        loc: node$$1.loc,
+        target,
+        to: state.scope.allocateBlock(target.chars),
+        positional
+      }));
     }
-  }).kw('partial', {
-    assert: function assert(node$$1, state) {
-      if (state.isStrict) {
-        return Err((0, _syntax.generateSyntaxError)('{{partial}} is not allowed in strict mode templates', node$$1.loc));
-      }
 
-      var _node$$1$args2 = node$$1.args,
-          positional = _node$$1$args2.positional,
-          named = _node$$1$args2.named;
-      var trusting = node$$1.trusting;
-
-      if (positional.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("Partial found with no arguments. You must specify a template name", node$$1.loc));
-      } else if (positional.size !== 1) {
-        return Err((0, _syntax.generateSyntaxError)("Partial found with " + positional.exprs.length + " arguments. You must specify a template name", node$$1.loc));
-      }
-
-      if (named.isEmpty()) {
-        if (trusting) {
-          return Err((0, _syntax.generateSyntaxError)("{{{partial ...}}} is not supported, please use {{partial ...}} instead", node$$1.loc));
-        }
-
-        return Ok(positional.nth(0));
-      } else {
-        return Err((0, _syntax.generateSyntaxError)("Partial does not take any named argument", node$$1.loc));
-      }
-    },
-    translate: function translate(_ref19, expr) {
-      var node$$1 = _ref19.node,
-          state = _ref19.state;
-      state.scope.setHasEval();
-      var visited = expr === undefined ? Ok(new _syntax.ASTv2.LiteralExpression({
-        loc: _syntax.SourceSpan.synthetic('undefined'),
-        value: undefined
-      })) : VISIT_EXPRS.visit(expr, state);
-      return visited.mapOk(function (target) {
-        return new Partial({
-          loc: node$$1.loc,
-          scope: state.scope,
-          target: target
-        });
-      });
-    }
   }).kw('debugger', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
-      var positional = args.positional;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
+      var {
+        positional
+      } = args;
 
       if (args.isEmpty()) {
         return Ok(undefined);
@@ -4046,66 +3352,75 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         }
       }
     },
-    translate: function translate(_ref20) {
-      var node$$1 = _ref20.node,
-          scope = _ref20.state.scope;
+
+    translate({
+      node: node$$1,
+      state: {
+        scope
+      }
+    }) {
       scope.setHasEval();
       return Ok(new Debugger({
         loc: node$$1.loc,
-        scope: scope
+        scope
       }));
     }
+
   }).kw('component', {
     assert: assertCurryKeyword(0
     /* Component */
     ),
-    translate: function translate(_ref21, _ref22) {
-      var node$$1 = _ref21.node,
-          state = _ref21.state;
-      var definition = _ref22.definition,
-          args = _ref22.args;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      definition,
+      args
+    }) {
       var definitionResult = VISIT_EXPRS.visit(definition, state);
       var argsResult = VISIT_EXPRS.Args(args, state);
-      return Result.all(definitionResult, argsResult).mapOk(function (_ref23) {
-        var definition = _ref23[0],
-            args = _ref23[1];
-        return new InvokeComponent({
-          loc: node$$1.loc,
-          definition: definition,
-          args: args,
-          blocks: null
-        });
-      });
+      return Result.all(definitionResult, argsResult).mapOk(([definition, args]) => new InvokeComponent({
+        loc: node$$1.loc,
+        definition,
+        args,
+        blocks: null
+      }));
     }
+
   }).kw('helper', {
     assert: assertCurryKeyword(1
     /* Helper */
     ),
-    translate: function translate(_ref24, _ref25) {
-      var node$$1 = _ref24.node,
-          state = _ref24.state;
-      var definition = _ref25.definition,
-          args = _ref25.args;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      definition,
+      args
+    }) {
       var definitionResult = VISIT_EXPRS.visit(definition, state);
       var argsResult = VISIT_EXPRS.Args(args, state);
-      return Result.all(definitionResult, argsResult).mapOk(function (_ref26) {
-        var definition = _ref26[0],
-            args = _ref26[1];
-        var text = new _CallExpression({
+      return Result.all(definitionResult, argsResult).mapOk(([definition, args]) => {
+        var text = new CallExpression({
           callee: definition,
-          args: args,
+          args,
           loc: node$$1.loc
         });
         return new AppendTextNode({
           loc: node$$1.loc,
-          text: text
+          text
         });
       });
     }
+
   });
   var BLOCK_KEYWORDS = keywords('Block').kw('in-element', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
       var guid = args.get('guid');
 
       if (guid) {
@@ -4121,60 +3436,58 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
 
       return Ok({
-        insertBefore: insertBefore,
-        destination: destination
+        insertBefore,
+        destination
       });
     },
-    translate: function translate(_ref27, _ref28) {
-      var node$$1 = _ref27.node,
-          state = _ref27.state;
-      var insertBefore = _ref28.insertBefore,
-          destination = _ref28.destination;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      insertBefore,
+      destination
+    }) {
       var named = node$$1.blocks.get('default');
       var body = VISIT_STMTS.NamedBlock(named, state);
       var destinationResult = VISIT_EXPRS.visit(destination, state);
-      return Result.all(body, destinationResult).andThen(function (_ref29) {
-        var body = _ref29[0],
-            destination = _ref29[1];
-
+      return Result.all(body, destinationResult).andThen(([body, destination]) => {
         if (insertBefore) {
-          return VISIT_EXPRS.visit(insertBefore, state).mapOk(function (insertBefore) {
-            return {
-              body: body,
-              destination: destination,
-              insertBefore: insertBefore
-            };
-          });
+          return VISIT_EXPRS.visit(insertBefore, state).mapOk(insertBefore => ({
+            body,
+            destination,
+            insertBefore
+          }));
         } else {
           return Ok({
-            body: body,
-            destination: destination,
+            body,
+            destination,
             insertBefore: new Missing({
               loc: node$$1.callee.loc.collapse('end')
             })
           });
         }
-      }).mapOk(function (_ref30) {
-        var body = _ref30.body,
-            destination = _ref30.destination,
-            insertBefore = _ref30.insertBefore;
-        return new InElement({
-          loc: node$$1.loc,
-          block: body,
-          insertBefore: insertBefore,
-          guid: state.generateUniqueCursor(),
-          destination: destination
-        });
-      });
+      }).mapOk(({
+        body,
+        destination,
+        insertBefore
+      }) => new InElement({
+        loc: node$$1.loc,
+        block: body,
+        insertBefore,
+        guid: state.generateUniqueCursor(),
+        destination
+      }));
     }
+
   }).kw('if', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
 
       if (!args.named.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("{{#if}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
-          return e.name.chars;
-        }).join(', '), node$$1.loc));
+        return Err((0, _syntax.generateSyntaxError)("{{#if}} cannot receive named parameters, received " + args.named.entries.map(e => e.name.chars).join(', '), node$$1.loc));
       }
 
       if (args.positional.size > 1) {
@@ -4188,38 +3501,37 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return Ok({
-        condition: condition
+        condition
       });
     },
-    translate: function translate(_ref31, _ref32) {
-      var node$$1 = _ref31.node,
-          state = _ref31.state;
-      var condition = _ref32.condition;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      condition
+    }) {
       var block = node$$1.blocks.get('default');
       var inverse = node$$1.blocks.get('else');
       var conditionResult = VISIT_EXPRS.visit(condition, state);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
       var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
-      return Result.all(conditionResult, blockResult, inverseResult).mapOk(function (_ref33) {
-        var condition = _ref33[0],
-            block = _ref33[1],
-            inverse = _ref33[2];
-        return new If({
-          loc: node$$1.loc,
-          condition: condition,
-          block: block,
-          inverse: inverse
-        });
-      });
+      return Result.all(conditionResult, blockResult, inverseResult).mapOk(([condition, block, inverse]) => new If({
+        loc: node$$1.loc,
+        condition,
+        block,
+        inverse
+      }));
     }
+
   }).kw('unless', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
 
       if (!args.named.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("{{#unless}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
-          return e.name.chars;
-        }).join(', '), node$$1.loc));
+        return Err((0, _syntax.generateSyntaxError)("{{#unless}} cannot receive named parameters, received " + args.named.entries.map(e => e.name.chars).join(', '), node$$1.loc));
       }
 
       if (args.positional.size > 1) {
@@ -4233,45 +3545,40 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return Ok({
-        condition: condition
+        condition
       });
     },
-    translate: function translate(_ref34, _ref35) {
-      var node$$1 = _ref34.node,
-          state = _ref34.state;
-      var condition = _ref35.condition;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      condition
+    }) {
       var block = node$$1.blocks.get('default');
       var inverse = node$$1.blocks.get('else');
       var conditionResult = VISIT_EXPRS.visit(condition, state);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
       var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
-      return Result.all(conditionResult, blockResult, inverseResult).mapOk(function (_ref36) {
-        var condition = _ref36[0],
-            block = _ref36[1],
-            inverse = _ref36[2];
-        return new If({
-          loc: node$$1.loc,
-          condition: new Not({
-            value: condition,
-            loc: node$$1.loc
-          }),
-          block: block,
-          inverse: inverse
-        });
-      });
+      return Result.all(conditionResult, blockResult, inverseResult).mapOk(([condition, block, inverse]) => new If({
+        loc: node$$1.loc,
+        condition: new Not({
+          value: condition,
+          loc: node$$1.loc
+        }),
+        block,
+        inverse
+      }));
     }
-  }).kw('each', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
 
-      if (!args.named.entries.every(function (e) {
-        return e.name.chars === 'key';
-      })) {
-        return Err((0, _syntax.generateSyntaxError)("{{#each}} can only receive the 'key' named parameter, received " + args.named.entries.filter(function (e) {
-          return e.name.chars !== 'key';
-        }).map(function (e) {
-          return e.name.chars;
-        }).join(', '), args.named.loc));
+  }).kw('each', {
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
+
+      if (!args.named.entries.every(e => e.name.chars === 'key')) {
+        return Err((0, _syntax.generateSyntaxError)("{{#each}} can only receive the 'key' named parameter, received " + args.named.entries.filter(e => e.name.chars !== 'key').map(e => e.name.chars).join(', '), args.named.loc));
       }
 
       if (args.positional.size > 1) {
@@ -4286,43 +3593,41 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return Ok({
-        value: value,
-        key: key
+        value,
+        key
       });
     },
-    translate: function translate(_ref37, _ref38) {
-      var node$$1 = _ref37.node,
-          state = _ref37.state;
-      var value = _ref38.value,
-          key = _ref38.key;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      value,
+      key
+    }) {
       var block = node$$1.blocks.get('default');
       var inverse = node$$1.blocks.get('else');
       var valueResult = VISIT_EXPRS.visit(value, state);
       var keyResult = key ? VISIT_EXPRS.visit(key, state) : Ok(null);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
       var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
-      return Result.all(valueResult, keyResult, blockResult, inverseResult).mapOk(function (_ref39) {
-        var value = _ref39[0],
-            key = _ref39[1],
-            block = _ref39[2],
-            inverse = _ref39[3];
-        return new Each({
-          loc: node$$1.loc,
-          value: value,
-          key: key,
-          block: block,
-          inverse: inverse
-        });
-      });
+      return Result.all(valueResult, keyResult, blockResult, inverseResult).mapOk(([value, key, block, inverse]) => new Each({
+        loc: node$$1.loc,
+        value,
+        key,
+        block,
+        inverse
+      }));
     }
+
   }).kw('with', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
 
       if (!args.named.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("{{#with}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
-          return e.name.chars;
-        }).join(', '), args.named.loc));
+        return Err((0, _syntax.generateSyntaxError)("{{#with}} cannot receive named parameters, received " + args.named.entries.map(e => e.name.chars).join(', '), args.named.loc));
       }
 
       if (args.positional.size > 1) {
@@ -4336,38 +3641,37 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       return Ok({
-        value: value
+        value
       });
     },
-    translate: function translate(_ref40, _ref41) {
-      var node$$1 = _ref40.node,
-          state = _ref40.state;
-      var value = _ref41.value;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      value
+    }) {
       var block = node$$1.blocks.get('default');
       var inverse = node$$1.blocks.get('else');
       var valueResult = VISIT_EXPRS.visit(value, state);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
       var inverseResult = inverse ? VISIT_STMTS.NamedBlock(inverse, state) : Ok(null);
-      return Result.all(valueResult, blockResult, inverseResult).mapOk(function (_ref42) {
-        var value = _ref42[0],
-            block = _ref42[1],
-            inverse = _ref42[2];
-        return new With({
-          loc: node$$1.loc,
-          value: value,
-          block: block,
-          inverse: inverse
-        });
-      });
+      return Result.all(valueResult, blockResult, inverseResult).mapOk(([value, block, inverse]) => new With({
+        loc: node$$1.loc,
+        value,
+        block,
+        inverse
+      }));
     }
+
   }).kw('let', {
-    assert: function assert(node$$1) {
-      var args = node$$1.args;
+    assert(node$$1) {
+      var {
+        args
+      } = node$$1;
 
       if (!args.named.isEmpty()) {
-        return Err((0, _syntax.generateSyntaxError)("{{#let}} cannot receive named parameters, received " + args.named.entries.map(function (e) {
-          return e.name.chars;
-        }).join(', '), args.named.loc));
+        return Err((0, _syntax.generateSyntaxError)("{{#let}} cannot receive named parameters, received " + args.named.entries.map(e => e.name.chars).join(', '), args.named.loc));
       }
 
       if (args.positional.size === 0) {
@@ -4382,70 +3686,69 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         positional: args.positional
       });
     },
-    translate: function translate(_ref43, _ref44) {
-      var node$$1 = _ref43.node,
-          state = _ref43.state;
-      var positional = _ref44.positional;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      positional
+    }) {
       var block = node$$1.blocks.get('default');
       var positionalResult = VISIT_EXPRS.Positional(positional, state);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
-      return Result.all(positionalResult, blockResult).mapOk(function (_ref45) {
-        var positional = _ref45[0],
-            block = _ref45[1];
-        return new Let({
-          loc: node$$1.loc,
-          positional: positional,
-          block: block
-        });
-      });
+      return Result.all(positionalResult, blockResult).mapOk(([positional, block]) => new Let({
+        loc: node$$1.loc,
+        positional,
+        block
+      }));
     }
+
   }).kw('-with-dynamic-vars', {
-    assert: function assert(node$$1) {
+    assert(node$$1) {
       return Ok({
         named: node$$1.args.named
       });
     },
-    translate: function translate(_ref46, _ref47) {
-      var node$$1 = _ref46.node,
-          state = _ref46.state;
-      var named = _ref47.named;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      named
+    }) {
       var block = node$$1.blocks.get('default');
       var namedResult = VISIT_EXPRS.NamedArguments(named, state);
       var blockResult = VISIT_STMTS.NamedBlock(block, state);
-      return Result.all(namedResult, blockResult).mapOk(function (_ref48) {
-        var named = _ref48[0],
-            block = _ref48[1];
-        return new WithDynamicVars({
-          loc: node$$1.loc,
-          named: named,
-          block: block
-        });
-      });
+      return Result.all(namedResult, blockResult).mapOk(([named, block]) => new WithDynamicVars({
+        loc: node$$1.loc,
+        named,
+        block
+      }));
     }
+
   }).kw('component', {
     assert: assertCurryKeyword(0
     /* Component */
     ),
-    translate: function translate(_ref49, _ref50) {
-      var node$$1 = _ref49.node,
-          state = _ref49.state;
-      var definition = _ref50.definition,
-          args = _ref50.args;
+
+    translate({
+      node: node$$1,
+      state
+    }, {
+      definition,
+      args
+    }) {
       var definitionResult = VISIT_EXPRS.visit(definition, state);
       var argsResult = VISIT_EXPRS.Args(args, state);
       var blocksResult = VISIT_STMTS.NamedBlocks(node$$1.blocks, state);
-      return Result.all(definitionResult, argsResult, blocksResult).mapOk(function (_ref51) {
-        var definition = _ref51[0],
-            args = _ref51[1],
-            blocks = _ref51[2];
-        return new InvokeComponent({
-          loc: node$$1.loc,
-          definition: definition,
-          args: args,
-          blocks: blocks
-        });
-      });
+      return Result.all(definitionResult, argsResult, blocksResult).mapOk(([definition, args, blocks]) => new InvokeComponent({
+        loc: node$$1.loc,
+        definition,
+        args,
+        blocks
+      }));
     }
+
   });
   var MODIFIER_KEYWORDS = keywords('Modifier'); // There is a small whitelist of namespaced attributes specially
   // enumerated in
@@ -4544,82 +3847,70 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return typeof attrName === 'string' ? attrName : INFLATE_ATTR_TABLE[attrName];
   }
 
-  var ClassifiedElement = /*#__PURE__*/function () {
-    function ClassifiedElement(element, delegate, state) {
+  class ClassifiedElement {
+    constructor(element, delegate, state) {
       this.element = element;
       this.state = state;
       this.delegate = delegate;
     }
 
-    var _proto9 = ClassifiedElement.prototype;
+    toStatement() {
+      return this.prepare().andThen(prepared => this.delegate.toStatement(this, prepared));
+    }
 
-    _proto9.toStatement = function toStatement() {
-      var _this4 = this;
-
-      return this.prepare().andThen(function (prepared) {
-        return _this4.delegate.toStatement(_this4, prepared);
-      });
-    };
-
-    _proto9.attr = function attr(_attr) {
-      var _this5 = this;
-
-      var name = _attr.name;
-      var rawValue = _attr.value;
+    attr(attr) {
+      var name = attr.name;
+      var rawValue = attr.value;
       var namespace = getAttrNamespace(name.chars) || undefined;
 
       if (_syntax.ASTv2.isLiteral(rawValue, 'string')) {
         return Ok(new StaticAttr({
-          loc: _attr.loc,
-          name: name,
+          loc: attr.loc,
+          name,
           value: rawValue.toSlice(),
-          namespace: namespace,
+          namespace,
           kind: {
             component: this.delegate.dynamicFeatures
           }
         }));
       }
 
-      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(rawValue), this.state).mapOk(function (value) {
-        var isTrusting = _attr.trusting;
+      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(rawValue), this.state).mapOk(value => {
+        var isTrusting = attr.trusting;
         return new DynamicAttr({
-          loc: _attr.loc,
-          name: name,
+          loc: attr.loc,
+          name,
           value: value,
-          namespace: namespace,
+          namespace,
           kind: {
             trusting: isTrusting,
-            component: _this5.delegate.dynamicFeatures
+            component: this.delegate.dynamicFeatures
           }
         });
       });
-    };
+    }
 
-    _proto9.modifier = function modifier(_modifier) {
-      if (isHelperInvocation(_modifier)) {
-        assertIsValidModifier(_modifier);
+    modifier(modifier) {
+      if (isHelperInvocation(modifier)) {
+        assertIsValidModifier(modifier);
       }
 
-      var translated = MODIFIER_KEYWORDS.translate(_modifier, this.state);
+      var translated = MODIFIER_KEYWORDS.translate(modifier, this.state);
 
       if (translated !== null) {
         return translated;
       }
 
-      var head = VISIT_EXPRS.visit(_modifier.callee, this.state);
-      var args = VISIT_EXPRS.Args(_modifier.args, this.state);
-      return Result.all(head, args).mapOk(function (_ref52) {
-        var head = _ref52[0],
-            args = _ref52[1];
-        return new Modifier({
-          loc: _modifier.loc,
-          callee: head,
-          args: args
-        });
-      });
-    };
+      var head = VISIT_EXPRS.visit(modifier.callee, this.state);
+      var args = VISIT_EXPRS.Args(modifier.args, this.state);
+      return Result.all(head, args).mapOk(([head, args]) => new Modifier({
+        loc: modifier.loc,
+        callee: head,
+        args
+      }));
+    }
 
-    _proto9.attrs = function attrs() {
+    attrs() {
       var attrs = new ResultArray();
       var args = new ResultArray(); // Unlike most attributes, the `type` attribute can change how
       // subsequent attributes are interpreted by the browser. To address
@@ -4629,186 +3920,151 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       // See https://github.com/glimmerjs/glimmer-vm/pull/726
 
       var typeAttr = null;
-      var simple = this.element.attrs.filter(function (attr) {
-        return attr.type === 'SplatAttr';
-      }).length === 0;
+      var simple = this.element.attrs.filter(attr => attr.type === 'SplatAttr').length === 0;
 
-      for (var _iterator4 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.element.attrs), _step4; !(_step4 = _iterator4()).done;) {
-        var _attr2 = _step4.value;
-
-        if (_attr2.type === 'SplatAttr') {
+      for (var attr of this.element.attrs) {
+        if (attr.type === 'SplatAttr') {
           attrs.add(Ok(new SplatAttr({
-            loc: _attr2.loc,
+            loc: attr.loc,
             symbol: this.state.scope.allocateBlock('attrs')
           })));
-        } else if (_attr2.name.chars === 'type' && simple) {
-          typeAttr = _attr2;
+        } else if (attr.name.chars === 'type' && simple) {
+          typeAttr = attr;
         } else {
-          attrs.add(this.attr(_attr2));
+          attrs.add(this.attr(attr));
         }
       }
 
-      for (var _iterator5 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.element.componentArgs), _step5; !(_step5 = _iterator5()).done;) {
-        var _arg = _step5.value;
-        args.add(this.delegate.arg(_arg, this));
+      for (var arg of this.element.componentArgs) {
+        args.add(this.delegate.arg(arg, this));
       }
 
       if (typeAttr) {
         attrs.add(this.attr(typeAttr));
       }
 
-      return Result.all(args.toArray(), attrs.toArray()).mapOk(function (_ref53) {
-        var args = _ref53[0],
-            attrs = _ref53[1];
-        return {
-          attrs: attrs,
-          args: new _NamedArguments({
-            loc: (0, _syntax.maybeLoc)(args, _syntax.SourceSpan.NON_EXISTENT),
-            entries: OptionalList(args)
-          })
-        };
-      });
-    };
+      return Result.all(args.toArray(), attrs.toArray()).mapOk(([args, attrs]) => ({
+        attrs,
+        args: new NamedArguments({
+          loc: (0, _syntax.maybeLoc)(args, _syntax.SourceSpan.NON_EXISTENT),
+          entries: OptionalList(args)
+        })
+      }));
+    }
 
-    _proto9.prepare = function prepare() {
-      var _this6 = this;
-
+    prepare() {
       var attrs = this.attrs();
-      var modifiers = new ResultArray(this.element.modifiers.map(function (m) {
-        return _this6.modifier(m);
-      })).toArray();
-      return Result.all(attrs, modifiers).mapOk(function (_ref54) {
-        var result = _ref54[0],
-            modifiers = _ref54[1];
-        var attrs = result.attrs,
-            args = result.args;
-        var elementParams = [].concat(attrs, modifiers);
+      var modifiers = new ResultArray(this.element.modifiers.map(m => this.modifier(m))).toArray();
+      return Result.all(attrs, modifiers).mapOk(([result, modifiers]) => {
+        var {
+          attrs,
+          args
+        } = result;
+        var elementParams = [...attrs, ...modifiers];
         var params = new ElementParameters({
           loc: (0, _syntax.maybeLoc)(elementParams, _syntax.SourceSpan.NON_EXISTENT),
           body: OptionalList(elementParams)
         });
         return {
-          args: args,
-          params: params
+          args,
+          params
         };
       });
-    };
+    }
 
-    return ClassifiedElement;
-  }();
+  }
 
-  function hasDynamicFeatures(_ref55) {
-    var attrs = _ref55.attrs,
-        modifiers = _ref55.modifiers;
-
+  function hasDynamicFeatures({
+    attrs,
+    modifiers
+  }) {
     // ElementModifier needs the special ComponentOperations
     if (modifiers.length > 0) {
       return true;
     } // Splattributes need the special ComponentOperations to merge into
 
 
-    return !!attrs.filter(function (attr) {
-      return attr.type === 'SplatAttr';
-    })[0];
+    return !!attrs.filter(attr => attr.type === 'SplatAttr')[0];
   }
 
-  var ClassifiedComponent = /*#__PURE__*/function () {
-    function ClassifiedComponent(tag, element) {
+  class ClassifiedComponent {
+    constructor(tag, element) {
       this.tag = tag;
       this.element = element;
       this.dynamicFeatures = true;
     }
 
-    var _proto10 = ClassifiedComponent.prototype;
-
-    _proto10.arg = function arg(attr, _ref56) {
-      var state = _ref56.state;
+    arg(attr, {
+      state
+    }) {
       var name = attr.name;
-      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(attr.value), state).mapOk(function (value) {
-        return new NamedArgument({
-          loc: attr.loc,
-          key: name,
-          value: value
-        });
-      });
-    };
+      return VISIT_EXPRS.visit(convertPathToCallIfKeyword(attr.value), state).mapOk(value => new NamedArgument({
+        loc: attr.loc,
+        key: name,
+        value
+      }));
+    }
 
-    _proto10.toStatement = function toStatement(component, _ref57) {
-      var _this7 = this;
+    toStatement(component, {
+      args,
+      params
+    }) {
+      var {
+        element,
+        state
+      } = component;
+      return this.blocks(state).mapOk(blocks => new Component({
+        loc: element.loc,
+        tag: this.tag,
+        params,
+        args,
+        blocks
+      }));
+    }
 
-      var args = _ref57.args,
-          params = _ref57.params;
-      var element = component.element,
-          state = component.state;
-      return this.blocks(state).mapOk(function (blocks) {
-        return new Component({
-          loc: element.loc,
-          tag: _this7.tag,
-          params: params,
-          args: args,
-          blocks: blocks
-        });
-      });
-    };
-
-    _proto10.blocks = function blocks(state) {
+    blocks(state) {
       return VISIT_STMTS.NamedBlocks(this.element.blocks, state);
-    };
+    }
 
-    return ClassifiedComponent;
-  }();
+  }
 
-  var ClassifiedSimpleElement = /*#__PURE__*/function () {
-    function ClassifiedSimpleElement(tag, element, dynamicFeatures) {
+  class ClassifiedSimpleElement {
+    constructor(tag, element, dynamicFeatures) {
       this.tag = tag;
       this.element = element;
       this.dynamicFeatures = dynamicFeatures;
       this.isComponent = false;
     }
 
-    var _proto11 = ClassifiedSimpleElement.prototype;
-
-    _proto11.arg = function arg(attr) {
+    arg(attr) {
       return Err((0, _syntax.generateSyntaxError)(attr.name.chars + " is not a valid attribute name. @arguments are only allowed on components, but the tag for this element (`" + this.tag.chars + "`) is a regular, non-component HTML element.", attr.loc));
-    };
+    }
 
-    _proto11.toStatement = function toStatement(classified, _ref58) {
-      var _this8 = this;
-
-      var params = _ref58.params;
-      var state = classified.state,
-          element = classified.element;
+    toStatement(classified, {
+      params
+    }) {
+      var {
+        state,
+        element
+      } = classified;
       var body = VISIT_STMTS.visitList(this.element.body, state);
-      return body.mapOk(function (body) {
-        return new SimpleElement({
-          loc: element.loc,
-          tag: _this8.tag,
-          params: params,
-          body: body.toArray(),
-          dynamicFeatures: _this8.dynamicFeatures
-        });
-      });
-    };
+      return body.mapOk(body => new SimpleElement({
+        loc: element.loc,
+        tag: this.tag,
+        params,
+        body: body.toArray(),
+        dynamicFeatures: this.dynamicFeatures
+      }));
+    }
 
-    return ClassifiedSimpleElement;
-  }();
+  }
 
-  var NormalizationStatements = /*#__PURE__*/function () {
-    function NormalizationStatements() {}
+  class NormalizationStatements {
+    visitList(nodes, state) {
+      return new ResultArray(nodes.map(e => VISIT_STMTS.visit(e, state))).toOptionalList().mapOk(list => list.filter(s => s !== null));
+    }
 
-    var _proto12 = NormalizationStatements.prototype;
-
-    _proto12.visitList = function visitList(nodes, state) {
-      return new ResultArray(nodes.map(function (e) {
-        return VISIT_STMTS.visit(e, state);
-      })).toOptionalList().mapOk(function (list) {
-        return list.filter(function (s) {
-          return s !== null;
-        });
-      });
-    };
-
-    _proto12.visit = function visit(node$$1, state) {
+    visit(node$$1, state) {
       switch (node$$1.type) {
         case 'GlimmerComment':
           return Ok(null);
@@ -4831,11 +4087,9 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         case 'SimpleElement':
           return this.SimpleElement(node$$1, state);
       }
-    };
+    }
 
-    _proto12.InvokeBlock = function InvokeBlock(node$$1, state) {
-      var _this9 = this;
-
+    InvokeBlock(node$$1, state) {
       var translated = BLOCK_KEYWORDS.translate(node$$1, state);
 
       if (translated !== null) {
@@ -4844,57 +4098,43 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
       var head = VISIT_EXPRS.visit(node$$1.callee, state);
       var args = VISIT_EXPRS.Args(node$$1.args, state);
-      return Result.all(head, args).andThen(function (_ref59) {
-        var head = _ref59[0],
-            args = _ref59[1];
-        return _this9.NamedBlocks(node$$1.blocks, state).mapOk(function (blocks) {
-          return new _InvokeBlock({
-            loc: node$$1.loc,
-            head: head,
-            args: args,
-            blocks: blocks
-          });
-        });
-      });
-    };
+      return Result.all(head, args).andThen(([head, args]) => this.NamedBlocks(node$$1.blocks, state).mapOk(blocks => new InvokeBlock({
+        loc: node$$1.loc,
+        head,
+        args,
+        blocks
+      })));
+    }
 
-    _proto12.NamedBlocks = function NamedBlocks(blocks, state) {
-      var _this10 = this;
-
-      var list = new ResultArray(blocks.blocks.map(function (b) {
-        return _this10.NamedBlock(b, state);
+    NamedBlocks(blocks, state) {
+      var list = new ResultArray(blocks.blocks.map(b => this.NamedBlock(b, state)));
+      return list.toArray().mapOk(list => new NamedBlocks({
+        loc: blocks.loc,
+        blocks: OptionalList(list)
       }));
-      return list.toArray().mapOk(function (list) {
-        return new _NamedBlocks({
-          loc: blocks.loc,
-          blocks: OptionalList(list)
-        });
-      });
-    };
+    }
 
-    _proto12.NamedBlock = function NamedBlock(named, state) {
+    NamedBlock(named, state) {
       var body = state.visitBlock(named.block);
-      return body.mapOk(function (body) {
-        return new _NamedBlock({
+      return body.mapOk(body => {
+        return new NamedBlock({
           loc: named.loc,
           name: named.name,
           body: body.toArray(),
           scope: named.block.scope
         });
       });
-    };
+    }
 
-    _proto12.SimpleElement = function SimpleElement(element, state) {
+    SimpleElement(element, state) {
       return new ClassifiedElement(element, new ClassifiedSimpleElement(element.tag, element, hasDynamicFeatures(element)), state).toStatement();
-    };
+    }
 
-    _proto12.Component = function Component(component, state) {
-      return VISIT_EXPRS.visit(component.callee, state).andThen(function (callee) {
-        return new ClassifiedElement(component, new ClassifiedComponent(callee, component), state).toStatement();
-      });
-    };
+    Component(component, state) {
+      return VISIT_EXPRS.visit(component.callee, state).andThen(callee => new ClassifiedElement(component, new ClassifiedComponent(callee, component), state).toStatement());
+    }
 
-    _proto12.AppendContent = function AppendContent(append, state) {
+    AppendContent(append, state) {
       var translated = APPEND_KEYWORDS.translate(append, state);
 
       if (translated !== null) {
@@ -4902,7 +4142,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       }
 
       var value = VISIT_EXPRS.visit(append.value, state);
-      return value.mapOk(function (value) {
+      return value.mapOk(value => {
         if (append.trusting) {
           return new AppendTrustedHTML({
             loc: append.loc,
@@ -4915,9 +4155,9 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           });
         }
       });
-    };
+    }
 
-    _proto12.TextNode = function TextNode(text) {
+    TextNode(text) {
       return new AppendTextNode({
         loc: text.loc,
         text: new _syntax.ASTv2.LiteralExpression({
@@ -4925,84 +4165,49 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           value: text.chars
         })
       });
-    };
+    }
 
-    _proto12.HtmlComment = function HtmlComment(comment) {
+    HtmlComment(comment) {
       return new AppendComment({
         loc: comment.loc,
         value: comment.text
       });
-    };
+    }
 
-    return NormalizationStatements;
-  }();
+  }
 
   var VISIT_STMTS = new NormalizationStatements();
-
-  var __classPrivateFieldSet$1 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
-    }
-
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var __classPrivateFieldGet$1 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var _currentScope, _cursorCount;
   /**
    * This is the mutable state for this compiler pass.
    */
 
-
-  var NormalizationState = /*#__PURE__*/function () {
-    function NormalizationState(block, isStrict) {
+  class NormalizationState {
+    constructor(block, isStrict) {
       this.isStrict = isStrict;
-
-      _currentScope.set(this, void 0);
-
-      _cursorCount.set(this, 0);
-
-      __classPrivateFieldSet$1(this, _currentScope, block);
+      this._cursorCount = 0;
+      this._currentScope = block;
     }
 
-    var _proto13 = NormalizationState.prototype;
+    generateUniqueCursor() {
+      return "%cursor:" + this._cursorCount++ + "%";
+    }
 
-    _proto13.generateUniqueCursor = function generateUniqueCursor() {
-      var _a;
+    get scope() {
+      return this._currentScope;
+    }
 
-      return "%cursor:" + (__classPrivateFieldSet$1(this, _cursorCount, (_a = +__classPrivateFieldGet$1(this, _cursorCount)) + 1), _a) + "%";
-    };
-
-    _proto13.visitBlock = function visitBlock(block) {
-      var oldBlock = __classPrivateFieldGet$1(this, _currentScope);
-
-      __classPrivateFieldSet$1(this, _currentScope, block.scope);
+    visitBlock(block) {
+      var oldBlock = this._currentScope;
+      this._currentScope = block.scope;
 
       try {
         return VISIT_STMTS.visitList(block.body, this);
       } finally {
-        __classPrivateFieldSet$1(this, _currentScope, oldBlock);
+        this._currentScope = oldBlock;
       }
-    };
+    }
 
-    (0, _emberBabel.createClass)(NormalizationState, [{
-      key: "scope",
-      get: function get() {
-        return __classPrivateFieldGet$1(this, _currentScope);
-      }
-    }]);
-    return NormalizationState;
-  }();
-
-  _currentScope = new WeakMap(), _cursorCount = new WeakMap();
+  }
   /**
    * Normalize the AST from @glimmer/syntax into the HIR. The HIR has special
    * instructions for keywords like `{{yield}}`, `(has-block)` and
@@ -5042,43 +4247,35 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
    * ```
    */
 
+
   function normalize$1(source, root, isStrict) {
     // create a new context for the normalization pass
     var state = new NormalizationState(root.table, isStrict);
     var body = VISIT_STMTS.visitList(root.body, state);
-    return body.mapOk(function (body) {
-      return new Template({
-        loc: root.loc,
-        scope: root.table,
-        body: body.toArray()
-      });
-    });
+    return body.mapOk(body => new Template({
+      loc: root.loc,
+      scope: root.table,
+      body: body.toArray()
+    }));
   }
 
-  var WireFormatDebugger = /*#__PURE__*/function () {
-    function WireFormatDebugger(_ref60) {
-      var _statements = _ref60[0],
-          symbols = _ref60[1],
-          _hasEval = _ref60[2],
-          upvars = _ref60[3];
+  class WireFormatDebugger {
+    constructor([_statements, symbols, _hasEval, upvars]) {
       this.upvars = upvars;
       this.symbols = symbols;
     }
 
-    var _proto14 = WireFormatDebugger.prototype;
-
-    _proto14.format = function format(program) {
+    format(program) {
       var out = [];
 
-      for (var _iterator6 = (0, _emberBabel.createForOfIteratorHelperLoose)(program[0]), _step6; !(_step6 = _iterator6()).done;) {
-        var _statement = _step6.value;
-        out.push(this.formatOpcode(_statement));
+      for (var statement of program[0]) {
+        out.push(this.formatOpcode(statement));
       }
 
       return out;
-    };
+    }
 
-    _proto14.formatOpcode = function formatOpcode(opcode) {
+    formatOpcode(opcode) {
       if (Array.isArray(opcode)) {
         switch (opcode[0]) {
           case 1
@@ -5150,11 +4347,6 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           /* Yield */
           :
             return ['yield', opcode[1], this.formatParams(opcode[2])];
-
-          case 19
-          /* Partial */
-          :
-            return ['partial', this.formatOpcode(opcode[1]), opcode[2]];
 
           case 20
           /* DynamicArg */
@@ -5231,11 +4423,6 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           :
             return ['get-strict-free', this.upvars[opcode[1]], opcode[2]];
 
-          case 33
-          /* GetFreeAsFallback */
-          :
-            return ['GetFreeAsFallback', this.upvars[opcode[1]], opcode[2]];
-
           case 34
           /* GetFreeAsComponentOrHelperHeadOrThisFallback */
           :
@@ -5250,6 +4437,11 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           /* GetFreeAsHelperHeadOrThisFallback */
           :
             return ['GetFreeAsHelperHeadOrThisFallback', this.upvars[opcode[1]], opcode[2]];
+
+          case 99
+          /* GetFreeAsDeprecatedHelperHeadOrThisFallback */
+          :
+            return ['GetFreeAsDeprecatedHelperHeadOrThisFallback', this.upvars[opcode[1]]];
 
           case 37
           /* GetFreeAsHelperHead */
@@ -5337,9 +4529,9 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       } else {
         return opcode;
       }
-    };
+    }
 
-    _proto14.formatCurryType = function formatCurryType(value) {
+    formatCurryType(value) {
       switch (value) {
         case 0
         /* Component */
@@ -5359,88 +4551,70 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         default:
           throw (0, _util.exhausted)(value);
       }
-    };
+    }
 
-    _proto14.formatElementParams = function formatElementParams(opcodes) {
-      var _this11 = this;
-
+    formatElementParams(opcodes) {
       if (opcodes === null) return null;
-      return opcodes.map(function (o) {
-        return _this11.formatOpcode(o);
-      });
-    };
+      return opcodes.map(o => this.formatOpcode(o));
+    }
 
-    _proto14.formatParams = function formatParams(opcodes) {
-      var _this12 = this;
-
+    formatParams(opcodes) {
       if (opcodes === null) return null;
-      return opcodes.map(function (o) {
-        return _this12.formatOpcode(o);
-      });
-    };
+      return opcodes.map(o => this.formatOpcode(o));
+    }
 
-    _proto14.formatHash = function formatHash(hash) {
-      var _this13 = this;
-
+    formatHash(hash) {
       if (hash === null) return null;
-      return hash[0].reduce(function (accum, key, index) {
-        accum[key] = _this13.formatOpcode(hash[1][index]);
+      return hash[0].reduce((accum, key, index) => {
+        accum[key] = this.formatOpcode(hash[1][index]);
         return accum;
       }, (0, _util.dict)());
-    };
+    }
 
-    _proto14.formatBlocks = function formatBlocks(blocks) {
-      var _this14 = this;
-
+    formatBlocks(blocks) {
       if (blocks === null) return null;
-      return blocks[0].reduce(function (accum, key, index) {
-        accum[key] = _this14.formatBlock(blocks[1][index]);
+      return blocks[0].reduce((accum, key, index) => {
+        accum[key] = this.formatBlock(blocks[1][index]);
         return accum;
       }, (0, _util.dict)());
-    };
+    }
 
-    _proto14.formatBlock = function formatBlock(block) {
-      var _this15 = this;
-
+    formatBlock(block) {
       return {
-        statements: block[0].map(function (s) {
-          return _this15.formatOpcode(s);
-        }),
+        statements: block[0].map(s => this.formatOpcode(s)),
         parameters: block[1]
       };
-    };
+    }
 
-    return WireFormatDebugger;
-  }();
+  }
 
   _exports.WireFormatDebugger = WireFormatDebugger;
 
-  var ExpressionEncoder = /*#__PURE__*/function () {
-    function ExpressionEncoder() {}
-
-    var _proto15 = ExpressionEncoder.prototype;
-
-    _proto15.expr = function expr(_expr) {
-      switch (_expr.type) {
+  class ExpressionEncoder {
+    expr(expr) {
+      switch (expr.type) {
         case 'Missing':
           return undefined;
 
         case 'Literal':
-          return this.Literal(_expr);
+          return this.Literal(expr);
 
         case 'CallExpression':
-          return this.CallExpression(_expr);
+          return this.CallExpression(expr);
+
+        case 'DeprecatedCallExpression':
+          return this.DeprecatedCallExpression(expr);
 
         case 'PathExpression':
-          return this.PathExpression(_expr);
+          return this.PathExpression(expr);
 
         case 'Arg':
           return [30
           /* GetSymbol */
-          , _expr.symbol];
+          , expr.symbol];
 
         case 'Local':
-          return this.Local(_expr);
+          return this.Local(expr);
 
         case 'This':
           return [30
@@ -5448,37 +4622,37 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           , 0];
 
         case 'Free':
-          return [_expr.resolution.resolution(), _expr.symbol];
+          return [expr.resolution.resolution(), expr.symbol];
 
         case 'HasBlock':
-          return this.HasBlock(_expr);
+          return this.HasBlock(expr);
 
         case 'HasBlockParams':
-          return this.HasBlockParams(_expr);
+          return this.HasBlockParams(expr);
 
         case 'Curry':
-          return this.Curry(_expr);
+          return this.Curry(expr);
 
         case 'Not':
-          return this.Not(_expr);
+          return this.Not(expr);
 
         case 'IfInline':
-          return this.IfInline(_expr);
+          return this.IfInline(expr);
 
         case 'InterpolateExpression':
-          return this.InterpolateExpression(_expr);
+          return this.InterpolateExpression(expr);
 
         case 'GetDynamicVar':
-          return this.GetDynamicVar(_expr);
+          return this.GetDynamicVar(expr);
 
         case 'Log':
-          return this.Log(_expr);
+          return this.Log(expr);
       }
-    };
+    }
 
-    _proto15.Literal = function Literal(_ref61) {
-      var value = _ref61.value;
-
+    Literal({
+      value
+    }) {
       if (value === undefined) {
         return [27
         /* Undefined */
@@ -5486,123 +4660,134 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       } else {
         return value;
       }
-    };
+    }
 
-    _proto15.Missing = function Missing() {
+    Missing() {
       return undefined;
-    };
+    }
 
-    _proto15.HasBlock = function HasBlock(_ref62) {
-      var symbol = _ref62.symbol;
+    HasBlock({
+      symbol
+    }) {
       return [48
       /* HasBlock */
       , [30
       /* GetSymbol */
       , symbol]];
-    };
+    }
 
-    _proto15.HasBlockParams = function HasBlockParams(_ref63) {
-      var symbol = _ref63.symbol;
+    HasBlockParams({
+      symbol
+    }) {
       return [49
       /* HasBlockParams */
       , [30
       /* GetSymbol */
       , symbol]];
-    };
+    }
 
-    _proto15.Curry = function Curry(_ref64) {
-      var definition = _ref64.definition,
-          curriedType = _ref64.curriedType,
-          args = _ref64.args;
+    Curry({
+      definition,
+      curriedType,
+      args
+    }) {
       return [50
       /* Curry */
       , EXPR.expr(definition), curriedType, EXPR.Positional(args.positional), EXPR.NamedArguments(args.named)];
-    };
+    }
 
-    _proto15.Local = function Local(_ref65) {
-      var isTemplateLocal = _ref65.isTemplateLocal,
-          symbol = _ref65.symbol;
+    Local({
+      isTemplateLocal,
+      symbol
+    }) {
       return [isTemplateLocal ? 32
       /* GetTemplateSymbol */
       : 30
       /* GetSymbol */
       , symbol];
-    };
+    }
 
-    _proto15.GetWithResolver = function GetWithResolver(_ref66) {
-      var symbol = _ref66.symbol;
+    GetWithResolver({
+      symbol
+    }) {
       return [34
       /* GetFreeAsComponentOrHelperHeadOrThisFallback */
       , symbol];
-    };
+    }
 
-    _proto15.PathExpression = function PathExpression(_ref67) {
-      var head = _ref67.head,
-          tail = _ref67.tail;
+    PathExpression({
+      head,
+      tail
+    }) {
       var getOp = EXPR.expr(head);
-      return [].concat(getOp, [EXPR.Tail(tail)]);
-    };
+      return [...getOp, EXPR.Tail(tail)];
+    }
 
-    _proto15.InterpolateExpression = function InterpolateExpression(_ref68) {
-      var parts = _ref68.parts;
+    InterpolateExpression({
+      parts
+    }) {
       return [29
       /* Concat */
-      , parts.map(function (e) {
-        return EXPR.expr(e);
-      }).toArray()];
-    };
+      , parts.map(e => EXPR.expr(e)).toArray()];
+    }
 
-    _proto15.CallExpression = function CallExpression(_ref69) {
-      var callee = _ref69.callee,
-          args = _ref69.args;
+    CallExpression({
+      callee,
+      args
+    }) {
       return [28
       /* Call */
-      , EXPR.expr(callee)].concat(EXPR.Args(args));
-    };
+      , EXPR.expr(callee), ...EXPR.Args(args)];
+    }
 
-    _proto15.Tail = function Tail(_ref70) {
-      var members = _ref70.members;
-      return (0, _util.mapPresent)(members, function (member) {
-        return member.chars;
-      });
-    };
+    DeprecatedCallExpression({
+      arg,
+      callee
+    }) {
+      return [99
+      /* GetFreeAsDeprecatedHelperHeadOrThisFallback */
+      , callee.symbol, [arg.chars]];
+    }
 
-    _proto15.Args = function Args(_ref71) {
-      var positional = _ref71.positional,
-          named = _ref71.named;
+    Tail({
+      members
+    }) {
+      return (0, _util.mapPresent)(members, member => member.chars);
+    }
+
+    Args({
+      positional,
+      named
+    }) {
       return [this.Positional(positional), this.NamedArguments(named)];
-    };
+    }
 
-    _proto15.Positional = function Positional(_ref72) {
-      var list = _ref72.list;
-      return list.map(function (l) {
-        return EXPR.expr(l);
-      }).toPresentArray();
-    };
+    Positional({
+      list
+    }) {
+      return list.map(l => EXPR.expr(l)).toPresentArray();
+    }
 
-    _proto15.NamedArgument = function NamedArgument(_ref73) {
-      var key = _ref73.key,
-          value = _ref73.value;
+    NamedArgument({
+      key,
+      value
+    }) {
       return [key.chars, EXPR.expr(value)];
-    };
+    }
 
-    _proto15.NamedArguments = function NamedArguments(_ref74) {
-      var pairs = _ref74.entries;
+    NamedArguments({
+      entries: pairs
+    }) {
       var list = pairs.toArray();
 
       if ((0, _util.isPresent)(list)) {
         var names = [];
         var values$$1 = [];
 
-        for (var _iterator7 = (0, _emberBabel.createForOfIteratorHelperLoose)(list), _step7; !(_step7 = _iterator7()).done;) {
-          var _pair = _step7.value;
-
-          var _EXPR$NamedArgument = EXPR.NamedArgument(_pair),
-              _name2 = _EXPR$NamedArgument[0],
-              _value = _EXPR$NamedArgument[1];
-
-          names.push(_name2);
-          values$$1.push(_value);
+        for (var pair of list) {
+          var [name, value] = EXPR.NamedArgument(pair);
+          names.push(name);
+          values$$1.push(value);
         }
 
         (0, _util.assertPresent)(names);
@@ -5611,93 +4796,90 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       } else {
         return null;
       }
-    };
+    }
 
-    _proto15.Not = function Not(_ref75) {
-      var value = _ref75.value;
+    Not({
+      value
+    }) {
       return [51
       /* Not */
       , EXPR.expr(value)];
-    };
+    }
 
-    _proto15.IfInline = function IfInline(_ref76) {
-      var condition = _ref76.condition,
-          truthy = _ref76.truthy,
-          falsy = _ref76.falsy;
-      return [52
+    IfInline({
+      condition,
+      truthy,
+      falsy
+    }) {
+      var expr = [52
       /* IfInline */
-      , EXPR.expr(condition), EXPR.expr(truthy), falsy ? EXPR.expr(falsy) : null];
-    };
+      , EXPR.expr(condition), EXPR.expr(truthy)];
 
-    _proto15.GetDynamicVar = function GetDynamicVar(_ref77) {
-      var name = _ref77.name;
+      if (falsy) {
+        expr.push(EXPR.expr(falsy));
+      }
+
+      return expr;
+    }
+
+    GetDynamicVar({
+      name
+    }) {
       return [53
       /* GetDynamicVar */
       , EXPR.expr(name)];
-    };
+    }
 
-    _proto15.Log = function Log(_ref78) {
-      var positional = _ref78.positional;
+    Log({
+      positional
+    }) {
       return [54
       /* Log */
       , this.Positional(positional)];
-    };
+    }
 
-    return ExpressionEncoder;
-  }();
+  }
 
   var EXPR = new ExpressionEncoder();
 
-  var WireStatements = /*#__PURE__*/function () {
-    function WireStatements(statements) {
+  class WireStatements {
+    constructor(statements) {
       this.statements = statements;
     }
 
-    var _proto16 = WireStatements.prototype;
-
-    _proto16.toArray = function toArray() {
+    toArray() {
       return this.statements;
-    };
+    }
 
-    return WireStatements;
-  }();
+  }
 
-  var ContentEncoder = /*#__PURE__*/function () {
-    function ContentEncoder() {}
-
-    var _proto17 = ContentEncoder.prototype;
-
-    _proto17.list = function list(statements) {
+  class ContentEncoder {
+    list(statements) {
       var out = [];
 
-      for (var _iterator8 = (0, _emberBabel.createForOfIteratorHelperLoose)(statements), _step8; !(_step8 = _iterator8()).done;) {
-        var _statement2 = _step8.value;
+      for (var statement of statements) {
+        var result = CONTENT.content(statement);
 
-        var _result3 = CONTENT.content(_statement2);
-
-        if (_result3 && _result3 instanceof WireStatements) {
-          out.push.apply(out, _result3.toArray());
+        if (result && result instanceof WireStatements) {
+          out.push(...result.toArray());
         } else {
-          out.push(_result3);
+          out.push(result);
         }
       }
 
       return out;
-    };
+    }
 
-    _proto17.content = function content(stmt) {
+    content(stmt) {
       return this.visitContent(stmt);
-    };
+    }
 
-    _proto17.visitContent = function visitContent(stmt) {
+    visitContent(stmt) {
       switch (stmt.type) {
         case 'Debugger':
           return [26
           /* Debugger */
           , stmt.scope.getEvalInfo()];
-
-        case 'Partial':
-          return this.Partial(stmt);
 
         case 'AppendComment':
           return this.AppendComment(stmt);
@@ -5744,29 +4926,23 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         default:
           return (0, _util.exhausted)(stmt);
       }
-    };
+    }
 
-    _proto17.Partial = function Partial(_ref79) {
-      var target = _ref79.target,
-          scope = _ref79.scope;
-      return [19
-      /* Partial */
-      , EXPR.expr(target), scope.getEvalInfo()];
-    };
-
-    _proto17.Yield = function Yield(_ref80) {
-      var to = _ref80.to,
-          positional = _ref80.positional;
+    Yield({
+      to,
+      positional
+    }) {
       return [18
       /* Yield */
       , to, EXPR.Positional(positional)];
-    };
+    }
 
-    _proto17.InElement = function InElement(_ref81) {
-      var guid = _ref81.guid,
-          insertBefore = _ref81.insertBefore,
-          destination = _ref81.destination,
-          block = _ref81.block;
+    InElement({
+      guid,
+      insertBefore,
+      destination,
+      block
+    }) {
       var wireBlock = CONTENT.NamedBlock(block)[1]; // let guid = args.guid;
 
       var wireDestination = EXPR.expr(destination);
@@ -5781,60 +4957,66 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         /* InElement */
         , wireBlock, guid, wireDestination, wireInsertBefore];
       }
-    };
+    }
 
-    _proto17.InvokeBlock = function InvokeBlock(_ref82) {
-      var head = _ref82.head,
-          args = _ref82.args,
-          blocks = _ref82.blocks;
+    InvokeBlock({
+      head,
+      args,
+      blocks
+    }) {
       return [6
       /* Block */
-      , EXPR.expr(head)].concat(EXPR.Args(args), [CONTENT.NamedBlocks(blocks)]);
-    };
+      , EXPR.expr(head), ...EXPR.Args(args), CONTENT.NamedBlocks(blocks)];
+    }
 
-    _proto17.AppendTrustedHTML = function AppendTrustedHTML(_ref83) {
-      var html = _ref83.html;
+    AppendTrustedHTML({
+      html
+    }) {
       return [2
       /* TrustingAppend */
       , EXPR.expr(html)];
-    };
+    }
 
-    _proto17.AppendTextNode = function AppendTextNode(_ref84) {
-      var text = _ref84.text;
+    AppendTextNode({
+      text
+    }) {
       return [1
       /* Append */
       , EXPR.expr(text)];
-    };
+    }
 
-    _proto17.AppendComment = function AppendComment(_ref85) {
-      var value = _ref85.value;
+    AppendComment({
+      value
+    }) {
       return [3
       /* Comment */
       , value.chars];
-    };
+    }
 
-    _proto17.SimpleElement = function SimpleElement(_ref86) {
-      var tag = _ref86.tag,
-          params = _ref86.params,
-          body = _ref86.body,
-          dynamicFeatures = _ref86.dynamicFeatures;
+    SimpleElement({
+      tag,
+      params,
+      body,
+      dynamicFeatures
+    }) {
       var op = dynamicFeatures ? 11
       /* OpenElementWithSplat */
       : 10
       /* OpenElement */
       ;
-      return new WireStatements([[op, deflateTagName(tag.chars)]].concat(CONTENT.ElementParameters(params).toArray(), [[12
+      return new WireStatements([[op, deflateTagName(tag.chars)], ...CONTENT.ElementParameters(params).toArray(), [12
       /* FlushElement */
-      ]], CONTENT.list(body), [[13
+      ], ...CONTENT.list(body), [13
       /* CloseElement */
-      ]]));
-    };
+      ]]);
+    }
 
-    _proto17.Component = function Component(_ref87) {
-      var tag = _ref87.tag,
-          params = _ref87.params,
-          args = _ref87.args,
-          blocks = _ref87.blocks;
+    Component({
+      tag,
+      params,
+      args,
+      blocks
+    }) {
       var wireTag = EXPR.expr(tag);
       var wirePositional = CONTENT.ElementParameters(params);
       var wireNamed = EXPR.NamedArguments(args);
@@ -5842,16 +5024,15 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       return [8
       /* Component */
       , wireTag, wirePositional.toPresentArray(), wireNamed, wireNamedBlocks];
-    };
+    }
 
-    _proto17.ElementParameters = function ElementParameters(_ref88) {
-      var body = _ref88.body;
-      return body.map(function (p) {
-        return CONTENT.ElementParameter(p);
-      });
-    };
+    ElementParameters({
+      body
+    }) {
+      return body.map(p => CONTENT.ElementParameter(p));
+    }
 
-    _proto17.ElementParameter = function ElementParameter(param) {
+    ElementParameter(param) {
       switch (param.type) {
         case 'SplatAttr':
           return [17
@@ -5859,106 +5040,115 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           , param.symbol];
 
         case 'DynamicAttr':
-          return [dynamicAttrOp(param.kind)].concat(dynamicAttr(param));
+          return [dynamicAttrOp(param.kind), ...dynamicAttr(param)];
 
         case 'StaticAttr':
-          return [staticAttrOp(param.kind)].concat(staticAttr(param));
+          return [staticAttrOp(param.kind), ...staticAttr(param)];
 
         case 'Modifier':
           return [4
           /* Modifier */
-          , EXPR.expr(param.callee)].concat(EXPR.Args(param.args));
+          , EXPR.expr(param.callee), ...EXPR.Args(param.args)];
       }
-    };
+    }
 
-    _proto17.NamedBlocks = function NamedBlocks(_ref89) {
-      var blocks = _ref89.blocks;
+    NamedBlocks({
+      blocks
+    }) {
       var names = [];
       var serializedBlocks = [];
 
-      for (var _iterator9 = (0, _emberBabel.createForOfIteratorHelperLoose)(blocks.toArray()), _step9; !(_step9 = _iterator9()).done;) {
-        var _block = _step9.value;
-
-        var _CONTENT$NamedBlock = CONTENT.NamedBlock(_block),
-            _name3 = _CONTENT$NamedBlock[0],
-            _serializedBlock = _CONTENT$NamedBlock[1];
-
-        names.push(_name3);
-        serializedBlocks.push(_serializedBlock);
+      for (var block of blocks.toArray()) {
+        var [name, serializedBlock] = CONTENT.NamedBlock(block);
+        names.push(name);
+        serializedBlocks.push(serializedBlock);
       }
 
       return names.length > 0 ? [names, serializedBlocks] : null;
-    };
+    }
 
-    _proto17.NamedBlock = function NamedBlock(_ref90) {
-      var name = _ref90.name,
-          body = _ref90.body,
-          scope = _ref90.scope;
-      return [name.chars, [CONTENT.list(body), scope.slots]];
-    };
+    NamedBlock({
+      name,
+      body,
+      scope
+    }) {
+      var nameChars = name.chars;
 
-    _proto17.If = function If(_ref91) {
-      var condition = _ref91.condition,
-          block = _ref91.block,
-          inverse = _ref91.inverse;
+      if (nameChars === 'inverse') {
+        nameChars = 'else';
+      }
+
+      return [nameChars, [CONTENT.list(body), scope.slots]];
+    }
+
+    If({
+      condition,
+      block,
+      inverse
+    }) {
       return [41
       /* If */
       , EXPR.expr(condition), CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
-    };
+    }
 
-    _proto17.Each = function Each(_ref92) {
-      var value = _ref92.value,
-          key = _ref92.key,
-          block = _ref92.block,
-          inverse = _ref92.inverse;
+    Each({
+      value,
+      key,
+      block,
+      inverse
+    }) {
       return [42
       /* Each */
       , EXPR.expr(value), key ? EXPR.expr(key) : null, CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
-    };
+    }
 
-    _proto17.With = function With(_ref93) {
-      var value = _ref93.value,
-          block = _ref93.block,
-          inverse = _ref93.inverse;
+    With({
+      value,
+      block,
+      inverse
+    }) {
       return [43
       /* With */
       , EXPR.expr(value), CONTENT.NamedBlock(block)[1], inverse ? CONTENT.NamedBlock(inverse)[1] : null];
-    };
+    }
 
-    _proto17.Let = function Let(_ref94) {
-      var positional = _ref94.positional,
-          block = _ref94.block;
+    Let({
+      positional,
+      block
+    }) {
       return [44
       /* Let */
       , EXPR.Positional(positional), CONTENT.NamedBlock(block)[1]];
-    };
+    }
 
-    _proto17.WithDynamicVars = function WithDynamicVars(_ref95) {
-      var named = _ref95.named,
-          block = _ref95.block;
+    WithDynamicVars({
+      named,
+      block
+    }) {
       return [45
       /* WithDynamicVars */
       , EXPR.NamedArguments(named), CONTENT.NamedBlock(block)[1]];
-    };
+    }
 
-    _proto17.InvokeComponent = function InvokeComponent(_ref96) {
-      var definition = _ref96.definition,
-          args = _ref96.args,
-          blocks = _ref96.blocks;
+    InvokeComponent({
+      definition,
+      args,
+      blocks
+    }) {
       return [46
       /* InvokeComponent */
       , EXPR.expr(definition), EXPR.Positional(args.positional), EXPR.NamedArguments(args.named), blocks ? CONTENT.NamedBlocks(blocks) : null];
-    };
+    }
 
-    return ContentEncoder;
-  }();
+  }
 
   var CONTENT = new ContentEncoder();
 
-  function staticAttr(_ref97) {
-    var name = _ref97.name,
-        value = _ref97.value,
-        namespace = _ref97.namespace;
+  function staticAttr({
+    name,
+    value,
+    namespace
+  }) {
     var out = [deflateAttrName(name.chars), value.chars];
 
     if (namespace) {
@@ -5968,10 +5158,11 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return out;
   }
 
-  function dynamicAttr(_ref98) {
-    var name = _ref98.name,
-        value = _ref98.value,
-        namespace = _ref98.namespace;
+  function dynamicAttr({
+    name,
+    value,
+    namespace
+  }) {
     var out = [deflateAttrName(name.chars), EXPR.expr(value)];
 
     if (namespace) {
@@ -6016,13 +5207,14 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return block;
   }
 
-  var defaultId = function () {
-    if (typeof _nodeModule.require === 'function') {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        var crypto = (0, _nodeModule.require)('crypto');
+  var defaultId = (() => {
+    var req = typeof module === 'object' && typeof module.require === 'function' ? module.require : require;
 
-        var idFn = function idFn(src) {
+    if (req) {
+      try {
+        var crypto = req('crypto');
+
+        var idFn = src => {
           var hash = crypto.createHash('sha1');
           hash.update(src, 'utf8'); // trim to 6 bytes of data (2^48 - 1)
 
@@ -6037,7 +5229,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return function idFn() {
       return null;
     };
-  }();
+  })();
 
   _exports.defaultId = defaultId;
   var defaultOptions = {
@@ -6058,20 +5250,12 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
    * @return {string} a template javascript string
    */
 
-  function precompileJSON(string, options) {
-    if (options === void 0) {
-      options = defaultOptions;
-    }
-
+  function precompileJSON(string, options = defaultOptions) {
     var _a, _b;
 
     var source = new _syntax.Source(string, (_a = options.meta) === null || _a === void 0 ? void 0 : _a.moduleName);
-
-    var _normalize = (0, _syntax.normalize)(source, options),
-        ast = _normalize[0],
-        locals = _normalize[1];
-
-    var block = normalize$1(source, ast, (_b = options.strictMode) !== null && _b !== void 0 ? _b : false).mapOk(function (pass2In) {
+    var [ast, locals] = (0, _syntax.normalize)(source, options);
+    var block = normalize$1(source, ast, (_b = options.strictMode) !== null && _b !== void 0 ? _b : false).mapOk(pass2In => {
       return visit(pass2In);
     });
 
@@ -6100,17 +5284,10 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
    * @return {string} a template javascript string
    */
 
-  function precompile(source, options) {
-    if (options === void 0) {
-      options = defaultOptions;
-    }
-
+  function precompile(source, options = defaultOptions) {
     var _a, _b;
 
-    var _precompileJSON = precompileJSON(source, options),
-        block = _precompileJSON[0],
-        usedLocals = _precompileJSON[1];
-
+    var [block, usedLocals] = precompileJSON(source, options);
     var moduleName = (_a = options.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
     var idFn = options.id || defaultId;
     var blockJSON = JSON.stringify(block);
@@ -6124,18 +5301,16 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       isStrictMode: (_b = options.strictMode) !== null && _b !== void 0 ? _b : false
     };
 
-    if (!options.strictMode) {
+    if (usedLocals.length === 0) {
       delete templateJSONObject.scope;
     } // JSON is javascript
 
 
     var stringified = JSON.stringify(templateJSONObject);
 
-    if (options.strictMode && usedLocals.length > 0) {
+    if (usedLocals.length > 0) {
       var scopeFn = "()=>[" + usedLocals.join(',') + "]";
       stringified = stringified.replace("\"" + SCOPE_PLACEHOLDER + "\"", scopeFn);
-    } else {
-      stringified = stringified.replace("\"" + SCOPE_PLACEHOLDER + "\"", 'null');
     }
 
     return stringified;
@@ -6176,7 +5351,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
           /* AppendPath */
           ,
           path: head,
-          trusted: trusted
+          trusted
         };
       } else {
       return {
@@ -6184,7 +5359,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         /* AppendExpr */
         ,
         expr: head,
-        trusted: trusted
+        trusted
       };
     }
   }
@@ -6231,21 +5406,21 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
             /* Call */
             ,
             head: normalizeCallHead(name),
-            params: params,
-            hash: hash,
+            params,
+            hash,
             trusted: false
           };
         }
 
       case '#':
         {
-          var _normalizeBuilderBloc = normalizeBuilderBlockStatement(statement),
-              path = _normalizeBuilderBloc.head,
-              _params = _normalizeBuilderBloc.params,
-              _hash = _normalizeBuilderBloc.hash,
-              blocks = _normalizeBuilderBloc.blocks,
-              blockParams = _normalizeBuilderBloc.blockParams;
-
+          var {
+            head: path,
+            params: _params,
+            hash: _hash,
+            blocks,
+            blockParams
+          } = normalizeBuilderBlockStatement(statement);
           return {
             kind: "Block"
             /* Block */
@@ -6253,26 +5428,26 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
             head: path,
             params: _params,
             hash: _hash,
-            blocks: blocks,
-            blockParams: blockParams
+            blocks,
+            blockParams
           };
         }
 
       case '!':
         {
-          var _name4 = statement[0].slice(1);
+          var _name2 = statement[0].slice(1);
 
-          var _normalizeBuilderBloc2 = normalizeBuilderBlockStatement(statement),
-              _params2 = _normalizeBuilderBloc2.params,
-              _hash2 = _normalizeBuilderBloc2.hash,
-              _blocks = _normalizeBuilderBloc2.blocks,
-              _blockParams = _normalizeBuilderBloc2.blockParams;
-
+          var {
+            params: _params2,
+            hash: _hash2,
+            blocks: _blocks,
+            blockParams: _blockParams
+          } = normalizeBuilderBlockStatement(statement);
           return {
             kind: "Keyword"
             /* Keyword */
             ,
-            name: _name4,
+            name: _name2,
             params: _params2,
             hash: _hash2,
             blocks: _blocks,
@@ -6301,8 +5476,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
             /* Element */
             ,
             name: extractElement(name),
-            attrs: attrs,
-            block: block
+            attrs,
+            block
           };
         }
 
@@ -6393,11 +5568,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return normalizeDottedPath(result[1]);
   }
 
-  function normalizePath(head, tail) {
-    if (tail === void 0) {
-      tail = [];
-    }
-
+  function normalizePath(head, tail = []) {
     var pathHead = normalizePathHead(head);
 
     if ((0, _util.isPresent)(tail)) {
@@ -6407,7 +5578,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         ,
         path: {
           head: pathHead,
-          tail: tail
+          tail
         }
       };
     } else {
@@ -6421,17 +5592,14 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function normalizeDottedPath(whole) {
-    var _normalizePathHead = normalizePathHead(whole),
-        kind = _normalizePathHead.kind,
-        rest = _normalizePathHead.name;
-
-    var _rest$split = rest.split('.'),
-        name = _rest$split[0],
-        tail = _rest$split.slice(1);
-
+    var {
+      kind,
+      name: rest
+    } = normalizePathHead(whole);
+    var [name, ...tail] = rest.split('.');
     var variable = {
-      kind: kind,
-      name: name,
+      kind,
+      name,
       mode: 'loose'
     };
 
@@ -6442,7 +5610,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         ,
         path: {
           head: variable,
-          tail: tail
+          tail
         }
       };
     } else {
@@ -6450,7 +5618,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         type: "GetVar"
         /* GetVar */
         ,
-        variable: variable
+        variable
       };
     }
   }
@@ -6489,8 +5657,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
 
     return {
-      kind: kind,
-      name: name,
+      kind,
+      name,
       mode: 'loose'
     };
   }
@@ -6508,29 +5676,28 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       if (Array.isArray(statement[1])) {
         params = normalizeParams(statement[1]);
       } else {
-        var _normalizeBlockHash = normalizeBlockHash(statement[1]);
-
-        hash = _normalizeBlockHash.hash;
-        blockParams = _normalizeBlockHash.blockParams;
+        ({
+          hash,
+          blockParams
+        } = normalizeBlockHash(statement[1]));
       }
 
       blocks = normalizeBlocks(statement[2]);
     } else if (statement.length === 4) {
       params = normalizeParams(statement[1]);
-
-      var _normalizeBlockHash2 = normalizeBlockHash(statement[2]);
-
-      hash = _normalizeBlockHash2.hash;
-      blockParams = _normalizeBlockHash2.blockParams;
+      ({
+        hash,
+        blockParams
+      } = normalizeBlockHash(statement[2]));
       blocks = normalizeBlocks(statement[3]);
     }
 
     return {
       head: extractBlockHead(head),
-      params: params,
-      hash: hash,
-      blockParams: blockParams,
-      blocks: blocks
+      params,
+      hash,
+      blockParams,
+      blocks
     };
   }
 
@@ -6544,7 +5711,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
     var out = null;
     var blockParams = null;
-    entries(hash, function (key, value) {
+    entries(hash, (key, value) => {
       if (key === 'as') {
         blockParams = Array.isArray(value) ? value : [value];
       } else {
@@ -6554,12 +5721,12 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     });
     return {
       hash: out,
-      blockParams: blockParams
+      blockParams
     };
   }
 
   function entries(dict$$1, callback) {
-    Object.keys(dict$$1).forEach(function (key) {
+    Object.keys(dict$$1).forEach(key => {
       var value = dict$$1[key];
       callback(key, value);
     });
@@ -6576,15 +5743,11 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function normalizeBlock(block) {
-    return block.map(function (s) {
-      return normalizeStatement(s);
-    });
+    return block.map(s => normalizeStatement(s));
   }
 
   function normalizeAttrs(attrs) {
-    return mapObject(attrs, function (a) {
-      return normalizeAttr(a).expr;
-    });
+    return mapObject(attrs, a => normalizeAttr(a).expr);
   }
 
   function normalizeAttr(attr) {
@@ -6598,7 +5761,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     } else {
       var expr = normalizeExpression(attr);
       return {
-        expr: expr,
+        expr,
         trusted: false
       };
     }
@@ -6606,7 +5769,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
   function mapObject(object, callback) {
     var out = (0, _util.dict)();
-    Object.keys(object).forEach(function (k) {
+    Object.keys(object).forEach(k => {
       out[k] = callback(object[k], k);
     });
     return out;
@@ -6617,11 +5780,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return match ? match[1] : null;
   }
 
-  function normalizeAppendExpression(expression, forceTrusted) {
-    if (forceTrusted === void 0) {
-      forceTrusted = false;
-    }
-
+  function normalizeAppendExpression(expression, forceTrusted = false) {
     if (expression === null || expression === undefined) {
       return {
         expr: {
@@ -6671,7 +5830,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
               params: normalizeParams(expression.slice(1))
             };
             return {
-              expr: expr,
+              expr,
               kind: "AppendExpr"
               /* AppendExpr */
               ,
@@ -6949,123 +6108,113 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
   }
 
-  var ProgramSymbols = /*#__PURE__*/function () {
-    function ProgramSymbols() {
+  class ProgramSymbols {
+    constructor() {
       this._freeVariables = [];
       this._symbols = ['this'];
       this.top = this;
     }
 
-    var _proto18 = ProgramSymbols.prototype;
-
-    _proto18.toSymbols = function toSymbols() {
+    toSymbols() {
       return this._symbols.slice(1);
-    };
+    }
 
-    _proto18.toUpvars = function toUpvars() {
+    toUpvars() {
       return this._freeVariables;
-    };
+    }
 
-    _proto18.freeVar = function freeVar(name) {
+    freeVar(name) {
       return addString(this._freeVariables, name);
-    };
+    }
 
-    _proto18.block = function block(name) {
+    block(name) {
       return this.symbol(name);
-    };
+    }
 
-    _proto18.arg = function arg(name) {
+    arg(name) {
       return addString(this._symbols, name);
-    };
+    }
 
-    _proto18.local = function local(name) {
+    local(name) {
       throw new Error("No local " + name + " was found. Maybe you meant ^" + name + " for upvar, or !" + name + " for keyword?");
-    };
+    }
 
-    _proto18.this = function _this() {
+    this() {
       return 0;
-    };
+    }
 
-    _proto18.hasLocal = function hasLocal(_name) {
+    hasLocal(_name) {
       return false;
     } // any symbol
-    ;
 
-    _proto18.symbol = function symbol(name) {
+
+    symbol(name) {
       return addString(this._symbols, name);
-    };
+    }
 
-    _proto18.child = function child(locals) {
+    child(locals) {
       return new LocalSymbols(this, locals);
-    };
+    }
 
-    return ProgramSymbols;
-  }();
+  }
 
   _exports.ProgramSymbols = ProgramSymbols;
 
-  var LocalSymbols = /*#__PURE__*/function () {
-    function LocalSymbols(parent, locals) {
+  class LocalSymbols {
+    constructor(parent, locals) {
       this.parent = parent;
       this.locals = (0, _util.dict)();
 
-      for (var _iterator10 = (0, _emberBabel.createForOfIteratorHelperLoose)(locals), _step10; !(_step10 = _iterator10()).done;) {
-        var _local = _step10.value;
-        this.locals[_local] = parent.top.symbol(_local);
+      for (var local of locals) {
+        this.locals[local] = parent.top.symbol(local);
       }
     }
 
-    var _proto19 = LocalSymbols.prototype;
+    get paramSymbols() {
+      return (0, _util.values)(this.locals);
+    }
 
-    _proto19.freeVar = function freeVar(name) {
+    get top() {
+      return this.parent.top;
+    }
+
+    freeVar(name) {
       return this.parent.freeVar(name);
-    };
+    }
 
-    _proto19.arg = function arg(name) {
+    arg(name) {
       return this.parent.arg(name);
-    };
+    }
 
-    _proto19.block = function block(name) {
+    block(name) {
       return this.parent.block(name);
-    };
+    }
 
-    _proto19.local = function local(name) {
+    local(name) {
       if (name in this.locals) {
         return this.locals[name];
       } else {
         return this.parent.local(name);
       }
-    };
+    }
 
-    _proto19.this = function _this() {
+    this() {
       return this.parent.this();
-    };
+    }
 
-    _proto19.hasLocal = function hasLocal(name) {
+    hasLocal(name) {
       if (name in this.locals) {
         return true;
       } else {
         return this.parent.hasLocal(name);
       }
-    };
+    }
 
-    _proto19.child = function child(locals) {
+    child(locals) {
       return new LocalSymbols(this, locals);
-    };
+    }
 
-    (0, _emberBabel.createClass)(LocalSymbols, [{
-      key: "paramSymbols",
-      get: function get() {
-        return (0, _util.values)(this.locals);
-      }
-    }, {
-      key: "top",
-      get: function get() {
-        return this.parent.top;
-      }
-    }]);
-    return LocalSymbols;
-  }();
+  }
 
   function addString(array, item) {
     var index = array.indexOf(item);
@@ -7085,25 +6234,17 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
   function buildStatements(statements, symbols) {
     var out = [];
-    statements.forEach(function (s) {
-      return out.push.apply(out, buildStatement(normalizeStatement(s), symbols));
-    });
+    statements.forEach(s => out.push(...buildStatement(normalizeStatement(s), symbols)));
     return out;
   }
 
   function buildNormalizedStatements(statements, symbols) {
     var out = [];
-    statements.forEach(function (s) {
-      return out.push.apply(out, buildStatement(s, symbols));
-    });
+    statements.forEach(s => out.push(...buildStatement(s, symbols)));
     return out;
   }
 
-  function buildStatement(normalized, symbols) {
-    if (symbols === void 0) {
-      symbols = new ProgramSymbols();
-    }
-
+  function buildStatement(normalized, symbols = new ProgramSymbols()) {
     switch (normalized.kind) {
       case "AppendPath"
       /* AppendPath */
@@ -7131,10 +6272,12 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
       /* Call */
       :
         {
-          var path = normalized.head,
-              params = normalized.params,
-              hash = normalized.hash,
-              trusted = normalized.trusted;
+          var {
+            head: path,
+            params,
+            hash,
+            trusted
+          } = normalized;
           var builtParams = params ? buildParams(params, symbols) : null;
           var builtHash = hash ? buildHash(hash, symbols) : null;
           var builtExpr = buildCallHead(path, trusted ? 3
@@ -7215,27 +6358,15 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
   }
 
-  function s(arr) {
-    for (var _len2 = arguments.length, interpolated = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-      interpolated[_key2 - 1] = arguments[_key2];
-    }
-
-    var result = arr.reduce(function (result, string, i) {
-      return result + ("" + string + (interpolated[i] ? String(interpolated[i]) : ''));
-    }, '');
+  function s(arr, ...interpolated) {
+    var result = arr.reduce((result, string, i) => result + ("" + string + (interpolated[i] ? String(interpolated[i]) : '')), '');
     return [0
     /* Literal */
     , result];
   }
 
-  function c(arr) {
-    for (var _len3 = arguments.length, interpolated = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-      interpolated[_key3 - 1] = arguments[_key3];
-    }
-
-    var result = arr.reduce(function (result, string, i) {
-      return result + ("" + string + (interpolated[i] ? String(interpolated[i]) : ''));
-    }, '');
+  function c(arr, ...interpolated) {
+    var result = arr.reduce((result, string, i) => result + ("" + string + (interpolated[i] ? String(interpolated[i]) : '')), '');
     return [1
     /* Comment */
     , result];
@@ -7249,7 +6380,9 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   _exports.NEWLINE = NEWLINE;
 
   function buildKeyword(normalized, symbols) {
-    var name = normalized.name;
+    var {
+      name
+    } = normalized;
     var params = buildParams(normalized.params, symbols);
     var childSymbols = symbols.child(normalized.blockParams || []);
     var block = buildBlock(normalized.blocks.default, childSymbols, childSymbols.paramSymbols);
@@ -7268,7 +6401,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
       case 'each':
         var keyExpr = normalized.hash ? normalized.hash['key'] : null;
-        var key = keyExpr ? buildExpression(keyExpr, 'Generic', symbols) : null;
+        var key = keyExpr ? buildExpression(keyExpr, 'Strict', symbols) : null;
         return [42
         /* Each */
         , params[0], key, block, inverse];
@@ -7278,10 +6411,11 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     }
   }
 
-  function buildElement(_ref99, symbols) {
-    var name = _ref99.name,
-        attrs = _ref99.attrs,
-        block = _ref99.block;
+  function buildElement({
+    name,
+    attrs,
+    block
+  }, symbols) {
     var out = [hasSplat(attrs) ? [11
     /* OpenElementWithSplat */
     , name] : [10
@@ -7289,11 +6423,11 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     , name]];
 
     if (attrs) {
-      var _buildElementParams = buildElementParams(attrs, symbols),
-          params = _buildElementParams.params,
-          args = _buildElementParams.args;
-
-      out.push.apply(out, params);
+      var {
+        params,
+        args
+      } = buildElementParams(attrs, symbols);
+      out.push(...params);
     }
 
     out.push([12
@@ -7301,9 +6435,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     ]);
 
     if (Array.isArray(block)) {
-      block.forEach(function (s) {
-        return out.push.apply(out, buildStatement(s, symbols));
-      });
+      block.forEach(s => out.push(...buildStatement(s, symbols)));
     } else if (block === null) {// do nothing
     } else {
       throw (0, _util.assertNever)(block);
@@ -7317,9 +6449,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
   function hasSplat(attrs) {
     if (attrs === null) return false;
-    return Object.keys(attrs).some(function (a) {
-      return attrs[a] === "Splat";
-    }
+    return Object.keys(attrs).some(a => attrs[a] === "Splat"
     /* Splat */
     );
   }
@@ -7328,7 +6458,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     var params = [];
     var keys = [];
     var values$$1 = [];
-    Object.keys(attrs).forEach(function (key) {
+    Object.keys(attrs).forEach(key => {
       var value = attrs[key];
 
       if (value === "Splat"
@@ -7341,12 +6471,12 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         keys.push(key);
         values$$1.push(buildExpression(value, 'Strict', symbols));
       } else {
-        params.push.apply(params, buildAttributeValue(key, value, // TODO: extract namespace from key
+        params.push(...buildAttributeValue(key, value, // TODO: extract namespace from key
         extractNamespace(key), symbols));
       }
     });
     return {
-      params: params,
+      params,
       args: (0, _util.isPresent)(keys) && (0, _util.isPresent)(values$$1) ? [keys, values$$1] : null
     };
   }
@@ -7463,7 +6593,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         {
           var builtParams = buildParams(expr.params, symbols);
           var builtHash = buildHash(expr.hash, symbols);
-          var builtExpr = buildCallHead(expr.head, context === 'Generic' ? 'SubExpression' : varContext(context, false), symbols);
+          var builtExpr = buildCallHead(expr.head, context === 'Strict' ? 'SubExpression' : varContext(context, false), symbols);
           return [28
           /* Call */
           , builtExpr, builtParams, builtHash];
@@ -7479,8 +6609,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
             kind: VariableKind.Block,
             name: expr.name,
             mode: 'loose'
-          }, 4
-          /* LooseFreeVariable */
+          }, 0
+          /* Strict */
           , symbols)];
         }
 
@@ -7494,8 +6624,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
             kind: VariableKind.Block,
             name: expr.name,
             mode: 'loose'
-          }, 4
-          /* LooseFreeVariable */
+          }, 0
+          /* Strict */
           , symbols)];
         }
 
@@ -7528,8 +6658,8 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   }
 
   function buildGetPath(head, symbols) {
-    return buildVar(head.path.head, 4
-    /* LooseFreeVariable */
+    return buildVar(head.path.head, 0
+    /* Strict */
     , symbols, head.path.tail);
   }
 
@@ -7572,10 +6702,6 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         } else if (context === 'SubExpression') {
           op = 37
           /* GetFreeAsHelperHead */
-          ;
-        } else if (context === 'Generic') {
-          op = 33
-          /* GetFreeAsFallback */
           ;
         } else {
           op = expressionContextOp(context);
@@ -7647,13 +6773,6 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
         /* GetFreeAsHelperHeadOrThisFallback */
         ;
 
-      case 4
-      /* LooseFreeVariable */
-      :
-        return 33
-        /* GetFreeAsFallback */
-        ;
-
       case 5
       /* ResolveAsCallHead */
       :
@@ -7682,23 +6801,19 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
 
   function buildParams(exprs, symbols) {
     if (exprs === null || !(0, _util.isPresent)(exprs)) return null;
-    return exprs.map(function (e) {
-      return buildExpression(e, 'Generic', symbols);
-    });
+    return exprs.map(e => buildExpression(e, 'Strict', symbols));
   }
 
   function buildConcat(exprs, symbols) {
-    return exprs.map(function (e) {
-      return buildExpression(e, 'AttrValue', symbols);
-    });
+    return exprs.map(e => buildExpression(e, 'AttrValue', symbols));
   }
 
   function buildHash(exprs, symbols) {
     if (exprs === null) return null;
     var out = [[], []];
-    Object.keys(exprs).forEach(function (key) {
+    Object.keys(exprs).forEach(key => {
       out[0].push(key);
-      out[1].push(buildExpression(exprs[key], 'Generic', symbols));
+      out[1].push(buildExpression(exprs[key], 'Strict', symbols));
     });
     return out;
   }
@@ -7706,7 +6821,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
   function buildBlocks(blocks, blockParams, parent) {
     var keys = [];
     var values$$1 = [];
-    Object.keys(blocks).forEach(function (name) {
+    Object.keys(blocks).forEach(name => {
       keys.push(name);
 
       if (name === 'default') {
@@ -7719,11 +6834,7 @@ define("@glimmer/compiler", ["exports", "ember-babel", "node-module", "@glimmer/
     return [keys, values$$1];
   }
 
-  function buildBlock(block, symbols, locals) {
-    if (locals === void 0) {
-      locals = [];
-    }
-
+  function buildBlock(block, symbols, locals = []) {
     return [buildNormalizedStatements(block, symbols), locals];
   }
 });
@@ -7739,7 +6850,7 @@ define("@glimmer/env", ["exports"], function (_exports) {
   var CI = false;
   _exports.CI = CI;
 });
-define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-html-tokenizer", "@handlebars/parser"], function (_exports, _emberBabel, _util, _simpleHtmlTokenizer, _parser) {
+define("@glimmer/syntax", ["exports", "@glimmer/util", "simple-html-tokenizer", "@handlebars/parser"], function (_exports, _util, _simpleHtmlTokenizer, _parser) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -7749,10 +6860,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   _exports.generateSyntaxError = generateSyntaxError;
   _exports.preprocess = preprocess;
   _exports.print = build;
+  _exports.sortByLoc = sortByLoc;
   _exports.traverse = traverse;
   _exports.cannotRemoveNode = cannotRemoveNode;
   _exports.cannotReplaceNode = cannotReplaceNode;
   _exports.isKeyword = isKeyword;
+  _exports.getTemplateLocals = getTemplateLocals;
   _exports.maybeLoc = maybeLoc;
   _exports.loc = loc;
   _exports.hasSpan = hasSpan;
@@ -7783,60 +6896,36 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     end: UNKNOWN_POSITION
   });
 
-  var SourceSlice = /*#__PURE__*/function () {
-    function SourceSlice(options) {
+  class SourceSlice {
+    constructor(options) {
       this.loc = options.loc;
       this.chars = options.chars;
     }
 
-    SourceSlice.synthetic = function synthetic(chars) {
+    static synthetic(chars) {
       var offsets = SourceSpan.synthetic(chars);
       return new SourceSlice({
         loc: offsets,
         chars: chars
       });
-    };
+    }
 
-    SourceSlice.load = function load(source, slice) {
+    static load(source, slice) {
       return new SourceSlice({
         loc: SourceSpan.load(source, slice[1]),
         chars: slice[0]
       });
-    };
+    }
 
-    var _proto = SourceSlice.prototype;
-
-    _proto.getString = function getString() {
+    getString() {
       return this.chars;
-    };
+    }
 
-    _proto.serialize = function serialize() {
+    serialize() {
       return [this.chars, this.loc.serialize()];
-    };
-
-    return SourceSlice;
-  }();
-
-  _exports.SourceSlice = SourceSlice;
-
-  var __classPrivateFieldSet = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
     }
 
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var __classPrivateFieldGet = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var _whens, _map, _whens_1;
+  }
   /**
    * This file implements the DSL used by span and offset in places where they need to exhaustively
    * consider all combinations of states (Handlebars offsets, character offsets and invisible/broken
@@ -7847,46 +6936,36 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
+  _exports.SourceSlice = SourceSlice;
   var MatchAny = 'MATCH_ANY';
   var IsInvisible = 'IS_INVISIBLE';
 
-  var WhenList = /*#__PURE__*/function () {
-    function WhenList(whens) {
-      _whens.set(this, void 0);
-
-      __classPrivateFieldSet(this, _whens, whens);
+  class WhenList {
+    constructor(whens) {
+      this._whens = whens;
     }
 
-    var _proto2 = WhenList.prototype;
+    first(kind) {
+      for (var when of this._whens) {
+        var value = when.match(kind);
 
-    _proto2.first = function first(kind) {
-      for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(__classPrivateFieldGet(this, _whens)), _step; !(_step = _iterator()).done;) {
-        var _when = _step.value;
-
-        var _value = _when.match(kind);
-
-        if ((0, _util.isPresent)(_value)) {
-          return _value[0];
+        if ((0, _util.isPresent)(value)) {
+          return value[0];
         }
       }
 
       return null;
-    };
-
-    return WhenList;
-  }();
-
-  _whens = new WeakMap();
-
-  var When = /*#__PURE__*/function () {
-    function When() {
-      _map.set(this, new Map());
     }
 
-    var _proto3 = When.prototype;
+  }
 
-    _proto3.get = function get(pattern, or) {
-      var value = __classPrivateFieldGet(this, _map).get(pattern);
+  class When {
+    constructor() {
+      this._map = new Map();
+    }
+
+    get(pattern, or) {
+      var value = this._map.get(pattern);
 
       if (value) {
         return value;
@@ -7894,22 +6973,22 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
       value = or();
 
-      __classPrivateFieldGet(this, _map).set(pattern, value);
+      this._map.set(pattern, value);
 
       return value;
-    };
+    }
 
-    _proto3.add = function add(pattern, out) {
-      __classPrivateFieldGet(this, _map).set(pattern, out);
-    };
+    add(pattern, out) {
+      this._map.set(pattern, out);
+    }
 
-    _proto3.match = function match(kind) {
+    match(kind) {
       var pattern = patternFor(kind);
       var out = [];
 
-      var exact = __classPrivateFieldGet(this, _map).get(pattern);
+      var exact = this._map.get(pattern);
 
-      var fallback = __classPrivateFieldGet(this, _map).get(MatchAny);
+      var fallback = this._map.get(MatchAny);
 
       if (exact) {
         out.push(exact);
@@ -7920,56 +6999,42 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return out;
-    };
+    }
 
-    return When;
-  }();
-
-  _map = new WeakMap();
+  }
 
   function match(callback) {
     return callback(new Matcher()).check();
   }
 
-  var Matcher = /*#__PURE__*/function () {
-    function Matcher() {
-      _whens_1.set(this, new When());
+  class Matcher {
+    constructor() {
+      this._whens = new When();
     }
     /**
      * You didn't exhaustively match all possibilities.
      */
 
 
-    var _proto4 = Matcher.prototype;
+    check() {
+      return (left, right) => this.matchFor(left.kind, right.kind)(left, right);
+    }
 
-    _proto4.check = function check() {
-      var _this = this;
-
-      return function (left, right) {
-        return _this.matchFor(left.kind, right.kind)(left, right);
-      };
-    };
-
-    _proto4.matchFor = function matchFor(left, right) {
-      var nesteds = __classPrivateFieldGet(this, _whens_1).match(left);
+    matchFor(left, right) {
+      var nesteds = this._whens.match(left);
 
       var callback = new WhenList(nesteds).first(right);
       return callback;
-    };
+    }
 
-    _proto4.when = function when(left, right, // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    when(left, right, // eslint-disable-next-line @typescript-eslint/no-explicit-any
     callback) {
-      __classPrivateFieldGet(this, _whens_1).get(left, function () {
-        return new When();
-      }).add(right, callback);
+      this._whens.get(left, () => new When()).add(right, callback);
 
       return this;
-    };
+    }
 
-    return Matcher;
-  }();
-
-  _whens_1 = new WeakMap();
+  }
 
   function patternFor(kind) {
     switch (kind) {
@@ -7987,26 +7052,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       default:
         return kind;
     }
-  }
-
-  var __classPrivateFieldGet$1 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var __classPrivateFieldSet$1 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
-    }
-
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var _locPos, _charPos; // eslint-disable-next-line import/no-extraneous-dependencies
+  } // eslint-disable-next-line import/no-extraneous-dependencies
 
   /**
    * Used to indicate that an attempt to convert a `SourcePosition` to a character offset failed. It
@@ -8027,8 +7073,8 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    * - `InvisiblePosition`, which represents a position not in source (@see {InvisiblePosition})
    */
 
-  var SourceOffset = /*#__PURE__*/function () {
-    function SourceOffset(data) {
+  class SourceOffset {
+    constructor(data) {
       this.data = data;
     }
     /**
@@ -8038,7 +7084,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    SourceOffset.forHbsPos = function forHbsPos(source, pos) {
+    static forHbsPos(source, pos) {
       return new HbsPosition(source, pos, null).wrap();
     }
     /**
@@ -8046,13 +7092,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * calling code determined (or knows) that the `SourceLocation` doesn't correspond correctly to
      * any part of the source.
      */
-    ;
 
-    SourceOffset.broken = function broken(pos) {
-      if (pos === void 0) {
-        pos = UNKNOWN_POSITION;
-      }
 
+    static broken(pos = UNKNOWN_POSITION) {
       return new InvisiblePosition("Broken"
       /* Broken */
       , pos).wrap();
@@ -8060,10 +7102,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     /**
      * Get the character offset for this `SourceOffset`, if possible.
      */
-    ;
 
-    var _proto5 = SourceOffset.prototype;
 
+    get offset() {
+      var charPos = this.data.toCharPos();
+      return charPos === null ? null : charPos.offset;
+    }
     /**
      * Compare this offset with another one.
      *
@@ -8073,16 +7117,18 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * Otherwise, two `SourceOffset`s are equivalent if their successfully computed character offsets
      * are the same.
      */
-    _proto5.eql = function eql(right) {
-      return _eql(this.data, right.data);
+
+
+    eql(right) {
+      return eql(this.data, right.data);
     }
     /**
      * Create a span that starts from this source offset and ends with another source offset. Avoid
      * computing character offsets if both `SourceOffset`s are still lazy.
      */
-    ;
 
-    _proto5.until = function until(other) {
+
+    until(other) {
       return span(this.data, other.data);
     }
     /**
@@ -8094,9 +7140,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * If the resulting character offset is less than 0 or greater than the size of the source, `move`
      * returns a broken offset.
      */
-    ;
 
-    _proto5.move = function move(by) {
+
+    move(by) {
       var charPos = this.data.toCharPos();
 
       if (charPos === null) {
@@ -8115,33 +7161,25 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * Create a new `SourceSpan` that represents a collapsed range at this source offset. Avoid
      * computing the character offset if it has not already been computed.
      */
-    ;
 
-    _proto5.collapsed = function collapsed() {
+
+    collapsed() {
       return span(this.data, this.data);
     }
     /**
      * Convert this `SourceOffset` into a Handlebars {@see SourcePosition} for compatibility with
      * existing plugins.
      */
-    ;
 
-    _proto5.toJSON = function toJSON() {
+
+    toJSON() {
       return this.data.toJSON();
-    };
+    }
 
-    (0, _emberBabel.createClass)(SourceOffset, [{
-      key: "offset",
-      get: function get() {
-        var charPos = this.data.toCharPos();
-        return charPos === null ? null : charPos.offset;
-      }
-    }]);
-    return SourceOffset;
-  }();
+  }
 
-  var CharPosition = /*#__PURE__*/function () {
-    function CharPosition(source, charPos) {
+  class CharPosition {
+    constructor(source, charPos) {
       this.source = source;
       this.charPos = charPos;
       this.kind = "CharPosition"
@@ -8149,7 +7187,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       ;
       /** Computed from char offset */
 
-      _locPos.set(this, null);
+      this._locPos = null;
     }
     /**
      * This is already a `CharPosition`.
@@ -8160,9 +7198,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    var _proto6 = CharPosition.prototype;
-
-    _proto6.toCharPos = function toCharPos() {
+    toCharPos() {
       return this;
     }
     /**
@@ -8171,69 +7207,58 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @implements {PositionData}
      */
-    ;
 
-    _proto6.toJSON = function toJSON() {
+
+    toJSON() {
       var hbs = this.toHbsPos();
       return hbs === null ? UNKNOWN_POSITION : hbs.toJSON();
-    };
+    }
 
-    _proto6.wrap = function wrap() {
+    wrap() {
       return new SourceOffset(this);
     }
     /**
      * A `CharPosition` always has an offset it can produce without any additional computation.
      */
-    ;
 
+
+    get offset() {
+      return this.charPos;
+    }
     /**
      * Convert the current character offset to an `HbsPosition`, if it was not already computed. Once
      * a `CharPosition` has computed its `HbsPosition`, it will not need to do compute it again, and
      * the same `CharPosition` is retained when used as one of the ends of a `SourceSpan`, so
      * computing the `HbsPosition` should be a one-time operation.
      */
-    _proto6.toHbsPos = function toHbsPos() {
-      var locPos = __classPrivateFieldGet$1(this, _locPos);
+
+
+    toHbsPos() {
+      var locPos = this._locPos;
 
       if (locPos === null) {
         var hbsPos = this.source.hbsPosFor(this.charPos);
 
         if (hbsPos === null) {
-          __classPrivateFieldSet$1(this, _locPos, locPos = BROKEN);
+          this._locPos = locPos = BROKEN;
         } else {
-          __classPrivateFieldSet$1(this, _locPos, locPos = new HbsPosition(this.source, hbsPos, this.charPos));
+          this._locPos = locPos = new HbsPosition(this.source, hbsPos, this.charPos);
         }
       }
 
       return locPos === BROKEN ? null : locPos;
-    };
+    }
 
-    (0, _emberBabel.createClass)(CharPosition, [{
-      key: "offset",
-      get: function get() {
-        return this.charPos;
-      }
-    }]);
-    return CharPosition;
-  }();
+  }
 
-  _locPos = new WeakMap();
-
-  var HbsPosition = /*#__PURE__*/function () {
-    function HbsPosition(source, hbsPos, charPos) {
-      if (charPos === void 0) {
-        charPos = null;
-      }
-
+  class HbsPosition {
+    constructor(source, hbsPos, charPos = null) {
       this.source = source;
       this.hbsPos = hbsPos;
       this.kind = "HbsPosition"
       /* HbsPosition */
       ;
-
-      _charPos.set(this, void 0);
-
-      __classPrivateFieldSet$1(this, _charPos, charPos === null ? null : new CharPosition(source, charPos));
+      this._charPos = charPos === null ? null : new CharPosition(source, charPos);
     }
     /**
      * Lazily compute the character offset from the {@see SourcePosition}. Once an `HbsPosition` has
@@ -8245,18 +7270,16 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    var _proto7 = HbsPosition.prototype;
-
-    _proto7.toCharPos = function toCharPos() {
-      var charPos = __classPrivateFieldGet$1(this, _charPos);
+    toCharPos() {
+      var charPos = this._charPos;
 
       if (charPos === null) {
         var charPosNumber = this.source.charPosFor(this.hbsPos);
 
         if (charPosNumber === null) {
-          __classPrivateFieldSet$1(this, _charPos, charPos = BROKEN);
+          this._charPos = charPos = BROKEN;
         } else {
-          __classPrivateFieldSet$1(this, _charPos, charPos = new CharPosition(this.source, charPosNumber));
+          this._charPos = charPos = new CharPosition(this.source, charPosNumber);
         }
       }
 
@@ -8268,13 +7291,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @implements {PositionData}
      */
-    ;
 
-    _proto7.toJSON = function toJSON() {
+
+    toJSON() {
       return this.hbsPos;
-    };
+    }
 
-    _proto7.wrap = function wrap() {
+    wrap() {
       return new SourceOffset(this);
     }
     /**
@@ -8282,19 +7305,16 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * {@see CharPosition} for the alternative.
      */
-    ;
 
-    _proto7.toHbsPos = function toHbsPos() {
+
+    toHbsPos() {
       return this;
-    };
+    }
 
-    return HbsPosition;
-  }();
+  }
 
-  _charPos = new WeakMap();
-
-  var InvisiblePosition = /*#__PURE__*/function () {
-    function InvisiblePosition(kind, // whatever was provided, possibly broken
+  class InvisiblePosition {
+    constructor(kind, // whatever was provided, possibly broken
     pos) {
       this.kind = kind;
       this.pos = pos;
@@ -8304,9 +7324,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    var _proto8 = InvisiblePosition.prototype;
-
-    _proto8.toCharPos = function toCharPos() {
+    toCharPos() {
       return null;
     }
     /**
@@ -8316,24 +7334,21 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * If an `InvisiblePosition` never had an source offset at all, this method returns
      * {@see UNKNOWN_POSITION} for compatibility.
      */
-    ;
 
-    _proto8.toJSON = function toJSON() {
+
+    toJSON() {
       return this.pos;
-    };
+    }
 
-    _proto8.wrap = function wrap() {
+    wrap() {
       return new SourceOffset(this);
-    };
+    }
 
-    (0, _emberBabel.createClass)(InvisiblePosition, [{
-      key: "offset",
-      get: function get() {
-        return null;
-      }
-    }]);
-    return InvisiblePosition;
-  }();
+    get offset() {
+      return null;
+    }
+
+  }
   /**
    * Compare two {@see AnyPosition} and determine whether they are equal.
    *
@@ -8341,66 +7356,43 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var _eql = match(function (m) {
-    return m.when("HbsPosition"
-    /* HbsPosition */
-    , "HbsPosition"
-    /* HbsPosition */
-    , function (_ref, _ref2) {
-      var left = _ref.hbsPos;
-      var right = _ref2.hbsPos;
-      return left.column === right.column && left.line === right.line;
-    }).when("CharPosition"
-    /* CharPosition */
-    , "CharPosition"
-    /* CharPosition */
-    , function (_ref3, _ref4) {
-      var left = _ref3.charPos;
-      var right = _ref4.charPos;
-      return left === right;
-    }).when("CharPosition"
-    /* CharPosition */
-    , "HbsPosition"
-    /* HbsPosition */
-    , function (_ref5, right) {
-      var left = _ref5.offset;
+  var eql = match(m => m.when("HbsPosition"
+  /* HbsPosition */
+  , "HbsPosition"
+  /* HbsPosition */
+  , ({
+    hbsPos: left
+  }, {
+    hbsPos: right
+  }) => left.column === right.column && left.line === right.line).when("CharPosition"
+  /* CharPosition */
+  , "CharPosition"
+  /* CharPosition */
+  , ({
+    charPos: left
+  }, {
+    charPos: right
+  }) => left === right).when("CharPosition"
+  /* CharPosition */
+  , "HbsPosition"
+  /* HbsPosition */
+  , ({
+    offset: left
+  }, right) => {
+    var _a;
 
-      var _a;
+    return left === ((_a = right.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset);
+  }).when("HbsPosition"
+  /* HbsPosition */
+  , "CharPosition"
+  /* CharPosition */
+  , (left, {
+    offset: right
+  }) => {
+    var _a;
 
-      return left === ((_a = right.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset);
-    }).when("HbsPosition"
-    /* HbsPosition */
-    , "CharPosition"
-    /* CharPosition */
-    , function (left, _ref6) {
-      var right = _ref6.offset;
-
-      var _a;
-
-      return ((_a = left.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset) === right;
-    }).when(MatchAny, MatchAny, function () {
-      return false;
-    });
-  });
-
-  var __classPrivateFieldGet$2 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var __classPrivateFieldSet$2 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
-    }
-
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var _locPosSpan, _charPosSpan, _providedHbsLoc; // eslint-disable-next-line import/no-extraneous-dependencies
+    return ((_a = left.toCharPos()) === null || _a === void 0 ? void 0 : _a.offset) === right;
+  }).when(MatchAny, MatchAny, () => false)); // eslint-disable-next-line import/no-extraneous-dependencies
 
   /**
    * A `SourceSpan` object represents a span of characters inside of a template source.
@@ -8437,9 +7429,8 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    * The goal is to avoid creating any problems for use-cases like AST Explorer.
    */
 
-
-  var SourceSpan = /*#__PURE__*/function () {
-    function SourceSpan(data) {
+  class SourceSpan {
+    constructor(data) {
       this.data = data;
       this.isInvisible = data.kind !== "CharPosition"
       /* CharPosition */
@@ -8448,7 +7439,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       ;
     }
 
-    SourceSpan.load = function load(source, serialized) {
+    static get NON_EXISTENT() {
+      return new InvisibleSpan("NonExistent"
+      /* NonExistent */
+      , NON_EXISTENT_LOCATION).wrap();
+    }
+
+    static load(source, serialized) {
       if (typeof serialized === 'number') {
         return SourceSpan.forCharPositions(source, serialized, serialized);
       } else if (typeof serialized === 'string') {
@@ -8466,76 +7463,96 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         }
 
       (0, _util.assertNever)(serialized);
-    };
+    }
 
-    SourceSpan.forHbsLoc = function forHbsLoc(source, loc) {
+    static forHbsLoc(source, loc) {
       var start = new HbsPosition(source, loc.start);
       var end = new HbsPosition(source, loc.end);
       return new HbsSpan(source, {
-        start: start,
-        end: end
+        start,
+        end
       }, loc).wrap();
-    };
+    }
 
-    SourceSpan.forCharPositions = function forCharPositions(source, startPos, endPos) {
+    static forCharPositions(source, startPos, endPos) {
       var start = new CharPosition(source, startPos);
       var end = new CharPosition(source, endPos);
       return new CharPositionSpan(source, {
-        start: start,
-        end: end
+        start,
+        end
       }).wrap();
-    };
+    }
 
-    SourceSpan.synthetic = function synthetic(chars) {
+    static synthetic(chars) {
       return new InvisibleSpan("InternalsSynthetic"
       /* InternalsSynthetic */
       , NON_EXISTENT_LOCATION, chars).wrap();
-    };
+    }
 
-    SourceSpan.broken = function broken(pos) {
-      if (pos === void 0) {
-        pos = BROKEN_LOCATION;
-      }
-
+    static broken(pos = BROKEN_LOCATION) {
       return new InvisibleSpan("Broken"
       /* Broken */
       , pos).wrap();
-    };
+    }
 
-    var _proto9 = SourceSpan.prototype;
-
-    _proto9.getStart = function getStart() {
+    getStart() {
       return this.data.getStart().wrap();
-    };
+    }
 
-    _proto9.getEnd = function getEnd() {
+    getEnd() {
       return this.data.getEnd().wrap();
-    };
+    }
 
+    get loc() {
+      var span = this.data.toHbsSpan();
+      return span === null ? BROKEN_LOCATION : span.toHbsLoc();
+    }
+
+    get module() {
+      return this.data.getModule();
+    }
+    /**
+     * Get the starting `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
+     */
+
+
+    get startPosition() {
+      return this.loc.start;
+    }
+    /**
+     * Get the ending `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
+     */
+
+
+    get endPosition() {
+      return this.loc.end;
+    }
     /**
      * Support converting ASTv1 nodes into a serialized format using JSON.stringify.
      */
-    _proto9.toJSON = function toJSON() {
+
+
+    toJSON() {
       return this.loc;
     }
     /**
      * Create a new span with the current span's end and a new beginning.
      */
-    ;
 
-    _proto9.withStart = function withStart(other) {
+
+    withStart(other) {
       return span(other.data, this.data.getEnd());
     }
     /**
      * Create a new span with the current span's beginning and a new ending.
      */
-    ;
 
-    _proto9.withEnd = function withEnd(other) {
+
+    withEnd(other) {
       return span(this.data.getStart(), other.data);
-    };
+    }
 
-    _proto9.asString = function asString() {
+    asString() {
       return this.data.asString();
     }
     /**
@@ -8543,9 +7560,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * that the byte offsets represented by this `SourceSpan` actually correspond to the expected
      * string.
      */
-    ;
 
-    _proto9.toSlice = function toSlice(expected) {
+
+    toSlice(expected) {
       var chars = this.data.asString();
 
       if (true
@@ -8567,9 +7584,57 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @deprecated use startPosition instead
      */
-    ;
 
-    _proto9.collapse = function collapse(where) {
+
+    get start() {
+      return this.loc.start;
+    }
+    /**
+     * For compatibility with SourceLocation in AST plugins
+     *
+     * @deprecated use withStart instead
+     */
+
+
+    set start(position) {
+      this.data.locDidUpdate({
+        start: position
+      });
+    }
+    /**
+     * For compatibility with SourceLocation in AST plugins
+     *
+     * @deprecated use endPosition instead
+     */
+
+
+    get end() {
+      return this.loc.end;
+    }
+    /**
+     * For compatibility with SourceLocation in AST plugins
+     *
+     * @deprecated use withEnd instead
+     */
+
+
+    set end(position) {
+      this.data.locDidUpdate({
+        end: position
+      });
+    }
+    /**
+     * For compatibility with SourceLocation in AST plugins
+     *
+     * @deprecated use module instead
+     */
+
+
+    get source() {
+      return this.module;
+    }
+
+    collapse(where) {
       switch (where) {
         case 'start':
           return this.getStart().collapsed();
@@ -8577,256 +7642,155 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         case 'end':
           return this.getEnd().collapsed();
       }
-    };
+    }
 
-    _proto9.extend = function extend(other) {
+    extend(other) {
       return span(this.data.getStart(), other.data.getEnd());
-    };
+    }
 
-    _proto9.serialize = function serialize() {
+    serialize() {
       return this.data.serialize();
-    };
+    }
 
-    _proto9.slice = function slice(_ref7) {
-      var _ref7$skipStart = _ref7.skipStart,
-          skipStart = _ref7$skipStart === void 0 ? 0 : _ref7$skipStart,
-          _ref7$skipEnd = _ref7.skipEnd,
-          skipEnd = _ref7$skipEnd === void 0 ? 0 : _ref7$skipEnd;
+    slice({
+      skipStart = 0,
+      skipEnd = 0
+    }) {
       return span(this.getStart().move(skipStart).data, this.getEnd().move(-skipEnd).data);
-    };
+    }
 
-    _proto9.sliceStartChars = function sliceStartChars(_ref8) {
-      var _ref8$skipStart = _ref8.skipStart,
-          skipStart = _ref8$skipStart === void 0 ? 0 : _ref8$skipStart,
-          chars = _ref8.chars;
+    sliceStartChars({
+      skipStart = 0,
+      chars
+    }) {
       return span(this.getStart().move(skipStart).data, this.getStart().move(skipStart + chars).data);
-    };
+    }
 
-    _proto9.sliceEndChars = function sliceEndChars(_ref9) {
-      var _ref9$skipEnd = _ref9.skipEnd,
-          skipEnd = _ref9$skipEnd === void 0 ? 0 : _ref9$skipEnd,
-          chars = _ref9.chars;
+    sliceEndChars({
+      skipEnd = 0,
+      chars
+    }) {
       return span(this.getEnd().move(skipEnd - chars).data, this.getStart().move(-skipEnd).data);
-    };
+    }
 
-    (0, _emberBabel.createClass)(SourceSpan, [{
-      key: "loc",
-      get: function get() {
-        var span = this.data.toHbsSpan();
-        return span === null ? BROKEN_LOCATION : span.toHbsLoc();
-      }
-    }, {
-      key: "module",
-      get: function get() {
-        return this.data.getModule();
-      }
-      /**
-       * Get the starting `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
-       */
-
-    }, {
-      key: "startPosition",
-      get: function get() {
-        return this.loc.start;
-      }
-      /**
-       * Get the ending `SourcePosition` for this `SourceSpan`, lazily computing it if needed.
-       */
-
-    }, {
-      key: "endPosition",
-      get: function get() {
-        return this.loc.end;
-      }
-    }, {
-      key: "start",
-      get: function get() {
-        return this.loc.start;
-      }
-      /**
-       * For compatibility with SourceLocation in AST plugins
-       *
-       * @deprecated use withStart instead
-       */
-      ,
-      set: function set(position) {
-        this.data.locDidUpdate({
-          start: position
-        });
-      }
-      /**
-       * For compatibility with SourceLocation in AST plugins
-       *
-       * @deprecated use endPosition instead
-       */
-
-    }, {
-      key: "end",
-      get: function get() {
-        return this.loc.end;
-      }
-      /**
-       * For compatibility with SourceLocation in AST plugins
-       *
-       * @deprecated use withEnd instead
-       */
-      ,
-      set: function set(position) {
-        this.data.locDidUpdate({
-          end: position
-        });
-      }
-      /**
-       * For compatibility with SourceLocation in AST plugins
-       *
-       * @deprecated use module instead
-       */
-
-    }, {
-      key: "source",
-      get: function get() {
-        return this.module;
-      }
-    }], [{
-      key: "NON_EXISTENT",
-      get: function get() {
-        return new InvisibleSpan("NonExistent"
-        /* NonExistent */
-        , NON_EXISTENT_LOCATION).wrap();
-      }
-    }]);
-    return SourceSpan;
-  }();
+  }
 
   _exports.SourceSpan = SourceSpan;
 
-  var CharPositionSpan = /*#__PURE__*/function () {
-    function CharPositionSpan(source, charPositions) {
+  class CharPositionSpan {
+    constructor(source, charPositions) {
       this.source = source;
       this.charPositions = charPositions;
       this.kind = "CharPosition"
       /* CharPosition */
       ;
-
-      _locPosSpan.set(this, null);
+      this._locPosSpan = null;
     }
 
-    var _proto10 = CharPositionSpan.prototype;
-
-    _proto10.wrap = function wrap() {
+    wrap() {
       return new SourceSpan(this);
-    };
+    }
 
-    _proto10.asString = function asString() {
+    asString() {
       return this.source.slice(this.charPositions.start.charPos, this.charPositions.end.charPos);
-    };
+    }
 
-    _proto10.getModule = function getModule() {
+    getModule() {
       return this.source.module;
-    };
+    }
 
-    _proto10.getStart = function getStart() {
+    getStart() {
       return this.charPositions.start;
-    };
+    }
 
-    _proto10.getEnd = function getEnd() {
+    getEnd() {
       return this.charPositions.end;
-    };
+    }
 
-    _proto10.locDidUpdate = function locDidUpdate() {};
+    locDidUpdate() {}
 
-    _proto10.toHbsSpan = function toHbsSpan() {
-      var locPosSpan = __classPrivateFieldGet$2(this, _locPosSpan);
+    toHbsSpan() {
+      var locPosSpan = this._locPosSpan;
 
       if (locPosSpan === null) {
         var start = this.charPositions.start.toHbsPos();
         var end = this.charPositions.end.toHbsPos();
 
         if (start === null || end === null) {
-          locPosSpan = __classPrivateFieldSet$2(this, _locPosSpan, BROKEN);
+          locPosSpan = this._locPosSpan = BROKEN;
         } else {
-          locPosSpan = __classPrivateFieldSet$2(this, _locPosSpan, new HbsSpan(this.source, {
-            start: start,
-            end: end
-          }));
+          locPosSpan = this._locPosSpan = new HbsSpan(this.source, {
+            start,
+            end
+          });
         }
       }
 
       return locPosSpan === BROKEN ? null : locPosSpan;
-    };
+    }
 
-    _proto10.serialize = function serialize() {
-      var _this$charPositions = this.charPositions,
-          start = _this$charPositions.start.charPos,
-          end = _this$charPositions.end.charPos;
+    serialize() {
+      var {
+        start: {
+          charPos: start
+        },
+        end: {
+          charPos: end
+        }
+      } = this.charPositions;
 
       if (start === end) {
         return start;
       } else {
         return [start, end];
       }
-    };
+    }
 
-    _proto10.toCharPosSpan = function toCharPosSpan() {
+    toCharPosSpan() {
       return this;
-    };
+    }
 
-    return CharPositionSpan;
-  }();
+  }
 
-  _locPosSpan = new WeakMap();
-
-  var HbsSpan = /*#__PURE__*/function () {
-    function HbsSpan(source, hbsPositions, providedHbsLoc) {
-      if (providedHbsLoc === void 0) {
-        providedHbsLoc = null;
-      }
-
+  class HbsSpan {
+    constructor(source, hbsPositions, providedHbsLoc = null) {
       this.source = source;
       this.hbsPositions = hbsPositions;
       this.kind = "HbsPosition"
       /* HbsPosition */
       ;
-
-      _charPosSpan.set(this, null); // the source location from Handlebars + AST Plugins -- could be wrong
-
-
-      _providedHbsLoc.set(this, void 0);
-
-      __classPrivateFieldSet$2(this, _providedHbsLoc, providedHbsLoc);
+      this._charPosSpan = null;
+      this._providedHbsLoc = providedHbsLoc;
     }
 
-    var _proto11 = HbsSpan.prototype;
-
-    _proto11.serialize = function serialize() {
+    serialize() {
       var charPos = this.toCharPosSpan();
       return charPos === null ? "Broken"
       /* Broken */
       : charPos.wrap().serialize();
-    };
+    }
 
-    _proto11.wrap = function wrap() {
+    wrap() {
       return new SourceSpan(this);
-    };
+    }
 
-    _proto11.updateProvided = function updateProvided(pos, edge) {
-      if (__classPrivateFieldGet$2(this, _providedHbsLoc)) {
-        __classPrivateFieldGet$2(this, _providedHbsLoc)[edge] = pos;
+    updateProvided(pos, edge) {
+      if (this._providedHbsLoc) {
+        this._providedHbsLoc[edge] = pos;
       } // invalidate computed character offsets
 
 
-      __classPrivateFieldSet$2(this, _charPosSpan, null);
-
-      __classPrivateFieldSet$2(this, _providedHbsLoc, {
+      this._charPosSpan = null;
+      this._providedHbsLoc = {
         start: pos,
         end: pos
-      });
-    };
+      };
+    }
 
-    _proto11.locDidUpdate = function locDidUpdate(_ref10) {
-      var start = _ref10.start,
-          end = _ref10.end;
-
+    locDidUpdate({
+      start,
+      end
+    }) {
       if (start !== undefined) {
         this.updateProvided(start, 'start');
         this.hbsPositions.start = new HbsPosition(this.source, start, null);
@@ -8836,78 +7800,69 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         this.updateProvided(end, 'end');
         this.hbsPositions.end = new HbsPosition(this.source, end, null);
       }
-    };
+    }
 
-    _proto11.asString = function asString() {
+    asString() {
       var span = this.toCharPosSpan();
       return span === null ? '' : span.asString();
-    };
+    }
 
-    _proto11.getModule = function getModule() {
+    getModule() {
       return this.source.module;
-    };
+    }
 
-    _proto11.getStart = function getStart() {
+    getStart() {
       return this.hbsPositions.start;
-    };
+    }
 
-    _proto11.getEnd = function getEnd() {
+    getEnd() {
       return this.hbsPositions.end;
-    };
+    }
 
-    _proto11.toHbsLoc = function toHbsLoc() {
+    toHbsLoc() {
       return {
         start: this.hbsPositions.start.hbsPos,
         end: this.hbsPositions.end.hbsPos
       };
-    };
+    }
 
-    _proto11.toHbsSpan = function toHbsSpan() {
+    toHbsSpan() {
       return this;
-    };
+    }
 
-    _proto11.toCharPosSpan = function toCharPosSpan() {
-      var charPosSpan = __classPrivateFieldGet$2(this, _charPosSpan);
+    toCharPosSpan() {
+      var charPosSpan = this._charPosSpan;
 
       if (charPosSpan === null) {
         var start = this.hbsPositions.start.toCharPos();
         var end = this.hbsPositions.end.toCharPos();
 
         if (start && end) {
-          charPosSpan = __classPrivateFieldSet$2(this, _charPosSpan, new CharPositionSpan(this.source, {
-            start: start,
-            end: end
-          }));
+          charPosSpan = this._charPosSpan = new CharPositionSpan(this.source, {
+            start,
+            end
+          });
         } else {
-          charPosSpan = __classPrivateFieldSet$2(this, _charPosSpan, BROKEN);
+          charPosSpan = this._charPosSpan = BROKEN;
           return null;
         }
       }
 
       return charPosSpan === BROKEN ? null : charPosSpan;
-    };
+    }
 
-    return HbsSpan;
-  }();
+  }
 
-  _charPosSpan = new WeakMap(), _providedHbsLoc = new WeakMap();
-
-  var InvisibleSpan = /*#__PURE__*/function () {
-    function InvisibleSpan(kind, // whatever was provided, possibly broken
+  class InvisibleSpan {
+    constructor(kind, // whatever was provided, possibly broken
     loc, // if the span represents a synthetic string
-    string) {
-      if (string === void 0) {
-        string = null;
-      }
-
+    string = null) {
       this.kind = kind;
       this.loc = loc;
       this.string = string;
     }
 
-    var _proto12 = InvisibleSpan.prototype;
-
-    _proto12.serialize = function serialize() {
+    serialize() {
       switch (this.kind) {
         case "Broken"
         /* Broken */
@@ -8922,20 +7877,20 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         :
           return this.string || '';
       }
-    };
+    }
 
-    _proto12.wrap = function wrap() {
+    wrap() {
       return new SourceSpan(this);
-    };
+    }
 
-    _proto12.asString = function asString() {
+    asString() {
       return this.string || '';
-    };
+    }
 
-    _proto12.locDidUpdate = function locDidUpdate(_ref11) {
-      var start = _ref11.start,
-          end = _ref11.end;
-
+    locDidUpdate({
+      start,
+      end
+    }) {
       if (start !== undefined) {
         this.loc.start = start;
       }
@@ -8943,96 +7898,81 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       if (end !== undefined) {
         this.loc.end = end;
       }
-    };
+    }
 
-    _proto12.getModule = function getModule() {
+    getModule() {
       // TODO: Make this reflect the actual module this span originated from
       return 'an unknown module';
-    };
+    }
 
-    _proto12.getStart = function getStart() {
+    getStart() {
       return new InvisiblePosition(this.kind, this.loc.start);
-    };
+    }
 
-    _proto12.getEnd = function getEnd() {
+    getEnd() {
       return new InvisiblePosition(this.kind, this.loc.end);
-    };
+    }
 
-    _proto12.toCharPosSpan = function toCharPosSpan() {
+    toCharPosSpan() {
       return this;
-    };
+    }
 
-    _proto12.toHbsSpan = function toHbsSpan() {
+    toHbsSpan() {
       return null;
-    };
+    }
 
-    _proto12.toHbsLoc = function toHbsLoc() {
+    toHbsLoc() {
       return BROKEN_LOCATION;
-    };
+    }
 
-    return InvisibleSpan;
-  }();
+  }
 
-  var span = match(function (m) {
-    return m.when("HbsPosition"
-    /* HbsPosition */
-    , "HbsPosition"
-    /* HbsPosition */
-    , function (left, right) {
-      return new HbsSpan(left.source, {
-        start: left,
-        end: right
-      }).wrap();
-    }).when("CharPosition"
-    /* CharPosition */
-    , "CharPosition"
-    /* CharPosition */
-    , function (left, right) {
-      return new CharPositionSpan(left.source, {
-        start: left,
-        end: right
-      }).wrap();
-    }).when("CharPosition"
-    /* CharPosition */
-    , "HbsPosition"
-    /* HbsPosition */
-    , function (left, right) {
-      var rightCharPos = right.toCharPos();
+  var span = match(m => m.when("HbsPosition"
+  /* HbsPosition */
+  , "HbsPosition"
+  /* HbsPosition */
+  , (left, right) => new HbsSpan(left.source, {
+    start: left,
+    end: right
+  }).wrap()).when("CharPosition"
+  /* CharPosition */
+  , "CharPosition"
+  /* CharPosition */
+  , (left, right) => new CharPositionSpan(left.source, {
+    start: left,
+    end: right
+  }).wrap()).when("CharPosition"
+  /* CharPosition */
+  , "HbsPosition"
+  /* HbsPosition */
+  , (left, right) => {
+    var rightCharPos = right.toCharPos();
 
-      if (rightCharPos === null) {
-        return new InvisibleSpan("Broken"
-        /* Broken */
-        , BROKEN_LOCATION).wrap();
-      } else {
-        return span(left, rightCharPos);
-      }
-    }).when("HbsPosition"
-    /* HbsPosition */
-    , "CharPosition"
-    /* CharPosition */
-    , function (left, right) {
-      var leftCharPos = left.toCharPos();
+    if (rightCharPos === null) {
+      return new InvisibleSpan("Broken"
+      /* Broken */
+      , BROKEN_LOCATION).wrap();
+    } else {
+      return span(left, rightCharPos);
+    }
+  }).when("HbsPosition"
+  /* HbsPosition */
+  , "CharPosition"
+  /* CharPosition */
+  , (left, right) => {
+    var leftCharPos = left.toCharPos();
 
-      if (leftCharPos === null) {
-        return new InvisibleSpan("Broken"
-        /* Broken */
-        , BROKEN_LOCATION).wrap();
-      } else {
-        return span(leftCharPos, right);
-      }
-    }).when(IsInvisible, MatchAny, function (left) {
-      return new InvisibleSpan(left.kind, BROKEN_LOCATION).wrap();
-    }).when(MatchAny, IsInvisible, function (_, right) {
-      return new InvisibleSpan(right.kind, BROKEN_LOCATION).wrap();
-    });
-  }); // eslint-disable-next-line import/no-extraneous-dependencies
+    if (leftCharPos === null) {
+      return new InvisibleSpan("Broken"
+      /* Broken */
+      , BROKEN_LOCATION).wrap();
+    } else {
+      return span(leftCharPos, right);
+    }
+  }).when(IsInvisible, MatchAny, left => new InvisibleSpan(left.kind, BROKEN_LOCATION).wrap()).when(MatchAny, IsInvisible, (_, right) => new InvisibleSpan(right.kind, BROKEN_LOCATION).wrap())); // eslint-disable-next-line import/no-extraneous-dependencies
 
-  var Source = /*#__PURE__*/function () {
-    function Source(source, module) {
-      if (module === void 0) {
-        module = 'an unknown module';
-      }
-
+  class Source {
+    constructor(source, module = 'an unknown module') {
       this.source = source;
       this.module = module;
     }
@@ -9041,26 +7981,25 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    var _proto13 = Source.prototype;
-
-    _proto13.check = function check(offset) {
+    check(offset) {
       return offset >= 0 && offset <= this.source.length;
-    };
+    }
 
-    _proto13.slice = function slice(start, end) {
+    slice(start, end) {
       return this.source.slice(start, end);
-    };
+    }
 
-    _proto13.offsetFor = function offsetFor(line, column) {
+    offsetFor(line, column) {
       return SourceOffset.forHbsPos(this, {
-        line: line,
-        column: column
+        line,
+        column
       });
-    };
+    }
 
-    _proto13.spanFor = function spanFor(_ref12) {
-      var start = _ref12.start,
-          end = _ref12.end;
+    spanFor({
+      start,
+      end
+    }) {
       return SourceSpan.forHbsLoc(this, {
         start: {
           line: start.line,
@@ -9071,9 +8010,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           column: end.column
         }
       });
-    };
+    }
 
-    _proto13.hbsPosFor = function hbsPosFor(offset) {
+    hbsPosFor(offset) {
       var seenLines = 0;
       var seenChars = 0;
 
@@ -9094,11 +8033,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           seenChars = nextLine + 1;
         }
       }
-    };
+    }
 
-    _proto13.charPosFor = function charPosFor(position) {
-      var line = position.line,
-          column = position.column;
+    charPosFor(position) {
+      var {
+        line,
+        column
+      } = position;
       var sourceString = this.source;
       var sourceLength = sourceString.length;
       var seenLines = 0;
@@ -9126,20 +8067,21 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           seenChars = nextLine + 1;
         }
       }
-    };
+    }
 
-    return Source;
-  }();
+  }
 
   _exports.Source = Source;
 
-  var PathExpressionImplV1 = /*#__PURE__*/function () {
-    function PathExpressionImplV1(original, head, tail, loc) {
+  class PathExpressionImplV1 {
+    constructor(original, head, tail, loc) {
       this.original = original;
       this.loc = loc;
       this.type = 'PathExpression';
       this.this = false;
-      this.data = false;
+      this.data = false; // Cache for the head value.
+
+      this._head = undefined;
       var parts = tail.slice();
 
       if (head.type === 'ThisHead') {
@@ -9154,32 +8096,32 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.parts = parts;
     }
 
-    (0, _emberBabel.createClass)(PathExpressionImplV1, [{
-      key: "head",
-      get: function get() {
-        var firstPart;
-
-        if (this.this) {
-          firstPart = 'this';
-        } else if (this.data) {
-          firstPart = "@" + this.parts[0];
-        } else {
-          firstPart = this.parts[0];
-        }
-
-        var firstPartLoc = this.loc.collapse('start').sliceStartChars({
-          chars: firstPart.length
-        }).loc;
-        return publicBuilder.head(firstPart, firstPartLoc);
+    get head() {
+      if (this._head) {
+        return this._head;
       }
-    }, {
-      key: "tail",
-      get: function get() {
-        return this.this ? this.parts : this.parts.slice(1);
+
+      var firstPart;
+
+      if (this.this) {
+        firstPart = 'this';
+      } else if (this.data) {
+        firstPart = "@" + this.parts[0];
+      } else {
+        firstPart = this.parts[0];
       }
-    }]);
-    return PathExpressionImplV1;
-  }();
+
+      var firstPartLoc = this.loc.collapse('start').sliceStartChars({
+        chars: firstPart.length
+      }).loc;
+      return this._head = publicBuilder.head(firstPart, firstPartLoc);
+    }
+
+    get tail() {
+      return this.this ? this.parts : this.parts.slice(1);
+    }
+
+  }
 
   var _SOURCE;
 
@@ -9198,7 +8140,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
     return {
       type: 'MustacheStatement',
-      path: path,
+      path,
       params: params || [],
       hash: hash || buildHash([]),
       escaped: !raw,
@@ -9308,12 +8250,14 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   }
 
   function buildElement(tag, options) {
-    var attrs = options.attrs,
-        blockParams = options.blockParams,
-        modifiers = options.modifiers,
-        comments = options.comments,
-        children = options.children,
-        loc = options.loc;
+    var {
+      attrs,
+      blockParams,
+      modifiers,
+      comments,
+      children,
+      loc
+    } = options;
     var tagName; // this is used for backwards compat, prior to `selfClosing` being part of the ElementNode AST
 
     var selfClosing = false;
@@ -9392,10 +8336,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   }
 
   function buildHead(original, loc) {
-    var _original$split = original.split('.'),
-        head = _original$split[0],
-        tail = _original$split.slice(1);
-
+    var [head, ...tail] = original.split('.');
     var headNode;
 
     if (head === 'this') {
@@ -9419,7 +8360,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
     return {
       head: headNode,
-      tail: tail
+      tail
     };
   }
 
@@ -9433,7 +8374,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   function buildAtName(name, loc) {
     return {
       type: 'AtHead',
-      name: name,
+      name,
       loc: buildLoc(loc || null)
     };
   }
@@ -9441,7 +8382,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   function buildVar(name, loc) {
     return {
       type: 'VarHead',
-      name: name,
+      name,
       loc: buildLoc(loc || null)
     };
   }
@@ -9459,18 +8400,18 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   function buildNamedBlockName(name, loc) {
     return {
       type: 'NamedBlockName',
-      name: name,
+      name,
       loc: buildLoc(loc || null)
     };
   }
 
   function buildCleanPath(head, tail, loc) {
-    var _headToString = headToString(head),
-        originalHead = _headToString.original,
-        headParts = _headToString.parts;
-
-    var parts = [].concat(headParts, tail);
-    var original = [].concat(originalHead, parts).join('.');
+    var {
+      original: originalHead,
+      parts: headParts
+    } = headToString(head);
+    var parts = [...headParts, ...tail];
+    var original = [...originalHead, ...parts].join('.');
     return new PathExpressionImplV1(original, head, tail, buildLoc(loc || null));
   }
 
@@ -9479,28 +8420,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       if ('type' in path) {
         return path;
       } else {
-        var _buildHead = buildHead(path.head, SourceSpan.broken()),
-            _head = _buildHead.head,
-            _tail = _buildHead.tail;
-
-        var _headToString2 = headToString(_head),
-            originalHead = _headToString2.original;
-
-        return new PathExpressionImplV1([originalHead].concat(_tail).join('.'), _head, _tail, buildLoc(loc || null));
+        var {
+          head: _head,
+          tail: _tail
+        } = buildHead(path.head, SourceSpan.broken());
+        var {
+          original: originalHead
+        } = headToString(_head);
+        return new PathExpressionImplV1([originalHead, ..._tail].join('.'), _head, _tail, buildLoc(loc || null));
       }
     }
 
-    var _buildHead2 = buildHead(path, SourceSpan.broken()),
-        head = _buildHead2.head,
-        tail = _buildHead2.tail;
-
+    var {
+      head,
+      tail
+    } = buildHead(path, SourceSpan.broken());
     return new PathExpressionImplV1(path, head, tail, buildLoc(loc || null));
   }
 
   function buildLiteral(type, value, loc) {
     return {
-      type: type,
-      value: value,
+      type,
+      value,
       original: value,
       loc: buildLoc(loc || null)
     };
@@ -9519,7 +8460,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return {
       type: 'HashPair',
       key: key,
-      value: value,
+      value,
       loc: buildLoc(loc || null)
     };
   }
@@ -9533,16 +8474,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     };
   }
 
-  function buildBlockItself(body, blockParams, chained, loc) {
-    if (chained === void 0) {
-      chained = false;
-    }
-
+  function buildBlockItself(body, blockParams, chained = false, loc) {
     return {
       type: 'Block',
       body: body || [],
       blockParams: blockParams || [],
-      chained: chained,
+      chained,
       loc: buildLoc(loc || null)
     };
   }
@@ -9558,16 +8495,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
   function buildPosition(line, column) {
     return {
-      line: line,
-      column: column
+      line,
+      column
     };
   }
 
-  function buildLoc() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
+  function buildLoc(...args) {
     if (args.length === 1) {
       var _loc = args[0];
 
@@ -9577,11 +8510,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         return SourceSpan.forHbsLoc(SOURCE(), SYNTHETIC_LOCATION);
       }
     } else {
-      var startLine = args[0],
-          startColumn = args[1],
-          endLine = args[2],
-          endColumn = args[3],
-          _source = args[4];
+      var [startLine, startColumn, endLine, endColumn, _source] = args;
       var source = _source ? new Source('', _source) : SOURCE();
       return SourceSpan.forHbsLoc(source, {
         start: {
@@ -9626,22 +8555,15 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     string: literal('StringLiteral'),
     boolean: literal('BooleanLiteral'),
     number: literal('NumberLiteral'),
-    undefined: function (_undefined) {
-      function undefined() {
-        return _undefined.apply(this, arguments);
-      }
 
-      undefined.toString = function () {
-        return _undefined.toString();
-      };
-
-      return undefined;
-    }(function () {
+    undefined() {
       return buildLiteral('UndefinedLiteral', undefined);
-    }),
-    null: function _null() {
+    },
+
+    null() {
       return buildLiteral('NullLiteral', null);
     }
+
   };
   _exports.builders = publicBuilder;
 
@@ -9669,25 +8591,22 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
   _exports.AST = _exports.ASTv1 = api;
 
-  var StrictResolution = /*#__PURE__*/function () {
-    function StrictResolution() {
+  class StrictResolution {
+    constructor() {
       this.isAngleBracket = false;
     }
 
-    var _proto14 = StrictResolution.prototype;
-
-    _proto14.resolution = function resolution() {
+    resolution() {
       return 31
       /* GetStrictFree */
       ;
-    };
+    }
 
-    _proto14.serialize = function serialize() {
+    serialize() {
       return 'Strict';
-    };
+    }
 
-    return StrictResolution;
-  }();
+  }
 
   var STRICT_RESOLUTION = new StrictResolution();
   /**
@@ -9700,12 +8619,8 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    * and they are captured by the `Ambiguity` union below.
    */
 
-  var LooseModeResolution = /*#__PURE__*/function () {
-    function LooseModeResolution(ambiguity, isAngleBracket) {
-      if (isAngleBracket === void 0) {
-        isAngleBracket = false;
-      }
-
+  class LooseModeResolution {
+    constructor(ambiguity, isAngleBracket = false) {
       this.ambiguity = ambiguity;
       this.isAngleBracket = isAngleBracket;
     }
@@ -9721,11 +8636,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    LooseModeResolution.namespaced = function namespaced(namespace, isAngleBracket) {
-      if (isAngleBracket === void 0) {
-        isAngleBracket = false;
-      }
-
+    static namespaced(namespace, isAngleBracket = false) {
       return new LooseModeResolution({
         namespaces: [namespace],
         fallback: false
@@ -9741,9 +8652,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @see {FallbackAmbiguity}
      */
-    ;
 
-    LooseModeResolution.fallback = function fallback() {
+
+    static fallback() {
       return new LooseModeResolution({
         namespaces: [],
         fallback: true
@@ -9768,10 +8679,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @see {ComponentOrHelperAmbiguity}
      */
-    ;
 
-    LooseModeResolution.append = function append(_ref13) {
-      var invoke = _ref13.invoke;
+
+    static append({
+      invoke
+    }) {
       return new LooseModeResolution({
         namespaces: ["Component"
         /* Component */
@@ -9800,10 +8712,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @see {HelperAmbiguity}
      */
-    ;
 
-    LooseModeResolution.trustingAppend = function trustingAppend(_ref14) {
-      var invoke = _ref14.invoke;
+
+    static trustingAppend({
+      invoke
+    }) {
       return new LooseModeResolution({
         namespaces: ["Helper"
         /* Helper */
@@ -9824,23 +8737,21 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      *
      * @see {HelperAmbiguity}
      */
-    ;
 
-    LooseModeResolution.attr = function attr() {
+
+    static attr() {
       return new LooseModeResolution({
         namespaces: ["Helper"
         /* Helper */
         ],
         fallback: true
       });
-    };
+    }
 
-    var _proto15 = LooseModeResolution.prototype;
-
-    _proto15.resolution = function resolution() {
+    resolution() {
       if (this.ambiguity.namespaces.length === 0) {
-        return 33
-        /* GetFreeAsFallback */
+        return 31
+        /* GetStrictFree */
         ;
       } else if (this.ambiguity.namespaces.length === 1) {
         if (this.ambiguity.fallback) {
@@ -9884,9 +8795,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           /* GetFreeAsComponentOrHelperHead */
           ;
         }
-    };
+    }
 
-    _proto15.serialize = function serialize() {
+    serialize() {
       if (this.ambiguity.namespaces.length === 0) {
         return 'Loose';
       } else if (this.ambiguity.namespaces.length === 1) {
@@ -9909,10 +8820,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         /* Invoke */
         ];
       }
-    };
+    }
 
-    return LooseModeResolution;
-  }();
+  }
 
   var ARGUMENT_RESOLUTION = LooseModeResolution.fallback();
 
@@ -9959,42 +8869,29 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     if (name !== undefined) {
       var type = name;
       return {
-        fields: function fields() {
-          return /*#__PURE__*/function () {
-            function _class(fields) {
+        fields() {
+          return class {
+            constructor(fields) {
               this.type = type;
-              this.loc = fields.loc;
-              copy(fields, this);
+              (0, _util.assign)(this, fields);
             }
 
-            return _class;
-          }();
+          };
         }
+
       };
     } else {
       return {
-        fields: function fields() {
-          return /*#__PURE__*/function () {
-            function _class2(fields) {
-              this.loc = fields.loc;
-              copy(fields, this);
+        fields() {
+          return class {
+            constructor(fields) {
+              (0, _util.assign)(this, fields);
             }
 
-            return _class2;
-          }();
+          };
         }
+
       };
-    }
-  }
-
-  function keys(object) {
-    return Object.keys(object);
-  }
-
-  function copy(object1, object2) {
-    for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(keys(object1)), _step2; !(_step2 = _iterator2()).done;) {
-      var _key2 = _step2.value;
-      object2[_key2] = object1[_key2];
     }
   }
   /**
@@ -10010,45 +8907,36 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var Args = /*#__PURE__*/function (_node$fields) {
-    (0, _emberBabel.inheritsLoose)(Args, _node$fields);
-
-    function Args() {
-      return _node$fields.apply(this, arguments) || this;
-    }
-
-    Args.empty = function empty(loc) {
+  class Args extends node().fields() {
+    static empty(loc) {
       return new Args({
-        loc: loc,
+        loc,
         positional: PositionalArguments.empty(loc),
         named: NamedArguments.empty(loc)
       });
-    };
+    }
 
-    Args.named = function named(_named) {
+    static named(named) {
       return new Args({
-        loc: _named.loc,
-        positional: PositionalArguments.empty(_named.loc.collapse('end')),
-        named: _named
+        loc: named.loc,
+        positional: PositionalArguments.empty(named.loc.collapse('end')),
+        named
       });
-    };
+    }
 
-    var _proto16 = Args.prototype;
-
-    _proto16.nth = function nth(offset) {
+    nth(offset) {
       return this.positional.nth(offset);
-    };
+    }
 
-    _proto16.get = function get(name) {
+    get(name) {
       return this.named.get(name);
-    };
+    }
 
-    _proto16.isEmpty = function isEmpty() {
+    isEmpty() {
       return this.positional.isEmpty() && this.named.isEmpty();
-    };
+    }
 
-    return Args;
-  }(node().fields());
+  }
   /**
    * Corresponds to positional arguments.
    *
@@ -10057,38 +8945,27 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var PositionalArguments = /*#__PURE__*/function (_node$fields2) {
-    (0, _emberBabel.inheritsLoose)(PositionalArguments, _node$fields2);
-
-    function PositionalArguments() {
-      return _node$fields2.apply(this, arguments) || this;
-    }
-
-    PositionalArguments.empty = function empty(loc) {
+  class PositionalArguments extends node().fields() {
+    static empty(loc) {
       return new PositionalArguments({
-        loc: loc,
+        loc,
         exprs: []
       });
-    };
+    }
 
-    var _proto17 = PositionalArguments.prototype;
+    get size() {
+      return this.exprs.length;
+    }
 
-    _proto17.nth = function nth(offset) {
+    nth(offset) {
       return this.exprs[offset] || null;
-    };
+    }
 
-    _proto17.isEmpty = function isEmpty() {
+    isEmpty() {
       return this.exprs.length === 0;
-    };
+    }
 
-    (0, _emberBabel.createClass)(PositionalArguments, [{
-      key: "size",
-      get: function get() {
-        return this.exprs.length;
-      }
-    }]);
-    return PositionalArguments;
-  }(node().fields());
+  }
   /**
    * Corresponds to named arguments.
    *
@@ -10100,41 +8977,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var NamedArguments = /*#__PURE__*/function (_node$fields3) {
-    (0, _emberBabel.inheritsLoose)(NamedArguments, _node$fields3);
-
-    function NamedArguments() {
-      return _node$fields3.apply(this, arguments) || this;
-    }
-
-    NamedArguments.empty = function empty(loc) {
+  class NamedArguments extends node().fields() {
+    static empty(loc) {
       return new NamedArguments({
-        loc: loc,
+        loc,
         entries: []
       });
-    };
+    }
 
-    var _proto18 = NamedArguments.prototype;
+    get size() {
+      return this.entries.length;
+    }
 
-    _proto18.get = function get(name) {
-      var entry = this.entries.filter(function (e) {
-        return e.name.chars === name;
-      })[0];
+    get(name) {
+      var entry = this.entries.filter(e => e.name.chars === name)[0];
       return entry ? entry.value : null;
-    };
+    }
 
-    _proto18.isEmpty = function isEmpty() {
+    isEmpty() {
       return this.entries.length === 0;
-    };
+    }
 
-    (0, _emberBabel.createClass)(NamedArguments, [{
-      key: "size",
-      get: function get() {
-        return this.entries.length;
-      }
-    }]);
-    return NamedArguments;
-  }(node().fields());
+  }
   /**
    * Corresponds to a single named argument.
    *
@@ -10144,11 +9008,14 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var NamedArgument = function NamedArgument(options) {
-    this.loc = options.name.loc.extend(options.value.loc);
-    this.name = options.name;
-    this.value = options.value;
-  };
+  class NamedArgument {
+    constructor(options) {
+      this.loc = options.name.loc.extend(options.value.loc);
+      this.name = options.name;
+      this.value = options.value;
+    }
+
+  }
   /**
    * `HtmlAttr` nodes are valid HTML attributes, with or without a value.
    *
@@ -10159,127 +9026,59 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var HtmlAttr = /*#__PURE__*/function (_node$fields4) {
-    (0, _emberBabel.inheritsLoose)(HtmlAttr, _node$fields4);
+  class HtmlAttr extends node('HtmlAttr').fields() {}
 
-    function HtmlAttr() {
-      return _node$fields4.apply(this, arguments) || this;
-    }
-
-    return HtmlAttr;
-  }(node('HtmlAttr').fields());
-
-  var SplatAttr = /*#__PURE__*/function (_node$fields5) {
-    (0, _emberBabel.inheritsLoose)(SplatAttr, _node$fields5);
-
-    function SplatAttr() {
-      return _node$fields5.apply(this, arguments) || this;
-    }
-
-    return SplatAttr;
-  }(node('SplatAttr').fields());
+  class SplatAttr extends node('SplatAttr').fields() {}
   /**
    * Corresponds to an argument passed by a component (`@x=<value>`)
    */
 
 
-  var ComponentArg = /*#__PURE__*/function (_node$fields6) {
-    (0, _emberBabel.inheritsLoose)(ComponentArg, _node$fields6);
-
-    function ComponentArg() {
-      return _node$fields6.apply(this, arguments) || this;
-    }
-
-    var _proto19 = ComponentArg.prototype;
-
+  class ComponentArg extends node().fields() {
     /**
      * Convert the component argument into a named argument node
      */
-    _proto19.toNamedArgument = function toNamedArgument() {
+    toNamedArgument() {
       return new NamedArgument({
         name: this.name,
         value: this.value
       });
-    };
+    }
 
-    return ComponentArg;
-  }(node().fields());
+  }
   /**
    * An `ElementModifier` is just a normal call node in modifier position.
    */
 
 
-  var ElementModifier = /*#__PURE__*/function (_node$fields7) {
-    (0, _emberBabel.inheritsLoose)(ElementModifier, _node$fields7);
+  class ElementModifier extends node('ElementModifier').fields() {}
 
-    function ElementModifier() {
-      return _node$fields7.apply(this, arguments) || this;
+  class SpanList {
+    constructor(span = []) {
+      this._span = span;
     }
 
-    return ElementModifier;
-  }(node('ElementModifier').fields());
-
-  var __classPrivateFieldSet$3 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
-    }
-
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var __classPrivateFieldGet$3 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var _span;
-
-  var SpanList = /*#__PURE__*/function () {
-    function SpanList(span) {
-      if (span === void 0) {
-        span = [];
-      }
-
-      _span.set(this, void 0);
-
-      __classPrivateFieldSet$3(this, _span, span);
-    }
-
-    SpanList.range = function range(span, fallback) {
-      if (fallback === void 0) {
-        fallback = SourceSpan.NON_EXISTENT;
-      }
-
+    static range(span, fallback = SourceSpan.NON_EXISTENT) {
       return new SpanList(span.map(loc)).getRangeOffset(fallback);
-    };
+    }
 
-    var _proto20 = SpanList.prototype;
+    add(offset) {
+      this._span.push(offset);
+    }
 
-    _proto20.add = function add(offset) {
-      __classPrivateFieldGet$3(this, _span).push(offset);
-    };
-
-    _proto20.getRangeOffset = function getRangeOffset(fallback) {
-      if (__classPrivateFieldGet$3(this, _span).length === 0) {
+    getRangeOffset(fallback) {
+      if (this._span.length === 0) {
         return fallback;
       } else {
-        var first = __classPrivateFieldGet$3(this, _span)[0];
-
-        var last = __classPrivateFieldGet$3(this, _span)[__classPrivateFieldGet$3(this, _span).length - 1];
-
+        var first = this._span[0];
+        var last = this._span[this._span.length - 1];
         return first.extend(last);
       }
-    };
+    }
 
-    return SpanList;
-  }();
+  }
 
   _exports.SpanList = SpanList;
-  _span = new WeakMap();
 
   function loc(span) {
     if (Array.isArray(span)) {
@@ -10309,74 +9108,32 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     }
   }
 
-  var GlimmerComment = /*#__PURE__*/function (_node$fields8) {
-    (0, _emberBabel.inheritsLoose)(GlimmerComment, _node$fields8);
+  class GlimmerComment extends node('GlimmerComment').fields() {}
 
-    function GlimmerComment() {
-      return _node$fields8.apply(this, arguments) || this;
-    }
+  class HtmlText extends node('HtmlText').fields() {}
 
-    return GlimmerComment;
-  }(node('GlimmerComment').fields());
+  class HtmlComment extends node('HtmlComment').fields() {}
 
-  var HtmlText = /*#__PURE__*/function (_node$fields9) {
-    (0, _emberBabel.inheritsLoose)(HtmlText, _node$fields9);
-
-    function HtmlText() {
-      return _node$fields9.apply(this, arguments) || this;
-    }
-
-    return HtmlText;
-  }(node('HtmlText').fields());
-
-  var HtmlComment = /*#__PURE__*/function (_node$fields10) {
-    (0, _emberBabel.inheritsLoose)(HtmlComment, _node$fields10);
-
-    function HtmlComment() {
-      return _node$fields10.apply(this, arguments) || this;
-    }
-
-    return HtmlComment;
-  }(node('HtmlComment').fields());
-
-  var AppendContent = /*#__PURE__*/function (_node$fields11) {
-    (0, _emberBabel.inheritsLoose)(AppendContent, _node$fields11);
-
-    function AppendContent() {
-      return _node$fields11.apply(this, arguments) || this;
-    }
-
-    (0, _emberBabel.createClass)(AppendContent, [{
-      key: "callee",
-      get: function get() {
-        if (this.value.type === 'Call') {
-          return this.value.callee;
-        } else {
-          return this.value;
-        }
+  class AppendContent extends node('AppendContent').fields() {
+    get callee() {
+      if (this.value.type === 'Call') {
+        return this.value.callee;
+      } else {
+        return this.value;
       }
-    }, {
-      key: "args",
-      get: function get() {
-        if (this.value.type === 'Call') {
-          return this.value.args;
-        } else {
-          return Args.empty(this.value.loc.collapse('end'));
-        }
-      }
-    }]);
-    return AppendContent;
-  }(node('AppendContent').fields());
-
-  var InvokeBlock = /*#__PURE__*/function (_node$fields12) {
-    (0, _emberBabel.inheritsLoose)(InvokeBlock, _node$fields12);
-
-    function InvokeBlock() {
-      return _node$fields12.apply(this, arguments) || this;
     }
 
-    return InvokeBlock;
-  }(node('InvokeBlock').fields());
+    get args() {
+      if (this.value.type === 'Call') {
+        return this.value.args;
+      } else {
+        return Args.empty(this.value.loc.collapse('end'));
+      }
+    }
+
+  }
+
+  class InvokeBlock extends node('InvokeBlock').fields() {}
   /**
    * Corresponds to a component invocation. When the content of a component invocation contains no
    * named blocks, `blocks` contains a single named block named `"default"`. When a component
@@ -10384,54 +9141,32 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var InvokeComponent = /*#__PURE__*/function (_node$fields13) {
-    (0, _emberBabel.inheritsLoose)(InvokeComponent, _node$fields13);
-
-    function InvokeComponent() {
-      return _node$fields13.apply(this, arguments) || this;
+  class InvokeComponent extends node('InvokeComponent').fields() {
+    get args() {
+      var entries = this.componentArgs.map(a => a.toNamedArgument());
+      return Args.named(new NamedArguments({
+        loc: SpanList.range(entries, this.callee.loc.collapse('end')),
+        entries
+      }));
     }
 
-    (0, _emberBabel.createClass)(InvokeComponent, [{
-      key: "args",
-      get: function get() {
-        var entries = this.componentArgs.map(function (a) {
-          return a.toNamedArgument();
-        });
-        return Args.named(new NamedArguments({
-          loc: SpanList.range(entries, this.callee.loc.collapse('end')),
-          entries: entries
-        }));
-      }
-    }]);
-    return InvokeComponent;
-  }(node('InvokeComponent').fields());
+  }
   /**
    * Corresponds to a simple HTML element. The AST allows component arguments and modifiers to support
    * future extensions.
    */
 
 
-  var SimpleElement = /*#__PURE__*/function (_node$fields14) {
-    (0, _emberBabel.inheritsLoose)(SimpleElement, _node$fields14);
-
-    function SimpleElement() {
-      return _node$fields14.apply(this, arguments) || this;
+  class SimpleElement extends node('SimpleElement').fields() {
+    get args() {
+      var entries = this.componentArgs.map(a => a.toNamedArgument());
+      return Args.named(new NamedArguments({
+        loc: SpanList.range(entries, this.tag.loc.collapse('end')),
+        entries
+      }));
     }
 
-    (0, _emberBabel.createClass)(SimpleElement, [{
-      key: "args",
-      get: function get() {
-        var entries = this.componentArgs.map(function (a) {
-          return a.toNamedArgument();
-        });
-        return Args.named(new NamedArguments({
-          loc: SpanList.range(entries, this.tag.loc.collapse('end')),
-          entries: entries
-        }));
-      }
-    }]);
-    return SimpleElement;
-  }(node('SimpleElement').fields());
+  }
   /**
    * Corresponds to a Handlebars literal.
    *
@@ -10439,24 +9174,15 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var LiteralExpression = /*#__PURE__*/function (_node$fields15) {
-    (0, _emberBabel.inheritsLoose)(LiteralExpression, _node$fields15);
-
-    function LiteralExpression() {
-      return _node$fields15.apply(this, arguments) || this;
-    }
-
-    var _proto21 = LiteralExpression.prototype;
-
-    _proto21.toSlice = function toSlice() {
+  class LiteralExpression extends node('Literal').fields() {
+    toSlice() {
       return new SourceSlice({
         loc: this.loc,
         chars: this.value
       });
-    };
+    }
 
-    return LiteralExpression;
-  }(node('Literal').fields());
+  }
   /**
    * Returns true if an input {@see ExpressionNode} is a literal.
    */
@@ -10489,15 +9215,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var PathExpression = /*#__PURE__*/function (_node$fields16) {
-    (0, _emberBabel.inheritsLoose)(PathExpression, _node$fields16);
-
-    function PathExpression() {
-      return _node$fields16.apply(this, arguments) || this;
-    }
-
-    return PathExpression;
-  }(node('Path').fields());
+  class PathExpression extends node('Path').fields() {}
   /**
    * Corresponds to a parenthesized call expression.
    *
@@ -10510,15 +9228,23 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var CallExpression = /*#__PURE__*/function (_node$fields17) {
-    (0, _emberBabel.inheritsLoose)(CallExpression, _node$fields17);
+  class CallExpression extends node('Call').fields() {}
+  /**
+   * Corresponds to a possible deprecated helper call. Must be:
+   *
+   * 1. A free variable (not this.foo, not @foo, not local).
+   * 2. Argument-less.
+   * 3. In a component invocation's named argument position.
+   * 4. Not parenthesized (not @bar={{(helper)}}).
+   * 5. Not interpolated (not @bar="{{helper}}").
+   *
+   * ```hbs
+   * <Foo @bar={{helper}} />
+   * ```
+   */
 
-    function CallExpression() {
-      return _node$fields17.apply(this, arguments) || this;
-    }
 
-    return CallExpression;
-  }(node('Call').fields());
+  class DeprecatedCallExpression extends node('DeprecatedCall').fields() {}
   /**
    * Corresponds to an interpolation in attribute value position.
    *
@@ -10528,58 +9254,26 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var InterpolateExpression = /*#__PURE__*/function (_node$fields18) {
-    (0, _emberBabel.inheritsLoose)(InterpolateExpression, _node$fields18);
-
-    function InterpolateExpression() {
-      return _node$fields18.apply(this, arguments) || this;
-    }
-
-    return InterpolateExpression;
-  }(node('Interpolate').fields());
+  class InterpolateExpression extends node('Interpolate').fields() {}
   /**
    * Corresponds to `this` at the head of an expression.
    */
 
 
-  var ThisReference = /*#__PURE__*/function (_node$fields19) {
-    (0, _emberBabel.inheritsLoose)(ThisReference, _node$fields19);
-
-    function ThisReference() {
-      return _node$fields19.apply(this, arguments) || this;
-    }
-
-    return ThisReference;
-  }(node('This').fields());
+  class ThisReference extends node('This').fields() {}
   /**
    * Corresponds to `@<ident>` at the beginning of an expression.
    */
 
 
-  var ArgReference = /*#__PURE__*/function (_node$fields20) {
-    (0, _emberBabel.inheritsLoose)(ArgReference, _node$fields20);
-
-    function ArgReference() {
-      return _node$fields20.apply(this, arguments) || this;
-    }
-
-    return ArgReference;
-  }(node('Arg').fields());
+  class ArgReference extends node('Arg').fields() {}
   /**
    * Corresponds to `<ident>` at the beginning of an expression, when `<ident>` is in the current
    * block's scope.
    */
 
 
-  var LocalVarReference = /*#__PURE__*/function (_node$fields21) {
-    (0, _emberBabel.inheritsLoose)(LocalVarReference, _node$fields21);
-
-    function LocalVarReference() {
-      return _node$fields21.apply(this, arguments) || this;
-    }
-
-    return LocalVarReference;
-  }(node('Local').fields());
+  class LocalVarReference extends node('Local').fields() {}
   /**
    * Corresponds to `<ident>` at the beginning of an expression, when `<ident>` is *not* in the
    * current block's scope.
@@ -10591,93 +9285,47 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var FreeVarReference = /*#__PURE__*/function (_node$fields22) {
-    (0, _emberBabel.inheritsLoose)(FreeVarReference, _node$fields22);
-
-    function FreeVarReference() {
-      return _node$fields22.apply(this, arguments) || this;
-    }
-
-    return FreeVarReference;
-  }(node('Free').fields());
+  class FreeVarReference extends node('Free').fields() {}
   /**
    * Corresponds to an entire template.
    */
 
 
-  var Template = /*#__PURE__*/function (_node$fields23) {
-    (0, _emberBabel.inheritsLoose)(Template, _node$fields23);
-
-    function Template() {
-      return _node$fields23.apply(this, arguments) || this;
-    }
-
-    return Template;
-  }(node().fields());
+  class Template extends node().fields() {}
   /**
    * Represents a block. In principle this could be merged with `NamedBlock`, because all cases
    * involving blocks have at least a notional name.
    */
 
 
-  var Block = /*#__PURE__*/function (_node$fields24) {
-    (0, _emberBabel.inheritsLoose)(Block, _node$fields24);
-
-    function Block() {
-      return _node$fields24.apply(this, arguments) || this;
-    }
-
-    return Block;
-  }(node().fields());
+  class Block extends node().fields() {}
   /**
    * Corresponds to a collection of named blocks.
    */
 
 
-  var NamedBlocks = /*#__PURE__*/function (_node$fields25) {
-    (0, _emberBabel.inheritsLoose)(NamedBlocks, _node$fields25);
-
-    function NamedBlocks() {
-      return _node$fields25.apply(this, arguments) || this;
+  class NamedBlocks extends node().fields() {
+    get(name) {
+      return this.blocks.filter(block => block.name.chars === name)[0] || null;
     }
 
-    var _proto22 = NamedBlocks.prototype;
-
-    _proto22.get = function get(name) {
-      return this.blocks.filter(function (block) {
-        return block.name.chars === name;
-      })[0] || null;
-    };
-
-    return NamedBlocks;
-  }(node().fields());
+  }
   /**
    * Corresponds to a single named block. This is used for anonymous named blocks (`default` and
    * `else`).
    */
 
 
-  var NamedBlock = /*#__PURE__*/function (_node$fields26) {
-    (0, _emberBabel.inheritsLoose)(NamedBlock, _node$fields26);
-
-    function NamedBlock() {
-      return _node$fields26.apply(this, arguments) || this;
+  class NamedBlock extends node().fields() {
+    get args() {
+      var entries = this.componentArgs.map(a => a.toNamedArgument());
+      return Args.named(new NamedArguments({
+        loc: SpanList.range(entries, this.name.loc.collapse('end')),
+        entries
+      }));
     }
 
-    (0, _emberBabel.createClass)(NamedBlock, [{
-      key: "args",
-      get: function get() {
-        var entries = this.componentArgs.map(function (a) {
-          return a.toNamedArgument();
-        });
-        return Args.named(new NamedArguments({
-          loc: SpanList.range(entries, this.name.loc.collapse('end')),
-          entries: entries
-        }));
-      }
-    }]);
-    return NamedBlock;
-  }(node().fields());
+  }
 
   var api$1 = /*#__PURE__*/Object.freeze({
     StrictResolution: StrictResolution,
@@ -10705,6 +9353,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     isLiteral: isLiteral,
     PathExpression: PathExpression,
     CallExpression: CallExpression,
+    DeprecatedCallExpression: DeprecatedCallExpression,
     InterpolateExpression: InterpolateExpression,
     ThisReference: ThisReference,
     ArgReference: ArgReference,
@@ -10786,15 +9435,36 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return text;
   }
 
+  function sortByLoc(a, b) {
+    // If either is invisible, don't try to order them
+    if (a.loc.isInvisible || b.loc.isInvisible) {
+      return 0;
+    }
+
+    if (a.loc.startPosition.line < b.loc.startPosition.line) {
+      return -1;
+    }
+
+    if (a.loc.startPosition.line === b.loc.startPosition.line && a.loc.startPosition.column < b.loc.startPosition.column) {
+      return -1;
+    }
+
+    if (a.loc.startPosition.line === b.loc.startPosition.line && a.loc.startPosition.column === b.loc.startPosition.column) {
+      return 0;
+    }
+
+    return 1;
+  }
+
   var voidMap = Object.create(null);
   var voidTagNames = 'area base br col command embed hr img input keygen link meta param source track wbr';
-  voidTagNames.split(' ').forEach(function (tagName) {
+  voidTagNames.split(' ').forEach(tagName => {
     voidMap[tagName] = true;
   });
   var NON_WHITESPACE = /\S/;
 
-  var Printer = /*#__PURE__*/function () {
-    function Printer(options) {
+  class Printer {
+    constructor(options) {
       this.buffer = '';
       this.options = options;
     }
@@ -10808,13 +9478,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     */
 
 
-    var _proto23 = Printer.prototype;
-
-    _proto23.handledByOverride = function handledByOverride(node, ensureLeadingWhitespace) {
-      if (ensureLeadingWhitespace === void 0) {
-        ensureLeadingWhitespace = false;
-      }
-
+    handledByOverride(node, ensureLeadingWhitespace = false) {
       if (this.options.override !== undefined) {
         var result = this.options.override(node, this.options);
 
@@ -10829,9 +9493,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return false;
-    };
+    }
 
-    _proto23.Node = function Node(node) {
+    Node(node) {
       switch (node.type) {
         case 'MustacheStatement':
         case 'BlockStatement':
@@ -10870,9 +9534,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         case 'ElementModifierStatement':
           return this.ElementModifierStatement(node);
       }
-    };
+    }
 
-    _proto23.Expression = function Expression(expression) {
+    Expression(expression) {
       switch (expression.type) {
         case 'StringLiteral':
         case 'BooleanLiteral':
@@ -10887,9 +9551,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         case 'SubExpression':
           return this.SubExpression(expression);
       }
-    };
+    }
 
-    _proto23.Literal = function Literal(literal) {
+    Literal(literal) {
       switch (literal.type) {
         case 'StringLiteral':
           return this.StringLiteral(literal);
@@ -10906,9 +9570,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         case 'NullLiteral':
           return this.NullLiteral(literal);
       }
-    };
+    }
 
-    _proto23.TopLevelStatement = function TopLevelStatement(statement) {
+    TopLevelStatement(statement) {
       switch (statement.type) {
         case 'MustacheStatement':
           return this.MustacheStatement(statement);
@@ -10939,9 +9603,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           // should have element
           return this.AttrNode(statement);
       }
-    };
+    }
 
-    _proto23.Block = function Block(block) {
+    Block(block) {
       /*
         When processing a template like:
              ```hbs
@@ -10981,17 +9645,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       this.TopLevelStatements(block.body);
-    };
+    }
 
-    _proto23.TopLevelStatements = function TopLevelStatements(statements) {
-      var _this2 = this;
+    TopLevelStatements(statements) {
+      statements.forEach(statement => this.TopLevelStatement(statement));
+    }
 
-      statements.forEach(function (statement) {
-        return _this2.TopLevelStatement(statement);
-      });
-    };
-
-    _proto23.ElementNode = function ElementNode(el) {
+    ElementNode(el) {
       if (this.handledByOverride(el)) {
         return;
       }
@@ -10999,35 +9659,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.OpenElementNode(el);
       this.TopLevelStatements(el.children);
       this.CloseElementNode(el);
-    };
+    }
 
-    _proto23.OpenElementNode = function OpenElementNode(el) {
-      var _this3 = this;
-
+    OpenElementNode(el) {
       this.buffer += "<" + el.tag;
+      var parts = [...el.attributes, ...el.modifiers, ...el.comments].sort(sortByLoc);
 
-      if (el.attributes.length) {
-        el.attributes.forEach(function (attr) {
-          _this3.buffer += ' ';
+      for (var part of parts) {
+        this.buffer += ' ';
 
-          _this3.AttrNode(attr);
-        });
-      }
+        switch (part.type) {
+          case 'AttrNode':
+            this.AttrNode(part);
+            break;
 
-      if (el.modifiers.length) {
-        el.modifiers.forEach(function (mod) {
-          _this3.buffer += ' ';
+          case 'ElementModifierStatement':
+            this.ElementModifierStatement(part);
+            break;
 
-          _this3.ElementModifierStatement(mod);
-        });
-      }
-
-      if (el.comments.length) {
-        el.comments.forEach(function (comment) {
-          _this3.buffer += ' ';
-
-          _this3.MustacheCommentStatement(comment);
-        });
+          case 'MustacheCommentStatement':
+            this.MustacheCommentStatement(part);
+            break;
+        }
       }
 
       if (el.blockParams.length) {
@@ -11039,32 +9692,34 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       this.buffer += '>';
-    };
+    }
 
-    _proto23.CloseElementNode = function CloseElementNode(el) {
+    CloseElementNode(el) {
       if (el.selfClosing || voidMap[el.tag.toLowerCase()]) {
         return;
       }
 
       this.buffer += "</" + el.tag + ">";
-    };
+    }
 
-    _proto23.AttrNode = function AttrNode(attr) {
+    AttrNode(attr) {
       if (this.handledByOverride(attr)) {
         return;
       }
 
-      var name = attr.name,
-          value = attr.value;
+      var {
+        name,
+        value
+      } = attr;
       this.buffer += name;
 
       if (value.type !== 'TextNode' || value.chars.length > 0) {
         this.buffer += '=';
         this.AttrNodeValue(value);
       }
-    };
+    }
 
-    _proto23.AttrNodeValue = function AttrNodeValue(value) {
+    AttrNodeValue(value) {
       if (value.type === 'TextNode') {
         this.buffer += '"';
         this.TextNode(value, true);
@@ -11072,9 +9727,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       } else {
         this.Node(value);
       }
-    };
+    }
 
-    _proto23.TextNode = function TextNode(text, isAttr) {
+    TextNode(text, isAttr) {
       if (this.handledByOverride(text)) {
         return;
       }
@@ -11086,9 +9741,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       } else {
         this.buffer += escapeText(text.chars);
       }
-    };
+    }
 
-    _proto23.MustacheStatement = function MustacheStatement(mustache) {
+    MustacheStatement(mustache) {
       if (this.handledByOverride(mustache)) {
         return;
       }
@@ -11108,9 +9763,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       this.buffer += mustache.escaped ? '}}' : '}}}';
-    };
+    }
 
-    _proto23.BlockStatement = function BlockStatement(block) {
+    BlockStatement(block) {
       if (this.handledByOverride(block)) {
         return;
       }
@@ -11153,13 +9808,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         this.Expression(block.path);
         this.buffer += block.closeStrip.close ? '~}}' : '}}';
       }
-    };
+    }
 
-    _proto23.BlockParams = function BlockParams(blockParams) {
+    BlockParams(blockParams) {
       this.buffer += " as |" + blockParams.join(' ') + "|";
-    };
+    }
 
-    _proto23.PartialStatement = function PartialStatement(partial) {
+    PartialStatement(partial) {
       if (this.handledByOverride(partial)) {
         return;
       }
@@ -11169,35 +9824,33 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.Params(partial.params);
       this.Hash(partial.hash);
       this.buffer += '}}';
-    };
+    }
 
-    _proto23.ConcatStatement = function ConcatStatement(concat) {
-      var _this4 = this;
-
+    ConcatStatement(concat) {
       if (this.handledByOverride(concat)) {
         return;
       }
 
       this.buffer += '"';
-      concat.parts.forEach(function (part) {
+      concat.parts.forEach(part => {
         if (part.type === 'TextNode') {
-          _this4.TextNode(part, true);
+          this.TextNode(part, true);
         } else {
-          _this4.Node(part);
+          this.Node(part);
         }
       });
       this.buffer += '"';
-    };
+    }
 
-    _proto23.MustacheCommentStatement = function MustacheCommentStatement(comment) {
+    MustacheCommentStatement(comment) {
       if (this.handledByOverride(comment)) {
         return;
       }
 
       this.buffer += "{{!--" + comment.value + "--}}";
-    };
+    }
 
-    _proto23.ElementModifierStatement = function ElementModifierStatement(mod) {
+    ElementModifierStatement(mod) {
       if (this.handledByOverride(mod)) {
         return;
       }
@@ -11207,25 +9860,25 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.Params(mod.params);
       this.Hash(mod.hash);
       this.buffer += '}}';
-    };
+    }
 
-    _proto23.CommentStatement = function CommentStatement(comment) {
+    CommentStatement(comment) {
       if (this.handledByOverride(comment)) {
         return;
       }
 
       this.buffer += "<!--" + comment.value + "-->";
-    };
+    }
 
-    _proto23.PathExpression = function PathExpression(path) {
+    PathExpression(path) {
       if (this.handledByOverride(path)) {
         return;
       }
 
       this.buffer += path.original;
-    };
+    }
 
-    _proto23.SubExpression = function SubExpression(sexp) {
+    SubExpression(sexp) {
       if (this.handledByOverride(sexp)) {
         return;
       }
@@ -11235,37 +9888,31 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.Params(sexp.params);
       this.Hash(sexp.hash);
       this.buffer += ')';
-    };
+    }
 
-    _proto23.Params = function Params(params) {
-      var _this5 = this;
-
+    Params(params) {
       // TODO: implement a top level Params AST node (just like the Hash object)
       // so that this can also be overridden
       if (params.length) {
-        params.forEach(function (param) {
-          _this5.buffer += ' ';
-
-          _this5.Expression(param);
+        params.forEach(param => {
+          this.buffer += ' ';
+          this.Expression(param);
         });
       }
-    };
+    }
 
-    _proto23.Hash = function Hash(hash) {
-      var _this6 = this;
-
+    Hash(hash) {
       if (this.handledByOverride(hash, true)) {
         return;
       }
 
-      hash.pairs.forEach(function (pair) {
-        _this6.buffer += ' ';
-
-        _this6.HashPair(pair);
+      hash.pairs.forEach(pair => {
+        this.buffer += ' ';
+        this.HashPair(pair);
       });
-    };
+    }
 
-    _proto23.HashPair = function HashPair(pair) {
+    HashPair(pair) {
       if (this.handledByOverride(pair)) {
         return;
       }
@@ -11273,50 +9920,52 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.buffer += pair.key;
       this.buffer += '=';
       this.Node(pair.value);
-    };
+    }
 
-    _proto23.StringLiteral = function StringLiteral(str) {
+    StringLiteral(str) {
       if (this.handledByOverride(str)) {
         return;
       }
 
       this.buffer += JSON.stringify(str.value);
-    };
+    }
 
-    _proto23.BooleanLiteral = function BooleanLiteral(bool) {
+    BooleanLiteral(bool) {
       if (this.handledByOverride(bool)) {
         return;
       }
 
       this.buffer += bool.value;
-    };
+    }
 
-    _proto23.NumberLiteral = function NumberLiteral(number) {
+    NumberLiteral(number) {
       if (this.handledByOverride(number)) {
         return;
       }
 
       this.buffer += number.value;
-    };
+    }
 
-    _proto23.UndefinedLiteral = function UndefinedLiteral(node) {
+    UndefinedLiteral(node) {
       if (this.handledByOverride(node)) {
         return;
       }
 
       this.buffer += 'undefined';
-    };
+    }
 
-    _proto23.NullLiteral = function NullLiteral(node) {
+    NullLiteral(node) {
       if (this.handledByOverride(node)) {
         return;
       }
 
       this.buffer += 'null';
-    };
+    }
 
-    _proto23.print = function print(node) {
-      var options = this.options;
+    print(node) {
+      var {
+        options
+      } = this;
 
       if (options.override) {
         var result = options.override(node, options);
@@ -11329,18 +9978,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.buffer = '';
       this.Node(node);
       return this.buffer;
-    };
-
-    return Printer;
-  }();
-
-  function build(ast, options) {
-    if (options === void 0) {
-      options = {
-        entityEncoding: 'transformed'
-      };
     }
 
+  }
+
+  function build(ast, options = {
+    entityEncoding: 'transformed'
+  }) {
     if (!ast) {
       return '';
     }
@@ -11350,11 +9994,14 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   }
 
   function generateSyntaxError(message, location) {
-    var module = location.module,
-        loc = location.loc;
-    var _loc$start = loc.start,
-        line = _loc$start.line,
-        column = _loc$start.column;
+    var {
+      module,
+      loc
+    } = location;
+    var {
+      line,
+      column
+    } = loc.start;
     var code = location.asString();
     var quotedCode = code ? "\n\n|\n|  " + code.split('\n').join('\n|  ') + "\n|\n\n" : '';
     var error = new Error(message + ": " + quotedCode + "(error occurred in '" + module + "' @ line " + line + " : column " + column + ")");
@@ -11423,225 +10070,35 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return new TraversalError('Replacing and removing in key handlers is not yet supported.', node, null, key);
   }
 
-  function getLocalName(node) {
-    switch (node.type) {
-      case 'ElementNode':
-        // unfortunately the ElementNode stores `tag` as a string
-        // if that changes in glimmer-vm this will need to be updated
-        return node.tag.split('.')[0];
-
-      case 'SubExpression':
-      case 'MustacheStatement':
-      case 'BlockStatement':
-        return getLocalName(node.path);
-
-      case 'UndefinedLiteral':
-      case 'NullLiteral':
-      case 'BooleanLiteral':
-      case 'StringLiteral':
-      case 'NumberLiteral':
-      case 'TextNode':
-      case 'Template':
-      case 'Block':
-      case 'CommentStatement':
-      case 'MustacheCommentStatement':
-      case 'PartialStatement':
-      case 'ElementModifierStatement':
-      case 'AttrNode':
-      case 'ConcatStatement':
-      case 'Program':
-      case 'Hash':
-      case 'HashPair':
-        return undefined;
-
-      case 'PathExpression':
-      default:
-        return node.parts.length ? node.parts[0] : undefined;
-    }
-  }
-
-  function getLocals(node) {
-    switch (node.type) {
-      case 'ElementNode':
-      case 'Program':
-      case 'Block':
-      case 'Template':
-        return node.blockParams;
-
-      case 'BlockStatement':
-        return node.program.blockParams;
-
-      default:
-        return undefined;
-    }
-  }
-
-  var TransformScope = /*#__PURE__*/function () {
-    function TransformScope(locals) {
-      this.locals = locals;
-      this.hasPartial = false;
-      this.usedLocals = {};
-
-      for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(locals), _step3; !(_step3 = _iterator3()).done;) {
-        var _local = _step3.value;
-        this.usedLocals[_local] = false;
-      }
-    }
-
-    var _proto24 = TransformScope.prototype;
-
-    _proto24.child = function child(node) {
-      var locals = getLocals(node);
-      return locals ? new ChildTransformScope(locals, this) : this;
-    };
-
-    _proto24.usePartial = function usePartial() {
-      this.hasPartial = true;
-    };
-
-    return TransformScope;
-  }();
-
-  var RootTransformScope = /*#__PURE__*/function (_TransformScope) {
-    (0, _emberBabel.inheritsLoose)(RootTransformScope, _TransformScope);
-
-    function RootTransformScope(node) {
-      var _a;
-
-      var locals = (_a = getLocals(node)) !== null && _a !== void 0 ? _a : [];
-      return _TransformScope.call(this, locals) || this;
-    }
-
-    var _proto25 = RootTransformScope.prototype;
-
-    _proto25.useLocal = function useLocal(node) {
-      var name = getLocalName(node);
-
-      if (name && name in this.usedLocals) {
-        this.usedLocals[name] = true;
-      }
-    };
-
-    _proto25.isLocal = function isLocal(name) {
-      return this.locals.indexOf(name) !== -1;
-    };
-
-    _proto25.currentUnusedLocals = function currentUnusedLocals() {
-      var _this7 = this;
-
-      if (!this.hasPartial && this.locals.length > 0) {
-        return this.locals.filter(function (local) {
-          return !_this7.usedLocals[local];
-        });
-      }
-
-      return false;
-    };
-
-    return RootTransformScope;
-  }(TransformScope);
-
-  var ChildTransformScope = /*#__PURE__*/function (_TransformScope2) {
-    (0, _emberBabel.inheritsLoose)(ChildTransformScope, _TransformScope2);
-
-    function ChildTransformScope(locals, parent) {
-      var _this8;
-
-      _this8 = _TransformScope2.call(this, locals) || this;
-      _this8.parent = parent;
-      return _this8;
-    }
-
-    var _proto26 = ChildTransformScope.prototype;
-
-    _proto26.useLocal = function useLocal(node) {
-      var name = getLocalName(node);
-
-      if (name && name in this.usedLocals) {
-        this.usedLocals[name] = true;
-      } else {
-        this.parent.useLocal(node);
-      }
-    };
-
-    _proto26.isLocal = function isLocal(name) {
-      return this.locals.indexOf(name) !== -1 || this.parent.isLocal(name);
-    };
-
-    _proto26.currentUnusedLocals = function currentUnusedLocals() {
-      if (!this.hasPartial && this.locals.length > 0) {
-        // We only care about the last local, because if it is used then it implies
-        // usage of the others (specifically when in a child block, |foo bar|)
-        if (!this.usedLocals[this.locals[this.locals.length - 1]]) {
-          return [this.locals[this.locals.length - 1]];
-        }
-      }
-
-      return false;
-    };
-
-    return ChildTransformScope;
-  }(TransformScope);
-
-  var WalkerPath = /*#__PURE__*/function () {
-    function WalkerPath(node, parent, parentKey) {
-      var _this9 = this;
-
-      if (parent === void 0) {
-        parent = null;
-      }
-
-      if (parentKey === void 0) {
-        parentKey = null;
-      }
-
+  class WalkerPath {
+    constructor(node, parent = null, parentKey = null) {
       this.node = node;
       this.parent = parent;
       this.parentKey = parentKey;
-      this.scope = parent ? parent.scope.child(node) : new RootTransformScope(node); // Consume in scope values
-
-      if (node.type === 'PathExpression') {
-        this.scope.useLocal(node);
-      }
-
-      if (node.type === 'ElementNode') {
-        this.scope.useLocal(node);
-        node.children.forEach(function (node) {
-          return _this9.scope.useLocal(node);
-        });
-      }
     }
 
-    var _proto27 = WalkerPath.prototype;
+    get parentNode() {
+      return this.parent ? this.parent.node : null;
+    }
 
-    _proto27.parents = function parents() {
-      var _this10 = this,
-          _ref15;
+    parents() {
+      return {
+        [Symbol.iterator]: () => {
+          return new PathParentsIterator(this);
+        }
+      };
+    }
 
-      return _ref15 = {}, _ref15[Symbol.iterator] = function () {
-        return new PathParentsIterator(_this10);
-      }, _ref15;
-    };
-
-    (0, _emberBabel.createClass)(WalkerPath, [{
-      key: "parentNode",
-      get: function get() {
-        return this.parent ? this.parent.node : null;
-      }
-    }]);
-    return WalkerPath;
-  }();
+  }
 
   _exports.WalkerPath = WalkerPath;
 
-  var PathParentsIterator = /*#__PURE__*/function () {
-    function PathParentsIterator(path) {
+  class PathParentsIterator {
+    constructor(path) {
       this.path = path;
     }
 
-    var _proto28 = PathParentsIterator.prototype;
-
-    _proto28.next = function next() {
+    next() {
       if (this.path.parent) {
         this.path = this.path.parent;
         return {
@@ -11654,10 +10111,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           value: null
         };
       }
-    };
+    }
 
-    return PathParentsIterator;
-  }();
+  }
 
   function getEnterFunction(handler) {
     if (typeof handler === 'function') {
@@ -11704,9 +10160,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   }
 
   function visitNode(visitor, path) {
-    var node = path.node,
-        parent = path.parent,
-        parentKey = path.parentKey;
+    var {
+      node,
+      parent,
+      parentKey
+    } = path;
     var handler = getNodeHandler(visitor, node.type);
     var enter;
     var exit;
@@ -11736,10 +10194,10 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     }
 
     if (result === undefined) {
-      var _keys = visitorKeys[node.type];
+      var keys = visitorKeys[node.type];
 
-      for (var i = 0; i < _keys.length; i++) {
-        var key = _keys[i]; // we know if it has child keys we can widen to a ParentNode
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i]; // we know if it has child keys we can widen to a ParentNode
 
         visitKey(visitor, handler, path, key);
       }
@@ -11761,7 +10219,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
   }
 
   function visitKey(visitor, handler, path, key) {
-    var node = path.node;
+    var {
+      node
+    } = path;
     var value = get(node, key);
 
     if (!value) {
@@ -11842,7 +10302,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       array.splice(index, 1);
       return 0;
     } else if (Array.isArray(result)) {
-      array.splice.apply(array, [index, 1].concat(result));
+      array.splice(index, 1, ...result);
       return result.length;
     } else {
       array.splice(index, 1, result);
@@ -11855,15 +10315,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     visitNode(visitor, path);
   }
 
-  var Walker = /*#__PURE__*/function () {
-    function Walker(order) {
+  class Walker {
+    constructor(order) {
       this.order = order;
       this.stack = [];
     }
 
-    var _proto29 = Walker.prototype;
-
-    _proto29.visit = function visit(node, callback) {
+    visit(node, callback) {
       if (!node) {
         return;
       }
@@ -11879,9 +10337,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       this.stack.pop();
-    };
+    }
 
-    _proto29.children = function children(node, callback) {
+    children(node, callback) {
       switch (node.type) {
         case 'Block':
         case 'Template':
@@ -11896,37 +10354,41 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         default:
           return;
       }
-    };
+    }
 
-    return Walker;
-  }();
+  }
 
   _exports.Path = _exports.Walker = Walker;
   var visitors = {
-    Program: function Program(walker, node, callback) {
+    Program(walker, node, callback) {
       for (var i = 0; i < node.body.length; i++) {
         walker.visit(node.body[i], callback);
       }
     },
-    Template: function Template(walker, node, callback) {
+
+    Template(walker, node, callback) {
       for (var i = 0; i < node.body.length; i++) {
         walker.visit(node.body[i], callback);
       }
     },
-    Block: function Block(walker, node, callback) {
+
+    Block(walker, node, callback) {
       for (var i = 0; i < node.body.length; i++) {
         walker.visit(node.body[i], callback);
       }
     },
-    ElementNode: function ElementNode(walker, node, callback) {
+
+    ElementNode(walker, node, callback) {
       for (var i = 0; i < node.children.length; i++) {
         walker.visit(node.children[i], callback);
       }
     },
-    BlockStatement: function BlockStatement(walker, node, callback) {
+
+    BlockStatement(walker, node, callback) {
       walker.visit(node.program, callback);
       walker.visit(node.inverse || null, callback);
     }
+
   }; // Based on the ID validation regex in Handlebars.
 
   var ID_INVERSE_PATTERN = /[!"#%-,\.\/;->@\[-\^`\{-~]/; // Checks the element's attributes to see if it uses block params.
@@ -12031,87 +10493,81 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    * 2. Mandating source locations
    */
 
-  var Builders = /*#__PURE__*/function () {
-    function Builders() {}
-
-    var _proto30 = Builders.prototype;
-
-    _proto30.pos = function pos(line, column) {
+  class Builders {
+    pos(line, column) {
       return {
-        line: line,
-        column: column
+        line,
+        column
       };
-    };
+    }
 
-    _proto30.blockItself = function blockItself(_ref16) {
-      var body = _ref16.body,
-          blockParams = _ref16.blockParams,
-          _ref16$chained = _ref16.chained,
-          chained = _ref16$chained === void 0 ? false : _ref16$chained,
-          loc = _ref16.loc;
+    blockItself({
+      body,
+      blockParams,
+      chained = false,
+      loc
+    }) {
       return {
         type: 'Block',
         body: body || [],
         blockParams: blockParams || [],
-        chained: chained,
-        loc: loc
+        chained,
+        loc
       };
-    };
+    }
 
-    _proto30.template = function template(_ref17) {
-      var body = _ref17.body,
-          blockParams = _ref17.blockParams,
-          loc = _ref17.loc;
+    template({
+      body,
+      blockParams,
+      loc
+    }) {
       return {
         type: 'Template',
         body: body || [],
         blockParams: blockParams || [],
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.mustache = function mustache(_ref18) {
-      var path = _ref18.path,
-          params = _ref18.params,
-          hash = _ref18.hash,
-          trusting = _ref18.trusting,
-          loc = _ref18.loc,
-          _ref18$strip = _ref18.strip,
-          strip = _ref18$strip === void 0 ? DEFAULT_STRIP : _ref18$strip;
+    mustache({
+      path,
+      params,
+      hash,
+      trusting,
+      loc,
+      strip = DEFAULT_STRIP
+    }) {
       return {
         type: 'MustacheStatement',
-        path: path,
-        params: params,
-        hash: hash,
+        path,
+        params,
+        hash,
         escaped: !trusting,
-        trusting: trusting,
-        loc: loc,
+        trusting,
+        loc,
         strip: strip || {
           open: false,
           close: false
         }
       };
-    };
+    }
 
-    _proto30.block = function block(_ref19) {
-      var path = _ref19.path,
-          params = _ref19.params,
-          hash = _ref19.hash,
-          defaultBlock = _ref19.defaultBlock,
-          _ref19$elseBlock = _ref19.elseBlock,
-          elseBlock = _ref19$elseBlock === void 0 ? null : _ref19$elseBlock,
-          loc = _ref19.loc,
-          _ref19$openStrip = _ref19.openStrip,
-          openStrip = _ref19$openStrip === void 0 ? DEFAULT_STRIP : _ref19$openStrip,
-          _ref19$inverseStrip = _ref19.inverseStrip,
-          inverseStrip = _ref19$inverseStrip === void 0 ? DEFAULT_STRIP : _ref19$inverseStrip,
-          _ref19$closeStrip = _ref19.closeStrip,
-          closeStrip = _ref19$closeStrip === void 0 ? DEFAULT_STRIP : _ref19$closeStrip;
+    block({
+      path,
+      params,
+      hash,
+      defaultBlock,
+      elseBlock = null,
+      loc,
+      openStrip = DEFAULT_STRIP,
+      inverseStrip = DEFAULT_STRIP,
+      closeStrip = DEFAULT_STRIP
+    }) {
       return {
         type: 'BlockStatement',
         path: path,
-        params: params,
-        hash: hash,
+        params,
+        hash,
         program: defaultBlock,
         inverse: elseBlock,
         loc: loc,
@@ -12119,231 +10575,227 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         inverseStrip: inverseStrip,
         closeStrip: closeStrip
       };
-    };
+    }
 
-    _proto30.comment = function comment(value, loc) {
+    comment(value, loc) {
       return {
         type: 'CommentStatement',
         value: value,
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.mustacheComment = function mustacheComment(value, loc) {
+    mustacheComment(value, loc) {
       return {
         type: 'MustacheCommentStatement',
         value: value,
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.concat = function concat(parts, loc) {
+    concat(parts, loc) {
       return {
         type: 'ConcatStatement',
-        parts: parts,
-        loc: loc
+        parts,
+        loc
       };
-    };
+    }
 
-    _proto30.element = function element(_ref20) {
-      var tag = _ref20.tag,
-          selfClosing = _ref20.selfClosing,
-          attrs = _ref20.attrs,
-          blockParams = _ref20.blockParams,
-          modifiers = _ref20.modifiers,
-          comments = _ref20.comments,
-          children = _ref20.children,
-          loc = _ref20.loc;
+    element({
+      tag,
+      selfClosing,
+      attrs,
+      blockParams,
+      modifiers,
+      comments,
+      children,
+      loc
+    }) {
       return {
         type: 'ElementNode',
-        tag: tag,
+        tag,
         selfClosing: selfClosing,
         attributes: attrs || [],
         blockParams: blockParams || [],
         modifiers: modifiers || [],
         comments: comments || [],
         children: children || [],
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.elementModifier = function elementModifier(_ref21) {
-      var path = _ref21.path,
-          params = _ref21.params,
-          hash = _ref21.hash,
-          loc = _ref21.loc;
+    elementModifier({
+      path,
+      params,
+      hash,
+      loc
+    }) {
       return {
         type: 'ElementModifierStatement',
-        path: path,
-        params: params,
-        hash: hash,
-        loc: loc
+        path,
+        params,
+        hash,
+        loc
       };
-    };
+    }
 
-    _proto30.attr = function attr(_ref22) {
-      var name = _ref22.name,
-          value = _ref22.value,
-          loc = _ref22.loc;
+    attr({
+      name,
+      value,
+      loc
+    }) {
       return {
         type: 'AttrNode',
         name: name,
         value: value,
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.text = function text(_ref23) {
-      var chars = _ref23.chars,
-          loc = _ref23.loc;
+    text({
+      chars,
+      loc
+    }) {
       return {
         type: 'TextNode',
-        chars: chars,
-        loc: loc
+        chars,
+        loc
       };
-    };
+    }
 
-    _proto30.sexpr = function sexpr(_ref24) {
-      var path = _ref24.path,
-          params = _ref24.params,
-          hash = _ref24.hash,
-          loc = _ref24.loc;
+    sexpr({
+      path,
+      params,
+      hash,
+      loc
+    }) {
       return {
         type: 'SubExpression',
-        path: path,
-        params: params,
-        hash: hash,
-        loc: loc
+        path,
+        params,
+        hash,
+        loc
       };
-    };
+    }
 
-    _proto30.path = function path(_ref25) {
-      var head = _ref25.head,
-          tail = _ref25.tail,
-          loc = _ref25.loc;
-
-      var _headToString$ = headToString$1(head),
-          originalHead = _headToString$.original;
-
-      var original = [].concat(originalHead, tail).join('.');
+    path({
+      head,
+      tail,
+      loc
+    }) {
+      var {
+        original: originalHead
+      } = headToString$1(head);
+      var original = [...originalHead, ...tail].join('.');
       return new PathExpressionImplV1(original, head, tail, loc);
-    };
+    }
 
-    _proto30.head = function head(_head2, loc) {
-      if (_head2[0] === '@') {
-        return this.atName(_head2, loc);
-      } else if (_head2 === 'this') {
+    head(head, loc) {
+      if (head[0] === '@') {
+        return this.atName(head, loc);
+      } else if (head === 'this') {
         return this.this(loc);
       } else {
-        return this.var(_head2, loc);
+        return this.var(head, loc);
       }
-    };
+    }
 
-    _proto30.this = function _this(loc) {
+    this(loc) {
       return {
         type: 'ThisHead',
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.atName = function atName(name, loc) {
+    atName(name, loc) {
       return {
         type: 'AtHead',
-        name: name,
-        loc: loc
+        name,
+        loc
       };
-    };
+    }
 
-    _proto30.var = function _var(name, loc) {
+    var(name, loc) {
       return {
         type: 'VarHead',
-        name: name,
-        loc: loc
+        name,
+        loc
       };
-    };
+    }
 
-    _proto30.hash = function hash(pairs, loc) {
+    hash(pairs, loc) {
       return {
         type: 'Hash',
         pairs: pairs || [],
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.pair = function pair(_ref26) {
-      var key = _ref26.key,
-          value = _ref26.value,
-          loc = _ref26.loc;
+    pair({
+      key,
+      value,
+      loc
+    }) {
       return {
         type: 'HashPair',
         key: key,
-        value: value,
-        loc: loc
+        value,
+        loc
       };
-    };
+    }
 
-    _proto30.literal = function literal(_ref27) {
-      var type = _ref27.type,
-          value = _ref27.value,
-          loc = _ref27.loc;
+    literal({
+      type,
+      value,
+      loc
+    }) {
       return {
-        type: type,
-        value: value,
+        type,
+        value,
         original: value,
-        loc: loc
+        loc
       };
-    };
+    }
 
-    _proto30.undefined = function (_undefined2) {
-      function undefined() {
-        return _undefined2.apply(this, arguments);
-      }
-
-      undefined.toString = function () {
-        return _undefined2.toString();
-      };
-
-      return undefined;
-    }(function () {
+    undefined() {
       return this.literal({
         type: 'UndefinedLiteral',
         value: undefined
       });
-    });
+    }
 
-    _proto30.null = function _null() {
+    null() {
       return this.literal({
         type: 'NullLiteral',
         value: null
       });
-    };
+    }
 
-    _proto30.string = function string(value, loc) {
+    string(value, loc) {
       return this.literal({
         type: 'StringLiteral',
-        value: value,
-        loc: loc
+        value,
+        loc
       });
-    };
+    }
 
-    _proto30.boolean = function boolean(value, loc) {
+    boolean(value, loc) {
       return this.literal({
         type: 'BooleanLiteral',
-        value: value,
-        loc: loc
+        value,
+        loc
       });
-    };
+    }
 
-    _proto30.number = function number(value, loc) {
+    number(value, loc) {
       return this.literal({
         type: 'NumberLiteral',
-        value: value,
-        loc: loc
+        value,
+        loc
       });
-    };
+    }
 
-    return Builders;
-  }(); // Expressions
+  } // Expressions
 
 
   function headToString$1(head) {
@@ -12370,16 +10822,8 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
   var b = new Builders();
 
-  var Parser = /*#__PURE__*/function () {
-    function Parser(source, entityParser, mode) {
-      if (entityParser === void 0) {
-        entityParser = new _simpleHtmlTokenizer.EntityParser(_simpleHtmlTokenizer.HTML5NamedCharRefs);
-      }
-
-      if (mode === void 0) {
-        mode = 'precompile';
-      }
-
+  class Parser {
+    constructor(source, entityParser = new _simpleHtmlTokenizer.EntityParser(_simpleHtmlTokenizer.HTML5NamedCharRefs), mode = 'precompile') {
       this.elementStack = [];
       this.currentAttribute = null;
       this.currentNode = null;
@@ -12388,40 +10832,69 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       this.tokenizer = new _simpleHtmlTokenizer.EventedTokenizer(this, entityParser, mode);
     }
 
-    var _proto31 = Parser.prototype;
-
-    _proto31.offset = function offset() {
-      var _this$tokenizer = this.tokenizer,
-          line = _this$tokenizer.line,
-          column = _this$tokenizer.column;
+    offset() {
+      var {
+        line,
+        column
+      } = this.tokenizer;
       return this.source.offsetFor(line, column);
-    };
+    }
 
-    _proto31.pos = function pos(_ref28) {
-      var line = _ref28.line,
-          column = _ref28.column;
+    pos({
+      line,
+      column
+    }) {
       return this.source.offsetFor(line, column);
-    };
+    }
 
-    _proto31.finish = function finish(node) {
+    finish(node) {
       return (0, _util.assign)({}, node, {
         loc: node.loc.until(this.offset())
       }); // node.loc = node.loc.withEnd(end);
-    };
+    }
 
-    _proto31.acceptTemplate = function acceptTemplate(node) {
+    get currentAttr() {
+      return this.currentAttribute;
+    }
+
+    get currentTag() {
+      var node = this.currentNode;
+      return node;
+    }
+
+    get currentStartTag() {
+      var node = this.currentNode;
+      return node;
+    }
+
+    get currentEndTag() {
+      var node = this.currentNode;
+      return node;
+    }
+
+    get currentComment() {
+      var node = this.currentNode;
+      return node;
+    }
+
+    get currentData() {
+      var node = this.currentNode;
+      return node;
+    }
+
+    acceptTemplate(node) {
       return this[node.type](node);
-    };
+    }
 
-    _proto31.acceptNode = function acceptNode(node) {
+    acceptNode(node) {
       return this[node.type](node);
-    };
+    }
 
-    _proto31.currentElement = function currentElement() {
+    currentElement() {
       return this.elementStack[this.elementStack.length - 1];
-    };
+    }
 
-    _proto31.sourceForNode = function sourceForNode(node, endNode) {
+    sourceForNode(node, endNode) {
       var firstLine = node.loc.start.line - 1;
       var currentLine = firstLine - 1;
       var firstColumn = node.loc.start.column;
@@ -12456,69 +10929,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return string.join('\n');
-    };
-
-    (0, _emberBabel.createClass)(Parser, [{
-      key: "currentAttr",
-      get: function get() {
-        return this.currentAttribute;
-      }
-    }, {
-      key: "currentTag",
-      get: function get() {
-        var node = this.currentNode;
-        return node;
-      }
-    }, {
-      key: "currentStartTag",
-      get: function get() {
-        var node = this.currentNode;
-        return node;
-      }
-    }, {
-      key: "currentEndTag",
-      get: function get() {
-        var node = this.currentNode;
-        return node;
-      }
-    }, {
-      key: "currentComment",
-      get: function get() {
-        var node = this.currentNode;
-        return node;
-      }
-    }, {
-      key: "currentData",
-      get: function get() {
-        var node = this.currentNode;
-        return node;
-      }
-    }]);
-    return Parser;
-  }();
-
-  var HandlebarsNodeVisitors = /*#__PURE__*/function (_Parser) {
-    (0, _emberBabel.inheritsLoose)(HandlebarsNodeVisitors, _Parser);
-
-    function HandlebarsNodeVisitors() {
-      return _Parser.apply(this, arguments) || this;
     }
 
-    var _proto32 = HandlebarsNodeVisitors.prototype;
+  }
 
-    _proto32.Program = function Program(program) {
+  class HandlebarsNodeVisitors extends Parser {
+    get isTopLevel() {
+      return this.elementStack.length === 0;
+    }
+
+    Program(program) {
       var body = [];
       var node;
 
       if (this.isTopLevel) {
         node = b.template({
-          body: body,
+          body,
           blockParams: program.blockParams,
           loc: this.source.spanFor(program.loc)
         });
       } else {
         node = b.blockItself({
-          body: body,
+          body,
           blockParams: program.blockParams,
           chained: program.chained,
           loc: this.source.spanFor(program.loc)
@@ -12546,9 +10978,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return node;
-    };
+    }
 
-    _proto32.BlockStatement = function BlockStatement(block) {
+    BlockStatement(block) {
       if (this.tokenizer.state === "comment"
       /* comment */
       ) {
@@ -12564,11 +10996,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           throw generateSyntaxError('A block may only be used inside an HTML element or another block.', this.source.spanFor(block.loc));
         }
 
-      var _acceptCallNodes = acceptCallNodes(this, block),
-          path = _acceptCallNodes.path,
-          params = _acceptCallNodes.params,
-          hash = _acceptCallNodes.hash; // These are bugs in Handlebars upstream
-
+      var {
+        path,
+        params,
+        hash
+      } = acceptCallNodes(this, block); // These are bugs in Handlebars upstream
 
       if (!block.program.loc) {
         block.program.loc = NON_EXISTENT_LOCATION;
@@ -12581,9 +11013,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       var program = this.Program(block.program);
       var inverse = block.inverse ? this.Program(block.inverse) : null;
       var node = b.block({
-        path: path,
-        params: params,
-        hash: hash,
+        path,
+        params,
+        hash,
         defaultBlock: program,
         elseBlock: inverse,
         loc: this.source.spanFor(block.loc),
@@ -12593,10 +11025,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       });
       var parentProgram = this.currentElement();
       appendChild(parentProgram, node);
-    };
+    }
 
-    _proto32.MustacheStatement = function MustacheStatement(rawMustache) {
-      var tokenizer = this.tokenizer;
+    MustacheStatement(rawMustache) {
+      var {
+        tokenizer
+      } = this;
 
       if (tokenizer.state === 'comment') {
         this.appendToCommentData(this.sourceForNode(rawMustache));
@@ -12604,9 +11038,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       var mustache;
-      var escaped = rawMustache.escaped,
-          loc = rawMustache.loc,
-          strip = rawMustache.strip;
+      var {
+        escaped,
+        loc,
+        strip
+      } = rawMustache;
 
       if (isHBSLiteral(rawMustache.path)) {
         mustache = b.mustache({
@@ -12615,21 +11051,21 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           hash: b.hash([], this.source.spanFor(rawMustache.path.loc).collapse('end')),
           trusting: !escaped,
           loc: this.source.spanFor(loc),
-          strip: strip
+          strip
         });
       } else {
-        var _acceptCallNodes2 = acceptCallNodes(this, rawMustache),
-            path = _acceptCallNodes2.path,
-            params = _acceptCallNodes2.params,
-            hash = _acceptCallNodes2.hash;
-
+        var {
+          path,
+          params,
+          hash
+        } = acceptCallNodes(this, rawMustache);
         mustache = b.mustache({
-          path: path,
-          params: params,
-          hash: hash,
+          path,
+          params,
+          hash,
           trusting: !escaped,
           loc: this.source.spanFor(loc),
-          strip: strip
+          strip
         });
       }
 
@@ -12702,16 +11138,16 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return mustache;
-    };
+    }
 
-    _proto32.appendDynamicAttributeValuePart = function appendDynamicAttributeValuePart(part) {
+    appendDynamicAttributeValuePart(part) {
       this.finalizeTextPart();
       var attr = this.currentAttr;
       attr.isDynamic = true;
       attr.parts.push(part);
-    };
+    }
 
-    _proto32.finalizeTextPart = function finalizeTextPart() {
+    finalizeTextPart() {
       var attr = this.currentAttr;
       var text = attr.currentPart;
 
@@ -12719,20 +11155,22 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         this.currentAttr.parts.push(text);
         this.startTextPart();
       }
-    };
+    }
 
-    _proto32.startTextPart = function startTextPart() {
+    startTextPart() {
       this.currentAttr.currentPart = null;
-    };
+    }
 
-    _proto32.ContentStatement = function ContentStatement(content) {
+    ContentStatement(content) {
       updateTokenizerLocation(this.tokenizer, content);
       this.tokenizer.tokenizePart(content.value);
       this.tokenizer.flushData();
-    };
+    }
 
-    _proto32.CommentStatement = function CommentStatement(rawComment) {
-      var tokenizer = this.tokenizer;
+    CommentStatement(rawComment) {
+      var {
+        tokenizer
+      } = this;
 
       if (tokenizer.state === "comment"
       /* comment */
@@ -12741,13 +11179,18 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           return null;
         }
 
-      var value = rawComment.value,
-          loc = rawComment.loc;
+      var {
+        value,
+        loc
+      } = rawComment;
       var comment = b.mustacheComment(value, this.source.spanFor(loc));
 
       switch (tokenizer.state) {
         case "beforeAttributeName"
         /* beforeAttributeName */
+        :
+        case "afterAttributeName"
+        /* afterAttributeName */
         :
           this.currentStartTag.comments.push(comment);
           break;
@@ -12766,40 +11209,42 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return comment;
-    };
+    }
 
-    _proto32.PartialStatement = function PartialStatement(partial) {
+    PartialStatement(partial) {
       throw generateSyntaxError("Handlebars partials are not supported", this.source.spanFor(partial.loc));
-    };
+    }
 
-    _proto32.PartialBlockStatement = function PartialBlockStatement(partialBlock) {
+    PartialBlockStatement(partialBlock) {
       throw generateSyntaxError("Handlebars partial blocks are not supported", this.source.spanFor(partialBlock.loc));
-    };
+    }
 
-    _proto32.Decorator = function Decorator(decorator) {
+    Decorator(decorator) {
       throw generateSyntaxError("Handlebars decorators are not supported", this.source.spanFor(decorator.loc));
-    };
+    }
 
-    _proto32.DecoratorBlock = function DecoratorBlock(decoratorBlock) {
+    DecoratorBlock(decoratorBlock) {
       throw generateSyntaxError("Handlebars decorator blocks are not supported", this.source.spanFor(decoratorBlock.loc));
-    };
+    }
 
-    _proto32.SubExpression = function SubExpression(sexpr) {
-      var _acceptCallNodes3 = acceptCallNodes(this, sexpr),
-          path = _acceptCallNodes3.path,
-          params = _acceptCallNodes3.params,
-          hash = _acceptCallNodes3.hash;
-
+    SubExpression(sexpr) {
+      var {
+        path,
+        params,
+        hash
+      } = acceptCallNodes(this, sexpr);
       return b.sexpr({
-        path: path,
-        params: params,
-        hash: hash,
+        path,
+        params,
+        hash,
         loc: this.source.spanFor(sexpr.loc)
       });
-    };
+    }
 
-    _proto32.PathExpression = function PathExpression(path) {
-      var original = path.original;
+    PathExpression(path) {
+      var {
+        original
+      } = path;
       var parts;
 
       if (original.indexOf('/') !== -1) {
@@ -12869,29 +11314,29 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           }
         };
       } else {
-        var _head3 = parts.shift();
+        var _head2 = parts.shift();
 
-        if (_head3 === undefined) {
+        if (_head2 === undefined) {
           throw generateSyntaxError("Attempted to parse a path expression, but it was not valid. Paths must start with a-z or A-Z.", this.source.spanFor(path.loc));
         }
 
         pathHead = {
           type: 'VarHead',
-          name: _head3,
+          name: _head2,
           loc: {
             start: path.loc.start,
             end: {
               line: path.loc.start.line,
-              column: path.loc.start.column + _head3.length
+              column: path.loc.start.column + _head2.length
             }
           }
         };
       }
 
       return new PathExpressionImplV1(path.original, pathHead, parts, this.source.spanFor(path.loc));
-    };
+    }
 
-    _proto32.Hash = function Hash(hash) {
+    Hash(hash) {
       var pairs = [];
 
       for (var i = 0; i < hash.pairs.length; i++) {
@@ -12904,56 +11349,49 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return b.hash(pairs, this.source.spanFor(hash.loc));
-    };
+    }
 
-    _proto32.StringLiteral = function StringLiteral(string) {
+    StringLiteral(string) {
       return b.literal({
         type: 'StringLiteral',
         value: string.value,
         loc: string.loc
       });
-    };
+    }
 
-    _proto32.BooleanLiteral = function BooleanLiteral(boolean) {
+    BooleanLiteral(boolean) {
       return b.literal({
         type: 'BooleanLiteral',
         value: boolean.value,
         loc: boolean.loc
       });
-    };
+    }
 
-    _proto32.NumberLiteral = function NumberLiteral(number) {
+    NumberLiteral(number) {
       return b.literal({
         type: 'NumberLiteral',
         value: number.value,
         loc: number.loc
       });
-    };
+    }
 
-    _proto32.UndefinedLiteral = function UndefinedLiteral(undef) {
+    UndefinedLiteral(undef) {
       return b.literal({
         type: 'UndefinedLiteral',
         value: undefined,
         loc: undef.loc
       });
-    };
+    }
 
-    _proto32.NullLiteral = function NullLiteral(nul) {
+    NullLiteral(nul) {
       return b.literal({
         type: 'NullLiteral',
         value: null,
         loc: nul.loc
       });
-    };
+    }
 
-    (0, _emberBabel.createClass)(HandlebarsNodeVisitors, [{
-      key: "isTopLevel",
-      get: function get() {
-        return this.elementStack.length === 0;
-      }
-    }]);
-    return HandlebarsNodeVisitors;
-  }(Parser);
+  }
 
   function calculateRightStrippedOffsets(original, value) {
     if (value === '') {
@@ -12994,9 +11432,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
   function acceptCallNodes(compiler, node) {
     var path = node.path.type === 'PathExpression' ? compiler.PathExpression(node.path) : compiler.SubExpression(node.path);
-    var params = node.params ? node.params.map(function (e) {
-      return compiler.acceptNode(e);
-    }) : []; // if there is no hash, position it as a collapsed node immediately after the last param (or the
+    var params = node.params ? node.params.map(e => compiler.acceptNode(e)) : []; // if there is no hash, position it as a collapsed node immediately after the last param (or the
     // path, if there are also no params)
 
     var end = params.length > 0 ? params[params.length - 1].loc : path.loc;
@@ -13006,17 +11442,19 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       loc: compiler.source.spanFor(end).collapse('end')
     };
     return {
-      path: path,
-      params: params,
-      hash: hash
+      path,
+      params,
+      hash
     };
   }
 
   function addElementModifier(element, mustache) {
-    var path = mustache.path,
-        params = mustache.params,
-        hash = mustache.hash,
-        loc = mustache.loc;
+    var {
+      path,
+      params,
+      hash,
+      loc
+    } = mustache;
 
     if (isHBSLiteral(path)) {
       var _modifier = "{{" + printLiteral(path) + "}}";
@@ -13026,69 +11464,62 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     }
 
     var modifier = b.elementModifier({
-      path: path,
-      params: params,
-      hash: hash,
-      loc: loc
+      path,
+      params,
+      hash,
+      loc
     });
     element.modifiers.push(modifier);
   }
 
-  var TokenizerEventHandlers = /*#__PURE__*/function (_HandlebarsNodeVisito) {
-    (0, _emberBabel.inheritsLoose)(TokenizerEventHandlers, _HandlebarsNodeVisito);
-
-    function TokenizerEventHandlers() {
-      var _this11;
-
-      _this11 = _HandlebarsNodeVisito.apply(this, arguments) || this;
-      _this11.tagOpenLine = 0;
-      _this11.tagOpenColumn = 0;
-      return _this11;
+  class TokenizerEventHandlers extends HandlebarsNodeVisitors {
+    constructor() {
+      super(...arguments);
+      this.tagOpenLine = 0;
+      this.tagOpenColumn = 0;
     }
 
-    var _proto33 = TokenizerEventHandlers.prototype;
-
-    _proto33.reset = function reset() {
+    reset() {
       this.currentNode = null;
     } // Comment
-    ;
 
-    _proto33.beginComment = function beginComment() {
+
+    beginComment() {
       this.currentNode = b.comment('', this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn));
-    };
+    }
 
-    _proto33.appendToCommentData = function appendToCommentData(char) {
+    appendToCommentData(char) {
       this.currentComment.value += char;
-    };
+    }
 
-    _proto33.finishComment = function finishComment() {
+    finishComment() {
       appendChild(this.currentElement(), this.finish(this.currentComment));
     } // Data
-    ;
 
-    _proto33.beginData = function beginData() {
+
+    beginData() {
       this.currentNode = b.text({
         chars: '',
         loc: this.offset().collapsed()
       });
-    };
+    }
 
-    _proto33.appendToData = function appendToData(char) {
+    appendToData(char) {
       this.currentData.chars += char;
-    };
+    }
 
-    _proto33.finishData = function finishData() {
+    finishData() {
       this.currentData.loc = this.currentData.loc.withEnd(this.offset());
       appendChild(this.currentElement(), this.currentData);
     } // Tags - basic
-    ;
 
-    _proto33.tagOpen = function tagOpen() {
+
+    tagOpen() {
       this.tagOpenLine = this.tokenizer.line;
       this.tagOpenColumn = this.tokenizer.column;
-    };
+    }
 
-    _proto33.beginStartTag = function beginStartTag() {
+    beginStartTag() {
       this.currentNode = {
         type: 'StartTag',
         name: '',
@@ -13098,9 +11529,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         selfClosing: false,
         loc: this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn)
       };
-    };
+    }
 
-    _proto33.beginEndTag = function beginEndTag() {
+    beginEndTag() {
       this.currentNode = {
         type: 'EndTag',
         name: '',
@@ -13110,9 +11541,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         selfClosing: false,
         loc: this.source.offsetFor(this.tagOpenLine, this.tagOpenColumn)
       };
-    };
+    }
 
-    _proto33.finishTag = function finishTag() {
+    finishTag() {
       var tag = this.finish(this.currentTag);
 
       if (tag.type === 'StartTag') {
@@ -13131,31 +11562,31 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       } else if (tag.type === 'EndTag') {
         this.finishEndTag(false);
       }
-    };
+    }
 
-    _proto33.finishStartTag = function finishStartTag() {
-      var _this$finish = this.finish(this.currentStartTag),
-          name = _this$finish.name,
-          attrs = _this$finish.attributes,
-          modifiers = _this$finish.modifiers,
-          comments = _this$finish.comments,
-          selfClosing = _this$finish.selfClosing,
-          loc = _this$finish.loc;
-
+    finishStartTag() {
+      var {
+        name,
+        attributes: attrs,
+        modifiers,
+        comments,
+        selfClosing,
+        loc
+      } = this.finish(this.currentStartTag);
       var element = b.element({
         tag: name,
-        selfClosing: selfClosing,
-        attrs: attrs,
-        modifiers: modifiers,
-        comments: comments,
+        selfClosing,
+        attrs,
+        modifiers,
+        comments,
         children: [],
         blockParams: [],
-        loc: loc
+        loc
       });
       this.elementStack.push(element);
-    };
+    }
 
-    _proto33.finishEndTag = function finishEndTag(isVoid) {
+    finishEndTag(isVoid) {
       var tag = this.finish(this.currentTag);
       var element = this.elementStack.pop();
       var parent = this.currentElement();
@@ -13163,19 +11594,19 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       element.loc = element.loc.withEnd(this.offset());
       parseElementBlockParams(element);
       appendChild(parent, element);
-    };
+    }
 
-    _proto33.markTagAsSelfClosing = function markTagAsSelfClosing() {
+    markTagAsSelfClosing() {
       this.currentTag.selfClosing = true;
     } // Tags - name
-    ;
 
-    _proto33.appendToTagName = function appendToTagName(char) {
+
+    appendToTagName(char) {
       this.currentTag.name += char;
     } // Tags - attributes
-    ;
 
-    _proto33.beginAttribute = function beginAttribute() {
+
+    beginAttribute() {
       var offset = this.offset();
       this.currentAttribute = {
         name: '',
@@ -13186,19 +11617,19 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         start: offset,
         valueSpan: offset.collapsed()
       };
-    };
+    }
 
-    _proto33.appendToAttributeName = function appendToAttributeName(char) {
+    appendToAttributeName(char) {
       this.currentAttr.name += char;
-    };
+    }
 
-    _proto33.beginAttributeValue = function beginAttributeValue(isQuoted) {
+    beginAttributeValue(isQuoted) {
       this.currentAttr.isQuoted = isQuoted;
       this.startTextPart();
       this.currentAttr.valueSpan = this.offset().collapsed();
-    };
+    }
 
-    _proto33.appendToAttributeValue = function appendToAttributeValue(char) {
+    appendToAttributeValue(char) {
       var parts = this.currentAttr.parts;
       var lastPart = parts[parts.length - 1];
       var current = this.currentAttr.currentPart;
@@ -13223,9 +11654,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           loc: _loc2.collapsed()
         });
       }
-    };
+    }
 
-    _proto33.finishAttributeValue = function finishAttributeValue() {
+    finishAttributeValue() {
       this.finalizeTextPart();
       var tag = this.currentTag;
       var tokenizerPos = this.offset();
@@ -13237,28 +11668,29 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         }));
       }
 
-      var _this$currentAttr = this.currentAttr,
-          name = _this$currentAttr.name,
-          parts = _this$currentAttr.parts,
-          start = _this$currentAttr.start,
-          isQuoted = _this$currentAttr.isQuoted,
-          isDynamic = _this$currentAttr.isDynamic,
-          valueSpan = _this$currentAttr.valueSpan;
+      var {
+        name,
+        parts,
+        start,
+        isQuoted,
+        isDynamic,
+        valueSpan
+      } = this.currentAttr;
       var value = this.assembleAttributeValue(parts, isQuoted, isDynamic, start.until(tokenizerPos));
       value.loc = valueSpan.withEnd(tokenizerPos);
       var attribute = b.attr({
-        name: name,
-        value: value,
+        name,
+        value,
         loc: start.until(tokenizerPos)
       });
       this.currentStartTag.attributes.push(attribute);
-    };
+    }
 
-    _proto33.reportSyntaxError = function reportSyntaxError(message) {
+    reportSyntaxError(message) {
       throw generateSyntaxError(message, this.offset().collapsed());
-    };
+    }
 
-    _proto33.assembleConcatenatedValue = function assembleConcatenatedValue(parts) {
+    assembleConcatenatedValue(parts) {
       for (var i = 0; i < parts.length; i++) {
         var part = parts[i];
 
@@ -13271,9 +11703,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       var first = parts[0];
       var last = parts[parts.length - 1];
       return b.concat(parts, this.source.spanFor(first.loc).extend(this.source.spanFor(last.loc)));
-    };
+    }
 
-    _proto33.validateEndTag = function validateEndTag(tag, element, selfClosing) {
+    validateEndTag(tag, element, selfClosing) {
       var error;
 
       if (voidMap[tag.name] && !selfClosing) {
@@ -13290,9 +11722,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       if (error) {
         throw generateSyntaxError(error, tag.loc);
       }
-    };
+    }
 
-    _proto33.assembleAttributeValue = function assembleAttributeValue(parts, isQuoted, isDynamic, span) {
+    assembleAttributeValue(parts, isQuoted, isDynamic, span) {
       if (isDynamic) {
         if (isQuoted) {
           return this.assembleConcatenatedValue(parts);
@@ -13309,24 +11741,31 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           loc: span
         });
       }
-    };
+    }
 
-    return TokenizerEventHandlers;
-  }(HandlebarsNodeVisitors);
+  }
 
   var syntax = {
     parse: preprocess,
     builders: publicBuilder,
     print: build,
-    traverse: traverse,
-    Walker: Walker
+    traverse,
+    Walker
   };
 
-  function preprocess(input, options) {
-    if (options === void 0) {
-      options = {};
+  class CodemodEntityParser extends _simpleHtmlTokenizer.EntityParser {
+    // match upstream types, but never match an entity
+    constructor() {
+      super({});
     }
 
+    parse() {
+      return undefined;
+    }
+
+  }
+
+  function preprocess(input, options = {}) {
     var _a, _b, _c;
 
     var mode = options.mode || 'precompile';
@@ -13357,7 +11796,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     var entityParser = undefined;
 
     if (mode === 'codemod') {
-      entityParser = new _simpleHtmlTokenizer.EntityParser({});
+      entityParser = new CodemodEntityParser();
     }
 
     var offsets = SourceSpan.forCharPositions(source, 0, source.source.length);
@@ -13376,7 +11815,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       for (var i = 0, l = options.plugins.ast.length; i < l; i++) {
         var transform = options.plugins.ast[i];
         var env = (0, _util.assign)({}, options, {
-          syntax: syntax
+          syntax
         }, {
           plugins: undefined
         });
@@ -13388,84 +11827,51 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return program;
   }
 
-  var __classPrivateFieldSet$4 = undefined && undefined.__classPrivateFieldSet || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to set private field on non-instance");
-    }
-
-    privateMap.set(receiver, value);
-    return value;
-  };
-
-  var __classPrivateFieldGet$4 = undefined && undefined.__classPrivateFieldGet || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-      throw new TypeError("attempted to get private field on non-instance");
-    }
-
-    return privateMap.get(receiver);
-  };
-
-  var _hasEval;
-
-  var SymbolTable = /*#__PURE__*/function () {
-    function SymbolTable() {}
-
-    SymbolTable.top = function top(locals, customizeComponentName) {
+  class SymbolTable {
+    static top(locals, customizeComponentName) {
       return new ProgramSymbolTable(locals, customizeComponentName);
-    };
+    }
 
-    var _proto34 = SymbolTable.prototype;
-
-    _proto34.child = function child(locals) {
-      var _this12 = this;
-
-      var symbols = locals.map(function (name) {
-        return _this12.allocate(name);
-      });
+    child(locals) {
+      var symbols = locals.map(name => this.allocate(name));
       return new BlockSymbolTable(this, locals, symbols);
-    };
+    }
 
-    return SymbolTable;
-  }();
+  }
 
   _exports.SymbolTable = SymbolTable;
 
-  var ProgramSymbolTable = /*#__PURE__*/function (_SymbolTable) {
-    (0, _emberBabel.inheritsLoose)(ProgramSymbolTable, _SymbolTable);
-
-    function ProgramSymbolTable(templateLocals, customizeComponentName) {
-      var _this13;
-
-      _this13 = _SymbolTable.call(this) || this;
-      _this13.templateLocals = templateLocals;
-      _this13.customizeComponentName = customizeComponentName;
-      _this13.symbols = [];
-      _this13.upvars = [];
-      _this13.size = 1;
-      _this13.named = (0, _util.dict)();
-      _this13.blocks = (0, _util.dict)();
-      _this13.usedTemplateLocals = [];
-
-      _hasEval.set((0, _emberBabel.assertThisInitialized)(_this13), false);
-
-      return _this13;
+  class ProgramSymbolTable extends SymbolTable {
+    constructor(templateLocals, customizeComponentName) {
+      super();
+      this.templateLocals = templateLocals;
+      this.customizeComponentName = customizeComponentName;
+      this.symbols = [];
+      this.upvars = [];
+      this.size = 1;
+      this.named = (0, _util.dict)();
+      this.blocks = (0, _util.dict)();
+      this.usedTemplateLocals = [];
+      this._hasEval = false;
     }
 
-    var _proto35 = ProgramSymbolTable.prototype;
-
-    _proto35.getUsedTemplateLocals = function getUsedTemplateLocals() {
+    getUsedTemplateLocals() {
       return this.usedTemplateLocals;
-    };
+    }
 
-    _proto35.setHasEval = function setHasEval() {
-      __classPrivateFieldSet$4(this, _hasEval, true);
-    };
+    setHasEval() {
+      this._hasEval = true;
+    }
 
-    _proto35.has = function has(name) {
+    get hasEval() {
+      return this._hasEval;
+    }
+
+    has(name) {
       return this.templateLocals.indexOf(name) !== -1;
-    };
+    }
 
-    _proto35.get = function get(name) {
+    get(name) {
       var index = this.usedTemplateLocals.indexOf(name);
 
       if (index !== -1) {
@@ -13475,20 +11881,18 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       index = this.usedTemplateLocals.length;
       this.usedTemplateLocals.push(name);
       return [index, true];
-    };
+    }
 
-    _proto35.getLocalsMap = function getLocalsMap() {
+    getLocalsMap() {
       return (0, _util.dict)();
-    };
+    }
 
-    _proto35.getEvalInfo = function getEvalInfo() {
+    getEvalInfo() {
       var locals = this.getLocalsMap();
-      return Object.keys(locals).map(function (symbol) {
-        return locals[symbol];
-      });
-    };
+      return Object.keys(locals).map(symbol => locals[symbol]);
+    }
 
-    _proto35.allocateFree = function allocateFree(name, resolution) {
+    allocateFree(name, resolution) {
       // If the name in question is an uppercase (i.e. angle-bracket) component invocation, run
       // the optional `customizeComponentName` function provided to the precompiler.
       if (resolution.resolution() === 39
@@ -13506,9 +11910,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       index = this.upvars.length;
       this.upvars.push(name);
       return index;
-    };
+    }
 
-    _proto35.allocateNamed = function allocateNamed(name) {
+    allocateNamed(name) {
       var named = this.named[name];
 
       if (!named) {
@@ -13516,9 +11920,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return named;
-    };
+    }
 
-    _proto35.allocateBlock = function allocateBlock(name) {
+    allocateBlock(name) {
       if (name === 'inverse') {
         name = 'else';
       }
@@ -13530,94 +11934,70 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return block;
-    };
-
-    _proto35.allocate = function allocate(identifier) {
-      this.symbols.push(identifier);
-      return this.size++;
-    };
-
-    (0, _emberBabel.createClass)(ProgramSymbolTable, [{
-      key: "hasEval",
-      get: function get() {
-        return __classPrivateFieldGet$4(this, _hasEval);
-      }
-    }]);
-    return ProgramSymbolTable;
-  }(SymbolTable);
-
-  _exports.ProgramSymbolTable = ProgramSymbolTable;
-  _hasEval = new WeakMap();
-
-  var BlockSymbolTable = /*#__PURE__*/function (_SymbolTable2) {
-    (0, _emberBabel.inheritsLoose)(BlockSymbolTable, _SymbolTable2);
-
-    function BlockSymbolTable(parent, symbols, slots) {
-      var _this14;
-
-      _this14 = _SymbolTable2.call(this) || this;
-      _this14.parent = parent;
-      _this14.symbols = symbols;
-      _this14.slots = slots;
-      return _this14;
     }
 
-    var _proto36 = BlockSymbolTable.prototype;
+    allocate(identifier) {
+      this.symbols.push(identifier);
+      return this.size++;
+    }
 
-    _proto36.has = function has(name) {
+  }
+
+  _exports.ProgramSymbolTable = ProgramSymbolTable;
+
+  class BlockSymbolTable extends SymbolTable {
+    constructor(parent, symbols, slots) {
+      super();
+      this.parent = parent;
+      this.symbols = symbols;
+      this.slots = slots;
+    }
+
+    get locals() {
+      return this.symbols;
+    }
+
+    has(name) {
       return this.symbols.indexOf(name) !== -1 || this.parent.has(name);
-    };
+    }
 
-    _proto36.get = function get(name) {
+    get(name) {
       var slot = this.symbols.indexOf(name);
       return slot === -1 ? this.parent.get(name) : [this.slots[slot], false];
-    };
+    }
 
-    _proto36.getLocalsMap = function getLocalsMap() {
-      var _this15 = this;
-
+    getLocalsMap() {
       var dict$$1 = this.parent.getLocalsMap();
-      this.symbols.forEach(function (symbol) {
-        return dict$$1[symbol] = _this15.get(symbol)[0];
-      });
+      this.symbols.forEach(symbol => dict$$1[symbol] = this.get(symbol)[0]);
       return dict$$1;
-    };
+    }
 
-    _proto36.getEvalInfo = function getEvalInfo() {
+    getEvalInfo() {
       var locals = this.getLocalsMap();
-      return Object.keys(locals).map(function (symbol) {
-        return locals[symbol];
-      });
-    };
+      return Object.keys(locals).map(symbol => locals[symbol]);
+    }
 
-    _proto36.setHasEval = function setHasEval() {
+    setHasEval() {
       this.parent.setHasEval();
-    };
+    }
 
-    _proto36.allocateFree = function allocateFree(name, resolution) {
+    allocateFree(name, resolution) {
       return this.parent.allocateFree(name, resolution);
-    };
+    }
 
-    _proto36.allocateNamed = function allocateNamed(name) {
+    allocateNamed(name) {
       return this.parent.allocateNamed(name);
-    };
+    }
 
-    _proto36.allocateBlock = function allocateBlock(name) {
+    allocateBlock(name) {
       return this.parent.allocateBlock(name);
-    };
+    }
 
-    _proto36.allocate = function allocate(identifier) {
+    allocate(identifier) {
       return this.parent.allocate(identifier);
-    };
+    }
 
-    (0, _emberBabel.createClass)(BlockSymbolTable, [{
-      key: "locals",
-      get: function get() {
-        return this.symbols;
-      }
-    }]);
-    return BlockSymbolTable;
-  }(SymbolTable);
+  }
 
   _exports.BlockSymbolTable = BlockSymbolTable;
 
@@ -13634,41 +12014,37 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return t;
   };
 
-  var Builder = /*#__PURE__*/function () {
-    function Builder() {}
-
-    var _proto37 = Builder.prototype;
-
+  class Builder {
     // TEMPLATE //
-    _proto37.template = function template(symbols, body, loc$$1) {
+    template(symbols, body, loc$$1) {
       return new Template({
         table: symbols,
-        body: body,
+        body,
         loc: loc$$1
       });
     } // INTERNAL (these nodes cannot be reached when doing general-purpose visiting) //
-    ;
 
-    _proto37.block = function block(symbols, body, loc$$1) {
+
+    block(symbols, body, loc$$1) {
       return new Block({
         scope: symbols,
-        body: body,
+        body,
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.namedBlock = function namedBlock(name, block, loc$$1) {
+    namedBlock(name, block, loc$$1) {
       return new NamedBlock({
-        name: name,
-        block: block,
+        name,
+        block,
         attrs: [],
         componentArgs: [],
         modifiers: [],
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.simpleNamedBlock = function simpleNamedBlock(name, block, loc$$1) {
+    simpleNamedBlock(name, block, loc$$1) {
       return new BuildElement({
         selfClosing: false,
         attrs: [],
@@ -13676,181 +12052,195 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         modifiers: [],
         comments: []
       }).named(name, block, loc$$1);
-    };
+    }
 
-    _proto37.slice = function slice(chars, loc$$1) {
+    slice(chars, loc$$1) {
       return new SourceSlice({
         loc: loc$$1,
-        chars: chars
+        chars
       });
-    };
+    }
 
-    _proto37.args = function args(positional, named, loc$$1) {
+    args(positional, named, loc$$1) {
       return new Args({
         loc: loc$$1,
-        positional: positional,
-        named: named
+        positional,
+        named
       });
-    };
+    }
 
-    _proto37.positional = function positional(exprs, loc$$1) {
+    positional(exprs, loc$$1) {
       return new PositionalArguments({
         loc: loc$$1,
-        exprs: exprs
+        exprs
       });
-    };
+    }
 
-    _proto37.namedArgument = function namedArgument(key, value) {
+    namedArgument(key, value) {
       return new NamedArgument({
         name: key,
-        value: value
+        value
       });
-    };
+    }
 
-    _proto37.named = function named(entries, loc$$1) {
+    named(entries, loc$$1) {
       return new NamedArguments({
         loc: loc$$1,
-        entries: entries
+        entries
       });
-    };
+    }
 
-    _proto37.attr = function attr(_ref29, loc$$1) {
-      var name = _ref29.name,
-          value = _ref29.value,
-          trusting = _ref29.trusting;
+    attr({
+      name,
+      value,
+      trusting
+    }, loc$$1) {
       return new HtmlAttr({
         loc: loc$$1,
-        name: name,
-        value: value,
-        trusting: trusting
+        name,
+        value,
+        trusting
       });
-    };
+    }
 
-    _proto37.splatAttr = function splatAttr(symbol, loc$$1) {
+    splatAttr(symbol, loc$$1) {
       return new SplatAttr({
-        symbol: symbol,
+        symbol,
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.arg = function arg(_ref30, loc$$1) {
-      var name = _ref30.name,
-          value = _ref30.value,
-          trusting = _ref30.trusting;
+    arg({
+      name,
+      value,
+      trusting
+    }, loc$$1) {
       return new ComponentArg({
-        name: name,
-        value: value,
-        trusting: trusting,
+        name,
+        value,
+        trusting,
         loc: loc$$1
       });
     } // EXPRESSIONS //
-    ;
 
-    _proto37.path = function path(head, tail, loc$$1) {
+
+    path(head, tail, loc$$1) {
       return new PathExpression({
         loc: loc$$1,
         ref: head,
-        tail: tail
+        tail
       });
-    };
+    }
 
-    _proto37.self = function self(loc$$1) {
+    self(loc$$1) {
       return new ThisReference({
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.at = function at(name, symbol, loc$$1) {
+    at(name, symbol, loc$$1) {
       return new ArgReference({
         loc: loc$$1,
         name: new SourceSlice({
           loc: loc$$1,
           chars: name
         }),
-        symbol: symbol
+        symbol
       });
-    };
+    }
 
-    _proto37.freeVar = function freeVar(_ref31) {
-      var name = _ref31.name,
-          context = _ref31.context,
-          symbol = _ref31.symbol,
-          loc$$1 = _ref31.loc;
+    freeVar({
+      name,
+      context,
+      symbol,
+      loc: loc$$1
+    }) {
       return new FreeVarReference({
-        name: name,
+        name,
         resolution: context,
-        symbol: symbol,
+        symbol,
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.localVar = function localVar(name, symbol, isTemplateLocal, loc$$1) {
+    localVar(name, symbol, isTemplateLocal, loc$$1) {
       return new LocalVarReference({
         loc: loc$$1,
-        name: name,
-        isTemplateLocal: isTemplateLocal,
-        symbol: symbol
+        name,
+        isTemplateLocal,
+        symbol
       });
-    };
+    }
 
-    _proto37.sexp = function sexp(parts, loc$$1) {
+    sexp(parts, loc$$1) {
       return new CallExpression({
         loc: loc$$1,
         callee: parts.callee,
         args: parts.args
       });
-    };
+    }
 
-    _proto37.interpolate = function interpolate(parts, loc$$1) {
+    deprecatedCall(arg, callee, loc$$1) {
+      return new DeprecatedCallExpression({
+        loc: loc$$1,
+        arg,
+        callee
+      });
+    }
+
+    interpolate(parts, loc$$1) {
       (0, _util.assertPresent)(parts);
       return new InterpolateExpression({
         loc: loc$$1,
-        parts: parts
+        parts
       });
-    };
+    }
 
-    _proto37.literal = function literal(value, loc$$1) {
+    literal(value, loc$$1) {
       return new LiteralExpression({
         loc: loc$$1,
-        value: value
+        value
       });
     } // STATEMENTS //
-    ;
 
-    _proto37.append = function append(_ref32, loc$$1) {
-      var table = _ref32.table,
-          trusting = _ref32.trusting,
-          value = _ref32.value;
+
+    append({
+      table,
+      trusting,
+      value
+    }, loc$$1) {
       return new AppendContent({
-        table: table,
-        trusting: trusting,
-        value: value,
+        table,
+        trusting,
+        value,
         loc: loc$$1
       });
-    };
+    }
 
-    _proto37.modifier = function modifier(_ref33, loc$$1) {
-      var callee = _ref33.callee,
-          args = _ref33.args;
+    modifier({
+      callee,
+      args
+    }, loc$$1) {
       return new ElementModifier({
         loc: loc$$1,
-        callee: callee,
-        args: args
+        callee,
+        args
       });
-    };
+    }
 
-    _proto37.namedBlocks = function namedBlocks(blocks, loc$$1) {
+    namedBlocks(blocks, loc$$1) {
       return new NamedBlocks({
         loc: loc$$1,
-        blocks: blocks
+        blocks
       });
-    };
+    }
 
-    _proto37.blockStatement = function blockStatement(_a, loc$$1) {
-      var symbols = _a.symbols,
-          program = _a.program,
-          _a$inverse = _a.inverse,
-          inverse = _a$inverse === void 0 ? null : _a$inverse,
+    blockStatement(_a, loc$$1) {
+      var {
+        symbols,
+        program,
+        inverse = null
+      } = _a,
           call = __rest(_a, ["symbols", "program", "inverse"]);
 
       var blocksLoc = program.loc;
@@ -13867,45 +12257,42 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         callee: call.callee,
         args: call.args
       });
-    };
+    }
 
-    _proto37.element = function element(options) {
+    element(options) {
       return new BuildElement(options);
-    };
+    }
 
-    return Builder;
-  }();
+  }
 
-  var BuildElement = /*#__PURE__*/function () {
-    function BuildElement(base) {
+  class BuildElement {
+    constructor(base) {
       this.base = base;
       this.builder = new Builder();
     }
 
-    var _proto38 = BuildElement.prototype;
-
-    _proto38.simple = function simple(tag, body, loc$$1) {
+    simple(tag, body, loc$$1) {
       return new SimpleElement((0, _util.assign)({
-        tag: tag,
-        body: body,
+        tag,
+        body,
         componentArgs: [],
         loc: loc$$1
       }, this.base));
-    };
+    }
 
-    _proto38.named = function named(name, block, loc$$1) {
+    named(name, block, loc$$1) {
       return new NamedBlock((0, _util.assign)({
-        name: name,
-        block: block,
+        name,
+        block,
         componentArgs: [],
         loc: loc$$1
       }, this.base));
-    };
+    }
 
-    _proto38.selfClosingComponent = function selfClosingComponent(callee, loc$$1) {
+    selfClosingComponent(callee, loc$$1) {
       return new InvokeComponent((0, _util.assign)({
         loc: loc$$1,
-        callee: callee,
+        callee,
         // point the empty named blocks at the `/` self-closing tag
         blocks: new NamedBlocks({
           blocks: [],
@@ -13915,29 +12302,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           })
         })
       }, this.base));
-    };
+    }
 
-    _proto38.componentWithDefaultBlock = function componentWithDefaultBlock(callee, children, symbols, loc$$1) {
+    componentWithDefaultBlock(callee, children, symbols, loc$$1) {
       var block = this.builder.block(symbols, children, loc$$1);
       var namedBlock = this.builder.namedBlock(SourceSlice.synthetic('default'), block, loc$$1); // BUILDER.simpleNamedBlock('default', children, symbols, loc);
 
       return new InvokeComponent((0, _util.assign)({
         loc: loc$$1,
-        callee: callee,
+        callee,
         blocks: this.builder.namedBlocks([namedBlock], namedBlock.loc)
       }, this.base));
-    };
+    }
 
-    _proto38.componentWithNamedBlocks = function componentWithNamedBlocks(callee, blocks, loc$$1) {
+    componentWithNamedBlocks(callee, blocks, loc$$1) {
       return new InvokeComponent((0, _util.assign)({
         loc: loc$$1,
-        callee: callee,
+        callee,
         blocks: this.builder.namedBlocks(blocks, SpanList.range(blocks))
       }, this.base));
-    };
+    }
 
-    return BuildElement;
-  }();
+  }
 
   function SexpSyntaxContext(node$$1) {
     if (isSimpleCallee(node$$1)) {
@@ -14066,11 +12452,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     return node$$1.params.length > 0 || node$$1.hash.pairs.length > 0;
   }
 
-  function normalize(source, options) {
-    if (options === void 0) {
-      options = {};
-    }
-
+  function normalize(source, options = {}) {
     var _a;
 
     var ast = preprocess(source, options);
@@ -14078,15 +12460,11 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       strictMode: false,
       locals: []
     }, options);
-    var top = SymbolTable.top(normalizeOptions.strictMode ? normalizeOptions.locals : [], (_a = // eslint-disable-next-line @typescript-eslint/unbound-method
-    options.customizeComponentName) !== null && _a !== void 0 ? _a : function (name) {
-      return name;
-    });
+    var top = SymbolTable.top(normalizeOptions.locals, (_a = // eslint-disable-next-line @typescript-eslint/unbound-method
+    options.customizeComponentName) !== null && _a !== void 0 ? _a : name => name);
     var block = new BlockContext(source, normalizeOptions, top);
     var normalizer = new StatementNormalizer(block);
-    var astV2 = new TemplateChildren(block.loc(ast.loc), ast.body.map(function (b$$1) {
-      return normalizer.normalize(b$$1);
-    }), block).assertTemplate(top);
+    var astV2 = new TemplateChildren(block.loc(ast.loc), ast.body.map(b$$1 => normalizer.normalize(b$$1)), block).assertTemplate(top);
     var locals = top.getUsedTemplateLocals();
     return [astV2, locals];
   }
@@ -14103,21 +12481,23 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var BlockContext = /*#__PURE__*/function () {
-    function BlockContext(source, options, table) {
+  class BlockContext {
+    constructor(source, options, table) {
       this.source = source;
       this.options = options;
       this.table = table;
       this.builder = new Builder();
     }
 
-    var _proto39 = BlockContext.prototype;
+    get strict() {
+      return this.options.strictMode || false;
+    }
 
-    _proto39.loc = function loc(loc$$1) {
+    loc(loc$$1) {
       return this.source.spanFor(loc$$1);
-    };
+    }
 
-    _proto39.resolutionFor = function resolutionFor(node$$1, resolution) {
+    resolutionFor(node$$1, resolution) {
       if (this.strict) {
         return {
           resolution: STRICT_RESOLUTION
@@ -14143,9 +12523,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
           resolution: STRICT_RESOLUTION
         };
       }
-    };
+    }
 
-    _proto39.isFreeVar = function isFreeVar(callee) {
+    isFreeVar(callee) {
       if (callee.type === 'PathExpression') {
         if (callee.head.type !== 'VarHead') {
           return false;
@@ -14157,32 +12537,25 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       } else {
         return false;
       }
-    };
+    }
 
-    _proto39.hasBinding = function hasBinding(name) {
+    hasBinding(name) {
       return this.table.has(name);
-    };
+    }
 
-    _proto39.child = function child(blockParams) {
+    child(blockParams) {
       return new BlockContext(this.source, this.options, this.table.child(blockParams));
-    };
+    }
 
-    _proto39.customizeComponentName = function customizeComponentName(input) {
+    customizeComponentName(input) {
       if (this.options.customizeComponentName) {
         return this.options.customizeComponentName(input);
       } else {
         return input;
       }
-    };
+    }
 
-    (0, _emberBabel.createClass)(BlockContext, [{
-      key: "strict",
-      get: function get() {
-        return this.options.strictMode || false;
-      }
-    }]);
-    return BlockContext;
-  }();
+  }
   /**
    * An `ExpressionNormalizer` normalizes expressions within a block.
    *
@@ -14190,14 +12563,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
    */
 
 
-  var ExpressionNormalizer = /*#__PURE__*/function () {
-    function ExpressionNormalizer(block) {
+  class ExpressionNormalizer {
+    constructor(block) {
       this.block = block;
     }
 
-    var _proto40 = ExpressionNormalizer.prototype;
-
-    _proto40.normalize = function normalize(expr, resolution) {
+    normalize(expr, resolution) {
       switch (expr.type) {
         case 'NullLiteral':
         case 'BooleanLiteral':
@@ -14220,23 +12591,22 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
             return this.block.builder.sexp(this.callParts(expr, _resolution.resolution), this.block.loc(expr.loc));
           }
       }
-    };
+    }
 
-    _proto40.path = function path(expr, resolution) {
+    path(expr, resolution) {
       var headOffsets = this.block.loc(expr.head.loc);
       var tail = []; // start with the head
 
       var offset = headOffsets;
 
-      for (var _iterator4 = (0, _emberBabel.createForOfIteratorHelperLoose)(expr.tail), _step4; !(_step4 = _iterator4()).done;) {
-        var _part = _step4.value;
+      for (var part of expr.tail) {
         offset = offset.sliceStartChars({
-          chars: _part.length,
+          chars: part.length,
           skipStart: 1
         });
         tail.push(new SourceSlice({
           loc: offset,
-          chars: _part
+          chars: part
         }));
       }
 
@@ -14246,34 +12616,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * The `callParts` method takes ASTv1.CallParts as well as a syntax context and normalizes
      * it to an ASTv2 CallParts.
      */
-    ;
 
-    _proto40.callParts = function callParts(parts, context) {
-      var _this16 = this;
 
-      var path = parts.path,
-          params = parts.params,
-          hash = parts.hash;
+    callParts(parts, context) {
+      var {
+        path,
+        params,
+        hash
+      } = parts;
       var callee = this.normalize(path, context);
-      var paramList = params.map(function (p) {
-        return _this16.normalize(p, ARGUMENT_RESOLUTION);
-      });
+      var paramList = params.map(p => this.normalize(p, ARGUMENT_RESOLUTION));
       var paramLoc = SpanList.range(paramList, callee.loc.collapse('end'));
       var namedLoc = this.block.loc(hash.loc);
       var argsLoc = SpanList.range([paramLoc, namedLoc]);
-      var positional = this.block.builder.positional(params.map(function (p) {
-        return _this16.normalize(p, ARGUMENT_RESOLUTION);
-      }), paramLoc);
-      var named = this.block.builder.named(hash.pairs.map(function (p) {
-        return _this16.namedArgument(p);
-      }), this.block.loc(hash.loc));
+      var positional = this.block.builder.positional(params.map(p => this.normalize(p, ARGUMENT_RESOLUTION)), paramLoc);
+      var named = this.block.builder.named(hash.pairs.map(p => this.namedArgument(p)), this.block.loc(hash.loc));
       return {
-        callee: callee,
+        callee,
         args: this.block.builder.args(positional, named, argsLoc)
       };
-    };
+    }
 
-    _proto40.namedArgument = function namedArgument(pair) {
+    namedArgument(pair) {
       var offsets = this.block.loc(pair.loc);
       var keyOffsets = offsets.sliceStartChars({
         chars: pair.key.length
@@ -14293,12 +12657,16 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * the `VariableReference` node bears full responsibility for loose mode rules that control
      * the behavior of free variables.
      */
-    ;
 
-    _proto40.ref = function ref(head, resolution) {
-      var block = this.block;
-      var builder = block.builder,
-          table = block.table;
+
+    ref(head, resolution) {
+      var {
+        block
+      } = this;
+      var {
+        builder,
+        table
+      } = block;
       var offsets = block.loc(head.loc);
 
       switch (head.type) {
@@ -14314,10 +12682,7 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         case 'VarHead':
           {
             if (block.hasBinding(head.name)) {
-              var _table$get = table.get(head.name),
-                  _symbol = _table$get[0],
-                  isRoot = _table$get[1];
-
+              var [_symbol, isRoot] = table.get(head.name);
               return block.builder.localVar(head.name, _symbol, isRoot, offsets);
             } else {
               var context = block.strict ? STRICT_RESOLUTION : resolution;
@@ -14326,30 +12691,27 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
               return block.builder.freeVar({
                 name: head.name,
-                context: context,
+                context,
                 symbol: _symbol2,
                 loc: offsets
               });
             }
           }
       }
-    };
+    }
 
-    return ExpressionNormalizer;
-  }();
+  }
   /**
    * `TemplateNormalizer` normalizes top-level ASTv1 statements to ASTv2.
    */
 
 
-  var StatementNormalizer = /*#__PURE__*/function () {
-    function StatementNormalizer(block) {
+  class StatementNormalizer {
+    constructor(block) {
       this.block = block;
     }
 
-    var _proto41 = StatementNormalizer.prototype;
-
-    _proto41.normalize = function normalize(node$$1) {
+    normalize(node$$1) {
       switch (node$$1.type) {
         case 'PartialStatement':
           throw new Error("Handlebars partial syntax ({{> ...}}) is not allowed in Glimmer");
@@ -14385,9 +12747,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
             chars: node$$1.chars
           });
       }
-    };
+    }
 
-    _proto41.MustacheCommentStatement = function MustacheCommentStatement(node$$1) {
+    MustacheCommentStatement(node$$1) {
       var loc$$1 = this.block.loc(node$$1.loc);
       var textLoc;
 
@@ -14411,10 +12773,12 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     /**
      * Normalizes an ASTv1.MustacheStatement to an ASTv2.AppendStatement
      */
-    ;
 
-    _proto41.MustacheStatement = function MustacheStatement(mustache) {
-      var escaped = mustache.escaped;
+
+    MustacheStatement(mustache) {
+      var {
+        escaped
+      } = mustache;
       var loc$$1 = this.block.loc(mustache.loc); // Normalize the call parts in AppendSyntaxContext
 
       var callParts = this.expr.callParts({
@@ -14426,17 +12790,19 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       return this.block.builder.append({
         table: this.block.table,
         trusting: !escaped,
-        value: value
+        value
       }, loc$$1);
     }
     /**
      * Normalizes a ASTv1.BlockStatement to an ASTv2.BlockStatement
      */
-    ;
 
-    _proto41.BlockStatement = function BlockStatement(block) {
-      var program = block.program,
-          inverse = block.inverse;
+
+    BlockStatement(block) {
+      var {
+        program,
+        inverse
+      } = block;
       var loc$$1 = this.block.loc(block.loc);
       var resolution = this.block.resolutionFor(block, BlockSyntaxContext);
 
@@ -14450,30 +12816,26 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         program: this.Block(program),
         inverse: inverse ? this.Block(inverse) : null
       }, callParts), loc$$1);
-    };
+    }
 
-    _proto41.Block = function Block(_ref34) {
-      var body = _ref34.body,
-          loc$$1 = _ref34.loc,
-          blockParams = _ref34.blockParams;
+    Block({
+      body,
+      loc: loc$$1,
+      blockParams
+    }) {
       var child = this.block.child(blockParams);
       var normalizer = new StatementNormalizer(child);
-      return new BlockChildren(this.block.loc(loc$$1), body.map(function (b$$1) {
-        return normalizer.normalize(b$$1);
-      }), this.block).assertBlock(child.table);
-    };
+      return new BlockChildren(this.block.loc(loc$$1), body.map(b$$1 => normalizer.normalize(b$$1)), this.block).assertBlock(child.table);
+    }
 
-    (0, _emberBabel.createClass)(StatementNormalizer, [{
-      key: "expr",
-      get: function get() {
-        return new ExpressionNormalizer(this.block);
-      }
-    }]);
-    return StatementNormalizer;
-  }();
+    get expr() {
+      return new ExpressionNormalizer(this.block);
+    }
 
-  var ElementNormalizer = /*#__PURE__*/function () {
-    function ElementNormalizer(ctx) {
+  }
+
+  class ElementNormalizer {
+    constructor(ctx) {
       this.ctx = ctx;
     }
     /**
@@ -14492,49 +12854,29 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      */
 
 
-    var _proto42 = ElementNormalizer.prototype;
-
-    _proto42.ElementNode = function ElementNode(element) {
-      var _this17 = this;
-
-      var tag = element.tag,
-          selfClosing = element.selfClosing,
-          comments = element.comments;
+    ElementNode(element) {
+      var {
+        tag,
+        selfClosing,
+        comments
+      } = element;
       var loc$$1 = this.ctx.loc(element.loc);
-
-      var _tag$split = tag.split('.'),
-          tagHead = _tag$split[0],
-          rest = _tag$split.slice(1); // the head, attributes and modifiers are in the current scope
-
+      var [tagHead, ...rest] = tag.split('.'); // the head, attributes and modifiers are in the current scope
 
       var path = this.classifyTag(tagHead, rest, element.loc);
-      var attrs = element.attributes.filter(function (a) {
-        return a.name[0] !== '@';
-      }).map(function (a) {
-        return _this17.attr(a);
-      });
-      var args = element.attributes.filter(function (a) {
-        return a.name[0] === '@';
-      }).map(function (a) {
-        return _this17.arg(a);
-      });
-      var modifiers = element.modifiers.map(function (m) {
-        return _this17.modifier(m);
-      }); // the element's block params are in scope for the children
+      var attrs = element.attributes.filter(a => a.name[0] !== '@').map(a => this.attr(a));
+      var args = element.attributes.filter(a => a.name[0] === '@').map(a => this.arg(a));
+      var modifiers = element.modifiers.map(m => this.modifier(m)); // the element's block params are in scope for the children
 
       var child = this.ctx.child(element.blockParams);
       var normalizer = new StatementNormalizer(child);
-      var childNodes = element.children.map(function (s) {
-        return normalizer.normalize(s);
-      });
+      var childNodes = element.children.map(s => normalizer.normalize(s));
       var el = this.ctx.builder.element({
-        selfClosing: selfClosing,
-        attrs: attrs,
+        selfClosing,
+        attrs,
         componentArgs: args,
-        modifiers: modifiers,
-        comments: comments.map(function (c) {
-          return new StatementNormalizer(_this17.ctx).MustacheCommentStatement(c);
-        })
+        modifiers,
+        comments: comments.map(c => new StatementNormalizer(this.ctx).MustacheCommentStatement(c))
       });
       var children = new ElementChildren(el, loc$$1, childNodes, this.ctx);
       var offsets = this.ctx.loc(element.loc);
@@ -14559,9 +12901,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         var blocks = children.assertComponent(tag, child.table, element.blockParams.length > 0);
         return el.componentWithNamedBlocks(path, blocks, loc$$1);
       }
-    };
+    }
 
-    _proto42.modifier = function modifier(m) {
+    modifier(m) {
       var resolution = this.ctx.resolutionFor(m, ModifierSyntaxContext);
 
       if (resolution.resolution === 'error') {
@@ -14580,9 +12922,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * <a href="{{url}}.html" />
      * ```
      */
-    ;
 
-    _proto42.mustacheAttr = function mustacheAttr(mustache) {
+
+    mustacheAttr(mustache) {
       // Normalize the call parts in AttrValueSyntaxContext
       var sexp = this.ctx.builder.sexp(this.expr.callParts(mustache, AttrValueSyntaxContext(mustache)), this.ctx.loc(mustache.loc)); // If there are no params or hash, just return the function part as its own expression
 
@@ -14596,9 +12938,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * attrPart is the narrowed down list of valid attribute values that are also
      * allowed as a concat part (you can't nest concats).
      */
-    ;
 
-    _proto42.attrPart = function attrPart(part) {
+
+    attrPart(part) {
       switch (part.type) {
         case 'MustacheStatement':
           return {
@@ -14612,17 +12954,13 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
             trusting: true
           };
       }
-    };
+    }
 
-    _proto42.attrValue = function attrValue(part) {
-      var _this18 = this;
-
+    attrValue(part) {
       switch (part.type) {
         case 'ConcatStatement':
           {
-            var parts = part.parts.map(function (p) {
-              return _this18.attrPart(p).expr;
-            });
+            var parts = part.parts.map(p => this.attrPart(p).expr);
             return {
               expr: this.ctx.builder.interpolate(parts, this.ctx.loc(part.loc)),
               trusting: false
@@ -14632,9 +12970,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         default:
           return this.attrPart(part);
       }
-    };
+    }
 
-    _proto42.attr = function attr(m) {
+    attr(m) {
       if (m.name === '...attributes') {
         return this.ctx.builder.splatAttr(this.ctx.table.allocateBlock('attrs'), this.ctx.loc(m.loc));
       }
@@ -14649,14 +12987,68 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         value: value.expr,
         trusting: value.trusting
       }, offsets);
-    };
+    }
 
-    _proto42.arg = function arg(_arg) {
-      var offsets = this.ctx.loc(_arg.loc);
+    maybeDeprecatedCall(arg, part) {
+      if (this.ctx.strict) {
+        return null;
+      }
+
+      if (part.type !== 'MustacheStatement') {
+        return null;
+      }
+
+      var {
+        path
+      } = part;
+
+      if (path.type !== 'PathExpression') {
+        return null;
+      }
+
+      if (path.head.type !== 'VarHead') {
+        return null;
+      }
+
+      var {
+        name
+      } = path.head;
+
+      if (name === 'has-block' || name === 'has-block-params') {
+        return null;
+      }
+
+      if (this.ctx.hasBinding(name)) {
+        return null;
+      }
+
+      if (path.tail.length !== 0) {
+        return null;
+      }
+
+      if (part.params.length !== 0 || part.hash.pairs.length !== 0) {
+        return null;
+      }
+
+      var context = LooseModeResolution.attr();
+      var callee = this.ctx.builder.freeVar({
+        name,
+        context,
+        symbol: this.ctx.table.allocateFree(name, context),
+        loc: path.loc
+      });
+      return {
+        expr: this.ctx.builder.deprecatedCall(arg, callee, part.loc),
+        trusting: false
+      };
+    }
+
+    arg(arg) {
+      var offsets = this.ctx.loc(arg.loc);
       var nameSlice = offsets.sliceStartChars({
-        chars: _arg.name.length
-      }).toSlice(_arg.name);
-      var value = this.attrValue(_arg.value);
+        chars: arg.name.length
+      }).toSlice(arg.name);
+      var value = this.maybeDeprecatedCall(nameSlice, arg.value) || this.attrValue(arg.value);
       return this.ctx.builder.arg({
         name: nameSlice,
         value: value.expr,
@@ -14678,9 +13070,9 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
      * 5. If the variable is uppercase return a FreeVar(ResolveAsComponentHead)
      * 6. Otherwise, return `'ElementHead'`
      */
-    ;
 
-    _proto42.classifyTag = function classifyTag(variable, tail, loc$$1) {
+
+    classifyTag(variable, tail, loc$$1) {
       var uppercase = isUpperCase(variable);
       var inScope = variable[0] === '@' || variable === 'this' || this.ctx.hasBinding(variable);
 
@@ -14701,16 +13093,14 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
         skipStart: 1,
         chars: variable.length
       });
-      var tailLength = tail.reduce(function (accum, part) {
-        return accum + 1 + part.length;
-      }, 0);
+      var tailLength = tail.reduce((accum, part) => accum + 1 + part.length, 0);
       var pathEnd = variableLoc.getEnd().move(tailLength);
       var pathLoc = variableLoc.withEnd(pathEnd);
 
       if (isComponent) {
         var path = b.path({
           head: b.head(variable, variableLoc),
-          tail: tail,
+          tail,
           loc: pathLoc
         });
         var resolution = this.ctx.resolutionFor(path, ComponentSyntaxContext);
@@ -14729,100 +13119,71 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
       }
 
       return 'ElementHead';
-    };
-
-    (0, _emberBabel.createClass)(ElementNormalizer, [{
-      key: "expr",
-      get: function get() {
-        return new ExpressionNormalizer(this.ctx);
-      }
-    }]);
-    return ElementNormalizer;
-  }();
-
-  var Children = function Children(loc$$1, children, block) {
-    this.loc = loc$$1;
-    this.children = children;
-    this.block = block;
-    this.namedBlocks = children.filter(function (c) {
-      return c instanceof NamedBlock;
-    });
-    this.hasSemanticContent = Boolean(children.filter(function (c) {
-      if (c instanceof NamedBlock) {
-        return false;
-      }
-
-      switch (c.type) {
-        case 'GlimmerComment':
-        case 'HtmlComment':
-          return false;
-
-        case 'HtmlText':
-          return !/^\s*$/.exec(c.chars);
-
-        default:
-          return true;
-      }
-    }).length);
-    this.nonBlockChildren = children.filter(function (c) {
-      return !(c instanceof NamedBlock);
-    });
-  };
-
-  var TemplateChildren = /*#__PURE__*/function (_Children) {
-    (0, _emberBabel.inheritsLoose)(TemplateChildren, _Children);
-
-    function TemplateChildren() {
-      return _Children.apply(this, arguments) || this;
     }
 
-    var _proto43 = TemplateChildren.prototype;
+    get expr() {
+      return new ExpressionNormalizer(this.ctx);
+    }
 
-    _proto43.assertTemplate = function assertTemplate(table) {
+  }
+
+  class Children {
+    constructor(loc$$1, children, block) {
+      this.loc = loc$$1;
+      this.children = children;
+      this.block = block;
+      this.namedBlocks = children.filter(c => c instanceof NamedBlock);
+      this.hasSemanticContent = Boolean(children.filter(c => {
+        if (c instanceof NamedBlock) {
+          return false;
+        }
+
+        switch (c.type) {
+          case 'GlimmerComment':
+          case 'HtmlComment':
+            return false;
+
+          case 'HtmlText':
+            return !/^\s*$/.exec(c.chars);
+
+          default:
+            return true;
+        }
+      }).length);
+      this.nonBlockChildren = children.filter(c => !(c instanceof NamedBlock));
+    }
+
+  }
+
+  class TemplateChildren extends Children {
+    assertTemplate(table) {
       if ((0, _util.isPresent)(this.namedBlocks)) {
         throw generateSyntaxError("Unexpected named block at the top-level of a template", this.loc);
       }
 
       return this.block.builder.template(table, this.nonBlockChildren, this.block.loc(this.loc));
-    };
-
-    return TemplateChildren;
-  }(Children);
-
-  var BlockChildren = /*#__PURE__*/function (_Children2) {
-    (0, _emberBabel.inheritsLoose)(BlockChildren, _Children2);
-
-    function BlockChildren() {
-      return _Children2.apply(this, arguments) || this;
     }
 
-    var _proto44 = BlockChildren.prototype;
+  }
 
-    _proto44.assertBlock = function assertBlock(table) {
+  class BlockChildren extends Children {
+    assertBlock(table) {
       if ((0, _util.isPresent)(this.namedBlocks)) {
         throw generateSyntaxError("Unexpected named block nested in a normal block", this.loc);
       }
 
       return this.block.builder.block(table, this.nonBlockChildren, this.loc);
-    };
-
-    return BlockChildren;
-  }(Children);
-
-  var ElementChildren = /*#__PURE__*/function (_Children3) {
-    (0, _emberBabel.inheritsLoose)(ElementChildren, _Children3);
-
-    function ElementChildren(el, loc$$1, children, block) {
-      var _this19;
-
-      _this19 = _Children3.call(this, loc$$1, children, block) || this;
-      _this19.el = el;
-      return _this19;
     }
 
-    var _proto45 = ElementChildren.prototype;
+  }
 
-    _proto45.assertNamedBlock = function assertNamedBlock(name, table) {
+  class ElementChildren extends Children {
+    constructor(el, loc$$1, children, block) {
+      super(loc$$1, children, block);
+      this.el = el;
+    }
+
+    assertNamedBlock(name, table) {
       if (this.el.base.selfClosing) {
         throw generateSyntaxError("<:" + name.chars + "/> is not a valid named block: named blocks cannot be self-closing", this.loc);
       }
@@ -14841,32 +13202,28 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
       var offsets = SpanList.range(this.nonBlockChildren, this.loc);
       return this.block.builder.namedBlock(name, this.block.builder.block(table, this.nonBlockChildren, offsets), this.loc);
-    };
+    }
 
-    _proto45.assertElement = function assertElement(name, hasBlockParams) {
+    assertElement(name, hasBlockParams) {
       if (hasBlockParams) {
         throw generateSyntaxError("Unexpected block params in <" + name + ">: simple elements cannot have block params", this.loc);
       }
 
       if ((0, _util.isPresent)(this.namedBlocks)) {
-        var names = this.namedBlocks.map(function (b$$1) {
-          return b$$1.name;
-        });
+        var names = this.namedBlocks.map(b$$1 => b$$1.name);
 
         if (names.length === 1) {
           throw generateSyntaxError("Unexpected named block <:foo> inside <" + name.chars + "> HTML element", this.loc);
         } else {
-          var printedNames = names.map(function (n) {
-            return "<:" + n.chars + ">";
-          }).join(', ');
+          var printedNames = names.map(n => "<:" + n.chars + ">").join(', ');
           throw generateSyntaxError("Unexpected named blocks inside <" + name.chars + "> HTML element (" + printedNames + ")", this.loc);
         }
       }
 
       return this.el.simple(name, this.nonBlockChildren, this.loc);
-    };
+    }
 
-    _proto45.assertComponent = function assertComponent(name, table, hasBlockParams) {
+    assertComponent(name, table, hasBlockParams) {
       if ((0, _util.isPresent)(this.namedBlocks) && this.hasSemanticContent) {
         throw generateSyntaxError("Unexpected content inside <" + name + "> component invocation: when using named blocks, the tag cannot contain other content", this.loc);
       }
@@ -14878,25 +13235,27 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
 
         var seenNames = new Set();
 
-        for (var _iterator5 = (0, _emberBabel.createForOfIteratorHelperLoose)(this.namedBlocks), _step5; !(_step5 = _iterator5()).done;) {
-          var _block = _step5.value;
-          var _name2 = _block.name.chars;
+        for (var block of this.namedBlocks) {
+          var _name = block.name.chars;
 
-          if (seenNames.has(_name2)) {
-            throw generateSyntaxError("Component had two named blocks with the same name, `<:" + _name2 + ">`. Only one block with a given name may be passed", this.loc);
+          if (seenNames.has(_name)) {
+            throw generateSyntaxError("Component had two named blocks with the same name, `<:" + _name + ">`. Only one block with a given name may be passed", this.loc);
           }
 
-          seenNames.add(_name2);
+          if (_name === 'inverse' && seenNames.has('else') || _name === 'else' && seenNames.has('inverse')) {
+            throw generateSyntaxError("Component has both <:else> and <:inverse> block. <:inverse> is an alias for <:else>", this.loc);
+          }
+
+          seenNames.add(_name);
         }
 
         return this.namedBlocks;
       } else {
         return [this.block.builder.namedBlock(SourceSlice.synthetic('default'), this.block.builder.block(table, this.nonBlockChildren, this.loc), this.loc)];
       }
-    };
+    }
 
-    return ElementChildren;
-  }(Children);
+  }
 
   function printPath(node$$1) {
     if (node$$1.type !== 'PathExpression' && node$$1.path.type === 'PathExpression') {
@@ -14960,9 +13319,128 @@ define("@glimmer/syntax", ["exports", "ember-babel", "@glimmer/util", "simple-ht
     with: ['Block'],
     yield: ['Append']
   };
+  /**
+   * Gets the correct Token from the Node based on it's type
+   */
+
   _exports.KEYWORDS_TYPES = KEYWORDS_TYPES;
+
+  function tokensFromType(node, scopedTokens, options) {
+    if (node.type === 'PathExpression') {
+      if (node.head.type === 'AtHead' || node.head.type === 'ThisHead') {
+        return;
+      }
+
+      var possbleToken = node.head.name;
+
+      if (scopedTokens.indexOf(possbleToken) === -1) {
+        return possbleToken;
+      }
+    } else if (node.type === 'ElementNode') {
+      var {
+        tag
+      } = node;
+      var char = tag.charAt(0);
+
+      if (char === ':' || char === '@') {
+        return;
+      }
+
+      if (!options.includeHtmlElements && tag.indexOf('.') === -1 && tag.toLowerCase() === tag) {
+        return;
+      }
+
+      if (tag.substr(0, 5) === 'this.') {
+        return;
+      }
+
+      if (scopedTokens.indexOf(tag) !== -1) {
+        return;
+      }
+
+      return tag;
+    }
+  }
+  /**
+   * Adds tokens to the tokensSet based on their node.type
+   */
+
+
+  function addTokens(tokensSet, node, scopedTokens, options) {
+    var maybeTokens = tokensFromType(node, scopedTokens, options);
+    (Array.isArray(maybeTokens) ? maybeTokens : [maybeTokens]).forEach(maybeToken => {
+      if (maybeToken !== undefined && maybeToken[0] !== '@') {
+        tokensSet.add(maybeToken.split('.')[0]);
+      }
+    });
+  }
+  /**
+   * Parses and traverses a given handlebars html template to extract all template locals
+   * referenced that could possible come from the praent scope. Can exclude known keywords
+   * optionally.
+   */
+
+
+  function getTemplateLocals(html, options = {
+    includeHtmlElements: false,
+    includeKeywords: false
+  }) {
+    var ast = preprocess(html);
+    var tokensSet = new Set();
+    var scopedTokens = [];
+    traverse(ast, {
+      Block: {
+        enter({
+          blockParams
+        }) {
+          blockParams.forEach(param => {
+            scopedTokens.push(param);
+          });
+        },
+
+        exit({
+          blockParams
+        }) {
+          blockParams.forEach(() => {
+            scopedTokens.pop();
+          });
+        }
+
+      },
+      ElementNode: {
+        enter(node) {
+          node.blockParams.forEach(param => {
+            scopedTokens.push(param);
+          });
+          addTokens(tokensSet, node, scopedTokens, options);
+        },
+
+        exit({
+          blockParams
+        }) {
+          blockParams.forEach(() => {
+            scopedTokens.pop();
+          });
+        }
+
+      },
+
+      PathExpression(node) {
+        addTokens(tokensSet, node, scopedTokens, options);
+      }
+
+    });
+    var tokens = [];
+    tokensSet.forEach(s => tokens.push(s));
+
+    if (!(options === null || options === void 0 ? void 0 : options.includeKeywords)) {
+      tokens = tokens.filter(token => !isKeyword(token));
+    }
+
+    return tokens;
+  }
 });
-define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBabel) {
+define("@glimmer/util", ["exports"], function (_exports) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -14974,10 +13452,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   _exports.dict = dict;
   _exports.isDict = isDict;
   _exports.isObject = isObject;
-  _exports.ensureGuid = ensureGuid;
-  _exports.initializeGuid = initializeGuid;
   _exports.isSerializationFirstNode = isSerializationFirstNode;
-  _exports.assign = assign;
   _exports.fillNulls = fillNulls;
   _exports.values = values;
   _exports.castToSimple = castToSimple;
@@ -15017,7 +13492,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   _exports.toPresentOption = toPresentOption;
   _exports.assertPresent = assertPresent;
   _exports.mapPresent = mapPresent;
-  _exports.symbol = _exports.tuple = _exports.HAS_NATIVE_SYMBOL = _exports.HAS_NATIVE_PROXY = _exports.EMPTY_NUMBER_ARRAY = _exports.EMPTY_STRING_ARRAY = _exports.EMPTY_ARRAY = _exports.verifySteps = _exports.logStep = _exports.endTestSteps = _exports.beginTestSteps = _exports.debugToString = _exports._WeakSet = _exports.SERIALIZATION_FIRST_NODE_STRING = _exports.NonemptyStack = _exports.Stack = _exports.DictSet = _exports.LOGGER = _exports.LOCAL_LOGGER = void 0;
+  _exports.symbol = _exports.tuple = _exports.HAS_NATIVE_SYMBOL = _exports.HAS_NATIVE_PROXY = _exports.EMPTY_NUMBER_ARRAY = _exports.EMPTY_STRING_ARRAY = _exports.EMPTY_ARRAY = _exports.verifySteps = _exports.logStep = _exports.endTestSteps = _exports.beginTestSteps = _exports.debugToString = _exports._WeakSet = _exports.assign = _exports.SERIALIZATION_FIRST_NODE_STRING = _exports.Stack = _exports.LOGGER = _exports.LOCAL_LOGGER = void 0;
   var EMPTY_ARRAY = Object.freeze([]);
   _exports.EMPTY_ARRAY = EMPTY_ARRAY;
 
@@ -15054,16 +13529,6 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     LOCAL_LOGGER.warn("DEPRECATION: " + desc);
   }
 
-  var GUID = 0;
-
-  function initializeGuid(object) {
-    return object._guid = ++GUID;
-  }
-
-  function ensureGuid(object) {
-    return object._guid || initializeGuid(object);
-  }
-
   function dict() {
     return Object.create(null);
   }
@@ -15073,126 +13538,47 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   }
 
   function isObject(u) {
-    return typeof u === 'object' && u !== null;
+    return typeof u === 'function' || typeof u === 'object' && u !== null;
   }
 
-  var DictSet = /*#__PURE__*/function () {
-    function DictSet() {
-      this.dict = dict();
-    }
-
-    var _proto = DictSet.prototype;
-
-    _proto.add = function add(obj) {
-      if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[ensureGuid(obj)] = obj;
-      return this;
-    };
-
-    _proto.delete = function _delete(obj) {
-      if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
-    };
-
-    return DictSet;
-  }();
-
-  _exports.DictSet = DictSet;
-
-  var StackImpl = /*#__PURE__*/function () {
-    function StackImpl(values) {
-      if (values === void 0) {
-        values = [];
-      }
-
+  class StackImpl {
+    constructor(values = []) {
       this.current = null;
       this.stack = values;
     }
 
-    var _proto2 = StackImpl.prototype;
+    get size() {
+      return this.stack.length;
+    }
 
-    _proto2.push = function push(item) {
+    push(item) {
       this.current = item;
       this.stack.push(item);
-    };
+    }
 
-    _proto2.pop = function pop() {
+    pop() {
       var item = this.stack.pop();
       var len = this.stack.length;
       this.current = len === 0 ? null : this.stack[len - 1];
       return item === undefined ? null : item;
-    };
-
-    _proto2.nth = function nth(from) {
-      var len = this.stack.length;
-      return len < from ? null : this.stack[len - from];
-    };
-
-    _proto2.isEmpty = function isEmpty() {
-      return this.stack.length === 0;
-    };
-
-    _proto2.toArray = function toArray() {
-      return this.stack;
-    };
-
-    (0, _emberBabel.createClass)(StackImpl, [{
-      key: "size",
-      get: function get() {
-        return this.stack.length;
-      }
-    }]);
-    return StackImpl;
-  }();
-
-  _exports.Stack = StackImpl;
-
-  var NonemptyStackImpl = /*#__PURE__*/function () {
-    function NonemptyStackImpl(values) {
-      this.stack = values;
-      this.current = values[values.length - 1];
     }
 
-    var _proto3 = NonemptyStackImpl.prototype;
-
-    _proto3.push = function push(item) {
-      this.current = item;
-      this.stack.push(item);
-    };
-
-    _proto3.pop = function pop() {
-      if (this.stack.length === 1) {
-        throw new Error("cannot pop the last element of a NonemptyStack");
-      }
-
-      var item = this.stack.pop();
-      var len = this.stack.length;
-      this.current = this.stack[len - 1];
-      return item;
-    };
-
-    _proto3.nth = function nth(from) {
-      var len = this.stack.length;
-      return from >= len ? null : this.stack[from];
-    };
-
-    _proto3.nthBack = function nthBack(from) {
+    nth(from) {
       var len = this.stack.length;
       return len < from ? null : this.stack[len - from];
-    };
+    }
 
-    _proto3.toArray = function toArray() {
+    isEmpty() {
+      return this.stack.length === 0;
+    }
+
+    toArray() {
       return this.stack;
-    };
+    }
 
-    (0, _emberBabel.createClass)(NonemptyStackImpl, [{
-      key: "size",
-      get: function get() {
-        return this.stack.length;
-      }
-    }]);
-    return NonemptyStackImpl;
-  }();
+  }
 
-  _exports.NonemptyStack = NonemptyStackImpl;
+  _exports.Stack = StackImpl;
 
   function clearElement(parent) {
     var current = parent.firstChild;
@@ -15211,9 +13597,13 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     return node.nodeValue === SERIALIZATION_FIRST_NODE_STRING;
   }
 
-  var objKeys = Object.keys;
+  var _a;
 
-  function assign(obj) {
+  var {
+    keys: objKeys
+  } = Object;
+
+  function assignFn(obj) {
     for (var i = 1; i < arguments.length; i++) {
       var assignment = arguments[i];
       if (assignment === null || typeof assignment !== 'object') continue;
@@ -15228,6 +13618,9 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
 
     return obj;
   }
+
+  var assign = (_a = Object.assign) !== null && _a !== void 0 ? _a : assignFn;
+  _exports.assign = assign;
 
   function fillNulls(count) {
     var arr = new Array(count);
@@ -15330,11 +13723,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     return val;
   }
 
-  function unreachable(message) {
-    if (message === void 0) {
-      message = 'unreachable';
-    }
-
+  function unreachable(message = 'unreachable') {
     return new Error(message);
   }
 
@@ -15342,13 +13731,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     throw new Error("Exhausted " + value);
   }
 
-  var tuple = function tuple() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    return args;
-  };
+  var tuple = (...args) => args;
 
   _exports.tuple = tuple;
 
@@ -15359,12 +13742,8 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   var symbol = HAS_NATIVE_SYMBOL ? Symbol : enumerableSymbol;
   _exports.symbol = symbol;
 
-  function strip(strings) {
+  function strip(strings, ...args) {
     var out = '';
-
-    for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-      args[_key2 - 1] = arguments[_key2];
-    }
 
     for (var i = 0; i < strings.length; i++) {
       var string = strings[i];
@@ -15384,19 +13763,15 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
 
     var min = Infinity;
 
-    for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(lines), _step; !(_step = _iterator()).done;) {
-      var _line2 = _step.value;
-
-      var _leading = _line2.match(/^\s*/)[0].length;
-
-      min = Math.min(min, _leading);
+    for (var line of lines) {
+      var leading = line.match(/^\s*/)[0].length;
+      min = Math.min(min, leading);
     }
 
     var stripped = [];
 
-    for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(lines), _step2; !(_step2 = _iterator2()).done;) {
-      var _line3 = _step2.value;
-      stripped.push(_line3.slice(min));
+    for (var _line of lines) {
+      stripped.push(_line.slice(min));
     }
 
     return stripped.join('\n');
@@ -15412,12 +13787,8 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     ;
   }
 
-  function constants() {
-    for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-      values[_key3] = arguments[_key3];
-    }
-
-    return [false, true, null, undefined].concat(values);
+  function constants(...values) {
+    return [false, true, null, undefined, ...values];
   }
 
   function isSmallInt(value) {
@@ -15469,9 +13840,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   } // Warm
 
 
-  [1, -1].forEach(function (x) {
-    return decodeImmediate(encodeImmediate(x));
-  });
+  [1, -1].forEach(x => decodeImmediate(encodeImmediate(x)));
 
   function unwrapHandle(handle) {
     if (typeof handle === 'number') {
@@ -15506,29 +13875,26 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     return typeof handle === 'number';
   }
 
-  var weakSet = typeof WeakSet === 'function' ? WeakSet : /*#__PURE__*/function () {
-    function WeakSetPolyFill() {
+  var weakSet = typeof WeakSet === 'function' ? WeakSet : class WeakSetPolyFill {
+    constructor() {
       this._map = new WeakMap();
     }
 
-    var _proto4 = WeakSetPolyFill.prototype;
-
-    _proto4.add = function add(val) {
+    add(val) {
       this._map.set(val, true);
 
       return this;
-    };
+    }
 
-    _proto4.delete = function _delete(val) {
+    delete(val) {
       return this._map.delete(val);
-    };
+    }
 
-    _proto4.has = function has(val) {
+    has(val) {
       return this._map.has(val);
-    };
+    }
 
-    return WeakSetPolyFill;
-  }();
+  };
   _exports._WeakSet = weakSet;
 
   function castToSimple(node) {
@@ -15584,9 +13950,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
       if (typeof check === 'string') {
         isMatch = stringCheckNode(node, check);
       } else if (Array.isArray(check)) {
-        isMatch = check.some(function (c) {
-          return stringCheckNode(node, c);
-        });
+        isMatch = check.some(c => stringCheckNode(node, c));
       } else {
         throw unreachable();
       }
@@ -15642,11 +14006,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     }
   }
 
-  function assertPresent(list, message) {
-    if (message === void 0) {
-      message = "unexpected empty list";
-    }
-
+  function assertPresent(list, message = "unexpected empty list") {
     if (!isPresent(list)) {
       throw new Error(message);
     }
@@ -15659,9 +14019,8 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
 
     var out = [];
 
-    for (var _iterator3 = (0, _emberBabel.createForOfIteratorHelperLoose)(list), _step3; !(_step3 = _iterator3()).done;) {
-      var _item = _step3.value;
-      out.push(callback(_item));
+    for (var item of list) {
+      out.push(callback(item));
     }
 
     return out;
@@ -15673,22 +14032,25 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
     if (true
     /* DEBUG */
     && HAS_NATIVE_PROXY) {
-      var assertOnProperty = function assertOnProperty(property) {
+      var assertOnProperty = property => {
         throw new Error("You accessed `this." + String(property) + "` from a function passed to the " + source + ", but the function itself was not bound to a valid `this` context. Consider updating to use a bound function (for instance, use an arrow function, `() => {}`).");
       };
 
       context = new Proxy({}, {
-        get: function get(_target, property) {
+        get(_target, property) {
           assertOnProperty(property);
         },
-        set: function set(_target, property) {
+
+        set(_target, property) {
           assertOnProperty(property);
           return false;
         },
-        has: function has(_target, property) {
+
+        has(_target, property) {
           assertOnProperty(property);
           return false;
         }
+
       });
     }
 
@@ -15700,7 +14062,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   if (true
   /* DEBUG */
   ) {
-    var getFunctionName = function getFunctionName(fn) {
+    var getFunctionName = fn => {
       var functionName = fn.name;
 
       if (functionName === undefined) {
@@ -15711,7 +14073,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
       return functionName.replace(/^bound /, '');
     };
 
-    var getObjectName = function getObjectName(obj) {
+    var getObjectName = obj => {
       var name;
       var className;
 
@@ -15734,11 +14096,11 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
       return name || className;
     };
 
-    var getPrimitiveName = function getPrimitiveName(value) {
+    var getPrimitiveName = value => {
       return String(value);
     };
 
-    debugToString = function debugToString(value) {
+    debugToString = value => {
       if (typeof value === 'function') {
         return getFunctionName(value) || "(unknown function)";
       } else if (typeof value === 'object' && value !== null) {
@@ -15780,11 +14142,7 @@ define("@glimmer/util", ["exports", "ember-babel"], function (_exports, _emberBa
   var LOGGER = console;
   _exports.LOGGER = LOGGER;
 
-  function assertNever(value, desc) {
-    if (desc === void 0) {
-      desc = 'unexpected unreachable branch';
-    }
-
+  function assertNever(value, desc = 'unexpected unreachable branch') {
     LOGGER.log('unreachable', value);
     LOGGER.log(desc + " :: " + JSON.stringify(value) + " (" + value + ")");
     throw new Error("code reached unreachable");
@@ -15943,7 +14301,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
     constructor: Visitor,
     mutating: false,
     // Visits a given value. If mutating, will replace the value if necessary.
-    acceptKey: function acceptKey(node, name) {
+    acceptKey: function (node, name) {
       var value = this.accept(node[name]);
 
       if (this.mutating) {
@@ -15958,7 +14316,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
     },
     // Performs an accept operation with added sanity check to ensure
     // required keys are not removed.
-    acceptRequired: function acceptRequired(node, name) {
+    acceptRequired: function (node, name) {
       this.acceptKey(node, name);
 
       if (!node[name]) {
@@ -15967,7 +14325,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
     },
     // Traverses a given array. If mutating, empty respnses will be removed
     // for child elements.
-    acceptArray: function acceptArray(array) {
+    acceptArray: function (array) {
       for (var i = 0, l = array.length; i < l; i++) {
         this.acceptKey(array, i);
 
@@ -15978,7 +14336,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
         }
       }
     },
-    accept: function accept(object) {
+    accept: function (object) {
       if (!object) {
         return;
       }
@@ -16003,7 +14361,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
         return object;
       }
     },
-    Program: function Program(program) {
+    Program: function (program) {
       this.acceptArray(program.body);
     },
     MustacheStatement: visitSubExpression,
@@ -16011,39 +14369,39 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
     BlockStatement: visitBlock,
     DecoratorBlock: visitBlock,
     PartialStatement: visitPartial,
-    PartialBlockStatement: function PartialBlockStatement(partial) {
+    PartialBlockStatement: function (partial) {
       visitPartial.call(this, partial);
       this.acceptKey(partial, 'program');
     },
-    ContentStatement: function ContentStatement()
+    ContentStatement: function ()
     /* content */
     {},
-    CommentStatement: function CommentStatement()
+    CommentStatement: function ()
     /* comment */
     {},
     SubExpression: visitSubExpression,
-    PathExpression: function PathExpression()
+    PathExpression: function ()
     /* path */
     {},
-    StringLiteral: function StringLiteral()
+    StringLiteral: function ()
     /* string */
     {},
-    NumberLiteral: function NumberLiteral()
+    NumberLiteral: function ()
     /* number */
     {},
-    BooleanLiteral: function BooleanLiteral()
+    BooleanLiteral: function ()
     /* bool */
     {},
-    UndefinedLiteral: function UndefinedLiteral()
+    UndefinedLiteral: function ()
     /* literal */
     {},
-    NullLiteral: function NullLiteral()
+    NullLiteral: function ()
     /* literal */
     {},
-    Hash: function Hash(hash) {
+    Hash: function (hash) {
       this.acceptArray(hash.pairs);
     },
-    HashPair: function HashPair(pair) {
+    HashPair: function (pair) {
       this.acceptRequired(pair, 'value');
     }
   };
@@ -16355,12 +14713,12 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
 
 
   var parser = function () {
-    var o = function o(k, v, _o, l) {
-      for (_o = _o || {}, l = k.length; l--; _o[k[l]] = v) {
+    var o = function (k, v, o, l) {
+      for (o = o || {}, l = k.length; l--; o[k[l]] = v) {
         ;
       }
 
-      return _o;
+      return o;
     },
         $V0 = [2, 44],
         $V1 = [1, 20],
@@ -17392,7 +15750,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           this.parseError = Object.getPrototypeOf(this).parseError;
         }
 
-        _token_stack: var lex = function lex() {
+        _token_stack: var lex = function () {
           var token;
           token = lexer.lex() || EOF;
 
@@ -17530,7 +15888,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           }
         },
         // resets the lexer, sets new input
-        setInput: function setInput(input, yy) {
+        setInput: function (input, yy) {
           this.yy = yy || this.yy || {};
           this._input = input;
           this._more = this._backtrack = this.done = false;
@@ -17552,7 +15910,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return this;
         },
         // consumes and returns one char from the input
-        input: function input() {
+        input: function () {
           var ch = this._input[0];
           this.yytext += ch;
           this.yyleng++;
@@ -17576,7 +15934,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return ch;
         },
         // unshifts one char (or a string) into the input
-        unput: function unput(ch) {
+        unput: function (ch) {
           var len = ch.length;
           var lines = ch.split(/(?:\r\n?|\n)/g);
           this._input = ch + this._input;
@@ -17607,12 +15965,12 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return this;
         },
         // When called from action, caches matched text and appends it on next action
-        more: function more() {
+        more: function () {
           this._more = true;
           return this;
         },
         // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
-        reject: function reject() {
+        reject: function () {
           if (this.options.backtrack_lexer) {
             this._backtrack = true;
           } else {
@@ -17626,16 +15984,16 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return this;
         },
         // retain first n characters of the match
-        less: function less(n) {
+        less: function (n) {
           this.unput(this.match.slice(n));
         },
         // displays already matched input, i.e. for error messages
-        pastInput: function pastInput() {
+        pastInput: function () {
           var past = this.matched.substr(0, this.matched.length - this.match.length);
           return (past.length > 20 ? '...' : '') + past.substr(-20).replace(/\n/g, "");
         },
         // displays upcoming input, i.e. for error messages
-        upcomingInput: function upcomingInput() {
+        upcomingInput: function () {
           var next = this.match;
 
           if (next.length < 20) {
@@ -17645,13 +16003,13 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return (next.substr(0, 20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
         },
         // displays the character position where the lexing error occurred, i.e. for error messages
-        showPosition: function showPosition() {
+        showPosition: function () {
           var pre = this.pastInput();
           var c = new Array(pre.length + 1).join("-");
           return pre + this.upcomingInput() + "\n" + c + "^";
         },
         // test the lexed token: return FALSE when not a match, otherwise return token
-        test_match: function test_match(match, indexed_rule) {
+        test_match: function (match, indexed_rule) {
           var token, lines, backup;
 
           if (this.options.backtrack_lexer) {
@@ -17727,7 +16085,7 @@ define("@handlebars/parser/index", ["exports"], function (_exports) {
           return false;
         },
         // return next match in input
-        next: function next() {
+        next: function () {
           if (this.done) {
             return this.EOF;
           }
@@ -18760,100 +17118,186 @@ define("ember-babel", ["exports"], function (_exports) {
     return i.next.bind(i);
   }
 });
-define("ember-template-compiler/index", ["exports", "@ember/-internals/environment", "@ember/canary-features", "ember/version", "ember-template-compiler/lib/compat", "ember-template-compiler/lib/system/precompile", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/bootstrap", "ember-template-compiler/lib/system/initializer"], function (_exports, _environment, _canaryFeatures, _version, _compat, _precompile, _compile, _compileOptions, _index, _bootstrap, _initializer) {
+define("ember-template-compiler/index", ["exports", "@ember/-internals/environment", "@ember/canary-features", "@glimmer/syntax", "ember/version", "require", "ember-template-compiler/lib/system/precompile", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/plugins/index", "@glimmer/compiler", "ember-template-compiler/lib/system/bootstrap", "ember-template-compiler/lib/system/initializer"], function (_exports, _environment, _canaryFeatures, _GlimmerSyntax, _version, _require, _precompile, _compile, _compileOptions, _index, _compiler, _bootstrap, _initializer) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
+  Object.defineProperty(_exports, "_preprocess", {
+    enumerable: true,
+    get: function () {
+      return _GlimmerSyntax.preprocess;
+    }
+  });
+  Object.defineProperty(_exports, "_print", {
+    enumerable: true,
+    get: function () {
+      return _GlimmerSyntax.print;
+    }
+  });
+  Object.defineProperty(_exports, "VERSION", {
+    enumerable: true,
+    get: function () {
+      return _version.default;
+    }
+  });
   Object.defineProperty(_exports, "precompile", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _precompile.default;
     }
   });
   Object.defineProperty(_exports, "compile", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _compile.default;
     }
   });
   Object.defineProperty(_exports, "compileOptions", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _compileOptions.default;
     }
   });
-  Object.defineProperty(_exports, "registerPlugin", {
+  Object.defineProperty(_exports, "_buildCompileOptions", {
     enumerable: true,
-    get: function get() {
-      return _compileOptions.registerPlugin;
+    get: function () {
+      return _compileOptions.buildCompileOptions;
     }
   });
-  Object.defineProperty(_exports, "unregisterPlugin", {
+  Object.defineProperty(_exports, "_transformsFor", {
     enumerable: true,
-    get: function get() {
-      return _compileOptions.unregisterPlugin;
+    get: function () {
+      return _compileOptions.transformsFor;
     }
   });
   Object.defineProperty(_exports, "RESOLUTION_MODE_TRANSFORMS", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _index.RESOLUTION_MODE_TRANSFORMS;
     }
   });
   Object.defineProperty(_exports, "STRICT_MODE_TRANSFORMS", {
     enumerable: true,
-    get: function get() {
+    get: function () {
       return _index.STRICT_MODE_TRANSFORMS;
     }
   });
-  _exports._Ember = void 0;
+  Object.defineProperty(_exports, "_precompile", {
+    enumerable: true,
+    get: function () {
+      return _compiler.precompile;
+    }
+  });
+  _exports._GlimmerSyntax = _exports._Ember = void 0;
+  _exports._GlimmerSyntax = _GlimmerSyntax;
 
-  var _Ember = typeof _environment.context.imports.Ember === 'object' && _environment.context.imports.Ember || {}; // private API used by ember-cli-htmlbars to setup ENV and FEATURES
-
+  var _Ember;
 
   _exports._Ember = _Ember;
 
-  if (!_Ember.ENV) {
-    _Ember.ENV = _environment.ENV;
+  try {
+    // tslint:disable-next-line: no-require-imports
+    _exports._Ember = _Ember = (0, _require.default)("ember");
+  } catch (e) {
+    _exports._Ember = _Ember = {
+      ENV: _environment.ENV,
+      FEATURES: _canaryFeatures.FEATURES,
+      VERSION: _version.default
+    };
   }
-
-  if (!_Ember.FEATURES) {
-    _Ember.FEATURES = _canaryFeatures.FEATURES;
-  }
-
-  if (!_Ember.VERSION) {
-    _Ember.VERSION = _version.default;
-  } // used for adding Ember.Handlebars.compile for backwards compat
-
-
-  (0, _compat.default)(_Ember);
 });
-define("ember-template-compiler/lib/compat", ["exports", "ember-template-compiler/lib/system/compile", "ember-template-compiler/lib/system/compile-options", "ember-template-compiler/lib/system/precompile"], function (_exports, _compile, _compileOptions, _precompile) {
+define("ember-template-compiler/lib/plugins/assert-against-attrs", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
-  _exports.default = setupGlobal;
+  _exports.default = assertAgainstAttrs;
 
-  function setupGlobal(Ember) {
-    var EmberHandlebars = Ember.Handlebars;
+  /**
+   @module ember
+  */
 
-    if (!EmberHandlebars) {
-      Ember.Handlebars = EmberHandlebars = {};
+  /**
+    A Glimmer2 AST transformation that asserts against
+  
+    ```handlebars
+    {{attrs.foo.bar}}
+    ```
+  
+    ...as well as `{{#if attrs.foo}}`, `{{deeply (nested attrs.foobar.baz)}}`.
+  
+    @private
+    @class AssertAgainstAttrs
+  */
+  function assertAgainstAttrs(env) {
+    var _a;
+
+    var {
+      builders: b
+    } = env.syntax;
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
+    var stack = [[]];
+
+    function updateBlockParamsStack(blockParams) {
+      var parent = stack[stack.length - 1];
+      stack.push(parent.concat(blockParams));
     }
 
-    var EmberHTMLBars = Ember.HTMLBars;
+    return {
+      name: 'assert-against-attrs',
+      visitor: {
+        Program: {
+          enter(node) {
+            updateBlockParamsStack(node.blockParams);
+          },
 
-    if (!EmberHTMLBars) {
-      Ember.HTMLBars = EmberHTMLBars = {};
+          exit() {
+            stack.pop();
+          }
+
+        },
+        ElementNode: {
+          enter(node) {
+            updateBlockParamsStack(node.blockParams);
+          },
+
+          exit() {
+            stack.pop();
+          }
+
+        },
+
+        PathExpression(node) {
+          if (isAttrs(node, stack[stack.length - 1])) {
+            var path = b.path(node.original.substr(6));
+            (true && !(node.this !== false) && (0, _debug.assert)("Using {{attrs}} to reference named arguments is not supported. {{attrs." + path.original + "}} should be updated to {{@" + path.original + "}}. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), node.this !== false));
+          }
+        }
+
+      }
+    };
+  }
+
+  function isAttrs(node, symbols) {
+    var name = node.parts[0];
+
+    if (symbols.indexOf(name) !== -1) {
+      return false;
     }
 
-    EmberHTMLBars.precompile = EmberHandlebars.precompile = _precompile.default;
-    EmberHTMLBars.compile = EmberHandlebars.compile = _compile.default;
-    EmberHTMLBars.registerPlugin = _compileOptions.registerPlugin;
+    if (name === 'attrs') {
+      if (node.this === true) {
+        node.parts.shift();
+        node.original = node.original.slice(5);
+      }
+
+      return true;
+    }
+
+    return false;
   }
 });
 define("ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modifiers", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
@@ -18865,12 +17309,13 @@ define("ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modif
   _exports.default = assertAgainstDynamicHelpersModifiers;
 
   function assertAgainstDynamicHelpersModifiers(env) {
-    var moduleName = env.meta.moduleName;
+    var _a;
 
-    var _trackLocals = (0, _utils.trackLocals)(),
-        hasLocal = _trackLocals.hasLocal,
-        node = _trackLocals.node;
-
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
+    var {
+      hasLocal,
+      node
+    } = (0, _utils.trackLocals)();
     return {
       name: 'assert-against-dynamic-helpers-modifiers',
       visitor: {
@@ -18880,18 +17325,21 @@ define("ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modif
             children: node
           }
         },
-        MustacheStatement: function MustacheStatement(node) {
+
+        MustacheStatement(node) {
           if ((0, _utils.isPath)(node.path)) {
             var name = node.path.parts[0];
             (true && !(name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)) && (0, _debug.assert)(messageFor(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)));
           }
         },
-        SubExpression: function SubExpression(node) {
+
+        SubExpression(node) {
           if ((0, _utils.isPath)(node.path)) {
             var name = node.path.parts[0];
             (true && !(name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)) && (0, _debug.assert)(messageFor(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), name !== 'helper' && name !== 'modifier' || isLocalVariable(node.path, hasLocal)));
           }
         }
+
       }
     };
   }
@@ -18923,21 +17371,22 @@ define("ember-template-compiler/lib/plugins/assert-against-named-blocks", ["expo
     @class AssertAgainstNamedBlocks
   */
   function assertAgainstNamedBlocks(env) {
-    var moduleName = env.meta.moduleName;
+    var _a;
+
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
     return {
       name: 'assert-against-named-blocks',
       visitor: {
-        ElementNode: function ElementNode(node) {
+        ElementNode(node) {
           if (node.tag[0] === ':') {
             var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
             (true && !(false) && (0, _debug.assert)("Named blocks are not currently available, attempted to use the <" + node.tag + "> named block. " + sourceInformation));
           }
         },
-        MustacheStatement: function MustacheStatement(node) {
+
+        MustacheStatement(node) {
           if (node.path.type === 'PathExpression' && node.path.original === 'yield') {
-            var to = node.hash.pairs.filter(function (pair) {
-              return pair.key === 'to';
-            })[0]; // Glimmer template compiler ensures yield must receive a string literal,
+            var to = node.hash.pairs.filter(pair => pair.key === 'to')[0]; // Glimmer template compiler ensures yield must receive a string literal,
             // so we only need to check if it is not "default" or "inverse"
 
             if (to && to.value.type === 'StringLiteral' && to.value.original !== 'default' && to.value.original !== 'inverse') {
@@ -18946,6 +17395,43 @@ define("ember-template-compiler/lib/plugins/assert-against-named-blocks", ["expo
             }
           }
         }
+
+      }
+    };
+  }
+});
+define("ember-template-compiler/lib/plugins/assert-against-named-outlets", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display"], function (_exports, _debug, _calculateLocationDisplay) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = assertAgainstNamedOutlets;
+
+  /**
+   @module ember
+  */
+
+  /**
+    Prevents usage of named outlets, a legacy concept in Ember removed in 4.0.
+  
+    @private
+    @class AssertAgainstNamedOutlets
+  */
+  function assertAgainstNamedOutlets(env) {
+    var _a;
+
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
+    return {
+      name: 'assert-against-named-outlets',
+      visitor: {
+        MustacheStatement(node) {
+          if (node.path.type === 'PathExpression' && node.path.original === 'outlet' && node.params[0]) {
+            var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
+            (true && !(false) && (0, _debug.assert)("Named outlets were removed in Ember 4.0. See https://deprecations.emberjs.com/v3.x#toc_route-render-template for guidance on alternative APIs for named outlet use cases. " + sourceInformation));
+          }
+        }
+
       }
     };
   }
@@ -18959,15 +17445,18 @@ define("ember-template-compiler/lib/plugins/assert-input-helper-without-block", 
   _exports.default = errorOnInputWithContent;
 
   function errorOnInputWithContent(env) {
-    var moduleName = env.meta.moduleName;
+    var _a;
+
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
     return {
       name: 'assert-input-helper-without-block',
       visitor: {
-        BlockStatement: function BlockStatement(node) {
+        BlockStatement(node) {
           if ((0, _utils.isPath)(node.path) && node.path.original === 'input') {
             (true && !(false) && (0, _debug.assert)(assertMessage(moduleName, node)));
           }
         }
+
       }
     };
   }
@@ -18986,7 +17475,9 @@ define("ember-template-compiler/lib/plugins/assert-reserved-named-arguments", ["
   _exports.default = assertReservedNamedArguments;
 
   function assertReservedNamedArguments(env) {
-    var moduleName = env.meta.moduleName;
+    var _a;
+
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
     return {
       name: 'assert-reserved-named-arguments',
       visitor: {
@@ -18994,30 +17485,33 @@ define("ember-template-compiler/lib/plugins/assert-reserved-named-arguments", ["
         // hazards (e.g. using angle bracket to invoke a classic component that uses
         // `this.someReservedName`. However, we want to avoid leaking special internal
         // things, such as `__ARGS__`, so those would need to be asserted on both sides.
-        AttrNode: function AttrNode(_ref) {
-          var name = _ref.name,
-              loc = _ref.loc;
-
+        AttrNode({
+          name,
+          loc
+        }) {
           if (name === '@__ARGS__') {
             (true && !(false) && (0, _debug.assert)(assertMessage(name) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         },
-        HashPair: function HashPair(_ref2) {
-          var key = _ref2.key,
-              loc = _ref2.loc;
 
+        HashPair({
+          key,
+          loc
+        }) {
           if (key === '__ARGS__') {
             (true && !(false) && (0, _debug.assert)(assertMessage(key) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         },
-        PathExpression: function PathExpression(_ref3) {
-          var original = _ref3.original,
-              loc = _ref3.loc;
 
+        PathExpression({
+          original,
+          loc
+        }) {
           if (isReserved(original)) {
             (true && !(false) && (0, _debug.assert)(assertMessage(original) + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         }
+
       }
     };
   }
@@ -19041,18 +17535,21 @@ define("ember-template-compiler/lib/plugins/assert-splattribute-expression", ["e
   _exports.default = assertSplattributeExpressions;
 
   function assertSplattributeExpressions(env) {
-    var moduleName = env.meta.moduleName;
+    var _a;
+
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
     return {
       name: 'assert-splattribute-expressions',
       visitor: {
-        PathExpression: function PathExpression(_ref) {
-          var original = _ref.original,
-              loc = _ref.loc;
-
+        PathExpression({
+          original,
+          loc
+        }) {
           if (original === '...attributes') {
             (true && !(false) && (0, _debug.assert)(errorMessage() + " " + (0, _calculateLocationDisplay.default)(moduleName, loc)));
           }
         }
+
       }
     };
   }
@@ -19061,100 +17558,7 @@ define("ember-template-compiler/lib/plugins/assert-splattribute-expression", ["e
     return '`...attributes` can only be used in the element position e.g. `<div ...attributes />`. It cannot be used as a path.';
   }
 });
-define("ember-template-compiler/lib/plugins/deprecate-send-action", ["exports", "@ember/debug", "@ember/deprecated-features", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _deprecatedFeatures, _calculateLocationDisplay, _utils) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = deprecateSendAction;
-  var EVENTS = ['insert-newline', 'enter', 'escape-press', 'focus-in', 'focus-out', 'key-press', 'key-up', 'key-down'];
-
-  function deprecateSendAction(env) {
-    if (_deprecatedFeatures.SEND_ACTION) {
-      var moduleName = env.meta.moduleName;
-
-      var deprecationMessage = function deprecationMessage(node, eventName, actionName) {
-        var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
-
-        if (node.type === 'ElementNode') {
-          return "Passing actions to components as strings (like `<Input @" + eventName + "=\"" + actionName + "\" />`) is deprecated. Please use closure actions instead (`<Input @" + eventName + "={{action \"" + actionName + "\"}} />`). " + sourceInformation;
-        } else {
-          return "Passing actions to components as strings (like `{{input " + eventName + "=\"" + actionName + "\"}}`) is deprecated. Please use closure actions instead (`{{input " + eventName + "=(action \"" + actionName + "\")}}`). " + sourceInformation;
-        }
-      };
-
-      return {
-        name: 'deprecate-send-action',
-        visitor: {
-          ElementNode: function ElementNode(node) {
-            if (node.tag !== 'Input') {
-              return;
-            }
-
-            node.attributes.forEach(function (_ref) {
-              var name = _ref.name,
-                  value = _ref.value;
-
-              if (name.charAt(0) === '@') {
-                var eventName = name.substring(1);
-
-                if (EVENTS.indexOf(eventName) > -1) {
-                  if (value.type === 'TextNode') {
-                    (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, eventName, value.chars), false, {
-                      id: 'ember-component.send-action',
-                      until: '4.0.0',
-                      url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
-                      for: 'ember-source',
-                      since: {
-                        enabled: '3.4.0'
-                      }
-                    }));
-                  } else if (value.type === 'MustacheStatement' && value.path.type === 'StringLiteral') {
-                    (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, eventName, value.path.original), false, {
-                      id: 'ember-component.send-action',
-                      until: '4.0.0',
-                      url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
-                      for: 'ember-source',
-                      since: {
-                        enabled: '3.4.0'
-                      }
-                    }));
-                  }
-                }
-              }
-            });
-          },
-          MustacheStatement: function MustacheStatement(node) {
-            if (!(0, _utils.isPath)(node.path) || node.path.original !== 'input') {
-              return;
-            }
-
-            node.hash.pairs.forEach(function (pair) {
-              if (EVENTS.indexOf(pair.key) > -1 && pair.value.type === 'StringLiteral') {
-                (true && !(false) && (0, _debug.deprecate)(deprecationMessage(node, pair.key, pair.value.original), false, {
-                  id: 'ember-component.send-action',
-                  until: '4.0.0',
-                  url: 'https://emberjs.com/deprecations/v3.x#toc_ember-component-send-action',
-                  for: 'ember-source',
-                  since: {
-                    enabled: '3.4.0'
-                  }
-                }));
-              }
-            });
-          }
-        }
-      };
-    }
-
-    return {
-      name: 'deprecate-send-action',
-      visitor: {}
-    };
-  }
-});
-define("ember-template-compiler/lib/plugins/index", ["exports", "ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modifiers", "ember-template-compiler/lib/plugins/assert-against-named-blocks", "ember-template-compiler/lib/plugins/assert-input-helper-without-block", "ember-template-compiler/lib/plugins/assert-reserved-named-arguments", "ember-template-compiler/lib/plugins/assert-splattribute-expression", "ember-template-compiler/lib/plugins/deprecate-send-action", "ember-template-compiler/lib/plugins/transform-action-syntax", "ember-template-compiler/lib/plugins/transform-attrs-into-args", "ember-template-compiler/lib/plugins/transform-each-in-into-each", "ember-template-compiler/lib/plugins/transform-each-track-array", "ember-template-compiler/lib/plugins/transform-has-block-syntax", "ember-template-compiler/lib/plugins/transform-in-element", "ember-template-compiler/lib/plugins/transform-link-to", "ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", "ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", "ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet", "@ember/deprecated-features"], function (_exports, _assertAgainstDynamicHelpersModifiers, _assertAgainstNamedBlocks, _assertInputHelperWithoutBlock, _assertReservedNamedArguments, _assertSplattributeExpression, _deprecateSendAction, _transformActionSyntax, _transformAttrsIntoArgs, _transformEachInIntoEach, _transformEachTrackArray, _transformHasBlockSyntax, _transformInElement, _transformLinkTo, _transformOldClassBindingSyntax, _transformQuotedBindingsIntoJustBindings, _transformWrapMountAndOutlet, _deprecatedFeatures) {
+define("ember-template-compiler/lib/plugins/index", ["exports", "ember-template-compiler/lib/plugins/assert-against-attrs", "ember-template-compiler/lib/plugins/assert-against-dynamic-helpers-modifiers", "ember-template-compiler/lib/plugins/assert-against-named-blocks", "ember-template-compiler/lib/plugins/assert-against-named-outlets", "ember-template-compiler/lib/plugins/assert-input-helper-without-block", "ember-template-compiler/lib/plugins/assert-reserved-named-arguments", "ember-template-compiler/lib/plugins/assert-splattribute-expression", "ember-template-compiler/lib/plugins/transform-action-syntax", "ember-template-compiler/lib/plugins/transform-each-in-into-each", "ember-template-compiler/lib/plugins/transform-each-track-array", "ember-template-compiler/lib/plugins/transform-in-element", "ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", "ember-template-compiler/lib/plugins/transform-resolutions", "ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet"], function (_exports, _assertAgainstAttrs, _assertAgainstDynamicHelpersModifiers, _assertAgainstNamedBlocks, _assertAgainstNamedOutlets, _assertInputHelperWithoutBlock, _assertReservedNamedArguments, _assertSplattributeExpression, _transformActionSyntax, _transformEachInIntoEach, _transformEachTrackArray, _transformInElement, _transformQuotedBindingsIntoJustBindings, _transformResolutions, _transformWrapMountAndOutlet) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -19162,15 +17566,15 @@ define("ember-template-compiler/lib/plugins/index", ["exports", "ember-template-
   });
   _exports.STRICT_MODE_TRANSFORMS = _exports.RESOLUTION_MODE_TRANSFORMS = void 0;
   // order of plugins is important
-  var RESOLUTION_MODE_TRANSFORMS = Object.freeze([_transformOldClassBindingSyntax.default, _transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformAttrsIntoArgs.default, _transformEachInIntoEach.default, _transformHasBlockSyntax.default, _transformLinkTo.default, _assertInputHelperWithoutBlock.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _transformWrapMountAndOutlet.default, _deprecatedFeatures.SEND_ACTION ? _deprecateSendAction.default : null, !true
+  var RESOLUTION_MODE_TRANSFORMS = Object.freeze([_transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _assertAgainstAttrs.default, _transformEachInIntoEach.default, _assertInputHelperWithoutBlock.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _assertAgainstNamedOutlets.default, _transformWrapMountAndOutlet.default, !true
   /* EMBER_NAMED_BLOCKS */
-  ? _assertAgainstNamedBlocks.default : null, !false
+  ? _assertAgainstNamedBlocks.default : null, true
   /* EMBER_DYNAMIC_HELPERS_AND_MODIFIERS */
-  ? _assertAgainstDynamicHelpersModifiers.default : null].filter(notNull));
+  ? _transformResolutions.default : _assertAgainstDynamicHelpersModifiers.default].filter(notNull));
   _exports.RESOLUTION_MODE_TRANSFORMS = RESOLUTION_MODE_TRANSFORMS;
-  var STRICT_MODE_TRANSFORMS = Object.freeze([_transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformEachInIntoEach.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _transformWrapMountAndOutlet.default, _deprecatedFeatures.SEND_ACTION ? _deprecateSendAction.default : null, !true
+  var STRICT_MODE_TRANSFORMS = Object.freeze([_transformQuotedBindingsIntoJustBindings.default, _assertReservedNamedArguments.default, _transformActionSyntax.default, _transformEachInIntoEach.default, _transformInElement.default, _assertSplattributeExpression.default, _transformEachTrackArray.default, _assertAgainstNamedOutlets.default, _transformWrapMountAndOutlet.default, !true
   /* EMBER_NAMED_BLOCKS */
-  ? _assertAgainstNamedBlocks.default : null, !false
+  ? _assertAgainstNamedBlocks.default : null, !true
   /* EMBER_DYNAMIC_HELPERS_AND_MODIFIERS */
   ? _assertAgainstDynamicHelpersModifiers.default : null].filter(notNull));
   _exports.STRICT_MODE_TRANSFORMS = STRICT_MODE_TRANSFORMS;
@@ -19211,27 +17615,33 @@ define("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports"
     @private
     @class TransformActionSyntax
   */
-  function transformActionSyntax(_ref) {
-    var syntax = _ref.syntax;
-    var b = syntax.builders;
+  function transformActionSyntax({
+    syntax
+  }) {
+    var {
+      builders: b
+    } = syntax;
     return {
       name: 'transform-action-syntax',
       visitor: {
-        ElementModifierStatement: function ElementModifierStatement(node) {
+        ElementModifierStatement(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         },
-        MustacheStatement: function MustacheStatement(node) {
+
+        MustacheStatement(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         },
-        SubExpression: function SubExpression(node) {
+
+        SubExpression(node) {
           if (isAction(node)) {
             insertThisAsFirstParam(node, b);
           }
         }
+
       }
     };
   }
@@ -19242,83 +17652,6 @@ define("ember-template-compiler/lib/plugins/transform-action-syntax", ["exports"
 
   function insertThisAsFirstParam(node, builders) {
     node.params.unshift(builders.path('this'));
-  }
-});
-define("ember-template-compiler/lib/plugins/transform-attrs-into-args", ["exports"], function (_exports) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = transformAttrsIntoArgs;
-
-  /**
-   @module ember
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{attrs.foo.bar}}
-    ```
-  
-    to
-  
-    ```handlebars
-   {{@foo.bar}}
-    ```
-  
-    as well as `{{#if attrs.foo}}`, `{{deeply (nested attrs.foobar.baz)}}`,
-    `{{this.attrs.foo}}` etc
-  
-    @private
-    @class TransformAttrsToProps
-  */
-  function transformAttrsIntoArgs(env) {
-    var b = env.syntax.builders;
-    var stack = [[]];
-    return {
-      name: 'transform-attrs-into-args',
-      visitor: {
-        Program: {
-          enter: function enter(node) {
-            var parent = stack[stack.length - 1];
-            stack.push(parent.concat(node.blockParams));
-          },
-          exit: function exit() {
-            stack.pop();
-          }
-        },
-        PathExpression: function PathExpression(node) {
-          if (isAttrs(node, stack[stack.length - 1])) {
-            var path = b.path(node.original.substr(6));
-            path.original = "@" + path.original;
-            path.data = true;
-            return path;
-          }
-        }
-      }
-    };
-  }
-
-  function isAttrs(node, symbols) {
-    var name = node.parts[0];
-
-    if (symbols.indexOf(name) !== -1) {
-      return false;
-    }
-
-    if (name === 'attrs') {
-      if (node.this === true) {
-        node.parts.shift();
-        node.original = node.original.slice(5);
-      }
-
-      return true;
-    }
-
-    return false;
   }
 });
 define("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
@@ -19350,11 +17683,13 @@ define("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["expo
     @class TransformHasBlockSyntax
   */
   function transformEachInIntoEach(env) {
-    var b = env.syntax.builders;
+    var {
+      builders: b
+    } = env.syntax;
     return {
       name: 'transform-each-in-into-each',
       visitor: {
-        BlockStatement: function BlockStatement(node) {
+        BlockStatement(node) {
           if ((0, _utils.isPath)(node.path) && node.path.original === 'each-in') {
             node.params[0] = b.sexpr(b.path('-each-in'), [node.params[0]]);
             var blockParams = node.program.blockParams;
@@ -19367,13 +17702,14 @@ define("ember-template-compiler/lib/plugins/transform-each-in-into-each", ["expo
             } else {
               var key = blockParams.shift();
               var value = blockParams.shift();
-              blockParams = [value, key].concat(blockParams);
+              blockParams = [value, key, ...blockParams];
             }
 
             node.program.blockParams = blockParams;
             return b.block(b.path('each'), node.params, node.hash, node.program, node.inverse, node.loc);
           }
         }
+
       }
     };
   }
@@ -19407,11 +17743,13 @@ define("ember-template-compiler/lib/plugins/transform-each-track-array", ["expor
     @class TransformHasBlockSyntax
   */
   function transformEachTrackArray(env) {
-    var b = env.syntax.builders;
+    var {
+      builders: b
+    } = env.syntax;
     return {
       name: 'transform-each-track-array',
       visitor: {
-        BlockStatement: function BlockStatement(node) {
+        BlockStatement(node) {
           if ((0, _utils.isPath)(node.path) && node.path.original === 'each') {
             var firstParam = node.params[0];
 
@@ -19423,68 +17761,12 @@ define("ember-template-compiler/lib/plugins/transform-each-track-array", ["expor
             return b.block(b.path('each'), node.params, node.hash, node.program, node.inverse, node.loc);
           }
         }
+
       }
     };
   }
 });
-define("ember-template-compiler/lib/plugins/transform-has-block-syntax", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = transformHasBlockSyntax;
-
-  /**
-   @module ember
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{hasBlock}}
-    ```
-  
-    with
-  
-    ```handlebars
-   {{has-block}}
-    ```
-  
-    @private
-    @class TransformHasBlockSyntax
-  */
-  var TRANSFORMATIONS = {
-    hasBlock: 'has-block',
-    hasBlockParams: 'has-block-params'
-  };
-
-  function transformHasBlockSyntax(env) {
-    var b = env.syntax.builders;
-    return {
-      name: 'transform-has-block-syntax',
-      visitor: {
-        PathExpression: function PathExpression(node) {
-          if (TRANSFORMATIONS[node.original]) {
-            return b.sexpr(b.path(TRANSFORMATIONS[node.original]));
-          }
-        },
-        MustacheStatement: function MustacheStatement(node) {
-          if ((0, _utils.isPath)(node.path) && TRANSFORMATIONS[node.path.original]) {
-            return b.mustache(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash, undefined, node.loc);
-          }
-        },
-        SubExpression: function SubExpression(node) {
-          if ((0, _utils.isPath)(node.path) && TRANSFORMATIONS[node.path.original]) {
-            return b.sexpr(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash);
-          }
-        }
-      }
-    };
-  }
-});
-define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
+define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "@ember/debug", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _utils) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -19497,26 +17779,7 @@ define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "
   */
 
   /**
-    A Glimmer2 AST transformation that handles the public `{{in-element}}` as per RFC287, and deprecates but still
-    continues support for the private `{{-in-element}}`.
-  
-    Transforms:
-  
-    ```handlebars
-    {{#-in-element someElement}}
-      {{modal-display text=text}}
-    {{/-in-element}}
-    ```
-  
-    into:
-  
-    ```handlebars
-    {{#in-element someElement}}
-      {{modal-display text=text}}
-    {{/in-element}}
-    ```
-  
-    And issues a deprecation message.
+    A Glimmer2 AST transformation that handles the public `{{in-element}}` as per RFC287.
   
     Issues a build time assertion for:
   
@@ -19530,12 +17793,13 @@ define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "
     @class TransformInElement
   */
   function transformInElement(env) {
-    var moduleName = env.meta.moduleName;
-    var b = env.syntax.builders;
+    var {
+      builders: b
+    } = env.syntax;
     return {
       name: 'transform-in-element',
       visitor: {
-        BlockStatement: function BlockStatement(node) {
+        BlockStatement(node) {
           if (!(0, _utils.isPath)(node.path)) return;
 
           if (node.path.original === 'in-element') {
@@ -19547,277 +17811,16 @@ define("ember-template-compiler/lib/plugins/transform-in-element", ["exports", "
               node.params.unshift(subExpr);
             }
 
-            node.hash.pairs.forEach(function (pair) {
+            node.hash.pairs.forEach(pair => {
               if (pair.key === 'insertBefore') {
                 (true && !(pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral') && (0, _debug.assert)("Can only pass null to insertBefore in in-element, received: " + JSON.stringify(pair.value), pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral'));
               }
             });
-          } else if (node.path.original === '-in-element') {
-            var sourceInformation = (0, _calculateLocationDisplay.default)(moduleName, node.loc);
-            (true && !(false) && (0, _debug.deprecate)("The use of the private `{{-in-element}}` is deprecated, please refactor to the public `{{in-element}}`. " + sourceInformation, false, {
-              id: 'glimmer.private-in-element',
-              until: '3.25.0',
-              for: 'ember-source',
-              since: {
-                enabled: '3.20.0'
-              }
-            }));
-            node.path.original = 'in-element';
-            node.path.parts = ['in-element']; // replicate special hash arguments added here:
-            // https://github.com/glimmerjs/glimmer-vm/blob/ba9b37d44b85fa1385eeeea71910ff5798198c8e/packages/%40glimmer/syntax/lib/parser/handlebars-node-visitors.ts#L340-L363
-
-            var needsInsertBefore = true;
-            var hash = node.hash;
-            hash.pairs.forEach(function (pair) {
-              if (pair.key === 'insertBefore') {
-                (true && !(pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral') && (0, _debug.assert)("Can only pass a null or undefined literals to insertBefore in -in-element, received: " + JSON.stringify(pair.value), pair.value.type === 'NullLiteral' || pair.value.type === 'UndefinedLiteral'));
-                needsInsertBefore = false;
-              }
-            }); // Maintain compatibility with previous -in-element behavior (defaults to append, not clear)
-
-            if (needsInsertBefore) {
-              var nullLiteral = b.literal('NullLiteral', null);
-              var nextSibling = b.pair('insertBefore', nullLiteral);
-              hash.pairs.push(nextSibling);
-            }
           }
         }
+
       }
     };
-  }
-});
-define("ember-template-compiler/lib/plugins/transform-link-to", ["exports", "@ember/debug", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _calculateLocationDisplay, _utils) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = transformLinkTo;
-
-  function isInlineLinkTo(node) {
-    return (0, _utils.isPath)(node.path) && node.path.original === 'link-to';
-  }
-
-  function isBlockLinkTo(node) {
-    return (0, _utils.isPath)(node.path) && node.path.original === 'link-to';
-  }
-
-  function isQueryParams(node) {
-    return (0, _utils.isSubExpression)(node) && (0, _utils.isPath)(node.path) && node.path.original === 'query-params';
-  }
-
-  function transformInlineLinkToIntoBlockForm(env, node) {
-    var b = env.syntax.builders;
-    return b.block('link-to', node.params.slice(1), node.hash, b.blockItself([buildStatement(b, node.params[0], node.escaped, node.loc)], undefined, false, node.loc), null, node.loc);
-  }
-
-  function transformPositionalLinkToIntoNamedArguments(env, node) {
-    var b = env.syntax.builders;
-    var moduleName = env.meta.moduleName;
-    var params = node.params,
-        pairs = node.hash.pairs;
-    var keys = pairs.map(function (pair) {
-      return pair.key;
-    });
-
-    if (params.length === 0) {
-      (true && !(keys.indexOf('params') !== -1 || keys.indexOf('route') !== -1 || keys.indexOf('model') !== -1 || keys.indexOf('models') !== -1 || keys.indexOf('query') !== -1) && (0, _debug.assert)("You must provide one or more parameters to the `{{link-to}}` component. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('params') !== -1 || keys.indexOf('route') !== -1 || keys.indexOf('model') !== -1 || keys.indexOf('models') !== -1 || keys.indexOf('query') !== -1));
-      return node;
-    } else {
-      (true && !(keys.indexOf('params') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `params` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('params') === -1));
-      (true && !(keys.indexOf('route') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `route` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('route') === -1));
-      (true && !(keys.indexOf('model') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `model` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('model') === -1));
-      (true && !(keys.indexOf('models') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `models` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('models') === -1));
-      (true && !(keys.indexOf('query') === -1) && (0, _debug.assert)("You cannot pass positional parameters and the `query` argument to the `{{link-to}}` component at the same time. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), keys.indexOf('query') === -1));
-    }
-
-    (true && !(params.length > 0) && (0, _debug.assert)("You must provide one or more parameters to the `{{link-to}}` component. " + (0, _calculateLocationDisplay.default)(moduleName, node.loc), params.length > 0)); // 1. The last argument is possibly the `query` object.
-
-    var query = params[params.length - 1];
-
-    if (query && isQueryParams(query)) {
-      params.pop();
-      (true && !(query.params.length === 0) && (0, _debug.assert)("The `(query-params ...)` helper does not take positional arguments. " + (0, _calculateLocationDisplay.default)(moduleName, query.loc), query.params.length === 0));
-      pairs.push(b.pair('query', b.sexpr(b.path('-hash', query.path.loc), [], query.hash, query.loc), query.loc));
-    } // 2. If there is a `route`, it is now at index 0.
-
-
-    var route = params.shift();
-
-    if (route) {
-      pairs.push(b.pair('route', route, route.loc));
-    } // 3. Any remaining indices (if any) are `models`.
-
-
-    if (params.length === 1) {
-      pairs.push(b.pair('model', params[0], params[0].loc));
-    } else if (params.length > 1) {
-      pairs.push(b.pair('models', b.sexpr(b.path('array', node.loc), params, undefined, node.loc), node.loc));
-    }
-
-    return b.block(node.path, null, b.hash(pairs, node.hash.loc), node.program, node.inverse, node.loc);
-  }
-
-  function buildStatement(b, content, escaped, loc) {
-    switch (content.type) {
-      case 'PathExpression':
-        return b.mustache(content, undefined, undefined, !escaped, loc);
-
-      case 'SubExpression':
-        return b.mustache(content.path, content.params, content.hash, !escaped, loc);
-      // The default case handles literals.
-
-      default:
-        return b.text("" + content.value, loc);
-    }
-  }
-
-  function transformLinkTo(env) {
-    return {
-      name: 'transform-link-to',
-      visitor: {
-        MustacheStatement: function MustacheStatement(node) {
-          if (isInlineLinkTo(node)) {
-            var block = transformInlineLinkToIntoBlockForm(env, node);
-            return transformPositionalLinkToIntoNamedArguments(env, block);
-          }
-        },
-        BlockStatement: function BlockStatement(node) {
-          if (isBlockLinkTo(node)) {
-            return transformPositionalLinkToIntoNamedArguments(env, node);
-          }
-        }
-      }
-    };
-  }
-});
-define("ember-template-compiler/lib/plugins/transform-old-class-binding-syntax", ["exports"], function (_exports) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.default = transformOldClassBindingSyntax;
-
-  function transformOldClassBindingSyntax(env) {
-    var b = env.syntax.builders;
-    return {
-      name: 'transform-old-class-binding-syntax',
-      visitor: {
-        MustacheStatement: function MustacheStatement(node) {
-          process(b, node);
-        },
-        BlockStatement: function BlockStatement(node) {
-          process(b, node);
-        }
-      }
-    };
-  }
-
-  function process(b, node) {
-    var allOfTheMicrosyntaxes = [];
-    var allOfTheMicrosyntaxIndexes = [];
-    var classPair;
-    each(node.hash.pairs, function (pair, index) {
-      var key = pair.key;
-
-      if (key === 'classBinding' || key === 'classNameBindings') {
-        allOfTheMicrosyntaxIndexes.push(index);
-        allOfTheMicrosyntaxes.push(pair);
-      } else if (key === 'class') {
-        classPair = pair;
-      }
-    });
-
-    if (allOfTheMicrosyntaxes.length === 0) {
-      return;
-    }
-
-    var classValue = [];
-
-    if (classPair) {
-      classValue.push(classPair.value);
-      classValue.push(b.string(' '));
-    } else {
-      classPair = b.pair('class', null);
-      node.hash.pairs.push(classPair);
-    }
-
-    each(allOfTheMicrosyntaxIndexes, function (index) {
-      node.hash.pairs.splice(index, 1);
-    });
-    each(allOfTheMicrosyntaxes, function (_ref) {
-      var value = _ref.value;
-      var sexprs = []; // TODO: add helpful deprecation when both `classNames` and `classNameBindings` can
-      // be removed.
-
-      if (value.type === 'StringLiteral') {
-        var microsyntax = parseMicrosyntax(value.original);
-        buildSexprs(microsyntax, sexprs, b);
-        classValue.push.apply(classValue, sexprs);
-      }
-    });
-    var hash = b.hash();
-    classPair.value = b.sexpr(b.path('concat'), classValue, hash);
-  }
-
-  function buildSexprs(microsyntax, sexprs, b) {
-    for (var i = 0; i < microsyntax.length; i++) {
-      var _microsyntax$i = microsyntax[i],
-          propName = _microsyntax$i[0],
-          activeClass = _microsyntax$i[1],
-          inactiveClass = _microsyntax$i[2];
-      var sexpr = void 0; // :my-class-name microsyntax for static values
-
-      if (propName === '') {
-        sexpr = b.string(activeClass);
-      } else {
-        var params = [b.path(propName)];
-
-        if (activeClass || activeClass === '') {
-          params.push(b.string(activeClass));
-        } else {
-          var sexprParams = [b.string(propName), b.path(propName)];
-          var hash = b.hash();
-
-          if (activeClass !== undefined) {
-            hash.pairs.push(b.pair('activeClass', b.string(activeClass)));
-          }
-
-          if (inactiveClass !== undefined) {
-            hash.pairs.push(b.pair('inactiveClass', b.string(inactiveClass)));
-          }
-
-          params.push(b.sexpr(b.path('-normalize-class'), sexprParams, hash));
-        }
-
-        if (inactiveClass || inactiveClass === '') {
-          params.push(b.string(inactiveClass));
-        }
-
-        sexpr = b.sexpr(b.path('if'), params);
-      }
-
-      sexprs.push(sexpr);
-      sexprs.push(b.string(' '));
-    }
-  }
-
-  function each(list, callback) {
-    for (var i = 0; i < list.length; i++) {
-      callback(list[i], i);
-    }
-  }
-
-  function parseMicrosyntax(string) {
-    var segments = string.split(' ');
-    var ret = [];
-
-    for (var i = 0; i < segments.length; i++) {
-      ret[i] = segments[i].split(':');
-    }
-
-    return ret;
   }
 });
 define("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-bindings", ["exports"], function (_exports) {
@@ -19834,7 +17837,7 @@ define("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
     return {
       name: 'transform-quoted-bindings-into-just-bindings',
       visitor: {
-        ElementNode: function ElementNode(node) {
+        ElementNode(node) {
           var styleAttr = getStyleAttr(node);
 
           if (!validStyleAttr(styleAttr)) {
@@ -19843,6 +17846,7 @@ define("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
 
           styleAttr.value = styleAttr.value.parts[0];
         }
+
       }
     };
   }
@@ -19872,6 +17876,156 @@ define("ember-template-compiler/lib/plugins/transform-quoted-bindings-into-just-
     }
 
     return undefined;
+  }
+});
+define("ember-template-compiler/lib/plugins/transform-resolutions", ["exports", "@ember/debug", "@glimmer/syntax", "ember-template-compiler/lib/system/calculate-location-display", "ember-template-compiler/lib/plugins/utils"], function (_exports, _debug, _syntax, _calculateLocationDisplay, _utils) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = transformResolutions;
+
+  /**
+   @module ember
+  */
+
+  /**
+    A Glimmer2 AST transformation that replaces all instances of
+  
+    ```handlebars
+    {{helper "..." ...}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{helper (-resolve "helper:...") ...}}
+    ```
+  
+    and
+  
+    ```handlebars
+    {{helper ... ...}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{helper (-disallow-dynamic-resolution ...) ...}}
+    ```
+  
+    and
+  
+    ```handlebars
+    {{modifier "..." ...}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{modifier (-resolve "modifier:...") ...}}
+    ```
+    and
+  
+    ```handlebars
+    {{modifier ... ...}}
+    ```
+  
+    with
+  
+    ```handlebars
+    {{modifier (-disallow-dynamic-resolution ...) ...}}
+    ```
+  
+    @private
+    @class TransformResolutions
+  */
+  var TARGETS = Object.freeze(['helper', 'modifier']);
+
+  function transformResolutions(env) {
+    var _a;
+
+    var {
+      builders: b
+    } = env.syntax;
+    var moduleName = (_a = env.meta) === null || _a === void 0 ? void 0 : _a.moduleName;
+    var {
+      hasLocal,
+      node: tracker
+    } = (0, _utils.trackLocals)();
+    var seen;
+    return {
+      name: 'transform-resolutions',
+      visitor: {
+        Template: {
+          enter() {
+            seen = new Set();
+          },
+
+          exit() {
+            seen = undefined;
+          }
+
+        },
+        Block: tracker,
+        ElementNode: {
+          keys: {
+            children: tracker
+          }
+        },
+
+        MustacheStatement(node) {
+          (true && !(seen) && (0, _debug.assert)('[BUG] seen set should be available', seen));
+
+          if (seen.has(node)) {
+            return;
+          }
+
+          if ((0, _utils.isPath)(node.path) && !isLocalVariable(node.path, hasLocal) && TARGETS.indexOf(node.path.original) !== -1) {
+            var result = b.mustache(node.path, transformParams(b, node.params, node.path.original, moduleName, node.loc), node.hash, node.trusting, node.loc, node.strip); // Avoid double/infinite-processing
+
+            seen.add(result);
+            return result;
+          }
+        },
+
+        SubExpression(node) {
+          (true && !(seen) && (0, _debug.assert)('[BUG] seen set should be available', seen));
+
+          if (seen.has(node)) {
+            return;
+          }
+
+          if ((0, _utils.isPath)(node.path) && !isLocalVariable(node.path, hasLocal) && TARGETS.indexOf(node.path.original) !== -1) {
+            var result = b.sexpr(node.path, transformParams(b, node.params, node.path.original, moduleName, node.loc), node.hash, node.loc); // Avoid double/infinite-processing
+
+            seen.add(result);
+            return result;
+          }
+        }
+
+      }
+    };
+  }
+
+  function isLocalVariable(node, hasLocal) {
+    return !node.this && node.parts.length === 1 && hasLocal(node.parts[0]);
+  }
+
+  function transformParams(b, params, type, moduleName, loc) {
+    var [first, ...rest] = params;
+    (true && !(first) && (0, _debug.assert)("The " + type + " keyword requires at least one positional arguments " + (0, _calculateLocationDisplay.default)(moduleName, loc), first));
+
+    if ((0, _utils.isStringLiteral)(first)) {
+      return [b.sexpr(b.path('-resolve', first.loc), [b.string(type + ":" + first.value)], undefined, first.loc), ...rest];
+    } else if (true
+    /* DEBUG */
+    ) {
+      return [b.sexpr(b.path('-disallow-dynamic-resolution', first.loc), [first], b.hash([b.pair('type', b.string(type), first.loc), b.pair('loc', b.string((0, _calculateLocationDisplay.default)(moduleName, loc)), first.loc), b.pair('original', b.string((0, _syntax.print)(first)))]), first.loc), ...rest];
+    } else {
+      return params;
+    }
   }
 });
 define("ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet", ["exports", "ember-template-compiler/lib/plugins/utils"], function (_exports, _utils) {
@@ -19915,28 +18069,31 @@ define("ember-template-compiler/lib/plugins/transform-wrap-mount-and-outlet", ["
     @class TransformHasBlockSyntax
   */
   function transformWrapMountAndOutlet(env) {
-    var b = env.syntax.builders;
-
-    var _trackLocals = (0, _utils.trackLocals)(),
-        hasLocal = _trackLocals.hasLocal,
-        node = _trackLocals.node;
-
+    var {
+      builders: b
+    } = env.syntax;
+    var {
+      hasLocal,
+      node
+    } = (0, _utils.trackLocals)();
     return {
       name: 'transform-wrap-mount-and-outlet',
       visitor: {
         Program: node,
         ElementNode: node,
-        MustacheStatement: function MustacheStatement(node) {
+
+        MustacheStatement(node) {
           if ((0, _utils.isPath)(node.path) && (node.path.original === 'mount' || node.path.original === 'outlet') && !hasLocal(node.path.original)) {
             var subexpression = b.sexpr(b.path("-" + node.path.original), node.params, node.hash, node.loc);
             return b.mustache(b.path('component'), [subexpression], b.hash(), undefined, node.loc);
           }
         }
+
       }
     };
   }
 });
-define("ember-template-compiler/lib/plugins/utils", ["exports", "ember-babel"], function (_exports, _emberBabel) {
+define("ember-template-compiler/lib/plugins/utils", ["exports"], function (_exports) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -19944,6 +18101,7 @@ define("ember-template-compiler/lib/plugins/utils", ["exports", "ember-babel"], 
   });
   _exports.isPath = isPath;
   _exports.isSubExpression = isSubExpression;
+  _exports.isStringLiteral = isStringLiteral;
   _exports.trackLocals = trackLocals;
 
   function isPath(node) {
@@ -19954,37 +18112,36 @@ define("ember-template-compiler/lib/plugins/utils", ["exports", "ember-babel"], 
     return node.type === 'SubExpression';
   }
 
+  function isStringLiteral(node) {
+    return node.type === 'StringLiteral';
+  }
+
   function trackLocals() {
     var locals = new Map();
     var node = {
-      enter: function enter(node) {
-        for (var _iterator = (0, _emberBabel.createForOfIteratorHelperLoose)(node.blockParams), _step; !(_step = _iterator()).done;) {
-          var _param = _step.value;
-
-          var _value = locals.get(_param) || 0;
-
-          locals.set(_param, _value + 1);
+      enter(node) {
+        for (var param of node.blockParams) {
+          var value = locals.get(param) || 0;
+          locals.set(param, value + 1);
         }
       },
-      exit: function exit(node) {
-        for (var _iterator2 = (0, _emberBabel.createForOfIteratorHelperLoose)(node.blockParams), _step2; !(_step2 = _iterator2()).done;) {
-          var _param2 = _step2.value;
 
-          var _value2 = locals.get(_param2) - 1;
+      exit(node) {
+        for (var param of node.blockParams) {
+          var value = locals.get(param) - 1;
 
-          if (_value2 === 0) {
-            locals.delete(_param2);
+          if (value === 0) {
+            locals.delete(param);
           } else {
-            locals.set(_param2, _value2);
+            locals.set(param, value);
           }
         }
       }
+
     };
     return {
-      hasLocal: function hasLocal(key) {
-        return locals.has(key);
-      },
-      node: node
+      hasLocal: key => locals.has(key),
+      node
     };
   }
 });
@@ -20013,11 +18170,11 @@ define("ember-template-compiler/lib/system/bootstrap", ["exports", "ember-templa
     @static
     @param ctx
   */
-  function bootstrap(_ref) {
-    var context = _ref.context,
-        hasTemplate = _ref.hasTemplate,
-        setTemplate = _ref.setTemplate;
-
+  function bootstrap({
+    context,
+    hasTemplate,
+    setTemplate
+  }) {
     if (!context) {
       context = document;
     }
@@ -20066,12 +18223,13 @@ define("ember-template-compiler/lib/system/calculate-location-display", ["export
     }
 
     if (loc) {
-      var _ref = loc.start || {
+      var {
+        column,
+        line
+      } = loc.start || {
         line: undefined,
         column: undefined
-      },
-          column = _ref.column,
-          line = _ref.line;
+      };
 
       if (line !== undefined && column !== undefined) {
         if (moduleName) {
@@ -20090,37 +18248,37 @@ define("ember-template-compiler/lib/system/calculate-location-display", ["export
     return moduleInfo;
   }
 });
-define("ember-template-compiler/lib/system/compile-options", ["exports", "@ember/debug", "@ember/polyfills", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/dasherize-component-name"], function (_exports, _debug, _polyfills, _index, _dasherizeComponentName) {
+define("ember-template-compiler/lib/system/compile-options", ["exports", "@ember/debug", "ember-template-compiler/lib/plugins/index", "ember-template-compiler/lib/system/dasherize-component-name"], function (_exports, _debug, _index, _dasherizeComponentName) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
+  _exports.buildCompileOptions = buildCompileOptions;
+  _exports.transformsFor = transformsFor;
   _exports.default = compileOptions;
-  _exports.registerPlugin = registerPlugin;
-  _exports.unregisterPlugin = unregisterPlugin;
   var USER_PLUGINS = [];
 
   function malformedComponentLookup(string) {
     return string.indexOf('::') === -1 && string.indexOf(':') > -1;
   }
 
-  function compileOptions(_options) {
-    if (_options === void 0) {
-      _options = {};
-    }
-
-    var options = (0, _polyfills.assign)({
+  function buildCompileOptions(_options) {
+    var moduleName = _options.moduleName;
+    var options = Object.assign({
       meta: {},
       isProduction: false,
       plugins: {
         ast: []
       }
     }, _options, {
-      customizeComponentName: function customizeComponentName(tagname) {
-        (true && !(!malformedComponentLookup(tagname)) && (0, _debug.assert)("You tried to invoke a component named <" + tagname + " /> in \"" + _options.moduleName + "\", but that is not a valid name for a component. Did you mean to use the \"::\" syntax for nested components?", !malformedComponentLookup(tagname)));
+      moduleName,
+
+      customizeComponentName(tagname) {
+        (true && !(!malformedComponentLookup(tagname)) && (0, _debug.assert)("You tried to invoke a component named <" + tagname + " /> in \"" + (moduleName !== null && moduleName !== void 0 ? moduleName : '[NO MODULE]') + "\", but that is not a valid name for a component. Did you mean to use the \"::\" syntax for nested components?", !malformedComponentLookup(tagname)));
         return _dasherizeComponentName.default.get(tagname);
       }
+
     });
 
     if (!true
@@ -20128,90 +18286,53 @@ define("ember-template-compiler/lib/system/compile-options", ["exports", "@ember
     ) {
         options.strictMode = false;
         options.locals = undefined;
-      } // move `moduleName` into `meta` property
+      }
+
+    if ('locals' in options && !options.locals) {
+      // Glimmer's precompile options declare `locals` like:
+      //    locals?: string[]
+      // but many in-use versions of babel-plugin-htmlbars-inline-precompile will
+      // set locals to `null`. This used to work but only because glimmer was
+      // ignoring locals for non-strict templates, and now it supports that case.
+      delete options.locals;
+    } // move `moduleName` into `meta` property
 
 
     if (options.moduleName) {
       var meta = options.meta;
+      (true && !(meta) && (0, _debug.assert)('has meta', meta)); // We just set it
+
       meta.moduleName = options.moduleName;
     }
-
-    var builtInPlugins = options.strictMode ? _index.STRICT_MODE_TRANSFORMS : _index.RESOLUTION_MODE_TRANSFORMS;
-
-    if (!_options.plugins) {
-      options.plugins = {
-        ast: [].concat(USER_PLUGINS, builtInPlugins)
-      };
-    } else {
-      var potententialPugins = [].concat(USER_PLUGINS, builtInPlugins);
-      var providedPlugins = options.plugins.ast.map(function (plugin) {
-        return wrapLegacyPluginIfNeeded(plugin);
-      });
-      var pluginsToAdd = potententialPugins.filter(function (plugin) {
-        return options.plugins.ast.indexOf(plugin) === -1;
-      });
-      options.plugins.ast = providedPlugins.concat(pluginsToAdd);
-    } // TODO: Fix the types here so that this conversion isn't necessary
-
 
     return options;
   }
 
-  function wrapLegacyPluginIfNeeded(_plugin) {
-    var plugin = _plugin;
+  function transformsFor(options) {
+    return true
+    /* EMBER_STRICT_MODE */
+    && options.strictMode ? _index.STRICT_MODE_TRANSFORMS : _index.RESOLUTION_MODE_TRANSFORMS;
+  }
 
-    if (_plugin.prototype && _plugin.prototype.transform) {
-      var pluginFunc = function pluginFunc(env) {
-        var pluginInstantiated = false;
-        return {
-          name: _plugin.constructor && _plugin.constructor.name,
-          visitor: {
-            Program: function Program(node) {
-              if (!pluginInstantiated) {
-                pluginInstantiated = true;
+  function compileOptions(_options = {}) {
+    var options = buildCompileOptions(_options);
+    var builtInPlugins = transformsFor(options);
 
-                var _plugin2 = new _plugin(env);
-
-                _plugin2.syntax = env.syntax;
-                return _plugin2.transform(node);
-              }
-            }
-          }
-        };
+    if (!_options.plugins) {
+      options.plugins = {
+        ast: [...USER_PLUGINS, ...builtInPlugins]
       };
-
-      pluginFunc.__raw = _plugin;
-      plugin = pluginFunc;
+    } else {
+      var potententialPugins = [...USER_PLUGINS, ...builtInPlugins];
+      (true && !(options.plugins) && (0, _debug.assert)('expected plugins', options.plugins));
+      var pluginsToAdd = potententialPugins.filter(plugin => {
+        (true && !(options.plugins) && (0, _debug.assert)('expected plugins', options.plugins));
+        return options.plugins.ast.indexOf(plugin) === -1;
+      });
+      options.plugins.ast = options.plugins.ast.concat(pluginsToAdd);
     }
 
-    return plugin;
-  }
-
-  function registerPlugin(type, _plugin) {
-    if (type !== 'ast') {
-      throw new Error("Attempting to register " + _plugin + " as \"" + type + "\" which is not a valid Glimmer plugin type.");
-    }
-
-    for (var i = 0; i < USER_PLUGINS.length; i++) {
-      var PLUGIN = USER_PLUGINS[i];
-
-      if (PLUGIN === _plugin || PLUGIN.__raw === _plugin) {
-        return;
-      }
-    }
-
-    var plugin = wrapLegacyPluginIfNeeded(_plugin);
-    USER_PLUGINS = [plugin].concat(USER_PLUGINS);
-  }
-
-  function unregisterPlugin(type, PluginClass) {
-    if (type !== 'ast') {
-      throw new Error("Attempting to unregister " + PluginClass + " as \"" + type + "\" which is not a valid Glimmer plugin type.");
-    }
-
-    USER_PLUGINS = USER_PLUGINS.filter(function (plugin) {
-      return plugin !== PluginClass && plugin.__raw !== PluginClass;
-    });
+    return options;
   }
 });
 define("ember-template-compiler/lib/system/compile", ["exports", "require", "ember-template-compiler/lib/system/precompile"], function (_exports, _require, _precompile) {
@@ -20235,11 +18356,7 @@ define("ember-template-compiler/lib/system/compile", ["exports", "require", "emb
     @param {Object} options This is an options hash to augment the compiler options.
   */
 
-  function compile(templateString, options) {
-    if (options === void 0) {
-      options = {};
-    }
-
+  function compile(templateString, options = {}) {
     if (!template && (0, _require.has)('@ember/-internals/glimmer')) {
       // tslint:disable-next-line:no-require-imports
       template = (0, _require.default)("@ember/-internals/glimmer").template;
@@ -20271,19 +18388,17 @@ define("ember-template-compiler/lib/system/dasherize-component-name", ["exports"
   var SIMPLE_DASHERIZE_REGEXP = /[A-Z]|::/g;
   var ALPHA = /[A-Za-z0-9]/;
 
-  var _default = new _utils.Cache(1000, function (key) {
-    return key.replace(SIMPLE_DASHERIZE_REGEXP, function (char, index) {
-      if (char === '::') {
-        return '/';
-      }
+  var _default = new _utils.Cache(1000, key => key.replace(SIMPLE_DASHERIZE_REGEXP, (char, index) => {
+    if (char === '::') {
+      return '/';
+    }
 
-      if (index === 0 || !ALPHA.test(key[index - 1])) {
-        return char.toLowerCase();
-      }
+    if (index === 0 || !ALPHA.test(key[index - 1])) {
+      return char.toLowerCase();
+    }
 
-      return "-" + char.toLowerCase();
-    });
-  });
+    return "-" + char.toLowerCase();
+  }));
 
   _exports.default = _default;
 });
@@ -20297,20 +18412,26 @@ define("ember-template-compiler/lib/system/initializer", ["require", "ember-temp
     var emberGlimmer = (0, _require.default)("@ember/-internals/glimmer");
     var emberApp = (0, _require.default)("@ember/application");
     var Application = emberApp.default;
-    var hasTemplate = emberGlimmer.hasTemplate,
-        setTemplate = emberGlimmer.setTemplate;
-    var hasDOM = emberEnv.hasDOM;
+    var {
+      hasTemplate,
+      setTemplate
+    } = emberGlimmer;
+    var {
+      hasDOM
+    } = emberEnv;
     Application.initializer({
       name: 'domTemplates',
-      initialize: function initialize() {
+
+      initialize() {
         if (hasDOM) {
           (0, _bootstrap.default)({
             context: document,
-            hasTemplate: hasTemplate,
-            setTemplate: setTemplate
+            hasTemplate,
+            setTemplate
           });
         }
       }
+
     });
   }
 });
@@ -20336,11 +18457,7 @@ define("ember-template-compiler/lib/system/precompile", ["exports", "@glimmer/co
     @method precompile
     @param {String} templateString This is the string to be compiled by HTMLBars.
   */
-  function precompile(templateString, options) {
-    if (options === void 0) {
-      options = {};
-    }
-
+  function precompile(templateString, options = {}) {
     return (0, _compiler.precompile)(templateString, (0, _compileOptions.default)(options));
   }
 });
@@ -20351,32 +18468,8 @@ define("ember/version", ["exports"], function (_exports) {
     value: true
   });
   _exports.default = void 0;
-  var _default = "3.25.0";
+  var _default = "4.1.0";
   _exports.default = _default;
-});
-define("node-module/index", ["exports"], function (_exports) {
-  "use strict";
-
-  Object.defineProperty(_exports, "__esModule", {
-    value: true
-  });
-  _exports.require = _exports.module = _exports.IS_NODE = void 0;
-
-  /*global module */
-  var IS_NODE = typeof module === 'object' && typeof module.require === 'function';
-  _exports.IS_NODE = IS_NODE;
-  var exportModule;
-  _exports.module = exportModule;
-  var exportRequire;
-  _exports.require = exportRequire;
-
-  if (IS_NODE) {
-    _exports.module = exportModule = module;
-    _exports.require = exportRequire = module.require;
-  } else {
-    _exports.module = exportModule = null;
-    _exports.require = exportRequire = null;
-  }
 });
 define("simple-html-tokenizer", ["exports"], function (_exports) {
   "use strict";
@@ -21381,7 +19474,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     lrcorner: "⌟",
     lrhar: "⇋",
     lrhard: "⥭",
-    lrm: "\u200E",
+    lrm: "\u200e",
     lrtri: "⊿",
     lsaquo: "‹",
     lscr: "𝓁",
@@ -21501,7 +19594,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     nesim: "≂̸",
     NestedGreaterGreater: "≫",
     NestedLessLess: "≪",
-    NewLine: "\n",
+    NewLine: "\u000a",
     nexist: "∄",
     nexists: "∄",
     Nfr: "𝔑",
@@ -21982,7 +20075,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     risingdotseq: "≓",
     rlarr: "⇄",
     rlhar: "⇌",
-    rlm: "\u200F",
+    rlm: "\u200f",
     rmoustache: "⎱",
     rmoust: "⎱",
     rnmid: "⫮",
@@ -22066,7 +20159,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     shortparallel: "∥",
     ShortRightArrow: "→",
     ShortUpArrow: "↑",
-    shy: "\xAD",
+    shy: "\u00ad",
     Sigma: "Σ",
     sigma: "σ",
     sigmaf: "ς",
@@ -22209,7 +20302,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     swarrow: "↙",
     swnwar: "⤪",
     szlig: "ß",
-    Tab: "\t",
+    Tab: "\u0009",
     target: "⌖",
     Tau: "Τ",
     tau: "τ",
@@ -22515,8 +20608,8 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
     Zopf: "ℤ",
     Zscr: "𝒵",
     zscr: "𝓏",
-    zwj: "\u200D",
-    zwnj: "\u200C"
+    zwj: "\u200d",
+    zwnj: "\u200c"
   };
   _exports.HTML5NamedCharRefs = namedCharRefs;
   var HEXCHARCODE = /^#[xX]([A-Fa-f0-9]+)$/;
@@ -22594,7 +20687,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
       this.index = -1;
       this.tagNameBuffer = '';
       this.states = {
-        beforeData: function beforeData() {
+        beforeData: function () {
           var char = this.peek();
 
           if (char === '<' && !this.isIgnoredEndTag()) {
@@ -22618,7 +20711,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.beginData();
           }
         },
-        data: function data() {
+        data: function () {
           var char = this.peek();
           var tag = this.tagNameBuffer;
 
@@ -22637,7 +20730,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToData(char);
           }
         },
-        tagOpen: function tagOpen() {
+        tagOpen: function () {
           var char = this.consume();
 
           if (char === '!') {
@@ -22657,7 +20750,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.appendToTagName(char);
           }
         },
-        markupDeclarationOpen: function markupDeclarationOpen() {
+        markupDeclarationOpen: function () {
           var char = this.consume();
 
           if (char === '-' && this.peek() === '-') {
@@ -22666,9 +20759,240 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             /* commentStart */
             );
             this.delegate.beginComment();
+          } else {
+            var maybeDoctype = char.toUpperCase() + this.input.substring(this.index, this.index + 6).toUpperCase();
+
+            if (maybeDoctype === 'DOCTYPE') {
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+              this.transitionTo("doctype"
+              /* doctype */
+              );
+              if (this.delegate.beginDoctype) this.delegate.beginDoctype();
+            }
           }
         },
-        commentStart: function commentStart() {
+        doctype: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            this.transitionTo("beforeDoctypeName"
+            /* beforeDoctypeName */
+            );
+          }
+        },
+        beforeDoctypeName: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            return;
+          } else {
+            this.transitionTo("doctypeName"
+            /* doctypeName */
+            );
+            if (this.delegate.appendToDoctypeName) this.delegate.appendToDoctypeName(char.toLowerCase());
+          }
+        },
+        doctypeName: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            this.transitionTo("afterDoctypeName"
+            /* afterDoctypeName */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            if (this.delegate.appendToDoctypeName) this.delegate.appendToDoctypeName(char.toLowerCase());
+          }
+        },
+        afterDoctypeName: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            return;
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            var nextSixChars = char.toUpperCase() + this.input.substring(this.index, this.index + 5).toUpperCase();
+            var isPublic = nextSixChars.toUpperCase() === 'PUBLIC';
+            var isSystem = nextSixChars.toUpperCase() === 'SYSTEM';
+
+            if (isPublic || isSystem) {
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+              this.consume();
+            }
+
+            if (isPublic) {
+              this.transitionTo("afterDoctypePublicKeyword"
+              /* afterDoctypePublicKeyword */
+              );
+            } else if (isSystem) {
+              this.transitionTo("afterDoctypeSystemKeyword"
+              /* afterDoctypeSystemKeyword */
+              );
+            }
+          }
+        },
+        afterDoctypePublicKeyword: function () {
+          var char = this.peek();
+
+          if (isSpace(char)) {
+            this.transitionTo("beforeDoctypePublicIdentifier"
+            /* beforeDoctypePublicIdentifier */
+            );
+            this.consume();
+          } else if (char === '"') {
+            this.transitionTo("doctypePublicIdentifierDoubleQuoted"
+            /* doctypePublicIdentifierDoubleQuoted */
+            );
+            this.consume();
+          } else if (char === "'") {
+            this.transitionTo("doctypePublicIdentifierSingleQuoted"
+            /* doctypePublicIdentifierSingleQuoted */
+            );
+            this.consume();
+          } else if (char === '>') {
+            this.consume();
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          }
+        },
+        doctypePublicIdentifierDoubleQuoted: function () {
+          var char = this.consume();
+
+          if (char === '"') {
+            this.transitionTo("afterDoctypePublicIdentifier"
+            /* afterDoctypePublicIdentifier */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            if (this.delegate.appendToDoctypePublicIdentifier) this.delegate.appendToDoctypePublicIdentifier(char);
+          }
+        },
+        doctypePublicIdentifierSingleQuoted: function () {
+          var char = this.consume();
+
+          if (char === "'") {
+            this.transitionTo("afterDoctypePublicIdentifier"
+            /* afterDoctypePublicIdentifier */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            if (this.delegate.appendToDoctypePublicIdentifier) this.delegate.appendToDoctypePublicIdentifier(char);
+          }
+        },
+        afterDoctypePublicIdentifier: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            this.transitionTo("betweenDoctypePublicAndSystemIdentifiers"
+            /* betweenDoctypePublicAndSystemIdentifiers */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else if (char === '"') {
+            this.transitionTo("doctypeSystemIdentifierDoubleQuoted"
+            /* doctypeSystemIdentifierDoubleQuoted */
+            );
+          } else if (char === "'") {
+            this.transitionTo("doctypeSystemIdentifierSingleQuoted"
+            /* doctypeSystemIdentifierSingleQuoted */
+            );
+          }
+        },
+        betweenDoctypePublicAndSystemIdentifiers: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            return;
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else if (char === '"') {
+            this.transitionTo("doctypeSystemIdentifierDoubleQuoted"
+            /* doctypeSystemIdentifierDoubleQuoted */
+            );
+          } else if (char === "'") {
+            this.transitionTo("doctypeSystemIdentifierSingleQuoted"
+            /* doctypeSystemIdentifierSingleQuoted */
+            );
+          }
+        },
+        doctypeSystemIdentifierDoubleQuoted: function () {
+          var char = this.consume();
+
+          if (char === '"') {
+            this.transitionTo("afterDoctypeSystemIdentifier"
+            /* afterDoctypeSystemIdentifier */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            if (this.delegate.appendToDoctypeSystemIdentifier) this.delegate.appendToDoctypeSystemIdentifier(char);
+          }
+        },
+        doctypeSystemIdentifierSingleQuoted: function () {
+          var char = this.consume();
+
+          if (char === "'") {
+            this.transitionTo("afterDoctypeSystemIdentifier"
+            /* afterDoctypeSystemIdentifier */
+            );
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          } else {
+            if (this.delegate.appendToDoctypeSystemIdentifier) this.delegate.appendToDoctypeSystemIdentifier(char);
+          }
+        },
+        afterDoctypeSystemIdentifier: function () {
+          var char = this.consume();
+
+          if (isSpace(char)) {
+            return;
+          } else if (char === '>') {
+            if (this.delegate.endDoctype) this.delegate.endDoctype();
+            this.transitionTo("beforeData"
+            /* beforeData */
+            );
+          }
+        },
+        commentStart: function () {
           var char = this.consume();
 
           if (char === '-') {
@@ -22687,7 +21011,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        commentStartDash: function commentStartDash() {
+        commentStartDash: function () {
           var char = this.consume();
 
           if (char === '-') {
@@ -22706,7 +21030,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        comment: function comment() {
+        comment: function () {
           var char = this.consume();
 
           if (char === '-') {
@@ -22717,7 +21041,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToCommentData(char);
           }
         },
-        commentEndDash: function commentEndDash() {
+        commentEndDash: function () {
           var char = this.consume();
 
           if (char === '-') {
@@ -22731,7 +21055,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        commentEnd: function commentEnd() {
+        commentEnd: function () {
           var char = this.consume();
 
           if (char === '>') {
@@ -22746,7 +21070,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        tagName: function tagName() {
+        tagName: function () {
           var char = this.consume();
 
           if (isSpace(char)) {
@@ -22766,7 +21090,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.appendToTagName(char);
           }
         },
-        endTagName: function endTagName() {
+        endTagName: function () {
           var char = this.consume();
 
           if (isSpace(char)) {
@@ -22789,7 +21113,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.appendToTagName(char);
           }
         },
-        beforeAttributeName: function beforeAttributeName() {
+        beforeAttributeName: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -22821,7 +21145,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.beginAttribute();
           }
         },
-        attributeName: function attributeName() {
+        attributeName: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -22858,7 +21182,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeName(char);
           }
         },
-        afterAttributeName: function afterAttributeName() {
+        afterAttributeName: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -22895,7 +21219,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeName(char);
           }
         },
-        beforeAttributeValue: function beforeAttributeValue() {
+        beforeAttributeValue: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -22929,7 +21253,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueDoubleQuoted: function attributeValueDoubleQuoted() {
+        attributeValueDoubleQuoted: function () {
           var char = this.consume();
 
           if (char === '"') {
@@ -22943,7 +21267,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueSingleQuoted: function attributeValueSingleQuoted() {
+        attributeValueSingleQuoted: function () {
           var char = this.consume();
 
           if (char === "'") {
@@ -22957,7 +21281,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        attributeValueUnquoted: function attributeValueUnquoted() {
+        attributeValueUnquoted: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -22987,7 +21311,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             this.delegate.appendToAttributeValue(char);
           }
         },
-        afterAttributeValueQuoted: function afterAttributeValueQuoted() {
+        afterAttributeValueQuoted: function () {
           var char = this.peek();
 
           if (isSpace(char)) {
@@ -23012,7 +21336,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        selfClosingStartTag: function selfClosingStartTag() {
+        selfClosingStartTag: function () {
           var char = this.peek();
 
           if (char === '>') {
@@ -23028,7 +21352,7 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
             );
           }
         },
-        endTagOpen: function endTagOpen() {
+        endTagOpen: function () {
           var char = this.consume();
 
           if (char === '@' || char === ':' || isAlpha(char)) {
@@ -23242,6 +21566,49 @@ define("simple-html-tokenizer", ["exports"], function (_exports) {
       this.startColumn = this.tokenizer.column;
     }; // Data
 
+
+    Tokenizer.prototype.beginDoctype = function () {
+      this.push({
+        type: "Doctype"
+        /* Doctype */
+        ,
+        name: ''
+      });
+    };
+
+    Tokenizer.prototype.appendToDoctypeName = function (char) {
+      this.current("Doctype"
+      /* Doctype */
+      ).name += char;
+    };
+
+    Tokenizer.prototype.appendToDoctypePublicIdentifier = function (char) {
+      var doctype = this.current("Doctype"
+      /* Doctype */
+      );
+
+      if (doctype.publicIdentifier === undefined) {
+        doctype.publicIdentifier = char;
+      } else {
+        doctype.publicIdentifier += char;
+      }
+    };
+
+    Tokenizer.prototype.appendToDoctypeSystemIdentifier = function (char) {
+      var doctype = this.current("Doctype"
+      /* Doctype */
+      );
+
+      if (doctype.systemIdentifier === undefined) {
+        doctype.systemIdentifier = char;
+      } else {
+        doctype.systemIdentifier += char;
+      }
+    };
+
+    Tokenizer.prototype.endDoctype = function () {
+      this.addLocInfo();
+    };
 
     Tokenizer.prototype.beginData = function () {
       this.push({

@@ -11,7 +11,7 @@ export default class PackageCache {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map() as Map<string, Package | null>);
     let result = getOrCreate(cache, packageName, () => {
       // the type cast is needed because resolvePackagePath itself is erroneously typed as `any`.
-      let packagePath = resolvePackagePath(packageName, this.basedir(fromPackage)) as string | null;
+      let packagePath = resolvePackagePath(packageName, this.appRoot) as string | null;
       if (!packagePath) {
         // this gets our null into the cache so we don't keep trying to resolve
         // a thing that is not found
@@ -43,10 +43,9 @@ export default class PackageCache {
 
   get(packageRoot: string) {
     let root = realpathSync(packageRoot);
-    let p = getOrCreate(this.rootCache, root, () => {
+    return getOrCreate(this.rootCache, root, () => {
       return new Package(root, this, root === this.appRoot);
     });
-    return p;
   }
 
   ownerOfFile(filename: string): Package | undefined {

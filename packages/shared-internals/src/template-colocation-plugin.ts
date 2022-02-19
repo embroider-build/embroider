@@ -105,7 +105,7 @@ export default function main(babel: typeof Babel) {
         } else if (t.isTSDeclareFunction(declaration)) {
           // we don't rewrite this
         } else {
-          path.node.declaration = t.callExpression(setComponentTemplate(path, state), [template, declaration]);
+          // path.node.declaration = t.callExpression(setComponentTemplate(path, state), [template, declaration]);
         }
       },
       ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: State) {

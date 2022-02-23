@@ -31,7 +31,7 @@ You can read more about the motivation and key ideas in the [intro to the SPEC](
 
 ## Status / Should I Use It?
 
-We are rapidly nearing a 1.0 release, and several large, heavily-tested Ember apps are shipping to production with Embroider. So if you are excited to adopt Embroider, it is a reasonable choice. The main risks to be aware of if you choose to use Embroider in production are:
+Several large, heavily-tested Ember apps are shipping to production with Embroider. So if you are excited to adopt Embroider, it is a reasonable choice. The main risks to be aware of if you choose to use Embroider in production are:
 
 - you're likely to discover some Ember addons don't work or break your build
 - Embroider's own configuration options are subject to change, so you'll need

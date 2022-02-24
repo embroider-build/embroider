@@ -1,41 +1,28 @@
-import { appScenarios } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
+import { appScenarios, baseV2Addon } from './scenarios';
+import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { AddonMeta } from '@embroider/shared-internals';
+
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('v2-addon', project => {
-    let meta: AddonMeta = {
-      type: 'addon',
-      version: 2,
-      'app-js': {
-        './components/example-component.js': 'app/components/example-component.js',
-      },
-      main: 'addon-main.js',
-    };
-
-    let packageJSON = {
-      keywords: ['ember-addon'],
-      'ember-addon': meta,
-    };
-
-    let addon = new Project({
-      name: 'v2-addon',
-      files: {
-        'package.json': JSON.stringify(packageJSON, null, 2),
-        app: {
-          components: {
-            'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
-          },
+    let addon = baseV2Addon();
+    addon.pkg.name = 'v2-addon';
+    (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
+      'app/components/example-component.js';
+    merge(addon.files, {
+      app: {
+        components: {
+          'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
         },
-        'addon-main.js': `
+      },
+      'addon-main.js': `
           const { addonV1Shim } = require('@embroider/addon-shim');
           module.exports = addonV1Shim(__dirname);
         `,
-        components: {
-          'example-component.js': `
+      components: {
+        'example-component.js': `
               import Component from '@glimmer/component';
               import { hbs } from 'ember-cli-htmlbars';
               import { setComponentTemplate } from '@ember/component';
@@ -45,16 +32,15 @@ appScenarios
               }
               setComponentTemplate(TEMPLATE, ExampleComponent);
             `,
-        },
-        'import-from-npm.js': `
+      },
+      'import-from-npm.js': `
           export default async function() { 
             let { message } = await import('third-party');
             return message() 
           }
         `,
-      },
     });
-    addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
+
     addon.addDependency('third-party', {
       files: {
         'index.js': `

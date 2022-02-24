@@ -29,6 +29,7 @@
     "@embroider/compat": "1.2.0",
     "@embroider/core": "1.2.0",
     "@embroider/router": "1.2.0",
+    "@embroider/test-setup": "1.2.0",
     "@embroider/webpack": "1.2.0",
     "@glimmer/component": "^1.0.4",
     "@glimmer/tracking": "^1.0.4",

@@ -4,8 +4,10 @@ import { readFileSync } from 'fs';
 import globby from 'globby';
 import { set } from 'lodash';
 
-export async function setupFastboot(app: PreparedApp, environment = 'development') {
-  let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`);
+export async function setupFastboot(app: PreparedApp, environment = 'development', envVars?: Record<string, string>) {
+  let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`, {
+    env: envVars,
+  });
 
   if (result.exitCode !== 0) {
     throw new Error(`failed to build app for fastboot: ${result.output}`);

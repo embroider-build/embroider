@@ -53,6 +53,8 @@ appScenarios
           let result = await app.execute(`yarn test`, {
             env: {
               EMBER_ENV: env,
+              EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+              EMBROIDER_TEST_SETUP_FORCE: 'embroider',
             },
           });
           assert.equal(result.exitCode, 0, result.output);
@@ -63,7 +65,11 @@ appScenarios
           let doc: any;
 
           hooks.before(async () => {
-            ({ visit } = await setupFastboot(app, env));
+            ({ visit } = await setupFastboot(app, env, {
+              EMBER_ENV: env,
+              EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+              EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+            }));
             doc = (await visit('/')).window.document;
           });
 

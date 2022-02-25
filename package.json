@@ -27,7 +27,7 @@
     "compile": "tsc",
     "lint": "eslint . --cache",
     "prepare": "tsc",
-    "test": "node ./test-packages/support/suite-setup-util.js --emit && jest"
+    "test": "cd tests/scenarios && yarn test"
   },
   "jest": {
     "projects": [

@@ -1,5 +1,10 @@
-import { resolve } from 'path';
+import { relative, resolve } from 'path';
 import execa from 'execa';
+
+function relativeToEmbroiderRoot(absolutePath: string): string {
+  let embroiderRoot = resolve(__dirname, '../..');
+  return relative(embroiderRoot, absolutePath);
+}
 
 async function githubMatrix() {
   let dir = resolve(__dirname, '..', '..', 'tests', 'scenarios');
@@ -27,7 +32,7 @@ async function githubMatrix() {
         name: `${s.name} windows`,
         os: 'windows',
         command: s.command,
-        dir,
+        dir: relativeToEmbroiderRoot(dir),
       })),
   ];
 

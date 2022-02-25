@@ -1,4 +1,4 @@
-import { appScenarios, appReleaseScenario, dummyAppScenarios, baseAddon } from './scenarios';
+import { appScenarios, dummyAppScenarios, baseAddon } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -70,7 +70,8 @@ appScenarios
     });
   });
 
-appReleaseScenario
+appScenarios
+  .only('release')
   .map('macro-babel-cache-busting', project => {
     scenarioSetup(project);
   })

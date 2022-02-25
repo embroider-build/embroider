@@ -54,10 +54,6 @@ export function supportMatrix(scenarios: Scenarios) {
   });
 }
 
-export function onlyRunRelease(scenarios: Scenarios) {
-  return scenarios.expand({ release });
-}
-
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {
   return Project.fromDir(
     dirname(require.resolve('../addon-template/package.json')),
@@ -71,4 +67,3 @@ export function baseApp() {
 
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
-export const appReleaseScenario = onlyRunRelease(Scenarios.fromProject(baseApp));

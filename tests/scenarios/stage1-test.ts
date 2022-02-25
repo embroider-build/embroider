@@ -10,7 +10,7 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .only('release')
-  .map('stage-1', project => {
+  .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
@@ -25,7 +25,7 @@ appScenarios
     merge(project.files, loadFromFixtureData('basic-in-repo-addon'));
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} max compatibility`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -160,7 +160,7 @@ appScenarios
     project.addDependency(addon);
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} inline hbs, ember-cli-htmlbars@3`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -351,7 +351,7 @@ appScenarios
     merge(project.files, loadFromFixtureData('blacklisted-addon-build-options'));
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} problematic addon zoo`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -430,7 +430,7 @@ dummyAppScenarios
     });
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} addon dummy app`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 

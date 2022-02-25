@@ -43,8 +43,8 @@ jobs:
       - name: lint
         run: yarn lint
       - id: set-matrix
-        working-directory: tests/scenarios
-        run: echo "::set-output name=matrix::$(yarn --silent test:list --matrix 'yarn test --filter %s:')"
+        working-directory: test-packages/support
+        run: echo "::set-output name=matrix::$(node ./suite-setup-util.js --matrix)"
 
   test:
     needs: ['preflight']

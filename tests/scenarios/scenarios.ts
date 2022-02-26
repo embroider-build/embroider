@@ -1,19 +1,5 @@
 import { Scenarios, Project } from 'scenario-tester';
-import { dirname, delimiter } from 'path';
-
-// https://github.com/volta-cli/volta/issues/702
-// We need this because we're launching node in child processes and we want
-// those children to respect volta config per project.
-(function restoreVoltaEnvironment() {
-  let voltaHome = process.env['VOLTA_HOME'];
-  if (!voltaHome) return;
-  let paths = process.env['PATH']!.split(delimiter);
-  while (/\.volta/.test(paths[0])) {
-    paths.shift();
-  }
-  paths.unshift(`${voltaHome}/bin`);
-  process.env['PATH'] = paths.join(delimiter);
-})();
+import { dirname } from 'path';
 
 async function lts_3_16(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.16' });

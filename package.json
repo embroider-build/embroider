@@ -37,7 +37,8 @@
   },
   "resolutions": {
     "**/browserslist": "^4.14.0",
-    "**/qunit": "^2.14.1"
+    "**/qunit": "^2.14.1",
+    "scenario-tester/fixturify-project": "4.1.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.0",

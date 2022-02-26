@@ -1,10 +1,11 @@
-import { appReleaseScenario } from './scenarios';
+import { appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
-appReleaseScenario
+appScenarios
+  .only('release')
   .map('transform @glimmer/tracking', project => {
     merge(project.files, {
       app: {

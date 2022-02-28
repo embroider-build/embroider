@@ -78,7 +78,6 @@ export default class V1InstanceCache {
     let v1Addon = new Klass(addonInstance, this.options, this.app, this.app.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);
-    addonInstance.addons.forEach(a => this.addAddon(a));
   }
 
   getAddons(root: string): V1Addon[] {

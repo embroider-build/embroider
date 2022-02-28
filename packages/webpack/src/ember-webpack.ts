@@ -493,7 +493,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
     };
 
-    if (variant.optimizeForProduction) {
+    if (variant.optimizeForProduction || variant.hasFastBoot) {
       return {
         loaders: [MiniCssExtractPlugin.loader, cssLoader],
         plugins: [

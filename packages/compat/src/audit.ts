@@ -257,7 +257,7 @@ export class Audit {
     resolver.enableAuditMode();
 
     let compile = applyVariantToTemplateCompiler(
-      { name: 'default', runtime: 'all', optimizeForProduction: false },
+      { name: 'default', runtime: 'all', optimizeForProduction: false, hasFastBoot: false },
       templateCompiler.compile
     );
     return { compile, resolver };

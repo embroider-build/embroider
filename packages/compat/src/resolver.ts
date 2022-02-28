@@ -823,28 +823,41 @@ export default class CompatResolver implements Resolver {
     );
   }
 
-  resolveDynamicHelper(helperName: string, from: string, loc: Loc): Resolution | null {
+  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): Resolution | null {
     if (!this.staticHelpersEnabled) {
       return null;
     }
 
-    if (builtInHelpers.includes(helperName)) {
-      return null;
-    }
+    if (helper.type === 'literal') {
+      let helperName = helper.path;
+      if (builtInHelpers.includes(helperName)) {
+        return null;
+      }
 
-    let found = this.tryHelper(helperName, from);
-    if (found) {
-      return this.add(found, from);
+      let found = this.tryHelper(helperName, from);
+      if (found) {
+        return this.add(found, from);
+      }
+      return this.add(
+        {
+          type: 'error',
+          message: `Missing helper`,
+          detail: helperName,
+          loc,
+        },
+        from
+      );
+    } else {
+      return this.add(
+        {
+          type: 'error',
+          message: 'Unsafe dynamic helper',
+          detail: `cannot statically analyze this expression`,
+          loc,
+        },
+        from
+      );
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing helper`,
-        detail: helperName,
-        loc,
-      },
-      from
-    );
   }
 }
 

@@ -1764,6 +1764,20 @@ describe('compat-resolver', function () {
     );
   });
 
+  test('rejects arbitrary expression in "helper" helper', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    expect(() => findDependencies('templates/application.hbs', `{{helper (some-helper this.which) }}`)).toThrow(
+      `Unsafe dynamic helper: cannot statically analyze this expression`
+    );
+  });
+
+  test('rejects any non-string-literal in "helper" helper', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    expect(() => findDependencies('templates/application.hbs', `{{helper this.which }}`)).toThrow(
+      `Unsafe dynamic helper: cannot statically analyze this expression`
+    );
+  });
+
   test('trusts inline ensure-safe-component helper', function () {
     let findDependencies = configure({ staticComponents: true });
     expect(findDependencies('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqual(

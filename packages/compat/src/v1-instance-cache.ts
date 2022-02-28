@@ -69,6 +69,10 @@ export default class V1InstanceCache {
   }
 
   private addAddon(addonInstance: AddonInstance) {
+    // Traverse and add any nested addons. This must happen _before_ we add
+    // the addon itself to correctly preserve the addon ordering.
+    addonInstance.addons.forEach(a => this.addAddon(a));
+
     this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance);
     let v1Addon = new Klass(addonInstance, this.options, this.app, this.app.packageCache, this.orderIdx);

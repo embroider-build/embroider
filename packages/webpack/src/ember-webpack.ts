@@ -21,7 +21,7 @@ import {
   getOrCreate,
 } from '@embroider/core';
 import { tmpdir } from '@embroider/shared-internals';
-import webpack, { Configuration } from 'webpack';
+import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
@@ -144,6 +144,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       variant,
     };
 
+    let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -151,13 +153,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       performance: {
         hints: false,
       },
-      plugins: [
-        //@ts-ignore
-        new MiniCssExtractPlugin({
-          filename: `chunk.[chunkhash].css`,
-          chunkFilename: `chunk.[chunkhash].css`,
-        }),
-      ],
+      plugins: stylePlugins,
       node: false,
       module: {
         rules: [
@@ -186,7 +182,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           },
           {
             test: isCSS,
-            use: this.makeCSSRule(variant),
+            use: styleLoaders,
           },
         ],
       },
@@ -483,21 +479,38 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     });
   }
 
-  private makeCSSRule(variant: Variant) {
-    return [
-      variant.optimizeForProduction
-        ? MiniCssExtractPlugin.loader
-        : { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
-      {
-        loader: 'css-loader',
-        options: {
-          url: true,
-          import: true,
-          modules: 'global',
-          ...this.extraCssLoaderOptions,
-        },
+  private setupStyleConfig(variant: Variant): {
+    loaders: RuleSetUseItem[];
+    plugins: WebpackPluginInstance[];
+  } {
+    let cssLoader = {
+      loader: 'css-loader',
+      options: {
+        url: true,
+        import: true,
+        modules: 'global',
+        ...this.extraCssLoaderOptions,
       },
-    ];
+    };
+
+    if (variant.optimizeForProduction) {
+      return {
+        loaders: [MiniCssExtractPlugin.loader, cssLoader],
+        plugins: [
+          new MiniCssExtractPlugin({
+            filename: `chunk.[chunkhash].css`,
+            chunkFilename: `chunk.[chunkhash].css`,
+          }),
+        ],
+      };
+    } else
+      return {
+        loaders: [
+          { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
+          cssLoader,
+        ],
+        plugins: [],
+      };
   }
 
   private findBestError(errors: any[]) {

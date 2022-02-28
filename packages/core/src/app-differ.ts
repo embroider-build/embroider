@@ -37,11 +37,6 @@ export default class AppDiffer {
     ownFastbootJSDir?: string | undefined,
     private babelParserConfig?: TransformOptions | undefined
   ) {
-    // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
-    activeAddonDescendants = activeAddonDescendants.sort((a, b) => {
-      return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
-    });
-
     this.sources = activeAddonDescendants.map(addon => maybeSource(addon, 'app-js')).filter(Boolean) as Source[];
 
     this.sources.push({

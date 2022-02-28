@@ -319,34 +319,4 @@ function handleComponentHelper(
   }
 
   resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
-
-  // if (
-  //   param.type === 'MustacheStatement' &&
-  //   param.hash.pairs.length === 0 &&
-  //   param.params.length === 0 &&
-  //   handleComponentHelper(param.path, resolver, moduleName, scopeStack)
-  // ) {
-  //   return;
-  // }
-
-  // if (
-  //   param.type === 'MustacheStatement' &&
-  //   param.path.type === 'PathExpression' &&
-  //   param.path.original === 'component'
-  // ) {
-  //   // safe because we will handle this inner `{{component ...}}` mustache on its own
-  //   return;
-  // }
-
-  // if (param.type === 'TextNode') {
-  //   resolver.resolveComponentHelper({ type: 'literal', path: param.chars }, moduleName, param.loc);
-  //   return;
-  // }
-
-  // if (param.type === 'SubExpression' && param.path.type === 'PathExpression' && param.path.original === 'component') {
-  //   // safe because we will handle this inner `(component ...)` subexpression on its own
-  //   return;
-  // }
-
-  // resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
 }

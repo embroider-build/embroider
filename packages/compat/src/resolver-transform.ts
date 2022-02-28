@@ -74,6 +74,10 @@ export function makeResolverTransform(resolver: Resolver) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
+            return;
+          }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: ASTv1.MustacheStatement) {
@@ -95,6 +99,10 @@ export function makeResolverTransform(resolver: Resolver) {
           }
           if (node.path.original === 'component' && node.params.length > 0) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            return;
+          }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
@@ -319,4 +327,17 @@ function handleComponentHelper(
   }
 
   resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
+}
+
+function handleDynamicHelper(param: ASTv1.Node, resolver: Resolver, moduleName: string): void {
+  switch (param.type) {
+    case 'StringLiteral':
+      resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
+      break;
+    case 'TextNode':
+      resolver.resolveDynamicHelper({ type: 'literal', path: param.chars }, moduleName, param.loc);
+      break;
+    default:
+      resolver.resolveDynamicHelper({ type: 'other' }, moduleName, param.loc);
+  }
 }

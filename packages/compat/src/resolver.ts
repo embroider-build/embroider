@@ -87,12 +87,14 @@ const builtInHelpers = [
   'hasBlock',
   'hasBlockParams',
   'hash',
+  'helper',
   'if',
   'input',
   'let',
   'link-to',
   'loc',
   'log',
+  // 'modifier',
   'mount',
   'mut',
   'on',
@@ -108,7 +110,6 @@ const builtInHelpers = [
 ];
 
 const builtInComponents = ['input', 'link-to', 'textarea'];
-
 const builtInModifiers = ['action', 'on'];
 
 // this is a subset of the full Options. We care about serializability, and we
@@ -820,6 +821,43 @@ export default class CompatResolver implements Resolver {
       },
       from
     );
+  }
+
+  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): Resolution | null {
+    if (!this.staticHelpersEnabled) {
+      return null;
+    }
+
+    if (helper.type === 'literal') {
+      let helperName = helper.path;
+      if (builtInHelpers.includes(helperName)) {
+        return null;
+      }
+
+      let found = this.tryHelper(helperName, from);
+      if (found) {
+        return this.add(found, from);
+      }
+      return this.add(
+        {
+          type: 'error',
+          message: `Missing helper`,
+          detail: helperName,
+          loc,
+        },
+        from
+      );
+    } else {
+      return this.add(
+        {
+          type: 'error',
+          message: 'Unsafe dynamic helper',
+          detail: `cannot statically analyze this expression`,
+          loc,
+        },
+        from
+      );
+    }
   }
 }
 

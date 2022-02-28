@@ -626,12 +626,6 @@ export class AppBuilder<TreeNames> {
         break;
       }
       this.findActiveAddons(current.package, current);
-      // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
-      current.addons = new Set(
-        [...current.addons].sort((a, b) => {
-          return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
-        })
-      );
       for (let addon of current.addons) {
         if (addon.isEngine() && !seenEngines.has(addon)) {
           seenEngines.add(addon);
@@ -647,6 +641,16 @@ export class AppBuilder<TreeNames> {
         }
       }
       done.push(current);
+    }
+
+    // the addons within each engine should be ordered the same way they are in
+    // a classic build.
+    for (let engine of done) {
+      engine.addons = new Set(
+        [...engine.addons].sort((a, b) => {
+          return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
+        })
+      );
     }
     return done;
   }

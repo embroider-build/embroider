@@ -2,6 +2,7 @@ import { PackageRules } from '..';
 
 let rules: PackageRules = {
   package: 'ember-power-select',
+  semverRange: '< 5.0.1',
   addonModules: {
     './components/power-select.js': {
       dependsOnComponents: [

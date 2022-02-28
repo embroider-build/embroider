@@ -1,18 +1,29 @@
 import { appScenarios } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
+import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
-    project.linkDevDependency('ember-bootstrap', { baseDir: __dirname });
+    project.addDevDependency(emberBootstrap());
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-composable-helpers', { baseDir: __dirname });
 
     merge(project.files, {
       app: {
+        adapters: {
+          'post.js': `
+            import JSONAPIAdapter from '@ember-data/adapter/json-api';
+            export default class PostAdapter extends JSONAPIAdapter {
+              findRecord(store, type, id, snapshot) {
+                return { data: { type: 'posts', id: '0 ', attributes: { title: 'Hello world' } } };
+              }
+            }
+          `,
+        },
         components: {
           'fancy-box.js': `
             import Component from '@glimmer/component';
@@ -58,6 +69,27 @@ appScenarios
             export default helper(loadedHelpers);
           `,
         },
+        models: {
+          'post.js': `
+            import Model, { attr } from '@ember-data/model';
+            export default class PostModel extends Model {
+              @attr() title;
+            }
+          `,
+        },
+        routes: {
+          'ember-data-example.js': `
+            import Route from '@ember/routing/route';
+            import { inject as service } from '@ember/service';
+
+            export default class EmberDataExampleRoute extends Route {
+              @service() store;
+              model() {
+                return this.store.findRecord('post', 0);
+              }
+            }
+          `,
+        },
         templates: {
           components: {
             'default-title.hbs': `
@@ -98,6 +130,7 @@ appScenarios
             <FancyBox @title="With Default" />
             <FancyBox @title="With Custom" @titleComponent="my-title" />
           `,
+          'ember-data-example.hbs': `<h1>{{@model.title}}</h1>`,
         },
         'router.js': `
           import EmberRouter from '@ember/routing/router';
@@ -113,6 +146,7 @@ appScenarios
             this.route('components-example');
             this.route('static-component-rules-example');
             this.route('macros-example');
+            this.route('ember-data-example');
           });
         `,
       },
@@ -209,6 +243,21 @@ appScenarios
                 assert.equal(currentURL(), '/static-component-rules-example');
                 assert.ok(document.querySelector('[data-example="default"].the-default-title-component'), 'default exists');
                 assert.ok(document.querySelector('[data-example="customized"].my-title-component'), 'customized exists');
+              });
+            });
+          `,
+          'ember-data-example-test.js': `
+            import { module, test } from 'qunit';
+            import { visit, currentURL } from '@ember/test-helpers';
+            import { setupApplicationTest } from 'ember-qunit';
+
+            module('Acceptance | ember data example', function (hooks) {
+              setupApplicationTest(hooks);
+
+              test('visiting /ember-data-example', async function (assert) {
+                await visit('/ember-data-example');
+                assert.equal(currentURL(), '/ember-data-example');
+                assert.dom('h1').containsText('Hello world');
               });
             });
           `,
@@ -321,3 +370,12 @@ appScenarios
       });
     });
   });
+
+function emberBootstrap() {
+  // https://github.com/kaliber5/ember-bootstrap/pull/1750
+  let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
+  modifiers.removeDependency('ember-source');
+  let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
+  eb.addDependency(modifiers);
+  return eb;
+}

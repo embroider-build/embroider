@@ -597,12 +597,20 @@ export class AppBuilder<TreeNames> {
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
   // ordering of the addons.
-  private findActiveAddons(pkg: Package, engine: EngineSummary): void {
+  private findActiveAddons(pkg: Package, engine: EngineSummary, isChild = false): void {
     for (let child of this.adapter.activeAddonChildren(pkg)) {
       if (!child.isEngine()) {
-        this.findActiveAddons(child, engine);
+        this.findActiveAddons(child, engine, true);
       }
       engine.addons.add(child);
+    }
+    // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
+    if (!isChild) {
+      engine.addons = new Set(
+        [...engine.addons].sort((a, b) => {
+          return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
+        })
+      );
     }
   }
 

@@ -1,19 +1,5 @@
 import { Scenarios, Project } from 'scenario-tester';
-import { dirname, delimiter } from 'path';
-
-// https://github.com/volta-cli/volta/issues/702
-// We need this because we're launching node in child processes and we want
-// those children to respect volta config per project.
-(function restoreVoltaEnvironment() {
-  let voltaHome = process.env['VOLTA_HOME'];
-  if (!voltaHome) return;
-  let paths = process.env['PATH']!.split(delimiter);
-  while (/\.volta/.test(paths[0])) {
-    paths.shift();
-  }
-  paths.unshift(`${voltaHome}/bin`);
-  process.env['PATH'] = paths.join(delimiter);
-})();
+import { dirname } from 'path';
 
 async function lts_3_16(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.16' });
@@ -34,9 +20,9 @@ async function lts_3_24(project: Project) {
 }
 
 async function lts_3_28(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.28' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-3.28' });
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data' });
 }
 
 async function release(project: Project) {
@@ -54,10 +40,6 @@ export function supportMatrix(scenarios: Scenarios) {
   });
 }
 
-export function onlyRunRelease(scenarios: Scenarios) {
-  return scenarios.expand({ release });
-}
-
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {
   return Project.fromDir(
     dirname(require.resolve('../addon-template/package.json')),
@@ -71,4 +53,3 @@ export function baseApp() {
 
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
-export const appReleaseScenario = onlyRunRelease(Scenarios.fromProject(baseApp));

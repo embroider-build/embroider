@@ -43,7 +43,8 @@ jobs:
       - name: lint
         run: yarn lint
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
+        working-directory: test-packages/support
+        run: echo "::set-output name=matrix::$(node ./suite-setup-util.js --matrix)"
 
   test:
     needs: ['preflight']
@@ -70,7 +71,7 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-v1
           restore-keys: |
             ${{ runner.os }}-yarn-
-      - run: yarn --frozen-lockfile
+      - run: yarn --no-lockfile
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

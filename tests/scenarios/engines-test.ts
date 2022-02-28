@@ -31,6 +31,7 @@ function emberEngines(): Project {
 }
 
 appScenarios
+  .skip('release') // ember-engines doesn't have an ember 4.0 compatible release yet.
   .map('engines', project => {
     let eagerEngine = baseAddon();
     let lazyEngine = baseAddon();

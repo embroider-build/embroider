@@ -58,10 +58,10 @@ The steps:
 
 1. Make a new top-level package.json for our new monorepo:
 
-   ```
+   ```json
    {
-     private: true,
-     workspaces: [
+     "private": true,
+     "workspaces": [
        "addon",
        "test-app"
      ]

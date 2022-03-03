@@ -1,8 +1,9 @@
-import { appScenarios, baseAddon } from './scenarios';
+import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
-import { setupFastboot, loadFromFixtureData } from './helpers';
+import { setupFastboot, loadFromFixtureData, FastbootTestHelpers } from './helpers';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
+import { JSDOM } from 'jsdom';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -26,6 +27,37 @@ appScenarios
         },
       })
     );
+
+    let v2Example = baseV2Addon();
+    v2Example.pkg.name = 'v2-example';
+    (v2Example.pkg as any)['ember-addon']['app-js']['./components/v2-example-component.js'] =
+      'app/components/v2-example-component.js';
+    merge(v2Example.files, {
+      app: {
+        components: {
+          'v2-example-component.js': `export { default } from 'v2-example/components/v2-example-component';`,
+        },
+      },
+      components: {
+        'v2-example-component.js': `
+          import Component from '@glimmer/component';
+          import { hbs } from 'ember-cli-htmlbars';
+          import { setComponentTemplate } from '@ember/component';
+          import './v2-example-component.css';
+          const TEMPLATE = hbs('<div data-test-v2-example>{{this.message}}</div>')
+          export default class ExampleComponent extends Component {
+            message = "it worked"
+          }
+          setComponentTemplate(TEMPLATE, ExampleComponent);
+        `,
+        'v2-example-component.css': `
+          [data-test-v2-example] {
+            color: green;
+          }
+        `,
+      },
+    });
+    project.addDependency(v2Example);
 
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
@@ -61,38 +93,48 @@ appScenarios
         });
 
         Qmodule(`fastboot: ${env}`, function (hooks) {
-          let visit: any;
-          let doc: any;
+          let fb: FastbootTestHelpers;
+          let doc: JSDOM['window']['document'];
 
           hooks.before(async () => {
-            ({ visit } = await setupFastboot(app, env, {
+            fb = await setupFastboot(app, env, {
               EMBER_ENV: env,
               EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
               EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-            }));
-            doc = (await visit('/')).window.document;
+            });
+            doc = (await fb.visit('/')).window.document;
           });
 
           test('content is rendered', async function (assert) {
-            assert.equal(doc.querySelector('[data-test="hello"]').textContent, 'Hello from fastboot-app');
+            assert.equal(doc.querySelector('[data-test="hello"]')!.textContent, 'Hello from fastboot-app');
           });
           test('found server implementation of in-app module', async function (assert) {
-            assert.equal(doc.querySelector('[data-test="example"]').textContent, 'This is the server implementation');
+            assert.equal(doc.querySelector('[data-test="example"]')!.textContent, 'This is the server implementation');
           });
           test('found server implementation of addon service', async function (assert) {
-            assert.equal(doc.querySelector('[data-test="addon-example"]').textContent, 'Server AddonExampleService');
+            assert.equal(doc.querySelector('[data-test="addon-example"]')!.textContent, 'Server AddonExampleService');
           });
           test('found fastboot-only service from the app', async function (assert) {
             assert.equal(
-              doc.querySelector('[data-test="check-service"]').textContent.trim(),
+              doc.querySelector('[data-test="check-service"]')!.textContent!.trim(),
               `I'm a fastboot-only service in the app`
             );
           });
           test('found fastboot-only file from the addon', async function (assert) {
-            assert.equal(doc.querySelector('[data-test="check-addon-file"]').textContent.trim(), '42');
+            assert.equal(doc.querySelector('[data-test="check-addon-file"]')!.textContent!.trim(), '42');
           });
           test('a component successfully lazy loaded some code', async function (assert) {
-            assert.equal(doc.querySelector('[data-test="lazy-component"]').textContent.trim(), 'From sample-lib');
+            assert.equal(doc.querySelector('[data-test="lazy-component"]')!.textContent!.trim(), 'From sample-lib');
+          });
+          test('eager CSS from a v2 addon is present', async function (assert) {
+            for (let link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
+              let src = await fb.fetchAsset(link.getAttribute('href')!);
+              if (/\[data-test-v2-example\]/.test(src)) {
+                assert.ok(true, 'found expected style');
+                return;
+              }
+            }
+            assert.ok(false, 'did not find expected style');
           });
         });
       });

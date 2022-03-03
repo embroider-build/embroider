@@ -3,8 +3,18 @@ import { join } from 'path';
 import { readFileSync } from 'fs';
 import globby from 'globby';
 import { set } from 'lodash';
+import type { JSDOM } from 'jsdom';
 
-export async function setupFastboot(app: PreparedApp, environment = 'development', envVars?: Record<string, string>) {
+export interface FastbootTestHelpers {
+  visit(url: string): Promise<JSDOM>;
+  fetchAsset(url: string): Promise<string>;
+}
+
+export async function setupFastboot(
+  app: PreparedApp,
+  environment = 'development',
+  envVars?: Record<string, string>
+): Promise<FastbootTestHelpers> {
   let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`, {
     env: envVars,
   });
@@ -31,7 +41,16 @@ export async function setupFastboot(app: PreparedApp, environment = 'development
     return new JSDOM(html);
   }
 
-  return { visit };
+  async function fetchAsset(url: string): Promise<string> {
+    const origin = 'http://example.com';
+    let u = new URL(url, origin);
+    if (u.origin !== origin) {
+      throw new Error(`fetchAsset only supports local assets, you asked for ${url}`);
+    }
+    return readFileSync(join(app.dir, 'dist', u.pathname), 'utf-8');
+  }
+
+  return { visit, fetchAsset };
 }
 
 export function loadFromFixtureData(fixtureNamespace: string) {

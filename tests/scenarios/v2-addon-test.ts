@@ -17,27 +17,23 @@ appScenarios
           'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
         },
       },
-      'addon-main.js': `
-          const { addonV1Shim } = require('@embroider/addon-shim');
-          module.exports = addonV1Shim(__dirname);
-        `,
       components: {
         'example-component.js': `
-              import Component from '@glimmer/component';
-              import { hbs } from 'ember-cli-htmlbars';
-              import { setComponentTemplate } from '@ember/component';
-              const TEMPLATE = hbs('<div data-test-example>{{this.message}}</div>')
-              export default class ExampleComponent extends Component {
-                message = "it worked"
-              }
-              setComponentTemplate(TEMPLATE, ExampleComponent);
-            `,
+          import Component from '@glimmer/component';
+          import { hbs } from 'ember-cli-htmlbars';
+          import { setComponentTemplate } from '@ember/component';
+          const TEMPLATE = hbs('<div data-test-example>{{this.message}}</div>')
+          export default class ExampleComponent extends Component {
+            message = "it worked"
+          }
+          setComponentTemplate(TEMPLATE, ExampleComponent);
+        `,
       },
       'import-from-npm.js': `
-          export default async function() { 
-            let { message } = await import('third-party');
-            return message() 
-          }
+        export default async function() { 
+          let { message } = await import('third-party');
+          return message() 
+        }
         `,
     });
 

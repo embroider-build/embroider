@@ -3,13 +3,14 @@ import { join } from 'path';
 import merge from 'lodash/merge';
 import fs from 'fs-extra';
 import { loadFromFixtureData } from './helpers';
-import { appReleaseScenario, dummyAppScenarios, baseAddon } from './scenarios';
+import { dummyAppScenarios, baseAddon, appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
-appReleaseScenario
-  .map('stage-1', project => {
+appScenarios
+  .only('release')
+  .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
@@ -24,7 +25,7 @@ appReleaseScenario
     merge(project.files, loadFromFixtureData('basic-in-repo-addon'));
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} max compatibility`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -129,7 +130,8 @@ appReleaseScenario
     });
   });
 
-appReleaseScenario
+appScenarios
+  .only('release')
   .map('stage-1-inline-hbs', project => {
     let addon = baseAddon();
 
@@ -158,7 +160,7 @@ appReleaseScenario
     project.addDependency(addon);
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} inline hbs, ember-cli-htmlbars@3`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -188,7 +190,8 @@ appReleaseScenario
     });
   });
 
-appReleaseScenario
+appScenarios
+  .only('release')
   .map('stage-1-problematic-addon-zoo', project => {
     let addon = baseAddon();
 
@@ -348,7 +351,7 @@ appReleaseScenario
     merge(project.files, loadFromFixtureData('blacklisted-addon-build-options'));
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} problematic addon zoo`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 
@@ -427,7 +430,7 @@ dummyAppScenarios
     });
   })
   .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name} addon dummy app`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
       let workspaceDir: string;
 

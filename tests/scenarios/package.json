@@ -24,6 +24,8 @@
     "@ember/string": "^1.0.0",
     "@embroider/macros": "1.2.0",
     "@embroider/addon-shim": "1.2.0",
+    "@embroider/router": "1.2.0",
+    "@embroider/util": "1.2.0",
     "bootstrap": "^4.3.1",
     "broccoli-funnel": "^3.0.5",
     "broccoli-merge-trees": "^3.0.2",

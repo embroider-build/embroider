@@ -227,15 +227,15 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 - every module that users should be allowed to import from your addon
 - every module in the **app reexports** you identified in the previous step
 
-7. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
-8. Delete your `addon/index.js` file.
-9. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
+11. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
+12. Delete your `addon/index.js` file.
+13. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
    ```js
    const { addonV1Shim } = require('@embroider/addon-shim');
    module.exports = addonV1Shim(__dirname);
    ```
-10. In your `addon/.eslintrc.js`, replace "index.js" with "addon-main.js" so that our new file will lint correctly as Node code.
-11. In your `addon/package.json`, add these things:
+14. In your `addon/.eslintrc.js`, replace "index.js" with "addon-main.js" so that our new file will lint correctly as Node code.
+15. In your `addon/package.json`, add these things:
     ```js
     "exports": {
       ".": "./dist/index.js",
@@ -258,7 +258,7 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
       "version": 2
     }
     ```
-12. In the `addon` directory, run `yarn start` to start building the addon.
-13. In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see your tests passing.
+16. In the `addon` directory, run `yarn start` to start building the addon.
+17. In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see your tests passing.
 
 When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

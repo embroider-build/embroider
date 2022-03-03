@@ -26,9 +26,6 @@ export interface Variant {
   // true if this build should be optimized for production, at the cost of
   // slower builds and/or worse debuggability
   optimizeForProduction: boolean;
-
-  // True if the build uses FastBoot
-  hasFastBoot: boolean;
 }
 
 export interface PackagerConstructor<Options> {

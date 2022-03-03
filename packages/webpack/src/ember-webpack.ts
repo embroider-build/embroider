@@ -493,7 +493,18 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
     };
 
-    if (variant.optimizeForProduction || variant.hasFastBoot) {
+    if (!variant.optimizeForProduction && variant.runtime === 'browser') {
+      // in development builds that only need to work in the browser (not
+      // fastboot), we can use style-loader because it's fast
+      return {
+        loaders: [
+          { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
+          cssLoader,
+        ],
+        plugins: [],
+      };
+    } else {
+      // in any other build, we separate the CSS into its own bundles
       return {
         loaders: [MiniCssExtractPlugin.loader, cssLoader],
         plugins: [
@@ -503,14 +514,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           }),
         ],
       };
-    } else
-      return {
-        loaders: [
-          { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
-          cssLoader,
-        ],
-        plugins: [],
-      };
+    }
   }
 
   private findBestError(errors: any[]) {

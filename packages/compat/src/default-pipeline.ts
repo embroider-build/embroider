@@ -59,34 +59,30 @@ export default function defaultPipeline<PackagerOptions>(
   return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
 }
 
-function hasFastbootDependency(emberApp: EmberAppInstance | EmberAppInstance): boolean {
-  return emberApp.project.addons.some(a => a.name === 'ember-cli-fastboot');
+function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {
+  return emberApp.project.addons.find(a => a.name === 'ember-cli-fastboot');
 }
 
 function defaultVariants(emberApp: EmberAppInstance): Variant[] {
   let variants: Variant[] = [];
-  let hasFastBoot = hasFastbootDependency(emberApp);
   if (emberApp.env === 'production') {
     variants.push({
       name: 'browser',
       runtime: 'browser',
       optimizeForProduction: true,
-      hasFastBoot,
     });
-    if (hasFastBoot) {
+    if (hasFastboot(emberApp)) {
       variants.push({
         name: 'fastboot',
         runtime: 'fastboot',
         optimizeForProduction: true,
-        hasFastBoot,
       });
     }
   } else {
     variants.push({
       name: 'dev',
-      runtime: hasFastBoot ? 'all' : 'browser',
+      runtime: hasFastboot(emberApp) ? 'all' : 'browser',
       optimizeForProduction: false,
-      hasFastBoot,
     });
   }
   return variants;

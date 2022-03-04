@@ -428,9 +428,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           // we need the ability to preload them
           output.lazyBundles.set(
             id,
-            chunks
-              .filter(chunk => chunk.runtime?.includes(id) && !entrypointAssets?.find(a => a.name === chunk.files?.[0]))
-              .map(chunk => `assets/${chunk.files?.[0]}`)
+            flatMap(
+              chunks.filter(chunk => chunk.runtime?.includes(id)),
+              chunk => chunk.files
+            )
+              .filter(file => !entrypointAssets?.find(a => a.name === file))
+              .map(file => `assets/${file}`)
           );
         }
       }
@@ -511,6 +514,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           new MiniCssExtractPlugin({
             filename: `chunk.[chunkhash].css`,
             chunkFilename: `chunk.[chunkhash].css`,
+            // in the browser, MiniCssExtractPlugin can manage it's own runtime
+            // lazy loading of stylesheets.
+            //
+            // but in fastboot, we need to disable that in favor of doing our
+            // own insertion of `<link>` tags in the HTML
+            runtime: variant.runtime === 'browser',
           }),
         ],
       };

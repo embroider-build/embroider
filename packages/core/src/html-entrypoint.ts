@@ -93,9 +93,11 @@ export class HTMLEntrypoint {
           if (supportsFastboot && placeholder.isScript()) {
             // if there is any fastboot involved, we will emit the lazy bundles
             // right before our first script.
+
             let lazyMatch = stats.lazyBundles.get(src);
             if (lazyMatch && !insertedLazy.has(src)) {
-              insertLazyBundles(lazyMatch, placeholder, this.publicAssetURL);
+              insertLazyJavascript(lazyMatch, placeholder, this.publicAssetURL);
+              insertLazyStyles(lazyMatch, placeholder, this.publicAssetURL);
               insertedLazy.add(src);
             }
           }
@@ -156,13 +158,25 @@ function isAbsoluteURL(url: string) {
   return /^(?:[a-z]+:)?\/\//i.test(url);
 }
 
-// we (somewhat arbitrarily) decide to put the lazy bundles before the very
-// first <script> that we have rewritten
-function insertLazyBundles(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
+// we (somewhat arbitrarily) decide to put the lazy javascript bundles before
+// the very first <script> that we have rewritten
+function insertLazyJavascript(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
   for (let bundle of lazyBundles) {
     if (bundle.endsWith('.js')) {
       let element = placeholder.start.ownerDocument.createElement('fastboot-script');
       element.setAttribute('src', publicAssetURL + bundle);
+      placeholder.insert(element);
+      placeholder.insertNewline();
+    }
+  }
+}
+
+function insertLazyStyles(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
+  for (let bundle of lazyBundles) {
+    if (bundle.endsWith('.css')) {
+      let element = placeholder.start.ownerDocument.createElement('link');
+      element.setAttribute('href', publicAssetURL + bundle);
+      element.setAttribute('rel', 'stylesheet');
       placeholder.insert(element);
       placeholder.insertNewline();
     }

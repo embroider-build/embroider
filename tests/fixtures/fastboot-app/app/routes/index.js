@@ -11,4 +11,8 @@ export default class IndexRoute extends Route {
     // merged by Embroider. So this serves as a reproduction of https://github.com/embroider-build/embroider/issues/160
     return this.fastboot.isFastBoot ? this.fastboot.request.host : null;
   }
+
+  async model() {
+    await import('v2-example/components/extra-styles.css');
+  }
 }

@@ -51,8 +51,13 @@ appScenarios
           setComponentTemplate(TEMPLATE, ExampleComponent);
         `,
         'v2-example-component.css': `
-          [data-test-v2-example] {
+          [data-test-v2-example], .eager-styles-marker {
             color: green;
+          }
+        `,
+        'extra-styles.css': `
+          [data-test-v2-example], .lazy-styles-marker {
+            background-color: blue;
           }
         `,
       },
@@ -129,7 +134,17 @@ appScenarios
           test('eager CSS from a v2 addon is present', async function (assert) {
             for (let link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
               let src = await fb.fetchAsset(link.getAttribute('href')!);
-              if (/\[data-test-v2-example\]/.test(src)) {
+              if (/eager-styles-marker/.test(src)) {
+                assert.ok(true, 'found expected style');
+                return;
+              }
+            }
+            assert.ok(false, 'did not find expected style');
+          });
+          test('lazy CSS from a v2 addon is present', async function (assert) {
+            for (let link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
+              let src = await fb.fetchAsset(link.getAttribute('href')!);
+              if (/lazy-styles-marker/.test(src)) {
                 assert.ok(true, 'found expected style');
                 return;
               }

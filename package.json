@@ -16,7 +16,8 @@
       "types/ember-cli-htmlbars",
       "tests/scenarios",
       "tests/app-template",
-      "tests/addon-template"
+      "tests/addon-template",
+      "tests/v2-addon-template"
     ],
     "nohoist": [
       "**/@types/broccoli-plugin"

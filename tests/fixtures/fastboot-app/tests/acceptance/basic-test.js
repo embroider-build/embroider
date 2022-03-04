@@ -39,4 +39,22 @@ module('Acceptance | runtime basics', function (hooks) {
   test('the tests suite eagerly loads some code that the app uses only lazily', async function (assert) {
     assert.equal(secondSampleLib(), 'From second-sample-lib');
   });
+
+  test('a component from a v2 addon with eager css', async function (assert) {
+    assert.dom('[data-test-v2-example]').containsText('it worked');
+    assert.equal(
+      getComputedStyle(document.querySelector('[data-test-v2-example]')).color,
+      'rgb(0, 128, 0)',
+      'style was applied'
+    );
+  });
+
+  test('a component from a v2 addon with lazy css', async function (assert) {
+    assert.dom('[data-test-v2-example]').containsText('it worked');
+    assert.equal(
+      getComputedStyle(document.querySelector('[data-test-v2-example]')).backgroundColor,
+      'rgb(0, 0, 255)',
+      'style was applied'
+    );
+  });
 });

@@ -47,6 +47,10 @@ export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {
   );
 }
 
+export function baseV2Addon() {
+  return Project.fromDir(dirname(require.resolve('../v2-addon-template/package.json')), { linkDeps: true });
+}
+
 export function baseApp() {
   return Project.fromDir(dirname(require.resolve('../app-template/package.json')), { linkDevDeps: true });
 }

@@ -4,11 +4,12 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { handleImportDeclaration } from './mini-modules-polyfill';
 import { ImportUtil } from 'babel-import-util';
+import { randomBytes } from 'crypto';
+import { outputFileSync, pathExistsSync, renameSync } from 'fs-extra';
 
 interface State {
   adjustFile: AdjustFile;
@@ -332,8 +333,8 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 }
 
 function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
+  let target = join(opts.externalsDir, 'missing', specifier + '.js');
+  atomicWrite(
     target,
     dynamicMissingModule({
       moduleName: specifier,
@@ -344,13 +345,31 @@ function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Opti
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
   let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
+  atomicWrite(
     target,
     externalTemplate({
       runtimeName: specifier,
     })
   );
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
+}
+
+function atomicWrite(path: string, content: string) {
+  if (pathExistsSync(path)) {
+    return;
+  }
+  let suffix = randomBytes(8).toString('hex');
+  outputFileSync(path + suffix, content);
+  try {
+    renameSync(path + suffix, path);
+  } catch (err: any) {
+    // windows throws EPERM for concurrent access. For us it's not an error
+    // condition because the other thread is writing the exact same value we
+    // would have.
+    if (err.code !== 'EPERM') {
+      throw err;
+    }
+  }
 }
 
 export default function main(babel: typeof Babel) {

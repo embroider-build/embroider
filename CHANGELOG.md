@@ -1,6 +1,54 @@
 # Embroider Changelog
 
 
+
+## v1.3.0 (2022-03-04)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#1146](https://github.com/embroider-build/embroider/pull/1146) Use MiniCssExtractPlugin for FastBoot builds ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#1120](https://github.com/embroider-build/embroider/pull/1120) Add support for the `helper` helper ([@Windvis](https://github.com/Windvis))
+  * [#1130](https://github.com/embroider-build/embroider/pull/1130) Only apply `ember-power-select` compat adapter when using `ember-power-select < 5.0.1` ([@betocantu93](https://github.com/betocantu93))
+
+#### :bug: Bug Fix
+* `core`, `webpack`
+  * [#1140](https://github.com/embroider-build/embroider/pull/1140) Fastboot lazy css support ([@ef4](https://github.com/ef4))
+* `core`
+  * [#1149](https://github.com/embroider-build/embroider/pull/1149) Update externals stubs atomically ([@ef4](https://github.com/ef4))
+* `compat`, `core`
+  * [#1145](https://github.com/embroider-build/embroider/pull/1145) Ensure addon `app` trees are merged in the correct order ([@eoneill](https://github.com/eoneill))
+* `compat`
+  * [#1135](https://github.com/embroider-build/embroider/pull/1135) Fix `@cached` decorator export from fake `@glimmer/tracking` module ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :memo: Documentation
+* Other
+  * [#1148](https://github.com/embroider-build/embroider/pull/1148) Fix `package.json` example in V2 porting guide ([@SergeAstapov](https://github.com/SergeAstapov))
+  * [#1143](https://github.com/embroider-build/embroider/pull/1143) Update number of steps for porting addon to V2 guide ([@AnastasiiaPlutalova](https://github.com/AnastasiiaPlutalova))
+  * [#1137](https://github.com/embroider-build/embroider/pull/1137) Update `Status` section in main README ([@bertdeblock](https://github.com/bertdeblock))
+* `addon-dev`
+  * [#1133](https://github.com/embroider-build/embroider/pull/1133) Fix typo in V2 addon local development documentation ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :house: Internal
+* Other
+  * [#1144](https://github.com/embroider-build/embroider/pull/1144) Remove a workaround that is trying fix an old bug in volta ([@krisselden](https://github.com/krisselden))
+* `router`, `util`
+  * [#1141](https://github.com/embroider-build/embroider/pull/1141) Drive the test suite from scenario-tester ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1103](https://github.com/embroider-build/embroider/pull/1103) Update the ember-template-compiler to v4.1.0 ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 10
+- Alberto Cantú Gómez ([@betocantu93](https://github.com/betocantu93))
+- AnastasiiaPlutalova ([@AnastasiiaPlutalova](https://github.com/AnastasiiaPlutalova))
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+- Sergey Astapov ([@SergeAstapov](https://github.com/SergeAstapov))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## v1.2.0 (2022-02-10)
 
 #### :rocket: Enhancement

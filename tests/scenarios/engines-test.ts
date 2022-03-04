@@ -63,9 +63,8 @@ appScenarios
     project.addDevDependency(eagerEngine);
     project.addDevDependency(lazyEngine);
 
-    project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
-    project.linkDependency('fastboot', { baseDir: __dirname });
     project.linkDependency('ember-truth-helpers', { baseDir: __dirname });
+    project.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.addDependency(emberEngines());
     eagerEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
     eagerEngine.addDependency(emberEngines());
@@ -76,6 +75,13 @@ appScenarios
     let engineTestFiles = loadFromFixtureData('engines-host-app');
     merge(project.files, engineTestFiles);
   })
+  .expand({
+    'with-fastboot': project => {
+      project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
+      project.linkDependency('fastboot', { baseDir: __dirname });
+    },
+    'without-fastboot': () => {},
+  })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
@@ -83,17 +89,17 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['development'].forEach(env => {
-        test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute('yarn test');
-          assert.equal(result.exitCode, 0, result.output);
-        });
+      test(`yarn test`, async function (assert) {
+        let result = await app.execute('yarn test');
+        assert.equal(result.exitCode, 0, result.output);
+      });
 
-        Qmodule(`fastboot: ${env}`, function (hooks) {
+      if (/with-fastboot/.test(scenario.name)) {
+        Qmodule(`fastboot`, function (hooks) {
           let visit: any;
 
           hooks.before(async () => {
-            ({ visit } = await setupFastboot(app, env));
+            ({ visit } = await setupFastboot(app));
           });
 
           test('host-app', async function (assert) {
@@ -119,6 +125,6 @@ appScenarios
             );
           });
         });
-      });
+      }
     });
   });

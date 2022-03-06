@@ -78,6 +78,10 @@ export function makeResolverTransform(resolver: Resolver) {
             handleDynamicHelper(node.params[0], resolver, filename);
             return;
           }
+          if (node.path.original === 'modifier' && node.params.length > 0) {
+            handleDynamicModifier(node.params[0], resolver, filename);
+            return;
+          }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: ASTv1.MustacheStatement) {
@@ -339,5 +343,11 @@ function handleDynamicHelper(param: ASTv1.Node, resolver: Resolver, moduleName: 
       break;
     default:
       resolver.resolveDynamicHelper({ type: 'other' }, moduleName, param.loc);
+  }
+}
+
+function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
   }
 }

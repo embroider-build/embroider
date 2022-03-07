@@ -859,6 +859,43 @@ export default class CompatResolver implements Resolver {
       );
     }
   }
+
+  resolveDynamicModifier(modifier: ComponentLocator, from: string, loc: Loc): Resolution | null {
+    if (!this.staticModifiersEnabled) {
+      return null;
+    }
+
+    if (modifier.type === 'literal') {
+      let modifierName = modifier.path;
+      if (builtInModifiers.includes(modifierName)) {
+        return null;
+      }
+
+      let found = this.tryModifier(modifierName, from);
+      if (found) {
+        return this.add(found, from);
+      }
+      return this.add(
+        {
+          type: 'error',
+          message: `Missing modifier`,
+          detail: modifierName,
+          loc,
+        },
+        from
+      );
+    } else {
+      return this.add(
+        {
+          type: 'error',
+          message: 'Unsafe dynamic modifier',
+          detail: `cannot statically analyze this expression`,
+          loc,
+        },
+        from
+      );
+    }
+  }
 }
 
 function humanReadableFile(root: string, file: string) {

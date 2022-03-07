@@ -519,7 +519,7 @@ describe('compat-resolver', function () {
       },
     ]);
   });
-  test('string literal passed to `helper` helper in content position', function () {
+  test('string literal passed to "helper" keyword in content position', function () {
     let findDependencies = configure({
       staticHelpers: true,
     });
@@ -528,6 +528,44 @@ describe('compat-resolver', function () {
       {
         path: '../helpers/hello-world.js',
         runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
+  test('string literal passed to "modifier" keyword in content position', function () {
+    let findDependencies = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
+      },
+    ]);
+  });
+  test('modifier currying using the "modifier" keyword', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (modifier "add-listener") as |addListener|}}
+          {{#let (modifier addListener "click") as |addClickListener|}}
+            <button {{addClickListener this.handleClick}}>Test</button>
+          {{/let}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
       },
     ]);
   });
@@ -546,7 +584,7 @@ describe('compat-resolver', function () {
       )
     ).toEqual([]);
   });
-  test('built-in helpers are ignored when used with the "helper" helper', function () {
+  test('built-in helpers are ignored when used with the "helper" keyword', function () {
     let findDependencies = configure({
       staticHelpers: true,
     });
@@ -557,6 +595,20 @@ describe('compat-resolver', function () {
       {{helper "fn"}}
       {{helper "array"}}
       {{helper "concat"}}
+    `
+      )
+    ).toEqual([]);
+  });
+  test('built-in modifiers are ignored when used with the "modifier" keyword', function () {
+    let findDependencies = configure({
+      staticModifiers: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      <button {{(modifier "on" "click" this.handleClick)}}>Test</button>
+      <button {{(modifier "action" "handleClick")}}>Test</button>
     `
       )
     ).toEqual([]);
@@ -662,7 +714,7 @@ describe('compat-resolver', function () {
       },
     ]);
   });
-  test('string literal passed to "helper" helper in helper position', function () {
+  test('string literal passed to "helper" keyword in helper position', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -681,6 +733,46 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('helper currying using the "helper" keyword', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/hello-world.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (helper "hello-world" name="World") as |hello|}}
+          {{#let (helper hello name="Tomster") as |helloTomster|}}
+            {{helloTomster name="Zoey"}}
+          {{/let}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
+  test('string literal passed to "modifier" keyword in helper position', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (modifier "add-listener" "click") as |addClickListener|}}
+          <button {{addClickListener this.handleClick}}>Test</button>
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
+      },
+    ]);
+  });
   test('string literal passed to component helper fails to resolve', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
@@ -688,20 +780,40 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
-  test('string literal passed to "helper" helper fails to resolve', function () {
+  test('string literal passed to "helper" keyword fails to resolve', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(() => {
       findDependencies('templates/application.hbs', `{{helper "hello-world"}}`);
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
+  });
+  test('string literal passed to "modifier" keyword fails to resolve', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(() => {
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      );
+    }).toThrow(new RegExp(`Missing modifier: add-listener in templates/application.hbs`));
   });
   test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
   });
-  test('string literal passed to "helper" helper fails to resolve when staticHelpers is off', function () {
+  test('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
     let findDependencies = configure({ staticHelpers: false });
+    givenFile('helpers/hello-world.js');
     expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([]);
+  });
+  test('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
+    let findDependencies = configure({ staticModifiers: false });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      )
+    ).toEqual([]);
   });
   test('dynamic component helper error in content position', function () {
     let findDependencies = configure({ staticComponents: true });
@@ -925,7 +1037,7 @@ describe('compat-resolver', function () {
     ]);
   });
   test('ignores builtins', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+    let findDependencies = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
     expect(
       findDependencies(
         'templates/application.hbs',
@@ -1764,18 +1876,14 @@ describe('compat-resolver', function () {
     );
   });
 
-  test('rejects arbitrary expression in "helper" helper', function () {
+  test('ignores any non-string-literal in "helper" keyword', function () {
     let findDependencies = configure({ staticHelpers: true });
-    expect(() => findDependencies('templates/application.hbs', `{{helper (some-helper this.which) }}`)).toThrow(
-      `Unsafe dynamic helper: cannot statically analyze this expression`
-    );
+    expect(findDependencies('templates/application.hbs', `{{helper this.which}}`)).toEqual([]);
   });
 
-  test('rejects any non-string-literal in "helper" helper', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(() => findDependencies('templates/application.hbs', `{{helper this.which }}`)).toThrow(
-      `Unsafe dynamic helper: cannot statically analyze this expression`
-    );
+  test('ignores any non-string-literal in "modifier" keyword', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(findDependencies('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqual([]);
   });
 
   test('trusts inline ensure-safe-component helper', function () {

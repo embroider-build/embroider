@@ -14,7 +14,7 @@ function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
     }
   }
 
-  return values;
+  return values.sort();
 }
 
 // We don't yet support lazy CSS in apps that are using fastboot. This test
@@ -39,11 +39,14 @@ module('Acceptance | basics', function (hooks) {
     let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
 
     if (ensureCSSisLazy) {
-      assert.deepEqual(rules, [
-        'engines-host-app/vendor/styles.css',
-        'eager-engine/addon/styles/addon.css',
-        'engines-host-app/app/styles/app.css',
-      ]);
+      assert.deepEqual(
+        rules,
+        [
+          'engines-host-app/vendor/styles.css',
+          'eager-engine/addon/styles/addon.css',
+          'engines-host-app/app/styles/app.css',
+        ].sort()
+      );
     }
 
     await visit('/style-check');
@@ -91,7 +94,9 @@ module('Acceptance | basics', function (hooks) {
         'macro-sample-addon/addon/styles/addon.css',
         'lazy-engine/addon/styles/addon.css',
         ensureCSSisLazy ? undefined : 'lazy-in-repo-engine/addon/styles/addon.css',
-      ].filter(Boolean)
+      ]
+        .filter(Boolean)
+        .sort()
     );
 
     await visit('/style-check');

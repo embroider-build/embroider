@@ -78,6 +78,10 @@ export function makeResolverTransform(resolver: Resolver) {
             handleDynamicHelper(node.params[0], resolver, filename);
             return;
           }
+          if (node.path.original === 'modifier' && node.params.length > 0) {
+            handleDynamicModifier(node.params[0], resolver, filename);
+            return;
+          }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: ASTv1.MustacheStatement) {
@@ -329,15 +333,18 @@ function handleComponentHelper(
   resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
 }
 
-function handleDynamicHelper(param: ASTv1.Node, resolver: Resolver, moduleName: string): void {
-  switch (param.type) {
-    case 'StringLiteral':
-      resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
-      break;
-    case 'TextNode':
-      resolver.resolveDynamicHelper({ type: 'literal', path: param.chars }, moduleName, param.loc);
-      break;
-    default:
-      resolver.resolveDynamicHelper({ type: 'other' }, moduleName, param.loc);
+function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+  // We only need to handle StringLiterals since Ember already throws an error if unsupported values
+  // are passed to the helper keyword.
+  // If a helper reference is passed in we don't need to do anything since it's either the result of a previous
+  // helper keyword invocation, or a helper reference that was imported somewhere.
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
+}
+
+function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
   }
 }

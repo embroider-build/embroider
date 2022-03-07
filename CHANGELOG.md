@@ -2,6 +2,23 @@
 
 
 
+
+## v1.4.0 (2022-03-07)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1151](https://github.com/embroider-build/embroider/pull/1151) Add support for the modifier keyword ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `core`
+  * [#1152](https://github.com/embroider-build/embroider/pull/1152) improve test suite compat ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1150](https://github.com/embroider-build/embroider/pull/1150) Make the helper keyword handling less strict ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
 ## v1.3.0 (2022-03-04)
 
 #### :rocket: Enhancement

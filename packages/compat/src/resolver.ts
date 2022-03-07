@@ -94,7 +94,7 @@ const builtInHelpers = [
   'link-to',
   'loc',
   'log',
-  // 'modifier',
+  'modifier',
   'mount',
   'mut',
   'on',

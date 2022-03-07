@@ -39,9 +39,7 @@ export class AppFiles {
       }
 
       if (relativePath.startsWith('tests/')) {
-        if (/-test\.\w+$/.test(relativePath)) {
-          tests.push(relativePath);
-        }
+        tests.push(relativePath);
         continue;
       }
 

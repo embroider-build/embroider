@@ -9,7 +9,11 @@ import { setupDeprecationAssertions } from '../../deprecation-assertions';
 import { ensureSafeComponent } from '@embroider/util';
 import SomeComponent from 'dummy/components/some-component';
 import ColocatedExample from 'dummy/components/colocated-example';
+import LegacyComponent from 'dummy/components/legacy-component';
+import LegacyWithTemplateComponent from 'dummy/components/legacy-with-template';
+import LegacyWithLayoutComponent from 'dummy/components/legacy-with-layout';
 import { setOwner } from '@ember/application';
+import Ember from 'ember';
 
 module('Integration | Helper | ensure-safe-component', function (hooks) {
   setupRenderingTest(hooks);
@@ -19,6 +23,7 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     // we need to pass an object with an owner to ensureSafeComponent. The test
     // context normally doesn't consider itself owned by `this.owner`!
     setOwner(this, this.owner);
+    Ember.onerror = undefined;
   });
 
   test('string value', async function (assert) {
@@ -49,6 +54,45 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
       this.element.textContent.trim(),
       'hello from colocated-example'
     );
+  });
+
+  test('legacy component class value with associated template', async function (assert) {
+    this.set('thing', ensureSafeComponent(LegacyWithTemplateComponent, this));
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(
+      this.element.textContent.trim(),
+      'hello from legacy-with-template'
+    );
+  });
+
+  test('legacy component class value with layout template', async function (assert) {
+    // This will issue a warning, but not throw
+    this.set('thing', ensureSafeComponent(LegacyWithLayoutComponent, this));
+    await render(hbs`
+      <this.thing />
+   `);
+    assert.equal(
+      this.element.textContent.trim(),
+      'hello from legacy-with-layout'
+    );
+  });
+
+  test('legacy component class value throws assertion', async function (assert) {
+    assert.expect(2);
+    // This will issue a warning, but not throw
+    this.set('thing', ensureSafeComponent(LegacyComponent, this));
+    Ember.onerror = (e) =>
+      assert.ok(
+        e.message.match(
+          /ensureSafeComponent cannot work with legacy components without associated templates. Received class "LegacyComponent". Consider migrating to co-located templates!/
+        ),
+        'Invoking a component without associated template throws'
+      );
+    await render(hbs`
+      <this.thing />
+    `);
   });
 
   test('curried component value', async function (assert) {

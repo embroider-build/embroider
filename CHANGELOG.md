@@ -3,6 +3,23 @@
 
 
 
+
+## v1.5.0 (2022-03-08)
+
+#### :rocket: Enhancement
+* `util`
+  * [#1155](https://github.com/embroider-build/embroider/pull/1155) Turn ensureSafeComponent into a no-op for class values on Ember 3.25+ ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1156](https://github.com/embroider-build/embroider/pull/1156) fix exception in macros babel plugin ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1154](https://github.com/embroider-build/embroider/pull/1154) Add `modifier` to the list of built-ins ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
 ## v1.4.0 (2022-03-07)
 
 #### :rocket: Enhancement

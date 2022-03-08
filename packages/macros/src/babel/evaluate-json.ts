@@ -222,6 +222,9 @@ export class Evaluator {
 
     if (path.isObjectExpression()) {
       let props = assertArray(path.get('properties')).map(p => {
+        if (p.isSpreadElement()) {
+          return [{ confident: false }, { confident: false }];
+        }
         let key = assertNotArray(p.get('key'));
         let keyEvalValue = this.evaluateKey(key);
         let value = assertNotArray(p.get('value'));

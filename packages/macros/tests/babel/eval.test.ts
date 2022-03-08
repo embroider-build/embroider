@@ -23,6 +23,11 @@ describe('evaluation', function () {
           expect(code).toMatch(`result = 42`);
         });
 
+        test('object literal non-nullish member access parses OK', () => {
+          let code = transform(`const result = { ...content\n}?.[0].content;`);
+          expect(code).toMatch(`const result = { ...content\n}?.[0].content;`);
+        });
+
         test('optional chaining nullish member access', () => {
           let code = transform(`const result = knownUndefinedValue?.x;`);
           expect(code).toMatch(`result = undefined`);

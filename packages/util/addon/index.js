@@ -1,5 +1,6 @@
 import { assert, deprecate } from '@ember/debug';
 import { getOwner } from '@ember/application';
+import { dependencySatisfies, macroCondition } from '@embroider/macros';
 import {
   isCurriedComponentDefinition,
   lookupCurriedComponentDefinition,
@@ -49,7 +50,11 @@ function ensureRegistered(klass, owner) {
 }
 
 function handleClass(klass, thingWithOwner) {
-  let owner = getOwner(thingWithOwner);
-  let nonce = ensureRegistered(klass, owner);
-  return lookupCurriedComponentDefinition(nonce, owner);
+  if (macroCondition(dependencySatisfies('ember-source', '>=3.25.0-beta'))) {
+    return klass;
+  } else {
+    let owner = getOwner(thingWithOwner);
+    let nonce = ensureRegistered(klass, owner);
+    return lookupCurriedComponentDefinition(nonce, owner);
+  }
 }

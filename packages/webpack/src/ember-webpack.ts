@@ -90,9 +90,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       throw new Error(`@embroider/webpack requires webpack@^5.0.0, but found version ${webpack.version}`);
     }
 
+    this.publicAssetURL = options?.publicAssetURL;
+    if (this.publicAssetURL && !options?.usesCorrectAssetURL) {
+      this.publicAssetURL += 'assets/';
+    }
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
-    this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
@@ -190,7 +193,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         path: join(this.outputPath, 'assets'),
         filename: `chunk.[chunkhash].js`,
         chunkFilename: `chunk.[chunkhash].js`,
-        publicPath: publicAssetURL + 'assets/',
+        publicPath: publicAssetURL,
       },
       optimization: {
         splitChunks: {
@@ -420,7 +423,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
         getOrCreate(output.entrypoints, id, () => new Map()).set(
           variantIndex,
-          entrypointAssets.map(asset => 'assets/' + asset.name)
+          entrypointAssets.map(asset => asset.name)
         );
         if (variant.runtime !== 'browser') {
           // in the browser we don't need to worry about lazy assets (they will be

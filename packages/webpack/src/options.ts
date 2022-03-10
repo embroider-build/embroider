@@ -20,6 +20,15 @@ export interface Options {
   // This should be a URL ending in "/".
   publicAssetURL?: string;
 
+  // in early versions of @embroider/webpack the `publicAssetURL` option was
+  // defined incorrectly and made the assumption that it should prepend
+  // `assets/` to all asset URL paths. Setting this option disables this
+  // automatic path modification which means that the `publicAssetURL` option
+  // correctly defines the location where the the `assets` directory is being
+  // served as opposed to where the whole app dist is served (which previously
+  // needed to contain an `assets/` subdirectory)
+  usesCorrectAssetURL?: boolean;
+
   // [thread-loader](https://github.com/webpack-contrib/thread-loader) options.
   // If set to false, `thread-loader` will not be used. If set to an object, it
   // will be used to configure `thread-loader`. If not specified,

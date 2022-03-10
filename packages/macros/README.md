@@ -200,7 +200,7 @@ import { isTesting, isDevelopingApp, macroCondition } from '@embroider/macros';
 if (macroCondition(isTesting()) {
   // some test code - stripped out when not running tests
 } else {
-  // some none-test code
+  // some non-test code
 }
 
 if (macroCondition(isDevelopingApp()) {

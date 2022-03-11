@@ -18,7 +18,6 @@ module.exports = function (defaults) {
     staticComponents: true,
     staticHelpers: true,
     staticModifiers: true,
-    splitRouteClasses: true,
     splitAtRoutes: ['split-me'],
   });
 };

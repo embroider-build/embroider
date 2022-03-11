@@ -96,7 +96,6 @@ const defaults = Object.assign(coreWithDefaults(), {
   compatAdapters: new Map(),
   extraPublicTrees: [],
   workspaceDir: null,
-  optionalComponents: [],
   packageRules: [],
   allowUnsafeDynamicComponents: false,
 });

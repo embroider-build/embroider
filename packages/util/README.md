@@ -18,7 +18,7 @@ ember install @embroider/util
 
 ### `ensureSafeComponent`
 
-This function aids you in eliminating un-analyzable usage of the `{{component}}` helper. For the full explanation of why and how you would do this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/master/ADDON-AUTHOR-GUIDE.md).
+This function aids you in eliminating un-analyzable usage of the `{{component}}` helper. For the full explanation of why and how you would do this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/main/ADDON-AUTHOR-GUIDE.md).
 
 Example usage in Javascript:
 

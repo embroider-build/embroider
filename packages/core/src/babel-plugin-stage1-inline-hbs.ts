@@ -4,7 +4,7 @@
 */
 
 import { join } from 'path';
-import { TemplateCompiler } from './template-compiler-common';
+import type { TemplateCompiler } from './template-compiler-common';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';

@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { join } from 'path';
-import { TemplateCompiler } from './template-compiler-common';
+import type { TemplateCompiler } from './template-compiler-common';
 import { ResolvedDep } from './resolver';
 import { templateCompilationModules } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';

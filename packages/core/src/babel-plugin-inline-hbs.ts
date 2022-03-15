@@ -9,7 +9,7 @@ import type { types as t } from '@babel/core';
 import type * as Babel from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import { join } from 'path';
-import { TemplateCompiler } from './template-compiler-common';
+import type { TemplateCompiler } from './template-compiler-common';
 import { parse } from '@babel/core';
 import { ResolvedDep } from './resolver';
 import { ImportUtil } from 'babel-import-util';

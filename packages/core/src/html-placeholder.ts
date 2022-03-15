@@ -32,8 +32,12 @@ export default class Placeholder {
     }
   }
 
-  insert(node: Node) {
+  insert(node: Node): void {
     this.end.parentElement.insertBefore(node, this.end);
+  }
+
+  appendToHead(node: Node): void {
+    this.end.ownerDocument.head.appendChild(node);
   }
 
   isScript(): boolean {
@@ -70,12 +74,20 @@ export default class Placeholder {
     let newTag = this.end.ownerDocument.createElement('link');
     newTag.href = href;
     newTag.rel = 'stylesheet';
-    this.insert(newTag);
-    this.insertNewline();
+
+    if (this.isScript()) {
+      // Add dynamic styles from scripts to the bottom of the head, and not to where the script was,
+      // to prevent FOUC when pre-rendering (FastBoot)
+      this.appendToHead(newTag);
+    } else {
+      // Keep the new style in the same place as the original one
+      this.insert(newTag);
+    }
+    this.insertNewline(newTag as InDOMNode);
   }
 
-  insertNewline() {
-    this.end.parentElement.insertBefore(this.end.ownerDocument.createTextNode('\n'), this.end);
+  insertNewline(node: InDOMNode = this.end): void {
+    node.parentElement.insertBefore(node.ownerDocument.createTextNode('\n'), node);
   }
 }
 

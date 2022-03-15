@@ -6,12 +6,16 @@ on:
 
   push:
     branches:
-      - master
+      - main
       - 'v*' # prior release branches (e.g. `v0.30.x` branch)
     tags:
       - 'v*'
   pull_request:
-    branches: [master]
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   preflight:
@@ -32,20 +36,21 @@ jobs:
         id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-v1
           restore-keys: |
             ${{ runner.os }}-yarn-
       - run: yarn --frozen-lockfile
       - name: lint
         run: yarn lint
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(node ./test-packages/support/suite-setup-util.js --matrix)"
+        working-directory: test-packages/support
+        run: echo "::set-output name=matrix::$(node ./suite-setup-util.js --matrix)"
 
   test:
     needs: ['preflight']
     name: ${{ matrix.name }}
     runs-on: '${{ matrix.os }}-latest'
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
@@ -63,10 +68,10 @@ jobs:
         id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-v1
           restore-keys: |
             ${{ runner.os }}-yarn-
-      - run: yarn --frozen-lockfile
+      - run: yarn --no-lockfile
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

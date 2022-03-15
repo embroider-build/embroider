@@ -5,6 +5,8 @@ import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
 
 export default class PackageCache {
+  constructor(public appRoot: string) {}
+
   resolve(packageName: string, fromPackage: Package): Package {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map() as Map<string, Package | null>);
     let result = getOrCreate(cache, packageName, () => {
@@ -25,14 +27,6 @@ export default class PackageCache {
     return result;
   }
 
-  getApp(packageRoot: string) {
-    let root = realpathSync(packageRoot);
-    let p = getOrCreate(this.rootCache, root, () => {
-      return new Package(root, this, true);
-    });
-    return p;
-  }
-
   seed(pkg: Package) {
     if (this.rootCache.has(pkg.root)) {
       throw new Error(`bug: tried to seed package ${pkg.name} but it's already in packageCache`);
@@ -50,7 +44,7 @@ export default class PackageCache {
   get(packageRoot: string) {
     let root = realpathSync(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
-      return new Package(root, this);
+      return new Package(root, this, root === this.appRoot);
     });
     return p;
   }
@@ -83,8 +77,8 @@ export default class PackageCache {
     shared.set(identifier, this);
   }
 
-  static shared(identifier: string) {
-    return getOrCreate(shared, identifier, () => new PackageCache());
+  static shared(identifier: string, appRoot: string) {
+    return getOrCreate(shared, identifier, () => new PackageCache(appRoot));
   }
 }
 

@@ -89,7 +89,7 @@ module('Integration | Macro | macroCondition', function (hooks) {
       assert.ok(true, 'it ran');
     };
     await render(
-      hbs`<div data-test-target {{action doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
+      hbs`<div data-test-target {{action this.doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
     );
     let target = this.element.querySelector('[data-test-target]');
     await click(target);
@@ -104,7 +104,7 @@ module('Integration | Macro | macroCondition', function (hooks) {
       })
     );
     await render(
-      hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x')) 'red' 'blue') }}`
+      hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x || 4.x')) 'red' 'blue') }}`
     );
   });
 

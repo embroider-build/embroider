@@ -1,7 +1,7 @@
 import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
 import type { ASTv1 } from '@glimmer/syntax';
 
-// This is the AST transform that resolves components and helpers at build time
+// This is the AST transform that resolves components, helpers and modifiers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
   function resolverTransform({ filename }: { filename: string }) {
@@ -26,6 +26,9 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
             return;
           }
           if (node.path.parts.length > 1) {
@@ -71,6 +74,14 @@ export function makeResolverTransform(resolver: Resolver) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
             return;
           }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
+            return;
+          }
+          if (node.path.original === 'modifier' && node.params.length > 0) {
+            handleDynamicModifier(node.params[0], resolver, filename);
+            return;
+          }
           resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
         },
         MustacheStatement(node: ASTv1.MustacheStatement) {
@@ -78,6 +89,9 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
             return;
           }
           if (node.path.parts.length > 1) {
@@ -89,6 +103,10 @@ export function makeResolverTransform(resolver: Resolver) {
           }
           if (node.path.original === 'component' && node.params.length > 0) {
             handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            return;
+          }
+          if (node.path.original === 'helper' && node.params.length > 0) {
+            handleDynamicHelper(node.params[0], resolver, filename);
             return;
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
@@ -104,6 +122,30 @@ export function makeResolverTransform(resolver: Resolver) {
               }
             }
           }
+        },
+        ElementModifierStatement(node: ASTv1.ElementModifierStatement) {
+          if (node.path.type !== 'PathExpression') {
+            return;
+          }
+          if (scopeStack.inScope(node.path.parts[0])) {
+            return;
+          }
+          if (node.path.this === true) {
+            return;
+          }
+          if (node.path.data === true) {
+            return;
+          }
+          if (node.path.parts.length > 1) {
+            // paths with a dot in them (which therefore split into more than
+            // one "part") are classically understood by ember to be contextual
+            // components. With the introduction of `Template strict mode` in Ember 3.25
+            // it is also possible to pass modifiers this way which means there's nothing
+            // to resolve at this location.
+            return;
+          }
+
+          resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
         },
         ElementNode: {
           enter(node: ASTv1.ElementNode) {
@@ -289,34 +331,20 @@ function handleComponentHelper(
   }
 
   resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
+}
 
-  // if (
-  //   param.type === 'MustacheStatement' &&
-  //   param.hash.pairs.length === 0 &&
-  //   param.params.length === 0 &&
-  //   handleComponentHelper(param.path, resolver, moduleName, scopeStack)
-  // ) {
-  //   return;
-  // }
+function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+  // We only need to handle StringLiterals since Ember already throws an error if unsupported values
+  // are passed to the helper keyword.
+  // If a helper reference is passed in we don't need to do anything since it's either the result of a previous
+  // helper keyword invocation, or a helper reference that was imported somewhere.
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
+}
 
-  // if (
-  //   param.type === 'MustacheStatement' &&
-  //   param.path.type === 'PathExpression' &&
-  //   param.path.original === 'component'
-  // ) {
-  //   // safe because we will handle this inner `{{component ...}}` mustache on its own
-  //   return;
-  // }
-
-  // if (param.type === 'TextNode') {
-  //   resolver.resolveComponentHelper({ type: 'literal', path: param.chars }, moduleName, param.loc);
-  //   return;
-  // }
-
-  // if (param.type === 'SubExpression' && param.path.type === 'PathExpression' && param.path.original === 'component') {
-  //   // safe because we will handle this inner `(component ...)` subexpression on its own
-  //   return;
-  // }
-
-  // resolver.unresolvableComponentArgument(componentName, argumentName, moduleName, param.loc);
+function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+  if (param.type === 'StringLiteral') {
+    resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
 }

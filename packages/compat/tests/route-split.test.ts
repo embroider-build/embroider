@@ -26,6 +26,7 @@ describe('splitAtRoutes', function () {
           staticAddonTrees: true,
           staticAddonTestSupportTrees: true,
           staticHelpers: true,
+          staticModifiers: true,
           staticComponents: true,
           splitAtRoutes: ['people'],
         },
@@ -39,6 +40,7 @@ describe('splitAtRoutes', function () {
             people: {
               'index.hbs': '<AllPeople/>',
               'show.hbs': '<OnePerson/>',
+              'edit.hbs': '<input {{auto-focus}} />',
             },
           },
           controllers: {
@@ -64,6 +66,9 @@ describe('splitAtRoutes', function () {
           helpers: {
             'capitalize.js': 'export default function(){}',
           },
+          modifiers: {
+            'auto-focus.js': 'export default function(){}',
+          },
         },
       });
       build = await BuildResult.build(app, buildOptions);
@@ -82,6 +87,10 @@ describe('splitAtRoutes', function () {
 
     it('has no helpers in main entrypoint', function () {
       expectFile('./assets/my-app.js').doesNotMatch('capitalize');
+    });
+
+    it('has no modifiers in main entrypoint', function () {
+      expectFile('./assets/my-app.js').doesNotMatch('auto-focus');
     });
 
     it('has non-split controllers in main entrypoint', function () {
@@ -142,6 +151,10 @@ describe('splitAtRoutes', function () {
       expectFile('./assets/_route_/people.js').doesNotMatch('capitalize');
     });
 
+    it('has no helpers in route entrypoint', function () {
+      expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
+    });
+
     describe('audit', function () {
       let auditResults: AuditResults;
       beforeAll(async function () {
@@ -160,6 +173,12 @@ describe('splitAtRoutes', function () {
       it('component is consumed only from the template that uses it', function () {
         expect(auditResults.modules['./components/one-person.js']?.consumedFrom).toEqual([
           './templates/people/show.hbs',
+        ]);
+      });
+
+      it('modifier is consumed only from the template that uses it', function () {
+        expect(auditResults.modules['./modifiers/auto-focus.js']?.consumedFrom).toEqual([
+          './templates/people/edit.hbs',
         ]);
       });
 
@@ -187,6 +206,7 @@ describe('splitAtRoutes', function () {
           staticAddonTrees: true,
           staticAddonTestSupportTrees: true,
           staticHelpers: true,
+          staticModifiers: true,
           staticComponents: true,
           splitAtRoutes: ['people'],
         },
@@ -212,6 +232,11 @@ describe('splitAtRoutes', function () {
                 'controller.js': '',
                 'route.js': '',
               },
+              edit: {
+                'template.hbs': '<input {{auto-focus}} />',
+                'controller.js': '',
+                'route.js': '',
+              },
             },
           },
           components: {
@@ -222,6 +247,9 @@ describe('splitAtRoutes', function () {
           },
           helpers: {
             'capitalize.js': 'export default function(){}',
+          },
+          modifiers: {
+            'auto-focus.js': 'export default function(){}',
           },
         },
         config: {
@@ -261,6 +289,10 @@ describe('splitAtRoutes', function () {
 
     it('has no helpers in main entrypoint', function () {
       expectFile('./assets/my-app.js').doesNotMatch('capitalize');
+    });
+
+    it('has no modifiers in main entrypoint', function () {
+      expectFile('./assets/my-app.js').doesNotMatch('auto-focus');
     });
 
     it('has non-split controllers in main entrypoint', function () {
@@ -321,6 +353,10 @@ describe('splitAtRoutes', function () {
       expectFile('./assets/_route_/people.js').doesNotMatch('capitalize');
     });
 
+    it('has no modifiers in route entrypoint', function () {
+      expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
+    });
+
     describe('audit', function () {
       let auditResults: AuditResults;
       beforeAll(async function () {
@@ -339,6 +375,12 @@ describe('splitAtRoutes', function () {
       it('component is consumed only from the template that uses it', function () {
         expect(auditResults.modules['./components/one-person.js']?.consumedFrom).toEqual([
           './pods/people/show/template.hbs',
+        ]);
+      });
+
+      it('modifier is consumed only from the template that uses it', function () {
+        expect(auditResults.modules['./modifiers/auto-focus.js']?.consumedFrom).toEqual([
+          './pods/people/edit/template.hbs',
         ]);
       });
 

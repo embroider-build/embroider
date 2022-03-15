@@ -1,54 +1,51 @@
-import { appScenarios } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
+import { appScenarios, baseV2Addon } from './scenarios';
+import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { AddonMeta } from '@embroider/shared-internals';
+
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('v2-addon', project => {
-    let meta: AddonMeta = {
-      type: 'addon',
-      version: 2,
-      'app-js': {
-        './components/example-component.js': 'app/components/example-component.js',
-      },
-      main: 'addon-main.js',
-    };
-
-    let packageJSON = {
-      keywords: ['ember-addon'],
-      'ember-addon': meta,
-    };
-
-    let addon = new Project({
-      name: 'v2-addon',
-      files: {
-        'package.json': JSON.stringify(packageJSON, null, 2),
-        app: {
-          components: {
-            'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
-          },
-        },
-        'addon-main.js': `
-          const { addonV1Shim } = require('@embroider/addon-shim');
-          module.exports = addonV1Shim(__dirname);
-        `,
+    let addon = baseV2Addon();
+    addon.pkg.name = 'v2-addon';
+    (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
+      'app/components/example-component.js';
+    merge(addon.files, {
+      app: {
         components: {
-          'example-component.js': `
-              import Component from '@glimmer/component';
-              import { hbs } from 'ember-cli-htmlbars';
-              import { setComponentTemplate } from '@ember/component';
-              const TEMPLATE = hbs('<div data-test-example>{{this.message}}</div>')
-              export default class ExampleComponent extends Component {
-                message = "it worked"
-              }
-              setComponentTemplate(TEMPLATE, ExampleComponent);
-            `,
+          'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
         },
+      },
+      components: {
+        'example-component.js': `
+          import Component from '@glimmer/component';
+          import { hbs } from 'ember-cli-htmlbars';
+          import { setComponentTemplate } from '@ember/component';
+          const TEMPLATE = hbs('<div data-test-example>{{this.message}}</div>')
+          export default class ExampleComponent extends Component {
+            message = "it worked"
+          }
+          setComponentTemplate(TEMPLATE, ExampleComponent);
+        `,
+      },
+      'import-from-npm.js': `
+        export default async function() { 
+          let { message } = await import('third-party');
+          return message() 
+        }
+        `,
+    });
+
+    addon.addDependency('third-party', {
+      files: {
+        'index.js': `
+          export function message() {
+            return 'content from third-party';
+          }
+        `,
       },
     });
-    addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
 
     project.addDevDependency(addon);
 
@@ -76,6 +73,17 @@ appScenarios
                 assert.ok(document.querySelector('[data-test-example]'), 'it worked');
               });
             });
+          `,
+        },
+        unit: {
+          'import-test.js': `
+           import { module, test } from 'qunit';
+           import example from 'v2-addon/import-from-npm';
+           module('Unit | import', function(hooks) {
+             test('v2 addons can import() from NPM', async function(assert) {
+              assert.equal(await example(), 'content from third-party');
+             });
+           });
           `,
         },
       },

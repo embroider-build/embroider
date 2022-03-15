@@ -4,10 +4,12 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { outputFileSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
 import { handleImportDeclaration } from './mini-modules-polyfill';
+import { ImportUtil } from 'babel-import-util';
+import { randomBytes } from 'crypto';
+import { outputFileSync, pathExistsSync, renameSync } from 'fs-extra';
 
 interface State {
   adjustFile: AdjustFile;
@@ -40,9 +42,8 @@ export interface Options {
   relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
   emberNeedsModulesPolyfill: boolean;
+  appRoot: string;
 }
-
-const packageCache = PackageCache.shared('embroider-stage3');
 
 type DefineExpressionPath = NodePath<t.CallExpression> & {
   node: t.CallExpression & {
@@ -159,10 +160,14 @@ function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
   return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
-function isResolvable(packageName: string, fromPkg: Package): false | Package {
+function isResolvable(packageName: string, fromPkg: V2Package, appRoot: string): false | Package {
   try {
-    let dep = packageCache.resolve(packageName, fromPkg);
-    if (!dep.isEmberPackage() && !fromPkg.hasDependency('ember-auto-import')) {
+    let dep = PackageCache.shared('embroider-stage3', appRoot).resolve(packageName, fromPkg);
+    if (!dep.isEmberPackage() && fromPkg.meta['auto-upgraded'] && !fromPkg.hasDependency('ember-auto-import')) {
+      // classic ember addons can only import non-ember dependencies if they
+      // have ember-auto-import.
+      //
+      // whereas native v2 packages can always import any dependency
       return false;
     }
     return dep;
@@ -230,6 +235,27 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return makeExternal(specifier, sourceFile, opts);
   }
 
+  if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
+    // Native v2 addons are allowed to use the emberVirtualPeerDeps like
+    // `@glimmer/component`. And like all v2 addons, it's important that they
+    // see those dependencies after those dependencies have been converted to
+    // v2.
+    //
+    // But unlike auto-upgraded addons, native v2 addons are not necessarily
+    // copied out of their original place in node_modules. And from that
+    // original place they might accidentally resolve the emberVirtualPeerDeps
+    // that are present there in v1 format.
+    //
+    // So before we even check isResolvable, we adjust these imports to point at
+    // the app's copies instead.
+    if (emberVirtualPeerDeps.has(packageName)) {
+      if (!opts.activeAddons[packageName]) {
+        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
+      }
+      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
+    }
+  }
+
   let relocatedPkg = sourceFile.relocatedIntoPackage();
   if (relocatedPkg) {
     // this file has been moved into another package (presumably the app).
@@ -240,7 +266,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     }
 
     // first try to resolve from the destination package
-    if (isResolvable(packageName, relocatedPkg)) {
+    if (isResolvable(packageName, relocatedPkg, opts.appRoot)) {
       if (!pkg.meta['auto-upgraded']) {
         throw new Error(
           `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
@@ -249,7 +275,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
       return specifier;
     } else {
       // second try to resolve from the source package
-      let targetPkg = isResolvable(packageName, pkg);
+      let targetPkg = isResolvable(packageName, pkg, opts.appRoot);
       if (targetPkg) {
         if (!pkg.meta['auto-upgraded']) {
           throw new Error(
@@ -262,7 +288,7 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
       }
     }
   } else {
-    if (isResolvable(packageName, pkg)) {
+    if (isResolvable(packageName, pkg, opts.appRoot)) {
       if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
@@ -277,32 +303,18 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
     return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
   }
 
-  // auto-upgraded packages can fall back to attmpeting to find dependencies at
-  // runtime. Native v2 packages can only get this behavior in the
-  // isExplicitlyExternal case above because they need to explicitly ask for
-  // externals.
   if (pkg.meta['auto-upgraded']) {
+    // auto-upgraded packages can fall back to attempting to find dependencies at
+    // runtime. Native v2 packages can only get this behavior in the
+    // isExplicitlyExternal case above because they need to explicitly ask for
+    // externals.
     return makeExternal(specifier, sourceFile, opts);
-  }
-
-  if (pkg.isV2Ember()) {
+  } else {
     // native v2 packages don't automatically externalize *everything* the way
     // auto-upgraded packages do, but they still externalize known and approved
     // ember virtual packages (like @ember/component)
     if (emberVirtualPackages.has(packageName)) {
       return makeExternal(specifier, sourceFile, opts);
-    }
-
-    // native v2 packages don't automatically get to use every other addon as a
-    // peerDep, but they do get the known and approved ember virtual peer deps,
-    // like @glimmer/component
-    if (emberVirtualPeerDeps.has(packageName)) {
-      if (!opts.activeAddons[packageName]) {
-        throw new Error(
-          `${pkg.name} is trying to import from ${packageName}, which is supposed to be present in all ember apps but seems to be missing`
-        );
-      }
-      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
     }
   }
 
@@ -321,8 +333,8 @@ function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options
 }
 
 function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
+  let target = join(opts.externalsDir, 'missing', specifier + '.js');
+  atomicWrite(
     target,
     dynamicMissingModule({
       moduleName: specifier,
@@ -333,13 +345,31 @@ function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Opti
 
 function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
   let target = join(opts.externalsDir, specifier + '.js');
-  outputFileSync(
+  atomicWrite(
     target,
     externalTemplate({
       runtimeName: specifier,
     })
   );
   return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
+}
+
+function atomicWrite(path: string, content: string) {
+  if (pathExistsSync(path)) {
+    return;
+  }
+  let suffix = randomBytes(8).toString('hex');
+  outputFileSync(path + suffix, content);
+  try {
+    renameSync(path + suffix, path);
+  } catch (err: any) {
+    // windows throws EPERM for concurrent access. For us it's not an error
+    // condition because the other thread is writing the exact same value we
+    // would have.
+    if (err.code !== 'EPERM') {
+      throw err;
+    }
+  }
 }
 
 export default function main(babel: typeof Babel) {
@@ -349,8 +379,9 @@ export default function main(babel: typeof Babel) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           let opts = ensureOpts(state);
-          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles);
-          addExtraImports(t, path, opts.extraImports);
+          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles, opts.appRoot);
+          let adder = new ImportUtil(t, path);
+          addExtraImports(adder, t, path, opts.extraImports);
         },
         exit(path: NodePath<t.Program>, state: State) {
           for (let child of path.get('body')) {
@@ -442,35 +473,39 @@ function rewriteTopLevelImport(
   return join(__dirname, '..');
 };
 
-function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, extraImports: Required<Options>['extraImports']) {
-  let counter = 0;
+function addExtraImports(
+  adder: ImportUtil,
+  t: BabelTypes,
+  path: NodePath<t.Program>,
+  extraImports: Required<Options>['extraImports']
+) {
   for (let { absPath, target, runtimeName } of extraImports) {
     if (absPath === path.hub.file.opts.filename) {
       if (runtimeName) {
-        path.node.body.unshift(amdDefine(t, runtimeName, counter));
-        path.node.body.unshift(
-          t.importDeclaration([t.importNamespaceSpecifier(t.identifier(`a${counter++}`))], t.stringLiteral(target))
-        );
+        path.node.body.unshift(amdDefine(t, adder, path, target, runtimeName));
       } else {
-        path.node.body.unshift(t.importDeclaration([], t.stringLiteral(target)));
+        adder.importForSideEffect(target);
       }
     }
   }
 }
 
-function amdDefine(t: BabelTypes, runtimeName: string, importCounter: number) {
+function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
+  let value = t.callExpression(adder.import(path, '@embroider/macros', 'importSync'), [t.stringLiteral(target)]);
   return t.expressionStatement(
     t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
       t.stringLiteral(runtimeName),
-      t.functionExpression(null, [], t.blockStatement([t.returnStatement(t.identifier(`a${importCounter}`))])),
+      t.functionExpression(null, [], t.blockStatement([t.returnStatement(value)])),
     ])
   );
 }
 
 class AdjustFile {
   readonly originalFile: string;
+  private packageCache: PackageCache;
 
-  constructor(public name: string, relocatedFiles: Options['relocatedFiles']) {
+  constructor(public name: string, relocatedFiles: Options['relocatedFiles'], appRoot: string) {
+    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
     if (!name) {
       throw new Error(`bug: adjust-imports plugin was run without a filename`);
     }
@@ -483,13 +518,17 @@ class AdjustFile {
 
   @Memoize()
   owningPackage(): Package | undefined {
-    return packageCache.ownerOfFile(this.originalFile);
+    return this.packageCache.ownerOfFile(this.originalFile);
   }
 
   @Memoize()
-  relocatedIntoPackage(): Package | undefined {
+  relocatedIntoPackage(): V2Package | undefined {
     if (this.isRelocated) {
-      return packageCache.ownerOfFile(this.name);
+      let owning = this.packageCache.ownerOfFile(this.name);
+      if (owning && !owning.isV2Ember()) {
+        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
+      }
+      return owning;
     }
   }
 }

@@ -16,8 +16,8 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
-    let packageInstance = new Package(tmpLocation, packageCache);
+    let packageCache = new PackageCache(tmpLocation);
+    let packageInstance = new Package(tmpLocation, packageCache, true);
 
     let originalProcessValue = process.env['BROCCOLI_ENABLED_MEMOIZE'];
     process.env['BROCCOLI_ENABLED_MEMOIZE'] = 'true';
@@ -59,8 +59,8 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
-    let packageInstance = new Package(tmpLocation, packageCache);
+    let packageCache = new PackageCache(tmpLocation);
+    let packageInstance = new Package(tmpLocation, packageCache, true);
     let nonResolvableDeps = packageInstance.nonResolvableDeps;
 
     if (!nonResolvableDeps) {
@@ -101,8 +101,8 @@ describe('package', () => {
 
     fixturify.writeSync(tmpLocation, projectJSON);
 
-    let packageCache = new PackageCache();
-    let packageInstance = new Package(tmpLocation, packageCache);
+    let packageCache = new PackageCache(tmpLocation);
+    let packageInstance = new Package(tmpLocation, packageCache, true);
     let dependencies = packageInstance.dependencies;
 
     expect(dependencies.length).toBe(2);

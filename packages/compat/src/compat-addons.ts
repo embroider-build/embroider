@@ -11,6 +11,17 @@ import V1App from './v1-app';
 import TreeSync from 'tree-sync';
 import { WatchedDir } from 'broccoli-source';
 
+// This build stage expects to be run with broccoli memoization enabled in order
+// to get good rebuild performance. We turn it on by default here, but you can
+// still explicitly turn it off by setting the env var to "false".
+//
+// As for safetly mutating process.env: broccoli doesn't read this until a Node
+// executes its build hook, so as far as I can tell there's no way we could set
+// this too late.
+if (typeof process.env.BROCCOLI_ENABLED_MEMOIZE === 'undefined') {
+  process.env.BROCCOLI_ENABLED_MEMOIZE = 'true';
+}
+
 export default class CompatAddons implements Stage {
   private didBuild = false;
   private destDir: string;
@@ -29,7 +40,7 @@ export default class CompatAddons implements Stage {
     ensureDirSync(options.workspaceDir!);
     this.destDir = realpathSync(options.workspaceDir!);
 
-    this.packageCache = v1Cache.packageCache.moveAddons(v1Cache.app.root, this.destDir);
+    this.packageCache = v1Cache.app.packageCache.moveAddons(this.destDir);
     this.inputPath = v1Cache.app.root;
     this.treeSyncMap = new WeakMap();
     this.v1Cache = v1Cache;
@@ -57,16 +68,16 @@ export default class CompatAddons implements Stage {
   async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
     await this.deferReady.promise;
     writeJSONSync(join(this.destDir, '.embroider-reuse.json'), {
-      appDestDir: relative(this.destDir, this.packageCache.appDestDir),
+      appDestDir: relative(this.destDir, this.packageCache.appRoot),
     });
     return {
-      outputPath: this.packageCache.appDestDir,
+      outputPath: this.packageCache.appRoot,
       packageCache: this.packageCache,
     };
   }
 
   private get appDestDir(): string {
-    return this.packageCache.appDestDir;
+    return this.packageCache.appRoot;
   }
 
   private get app(): Package {

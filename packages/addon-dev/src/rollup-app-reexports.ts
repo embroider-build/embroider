@@ -13,7 +13,10 @@ export default function appReexports(opts: {
       let pkg = readJsonSync('package.json');
       let appJS: Record<string, string> = {};
       for (let filename of Object.keys(bundle)) {
-        if (opts.include.some((glob) => minimatch(filename, glob))) {
+        if (
+          opts.include.some((glob) => minimatch(filename, glob)) &&
+          !minimatch(filename, '**/*.d.ts')
+        ) {
           appJS[`./${filename}`] = `./dist/_app_/${filename}`;
           this.emitFile({
             type: 'asset',

@@ -32,7 +32,12 @@ describe('audit', function () {
       resolver: new CompatResolver({
         root: app.baseDir,
         modulePrefix: 'audit-this-app',
-        options: { staticComponents: false, staticHelpers: false, allowUnsafeDynamicComponents: false },
+        options: {
+          staticComponents: false,
+          staticHelpers: false,
+          staticModifiers: false,
+          allowUnsafeDynamicComponents: false,
+        },
         activePackageRules: [],
         adjustImportsOptions: {
           renamePackages: {},
@@ -43,6 +48,7 @@ describe('audit', function () {
           relocatedFiles: {},
           resolvableExtensions,
           emberNeedsModulesPolyfill: true,
+          appRoot: '.',
         },
       }),
     };

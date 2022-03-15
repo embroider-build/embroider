@@ -1,14 +1,14 @@
 import PackageCache from './package-cache';
 import semver from 'semver';
 
-export default function babelFilter(skipBabel: { package: string; semverRange?: string }[]) {
+export default function babelFilter(skipBabel: { package: string; semverRange?: string }[], appRoot: string) {
   return function shouldTranspileFile(filename: string) {
     if (!babelCanHandle(filename)) {
       // quick exit for non JS extensions
       return false;
     }
 
-    let owner = PackageCache.shared('embroider-stage3').ownerOfFile(filename);
+    let owner = PackageCache.shared('embroider-stage3', appRoot).ownerOfFile(filename);
     if (owner) {
       for (let { package: pkg, semverRange } of skipBabel) {
         if (owner.name === pkg && (semverRange == null || semver.satisfies(owner.version, semverRange))) {

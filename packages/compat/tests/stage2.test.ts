@@ -460,10 +460,12 @@ describe('stage2 build', function () {
 
     test('addon/hello-world.js', function () {
       let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
-      assertFile.matches(/import \* as a. from ["']\.\.\/synthetic-import-1/);
-      assertFile.matches(/window\.define\(["']\my-addon\/synthetic-import-1["']/);
-      assertFile.matches(/import \* as a. from ["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/);
-      assertFile.matches(/window\.define\(["']my-app\/templates\/components\/second-choice["']/);
+      assertFile.matches(
+        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/synthetic-import-1/
+      );
+      assertFile.matches(
+        /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
+      );
       assertFile.matches(
         /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,
         'externals are handled correctly'
@@ -472,8 +474,9 @@ describe('stage2 build', function () {
 
     test('app/hello-world.js', function () {
       let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
-      assertFile.matches(/import \* as a. from ["']\.\.\/node_modules\/my-addon\/synthetic-import-1/);
-      assertFile.matches(/window\.define\(["']my-addon\/synthetic-import-1["']/);
+      assertFile.matches(
+        /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
+      );
       assertFile.matches(
         /export \{ default \} from ['"]\.\.\/node_modules\/my-addon\/components\/hello-world['"]/,
         'remapped to precise copy of my-addon'
@@ -490,7 +493,7 @@ describe('stage2 build', function () {
 
     test('uses-inline-template.js', function () {
       let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
-      assertFile.matches(/import a. from ["']\.\.\/templates\/components\/first-choice.hbs/);
+      assertFile.matches(/import a\d? from ["']\.\.\/templates\/components\/first-choice.hbs/);
       assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
     });
 
@@ -544,6 +547,7 @@ describe('stage2 build', function () {
     test(`changes in app.css are propagated at rebuild`, async function () {
       expectFile('assets/my-app.css').doesNotMatch('newly-added-class');
       writeFileSync(join(app.baseDir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
+      build.didChange(join(app.baseDir, 'app/styles'));
       await build.rebuild();
       expectFile('assets/my-app.css').matches('newly-added-class');
     });
@@ -555,12 +559,14 @@ describe('stage2 build', function () {
 
     test(`updated public asset`, async function () {
       writeFileSync(join(app.baseDir, 'public/public-file-1.txt'), `updated state`);
+      build.didChange(join(app.baseDir, 'app'));
       await build.rebuild();
       expectFile('public-file-1.txt').matches(/updated state/);
     });
 
     test(`added public asset`, async function () {
       writeFileSync(join(app.baseDir, 'public/public-file-2.txt'), `added`);
+      build.didChange(join(app.baseDir, 'app'));
       await build.rebuild();
       expectFile('public-file-2.txt').matches(/added/);
       expectFile('package.json').json().get('ember-addon.assets').includes('public-file-2.txt');
@@ -568,6 +574,7 @@ describe('stage2 build', function () {
 
     test(`removed public asset`, async function () {
       unlinkSync(join(app.baseDir, 'public/public-file-1.txt'));
+      build.didChange(join(app.baseDir, 'app'));
       await build.rebuild();
       expectFile('public-file-1.txt').doesNotExist();
       expectFile('package.json').json().get('ember-addon.assets').doesNotInclude('public-file-1.txt');

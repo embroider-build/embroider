@@ -417,6 +417,7 @@ export class AppBuilder<TreeNames> {
 
     let colocationOptions: ColocationOptions = {
       packageGuard: true,
+      appRoot: this.root,
     };
     babel.plugins.push([
       require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),
@@ -595,12 +596,20 @@ export class AppBuilder<TreeNames> {
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
   // ordering of the addons.
-  private findActiveAddons(pkg: Package, engine: EngineSummary): void {
+  private findActiveAddons(pkg: Package, engine: EngineSummary, isChild = false): void {
     for (let child of this.adapter.activeAddonChildren(pkg)) {
       if (!child.isEngine()) {
-        this.findActiveAddons(child, engine);
+        this.findActiveAddons(child, engine, true);
       }
       engine.addons.add(child);
+    }
+    // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
+    if (!isChild) {
+      engine.addons = new Set(
+        [...engine.addons].sort((a, b) => {
+          return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
+        })
+      );
     }
   }
 
@@ -871,7 +880,7 @@ export class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     if (this.adapter.env !== 'production') {
-      this.macrosConfig.enableAppDevelopment(this.root);
+      this.macrosConfig.enablePackageDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
     }
     for (let pkgRoot of this.adapter.developingAddons()) {
@@ -995,7 +1004,7 @@ export class AppBuilder<TreeNames> {
     );
     writeFileSync(
       join(this.root, '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel }),
+      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.root }),
       'utf8'
     );
   }
@@ -1131,6 +1140,9 @@ export class AppBuilder<TreeNames> {
     }
     if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
+    }
+    if (!this.options.staticModifiers) {
+      requiredAppFiles.push(appFiles.modifiers);
     }
 
     let styles = [];
@@ -1452,9 +1464,9 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 }
 
 const babelFilterTemplate = compile(`
-const { babelFilter } = require('@embroider/core');
-module.exports = babelFilter({{{json-stringify skipBabel}}});
-`) as (params: { skipBabel: Options['skipBabel'] }) => string;
+const { babelFilter } = require(${JSON.stringify(require.resolve('./index.js'))});
+module.exports = babelFilter({{{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}}");
+`) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path

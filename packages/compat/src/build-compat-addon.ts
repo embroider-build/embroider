@@ -3,20 +3,11 @@ import { Package } from '@embroider/core';
 import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Node } from 'broccoli-node-api';
-import OneShot from './one-shot';
 import buildFunnel from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
-export default function cachedBuildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
-  let tree = buildCompatAddon(originalPackage, v1Cache);
-  if (!originalPackage.mayRebuild) {
-    tree = new OneShot(tree, originalPackage.name);
-  }
-  return tree;
-}
-
-function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
+export default function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
   if (originalPackage.isV2Addon()) {
     // this case is needed when a native-v2 addon depends on a
     // non-native-v2 addon. (The non-native one will get rewritten and
@@ -26,6 +17,13 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
   }
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
+
+  if (oldPackages.length > 1) {
+    // extensibility hook that allows a compat adapter to optimize its own
+    // smooshing. We do it early so that if it reduces all the way to zero, the
+    // next check will handle that.
+    oldPackages = oldPackages[0].reduceInstances(oldPackages);
+  }
 
   if (oldPackages.length === 0) {
     // this happens when the v1 addon wasn't actually getting instantiated at
@@ -39,7 +37,7 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
     return new EmptyPackageTree(originalPackage.name);
   }
 
-  let needsSmooshing = oldPackages[0].hasAnyTrees();
+  let needsSmooshing = oldPackages.length > 1 && oldPackages[0].hasAnyTrees();
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees, { annotation: originalPackage.name });
@@ -52,6 +50,6 @@ function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): N
 function withoutNodeModules(originalPackage: Package): Node {
   let Klass = originalPackage.mayRebuild ? WatchedDir : UnwatchedDir;
   return buildFunnel(new Klass(originalPackage.root), {
-    exclude: ['node_modules'],
+    exclude: ['node_modules', '*/node_modules'],
   });
 }

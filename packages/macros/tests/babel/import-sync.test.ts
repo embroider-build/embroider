@@ -6,13 +6,25 @@ describe('importSync', function () {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
     config.finalize();
 
-    test('importSync becomes require', () => {
+    test('importSync becomes esc(require())', () => {
       let code = transform(`
       import { importSync } from '@embroider/macros';
       importSync('foo');
       `);
-      expect(code).toMatch(/require\(['"]foo['"]\)/);
+      expect(code).toMatch(/import esc from "\.\.\/\.\.\/src\/addon\/es-compat"/);
+      expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
       expect(code).not.toMatch(/window/);
+    });
+    test('importSync leaves existing binding for require alone', () => {
+      let code = transform(`
+      import { importSync } from '@embroider/macros';
+      import require from 'require';
+      importSync('foo');
+      require('x');
+      `);
+      expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
+      expect(code).toMatch(/import _require from 'require'/);
+      expect(code).toMatch(/_require\(['"]x['"]\)/);
     });
     test('aliased importSync becomes require', () => {
       let code = transform(`

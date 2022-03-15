@@ -54,8 +54,6 @@ module('Acceptance | smoke tests', function (hooks) {
   test('dependency satisfies works correctly', async function (assert) {
     await visit('/');
     assert.equal(currentURL(), '/');
-
-    let expectedVersion = ENV.LODASH_VERSION;
-    assert.equal(this.element.querySelector('[data-test-version]').textContent.trim(), expectedVersion);
+    assert.equal(this.element.querySelector('[data-test-version]').textContent.trim(), ENV.EXPECTED_VERSION);
   });
 });

@@ -71,7 +71,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   };
 
   let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
-    let appPackage = packageCache.getApp(appSrcDir);
+    let appPackage = packageCache.get(appSrcDir);
     let adapter = new CompatAppAdapter(
       root,
       appPackage,
@@ -82,7 +82,13 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
 
-    return new AppBuilder<TreeNames>(root, appPackage, adapter, options, MacrosConfig.for(legacyEmberAppInstance));
+    return new AppBuilder<TreeNames>(
+      root,
+      appPackage,
+      adapter,
+      options,
+      MacrosConfig.for(legacyEmberAppInstance, appSrcDir)
+    );
   };
 
   return { inTrees, instantiate };
@@ -179,9 +185,11 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
     let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
-      // When looking for child addons, we want to ignore 'peerDependencies' of a given package, to
-      // align with how ember-cli resolves addons
-      addon => !pkg.packageJSON.peerDependencies?.[addon.name]
+      // When looking for child addons, we want to ignore 'peerDependencies' of
+      // a given package, to align with how ember-cli resolves addons. So here
+      // we only include dependencies that definitely appear in one of the other
+      // sections.
+      addon => pkg.packageJSON.dependencies?.[addon.name] || pkg.packageJSON.devDependencies?.[addon.name]
     );
     if (pkg === this.appPackage) {
       let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
@@ -385,6 +393,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       // persistent caching.
       externalsDir: join(tmpdir, 'embroider', 'externals'),
       emberNeedsModulesPolyfill,
+      appRoot: this.root,
     };
   }
 

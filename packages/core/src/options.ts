@@ -9,6 +9,16 @@ export default interface Options {
   // Enabling this is a prerequisite for route splitting.
   staticHelpers?: boolean;
 
+  // When true, we statically resolve all modifiers at build time. This
+  // causes unused modifiers to be left out of the build ("tree shaking" of
+  // modifiers).
+  //
+  // Defaults to false, which gives you greater compatibility with classic Ember
+  // apps at the cost of bigger builds.
+  //
+  // Enabling this is a prerequisite for route splitting.
+  staticModifiers?: boolean;
+
   // When true, we statically resolve all components at build time. This causes
   // unused components to be left out of the build ("tree shaking" of
   // components).
@@ -26,7 +36,7 @@ export default interface Options {
   splitAtRoutes?: (RegExp | string)[];
 
   // Every file within your application's `app` directory is categorized as a
-  // component, helper, route, route template, controller, or "other".
+  // component, helper, modifier, route, route template, controller, or "other".
   //
   // This option lets you decide which "other" files should be loaded
   // statically. By default, all "other" files will be included in the build and
@@ -44,9 +54,9 @@ export default interface Options {
   // means that everything under your-project/app/lib will be loaded statically.
   //
   // This option has no effect on components (which are governed by
-  // staticComponents), helpers (which are governed by staticHelpers), or the
-  // route-specific files (routes, route templates, and controllers which are
-  // governed by splitAtRoutes).
+  // staticComponents), helpers (which are governed by staticHelpers), modifiers
+  // (which are governed by staticModifiers) or the route-specific files (routes,
+  // route templates, and controllers which are governed by splitAtRoutes).
   staticAppPaths?: string[];
 
   // By default, all modules that get imported into the app go through Babel, so
@@ -100,11 +110,9 @@ export default interface Options {
 export function optionsWithDefaults(options?: Options): Required<Options> {
   let defaults = {
     staticHelpers: false,
+    staticModifiers: false,
     staticComponents: false,
-    packageRules: [],
     splitAtRoutes: [],
-    splitControllers: false,
-    splitRouteClasses: false,
     staticAppPaths: [],
     skipBabel: [],
     pluginHints: [],

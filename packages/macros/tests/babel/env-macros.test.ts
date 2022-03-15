@@ -1,7 +1,7 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
-import { PackageCache } from '@embroider/core';
 import { MacrosConfig } from '../../src/node';
+import { resolve } from 'path';
 
 describe(`env macros`, function () {
   let macrosConfig: MacrosConfig;
@@ -16,9 +16,9 @@ describe(`env macros`, function () {
 
       describe(`true cases`, function () {
         beforeEach(function () {
-          macrosConfig = MacrosConfig.for({});
+          macrosConfig = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: true });
-          macrosConfig.enableAppDevelopment(PackageCache.shared('embroider-stage3').ownerOfFile(__filename)!.root);
+          macrosConfig.enablePackageDevelopment(resolve(__dirname, '..', '..'));
           applyMode(macrosConfig);
           macrosConfig.finalize();
           run = makeRunner(transform);
@@ -81,7 +81,7 @@ describe(`env macros`, function () {
             }
           `);
           expect(run(code)).toBe(true);
-          expect(code).toMatch(/return isTesting\(\)/);
+          expect(code).toMatch(/return isTesting\d*\(\)/);
         });
 
         buildTimeTest('isTesting: use within conditional', () => {
@@ -98,7 +98,7 @@ describe(`env macros`, function () {
           expect(run(code)).toBe('yes');
           expect(code).toMatch(/return 'yes'/);
           expect(code).not.toMatch(/return 'no'/);
-          expect(code).not.toMatch(/isTesting\(\)/);
+          expect(code).not.toMatch(/isTesting\d*\(\)/);
         });
 
         runTimeTest('isTesting: use within conditional', () => {
@@ -115,13 +115,13 @@ describe(`env macros`, function () {
           expect(run(code)).toBe('yes');
           expect(code).toMatch(/return 'yes'/);
           expect(code).toMatch(/return 'no'/);
-          expect(code).toMatch(/isTesting\(\)/);
+          expect(code).toMatch(/isTesting\d*\(\)/);
         });
       });
 
       describe(`false cases`, function () {
         beforeEach(function () {
-          macrosConfig = MacrosConfig.for({});
+          macrosConfig = MacrosConfig.for({}, '/nonexistent');
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: false });
           applyMode(macrosConfig);
           macrosConfig.finalize();

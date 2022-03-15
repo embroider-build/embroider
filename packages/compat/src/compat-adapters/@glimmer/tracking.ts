@@ -17,7 +17,14 @@ class RedirectToEmber extends Plugin {
   build() {
     if (!this.didBuild) {
       copyFileSync(join(this.inputPaths[0], 'package.json'), join(this.outputPath, 'package.json'));
-      outputFileSync(join(this.outputPath, 'index.js'), `export { tracked } from '@ember/-internals/metal';`);
+      outputFileSync(
+        join(this.outputPath, 'index.js'),
+        // Prior to ember-source 4.1, cached didn't exist
+        // using this way of importing from metal, cached will be undefined if pre 4.1
+        `import * as metal from "@ember/-internals/metal";
+const { cached, tracked } = metal;
+export { cached, tracked };`
+      );
       outputFileSync(
         join(this.outputPath, 'primitives', 'cache.js'),
         `export { createCache, getValue, isConst } from "@ember/-internals/metal";`

@@ -107,6 +107,7 @@ describe('compat-resolver', function () {
           relocatedFiles: {},
           resolvableExtensions: ['.js', '.hbs'],
           emberNeedsModulesPolyfill: false,
+          appRoot: appDir,
         },
         otherOptions.adjustImportsImports
       ),
@@ -476,6 +477,20 @@ describe('compat-resolver', function () {
     let findDependencies = configure({ staticHelpers: true });
     expect(findDependencies('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqual([]);
   });
+  test('helper defined in component not failing if there is no arguments', function () {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
+    expect(findDependencies('templates/application.hbs', `{{#if (this.myHelper)}}{{/if}}`)).toEqual([]);
+  });
+  test('class defined component not failing if there is a block', function () {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
+    expect(findDependencies('templates/application.hbs', `{{#this.myComponent}}hello{{/this.myComponent}}`)).toEqual(
+      []
+    );
+  });
+  test('class defined component not failing with arguments', function () {
+    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
+    expect(findDependencies('templates/application.hbs', `{{#this.myComponent 42}}{{/this.myComponent}}`)).toEqual([]);
+  });
   test('mustache missing, no args', function () {
     let findDependencies = configure({
       staticComponents: true,
@@ -503,6 +518,100 @@ describe('compat-resolver', function () {
         runtimeName: 'the-app/components/hello-world',
       },
     ]);
+  });
+  test('string literal passed to "helper" keyword in content position', function () {
+    let findDependencies = configure({
+      staticHelpers: true,
+    });
+    givenFile('helpers/hello-world.js');
+    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
+  test('string literal passed to "modifier" keyword in content position', function () {
+    let findDependencies = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
+      },
+    ]);
+  });
+  test('modifier currying using the "modifier" keyword', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (modifier "add-listener") as |addListener|}}
+          {{#let (modifier addListener "click") as |addClickListener|}}
+            <button {{addClickListener this.handleClick}}>Test</button>
+          {{/let}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
+      },
+    ]);
+  });
+  test('built-in components are ignored when used with the component helper', function () {
+    let findDependencies = configure({
+      staticComponents: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      {{component "input"}}
+      {{component "link-to"}}
+      {{component "textarea"}}
+    `
+      )
+    ).toEqual([]);
+  });
+  test('built-in helpers are ignored when used with the "helper" keyword', function () {
+    let findDependencies = configure({
+      staticHelpers: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      {{helper "fn"}}
+      {{helper "array"}}
+      {{helper "concat"}}
+    `
+      )
+    ).toEqual([]);
+  });
+  test('built-in modifiers are ignored when used with the "modifier" keyword', function () {
+    let findDependencies = configure({
+      staticModifiers: true,
+    });
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+      <button {{(modifier "on" "click" this.handleClick)}}>Test</button>
+      <button {{(modifier "action" "handleClick")}}>Test</button>
+    `
+      )
+    ).toEqual([]);
   });
   test('component helper with direct addon package reference', function () {
     let findDependencies = configure({
@@ -605,6 +714,65 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('string literal passed to "helper" keyword in helper position', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/hello-world.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (helper "hello-world") as |helloWorld|}}
+          {{helloWorld}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
+  test('helper currying using the "helper" keyword', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    givenFile('helpers/hello-world.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (helper "hello-world" name="World") as |hello|}}
+          {{#let (helper hello name="Tomster") as |helloTomster|}}
+            {{helloTomster name="Zoey"}}
+          {{/let}}
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../helpers/hello-world.js',
+        runtimeName: 'the-app/helpers/hello-world',
+      },
+    ]);
+  });
+  test('string literal passed to "modifier" keyword in helper position', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `
+        {{#let (modifier "add-listener" "click") as |addClickListener|}}
+          <button {{addClickListener this.handleClick}}>Test</button>
+        {{/let}}
+        `
+      )
+    ).toEqual([
+      {
+        path: '../modifiers/add-listener.js',
+        runtimeName: 'the-app/modifiers/add-listener',
+      },
+    ]);
+  });
   test('string literal passed to component helper fails to resolve', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
@@ -612,10 +780,40 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
+  test('string literal passed to "helper" keyword fails to resolve', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    expect(() => {
+      findDependencies('templates/application.hbs', `{{helper "hello-world"}}`);
+    }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
+  });
+  test('string literal passed to "modifier" keyword fails to resolve', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(() => {
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      );
+    }).toThrow(new RegExp(`Missing modifier: add-listener in templates/application.hbs`));
+  });
   test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
     let findDependencies = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
     expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
+  });
+  test('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
+    let findDependencies = configure({ staticHelpers: false });
+    givenFile('helpers/hello-world.js');
+    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([]);
+  });
+  test('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
+    let findDependencies = configure({ staticModifiers: false });
+    givenFile('modifiers/add-listener.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
+      )
+    ).toEqual([]);
   });
   test('dynamic component helper error in content position', function () {
     let findDependencies = configure({ staticComponents: true });
@@ -731,6 +929,59 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('missing modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(() => {
+      findDependencies('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
+    }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
+  });
+  test('emits no modifiers when staticModifiers is off', function () {
+    let findDependencies = configure({ staticModifiers: false });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([]);
+  });
+  test('modifier on html element', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier on component', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier on contextual component', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<Form as |f|> <f.Input {{auto-focus}} /></Form>`)).toEqual([
+      {
+        runtimeName: 'the-app/modifiers/auto-focus',
+        path: '../modifiers/auto-focus.js',
+      },
+    ]);
+  });
+  test('modifier provided as an argument', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('components/test.hbs', `<input {{@auto-focus}} />`)).toEqual([]);
+  });
+  test('contextual modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/auto-focus.js');
+    expect(findDependencies('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqual(
+      []
+    );
+  });
   test('local binding takes precedence over helper in bare mustache', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
@@ -745,6 +996,16 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
     ).toEqual([]);
   });
+  test('local binding takes precedence over modifier', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    givenFile('modifiers/some-modifier.js');
+    expect(
+      findDependencies(
+        'templates/application.hbs',
+        `{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}`
+      )
+    ).toEqual([]);
+  });
   test('angle components can establish local bindings', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
@@ -753,35 +1014,45 @@ describe('compat-resolver', function () {
     );
   });
   test('local binding only applies within block', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let findDependencies = configure({ staticHelpers: true, staticModifiers: true });
     givenFile('helpers/capitalize.js');
+    givenFile('modifiers/validate.js');
     expect(
       findDependencies(
         'templates/application.hbs',
-        `{{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}`
+        `
+        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}
+        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
+        `
       )
     ).toEqual([
       {
         runtimeName: 'the-app/helpers/capitalize',
         path: '../helpers/capitalize.js',
       },
+      {
+        runtimeName: 'the-app/modifiers/validate',
+        path: '../modifiers/validate.js',
+      },
     ]);
   });
   test('ignores builtins', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+    let findDependencies = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
     expect(
       findDependencies(
         'templates/application.hbs',
         `
-        {{outlet "foo"}}
+        {{outlet}}
         {{yield bar}}
         {{#with (hash submit=(action doit)) as |thing| }}
         {{/with}}
         <LinkTo @route="index"/>
+        <form {{on "submit" doit}}></form>
       `
       )
     ).toEqual([]);
   });
+
   test('ignores dot-rule curly component invocation, inline', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });
     expect(
@@ -1603,6 +1874,16 @@ describe('compat-resolver', function () {
     expect(() => findDependencies('templates/application.hbs', `{{component (some-helper this.which) }}`)).toThrow(
       `Unsafe dynamic component: cannot statically analyze this expression`
     );
+  });
+
+  test('ignores any non-string-literal in "helper" keyword', function () {
+    let findDependencies = configure({ staticHelpers: true });
+    expect(findDependencies('templates/application.hbs', `{{helper this.which}}`)).toEqual([]);
+  });
+
+  test('ignores any non-string-literal in "modifier" keyword', function () {
+    let findDependencies = configure({ staticModifiers: true });
+    expect(findDependencies('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqual([]);
   });
 
   test('trusts inline ensure-safe-component helper', function () {

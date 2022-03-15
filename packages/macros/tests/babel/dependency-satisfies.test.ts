@@ -1,127 +1,157 @@
-import * as path from 'path';
-import { allBabelVersions, Project, runDefault } from './helpers';
+import { allBabelVersions, Project, runDefault } from '@embroider/test-support';
+import { join } from 'path';
+import { MacrosConfig } from '../../src/node';
 
 const ROOT = process.cwd();
 
 describe(`dependencySatisfies`, function () {
   let project: Project;
 
-  afterEach(() => {
-    if (project) {
-      project.dispose();
-    }
+  beforeEach(() => {
+    project = new Project('test-app');
+  });
 
+  afterEach(() => {
+    project?.dispose();
     process.chdir(ROOT);
   });
 
-  allBabelVersions(function (transform: (code: string, options?: object) => string) {
-    test('is satisfied', () => {
-      let code = transform(`
+  allBabelVersions({
+    includePresetsTests: true,
+    babelConfig() {
+      project.writeSync();
+      let config = MacrosConfig.for({}, project.baseDir);
+      config.finalize();
+      return {
+        filename: join(project.baseDir, 'sample.js'),
+        plugins: config.babelPluginConfig(),
+      };
+    },
+
+    createTests(transform) {
+      test('is satisfied', () => {
+        project.addDependency('example-package', '2.9.0');
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return dependencySatisfies('qunit', '^2.8.0');
+        return dependencySatisfies('example-package', '^2.8.0');
       }
       `);
-      expect(runDefault(code)).toBe(true);
-    });
+        expect(runDefault(code)).toBe(true);
+      });
 
-    test('is not satisfied', () => {
-      let code = transform(`
+      test('is not satisfied', () => {
+        project.addDependency('example-package', '2.9.0');
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return dependencySatisfies('qunit', '^10.0.0');
+        return dependencySatisfies('example-package', '^10.0.0');
       }
       `);
-      expect(runDefault(code)).toBe(false);
-    });
+        expect(runDefault(code)).toBe(false);
+      });
 
-    test('is not present', () => {
-      let code = transform(`
+      test('is not present', () => {
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
         return dependencySatisfies('not-a-real-dep', '^10.0.0');
       }
       `);
-      expect(runDefault(code)).toBe(false);
-    });
+        expect(runDefault(code)).toBe(false);
+      });
 
-    test('import gets removed', () => {
-      let code = transform(`
+      test('import gets removed', () => {
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
         return dependencySatisfies('not-a-real-dep', '1');
       }
       `);
-      expect(code).not.toMatch(/dependencySatisfies/);
-    });
+        expect(code).not.toMatch(/dependencySatisfies/);
+      });
 
-    test('entire import statement gets removed', () => {
-      let code = transform(`
+      test('entire import statement gets removed', () => {
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
         return dependencySatisfies('not-a-real-dep', '*');
       }
       `);
-      expect(code).not.toMatch(/dependencySatisfies/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(code).not.toMatch(/dependencySatisfies/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('unused import gets removed', () => {
-      let code = transform(`
+      test('unused import gets removed', () => {
+        let code = transform(`
       import { dependencySatisfies } from '@embroider/macros';
       export default function() {
         return 1;
       }
       `);
-      expect(code).not.toMatch(/dependencySatisfies/);
-      expect(code).not.toMatch(/@embroider\/macros/);
-    });
+        expect(code).not.toMatch(/dependencySatisfies/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+      });
 
-    test('non call error', () => {
-      expect(() => {
-        transform(`
+      test('non call error', () => {
+        expect(() => {
+          transform(`
           import { dependencySatisfies } from '@embroider/macros';
           let x = dependencySatisfies;
         `);
-      }).toThrow(/You can only use dependencySatisfies as a function call/);
-    });
+        }).toThrow(/You can only use dependencySatisfies as a function call/);
+      });
 
-    test('args length error', () => {
-      expect(() => {
-        transform(`
+      test('args length error', () => {
+        expect(() => {
+          transform(`
           import { dependencySatisfies } from '@embroider/macros';
           dependencySatisfies('foo', 'bar', 'baz');
         `);
-      }).toThrow(/dependencySatisfies takes exactly two arguments, you passed 3/);
-    });
+        }).toThrow(/dependencySatisfies takes exactly two arguments, you passed 3/);
+      });
 
-    test('non literal arg error', () => {
-      expect(() => {
-        transform(`
+      test('non literal arg error', () => {
+        expect(() => {
+          transform(`
           import { dependencySatisfies } from '@embroider/macros';
           let name = 'qunit';
           dependencySatisfies(name, '*');
         `);
-      }).toThrow(/the first argument to dependencySatisfies must be a string literal/);
-    });
+        }).toThrow(/the first argument to dependencySatisfies must be a string literal/);
+      });
 
-    test('it considers prereleases (otherwise within the range) as allowed', () => {
-      project = new Project('test-app', '1.0.0');
-      project.addDevDependency('foo', '1.1.0-beta.1');
-      project.writeSync();
-
-      process.chdir(project.baseDir);
-
-      let code = transform(
-        `
+      test('it considers prereleases (otherwise within the range) as allowed', () => {
+        project.addDependency('foo', '1.1.0-beta.1');
+        let code = transform(
+          `
           import { dependencySatisfies } from '@embroider/macros';
           export default function() {
             return dependencySatisfies('foo', '^1.0.0');
           }
-        `,
-        { filename: path.join(project.baseDir, 'foo.js') }
-      );
-      expect(runDefault(code)).toBe(true);
-    });
+        `
+        );
+        expect(runDefault(code)).toBe(true);
+      });
+
+      test('monorepo resolutions resolve correctly', () => {
+        project.addDependency('@embroider/util', '1.2.3');
+        let code = transform(`
+        import { dependencySatisfies } from '@embroider/macros';
+
+        export default function() {
+          return { 
+            // specified in dependencies
+            util: dependencySatisfies('@embroider/util', '*'),
+
+            // not specified as any kind of dep
+            webpack: dependencySatisfies('@embroider/webpack', '*'),
+          }
+        }
+      `);
+
+        expect(runDefault(code)).toEqual({ util: true, webpack: false });
+      });
+    },
   });
 });

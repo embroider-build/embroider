@@ -14,7 +14,7 @@ describe('each', function () {
       let run = makeRunner(transform);
 
       beforeEach(function () {
-        macrosConfig = MacrosConfig.for({});
+        macrosConfig = MacrosConfig.for({}, __dirname);
         macrosConfig.setOwnConfig(__filename, { plugins: ['alpha', 'beta'], flavor: 'chocolate' });
         applyMode(macrosConfig);
         macrosConfig.finalize();
@@ -25,11 +25,11 @@ describe('each', function () {
       import { each, getOwnConfig, importSync } from '@embroider/macros';
       let plugins = [];
       for (let plugin of each(getOwnConfig().plugins)) {
-        plugins.push(importSync(plugin));
+        plugins.push(plugin);
       }
       `);
-        expect(code).toMatch(/plugins\.push\(require\(["']beta['"]\)\)/);
-        expect(code).toMatch(/plugins\.push\(require\(["']alpha['"]\)\)/);
+        expect(code).toMatch(/plugins\.push\(["']beta['"]\)/);
+        expect(code).toMatch(/plugins\.push\(["']alpha['"]\)/);
         expect(code).not.toMatch(/for/);
       });
 

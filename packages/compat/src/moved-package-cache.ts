@@ -12,13 +12,13 @@ function assertNoTildeExpansion(source: string, target: string) {
   }
 }
 export class MovablePackageCache extends PackageCache {
-  constructor(private macrosConfig: MacrosConfig) {
-    super();
+  constructor(private macrosConfig: MacrosConfig, appRoot: string) {
+    super(appRoot);
   }
 
-  moveAddons(appSrcDir: string, destDir: string): MovedPackageCache {
+  moveAddons(destDir: string): MovedPackageCache {
     // start with the plain old app package
-    let origApp = this.getApp(appSrcDir);
+    let origApp = this.get(this.appRoot);
 
     // discover the set of all packages that will need to be moved into the
     // workspace
@@ -30,7 +30,6 @@ export class MovablePackageCache extends PackageCache {
 
 export class MovedPackageCache extends PackageCache {
   readonly app!: Package;
-  readonly appDestDir: string;
   private commonSegmentCount: number;
   readonly moved: Map<Package, Package> = new Map();
   readonly unmovedAddons: Set<Package>;
@@ -43,14 +42,17 @@ export class MovedPackageCache extends PackageCache {
     private origApp: Package,
     private macrosConfig: MacrosConfig
   ) {
-    super();
+    // this is the initial appRoot, which we can't know until just below here
+    super('not-the-real-root');
 
     // that gives us our common segment count, which enables localPath mapping
     this.commonSegmentCount = movedSet.commonSegmentCount;
 
-    // so we can now determine where the app will go inside the workspace
-    this.appDestDir = this.localPath(origApp.root);
-    this.macrosConfig.packageMoved(origApp.root, this.appDestDir);
+    // so we can now determine where the app will go inside the workspace. THIS
+    // is where we fix 'not-the-real-root' from above.
+    this.appRoot = this.localPath(origApp.root);
+
+    this.macrosConfig.packageMoved(origApp.root, this.appRoot);
 
     for (let originalPkg of movedSet.packages) {
       // Update our rootCache so we don't need to rediscover moved packages

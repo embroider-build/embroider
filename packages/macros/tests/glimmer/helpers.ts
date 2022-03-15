@@ -12,13 +12,13 @@ export { Project };
 type CreateTestsWithConfig = (transform: (templateContents: string) => string, config: MacrosConfig) => void;
 type CreateTests = (transform: (templateContents: string) => string) => void;
 
-interface TemplateTransformOptions {
+export interface TemplateTransformOptions {
   filename?: string;
 }
 
 export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
   let { plugins, setConfig } = MacrosConfig.astPlugins();
-  let config = MacrosConfig.for({});
+  let config = MacrosConfig.for({}, '/nonexistent');
   setConfig(config);
   let compiler = new NodeTemplateCompiler({
     compilerPath,

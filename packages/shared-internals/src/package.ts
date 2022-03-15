@@ -8,14 +8,8 @@ import flatMap from 'lodash/flatMap';
 export default class Package {
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
-  constructor(readonly root: string, protected packageCache: PackageCache, isApp?: boolean) {
-    // In stage1 and stage2, we're careful to make sure our PackageCache entry
-    // for the app itself gets created with an explicit `isApp` flag. In stage3
-    // we don't have that much control, but we can rely on the v2-formatted app
-    // being easy to identify from its metadata.
-    let mayUseDevDeps = typeof isApp === 'boolean' ? isApp : this.isV2App();
-
-    this.dependencyKeys = mayUseDevDeps
+  constructor(readonly root: string, protected packageCache: PackageCache, isApp: boolean) {
+    this.dependencyKeys = isApp
       ? ['dependencies', 'devDependencies', 'peerDependencies']
       : ['dependencies', 'peerDependencies'];
   }
@@ -137,15 +131,15 @@ export default class Package {
             // which is why this logic is here in nonResolvableDeps. If you try
             // to ship broken stuff in regular dependencies, NPM is going to
             // stop you.
-            let pkg;
+            let pkg, main;
             try {
               pkg = this.packageCache.get(join(this.packageCache.basedir(this), path));
+              main = pkg.packageJSON['ember-addon']?.main || pkg.packageJSON['main'];
             } catch (err) {
               // package was missing or had invalid package.json
               return false;
             }
-            let main =
-              (pkg.packageJSON['ember-addon'] && pkg.packageJSON['ember-addon'].main) || pkg.packageJSON['main'];
+
             if (!main || main === '.' || main === './') {
               main = 'index.js';
             } else if (!extname(main)) {

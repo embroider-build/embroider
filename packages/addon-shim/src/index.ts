@@ -40,45 +40,49 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     return tree;
   }
 
+  let autoImportInstance: EAI2Instance | undefined;
+
   return {
     name: pkg.name,
     included(this: AddonInstance, ...args: unknown[]) {
-      if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
-        let autoImportVersion = this.parent.addons.find(
-          (a) => a.name === 'ember-auto-import'
-        )?.pkg.version;
-
-        if (!autoImportVersion) {
-          throw new Error(
-            `${this.parent.name} needs to depend on ember-auto-import in order to use ${this.name}`
-          );
-        }
-
-        if (
-          !satisfies(autoImportVersion, '>=2.0.0-alpha.0', {
-            includePrerelease: true,
-          })
-        ) {
-          throw new Error(
-            `${this.parent.name} has ember-auto-import ${autoImportVersion} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
-          );
-        }
-      }
-
       let parentOptions;
+      let parentName: string;
       if (isDeepAddonInstance(this)) {
         parentOptions = this.parent.options;
+        parentName = this.parent.name;
       } else {
         parentOptions = this.app.options;
+        parentName = this.parent.name();
+      }
+
+      // if we're being used by a v1 package, that package needs ember-auto-import 2
+      if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
+        let autoImport = locateAutoImport(this.parent.addons);
+        if (!autoImport.present) {
+          throw new Error(
+            `${parentName} needs to depend on ember-auto-import in order to use ${this.name}`
+          );
+        }
+
+        if (!autoImport.satisfiesV2) {
+          throw new Error(
+            `${parentName} has ember-auto-import ${autoImport.version} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
+          );
+        }
+        autoImportInstance = autoImport.instance;
+        autoImportInstance.registerV2Addon(this.name, directory);
+      } else {
+        // if we're being used by a v2 addon, it also has this shim and will
+        // forward our registration onward to ember-auto-import
+        (this.parent as EAI2Instance).registerV2Addon(this.name, directory);
       }
 
       if (options.disabled) {
         disabled = options.disabled(parentOptions);
       }
 
-      // this is here so that our possible exceptions above take precedence over
-      // the one that ember-auto-import will also throw if the app doesn't have
-      // ember-auto-import
+      // this is at the end so we can find our own autoImportInstance before any
+      // deeper v2 addons ask us to forward registrations upward to it
       this._super.included.apply(this, args);
     },
 
@@ -139,6 +143,10 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
     },
 
+    cacheKeyForTree(this: AddonInstance, treeType: string): string {
+      return `embroider-addon-shim/${treeType}/${directory}`;
+    },
+
     isDevelopingAddon(this: AddonInstance) {
       // if the app is inside our own directory, we must be under development.
       // This setting controls whether ember-cli will watch for changes in the
@@ -149,10 +157,55 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       let appInstance = this._findHost();
       return isInside(directory, appInstance.project.root);
     },
+
+    registerV2Addon(name: string, root: string): void {
+      autoImportInstance!.registerV2Addon(name, root);
+    },
   };
 }
 
 function isInside(parentDir: string, otherDir: string): boolean {
   let rel = relative(parentDir, otherDir);
   return Boolean(rel) && !rel.startsWith('..') && !isAbsolute(rel);
+}
+
+type EAI2Instance = AddonInstance & {
+  registerV2Addon(name: string, root: string): void;
+};
+
+function locateAutoImport(addons: AddonInstance[]):
+  | { present: false }
+  | {
+      present: true;
+      version: string;
+      satisfiesV2: false;
+    }
+  | {
+      present: true;
+      version: string;
+      satisfiesV2: true;
+      instance: EAI2Instance;
+    } {
+  let instance = addons.find((a) => a.name === 'ember-auto-import');
+  if (!instance) {
+    return { present: false };
+  }
+  let version = instance.pkg.version;
+  let satisfiesV2 = satisfies(version, '>=2.0.0-alpha.0', {
+    includePrerelease: true,
+  });
+  if (satisfiesV2) {
+    return {
+      present: true,
+      version,
+      satisfiesV2,
+      instance: instance as EAI2Instance,
+    };
+  } else {
+    return {
+      present: true,
+      version,
+      satisfiesV2,
+    };
+  }
 }

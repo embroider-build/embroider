@@ -1,5 +1,288 @@
 # Embroider Changelog
 
+
+
+
+
+## v1.5.0 (2022-03-08)
+
+#### :rocket: Enhancement
+* `util`
+  * [#1155](https://github.com/embroider-build/embroider/pull/1155) Turn ensureSafeComponent into a no-op for class values on Ember 3.25+ ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1156](https://github.com/embroider-build/embroider/pull/1156) fix exception in macros babel plugin ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1154](https://github.com/embroider-build/embroider/pull/1154) Add `modifier` to the list of built-ins ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
+## v1.4.0 (2022-03-07)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1151](https://github.com/embroider-build/embroider/pull/1151) Add support for the modifier keyword ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `core`
+  * [#1152](https://github.com/embroider-build/embroider/pull/1152) improve test suite compat ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1150](https://github.com/embroider-build/embroider/pull/1150) Make the helper keyword handling less strict ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
+## v1.3.0 (2022-03-04)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#1146](https://github.com/embroider-build/embroider/pull/1146) Use MiniCssExtractPlugin for FastBoot builds ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#1120](https://github.com/embroider-build/embroider/pull/1120) Add support for the `helper` helper ([@Windvis](https://github.com/Windvis))
+  * [#1130](https://github.com/embroider-build/embroider/pull/1130) Only apply `ember-power-select` compat adapter when using `ember-power-select < 5.0.1` ([@betocantu93](https://github.com/betocantu93))
+
+#### :bug: Bug Fix
+* `core`, `webpack`
+  * [#1140](https://github.com/embroider-build/embroider/pull/1140) Fastboot lazy css support ([@ef4](https://github.com/ef4))
+* `core`
+  * [#1149](https://github.com/embroider-build/embroider/pull/1149) Update externals stubs atomically ([@ef4](https://github.com/ef4))
+* `compat`, `core`
+  * [#1145](https://github.com/embroider-build/embroider/pull/1145) Ensure addon `app` trees are merged in the correct order ([@eoneill](https://github.com/eoneill))
+* `compat`
+  * [#1135](https://github.com/embroider-build/embroider/pull/1135) Fix `@cached` decorator export from fake `@glimmer/tracking` module ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :memo: Documentation
+* Other
+  * [#1148](https://github.com/embroider-build/embroider/pull/1148) Fix `package.json` example in V2 porting guide ([@SergeAstapov](https://github.com/SergeAstapov))
+  * [#1143](https://github.com/embroider-build/embroider/pull/1143) Update number of steps for porting addon to V2 guide ([@AnastasiiaPlutalova](https://github.com/AnastasiiaPlutalova))
+  * [#1137](https://github.com/embroider-build/embroider/pull/1137) Update `Status` section in main README ([@bertdeblock](https://github.com/bertdeblock))
+* `addon-dev`
+  * [#1133](https://github.com/embroider-build/embroider/pull/1133) Fix typo in V2 addon local development documentation ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :house: Internal
+* Other
+  * [#1144](https://github.com/embroider-build/embroider/pull/1144) Remove a workaround that is trying fix an old bug in volta ([@krisselden](https://github.com/krisselden))
+* `router`, `util`
+  * [#1141](https://github.com/embroider-build/embroider/pull/1141) Drive the test suite from scenario-tester ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1103](https://github.com/embroider-build/embroider/pull/1103) Update the ember-template-compiler to v4.1.0 ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 10
+- Alberto Cantú Gómez ([@betocantu93](https://github.com/betocantu93))
+- AnastasiiaPlutalova ([@AnastasiiaPlutalova](https://github.com/AnastasiiaPlutalova))
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Eugene ONeill ([@eoneill](https://github.com/eoneill))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+- Sergey Astapov ([@SergeAstapov](https://github.com/SergeAstapov))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## v1.2.0 (2022-02-10)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1124](https://github.com/embroider-build/embroider/pull/1124) improving ember-data compatibility & test coverage ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1119](https://github.com/embroider-build/embroider/pull/1119) Reuse the `loc` of the macroMaybeAttrs hashes for the created attributes ([@Windvis](https://github.com/Windvis))
+
+#### :memo: Documentation
+* [#1122](https://github.com/embroider-build/embroider/pull/1122) small nitpicking edits in doc ([@angelayanpan](https://github.com/angelayanpan))
+
+#### :house: Internal
+* `macros`
+  * [#1123](https://github.com/embroider-build/embroider/pull/1123) Regenerate yarn.lock ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Angela Pan ([@angelayanpan](https://github.com/angelayanpan))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
+## v1.1.0 (2022-02-08)
+
+#### :rocket: Enhancement
+* `compat`
+  * [#1085](https://github.com/embroider-build/embroider/pull/1085) Updates for LTS 3.28 including ember-data ([@ef4](https://github.com/ef4))
+  * [#1115](https://github.com/embroider-build/embroider/pull/1115) Use broccoli memoization by default ([@ef4](https://github.com/ef4))
+* `addon-dev`
+  * [#1106](https://github.com/embroider-build/embroider/pull/1106) Addon Dev - Allow ts,gts,gjs files as publicEntrypoints ([@josemarluedke](https://github.com/josemarluedke))
+* `macros`
+  * [#1083](https://github.com/embroider-build/embroider/pull/1083) Throw error when setting non-serializable macro config ([@mydea](https://github.com/mydea))
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1102](https://github.com/embroider-build/embroider/pull/1102) Optimize addonCacheKey computation ([@SergeAstapov](https://github.com/SergeAstapov))
+* `core`, `webpack`
+  * [#1109](https://github.com/embroider-build/embroider/pull/1109) fastboot chunk preloading fix ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#1098](https://github.com/embroider-build/embroider/pull/1098) Improve performance of emitting stats during incremental build ([@krisselden](https://github.com/krisselden))
+* `compat`
+  * [#1100](https://github.com/embroider-build/embroider/pull/1100) Fix cacheKeyForTree & OneShot incompatibility ([@ef4](https://github.com/ef4))
+  * [#1088](https://github.com/embroider-build/embroider/pull/1088) Support "cache" from @glimmer/tracking ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1084](https://github.com/embroider-build/embroider/pull/1084) Ensure OneShot tmp dir cleanup ([@krisselden](https://github.com/krisselden))
+
+#### :memo: Documentation
+* Other
+  * [#1110](https://github.com/embroider-build/embroider/pull/1110) fix small typo in addon author guides ([@jelhan](https://github.com/jelhan))
+* `addon-dev`
+  * [#1107](https://github.com/embroider-build/embroider/pull/1107) Creating v2 addon guide ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1096](https://github.com/embroider-build/embroider/pull/1096) Add section on package requirements to importSync documentation ([@jrjohnson](https://github.com/jrjohnson))
+
+#### :house: Internal
+* [#1105](https://github.com/embroider-build/embroider/pull/1105) Cancel workflows when they become outdated ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 9
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Jeldrik Hanschke ([@jelhan](https://github.com/jelhan))
+- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))
+- Josemar Luedke ([@josemarluedke](https://github.com/josemarluedke))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+- Sergey Astapov ([@SergeAstapov](https://github.com/SergeAstapov))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## v1.0.0 (2022-01-19)
+
+Declaring this as 1.0 to signifiy general level of stability and to give us more flexibility to distinguish minor and patch releases.
+
+#### :internal: Internal
+
+* Renamed default branch from master to main. 
+
+#### :bug: Bug Fix
+* `macros`
+  * [#1081](https://github.com/embroider-build/embroider/pull/1081) fix importSync scope collision ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v0.50.2 (2022-01-14)
+
+#### :bug: Bug Fix
+* `compat`, `macros`
+  * [#1076](https://github.com/embroider-build/embroider/pull/1076) add non-es6-compat to importSync ([@ef4](https://github.com/ef4))
+* `core`, `macros`
+  * [#1075](https://github.com/embroider-build/embroider/pull/1075) native v2 addons can always import from NPM ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v0.50.1 (2022-01-12)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1074](https://github.com/embroider-build/embroider/pull/1074) Ensure `babelFilter` config comes from fully qualified `@embroider/core` path in Stage 2 ([@krisselden](https://github.com/krisselden))
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#1070](https://github.com/embroider-build/embroider/pull/1070) Ensure `dependencySatisfies` only considers actual dependencies (includes a fix for invalid results within monorepo scenarios) ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+
+## v0.50.0 (2022-01-08)
+
+#### :rocket: Enhancement
+* `addon-shim`, `core`, `shared-internals`
+  * [#1069](https://github.com/embroider-build/embroider/pull/1069) Make addon-shim a non-ember-addon ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1068](https://github.com/embroider-build/embroider/pull/1068) Widen the node_modules exclude pattern when copying v2 addons ([@ef4](https://github.com/ef4))
+  * [#1064](https://github.com/embroider-build/embroider/pull/1064) Fix unsafe reuse of broccoli trees in OneShot ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v0.49.0 (2021-12-21)
+
+#### :rocket: Enhancement
+* `webpack`
+  * [#1055](https://github.com/embroider-build/embroider/pull/1055) Accept custom `css-loader` and `style-loader` config in `@embroider/webpack` ([@dfreeman](https://github.com/dfreeman))
+* `addon-shim`
+  * [#1052](https://github.com/embroider-build/embroider/pull/1052) restore tree caching via `cacheKeyForTree` ([@RuslanZavacky](https://github.com/RuslanZavacky))
+
+#### :bug: Bug Fix
+* `core`
+  * [#1048](https://github.com/embroider-build/embroider/pull/1048) Fix imported CSS with FastBoot ([@simonihmig](https://github.com/simonihmig))
+  * [#1045](https://github.com/embroider-build/embroider/pull/1045) Append styles imported in JS to end of `document.head` ([@simonihmig](https://github.com/simonihmig))
+* `macros`
+  * [#1059](https://github.com/embroider-build/embroider/pull/1059) cleanup test copy-paste errors ([@ef4](https://github.com/ef4))
+* `compat`, `util`
+  * [#1053](https://github.com/embroider-build/embroider/pull/1053) resolve failed macro condition in ember-private-api ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `compat`, `core`, `shared-internals`
+  * [#1043](https://github.com/embroider-build/embroider/pull/1043) Make extraImports lazy ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1044](https://github.com/embroider-build/embroider/pull/1044) Fix typo in file assertion test matcher ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 6
+- Dan Freeman ([@dfreeman](https://github.com/dfreeman))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Ruslan Zavacky ([@RuslanZavacky](https://github.com/RuslanZavacky))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## v0.48.1 (2021-12-08)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1042](https://github.com/embroider-build/embroider/pull/1042) Fix ember-cli-babel optimization ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+
+## v0.48.0 (2021-12-07)
+
+#### :rocket: Enhancement
+* `compat`, `core`, `router`
+  * [#1021](https://github.com/embroider-build/embroider/pull/1021) Add `staticModifiers` option ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1029](https://github.com/embroider-build/embroider/pull/1029) Don't resolve built-in components when used with the component helper ([@Windvis](https://github.com/Windvis))
+  * [#1030](https://github.com/embroider-build/embroider/pull/1030) fix the ember-get-config compat adapter ([@ef4](https://github.com/ef4))
+  * [#1035](https://github.com/embroider-build/embroider/pull/1035) Optimize ember-cli-babel handling ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `macros`
+  * [#1031](https://github.com/embroider-build/embroider/pull/1031) Add `isTesting` and `isDevelopingApp` to readme ([@mydea](https://github.com/mydea))
+
+#### :house: Internal
+* `router`
+  * [#1027](https://github.com/embroider-build/embroider/pull/1027) `@embroider/router` Ember 4 CI job compatibility ([@Windvis](https://github.com/Windvis))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Francesco Novy ([@mydea](https://github.com/mydea))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
+## v0.47.2 (2021-11-11)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1017](https://github.com/embroider-build/embroider/pull/1017) Ensure components + helpers can work from `this` paths with `staticComponents = true` & `staticHelpers = true` ([@thoov](https://github.com/thoov))
+* `addon-dev`
+  * [#1015](https://github.com/embroider-build/embroider/pull/1015) Address misleading warnings from rollup about externals ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `compat`
+  * [#1011](https://github.com/embroider-build/embroider/pull/1011) Minor typo fix ([@thoov](https://github.com/thoov))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Travis Hoover ([@thoov](https://github.com/thoov))
+
+
 ## v0.47.1 (2021-10-25)
 
 #### :rocket: Enhancement

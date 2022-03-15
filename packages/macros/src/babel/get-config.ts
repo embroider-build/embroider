@@ -1,5 +1,5 @@
 import type { NodePath } from '@babel/traverse';
-import State, { sourceFile, unusedNameLike } from './state';
+import State from './state';
 import { PackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
@@ -7,7 +7,6 @@ import assertNever from 'assert-never';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 
-const packageCache = PackageCache.shared('embroider-stage3');
 export type Mode = 'own' | 'getGlobalConfig' | 'package';
 
 function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' | 'package'): { root: string } | null {
@@ -29,7 +28,7 @@ function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' 
   } else {
     assertNever(mode);
   }
-  return targetPackage(sourceFile(path, state), packageName, packageCache);
+  return targetPackage(state.sourceFile, packageName, state.packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
@@ -56,7 +55,8 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
     collapsed.path.replaceWith(literalResult);
   } else {
     if (mode === 'getGlobalConfig') {
-      state.neededRuntimeImports.set(calleeName(path, context), 'getGlobalConfig');
+      let callee = path.get('callee');
+      callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'getGlobalConfig'));
     } else {
       let pkg = getPackage(path, state, mode);
       let pkgRoot;
@@ -65,9 +65,11 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
       } else {
         pkgRoot = context.types.identifier('undefined');
       }
-      let name = unusedNameLike('config', path);
-      path.replaceWith(context.types.callExpression(context.types.identifier(name), [pkgRoot]));
-      state.neededRuntimeImports.set(name, 'config');
+      path.replaceWith(
+        context.types.callExpression(state.importUtil.import(path, state.pathToOurAddon('runtime'), 'config'), [
+          pkgRoot,
+        ])
+      );
     }
   }
 }
@@ -106,12 +108,4 @@ export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state
       buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
     ),
   ];
-}
-
-function calleeName(path: NodePath<t.CallExpression>, context: typeof Babel): string {
-  let callee = path.node.callee;
-  if (context.types.isIdentifier(callee)) {
-    return callee.name;
-  }
-  throw new Error(`bug: our macros should only be invoked as identifiers`);
 }

@@ -96,7 +96,6 @@ const defaults = Object.assign(coreWithDefaults(), {
   compatAdapters: new Map(),
   extraPublicTrees: [],
   workspaceDir: null,
-  optionalComponents: [],
   packageRules: [],
   allowUnsafeDynamicComponents: false,
 });
@@ -115,6 +114,7 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
     staticAddonTrees: true,
     staticAddonTestSupportTrees: true,
     staticHelpers: true,
+    staticModifiers: true,
     staticComponents: true,
     allowUnsafeDynamicComponents: false,
   }),

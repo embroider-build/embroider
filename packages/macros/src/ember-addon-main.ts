@@ -1,4 +1,6 @@
+import { AppInstance } from '@embroider/shared-internals';
 import { join } from 'path';
+import { BuildPluginParams } from './glimmer/ast-transform';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
 export = {
@@ -9,31 +11,32 @@ export = {
     let parentOptions = (parent.options = parent.options || {});
     let ownOptions = (parentOptions['@embroider/macros'] = parentOptions['@embroider/macros'] || {});
 
-    const appInstance = this._findHost();
-    this.setMacrosConfig(MacrosConfig.for(appInstance));
+    let appInstance: AppInstance = this._findHost();
+    let macrosConfig = getMacrosConfig(appInstance);
+    this.setMacrosConfig(macrosConfig);
+
     // if parent is an addon it has root. If it's an app it has project.root.
     let source = parent.root || parent.project.root;
 
     if (ownOptions.setOwnConfig) {
-      MacrosConfig.for(appInstance).setOwnConfig(source, ownOptions.setOwnConfig);
+      macrosConfig.setOwnConfig(source, ownOptions.setOwnConfig);
     }
 
     if (ownOptions.setConfig) {
       for (let [packageName, config] of Object.entries(ownOptions.setConfig)) {
-        MacrosConfig.for(appInstance).setConfig(source, packageName, config as object);
+        macrosConfig.setConfig(source, packageName, config as object);
       }
     }
 
     if (appInstance.env !== 'production') {
-      let macros = MacrosConfig.for(appInstance);
-      // tell the macros where our app is
-      macros.enableAppDevelopment(join(appInstance.project.configPath(), '..', '..'));
+      // tell the macros our app is under development
+      macrosConfig.enablePackageDevelopment(getAppRoot(appInstance));
       // also tell them our root project is under development. This can be
       // different, in the case where this is an addon and the app is the dummy
       // app.
-      macros.enablePackageDevelopment(appInstance.project.root);
+      macrosConfig.enablePackageDevelopment(appInstance.project.root);
       // keep the macros in runtime mode for development & testing
-      macros.enableRuntimeMode();
+      macrosConfig.enableRuntimeMode();
     }
 
     // add our babel plugin to our parent's babel
@@ -51,9 +54,9 @@ export = {
     // forbidden and consuming it becomes allowed. There's no existing hook with
     // that timing.
     const originalToTree = appInstance.toTree;
-    appInstance.toTree = function () {
-      MacrosConfig.for(appInstance).finalize();
-      return originalToTree.apply(appInstance, arguments);
+    appInstance.toTree = function (...args) {
+      macrosConfig.finalize();
+      return originalToTree.apply(appInstance, args);
     };
   },
 
@@ -68,7 +71,7 @@ export = {
     let babelPlugins = (babelOptions.plugins = babelOptions.plugins || []);
     if (!babelPlugins.some(isEmbroiderMacrosPlugin)) {
       let appInstance = this._findHost();
-      babelPlugins.unshift(...MacrosConfig.for(appInstance).babelPluginConfig(appOrAddonInstance));
+      babelPlugins.unshift(...getMacrosConfig(appInstance).babelPluginConfig(appOrAddonInstance));
     }
   },
 
@@ -81,12 +84,18 @@ export = {
       // MacrosConfig.astPlugins is static because in classic ember-cli, at this
       // point there's not yet an appInstance, so we defer getting it and
       // calling setConfig until our included hook.
-      let { plugins, setConfig, getConfigForPlugin } = MacrosConfig.astPlugins((this as any).parent.root);
+      let { plugins, setConfig, lazyParams } = MacrosConfig.astPlugins((this as any).parent.root);
       this.setMacrosConfig = setConfig;
       plugins.forEach((plugin, index) => {
         let name = `@embroider/macros/${index}`;
         let baseDir = join(__dirname, '..');
-        let projectRoot = (this as any).parent.root;
+
+        let params: BuildPluginParams = {
+          name,
+          firstTransformParams: lazyParams,
+          methodName: index === 0 ? 'makeSecondTransform' : 'makeFirstTransform',
+          baseDir,
+        };
 
         registry.add('htmlbars-ast-plugin', {
           name,
@@ -94,15 +103,7 @@ export = {
           parallelBabel: {
             requireFile: join(__dirname, 'glimmer', 'ast-transform.js'),
             buildUsing: 'buildPlugin',
-            params: {
-              name,
-              get configs() {
-                return getConfigForPlugin();
-              },
-              methodName: index === 0 ? 'makeSecondTransform' : 'makeFirstTransform',
-              projectRoot: projectRoot,
-              baseDir,
-            },
+            params,
           },
           baseDir: () => baseDir,
         });
@@ -112,3 +113,13 @@ export = {
 
   options: {},
 };
+
+// this can differ from appInstance.project.root because Dummy apps are terrible
+function getAppRoot(appInstance: AppInstance): string {
+  return join(appInstance.project.configPath(), '..', '..');
+}
+
+function getMacrosConfig(appInstance: AppInstance): MacrosConfig {
+  let appRoot = join(appInstance.project.configPath(), '..', '..');
+  return MacrosConfig.for(appInstance, appRoot);
+}

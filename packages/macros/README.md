@@ -121,6 +121,10 @@ let foo = importSync('foo');
 let foo = require('foo');
 ```
 
+#### hint
+
+When using `importSync` on non ember-addon packages both the package being imported from *and* `ember-auto-import` *must* be in the `dependencies` of your addons `package.json`.
+
 ### dependencySatisfies
 
 Tests whether a given dependency is present and satisfies the given semver range. Both arguments must be strings and the second argument will be passed into [semver's satisfies](https://github.com/npm/node-semver#usage) method.
@@ -185,6 +189,28 @@ if (macroCondition(getOwnConfig().shouldIncludeMinifiedLibrary)) {
 ```hbs
 <button class="{{macroGetOwnConfig "themeColor"}}">My Themed Button</button>
 ```
+
+### isTesting, isDevelopingApp
+
+These methods can be used in conjunction with `macroCondition` to tree-shake code for specific environments.
+
+```js
+import { isTesting, isDevelopingApp, macroCondition } from '@embroider/macros';
+
+if (macroCondition(isTesting()) {
+  // some test code - stripped out when not running tests
+} else {
+  // some non-test code
+}
+
+if (macroCondition(isDevelopingApp()) {
+  // some code when app is in development environment - stripped out in production builds
+} else {
+  // some production code
+}
+```
+
+Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
 
 ## Real world examples
 

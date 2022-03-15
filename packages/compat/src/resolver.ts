@@ -39,7 +39,12 @@ export interface HelperResolution {
   modules: ResolvedDep[];
 }
 
-export type ResolutionResult = ComponentResolution | HelperResolution;
+export interface ModifierResolution {
+  type: 'modifier';
+  modules: ResolvedDep[];
+}
+
+export type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
 
 export interface ResolutionFail {
   type: 'error';
@@ -82,12 +87,14 @@ const builtInHelpers = [
   'hasBlock',
   'hasBlockParams',
   'hash',
+  'helper',
   'if',
   'input',
   'let',
   'link-to',
   'loc',
   'log',
+  'modifier',
   'mount',
   'mut',
   'on',
@@ -103,15 +110,20 @@ const builtInHelpers = [
 ];
 
 const builtInComponents = ['input', 'link-to', 'textarea'];
+const builtInModifiers = ['action', 'on'];
 
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<Required<Options>, 'staticHelpers' | 'staticComponents' | 'allowUnsafeDynamicComponents'>;
+type ResolverOptions = Pick<
+  Required<Options>,
+  'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
+>;
 
 function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
   return {
     staticHelpers: options.staticHelpers,
+    staticModifiers: options.staticModifiers,
     staticComponents: options.staticComponents,
     allowUnsafeDynamicComponents: options.allowUnsafeDynamicComponents,
   };
@@ -334,13 +346,13 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(templateCompiler: TemplateCompiler): unknown {
     this.templateCompiler = templateCompiler;
-    if (this.staticComponentsEnabled || this.staticHelpersEnabled) {
+    if (this.staticComponentsEnabled || this.staticHelpersEnabled || this.staticModifiersEnabled) {
       return makeResolverTransform(this);
     }
   }
 
-  // called by our audit tool. Forces staticComponents and staticHelpers to
-  // activate so we can audit their behavior, while making their errors silent
+  // called by our audit tool. Forces staticComponents, staticHelpers and staticModifiers
+  // to activate so we can audit their behavior, while making their errors silent
   // until we can gather them up at the end of the build for the audit results.
   enableAuditMode() {
     this.auditMode = true;
@@ -405,7 +417,7 @@ export default class CompatResolver implements Resolver {
   }
 
   absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
-    let pkg = owningPackage || PackageCache.shared('embroider-stage3').ownerOfFile(absPath);
+    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
       for (let [runtimeName, realName] of Object.entries(this.adjustImportsOptions.renamePackages)) {
@@ -436,10 +448,14 @@ export default class CompatResolver implements Resolver {
     return this.params.options.staticHelpers || this.auditMode;
   }
 
+  private get staticModifiersEnabled(): boolean {
+    return this.params.options.staticModifiers || this.auditMode;
+  }
+
   private tryHelper(path: string, from: string): Resolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
       let packageName = parts[0];
       let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
@@ -470,6 +486,40 @@ export default class CompatResolver implements Resolver {
     return null;
   }
 
+  private tryModifier(path: string, from: string): Resolution | null {
+    let parts = path.split('@');
+    if (parts.length > 1 && parts[0].length > 0) {
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
+      let packageName = parts[0];
+      let renamed = this.adjustImportsOptions.renamePackages[packageName];
+      if (renamed) {
+        packageName = renamed;
+      }
+      return this._tryModifier(parts[1], from, cache.resolve(packageName, cache.ownerOfFile(from)!));
+    } else {
+      return this._tryModifier(path, from, this.appPackage);
+    }
+  }
+
+  private _tryModifier(path: string, from: string, targetPackage: Package | AppPackagePlaceholder): Resolution | null {
+    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
+      let absPath = join(targetPackage.root, 'modifiers', path) + extension;
+      if (pathExistsSync(absPath)) {
+        return {
+          type: 'modifier',
+          modules: [
+            {
+              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
+              path: explicitRelative(dirname(from), absPath),
+              absPath,
+            },
+          ],
+        };
+      }
+    }
+    return null;
+  }
+
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
     return { root: this.params.root, name: this.params.modulePrefix };
@@ -478,7 +528,7 @@ export default class CompatResolver implements Resolver {
   private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3');
+      let cache = PackageCache.shared('embroider-stage3', this.params.root);
       let packageName = parts[0];
       let renamed = this.adjustImportsOptions.renamePackages[packageName];
       if (renamed) {
@@ -651,6 +701,28 @@ export default class CompatResolver implements Resolver {
     }
   }
 
+  resolveElementModifierStatement(path: string, from: string, loc: Loc): Resolution | null {
+    if (!this.staticModifiersEnabled) {
+      return null;
+    }
+    let found = this.tryModifier(path, from);
+    if (found) {
+      return this.add(found, from);
+    }
+    if (builtInModifiers.includes(path)) {
+      return null;
+    }
+    return this.add(
+      {
+        type: 'error',
+        message: `Missing modifier`,
+        detail: path,
+        loc,
+      },
+      from
+    );
+  }
+
   resolveElement(tagName: string, from: string, loc: Loc): Resolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
@@ -731,6 +803,11 @@ export default class CompatResolver implements Resolver {
         from
       );
     }
+
+    if (builtInComponents.includes(component.path)) {
+      return null;
+    }
+
     let found = this.tryComponent(component.path, from);
     if (found) {
       return this.add(found, from);
@@ -744,6 +821,80 @@ export default class CompatResolver implements Resolver {
       },
       from
     );
+  }
+
+  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): Resolution | null {
+    if (!this.staticHelpersEnabled) {
+      return null;
+    }
+
+    if (helper.type === 'literal') {
+      let helperName = helper.path;
+      if (builtInHelpers.includes(helperName)) {
+        return null;
+      }
+
+      let found = this.tryHelper(helperName, from);
+      if (found) {
+        return this.add(found, from);
+      }
+      return this.add(
+        {
+          type: 'error',
+          message: `Missing helper`,
+          detail: helperName,
+          loc,
+        },
+        from
+      );
+    } else {
+      return this.add(
+        {
+          type: 'error',
+          message: 'Unsafe dynamic helper',
+          detail: `cannot statically analyze this expression`,
+          loc,
+        },
+        from
+      );
+    }
+  }
+
+  resolveDynamicModifier(modifier: ComponentLocator, from: string, loc: Loc): Resolution | null {
+    if (!this.staticModifiersEnabled) {
+      return null;
+    }
+
+    if (modifier.type === 'literal') {
+      let modifierName = modifier.path;
+      if (builtInModifiers.includes(modifierName)) {
+        return null;
+      }
+
+      let found = this.tryModifier(modifierName, from);
+      if (found) {
+        return this.add(found, from);
+      }
+      return this.add(
+        {
+          type: 'error',
+          message: `Missing modifier`,
+          detail: modifierName,
+          loc,
+        },
+        from
+      );
+    } else {
+      return this.add(
+        {
+          type: 'error',
+          message: 'Unsafe dynamic modifier',
+          detail: `cannot statically analyze this expression`,
+          loc,
+        },
+        from
+      );
+    }
   }
 }
 

@@ -21,7 +21,7 @@ module.exports = function (environment) {
       // Here you can pass flags/options to your application instance
       // when it is created
     },
-    LODASH_VERSION: process.env.LODASH_VERSION || 'four',
+    EXPECTED_VERSION: process.env.EXPECTED_VERSION || 'four',
   };
 
   if (environment === 'development') {

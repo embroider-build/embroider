@@ -1,7 +1,5 @@
 import { satisfies } from 'semver';
-import { PackageCache } from '@embroider/shared-internals';
-
-let packageCache = PackageCache.shared('embroider-stage3');
+import type { PackageCache } from '@embroider/shared-internals';
 
 export default function dependencySatisfies(
   node: any,
@@ -10,7 +8,8 @@ export default function dependencySatisfies(
   // embroider stage3 we process all packages simultaneously, so baseDir is left
   // unconfigured and moduleName will be the full path to the source file.
   baseDir: string | undefined,
-  moduleName: string
+  moduleName: string,
+  packageCache: PackageCache
 ) {
   if (node.params.length !== 2) {
     throw new Error(`macroDependencySatisfies requires two arguments, you passed ${node.params.length}`);
@@ -24,7 +23,7 @@ export default function dependencySatisfies(
   let range = node.params[1].value;
 
   let us = packageCache.ownerOfFile(baseDir || moduleName);
-  if (!us) {
+  if (!us?.hasDependency(packageName)) {
     return false;
   }
 

@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { visit, currentURL } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
+import { dependencySatisfies } from '@embroider/macros';
 
 function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
   let values = [];
@@ -13,8 +14,12 @@ function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
     }
   }
 
-  return values;
+  return values.sort();
 }
+
+// We don't yet support lazy CSS in apps that are using fastboot. This test
+// application runs both with and without fastboot.
+const ensureCSSisLazy = !dependencySatisfies('ember-cli-fastboot', '*');
 
 module('Acceptance | basics', function (hooks) {
   setupApplicationTest(hooks);
@@ -33,11 +38,16 @@ module('Acceptance | basics', function (hooks) {
     let entriesBefore = Object.entries(window.require.entries).length;
     let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
 
-    assert.deepEqual(rules, [
-      'engines-host-app/vendor/styles.css',
-      'eager-engine/addon/styles/addon.css',
-      'engines-host-app/app/styles/app.css',
-    ]);
+    if (ensureCSSisLazy) {
+      assert.deepEqual(
+        rules,
+        [
+          'engines-host-app/vendor/styles.css',
+          'eager-engine/addon/styles/addon.css',
+          'engines-host-app/app/styles/app.css',
+        ].sort()
+      );
+    }
 
     await visit('/style-check');
     assert.dom('.shared-style-target').exists();
@@ -48,17 +58,19 @@ module('Acceptance | basics', function (hooks) {
       'eager-engine styles are present'
     );
 
-    assert.equal(
-      getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
-      '0px',
-      'lazy-engine addon styles are not present'
-    );
+    if (ensureCSSisLazy) {
+      assert.equal(
+        getComputedStyle(document.querySelector('.shared-style-target'))['border-right-width'],
+        '0px',
+        'lazy-engine addon styles are not present'
+      );
 
-    assert.equal(
-      getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
-      '0px',
-      'lazy-engine vendor styles are not present'
-    );
+      assert.equal(
+        getComputedStyle(document.querySelector('.shared-style-target'))['border-top-width'],
+        '0px',
+        'lazy-engine vendor styles are not present'
+      );
+    }
 
     // TODO: uncomment once we fix this appearing too eagerly
     //assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
@@ -73,13 +85,19 @@ module('Acceptance | basics', function (hooks) {
 
     rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
 
-    assert.deepEqual(rules, [
-      'engines-host-app/vendor/styles.css',
-      'eager-engine/addon/styles/addon.css',
-      'engines-host-app/app/styles/app.css',
-      'macro-sample-addon/addon/styles/addon.css',
-      'lazy-engine/addon/styles/addon.css',
-    ]);
+    assert.deepEqual(
+      rules,
+      [
+        'engines-host-app/vendor/styles.css',
+        'eager-engine/addon/styles/addon.css',
+        'engines-host-app/app/styles/app.css',
+        'macro-sample-addon/addon/styles/addon.css',
+        'lazy-engine/addon/styles/addon.css',
+        ensureCSSisLazy ? undefined : 'lazy-in-repo-engine/addon/styles/addon.css',
+      ]
+        .filter(Boolean)
+        .sort()
+    );
 
     await visit('/style-check');
 
@@ -113,7 +131,9 @@ module('Acceptance | basics', function (hooks) {
     const entriesBefore = Object.entries(window.require.entries).length;
     let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
 
-    assert.notOk(rules.includes('lazy-in-repo-engine/addon/styles/addon.css'));
+    if (ensureCSSisLazy) {
+      assert.notOk(rules.includes('lazy-in-repo-engine/addon/styles/addon.css'));
+    }
 
     await visit('/style-check');
     assert.dom('.shared-style-target').exists();
@@ -124,11 +144,13 @@ module('Acceptance | basics', function (hooks) {
       'eager-engine styles are present'
     );
 
-    assert.equal(
-      getComputedStyle(document.querySelector('.shared-style-target'))['border-bottom-width'],
-      '0px',
-      'lazy-in-repo-engine addon styles are not present'
-    );
+    if (ensureCSSisLazy) {
+      assert.equal(
+        getComputedStyle(document.querySelector('.shared-style-target'))['border-bottom-width'],
+        '0px',
+        'lazy-in-repo-engine addon styles are not present'
+      );
+    }
 
     await visit('/use-lazy-in-repo-engine');
     const entriesAfter = Object.entries(window.require.entries).length;

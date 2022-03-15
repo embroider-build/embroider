@@ -30,4 +30,17 @@ export interface Options {
   threadLoaderOptions?: object | false;
 
   babelLoaderOptions?: BabelLoaderOptions;
+
+  /**
+   * Options for [`css-loader`](https://webpack.js.org/loaders/css-loader)
+   */
+  cssLoaderOptions?: object;
+
+  /**
+   * Options for [`style-loader`](https://webpack.js.org/loaders/style-loader/).
+   *
+   * Note that [`mini-css-extract-plugin`](https://webpack.js.org/plugins/mini-css-extract-plugin/)
+   * is used instead of `style-loader` in production builds.
+   */
+  styleLoaderOptions?: object;
 }

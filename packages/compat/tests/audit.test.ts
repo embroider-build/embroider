@@ -4,7 +4,7 @@ import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
 import CompatResolver from '../src/resolver';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 
@@ -57,14 +57,16 @@ describe('audit', function () {
       plugins: [],
     };
 
-    babel.plugins!.push([
-      join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-      { templateCompiler: templateCompilerParams },
-    ]);
+    let hbsDepsPluginPath = join(
+      dirname(require.resolve('@embroider/core/package.json')),
+      'src/babel-plugin-inline-hbs-deps-node.js'
+    );
+
+    babel.plugins!.push([hbsDepsPluginPath, { templateCompiler: templateCompilerParams }]);
     babel.plugins!.push([
       require.resolve('babel-plugin-ember-template-compilation'),
       {
-        precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+        precompilerPath: hbsDepsPluginPath,
       } as InlinePrecompileOptions,
     ]);
 

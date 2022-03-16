@@ -121,12 +121,19 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
       throw path.buildCodeFrameError('placeholders inside a tagged template string are not supported');
     }
     let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
+    let args: t.Expression[] = [t.stringLiteral(template)];
+
+    let locals: t.Identifier[] = [
+      // TODO: this is where lexically scoped dependencies go
+    ];
+    let opts = precompileOpts(locals, t);
+    if (opts) {
+      args.push(opts);
+    }
+
     let newCallExpression = t.callExpression(
       state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
-      [
-        t.stringLiteral(template),
-        // TODO: here is where we will put scope once ember support that
-      ]
+      args
     );
 
     state.emittedCallExpressions.add(newCallExpression);
@@ -140,6 +147,20 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     );
     state.emittedCallExpressions.add(newCallExpression);
     path.replaceWith(newCallExpression);
+  }
+
+  function precompileOpts(locals: t.Identifier[], t: typeof Babel.types) {
+    if (locals.length > 0) {
+      return t.objectExpression([
+        t.objectProperty(
+          t.identifier('scope'),
+          t.arrowFunctionExpression(
+            [],
+            t.objectExpression(locals.map(name => t.objectProperty(name, name, false, true)))
+          )
+        ),
+      ]);
+    }
   }
 
   function amdDefine(runtimeName: string, importCounter: number, t: typeof Babel.types) {

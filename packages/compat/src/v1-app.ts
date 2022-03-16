@@ -9,7 +9,6 @@ import { Node } from 'broccoli-node-api';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import {
-  TemplateCompiler,
   TemplateCompilerPlugins,
   AddonMeta,
   Package,
@@ -27,7 +26,7 @@ import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
-import { isEmberAutoImportDynamic } from './detect-babel-plugins';
+import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
@@ -262,7 +261,7 @@ export default class V1App {
         // always-installed version of that (v2 addons are allowed to assume it
         // will be present in the final app build, the app doesn't get to turn
         // that off or configure it.)
-        !TemplateCompiler.isInlinePrecompilePlugin(p) &&
+        !isInlinePrecompilePlugin(p) &&
         !isEmberAutoImportDynamic(p)
       );
     });

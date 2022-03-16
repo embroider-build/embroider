@@ -4,7 +4,7 @@ import { PluginItem } from '@babel/core';
 import type { Params as InlineBabelParams } from './babel-plugin-stage1-inline-hbs-node';
 import { Plugins } from './ember-template-compiler-types';
 import { getEmberExports } from './load-ember-template-compiler';
-import { TemplateCompiler, matchesSourceFile } from './template-compiler-common';
+import { TemplateCompiler } from './template-compiler-common';
 
 export interface NodeTemplateCompilerParams {
   compilerPath: string;
@@ -38,27 +38,4 @@ export class NodeTemplateCompiler extends TemplateCompiler {
   baseDir() {
     return join(__dirname, '..');
   }
-
-  // tests for the classic ember-cli-htmlbars-inline-precompile babel plugin
-  static isInlinePrecompilePlugin(item: PluginItem) {
-    if (typeof item === 'string') {
-      return matchesSourceFile(item);
-    }
-    if (hasProperties(item) && (item as any)._parallelBabel) {
-      return matchesSourceFile((item as any)._parallelBabel.requireFile);
-    }
-    if (Array.isArray(item) && item.length > 0) {
-      if (typeof item[0] === 'string') {
-        return matchesSourceFile(item[0]);
-      }
-      if (hasProperties(item[0]) && (item[0] as any)._parallelBabel) {
-        return matchesSourceFile((item[0] as any)._parallelBabel.requireFile);
-      }
-    }
-    return false;
-  }
-}
-
-function hasProperties(item: any) {
-  return item && (typeof item === 'object' || typeof item === 'function');
 }

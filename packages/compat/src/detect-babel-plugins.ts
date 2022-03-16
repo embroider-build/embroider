@@ -39,3 +39,41 @@ export function isColocationPlugin(item: PluginItem): boolean {
 
   return pluginPath.includes(join('ember-cli-htmlbars', 'lib', 'colocated-babel-plugin', sep));
 }
+
+// tests for the classic ember-cli-htmlbars-inline-precompile babel plugin
+export function isInlinePrecompilePlugin(item: PluginItem) {
+  if (typeof item === 'string') {
+    return matchesSourceFile(item);
+  }
+  if (hasProperties(item) && (item as any)._parallelBabel) {
+    return matchesSourceFile((item as any)._parallelBabel.requireFile);
+  }
+  if (Array.isArray(item) && item.length > 0) {
+    if (typeof item[0] === 'string') {
+      return matchesSourceFile(item[0]);
+    }
+    if (hasProperties(item[0]) && (item[0] as any)._parallelBabel) {
+      return matchesSourceFile((item[0] as any)._parallelBabel.requireFile);
+    }
+  }
+  return false;
+}
+
+function matchesSourceFile(filename: string) {
+  return Boolean(htmlbarPathMatches.find(match => filename.endsWith(match)));
+}
+
+function hasProperties(item: any) {
+  return item && (typeof item === 'object' || typeof item === 'function');
+}
+
+const htmlbarPathMatches = [
+  ['htmlbars-inline-precompile', 'index.js'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
+  ['htmlbars-inline-precompile', 'index'].join(sep),
+  ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
+  ['ember-cli-htmlbars', 'index.js'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
+  ['ember-cli-htmlbars', 'index'].join(sep),
+  ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
+];

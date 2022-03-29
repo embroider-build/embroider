@@ -4,8 +4,7 @@ import { readFileSync } from 'fs';
 const backtick = '`';
 
 export default function rollupHbsPlugin(): Plugin {
-  const templateFilter = createFilter('**/*.hbs');
-  const moduleFilter = createFilter('**/*.hbs.js');
+  const filter = createFilter('**/*.hbs');
 
   return {
     name: 'rollup-hbs-plugin',
@@ -17,7 +16,7 @@ export default function rollupHbsPlugin(): Plugin {
 
       const id = resolution?.id;
 
-      if (!templateFilter(id)) return null;
+      if (!filter(id)) return null;
 
       // This creates an `*.hbs.js` that we will populate in `load()` hook.
       return {
@@ -31,8 +30,6 @@ export default function rollupHbsPlugin(): Plugin {
       };
     },
     load(id: string) {
-      if (!moduleFilter(id)) return null;
-
       const meta = this.getModuleInfo(id)?.meta;
       const originalId = meta?.['rollup-hbs-plugin']?.originalId;
 

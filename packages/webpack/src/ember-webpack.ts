@@ -76,6 +76,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
+  private _bundleSummary: BundleSummary | undefined;
 
   constructor(
     pathToVanillaApp: string,
@@ -98,11 +99,23 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     warmUp(this.extraThreadLoaderOptions);
   }
 
+  get bundleSummary(): BundleSummary {
+    let bundleSummary = this._bundleSummary;
+    if (bundleSummary === undefined) {
+      this._bundleSummary = bundleSummary = {
+        entrypoints: new Map(),
+        lazyBundles: new Map(),
+        variants: this.variants,
+      };
+    }
+    return bundleSummary;
+  }
+
   async build(): Promise<void> {
+    this._bundleSummary = undefined;
     let appInfo = this.examineApp();
     let webpack = this.getWebpack(appInfo);
-    let stats = this.summarizeStats(await this.runWebpack(webpack));
-    await this.writeFiles(stats, appInfo);
+    await this.runWebpack(webpack);
   }
 
   private examineApp(): AppInfo {
@@ -125,10 +138,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL };
   }
 
-  private configureWebpack(
-    { entrypoints, babel, resolvableExtensions, publicAssetURL }: AppInfo,
-    variant: Variant
-  ): Configuration {
+  private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
+    const { entrypoints, babel, resolvableExtensions, publicAssetURL } = appInfo;
+
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -145,7 +157,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       performance: {
         hints: false,
       },
-      plugins: stylePlugins,
+      plugins: [
+        ...stylePlugins,
+        compiler => {
+          compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
+            this.summarizeStats(stats, variant, variantIndex);
+            await this.writeFiles(this.bundleSummary, appInfo);
+          });
+        },
+      ],
       node: false,
       module: {
         rules: [
@@ -220,8 +240,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       return this.lastWebpack;
     }
     debug(`configuring webpack`);
-    let config = this.variants.map(variant =>
-      mergeWith({}, this.configureWebpack(appInfo, variant), this.extraConfig, appendArrays)
+    let config = this.variants.map((variant, variantIndex) =>
+      mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
     );
     this.lastAppInfo = appInfo;
     return (this.lastWebpack = webpack(config));
@@ -386,54 +406,47 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.MultiStats): BundleSummary {
-    let output: BundleSummary = {
-      entrypoints: new Map(),
-      lazyBundles: new Map(),
-      variants: this.variants,
-    };
-    for (let [variantIndex, variant] of this.variants.entries()) {
-      let { entrypoints, chunks } = multiStats.stats[variantIndex].toJson({
-        all: false,
-        entrypoints: true,
-        chunks: true,
-      });
+  private summarizeStats(stats: webpack.Stats, variant: Variant, variantIndex: number): void {
+    let output = this.bundleSummary;
+    let { entrypoints, chunks } = stats.toJson({
+      all: false,
+      entrypoints: true,
+      chunks: true,
+    });
 
-      // webpack's types are written rather loosely, implying that these two
-      // properties may not be present. They really always are, as far as I can
-      // tell, but we need to check here anyway to satisfy the type checker.
-      if (!entrypoints) {
-        throw new Error(`unexpected webpack output: no entrypoints`);
+    // webpack's types are written rather loosely, implying that these two
+    // properties may not be present. They really always are, as far as I can
+    // tell, but we need to check here anyway to satisfy the type checker.
+    if (!entrypoints) {
+      throw new Error(`unexpected webpack output: no entrypoints`);
+    }
+    if (!chunks) {
+      throw new Error(`unexpected webpack output: no chunks`);
+    }
+
+    for (let id of Object.keys(entrypoints)) {
+      let { assets: entrypointAssets } = entrypoints[id];
+      if (!entrypointAssets) {
+        throw new Error(`unexpected webpack output: no entrypoint.assets`);
       }
-      if (!chunks) {
-        throw new Error(`unexpected webpack output: no chunks`);
-      }
 
-      for (let id of Object.keys(entrypoints)) {
-        let { assets: entrypointAssets } = entrypoints[id];
-        if (!entrypointAssets) {
-          throw new Error(`unexpected webpack output: no entrypoint.assets`);
-        }
-
-        getOrCreate(output.entrypoints, id, () => new Map()).set(
-          variantIndex,
-          entrypointAssets.map(asset => asset.name)
+      getOrCreate(output.entrypoints, id, () => new Map()).set(
+        variantIndex,
+        entrypointAssets.map(asset => asset.name)
+      );
+      if (variant.runtime !== 'browser') {
+        // in the browser we don't need to worry about lazy assets (they will be
+        // handled automatically by webpack as needed), but in any other runtime
+        // we need the ability to preload them
+        output.lazyBundles.set(
+          id,
+          flatMap(
+            chunks.filter(chunk => chunk.runtime?.includes(id)),
+            chunk => chunk.files
+          ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
         );
-        if (variant.runtime !== 'browser') {
-          // in the browser we don't need to worry about lazy assets (they will be
-          // handled automatically by webpack as needed), but in any other runtime
-          // we need the ability to preload them
-          output.lazyBundles.set(
-            id,
-            flatMap(
-              chunks.filter(chunk => chunk.runtime?.includes(id)),
-              chunk => chunk.files
-            ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
-          );
-        }
       }
     }
-    return output;
   }
 
   private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.MultiStats> {

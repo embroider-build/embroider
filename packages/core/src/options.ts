@@ -32,7 +32,7 @@ export default interface Options {
   // Enables per-route code splitting. Any route names that match these patterns
   // will be split out of the initial app payload. If you use this, you must
   // also add @embroider/router to your app. See [@embroider/router's
-  // README](https://github.com/embroider-build/embroider/blob/master/packages/router/README.md)
+  // README](https://github.com/embroider-build/embroider/blob/main/packages/router/README.md)
   splitAtRoutes?: (RegExp | string)[];
 
   // Every file within your application's `app` directory is categorized as a

@@ -26,9 +26,9 @@ When you run the combined test suite locally, we emit Jest stubs for each of the
 
 When we run the combined suite in GitHub, we emit separate jobs for each separate test suite.
 
-## Test Maintance
+## Test Maintenance
 
-In the tests directory we derive our tests off of base app and addon templates (located at tests/app-template and tests/addon-template). These base templates should be updated every new LTS release of ember in order to bring in the lastest template changes and project dependencies. It is recommended to run `ember-cli-update` inside of these directories in order to bring them up to date. Lastly, tests/scenarios.ts should correctly represent our support matrix so new LTS versions should be added at the same time as template updates.
+In the tests directory we derive our tests off of base app and addon templates (located at tests/app-template and tests/addon-template). These base templates should be updated every new LTS release of ember in order to bring in the latest template changes and project dependencies. It is recommended to run `ember-cli-update` inside of these directories in order to bring them up to date. Lastly, tests/scenarios.ts should correctly represent our support matrix so new LTS versions should be added at the same time as template updates.
 
 ## Use a local version of embroider to compile your projects
 

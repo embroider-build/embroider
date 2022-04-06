@@ -4,7 +4,7 @@ This document lays out the recommended best practices for addon authors who want
 
 ## Give me the tl;dr: what should I do?
 
-The best thing for all addons authors to do right now is to achieve the "Embroider Safe" support level. Follow the instructions in the [@embroider/test-setup README](https://github.com/embroider-build/embroider/tree/master/packages/test-setup) to add the `embroider-safe` scenario to your ember-try config.
+The best thing for all addons authors to do right now is to achieve the "Embroider Safe" support level. Follow the instructions in the [@embroider/test-setup README](https://github.com/embroider-build/embroider/tree/main/packages/test-setup) to add the `embroider-safe` scenario to your ember-try config.
 
 There are other levels of support beyond "Embroider Safe", but as long as you get that far you unblock the ability of your users to use Embroider. And the good news is that many addons are already Embroider Safe without doing any work, and all they really need to do is verify by adding a new scenario to their test suite.
 
@@ -30,7 +30,7 @@ We call addons that can be understood by `@embroider/compat` "Embroider Safe". "
 
 Your addon may already be Embroider Safe! Many addons are. We've done a lot of work in the `@embroider/compat` package to be able to compile v1 addons on-the-fly into v2 addons.
 
-The best way to see if your addon is Embroider safe is to add the `@embroider/test-setup` package and runs its `embroider-safe` ember-try scenario. See its [README](https://github.com/embroider-build/embroider/tree/master/packages/test-setup) for full details.
+The best way to see if your addon is Embroider safe is to add the `@embroider/test-setup` package and runs its `embroider-safe` ember-try scenario. See its [README](https://github.com/embroider-build/embroider/tree/main/packages/test-setup) for full details.
 
 If your tests _don't_ work under Embroider when you try this, please file an issue on the Embroider repo. We can help you triage whether there's a missing feature in `@embroider/compat` that would allow your addon to work unchanged, or whether there is a better way to refactor your addon to avoid incompatible behavior.
 
@@ -69,8 +69,8 @@ Several of these examples use a monorepo as a way to keep a clean separation bet
 
 We support some tools to make V2 addon development more convenient:
 
-- [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/master/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
-- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/master/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how you author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
+- [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/main/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
+- [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how you author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
 
 ## Replacing the {{component}} helper
 

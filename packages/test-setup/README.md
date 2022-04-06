@@ -68,7 +68,7 @@ This function always accepts your `app` (the value returned from `new EmberApp` 
 
 When Embroider is not present in the app's dependencies, it does exactly the same thing as `app.toTree()`. But when Embroider is present, it uses Embroider and if it sees one of our pre-defined scenario names in the environment variable `EMBROIDER_TEST_SETUP_OPTIONS`, it will merge those pre-defined options into any options that you provided.
 
-For detailed documentation on what can go in `embroiderOptions`, see the comments in [Core Options](`https://github.com/embroider-build/embroider/blob/master/packages/core/src/options.ts`) and [Compat Options](https://github.com/embroider-build/embroider/blob/master/packages/compat/src/options.ts).
+For detailed documentation on what can go in `embroiderOptions`, see the comments in [Core Options](`https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts`) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts).
 
 If you normally pass extra broccoli trees to the `app.toTree()` method, you can still do so and should use the `extraPublicTrees` option:
 

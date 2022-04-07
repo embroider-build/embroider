@@ -17,6 +17,7 @@ import {
 } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
+import { AuditMessage } from './resolver';
 
 const { JSDOM } = jsdom;
 
@@ -244,10 +245,6 @@ export class Audit {
     config = Object.assign({}, config);
     config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
 
-    // TODO: find the template compiler params inside the babel config and
-    // maniuplate them to turn on the resolver's enableAuditMode. Or create some
-    // other out-of-band way to do that.
-
     config.ast = true;
     return config;
   }
@@ -312,16 +309,31 @@ export class Audit {
   }
 
   async run(): Promise<AuditResults> {
-    this.debug(`meta`, this.meta);
-    for (let asset of this.meta.assets) {
-      if (asset.endsWith('.html')) {
-        this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
+    (globalThis as any).embroider_audit = this.handleResolverError.bind(this);
+
+    try {
+      this.debug(`meta`, this.meta);
+      for (let asset of this.meta.assets) {
+        if (asset.endsWith('.html')) {
+          this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
+        }
       }
+      await this.drainQueue();
+      this.linkModules();
+      this.inspectModules();
+      return AuditResults.create(this.appDir, this.findings, this.modules);
+    } finally {
+      delete (globalThis as any).embroider_audit;
     }
-    await this.drainQueue();
-    this.linkModules();
-    this.inspectModules();
-    return AuditResults.create(this.appDir, this.findings, this.modules);
+  }
+
+  private handleResolverError(msg: AuditMessage) {
+    this.pushFinding({
+      message: msg.message,
+      filename: msg.filename,
+      detail: msg.detail,
+      codeFrame: this.frames.render(this.frames.forSource(msg.source)(msg)),
+    });
   }
 
   private linkModules() {
@@ -465,7 +477,7 @@ export class Audit {
         dependencies: result.imports.map(i => i.source),
       };
     } catch (err) {
-      if (err.code === 'BABEL_PARSE_ERROR') {
+      if (['BABEL_PARSE_ERROR', 'BABEL_TRANSFORM_ERROR'].includes(err.code)) {
         return [
           {
             filename,
@@ -509,7 +521,7 @@ export class Audit {
   }
 
   private async resolve(specifier: string, fromPath: string): Promise<string | ResolutionFailure | undefined> {
-    if (specifier === '@embroider/macros') {
+    if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
       return;
     }
     try {

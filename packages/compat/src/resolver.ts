@@ -151,10 +151,19 @@ export function rehydrate(params: RehydrationParams) {
   return new CompatResolver(params);
 }
 
+export interface AuditMessage {
+  message: string;
+  detail: string;
+  loc: Loc;
+  source: string;
+  filename: string;
+}
+
 export default class CompatResolver implements Resolver {
   private dependencies: Map<string, Resolution[]> = new Map();
   private templateCompiler: TemplateCompiler | undefined;
-  private auditMode = false;
+  private auditHandler: undefined | ((msg: AuditMessage) => void);
+  private currentContents: string | undefined;
 
   _parallelBabel: {
     requireFile: string;
@@ -169,9 +178,12 @@ export default class CompatResolver implements Resolver {
       buildUsing: 'rehydrate',
       params,
     };
+    if ((globalThis as any).embroider_audit) {
+      this.auditHandler = (globalThis as any).embroider_audit;
+    }
   }
 
-  enter(moduleName: string) {
+  enter(moduleName: string, contents: string) {
     let rules = this.findComponentRules(moduleName);
     let deps: Resolution[];
     if (rules?.dependsOnComponents) {
@@ -180,6 +192,7 @@ export default class CompatResolver implements Resolver {
       deps = [];
     }
     this.dependencies.set(moduleName, deps);
+    this.currentContents = contents;
   }
 
   private add(resolution: Resolution, from: string) {
@@ -351,29 +364,13 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  // called by our audit tool. Forces staticComponents, staticHelpers and staticModifiers
-  // to activate so we can audit their behavior, while making their errors silent
-  // until we can gather them up at the end of the build for the audit results.
-  enableAuditMode() {
-    this.auditMode = true;
-  }
-
-  errorsIn(moduleName: string): ResolutionFail[] {
-    let deps = this.dependencies.get(moduleName);
-    if (deps) {
-      return deps.filter(d => d.type === 'error') as ResolutionFail[];
-    } else {
-      return [];
-    }
-  }
-
   dependenciesOf(moduleName: string): ResolvedDep[] {
     let flatDeps: Map<string, ResolvedDep> = new Map();
     let deps = this.dependencies.get(moduleName);
     if (deps) {
       for (let dep of deps) {
         if (dep.type === 'error') {
-          if (!this.auditMode && !this.params.options.allowUnsafeDynamicComponents) {
+          if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
             let e: ResolverDependencyError = new Error(
               `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
             );
@@ -381,6 +378,15 @@ export default class CompatResolver implements Resolver {
             e.loc = dep.loc;
             e.moduleName = moduleName;
             throw e;
+          }
+          if (this.auditHandler) {
+            this.auditHandler({
+              message: dep.message,
+              filename: moduleName,
+              detail: dep.detail,
+              loc: dep.loc,
+              source: this.currentContents!,
+            });
           }
         } else {
           for (let entry of dep.modules) {
@@ -441,15 +447,15 @@ export default class CompatResolver implements Resolver {
   }
 
   private get staticComponentsEnabled(): boolean {
-    return this.params.options.staticComponents || this.auditMode;
+    return this.params.options.staticComponents || Boolean(this.auditHandler);
   }
 
   private get staticHelpersEnabled(): boolean {
-    return this.params.options.staticHelpers || this.auditMode;
+    return this.params.options.staticHelpers || Boolean(this.auditHandler);
   }
 
   private get staticModifiersEnabled(): boolean {
-    return this.params.options.staticModifiers || this.auditMode;
+    return this.params.options.staticModifiers || Boolean(this.auditHandler);
   }
 
   private tryHelper(path: string, from: string): Resolution | null {

@@ -1,5 +1,5 @@
 import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
-import { AppMeta, throwOnWarnings } from '@embroider/core';
+import { AppMeta, NodeTemplateCompilerParams, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
@@ -7,6 +7,7 @@ import CompatResolver from '../src/resolver';
 import { dirname, join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
+import { makePortable } from '@embroider/core/src/portable-babel-config';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -24,7 +25,7 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
-    let templateCompilerParams = {
+    let templateCompilerParams: NodeTemplateCompilerParams = {
       compilerPath: emberTemplateCompilerPath(),
       compilerChecksum: `mock-compiler-checksum${Math.random()}`,
       EmberENV: {},
@@ -74,7 +75,11 @@ describe('audit', function () {
       'index.html': `<script type="module" src="./app.js"></script>`,
       'app.js': `import Hello from './hello.hbs';`,
       'hello.hbs': ``,
-      'babel_config.js': `module.exports = ${JSON.stringify(babel)}`,
+      'babel_config.js': `module.exports = ${JSON.stringify(
+        makePortable(babel, { basedir: '.' }, []).config,
+        null,
+        2
+      )}`,
     });
     let appMeta: AppMeta = {
       type: 'app',
@@ -337,7 +342,7 @@ describe('audit', function () {
       },
     ]);
     expect(result.findings[0].codeFrame).toBeDefined();
-    expect(Object.keys(result.modules).length).toBe(3);
+    expect(Object.keys(result.modules).length).toBe(2);
   });
 
   test('traverse through template even when it has some errors', async function () {
@@ -379,7 +384,7 @@ describe('audit', function () {
     });
     let result = await audit();
     expect(result.findings.map(f => ({ filename: f.filename, message: f.message }))).toEqual([
-      { filename: './hello.hbs', message: 'failed to compile template' },
+      { filename: './hello.hbs', message: 'failed to parse' },
     ]);
     expect(Object.keys(result.modules).length).toBe(3);
   });

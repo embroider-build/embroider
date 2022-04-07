@@ -4,6 +4,41 @@
 
 
 
+
+## v1.6.0 (2022-04-07)
+
+#### :rocket: Enhancement
+* `addon-dev`, `compat`, `core`, `hbs-loader`, `shared-internals`, `webpack`
+  * [#1010](https://github.com/embroider-build/embroider/pull/1010) template compilation improvements ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1170](https://github.com/embroider-build/embroider/pull/1170) Ensure self-references within a dummy apps work for `@` resolution. ([@rwjblue](https://github.com/rwjblue))
+* `addon-dev`
+  * [#1171](https://github.com/embroider-build/embroider/pull/1171) FIX: rollup-hbs-plugin add resolveId hook ([@wondersloth](https://github.com/wondersloth))
+
+#### :memo: Documentation
+* Other
+  * [#1173](https://github.com/embroider-build/embroider/pull/1173) FIX Typos in CONTRIBUTING.md ([@wondersloth](https://github.com/wondersloth))
+* `core`, `test-setup`, `util`
+  * [#1164](https://github.com/embroider-build/embroider/pull/1164) Update `master` to `main` in links ([@bertdeblock](https://github.com/bertdeblock))
+* `macros`
+  * [#1159](https://github.com/embroider-build/embroider/pull/1159) README typo: "none-test code" ([@elwayman02](https://github.com/elwayman02))
+* `compat`, `core`, `router`
+  * [#1161](https://github.com/embroider-build/embroider/pull/1161) Remove outdated core and compat options ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :house: Internal
+* [#1186](https://github.com/embroider-build/embroider/pull/1186) Fix tests under ember-data 4.x ([@ef4](https://github.com/ef4))
+* [#1167](https://github.com/embroider-build/embroider/pull/1167) register node tests with scenario-tester ([@ef4](https://github.com/ef4))
+
+#### Committers: 5
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Jordan Hawker ([@elwayman02](https://github.com/elwayman02))
+- Matt Edwards ([@wondersloth](https://github.com/wondersloth))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v1.5.0 (2022-03-08)
 
 #### :rocket: Enhancement

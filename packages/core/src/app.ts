@@ -27,7 +27,6 @@ import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
 import { TemplateCompilerPlugins } from '.';
 import type { NodeTemplateCompilerParams } from './template-compiler-node';
-import { templateCompilerModule } from './write-template-compiler';
 import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { mangledEngineRoot } from './engine-mangler';
@@ -398,7 +397,7 @@ export class AppBuilder<TreeNames> {
       ]);
     } else {
       // on newer ember versions that don't need the modules-api-polyfill, we
-      // can compose with the newer babel-plugin-htmlbars-inline-precompile, and
+      // can compose with the newer babel-plugin-ember-template-compilation, and
       // use a simpler plugin that only needs to handle inserting discovered
       // dependencies.
       babel.plugins.push([
@@ -899,7 +898,6 @@ export class AppBuilder<TreeNames> {
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
     let templateCompiler = this.templateCompiler(emberENV);
     let babelConfig = this.babelConfig(templateCompiler, appFiles);
-    let templateCompilerIsParallelSafe = this.addTemplateCompiler(templateCompiler);
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
@@ -922,10 +920,6 @@ export class AppBuilder<TreeNames> {
       type: 'app',
       version: 2,
       assets: assetPaths,
-      'template-compiler': {
-        filename: '_template_compiler_.js',
-        isParallelSafe: templateCompilerIsParallelSafe,
-      },
       babel: {
         filename: '_babel_config_.js',
         isParallelSafe: babelConfig.isParallelSafe,
@@ -997,12 +991,6 @@ export class AppBuilder<TreeNames> {
         packageVersion: maybeNodeModuleVersion(cursor),
       };
     });
-  }
-
-  private addTemplateCompiler(params: NodeTemplateCompilerParams): boolean {
-    let mod = templateCompilerModule(params, this.portableHints);
-    writeFileSync(join(this.root, '_template_compiler_.js'), mod.src, 'utf8');
-    return mod.isParallelSafe;
   }
 
   private addBabelConfig(pconfig: { config: TransformOptions; isParallelSafe: boolean }) {

@@ -33,7 +33,6 @@ import { format } from 'util';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
 import { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
-import type { HbsLoaderConfig } from '@embroider/hbs-loader';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
 
@@ -47,7 +46,6 @@ import type { MinifyOptions } from 'terser';
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
-  templateCompiler: AppMeta['template-compiler'];
   babel: AppMeta['babel'];
   rootURL: AppMeta['root-url'];
   publicAssetURL: string;
@@ -109,7 +107,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
   private examineApp(): AppInfo {
     let meta = getAppMeta(this.pathToVanillaApp);
-    let templateCompiler = meta['template-compiler'];
     let rootURL = meta['root-url'];
     let babel = meta['babel'];
     let resolvableExtensions = meta['resolvable-extensions'];
@@ -125,11 +122,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicAssetURL };
+    return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL };
   }
 
   private configureWebpack(
-    { entrypoints, templateCompiler, babel, resolvableExtensions, publicAssetURL }: AppInfo,
+    { entrypoints, babel, resolvableExtensions, publicAssetURL }: AppInfo,
     variant: Variant
   ): Configuration {
     let entry: { [name: string]: string } = {};
@@ -138,11 +135,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         entry[moduleName] = './' + moduleName;
       }
     }
-
-    let hbsOptions: HbsLoaderConfig = {
-      templateCompilerFile: join(this.pathToVanillaApp, templateCompiler.filename),
-      variant,
-    };
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
@@ -160,10 +152,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           {
             test: /\.hbs$/,
             use: nonNullArray([
-              maybeThreadLoader(templateCompiler.isParallelSafe, this.extraThreadLoaderOptions),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
+              babelLoaderOptions(
+                babel.majorVersion,
+                variant,
+                join(this.pathToVanillaApp, babel.filename),
+                this.extraBabelLoaderOptions
+              ),
               {
                 loader: require.resolve('@embroider/hbs-loader'),
-                options: hbsOptions,
               },
             ]),
           },

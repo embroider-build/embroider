@@ -4,8 +4,8 @@ import type { ASTv1 } from '@glimmer/syntax';
 // This is the AST transform that resolves components, helpers and modifiers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
-  function resolverTransform({ filename }: { filename: string }) {
-    resolver.enter(filename);
+  function resolverTransform({ filename, contents }: { filename: string; contents: string }) {
+    resolver.enter(filename, contents);
 
     let scopeStack = new ScopeStack();
 

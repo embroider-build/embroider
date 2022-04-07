@@ -12,7 +12,7 @@ import MockUI from 'console-ui/mock';
 import { TransformOptions, transform } from '@babel/core';
 import { Options } from '../../packages/compat/src';
 import { BoundExpectFile } from './file-assertions';
-import { TemplateCompiler, AppMeta } from '@embroider/core';
+import { AppMeta, hbsToJS } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import { stableWorkspaceDir } from '@embroider/compat/src/default-pipeline';
 
@@ -75,13 +75,13 @@ export default class BuildResult {
   }
 
   async cleanup() {
-    await this.project.dispose();
+    this.project.dispose();
     await this.builder.cleanup();
   }
 
   transpile(contents: string, fileAssert: BoundExpectFile): string {
     if (fileAssert.path.endsWith('.hbs')) {
-      return this.templateCompiler.compile(fileAssert.fullPath, contents);
+      return transform(hbsToJS(contents), Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
     } else if (fileAssert.path.endsWith('.js')) {
       return transform(contents, Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
     } else {
@@ -128,12 +128,6 @@ export default class BuildResult {
 
   private get emberMeta(): AppMeta {
     return this.pkgJSON['ember-addon'] as AppMeta;
-  }
-
-  @Memoize()
-  private get templateCompiler() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(join(this.outputPath, this.emberMeta['template-compiler'].filename)) as TemplateCompiler;
   }
 
   @Memoize()

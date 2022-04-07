@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { applyVariantToTemplateCompiler, AppMeta, explicitRelative } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -17,7 +17,7 @@ import {
 } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
-import CompatResolver from './resolver';
+import { AuditMessage } from './resolver';
 
 const { JSDOM } = jsdom;
 
@@ -201,7 +201,7 @@ export class Audit {
 
     let audit = new this(dir, options);
     if (options['reuse-build']) {
-      if (!audit.meta.babel.isParallelSafe || !audit.meta['template-compiler'].isParallelSafe) {
+      if (!audit.meta.babel.isParallelSafe) {
         throw new BuildError(
           `You can't use the ${chalk.red(
             '--reuse-build'
@@ -244,31 +244,9 @@ export class Audit {
     let config = require(join(this.appDir, this.meta.babel.filename));
     config = Object.assign({}, config);
     config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
+
     config.ast = true;
     return config;
-  }
-
-  @Memoize()
-  private get templateSetup(): { compile: (filename: string, content: string) => string; resolver: CompatResolver } {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let templateCompiler = require(join(this.appDir, this.meta['template-compiler'].filename));
-    let resolver = templateCompiler.params.resolver as CompatResolver;
-
-    resolver.enableAuditMode();
-
-    let compile = applyVariantToTemplateCompiler(
-      { name: 'default', runtime: 'all', optimizeForProduction: false },
-      templateCompiler.compile
-    );
-    return { compile, resolver };
-  }
-
-  private get templateCompiler(): (filename: string, content: string) => string {
-    return this.templateSetup.compile;
-  }
-
-  private get templateResolver(): CompatResolver {
-    return this.templateSetup.resolver;
   }
 
   private debug(message: string, ...args: any[]) {
@@ -331,16 +309,31 @@ export class Audit {
   }
 
   async run(): Promise<AuditResults> {
-    this.debug(`meta`, this.meta);
-    for (let asset of this.meta.assets) {
-      if (asset.endsWith('.html')) {
-        this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
+    (globalThis as any).embroider_audit = this.handleResolverError.bind(this);
+
+    try {
+      this.debug(`meta`, this.meta);
+      for (let asset of this.meta.assets) {
+        if (asset.endsWith('.html')) {
+          this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
+        }
       }
+      await this.drainQueue();
+      this.linkModules();
+      this.inspectModules();
+      return AuditResults.create(this.appDir, this.findings, this.modules);
+    } finally {
+      delete (globalThis as any).embroider_audit;
     }
-    await this.drainQueue();
-    this.linkModules();
-    this.inspectModules();
-    return AuditResults.create(this.appDir, this.findings, this.modules);
+  }
+
+  private handleResolverError(msg: AuditMessage) {
+    this.pushFinding({
+      message: msg.message,
+      filename: msg.filename,
+      detail: msg.detail,
+      codeFrame: this.frames.render(this.frames.forSource(msg.source)(msg)),
+    });
   }
 
   private linkModules() {
@@ -484,7 +477,7 @@ export class Audit {
         dependencies: result.imports.map(i => i.source),
       };
     } catch (err) {
-      if (err.code === 'BABEL_PARSE_ERROR') {
+      if (['BABEL_PARSE_ERROR', 'BABEL_TRANSFORM_ERROR'].includes(err.code)) {
         return [
           {
             filename,
@@ -503,26 +496,7 @@ export class Audit {
     content: Buffer | string
   ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let rawSource = content.toString('utf8');
-    let js;
-    try {
-      js = this.templateCompiler(filename, rawSource);
-    } catch (err) {
-      return [
-        {
-          filename,
-          message: `failed to compile template`,
-          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
-        },
-      ];
-    }
-    for (let err of this.templateResolver.errorsIn(filename)) {
-      this.pushFinding({
-        filename,
-        message: err.message,
-        detail: err.detail,
-        codeFrame: this.frames.render(this.frames.forSource(rawSource)(err)),
-      });
-    }
+    let js = hbsToJS(rawSource);
     return this.visitJS(filename, js);
   }
 
@@ -547,7 +521,7 @@ export class Audit {
   }
 
   private async resolve(specifier: string, fromPath: string): Promise<string | ResolutionFailure | undefined> {
-    if (specifier === '@embroider/macros') {
+    if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
       return;
     }
     try {

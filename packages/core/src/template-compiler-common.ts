@@ -1,7 +1,6 @@
 import stripBom from 'strip-bom';
 import { Resolver, ResolvedDep } from './resolver';
-import { join, sep } from 'path';
-import type { PluginItem } from '@babel/core';
+import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
 import wrapLegacyHbsPluginIfNeeded from 'wrap-legacy-hbs-plugin-if-needed';
 
@@ -58,17 +57,6 @@ export interface GlimmerSyntax {
   _Ember: { FEATURES: any; ENV: any };
 }
 
-const htmlbarPathMatches = [
-  ['htmlbars-inline-precompile', 'index.js'].join(sep),
-  ['htmlbars-inline-precompile', 'lib', 'require-from-worker.js'].join(sep),
-  ['htmlbars-inline-precompile', 'index'].join(sep),
-  ['htmlbars-inline-precompile', 'lib', 'require-from-worker'].join(sep),
-  ['ember-cli-htmlbars', 'index.js'].join(sep),
-  ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
-  ['ember-cli-htmlbars', 'index'].join(sep),
-  ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
-];
-
 export interface TemplateCompilerParams {
   // this should be the exports object from ember-template-compiler.js. It's
   // "unknown" here because it changes shape in different ember versions, we
@@ -90,10 +78,6 @@ export class TemplateCompiler {
     this.resolver = params.resolver;
     this.EmberENV = params.EmberENV;
     this.plugins = params.plugins;
-
-    // stage3 packagers don't need to know about our instance, they can just
-    // grab the compile function and use it.
-    this.compile = this.compile.bind(this);
   }
 
   private get syntax(): GlimmerSyntax {
@@ -162,22 +146,6 @@ export class TemplateCompiler {
     return { compiled, dependencies };
   }
 
-  // Compiles all the way from a template string to a javascript module string.
-  compile(moduleName: string, contents: string) {
-    let { compiled, dependencies } = this.precompile(contents, { filename: moduleName });
-    let lines = [];
-    let counter = 0;
-    for (let { runtimeName, path } of dependencies) {
-      lines.push(`import a${counter} from "${path.split(sep).join('/')}";`);
-      lines.push(`window.define('${runtimeName}', function(){ return a${counter++}});`);
-    }
-
-    lines.push(`import { createTemplateFactory } from '@ember/template-factory';`);
-    lines.push(`export default createTemplateFactory(${compiled});`);
-
-    return lines.join('\n');
-  }
-
   // Applies all custom AST transforms and emits the results still as
   // handlebars.
   applyTransforms(moduleName: string, contents: string): string {
@@ -217,33 +185,6 @@ export class TemplateCompiler {
   baseDir() {
     return join(__dirname, '..');
   }
-
-  // tests for the classic ember-cli-htmlbars-inline-precompile babel plugin
-  static isInlinePrecompilePlugin(item: PluginItem) {
-    if (typeof item === 'string') {
-      return matchesSourceFile(item);
-    }
-    if (hasProperties(item) && (item as any)._parallelBabel) {
-      return matchesSourceFile((item as any)._parallelBabel.requireFile);
-    }
-    if (Array.isArray(item) && item.length > 0) {
-      if (typeof item[0] === 'string') {
-        return matchesSourceFile(item[0]);
-      }
-      if (hasProperties(item[0]) && (item[0] as any)._parallelBabel) {
-        return matchesSourceFile((item[0] as any)._parallelBabel.requireFile);
-      }
-    }
-    return false;
-  }
-}
-
-export function matchesSourceFile(filename: string) {
-  return Boolean(htmlbarPathMatches.find(match => filename.endsWith(match)));
-}
-
-function hasProperties(item: any) {
-  return item && (typeof item === 'object' || typeof item === 'function');
 }
 
 // this matches the setup done by ember-cli-htmlbars: https://git.io/JtbN6

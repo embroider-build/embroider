@@ -2,13 +2,13 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { join } from 'path';
-import { TemplateCompiler } from './template-compiler-common';
+import type { TemplateCompiler } from './template-compiler-common';
 import { ResolvedDep } from './resolver';
 import { templateCompilationModules } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
 
 /*
-  In order to coordinate with babel-plugin-htmlbars-inline-precompile, we need
+  In order to coordinate with babel-plugin-ember-template-compilation, we need
   to give it a `precompile` function that, as a side-effect, captures the
   dependencies needed within the current file. We do this coordination via this
   module-scoped variable, which is safe given Javascript's single-threaded
@@ -18,12 +18,12 @@ let currentState: State | undefined;
 
 /*
   This is the precompile function you should pass to
-  babel-plugin-htmlbars-inline-precompile.
+  babel-plugin-ember-template-compilation.
 */
 export function precompile(templateSource: string, options: Record<string, unknown>) {
   if (!currentState) {
     throw new Error(
-      `bug: babel-plugin-htmlbars-inline-precompile and babel-plugin-inline-hbs-deps aren't coordinating correctly`
+      `bug: babel-plugin-ember-template-compilation and babel-plugin-inline-hbs-deps aren't coordinating correctly`
     );
   }
   let { compiled, dependencies } = compiler(currentState).precompile(templateSource, {
@@ -121,12 +121,19 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
       throw path.buildCodeFrameError('placeholders inside a tagged template string are not supported');
     }
     let template = path.node.quasi.quasis.map(quasi => quasi.value.cooked).join('');
+    let args: t.Expression[] = [t.stringLiteral(template)];
+
+    let locals: t.Identifier[] = [
+      // TODO: this is where lexically scoped dependencies go
+    ];
+    let opts = precompileOpts(locals, t);
+    if (opts) {
+      args.push(opts);
+    }
+
     let newCallExpression = t.callExpression(
       state.adder.import(path, '@ember/template-compilation', 'precompileTemplate'),
-      [
-        t.stringLiteral(template),
-        // TODO: here is where we will put scope once ember support that
-      ]
+      args
     );
 
     state.emittedCallExpressions.add(newCallExpression);
@@ -140,6 +147,20 @@ export default function make(getCompiler: (opts: any) => TemplateCompiler) {
     );
     state.emittedCallExpressions.add(newCallExpression);
     path.replaceWith(newCallExpression);
+  }
+
+  function precompileOpts(locals: t.Identifier[], t: typeof Babel.types) {
+    if (locals.length > 0) {
+      return t.objectExpression([
+        t.objectProperty(
+          t.identifier('scope'),
+          t.arrowFunctionExpression(
+            [],
+            t.objectExpression(locals.map(name => t.objectProperty(name, name, false, true)))
+          )
+        ),
+      ]);
+    }
   }
 
   function amdDefine(runtimeName: string, importCounter: number, t: typeof Babel.types) {

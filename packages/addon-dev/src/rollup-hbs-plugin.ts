@@ -1,7 +1,7 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'rollup';
 import { readFileSync } from 'fs';
-const backtick = '`';
+import { hbsToJS } from '@embroider/shared-internals';
 
 export default function rollupHbsPlugin(): Plugin {
   const filter = createFilter('**/*.hbs');
@@ -38,9 +38,7 @@ export default function rollupHbsPlugin(): Plugin {
       }
 
       let input = readFileSync(originalId, 'utf8');
-      let code =
-        `import { hbs } from 'ember-cli-htmlbars';\n` +
-        `export default hbs${backtick}${input}${backtick};`;
+      let code = hbsToJS(input);
       return {
         code,
       };

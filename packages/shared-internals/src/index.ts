@@ -8,3 +8,4 @@ export { default as packageName } from './package-name';
 export { default as tmpdir } from './tmpdir';
 export * from './ember-cli-models';
 export * from './ember-standard-modules';
+export { hbsToJS } from './hbs-to-js';

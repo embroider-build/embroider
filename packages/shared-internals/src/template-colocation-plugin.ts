@@ -52,7 +52,7 @@ export default function main(babel: typeof Babel) {
           }
 
           let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + '.hbs';
-          if (existsSync(hbsFilename)) {
+          if (hbsFilename !== filename && existsSync(hbsFilename)) {
             state.colocatedTemplate = hbsFilename;
           }
         },

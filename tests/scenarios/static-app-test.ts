@@ -19,7 +19,7 @@ appScenarios
             import JSONAPIAdapter from '@ember-data/adapter/json-api';
             export default class PostAdapter extends JSONAPIAdapter {
               findRecord(store, type, id, snapshot) {
-                return { data: { type: 'posts', id: '0 ', attributes: { title: 'Hello world' } } };
+                return { data: { type: 'posts', id: '0', attributes: { title: 'Hello world' } } };
               }
             }
           `,
@@ -88,6 +88,12 @@ appScenarios
                 return this.store.findRecord('post', 0);
               }
             }
+          `,
+        },
+        serializers: {
+          'application.js': `
+            import JSONAPISerializer from '@ember-data/serializer/json-api';
+            export default class extends JSONAPISerializer {};
           `,
         },
         templates: {

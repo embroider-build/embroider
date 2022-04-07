@@ -648,6 +648,38 @@ describe('compat-resolver', function () {
       },
     ]);
   });
+  test('angle bracket invocation of component with @ syntax', function () {
+    let findDependencies = configure(
+      {
+        staticComponents: true,
+      },
+      { plugins: { ast: [emberHolyFuturisticNamespacingBatmanTransform] } }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/components/thing.js');
+    expect(findDependencies('templates/application.hbs', `<MyAddon$Thing />`)).toEqual([
+      {
+        path: '../node_modules/my-addon/components/thing.js',
+        runtimeName: 'my-addon/components/thing',
+      },
+    ]);
+  });
+  test('angle bracket invocation of component with @ syntax - self reference inside node_modules', function () {
+    let findDependencies = configure(
+      {
+        staticComponents: true,
+      },
+      { plugins: { ast: [emberHolyFuturisticNamespacingBatmanTransform] } }
+    );
+    givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
+    givenFile('node_modules/my-addon/components/thing.js');
+    expect(findDependencies('node_modules/my-addon/components/foo.hbs', `<MyAddon$Thing />`)).toEqual([
+      {
+        path: './thing.js',
+        runtimeName: 'my-addon/components/thing',
+      },
+    ]);
+  });
   test('helper with @ syntax', function () {
     let findDependencies = configure(
       {

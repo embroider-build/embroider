@@ -467,7 +467,9 @@ export default class CompatResolver implements Resolver {
       if (renamed) {
         packageName = renamed;
       }
-      return this._tryHelper(parts[1], from, cache.resolve(packageName, cache.ownerOfFile(from)!));
+      let owner = cache.ownerOfFile(from)!;
+      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
+      return this._tryHelper(parts[1], from, targetPackage);
     } else {
       return this._tryHelper(path, from, this.appPackage);
     }
@@ -501,7 +503,9 @@ export default class CompatResolver implements Resolver {
       if (renamed) {
         packageName = renamed;
       }
-      return this._tryModifier(parts[1], from, cache.resolve(packageName, cache.ownerOfFile(from)!));
+      let owner = cache.ownerOfFile(from)!;
+      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
+      return this._tryModifier(parts[1], from, targetPackage);
     } else {
       return this._tryModifier(path, from, this.appPackage);
     }
@@ -540,7 +544,10 @@ export default class CompatResolver implements Resolver {
       if (renamed) {
         packageName = renamed;
       }
-      return this._tryComponent(parts[1], from, withRuleLookup, cache.resolve(packageName, cache.ownerOfFile(from)!));
+      let owner = cache.ownerOfFile(from)!;
+      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
+
+      return this._tryComponent(parts[1], from, withRuleLookup, targetPackage);
     } else {
       return this._tryComponent(path, from, withRuleLookup, this.appPackage);
     }

@@ -30,9 +30,9 @@ appScenarios
         `,
       },
       'import-from-npm.js': `
-        export default async function() { 
+        export default async function() {
           let { message } = await import('third-party');
-          return message() 
+          return message()
         }
         `,
     });

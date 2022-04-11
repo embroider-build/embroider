@@ -74,6 +74,10 @@ The steps:
    # you definitely want this:
    node_modules
 
+   # you don't want *.md copies
+   /addon/README.md
+   /addon/LICENSE.md
+
    # and you can put in anything else that tends to accumulate in your environment:
    yarn-error.log
    .DS_Store
@@ -249,7 +253,7 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
     ],
     "scripts": {
       "build": "rollup --config",
-      "prepublishOnly": "rollup --config",
+      "prepublishOnly": "cp ../README.md ../LICENSE.md . && rollup --config",
       "start": "rollup --config --watch"
     },
     "ember-addon": {

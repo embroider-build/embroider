@@ -56,13 +56,12 @@ appScenarios
 
           plugins: [
             addon.publicEntrypoints([
-              '**/*.js',
-              'components/demo/out.hbs',
+              'components/**/*.js',
             ]),
 
             addon.appReexports([
-              'components/**/*.js',
-              'components/demo/out.hbs',
+              'components/demo/index.js',
+              'components/demo/out.js',
             ]),
 
             addon.hbs(),
@@ -90,12 +89,10 @@ appScenarios
                 import { tracked } from '@glimmer/tracking';
 
                 import FlipButton from './button';
-                import BlahButton from './button.hbs';
                 import Out from './out';
 
                 export default class ExampleComponent extends Component {
                   Button = FlipButton;
-                  Button2 = BlahButton;
                   Out = Out;
 
                   @tracked active = false;
@@ -109,7 +106,6 @@ appScenarios
               <this.Out>{{this.active}}</this.Out>
 
               <this.Button @onClick={{this.flip}} />
-              <this.Button2 @onClick={{this.flip}} />
             `,
           },
         },

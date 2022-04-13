@@ -1,14 +1,16 @@
 import { createFilter } from '@rollup/pluginutils';
+import type {
+  Plugin,
+  PluginContext,
+  CustomPluginOptions,
+  ResolvedId,
+} from 'rollup';
 import { readFileSync } from 'fs';
 import { hbsToJS } from '@embroider/shared-internals';
-import path from 'path';
-import { pathExists } from 'fs-extra';
-
-import type { Plugin } from 'rollup';
+import assertNever from 'assert-never';
+import { parse as pathParse } from 'path';
 
 export default function rollupHbsPlugin(): Plugin {
-  const filter = createFilter('**/*.hbs');
-
   return {
     name: 'rollup-hbs-plugin',
     async resolveId(source: string, importer: string | undefined, options) {
@@ -17,111 +19,109 @@ export default function rollupHbsPlugin(): Plugin {
         ...options,
       });
 
-      let id = resolution?.id;
-
-      // if id is undefined, it's possible we're importing a file that that rollup
-      // doesn't natively support such as a template-only component that the author
-      // doesn't want to be available on the globals resolver
-      //
-      //  e.g.:
-      //    import { default as Button } from './button';
-      //
-      //    where button.hbs is the sole "button" file.
-      //
-      //  if someone where to specify the `.hbs` extension themselves as in:
-      //
-      //    import { default as Button } from './button';
-      //
-      //  then this whole block will be skipped
-      if (importer && !id) {
-        // We can't just emit the js side of the template-only component (export default templateOnly())
-        // because we can't tell rollup where to put the file -- all emitted files are
-        // not-on-disk-area-used-at-build-time -- emitted files are for the build output
-        //
-        // https://github.com/rollup/rollup/blob/master/docs/05-plugin-development.md
-        //
-        // So, to deal with this, we need to ensure there _is no corresponding js/ts file_
-        // for the imported hbs, and then, add in some meta so that the load hook can
-        // generate the setComponentTemplate + templateOnly() combo
-        let fileName = path.join(path.dirname(importer), source);
-        let hbsExists = await pathExists(fileName + '.hbs');
-
-        if (!hbsExists) return null;
-
-        resolution = await this.resolve(source + '.hbs', importer, {
-          skipSelf: true,
-          ...options,
-        });
-
-        id = resolution?.id;
+      if (!resolution) {
+        return maybeSynthesizeComponentJS(this, source, importer, options);
+      } else {
+        return maybeRewriteHBS(resolution);
       }
-
-      if (!filter(id) || !id) return null;
-
-      let isTO = await isTemplateOnly(id);
-
-      // This creates an `*.hbs.js` that we will populate in `load()` hook.
-      return {
-        ...resolution,
-        id: id + '.js',
-        meta: {
-          'rollup-hbs-plugin': {
-            originalId: id,
-            isTemplateOnly: isTO,
-          },
-        },
-      };
     },
-    load(id: string) {
-      const meta = this.getModuleInfo(id)?.meta;
-      const pluginMeta = meta?.['rollup-hbs-plugin'];
-      const originalId = pluginMeta?.originalId;
-      const isTemplateOnly = pluginMeta?.isTemplateOnly;
 
-      if (!originalId) {
+    load(id: string) {
+      const meta = getMeta(this, id);
+      if (!meta) {
         return;
       }
 
-      if (isTemplateOnly) {
-        let code = getTemplateOnly(originalId);
-
-        return { code };
+      switch (meta.type) {
+        case 'template':
+          let input = readFileSync(meta.originalId, 'utf8');
+          let code = hbsToJS(input);
+          return {
+            code,
+          };
+        case 'template-only-component-js':
+          return {
+            code: templateOnlyComponent,
+          };
+        default:
+          assertNever(meta);
       }
-
-      // Co-located js + hbs
-      let input = readFileSync(originalId, 'utf8');
-      let code = hbsToJS(input);
-      return {
-        code,
-      };
     },
   };
 }
 
-const backtick = '`';
+const templateOnlyComponent =
+  `import templateOnly from '@ember/component/template-only';\n` +
+  `export default templateOnly();\n`;
 
-async function isTemplateOnly(hbsPath: string) {
-  let jsPath = hbsPath.replace(/\.hbs$/, '.js');
-  let tsPath = hbsPath.replace(/\.hbs$/, '.ts');
+type Meta =
+  | {
+      type: 'template';
+      originalId: string;
+    }
+  | {
+      type: 'template-only-component-js';
+    };
 
-  let [hasJs, hasTs] = await Promise.all([
-    pathExists(jsPath),
-    pathExists(tsPath),
-  ]);
-
-  let hasClass = hasJs || hasTs;
-
-  return !hasClass;
+function getMeta(context: PluginContext, id: string): Meta | null {
+  const meta = context.getModuleInfo(id)?.meta?.['rollup-hbs-plugin'];
+  if (meta) {
+    return meta as Meta;
+  } else {
+    return null;
+  }
 }
 
-function getTemplateOnly(hbsPath: string) {
-  let input = readFileSync(hbsPath, 'utf8');
-  let code =
-    `import { hbs } from 'ember-cli-htmlbars';\n` +
-    `import templateOnly from '@ember/component/template-only';\n` +
-    `import { setComponentTemplate } from '@ember/component';\n` +
-    `export default setComponentTemplate(\n` +
-    `hbs${backtick}${input}${backtick}, templateOnly());`;
+function correspondingTemplate(filename: string): string {
+  let { ext } = pathParse(filename);
+  return filename.slice(0, filename.length - ext.length) + '.hbs';
+}
 
-  return code;
+async function maybeSynthesizeComponentJS(
+  context: PluginContext,
+  source: string,
+  importer: string | undefined,
+  options: { custom?: CustomPluginOptions; isEntry: boolean }
+) {
+  let templateResolution = await context.resolve(
+    correspondingTemplate(source),
+    importer,
+    {
+      skipSelf: true,
+      ...options,
+    }
+  );
+  if (!templateResolution) {
+    return null;
+  }
+  // we're trying to resolve a JS module but only the corresponding HBS
+  // file exists. Synthesize the template-only component JS.
+  return {
+    id: templateResolution.id.replace(/\.hbs$/, '.js'),
+    meta: {
+      'rollup-hbs-plugin': {
+        type: 'template-only-component-js',
+      },
+    },
+  };
+}
+
+const hbsFilter = createFilter('**/*.hbs');
+
+function maybeRewriteHBS(resolution: ResolvedId) {
+  if (!hbsFilter(resolution.id)) {
+    return null;
+  }
+
+  // This creates an `*.hbs.js` that we will populate in `load()` hook.
+  return {
+    ...resolution,
+    id: resolution.id + '.js',
+    meta: {
+      'rollup-hbs-plugin': {
+        type: 'template',
+        originalId: resolution.id,
+      },
+    },
+  };
 }

@@ -466,6 +466,7 @@ function isSerializable(obj: object): boolean {
     return true;
   }
 
+  console.error('non serializable item found in config:', obj);
   return false;
 }
 

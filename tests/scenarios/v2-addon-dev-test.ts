@@ -3,8 +3,7 @@ import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import execa from 'execa';
-import { pathExists } from 'fs-extra';
+import { pathExistsSync, readJsonSync } from 'fs-extra';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -15,13 +14,17 @@ const { module: Qmodule, test } = QUnit;
 appScenarios
   .skip('lts_3_16')
   .skip('lts_3_24')
-  .map('v2 addon can have imports of template-only components', async project => {
+  .map('v2-addon-dev', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
       './*': './dist/*',
       './addon-main.js': './addon-main.js',
+      './package.json': './package.json',
+    };
+    addon.pkg.scripts = {
+      build: './node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
     };
 
     merge(addon.files, {
@@ -159,60 +162,39 @@ appScenarios
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
 
-      async function getAddonInfo() {
-        let pkgPath = path.resolve(path.join(app.dir, 'node_modules/v2-addon/package.json'));
-        let dir = path.dirname(pkgPath);
-
-        return {
-          dir,
-          distDir: path.join(dir, 'dist'),
-          build: async () => {
-            let rollupBin = 'node_modules/rollup/dist/bin/rollup';
-
-            await execa(path.join(dir, rollupBin), ['-c', './rollup.config.mjs'], {
-              cwd: dir,
-            });
-          },
-          reExports: async () => {
-            let pkgInfo = await import(pkgPath);
-            return pkgInfo['ember-addon']['app-js'] as Record<string, string>;
-          },
-        };
-      }
-
       hooks.before(async () => {
         app = await scenario.prepare();
-
-        let { build } = await getAddonInfo();
-
-        await build();
+        let result = await inDependency(app, 'v2-addon').execute('yarn build');
+        if (result.exitCode !== 0) {
+          throw new Error(result.output);
+        }
       });
 
       Qmodule('The addon', function () {
         test('output directories exist', async function (assert) {
-          let { distDir } = await getAddonInfo();
-
-          assert.strictEqual(await pathExists(distDir), true, 'dist/');
-          assert.strictEqual(await pathExists(path.join(distDir, '_app_')), true, 'dist/_app_');
+          let { dir } = inDependency(app, 'v2-addon');
+          assert.strictEqual(pathExistsSync(path.join(dir, 'dist')), true, 'dist/');
+          assert.strictEqual(pathExistsSync(path.join(dir, 'dist', '_app_')), true, 'dist/_app_');
         });
 
         test('package.json is modified appropriately', async function (assert) {
-          let { reExports } = await getAddonInfo();
+          let { dir } = inDependency(app, 'v2-addon');
+          let reExports = readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js'];
 
-          assert.deepEqual(await reExports(), {
+          assert.deepEqual(reExports, {
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
           });
         });
 
         test('the addon was built successfully', async function (assert) {
-          let { reExports, dir } = await getAddonInfo();
-          let files = Object.values(await reExports());
+          let { dir } = inDependency(app, 'v2-addon');
+          let files: string[] = Object.values(readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js']);
 
           assert.expect(files.length);
 
           for (let pathName of files) {
-            assert.deepEqual(await pathExists(path.join(dir, pathName)), true, `pathExists: ${pathName}`);
+            assert.deepEqual(pathExistsSync(path.join(dir, pathName)), true, `pathExists: ${pathName}`);
           }
         });
       });
@@ -225,3 +207,8 @@ appScenarios
       });
     });
   });
+
+// https://github.com/ef4/scenario-tester/issues/5
+function inDependency(app: PreparedApp, dependencyName: string): PreparedApp {
+  return new PreparedApp(path.dirname(require.resolve(`${dependencyName}/package.json`, { paths: [app.dir] })));
+}

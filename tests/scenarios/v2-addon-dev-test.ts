@@ -24,7 +24,7 @@ appScenarios
       './package.json': './package.json',
     };
     addon.pkg.scripts = {
-      build: './node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
+      build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
     };
 
     merge(addon.files, {

@@ -557,12 +557,21 @@ const threadLoaderOptions = {
   poolTimeout: Infinity,
 };
 
+function canUseThreadLoader(extraOptions: object | false | undefined) {
+  // If the environment sets JOBS to 0, or if our extraOptions are set to false,
+  // we have been explicitly configured not to use thread-loader
+  if (process.env.JOBS === '0' || extraOptions === false) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 function warmUp(extraOptions: object | false | undefined) {
-  // We don't know if we'll be parallel-safe or not, but if the environment sets
-  // JOBS to 0, or our extraOptions are set to false, we know we won't use
-  // thread-loader, so no need to consume extra resources warming the worker
-  // pool
-  if (process.env.JOBS === '1' || extraOptions === false) {
+  // We don't know if we'll be parallel-safe or not, but if we've been
+  // configured to not use thread-loader, then there is no need to consume extra
+  // resources warming the worker pool
+  if (!canUseThreadLoader(extraOptions)) {
     return null;
   }
 
@@ -573,7 +582,7 @@ function warmUp(extraOptions: object | false | undefined) {
 }
 
 function maybeThreadLoader(isParallelSafe: boolean, extraOptions: object | false | undefined) {
-  if (process.env.JOBS === '0' || extraOptions === false || !isParallelSafe) {
+  if (!canUseThreadLoader(extraOptions) || !isParallelSafe) {
     return null;
   }
 

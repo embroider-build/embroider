@@ -11,6 +11,9 @@ export interface BabelLoaderOptions {
 }
 
 export interface Options {
+  // This allows you to extend the webpack config in arbitrary ways. Your
+  // changes will get applied on top of the defaults provided by
+  // @embroider/webpack.
   webpackConfig: Configuration;
 
   // the base public URL for your assets in production. Use this when you want
@@ -18,6 +21,31 @@ export interface Options {
   // actual index.html will be served on.
   //
   // This should be a URL ending in "/".
+  //
+  // For example:
+  //
+  // 1. If your build produces the file "./dist/assets/chunk.123.js"
+  // 2. And you set publicAssetURL to "https://cdn/"
+  // 3. Browsers will try to locate the file at
+  //    "https://cdn/assets/chunk.123.js".
+  //
+  // Notice that `publicAssetURL` gets applied relative to your whole built
+  // application -- not a particular subdirectory like "/assets". If you don't
+  // want a part of the path to show up in the public URLs, you should adjust the
+  // actual locations of the output files to remove that directory. For example:
+  //
+  // webpackConfig: {
+  //   output: {
+  //     // This overrides our default of "assets/chunk.[chunkhash].js"
+  //     // to move the chunks to the root of the app, eliminating the assets subdirectory.
+  //     filename: `mychunk.[chunkhash].js`,
+  //     chunkFilename: `mychunk.[chunkhash].js`,
+  //   },
+  //   publicOutputPath: "https://cdn/",
+  // },
+  //
+  // The above example will result in CDN URLs like "https://cdn/mychunk.123.js".
+  //
   publicAssetURL?: string;
 
   // [thread-loader](https://github.com/webpack-contrib/thread-loader) options.

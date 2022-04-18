@@ -50,7 +50,7 @@ interface AppInfo {
   templateCompiler: AppMeta['template-compiler'];
   babel: AppMeta['babel'];
   rootURL: AppMeta['root-url'];
-  publicAssetURL: string;
+  publicChunkPrefix: string;
   resolvableExtensions: AppMeta['resolvable-extensions'];
 }
 
@@ -78,6 +78,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
+  private usesCorrectAssetURL: boolean;
 
   constructor(
     pathToVanillaApp: string,
@@ -91,9 +92,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     }
 
     this.publicAssetURL = options?.publicAssetURL;
-    if (this.publicAssetURL && !options?.usesCorrectAssetURL) {
-      this.publicAssetURL += 'assets/';
-    }
+    this.usesCorrectAssetURL = options?.usesCorrectAssetURL ?? false;
     this.pathToVanillaApp = realpathSync(pathToVanillaApp);
     this.extraConfig = options?.webpackConfig;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
@@ -118,21 +117,54 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     let resolvableExtensions = meta['resolvable-extensions'];
     let entrypoints = [];
     let otherAssets = [];
-    let publicAssetURL = this.publicAssetURL || rootURL;
+
+    let publicChunkPrefix: string;
+    let urlForAsset: (diskPath: string) => string;
+
+    if (!this.usesCorrectAssetURL) {
+      // backward-compatible behavior: any publicAssetURL provided by the user
+      // points at the assets subdir, not the root of our application.
+      let publicAssetURL = (this.publicAssetURL ?? rootURL) + 'assets/';
+
+      // Since we configure webpack to write to the assets subdir, chunks will
+      // be located directly in publicAssetURL.
+      publicChunkPrefix = publicAssetURL;
+
+      // If the users somehow tries to refer to an asset that's not in the
+      // assets subdir, we can't construct a public URL for that.
+      urlForAsset = (diskPath: string) => {
+        if (!/assets[\\/]/.test(diskPath)) {
+          throw new Error(`${diskPath} has an ambiguous public URL.`);
+        }
+        return publicAssetURL + diskPath.slice('assets/'.length);
+      };
+    } else {
+      // simpler, correct behavior: any publicAssetURL provided by the user
+      // points to the root of the application
+      let publicAssetURL = this.publicAssetURL ?? rootURL;
+
+      // Sinc we configure webpack to write to the assets subdir, we need to
+      // append to the publicAssetURL to get the location of the output chunks.
+      publicChunkPrefix = publicAssetURL + 'assets/';
+
+      // Any asset in the application can be mapped unambiguously to a public
+      // asset URL.
+      urlForAsset = (diskPath: string) => publicAssetURL + diskPath;
+    }
 
     for (let relativePath of meta.assets) {
       if (/\.html/i.test(relativePath)) {
-        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, publicAssetURL, relativePath));
+        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, urlForAsset, relativePath));
       } else {
         otherAssets.push(relativePath);
       }
     }
 
-    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicAssetURL };
+    return { entrypoints, otherAssets, templateCompiler, babel, rootURL, resolvableExtensions, publicChunkPrefix };
   }
 
   private configureWebpack(
-    { entrypoints, templateCompiler, babel, resolvableExtensions, publicAssetURL }: AppInfo,
+    { entrypoints, templateCompiler, babel, resolvableExtensions, publicChunkPrefix }: AppInfo,
     variant: Variant
   ): Configuration {
     let entry: { [name: string]: string } = {};
@@ -193,7 +225,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         path: join(this.outputPath, 'assets'),
         filename: `chunk.[chunkhash].js`,
         chunkFilename: `chunk.[chunkhash].js`,
-        publicPath: publicAssetURL,
+        publicPath: publicChunkPrefix,
       },
       optimization: {
         splitChunks: {
@@ -423,7 +455,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
         getOrCreate(output.entrypoints, id, () => new Map()).set(
           variantIndex,
-          entrypointAssets.map(asset => asset.name)
+          entrypointAssets.map(asset => `assets/${asset.name}`)
         );
         if (variant.runtime !== 'browser') {
           // in the browser we don't need to worry about lazy assets (they will be

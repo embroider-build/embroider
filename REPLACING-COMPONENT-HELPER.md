@@ -7,7 +7,7 @@ statically analyzed, which will prevent you from taking advantage of
 The exact rules for `{{component}}` are:
 
 - it's OK to pass a string literal component name like `{{component "my-title-bar"}}`
-- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`
+- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`. But make sure you understand what ensure-safe-component itself is doing. Sprinkling existing code with ensure-safe-component without paying attention to the deprecation messages it emits will *not* make your app work in Embroider.
 - any other syntax in the first argument to `{{component ...}}` is NOT OK
 
 The following sections explain what to do in the common scenarios where you might have unsafe usage of the `{{component}}` helper.

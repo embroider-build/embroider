@@ -105,19 +105,19 @@ export class HTMLEntrypoint {
             if (!base) {
               // this bundle only exists in the fastboot variant
               let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-              element.setAttribute('src', this.publicAssetURL + fastboot);
+              element.setAttribute('src', this.publicAssetURL + relativeToAssetDir(fastboot as string));
               placeholder.insert(element);
               placeholder.insertNewline();
             } else if (!fastboot || base === fastboot) {
               // no specialized fastboot variant
-              let src = this.publicAssetURL + base;
+              let src = this.publicAssetURL + relativeToAssetDir(base);
               placeholder.insertURL(src);
             } else {
               // we have both and they differ
-              let src = this.publicAssetURL + base;
+              let src = this.publicAssetURL + relativeToAssetDir(base);
               let element = placeholder.insertURL(src);
               if (element) {
-                element.setAttribute('data-fastboot-src', this.publicAssetURL + fastboot);
+                element.setAttribute('data-fastboot-src', this.publicAssetURL + relativeToAssetDir(fastboot));
               }
             }
           }
@@ -158,13 +158,26 @@ function isAbsoluteURL(url: string) {
   return /^(?:[a-z]+:)?\/\//i.test(url);
 }
 
+// relative references to scripts and styles parsed from HTML entrypoints have
+// their paths normalised using HTMLEntrypoint.relativeToApp to remove the
+// leading rootURL set by the app. this results in all resources mapping
+// directly to their output location on disk. However, when we eventually need
+// to write the replacement script and link tags for these resources into the
+// output HTML we need to trust that the publicAssetURL config value provided
+// by the app is the source of truth for where the assets will be served from
+// with no intermediate `assets/` directory - so we strip any leading `assets/`
+// if it exists
+function relativeToAssetDir(appRelativeURL: string) {
+  return appRelativeURL.replace(/^assets\//, '');
+}
+
 // we (somewhat arbitrarily) decide to put the lazy javascript bundles before
 // the very first <script> that we have rewritten
 function insertLazyJavascript(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
   for (let bundle of lazyBundles) {
     if (bundle.endsWith('.js')) {
       let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-      element.setAttribute('src', publicAssetURL + bundle);
+      element.setAttribute('src', publicAssetURL + relativeToAssetDir(bundle));
       placeholder.insert(element);
       placeholder.insertNewline();
     }
@@ -175,7 +188,7 @@ function insertLazyStyles(lazyBundles: string[], placeholder: Placeholder, publi
   for (let bundle of lazyBundles) {
     if (bundle.endsWith('.css')) {
       let element = placeholder.start.ownerDocument.createElement('link');
-      element.setAttribute('href', publicAssetURL + bundle);
+      element.setAttribute('href', publicAssetURL + relativeToAssetDir(bundle));
       element.setAttribute('rel', 'stylesheet');
       placeholder.insert(element);
       placeholder.insertNewline();

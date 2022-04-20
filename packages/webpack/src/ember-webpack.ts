@@ -184,10 +184,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         ],
       },
       output: {
-        path: join(this.outputPath, 'assets'),
-        filename: `chunk.[chunkhash].js`,
-        chunkFilename: `chunk.[chunkhash].js`,
-        publicPath: publicAssetURL + 'assets/',
+        path: join(this.outputPath),
+        filename: `assets/chunk.[chunkhash].js`,
+        chunkFilename: `assets/chunk.[chunkhash].js`,
+        publicPath: publicAssetURL,
       },
       optimization: {
         splitChunks: {
@@ -417,7 +417,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
         getOrCreate(output.entrypoints, id, () => new Map()).set(
           variantIndex,
-          entrypointAssets.map(asset => 'assets/' + asset.name)
+          entrypointAssets.map(asset => asset.name)
         );
         if (variant.runtime !== 'browser') {
           // in the browser we don't need to worry about lazy assets (they will be
@@ -428,9 +428,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             flatMap(
               chunks.filter(chunk => chunk.runtime?.includes(id)),
               chunk => chunk.files
-            )
-              .filter(file => !entrypointAssets?.find(a => a.name === file))
-              .map(file => `assets/${file}`)
+            ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
           );
         }
       }

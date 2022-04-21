@@ -61,6 +61,44 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   );
 }
 
+type BeginFn = (total: number) => void;
+type IncrementFn = () => Promise<void>;
+
+function createBarrier(): [BeginFn, IncrementFn] {
+  const barriers: Array<[() => void, (e: unknown) => void]> = [];
+  let done = true;
+  let limit = 0;
+  return [begin, increment];
+
+  function begin(newLimit: number) {
+    if (!done) flush(new Error('begin called before limit reached'));
+    done = false;
+    limit = newLimit;
+  }
+
+  async function increment() {
+    if (done) {
+      throw new Error('increment after limit reach');
+    }
+    const promise = new Promise<void>((resolve, reject) => {
+      barriers.push([resolve, reject]);
+    });
+    if (barriers.length === limit) {
+      flush();
+    }
+    await promise;
+  }
+
+  function flush(err?: Error) {
+    for (const [resolve, reject] of barriers) {
+      if (err) reject(err);
+      else resolve();
+    }
+    barriers.length = 0;
+    done = true;
+  }
+}
+
 // we want to ensure that not only does our instance conform to
 // PackagerInstance, but our constructor conforms to Packager. So instead of
 // just exporting our class directly, we export a const constructor of the
@@ -76,6 +114,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
+  private _bundleSummary: BundleSummary | undefined;
+  private beginBarrier: BeginFn;
+  private incrementBarrier: IncrementFn;
 
   constructor(
     pathToVanillaApp: string,
@@ -95,14 +136,28 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
     this.extraStyleLoaderOptions = options?.styleLoaderOptions;
+    [this.beginBarrier, this.incrementBarrier] = createBarrier();
     warmUp(this.extraThreadLoaderOptions);
   }
 
+  get bundleSummary(): BundleSummary {
+    let bundleSummary = this._bundleSummary;
+    if (bundleSummary === undefined) {
+      this._bundleSummary = bundleSummary = {
+        entrypoints: new Map(),
+        lazyBundles: new Map(),
+        variants: this.variants,
+      };
+    }
+    return bundleSummary;
+  }
+
   async build(): Promise<void> {
+    this._bundleSummary = undefined;
+    this.beginBarrier(this.variants.length);
     let appInfo = this.examineApp();
     let webpack = this.getWebpack(appInfo);
-    let stats = this.summarizeStats(await this.runWebpack(webpack));
-    await this.writeFiles(stats, appInfo);
+    await this.runWebpack(webpack);
   }
 
   private examineApp(): AppInfo {
@@ -125,10 +180,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL };
   }
 
-  private configureWebpack(
-    { entrypoints, babel, resolvableExtensions, publicAssetURL }: AppInfo,
-    variant: Variant
-  ): Configuration {
+  private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
+    const { entrypoints, babel, resolvableExtensions, publicAssetURL } = appInfo;
+
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
@@ -145,7 +199,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       performance: {
         hints: false,
       },
-      plugins: stylePlugins,
+      plugins: [
+        ...stylePlugins,
+        compiler => {
+          compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
+            this.summarizeStats(stats, variant, variantIndex);
+            await this.writeFiles(this.bundleSummary, appInfo, variantIndex);
+          });
+        },
+      ],
       node: false,
       module: {
         rules: [
@@ -220,8 +282,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       return this.lastWebpack;
     }
     debug(`configuring webpack`);
-    let config = this.variants.map(variant =>
-      mergeWith({}, this.configureWebpack(appInfo, variant), this.extraConfig, appendArrays)
+    let config = this.variants.map((variant, variantIndex) =>
+      mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
     );
     this.lastAppInfo = appInfo;
     return (this.lastWebpack = webpack(config));
@@ -293,7 +355,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     }
   }
 
-  private async writeFiles(stats: BundleSummary, { entrypoints, otherAssets }: AppInfo) {
+  private async writeFiles(stats: BundleSummary, { entrypoints, otherAssets }: AppInfo, variantIndex: number) {
     // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
     // that handles multiple HTML entrypoints correctly.
 
@@ -305,13 +367,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       await this.provideErrorContext('needed by %s', [entrypoint.filename], async () => {
         for (let script of entrypoint.scripts) {
           if (!stats.entrypoints.has(script)) {
+            const mapping = [] as string[];
             try {
               // zero here means we always attribute passthrough scripts to the
               // first build variant
-              stats.entrypoints.set(
-                script,
-                new Map([[0, [await this.writeScript(script, written, this.variants[0])]]])
-              );
+              stats.entrypoints.set(script, new Map([[0, mapping]]));
+              mapping.push(await this.writeScript(script, written, this.variants[0]));
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
                 this.consoleWrite(
@@ -329,10 +390,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         }
         for (let style of entrypoint.styles) {
           if (!stats.entrypoints.has(style)) {
+            const mapping = [] as string[];
             try {
               // zero here means we always attribute passthrough styles to the
               // first build variant
-              stats.entrypoints.set(style, new Map([[0, [await this.writeStyle(style, written, this.variants[0])]]]));
+              stats.entrypoints.set(style, new Map([[0, mapping]]));
+              mapping.push(await this.writeStyle(style, written, this.variants[0]));
             } catch (err) {
               if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
                 this.consoleWrite(
@@ -350,14 +413,19 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         }
       });
     }
-
-    for (let entrypoint of entrypoints) {
-      outputFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
-      written.add(entrypoint.filename);
+    // we need to wait for both compilers before writing html entrypoint
+    await this.incrementBarrier();
+    // only the first variant should write it.
+    if (variantIndex === 0) {
+      for (let entrypoint of entrypoints) {
+        outputFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
+        written.add(entrypoint.filename);
+      }
     }
 
     for (let relativePath of otherAssets) {
       if (!written.has(relativePath)) {
+        written.add(relativePath);
         await this.provideErrorContext(`while copying app's assets`, [], async () => {
           this.copyThrough(relativePath);
         });
@@ -386,54 +454,47 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     return fileParts.join('.');
   }
 
-  private summarizeStats(multiStats: webpack.MultiStats): BundleSummary {
-    let output: BundleSummary = {
-      entrypoints: new Map(),
-      lazyBundles: new Map(),
-      variants: this.variants,
-    };
-    for (let [variantIndex, variant] of this.variants.entries()) {
-      let { entrypoints, chunks } = multiStats.stats[variantIndex].toJson({
-        all: false,
-        entrypoints: true,
-        chunks: true,
-      });
+  private summarizeStats(stats: webpack.Stats, variant: Variant, variantIndex: number): void {
+    let output = this.bundleSummary;
+    let { entrypoints, chunks } = stats.toJson({
+      all: false,
+      entrypoints: true,
+      chunks: true,
+    });
 
-      // webpack's types are written rather loosely, implying that these two
-      // properties may not be present. They really always are, as far as I can
-      // tell, but we need to check here anyway to satisfy the type checker.
-      if (!entrypoints) {
-        throw new Error(`unexpected webpack output: no entrypoints`);
+    // webpack's types are written rather loosely, implying that these two
+    // properties may not be present. They really always are, as far as I can
+    // tell, but we need to check here anyway to satisfy the type checker.
+    if (!entrypoints) {
+      throw new Error(`unexpected webpack output: no entrypoints`);
+    }
+    if (!chunks) {
+      throw new Error(`unexpected webpack output: no chunks`);
+    }
+
+    for (let id of Object.keys(entrypoints)) {
+      let { assets: entrypointAssets } = entrypoints[id];
+      if (!entrypointAssets) {
+        throw new Error(`unexpected webpack output: no entrypoint.assets`);
       }
-      if (!chunks) {
-        throw new Error(`unexpected webpack output: no chunks`);
-      }
 
-      for (let id of Object.keys(entrypoints)) {
-        let { assets: entrypointAssets } = entrypoints[id];
-        if (!entrypointAssets) {
-          throw new Error(`unexpected webpack output: no entrypoint.assets`);
-        }
-
-        getOrCreate(output.entrypoints, id, () => new Map()).set(
-          variantIndex,
-          entrypointAssets.map(asset => asset.name)
+      getOrCreate(output.entrypoints, id, () => new Map()).set(
+        variantIndex,
+        entrypointAssets.map(asset => asset.name)
+      );
+      if (variant.runtime !== 'browser') {
+        // in the browser we don't need to worry about lazy assets (they will be
+        // handled automatically by webpack as needed), but in any other runtime
+        // we need the ability to preload them
+        output.lazyBundles.set(
+          id,
+          flatMap(
+            chunks.filter(chunk => chunk.runtime?.includes(id)),
+            chunk => chunk.files
+          ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
         );
-        if (variant.runtime !== 'browser') {
-          // in the browser we don't need to worry about lazy assets (they will be
-          // handled automatically by webpack as needed), but in any other runtime
-          // we need the ability to preload them
-          output.lazyBundles.set(
-            id,
-            flatMap(
-              chunks.filter(chunk => chunk.runtime?.includes(id)),
-              chunk => chunk.files
-            ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
-          );
-        }
       }
     }
-    return output;
   }
 
   private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.MultiStats> {

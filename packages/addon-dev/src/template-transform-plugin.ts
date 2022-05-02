@@ -56,8 +56,9 @@ export default function main(babel: typeof Babel) {
         };
 
         const astTransforms = options.astTransforms.map((maybeFunc) => {
+          // If it's a string attempt to resolve the path to a module.
           return typeof maybeFunc === 'string'
-            ? require(maybeFunc) // If it's a string attempt to resolve the path to a module.
+            ? require(maybeFunc) // eslint-disable-line @typescript-eslint/no-require-imports
             : maybeFunc;
         });
 

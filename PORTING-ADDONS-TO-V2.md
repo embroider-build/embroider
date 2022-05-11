@@ -8,9 +8,9 @@ This is a guide for addon authors who want to publish their addon in **v2 format
 
 The best candidates to convert to V2 are addons that provide only run-time features, like components, helpers, modifiers, and services. That kind of addon should definitely port to V2.
 
-In contrast, addons that are primarily an extension to the build system (like `ember-cli-sass` or `ember-cli-typescript`) are not good candidates to be V2 addons, at least at present. As V1 addons, they will continue to work through `@embroider/compat` even for apps with Embroider.
+In contrast, addons that are primarily an extension to the build system (like `ember-cli-sass` or `ember-cli-typescript`) are not good candidates to be V2 addons, at present. V1 addons will continue to work through `@embroider/compat` for Embroider apps.
 
-If your addon is a mix of both build-time and run-time features, consider replacing the build-time features with `@embroider/macros`. This would let you drop all your custom build-time code and port to V2. Alternatively, if you really need build customizations, you can provide users instructions and utilities (like a webpack rule or plugin) to add those customizations to their Embroider build. We do _not_ let V2 addons automatically manipulate the app's build pipeline. Thar be dragons.
+If your addon is a mix of both build-time and run-time features, consider replacing the build-time features with `@embroider/macros`. This would let you drop all your custom build-time code and port to V2. Alternatively, if you really need build customizations, you can provide users with instructions and utilities (like a webpack rule or plugin) to add those customizations to their Embroider build. We do _not_ let V2 addons automatically manipulate the app's build pipeline. Thar be dragons.
 
 ## Monorepo Organization
 

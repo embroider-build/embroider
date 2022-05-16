@@ -18,11 +18,15 @@ export class Addon {
   // Given a list of globs describing modules in your srcDir, this generates
   // corresponding appTree modules that contain reexports, and updates your
   // package.json metadata to list them all.
-  appReexports(patterns: string[]): Plugin {
+  appReexports(
+    patterns: string[],
+    opts: { mapFilename?: (fileName: string) => string } = {}
+  ): Plugin {
     return appReexports({
       from: this.#srcDir,
       to: this.#destDir,
       include: patterns,
+      mapFilename: opts.mapFilename,
     });
   }
 

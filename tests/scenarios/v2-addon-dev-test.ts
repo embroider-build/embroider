@@ -51,6 +51,10 @@ appScenarios
           destDir: 'dist',
         });
 
+        const reexportMappings = {
+          'components/demo/namespace-me.js': 'components/demo/namespace/namespace-me.js',
+        };
+
         export default {
           output: addon.output(),
 
@@ -62,7 +66,10 @@ appScenarios
             addon.appReexports([
               'components/demo/index.js',
               'components/demo/out.js',
-            ]),
+              'components/demo/namespace-me.js',
+            ], {
+              mapFilename: (name) => reexportMappings[name] || name,
+            }),
 
             addon.hbs(),
             addon.dependencies(),
@@ -83,6 +90,9 @@ appScenarios
             `,
             'out.hbs': `
               <out>{{yield}}</out>
+            `,
+            'namespace-me.hbs': `
+              namespaced component
             `,
             'index.js': `
                 import Component from '@glimmer/component';
@@ -149,6 +159,12 @@ appScenarios
 
               assert.dom('out').containsText('hi');
             });
+
+            test('<Demo::Namespace::NamespaceMe />', async function (assert) {
+              await render(hbs\`<Demo::Namespace::NamespaceMe />\`);
+
+              assert.dom().containsText('namespaced component');
+            });
           });
         `,
       },
@@ -180,6 +196,7 @@ appScenarios
           assert.deepEqual(reExports, {
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
+            './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
           });
         });
 

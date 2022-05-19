@@ -53,7 +53,6 @@ module.exports = {
           tree,
           '**/*.{js,css}',
           function (content, relativePath) {
-            console.log('$$$$' + relativePath);
             return \`/*path@\${relativePath}*/\n\${content}\`;
           }
         );
@@ -95,6 +94,7 @@ module.exports = {
         tests: false,
       },
     });
+    console.log(build.outputPath);
     expectFile = expectFilesAt(build.outputPath);
   });
 
@@ -110,16 +110,16 @@ module.exports = {
     expectFile('node_modules/my-preprocessor/package.json').exists();
   });
 
-  test.skip('app has correct path embedded in comment', () => {
+  test('app has correct path embedded in comment', () => {
     const assertFile = expectFile('components/from-the-app.js');
     assertFile.exists();
     // This is the expected output during an classic build.
-    assertFile.matches(/path:my-app\/components\/from-the-app\.js/, 'has a path comment in app components');
+    assertFile.matches(/path@my-app\/components\/from-the-app\.js/, 'has a path comment in app components');
   });
 
   test('addon has correct path embedded in comment', () => {
     expectFile('node_modules/my-preprocessor/package.json').exists();
     const assertFile = expectFile('node_modules/my-addon/components/greeting.js');
-    assertFile.matches(/\/\/path:my-addon\/components\/from-the-app\.js/, 'has a path comment in app components');
+    assertFile.matches(/path@my-addon\/components\/greeting\.js/, 'has a path comment in app components');
   });
 });

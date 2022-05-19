@@ -84,7 +84,9 @@ module.exports = {
       },
     });
 
-    addon.addDependency(PACKAGE_MY_PREPROCESSOR);
+    // We must explicitly pass the addonPreprocessor using the
+    // name is not sufficient.
+    addon.addDependency(addonPreprocessor);
 
     build = await BuildResult.build(app, {
       stage: 2,

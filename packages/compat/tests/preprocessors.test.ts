@@ -93,7 +93,7 @@ module.exports = {
         tests: false,
       },
     });
-    console.log(build.outputPath);
+
     expectFile = expectFilesAt(build.outputPath);
   });
 

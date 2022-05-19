@@ -13,8 +13,6 @@ describe('preprocessors tests', function () {
   beforeAll(async function () {
     app = Project.emberNew('my-app');
 
-    const PACKAGE_MY_PREPROCESSOR = 'my-preprocessor';
-
     merge(app.files, {
       config: {
         'targets.js': `module.exports = { browsers: ['last 1 Chrome versions'] }`,
@@ -30,6 +28,7 @@ describe('preprocessors tests', function () {
       },
     });
 
+    const PACKAGE_MY_PREPROCESSOR = 'my-preprocessor';
     let addonPreprocessor = app.addAddon(PACKAGE_MY_PREPROCESSOR);
 
     const INDEX_JS_WITH_PREPROCESSOR = `const { map } = require('broccoli-stew');

@@ -161,9 +161,9 @@ export class CodeFrameStorage {
   private codeFrames = [] as { rawSourceIndex: number; loc: SourceLocation }[];
   private rawSources = [] as string[];
 
-  forSource(rawSource: string): (node: { loc: SourceLocation | null }) => number | undefined {
+  forSource(rawSource: string): (node: { loc?: SourceLocation | null }) => number | undefined {
     let rawSourceIndex: number | undefined;
-    return (node: { loc: SourceLocation | null }) => {
+    return (node: { loc?: SourceLocation | null | undefined }) => {
       let loc = node.loc;
       if (!loc) {
         return;

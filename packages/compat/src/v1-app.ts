@@ -16,10 +16,10 @@ import {
   OutputFileToInputFileMap,
   PackageInfo,
   AddonInstance,
+  getAppRoot,
 } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
-import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
@@ -747,9 +747,7 @@ function throwIfMissing<T>(
 class V1DummyApp extends V1App {
   constructor(app: EmberAppInstance) {
     super(app);
-    this.owningAddon = new OwningAddon(this.app.project.root, this.packageCache);
-    this.packageCache.seed(this.owningAddon);
-    this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
+    this.owningAddon = this.packageCache.get(this.app.project.root);
   }
 
   get name(): string {
@@ -758,8 +756,7 @@ class V1DummyApp extends V1App {
   }
 
   get root(): string {
-    // this is the Known Hack for finding the true root of the dummy app.
-    return join(this.app.project.configPath(), '..', '..');
+    return getAppRoot(this.app);
   }
 }
 

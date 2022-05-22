@@ -1,8 +1,13 @@
 import Package from './package';
+import DummyPackage from './dummy-package';
 import { existsSync, realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
+
+// This is here so that in the happy future day when we can drop support for
+// dummy apps it will be obvious what code to delete.
+const SUPPORT_DUMMY_APPS = true;
 
 export default class PackageCache {
   constructor(public appRoot: string) {}
@@ -25,13 +30,6 @@ export default class PackageCache {
       throw e;
     }
     return result;
-  }
-
-  seed(pkg: Package) {
-    if (this.rootCache.has(pkg.root)) {
-      throw new Error(`bug: tried to seed package ${pkg.name} but it's already in packageCache`);
-    }
-    this.rootCache.set(pkg.root, pkg);
   }
 
   protected rootCache: Map<string, Package> = new Map();
@@ -68,6 +66,18 @@ export default class PackageCache {
       }
       if (existsSync([...usedSegments, 'package.json'].join(sep))) {
         return this.get(candidate);
+      } else if (SUPPORT_DUMMY_APPS && candidate === this.appRoot) {
+        // we were given an appRoot that doesn't have a package.json. This can
+        // happen in classic builds with a dummy app.
+        let owningAddon = this.ownerOfFile(segments.slice(0, length - 1).join(sep));
+        if (!owningAddon) {
+          throw new Error(
+            `bug: PackageCache was given appRoot=${this.appRoot}, which does not have a package.json and doesn't appear to be a dummy app`
+          );
+        }
+        let pkg = new DummyPackage(candidate, owningAddon, this);
+        this.rootCache.set(candidate, pkg);
+        return pkg;
       }
     }
   }

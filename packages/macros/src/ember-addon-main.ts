@@ -1,4 +1,4 @@
-import { AppInstance } from '@embroider/shared-internals';
+import { AppInstance, getAppRoot } from '@embroider/shared-internals';
 import { join } from 'path';
 import { BuildPluginParams } from './glimmer/ast-transform';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
@@ -114,12 +114,6 @@ export = {
   options: {},
 };
 
-// this can differ from appInstance.project.root because Dummy apps are terrible
-function getAppRoot(appInstance: AppInstance): string {
-  return join(appInstance.project.configPath(), '..', '..');
-}
-
 function getMacrosConfig(appInstance: AppInstance): MacrosConfig {
-  let appRoot = join(appInstance.project.configPath(), '..', '..');
-  return MacrosConfig.for(appInstance, appRoot);
+  return MacrosConfig.for(appInstance, getAppRoot(appInstance));
 }

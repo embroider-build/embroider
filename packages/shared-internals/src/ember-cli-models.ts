@@ -1,5 +1,6 @@
 import type { Funnel } from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
+import { join } from 'path';
 import { PackageInfo } from './metadata';
 export interface Project {
   targets: unknown;
@@ -55,6 +56,8 @@ export interface EmberAppInstance {
   getLintTests(): Node;
   otherAssetPaths: any[];
   addonPostprocessTree: (which: string, tree: Node) => Node;
+  import(path: string, opts?: { type?: string }): void;
+  toTree(additionalTrees?: Node[]): Node;
 }
 
 interface BaseAddonInstance {
@@ -136,4 +139,10 @@ export function findTopmostAddon(addon: AddonInstance): ShallowAddonInstance {
   } else {
     return addon;
   }
+}
+
+// this can differ from appInstance.project.root because Dummy apps are terrible
+export function getAppRoot(appInstance: AppInstance): string {
+  // this is the Known Hack for finding the true root of the dummy app.
+  return join(appInstance.project.configPath(), '..', '..');
 }

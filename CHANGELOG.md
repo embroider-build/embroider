@@ -5,6 +5,37 @@
 
 
 
+
+## v1.7.0 (2022-05-23)
+
+#### :rocket: Enhancement
+* `addon-dev`
+  * [#1202](https://github.com/embroider-build/embroider/pull/1202) Accept optional `mapFilename` config for `rollup-app-reexports` ([@dfreeman](https://github.com/dfreeman))
+* `macros`
+  * [#1168](https://github.com/embroider-build/embroider/pull/1168) Add message to clarify error for non-serializable configs ([@jkeen](https://github.com/jkeen))
+
+#### :bug: Bug Fix
+* `webpack`
+  * [#1177](https://github.com/embroider-build/embroider/pull/1177) Write files plugin ([@krisselden](https://github.com/krisselden))
+  * [#1194](https://github.com/embroider-build/embroider/pull/1194) Align webpack's outputPath with the whole app ([@ef4](https://github.com/ef4))
+* `addon-dev`
+  * [#1126](https://github.com/embroider-build/embroider/pull/1126) Fix importing of template-only components in V2 addons ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :memo: Documentation
+* [#1201](https://github.com/embroider-build/embroider/pull/1201) Small Update PORTING-ADDONS-TO-V2.md ([@angelayanpan](https://github.com/angelayanpan))
+
+#### :house: Internal
+* `compat`
+  * [#1208](https://github.com/embroider-build/embroider/pull/1208) Rebuilding yarn.lock ([@ef4](https://github.com/ef4))
+
+#### Committers: 6
+- Angela Pan ([@angelayanpan](https://github.com/angelayanpan))
+- Dan Freeman ([@dfreeman](https://github.com/dfreeman))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Jeff Keen ([@jkeen](https://github.com/jkeen))
+- Kris Selden ([@krisselden](https://github.com/krisselden))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## v1.6.0 (2022-04-07)
 
 #### :rocket: Enhancement

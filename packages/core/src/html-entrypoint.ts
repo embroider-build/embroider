@@ -96,28 +96,46 @@ export class HTMLEntrypoint {
 
             let lazyMatch = stats.lazyBundles.get(src);
             if (lazyMatch && !insertedLazy.has(src)) {
-              insertLazyJavascript(lazyMatch, placeholder, this.publicAssetURL);
+              insertLazyJavascript(lazyMatch, placeholder, this.rootURL);
               insertLazyStyles(lazyMatch, placeholder, this.publicAssetURL);
               insertedLazy.add(src);
             }
           }
           for (let [base, fastboot] of zip(matchingBundles, matchingFastbootBundles)) {
+            if (supportsFastboot) {
+              // the fastboot version gets prefixed with the rootURL, which
+              // points to our local build directory, because that's where
+              // fastboot always loads scripts from. If there's no
+              // fastboot-specific variant, fastboot loads the base variant, but
+              // still from rootURL rather than publicAssetURL.
+              fastboot = this.rootURL + (fastboot ?? base);
+            }
+
+            if (base) {
+              // the browser version gets prefixed with the publicAssetURL
+              // because that's where browsers will load it from
+              base = this.publicAssetURL + base;
+            }
+
             if (!base) {
               // this bundle only exists in the fastboot variant
               let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-              element.setAttribute('src', this.publicAssetURL + fastboot);
+              element.setAttribute('src', fastboot!);
               placeholder.insert(element);
               placeholder.insertNewline();
-            } else if (!fastboot || base === fastboot) {
-              // no specialized fastboot variant
-              let src = this.publicAssetURL + base;
-              placeholder.insertURL(src);
+            } else if (!fastboot) {
+              // no fastboot variant
+              placeholder.insertURL(base);
+            } else if (fastboot === base) {
+              // fastboot variant happens to be exactly the same bundle as base
+              // (and publicAssetURL===rootURL), so a plain script tag covers
+              // both
+              placeholder.insertURL(base);
             } else {
               // we have both and they differ
-              let src = this.publicAssetURL + base;
-              let element = placeholder.insertURL(src);
+              let element = placeholder.insertURL(base);
               if (element) {
-                element.setAttribute('data-fastboot-src', this.publicAssetURL + fastboot);
+                element.setAttribute('data-fastboot-src', fastboot);
               }
             }
           }
@@ -160,11 +178,15 @@ function isAbsoluteURL(url: string) {
 
 // we (somewhat arbitrarily) decide to put the lazy javascript bundles before
 // the very first <script> that we have rewritten
-function insertLazyJavascript(lazyBundles: string[], placeholder: Placeholder, publicAssetURL: string) {
+function insertLazyJavascript(lazyBundles: string[], placeholder: Placeholder, rootURL: string) {
   for (let bundle of lazyBundles) {
     if (bundle.endsWith('.js')) {
       let element = placeholder.start.ownerDocument.createElement('fastboot-script');
-      element.setAttribute('src', publicAssetURL + bundle);
+      // we're using rootURL instead of publicAssetURL here because
+      // <fastboot-script> is executed by fastboot, which always loads them from
+      // the local build directory. NOT from the publicAssetURL that browsers
+      // will use, which could be a CDN.
+      element.setAttribute('src', rootURL + bundle);
       placeholder.insert(element);
       placeholder.insertNewline();
     }

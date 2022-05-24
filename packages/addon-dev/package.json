@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
     "src/**/*.js.map"
   ],
   "dependencies": {
-    "@embroider/shared-internals": "^1.7.0",
+    "@embroider/shared-internals": "^1.7.1",
     "@rollup/pluginutils": "^4.1.1",
     "assert-never": "^1.2.1",
     "fs-extra": "^10.0.0",

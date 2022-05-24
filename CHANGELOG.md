@@ -6,6 +6,18 @@
 
 
 
+
+## v1.7.1 (2022-05-24)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1210](https://github.com/embroider-build/embroider/pull/1210) fastboot should not try to load through publicAssetURL ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#1209](https://github.com/embroider-build/embroider/pull/1209) fix default css chunk naming ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v1.7.0 (2022-05-23)
 
 #### :rocket: Enhancement

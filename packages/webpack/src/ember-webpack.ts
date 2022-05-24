@@ -568,8 +568,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         loaders: [MiniCssExtractPlugin.loader, cssLoader],
         plugins: [
           new MiniCssExtractPlugin({
-            filename: `chunk.[chunkhash].css`,
-            chunkFilename: `chunk.[chunkhash].css`,
+            filename: `assets/chunk.[chunkhash].css`,
+            chunkFilename: `assets/chunk.[chunkhash].css`,
             // in the browser, MiniCssExtractPlugin can manage it's own runtime
             // lazy loading of stylesheets.
             //

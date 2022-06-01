@@ -1,6 +1,12 @@
-import { allBabelVersions } from '@embroider/test-support';
-import { Options } from '../src/template-transform-plugin';
-import { hbsToJS } from '@embroider/shared-internals';
+import {
+  allBabelVersions,
+  emberTemplateCompilerPath,
+} from '@embroider/test-support';
+import {
+  TemplateTransformPlugin,
+  Options,
+} from '../src/template-transform-plugin';
+import { hbsToJS } from '@embroider/core';
 import { AST } from '@glimmer/syntax';
 import { join } from 'path';
 import tmp from 'tmp';
@@ -27,8 +33,15 @@ describe('template-transform-plugin', () => {
     };
   }
 
-  function setupPlugins(options?: Options) {
-    plugins = [[templateTransformBabelPlugin, options]];
+  function setupPlugins(options?: {
+    astTransforms: TemplateTransformPlugin[];
+  }) {
+    const opts: Options = {
+      astTransforms: options?.astTransforms,
+      compilerPath: emberTemplateCompilerPath(),
+      EmberENV: {},
+    };
+    plugins = [[templateTransformBabelPlugin, opts]];
   }
 
   allBabelVersions({
@@ -40,7 +53,6 @@ describe('template-transform-plugin', () => {
     createTests(transform) {
       afterEach(function () {
         plugins = undefined;
-        // options = undefined;
       });
 
       test('no-op', () => {
@@ -87,15 +99,15 @@ describe('template-transform-plugin', () => {
         const someFile = tmp.fileSync();
 
         const contents = `module.exports = function reverseTransform() {
-  return {
-    name: 'reverse-transform',
-    visitor: {
-      ElementNode(node) {
-        node.tag = node.tag.split('').reverse().join('');
-      },
-    },
-  };
-}`;
+        return {
+          name: 'reverse-transform',
+          visitor: {
+            ElementNode(node) {
+              node.tag = node.tag.split('').reverse().join('');
+            },
+          },
+        };
+      }`;
 
         writeFileSync(someFile.name, contents, 'utf8');
 
@@ -123,7 +135,7 @@ describe('template-transform-plugin', () => {
         });
 
         const code = `import { hbs as render } from 'ember-cli-htmlbars';
-export default render('<span>{{@phrase}}</span>');`;
+      export default render('<span>{{@phrase}}</span>');`;
 
         let output = transform(code);
 

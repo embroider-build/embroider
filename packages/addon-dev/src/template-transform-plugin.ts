@@ -1,15 +1,14 @@
 import make from '@embroider/core/src/babel-plugin-stage1-inline-hbs';
 import { TemplateCompiler, TemplateCompilerParams } from '@embroider/core';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
-import { EmberENV } from '@embroider/core';
 
-type TemplateTransform = () => { name: string; visitor: {} };
-
+export type TemplateTransform = () => { name: string; visitor: {} };
 export type TemplateTransformPlugin = TemplateTransform | string;
 export interface Options {
-  astTransforms: TemplateTransformPlugin[] | undefined;
-  compilerPath: string;
-  EmberENV: EmberENV;
+  // An array of either Glimmer AST plugins or paths that can be resolved to a plugin.
+  astTransforms?: TemplateTransformPlugin[];
+  // Defaults to 'ember-source/dist/ember-template-compiler'
+  compilerPath?: string;
 }
 
 function resolvePlugins(plugins: TemplateTransformPlugin[]) {
@@ -22,15 +21,21 @@ function resolvePlugins(plugins: TemplateTransformPlugin[]) {
 }
 
 export default make((options: Options) => {
-  let { compilerPath, astTransforms: somePlugins = [], ...opts } = options;
+  let {
+    astTransforms: somePlugins = [],
+    compilerPath = 'ember-source/dist/ember-template-compiler',
+  } = options;
+
+  compilerPath = require.resolve(compilerPath);
+
   const astTransforms: TemplateTransform[] = resolvePlugins(somePlugins);
 
   const params: TemplateCompilerParams = {
+    EmberENV: {},
     loadEmberTemplateCompiler: () => getEmberExports(compilerPath),
     plugins: {
       ast: astTransforms,
     },
-    ...opts,
   };
 
   return new TemplateCompiler(params);

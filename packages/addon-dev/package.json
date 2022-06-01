@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@embroider/test-support": "0.36.0",
+    "@glimmer/syntax": "^0.84.2",
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",
     "@types/yargs": "^17.0.3",
@@ -47,7 +48,7 @@
     "tmp": "^0.1.0"
   },
   "peerDependencies": {
-    "@glimmer/syntax": "*"
+    "ember-source": "*"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

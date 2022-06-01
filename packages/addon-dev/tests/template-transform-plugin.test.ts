@@ -39,7 +39,6 @@ describe('template-transform-plugin', () => {
     const opts: Options = {
       astTransforms: options?.astTransforms,
       compilerPath: emberTemplateCompilerPath(),
-      EmberENV: {},
     };
     plugins = [[templateTransformBabelPlugin, opts]];
   }

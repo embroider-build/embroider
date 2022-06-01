@@ -13,6 +13,9 @@ module.exports = {
           someAstTransformPlugin,
           './path/to/another-template-transform-plugin',
         ],
+        compilerPath: require.resolve(
+          'ember-source/dist/ember-template-compiler'
+        ),
       },
     ],
     ['@babel/plugin-proposal-decorators', { legacy: true }],

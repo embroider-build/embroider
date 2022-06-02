@@ -205,6 +205,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
             this.summarizeStats(stats, variant, variantIndex);
             await this.writeFiles(this.bundleSummary, appInfo, variantIndex);
+            // If this webpack instance / appInfo will be reused for a
+            // subsequent build then we need to be careful not to reuse the
+            // internal JSDOM state encapsulated within it.
+            appInfo.entrypoints.forEach(ep => ep.initialize());
           });
         },
       ],

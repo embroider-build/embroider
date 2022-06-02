@@ -8,7 +8,7 @@ import Placeholder from './html-placeholder';
 import { Variant } from './packager';
 
 export class HTMLEntrypoint {
-  private dom: JSDOM;
+  private dom!: JSDOM;
   private placeholders: Map<string, Placeholder[]> = new Map();
   modules: string[] = [];
   scripts: string[] = [];
@@ -20,6 +20,10 @@ export class HTMLEntrypoint {
     private publicAssetURL: string,
     public filename: string
   ) {
+    this.initialize();
+  }
+
+  initialize() {
     this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
 
     for (let tag of this.handledStyles()) {

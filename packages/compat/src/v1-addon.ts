@@ -488,14 +488,26 @@ export default class V1Addon {
 
   // applies preprocessors to JS and HBS
   private transpile(tree: Node) {
+    // Namespace the tree being passed to preprocessJs with the moduleName
+    // to mimic classic build
+    tree = buildFunnel(tree, { destDir: this.moduleName });
+
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
+
+    // Remove namespacing so that it gets written out to the node_modules
+    // directory correctly.
+    tree = buildFunnel(tree, {
+      srcDir: this.moduleName,
+    });
+
     if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template')?.length > 0) {
       tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
         registry: this.addonInstance.registry,
       });
     }
+
     return tree;
   }
 

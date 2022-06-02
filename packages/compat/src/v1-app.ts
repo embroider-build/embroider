@@ -551,10 +551,16 @@ export default class V1App {
     // auto-import is supported natively so we don't need it here
     this.app.registry.remove('js', 'ember-auto-import-analyzer');
 
-    return this.preprocessors.preprocessJs(tree, `/`, '/', {
+    tree = buildFunnel(tree, { destDir: this.name });
+
+    tree = this.preprocessors.preprocessJs(tree, `/`, '/', {
       annotation: 'v1-app-preprocess-js',
       registry: this.app.registry,
     });
+
+    tree = buildFunnel(tree, { srcDir: this.name });
+
+    return tree;
   }
 
   get htmlbarsPlugins(): TemplateCompilerPlugins {

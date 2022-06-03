@@ -3,7 +3,7 @@ import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { pathExistsSync, readJsonSync } from 'fs-extra';
+import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -202,12 +202,26 @@ appScenarios
 
         test('the addon was built successfully', async function (assert) {
           let { dir } = inDependency(app, 'v2-addon');
-          let files: string[] = Object.values(readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js']);
+          let expectedModules = {
+            './dist/_app_/components/demo/index.js': 'export { default } from "v2-addon/components/demo/index";\n',
+            './dist/_app_/components/demo/out.js': 'export { default } from "v2-addon/components/demo/out";\n',
+            './dist/_app_/components/demo/namespace/namespace-me.js':
+              'export { default } from "v2-addon/components/demo/namespace-me";\n',
+          };
 
-          assert.expect(files.length);
+          assert.strictEqual(
+            Object.keys(readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js']).length,
+            Object.keys(expectedModules).length
+          );
 
-          for (let pathName of files) {
-            assert.deepEqual(pathExistsSync(path.join(dir, pathName)), true, `pathExists: ${pathName}`);
+          for (let [pathName, moduleContents] of Object.entries(expectedModules)) {
+            let filePath = path.join(dir, pathName);
+            assert.deepEqual(pathExistsSync(filePath), true, `pathExists: ${pathName}`);
+            assert.strictEqual(
+              readFileSync(filePath, { encoding: 'utf8' }),
+              moduleContents,
+              `has correct reexport: ${pathName}`
+            );
           }
         });
       });

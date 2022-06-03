@@ -3,6 +3,8 @@ import { join } from 'path';
 import { BuildPluginParams } from './glimmer/ast-transform';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
+const wrappedTrees = new Set<Object>();
+
 export = {
   name: '@embroider/macros',
   included(this: any, parent: any) {
@@ -53,7 +55,7 @@ export = {
     // as macrosConfig is 1:1 with the appInstance, if
     // the toTree method is already wrapped, we don't need
     // to wrap it again
-    if (!originalToTree.__hasMacrosConfigWrapper) {
+    if (!wrappedTrees.has(originalToTree)) {
       // When we're used inside the traditional ember-cli build pipeline without
       // Embroider, we unfortunately need to hook into here uncleanly because we
       // need to delineate the point in time after which writing macro config is
@@ -63,7 +65,7 @@ export = {
         macrosConfig.finalize();
         return originalToTree.apply(appInstance, args);
       };
-      appInstance.toTree.__hasMacrosConfigWrapper = true;
+      wrappedTrees.add(appInstance.toTree);
     }
   },
 

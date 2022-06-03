@@ -48,16 +48,23 @@ export = {
 
     appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
 
-    // When we're used inside the traditional ember-cli build pipeline without
-    // Embroider, we unfortunately need to hook into here uncleanly because we
-    // need to delineate the point in time after which writing macro config is
-    // forbidden and consuming it becomes allowed. There's no existing hook with
-    // that timing.
     const originalToTree = appInstance.toTree;
-    appInstance.toTree = function (...args) {
-      macrosConfig.finalize();
-      return originalToTree.apply(appInstance, args);
-    };
+
+    // as macrosConfig is 1:1 with the appInstance, if
+    // the toTree method is already wrapped, we don't need
+    // to wrap it again
+    if (!originalToTree.__hasMacrosConfigWrapper) {
+      // When we're used inside the traditional ember-cli build pipeline without
+      // Embroider, we unfortunately need to hook into here uncleanly because we
+      // need to delineate the point in time after which writing macro config is
+      // forbidden and consuming it becomes allowed. There's no existing hook with
+      // that timing.
+      appInstance.toTree = function (...args) {
+        macrosConfig.finalize();
+        return originalToTree.apply(appInstance, args);
+      };
+      appInstance.toTree.__hasMacrosConfigWrapper = true;
+    }
   },
 
   // Other addons are allowed to call this. It's needed if an addon needs to

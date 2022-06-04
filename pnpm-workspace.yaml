@@ -1,0 +1,13 @@
+packages:
+  - "packages/*"
+  - "test-packages/*"
+  - "test-packages/@embroider/*"
+  - "types/babel-core"
+  - "types/@babel__traverse"
+  - "types/broccoli-funnel"
+  - "types/broccoli-concat"
+  - "types/ember-cli-htmlbars"
+  - "tests/scenarios"
+  - "tests/app-template"
+  - "tests/addon-template"
+  - "tests/v2-addon-template"

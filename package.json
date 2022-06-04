@@ -4,41 +4,18 @@
     "type": "git",
     "url": "git@github.com:embroider-build/embroider.git"
   },
-  "workspaces": {
-    "packages": [
-      "packages/*",
-      "test-packages/*",
-      "test-packages/@embroider/*",
-      "types/babel-core",
-      "types/@babel__traverse",
-      "types/broccoli-funnel",
-      "types/broccoli-concat",
-      "types/ember-cli-htmlbars",
-      "tests/scenarios",
-      "tests/app-template",
-      "tests/addon-template",
-      "tests/v2-addon-template"
-    ],
-    "nohoist": [
-      "**/@types/broccoli-plugin"
-    ]
-  },
   "scripts": {
     "clean": "git clean -x -f",
     "compile": "tsc",
     "lint": "eslint . --cache",
     "prepare": "tsc",
-    "test": "cd tests/scenarios && yarn test"
+    "test": "cd tests/scenarios && pnpm test"
   },
   "jest": {
     "projects": [
       "<rootDir>/packages/*",
       "<rootDir>/test-packages/"
     ]
-  },
-  "resolutions": {
-    "**/browserslist": "^4.14.0",
-    "**/qunit": "^2.14.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.0",
@@ -86,9 +63,19 @@
     },
     "npm": false
   },
+  "packageManager": "pnpm@7.1.7",
+  "pnpm": {
+    "overrides": {
+      "browserslist": "^4.14.0",
+      "qunit": "^2.14.1",
+      "@types/eslint": "7.29.0"
+    },
+    "overrides-notes": {
+      "@types/eslint": "webpack brings in @types/eslint@8, which breaks our type checking"
+    }
+  },
   "volta": {
-    "node": "14.19.3",
-    "yarn": "1.22.11"
+    "node": "14.19.3"
   },
   "version": "1.7.1"
 }

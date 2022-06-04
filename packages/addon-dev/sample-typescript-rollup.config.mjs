@@ -1,7 +1,6 @@
-import path from 'path';
-
 import ts from 'rollup-plugin-ts';
 import { defineConfig } from 'rollup';
+
 import { Addon } from '@embroider/addon-dev/rollup';
 
 const addon = new Addon({
@@ -9,26 +8,44 @@ const addon = new Addon({
   destDir: 'dist',
 });
 
-const globallyAvailable = [
-  'components/**/*.{js,ts}', 'services/**/*.{js,ts}', 'helpers/**/*.{js,ts}',
-  'instance-initializers/**/*.{js,ts}'
-];
-
 export default defineConfig({
-  output: addon.output(),
+  // https://github.com/rollup/rollup/issues/1828
+  watch: {
+    chokidar: {
+      usePolling: true,
+    },
+  },
+  output: {
+    ...addon.output(),
+    sourcemap: true,
+    // Until a bug with the ember-cli-htmlbars-removal transform is fixed, you
+    // may need
+    // hoistTransitiveImports: false
+    // specified here as well
+  },
   plugins: [
     // These are the modules that users should be able to import from your
     // addon. Anything not listed here may get optimized away.
-    addon.publicEntrypoints(['*.{js,ts}', ...globallyAvailable]),
+    addon.publicEntrypoints([
+      'index.ts',
+      'components/**/*.ts',
+      'helpers/**/*.ts',
+      'modifiers/**/*.ts',
+      'services/**/*.ts',
+      'test-support/**/*.ts',
+    ]),
 
     // These are the modules that should get reexported into the traditional
     // "app" tree. Things in here should also be in publicEntrypoints above, but
     // not everything in publicEntrypoints necessarily needs to go here.
-    //
-    // This generates an `_app_/` directory in your output directory
-    // and updates an 'ember-addon.app-js' entry in your package.json
-    addon.appReexports([...globallyAvailable]),
-
+    addon.appReexports([
+      'index.{js,ts}',
+      'components/**/*.{js,ts}',
+      'helpers/**/*.{js,ts}',
+      'modifiers/**/*.{js,ts}',
+      'services/**/*.{js,ts}',
+      'test-support/**/*.{js,ts}',
+    ]),
     // This babel config should *not* apply presets or compile away ES modules.
     // It exists only to provide development niceties for you, like automatic
     // template colocation.
@@ -38,17 +55,18 @@ export default defineConfig({
       // but we need the ember plugins converted first
       // (template compilation and co-location)
       transpiler: 'babel',
-      browserslist: false,
-      // NOTE: babel config must be CJS if in the same directory as CWD
-      //       https://github.com/wessberg/rollup-plugin-ts/issues/167
-      //       otherwise ESM babel.config.js can be imported and set here
-      // babelConfig,
-      // setting this true greatly improves performance, but
-      // at the cost of safety (and no declarations output in your dist directory).
-      transpileOnly: false,
+      browserslist: ['last 2 firefox versions', 'last 2 chrome versions'],
       tsconfig: {
         fileName: 'tsconfig.json',
-        hook: (config) => ({ ...config, declaration: true }),
+        hook: (config) => ({
+          ...config,
+          declaration: true,
+          declarationMap: true,
+          // See: https://devblogs.microsoft.com/typescript/announcing-typescript-4-5/#beta-delta
+          // Allows us to use `exports` to define types per export
+          // However, we can't use that feature until the minimum supported TS is 4.7+
+          declarationDir: './dist',
+        }),
       },
     }),
 
@@ -64,7 +82,6 @@ export default defineConfig({
     // to leave alone and keep in the published output.
     addon.keepAssets(['**/*.css']),
 
-    // Remove leftover build artifacts when starting a new build.
     addon.clean(),
   ],
 });

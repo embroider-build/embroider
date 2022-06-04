@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/semver": "^7.3.6",
+    "broccoli-node-api": "^1.7.0",
     "typescript": "*",
     "webpack": "^5"
   },

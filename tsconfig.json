@@ -3,13 +3,13 @@
     "./packages/*/src/**/*.ts",
     "./packages/*/tests/**/*.ts",
     "./test-packages/support/**/*.ts",
-    "./tests/scenarios/**/*.ts"
+    "./tests/scenarios/**/*.ts",
+    "./types/**/*.ts"
   ],
   "compilerOptions": {
     "target": "es2019",
     "module": "commonjs",
     "declaration": true,
-    "typeRoots": ["types", "node_modules/@types"],
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

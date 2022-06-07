@@ -1,15 +1,20 @@
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 import { readFileSync } from 'fs';
+import { readJsonSync, writeJsonSync } from 'fs-extra';
 import { join } from 'path';
 import minimatch from 'minimatch';
 
 export default function keepAssets({
   from,
+  to,
   include,
+  mapPath,
 }: {
   from: string;
+  to: string;
   include: string[];
+  mapPath?: (srcPath: string) => string;
 }): Plugin {
   return {
     name: 'copy-assets',
@@ -33,6 +38,10 @@ export default function keepAssets({
     // the assets go into the output directory in the same relative locations as
     // in the input directory
     async generateBundle() {
+      let pkg = readJsonSync('package.json');
+      let packageName: string = pkg.name;
+      let publicAssets: Record<string, string> = {};
+
       for (let name of walkSync(from, {
         globs: include,
         directories: false,
@@ -42,7 +51,15 @@ export default function keepAssets({
           fileName: name,
           source: readFileSync(join(from, name), 'utf8'),
         });
+
+        publicAssets[`${to}/${name}`] = mapPath?.(name) ?? `/${packageName}/${name}`;
       }
+
+      pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
+        'public-assets': publicAssets,
+      });
+
+      writeJsonSync('package.json', pkg, { spaces: 2 });
     },
   };
 }

@@ -52,7 +52,8 @@ export default function keepAssets({
           source: readFileSync(join(from, name), 'utf8'),
         });
 
-        publicAssets[`${to}/${name}`] = mapPath?.(name) ?? `/${packageName}/${name}`;
+        publicAssets[`${to}/${name}`] =
+          mapPath?.(name) ?? `/${packageName}/${name}`;
       }
 
       pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {

@@ -73,6 +73,7 @@ appScenarios
 
             addon.hbs(),
             addon.dependencies(),
+            addon.keepAssets(['**/*.wasm']),
 
             babel({ babelHelpers: 'bundled' }),
 
@@ -81,6 +82,9 @@ appScenarios
         };
       `,
       src: {
+        public: {
+          'placeholder.wasm': 'a b c, 1 2 3',
+        },
         components: {
           demo: {
             'button.hbs': `
@@ -192,11 +196,16 @@ appScenarios
         test('package.json is modified appropriately', async function (assert) {
           let { dir } = inDependency(app, 'v2-addon');
           let reExports = readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js'];
+          let assets = readJsonSync(path.join(dir, 'package.json'))['ember-addon']['public-assets'];
 
           assert.deepEqual(reExports, {
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
+          });
+
+          assert.deepEqual(assets, {
+            'dist/public/placeholder.wasm': '/v2-addon/public/placeholder.wasm',
           });
         });
 

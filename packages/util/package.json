@@ -1,6 +1,6 @@
 {
   "name": "@embroider/util",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "Utilities for app and addon authors.",
   "keywords": [
     "ember-addon"
@@ -28,7 +28,7 @@
     "test:ember-compatibility": "ember try:each"
   },
   "dependencies": {
-    "@embroider/macros": "1.7.1",
+    "@embroider/macros": "1.8.0",
     "broccoli-funnel": "^3.0.5",
     "ember-cli-babel": "^7.23.1"
   },
@@ -39,11 +39,11 @@
     "@ember/jquery": "^2.0.0",
     "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^2.4.2",
-    "@embroider/compat": "1.7.1",
-    "@embroider/core": "1.7.1",
-    "@embroider/test-setup": "1.7.1",
+    "@embroider/compat": "1.8.0",
+    "@embroider/core": "1.8.0",
+    "@embroider/test-setup": "1.8.0",
     "@embroider/test-support": "0.36.0",
-    "@embroider/webpack": "1.7.1",
+    "@embroider/webpack": "1.8.0",
     "@glimmer/component": "^1.0.3",
     "@glimmer/tracking": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^4.1.1",

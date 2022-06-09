@@ -7,6 +7,29 @@
 
 
 
+
+## v1.8.0 (2022-06-09)
+
+#### :rocket: Enhancement
+* `addon-dev`, `core`, `shared-internals`
+  * [#1199](https://github.com/embroider-build/embroider/pull/1199) Add babel plugin for preprocessing templates with ast transforms ([@wondersloth](https://github.com/wondersloth))
+
+#### :bug: Bug Fix
+* `webpack`
+  * [#1191](https://github.com/embroider-build/embroider/pull/1191) Fix thread-load JOBS handling/documentation ([@bendemboski](https://github.com/bendemboski))
+* `addon-dev`
+  * [#1215](https://github.com/embroider-build/embroider/pull/1215) Strip extension from reexport of `rollup-app-reexports` ([@simonihmig](https://github.com/simonihmig))
+* `core`
+  * [#1219](https://github.com/embroider-build/embroider/pull/1219) Fix duplicate HTML content on rebuilds ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1205](https://github.com/embroider-build/embroider/pull/1205) Fix preprocessors tree by wrapping with moduleName ([@wondersloth](https://github.com/wondersloth))
+
+#### Committers: 4
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Matt Edwards ([@wondersloth](https://github.com/wondersloth))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## v1.7.1 (2022-05-24)
 
 #### :bug: Bug Fix

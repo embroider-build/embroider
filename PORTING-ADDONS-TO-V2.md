@@ -61,10 +61,7 @@ The steps:
    ```json
    {
      "private": true,
-     "workspaces": [
-       "addon",
-       "test-app"
-     ]
+     "workspaces": ["addon", "test-app"]
    }
    ```
 
@@ -219,6 +216,7 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
    `yarn add --dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-proposal-class-properties @babel/plugin-proposal-decorators`
 
 6. Grab the [example babel config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.json) and save it as `addon/babel.config.json`
+   - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `@embroider/addon-dev/template-transform-plugin`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
 7. Grab the [example rollup config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-rollup.config.js) and save it as `addon/rollup.config.js`.
 8. Identify your **app reexports**. This is the list of modules from your addon that get reexported by files in the `addon/app` directory.
 9. Delete the `addon/app` directory. You aren't going to need it anymore.
@@ -230,10 +228,12 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 11. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
 12. Delete your `addon/index.js` file.
 13. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
-   ```js
-   const { addonV1Shim } = require('@embroider/addon-shim');
-   module.exports = addonV1Shim(__dirname);
-   ```
+
+```js
+const { addonV1Shim } = require('@embroider/addon-shim');
+module.exports = addonV1Shim(__dirname);
+```
+
 14. In your `addon/.eslintrc.js`, replace "index.js" with "addon-main.js" so that our new file will lint correctly as Node code.
 15. In your `addon/package.json`, add these things:
     ```js

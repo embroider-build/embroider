@@ -6,7 +6,7 @@ import type {
   ResolvedId,
 } from 'rollup';
 import { readFileSync } from 'fs';
-import { hbsToJS } from '@embroider/shared-internals';
+import { hbsToJS } from '@embroider/core';
 import assertNever from 'assert-never';
 import { parse as pathParse } from 'path';
 

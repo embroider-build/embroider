@@ -5,7 +5,7 @@ import {
   emberVirtualPeerDeps,
   packageName,
   templateCompilationModules,
-} from '@embroider/shared-internals';
+} from '@embroider/core';
 
 const compilationModules = new Set(
   templateCompilationModules.map((m) => m.module)

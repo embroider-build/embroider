@@ -1,4 +1,7 @@
-export {
-  default,
-  Options,
-} from '@embroider/shared-internals/src/template-colocation-plugin';
+import {
+  templateColocationPlugin,
+  Options as TemplateColocationPluginOptions,
+} from '@embroider/core';
+
+export { TemplateColocationPluginOptions as Options };
+export default templateColocationPlugin;

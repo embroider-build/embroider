@@ -90,6 +90,7 @@ export class HTMLEntrypoint {
         let matchingFastbootBundles = fastbootVariant >= 0 ? match.get(fastbootVariant) || [] : [];
 
         for (let placeholder of placeholders) {
+          placeholder.clear();
           if (supportsFastboot && placeholder.isScript()) {
             // if there is any fastboot involved, we will emit the lazy bundles
             // right before our first script.

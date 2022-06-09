@@ -53,7 +53,7 @@ export interface Options {
   // will be used to configure `thread-loader`. If not specified,
   // `thread-loader` will be used with a default configuration.
   //
-  // Note that setting `JOBS=1` in the environment will also disable
+  // Note that setting `JOBS=0` in the environment will also disable
   // `thread-loader`.
   threadLoaderOptions?: object | false;
 

@@ -21,6 +21,7 @@ module.exports = {
         legacy: true,
       },
     ],
+    [resolve('@babel/plugin-proposal-class-properties')],
     resolve('@embroider/addon-dev/template-colocation-plugin'),
   ],
 };

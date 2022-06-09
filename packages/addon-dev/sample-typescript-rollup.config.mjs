@@ -27,24 +27,24 @@ export default defineConfig({
     // These are the modules that users should be able to import from your
     // addon. Anything not listed here may get optimized away.
     addon.publicEntrypoints([
-      'index.ts',
-      'components/**/*.ts',
-      'helpers/**/*.ts',
-      'modifiers/**/*.ts',
-      'services/**/*.ts',
-      'test-support/**/*.ts',
+      'index.js',
+      'components/**/*.js',
+      'helpers/**/*.js',
+      'modifiers/**/*.js',
+      'services/**/*.js',
+      'test-support/**/*.js',
     ]),
 
     // These are the modules that should get reexported into the traditional
     // "app" tree. Things in here should also be in publicEntrypoints above, but
     // not everything in publicEntrypoints necessarily needs to go here.
     addon.appReexports([
-      'index.{js,ts}',
-      'components/**/*.{js,ts}',
-      'helpers/**/*.{js,ts}',
-      'modifiers/**/*.{js,ts}',
-      'services/**/*.{js,ts}',
-      'test-support/**/*.{js,ts}',
+      'index.js',
+      'components/**/*.js',
+      'helpers/**/*.js',
+      'modifiers/**/*.js',
+      'services/**/*.js',
+      'test-support/**/*.js',
     ]),
     // This babel config should *not* apply presets or compile away ES modules.
     // It exists only to provide development niceties for you, like automatic

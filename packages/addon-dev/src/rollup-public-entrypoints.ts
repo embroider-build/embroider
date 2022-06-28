@@ -1,15 +1,13 @@
 import walkSync from 'walk-sync';
 import { join } from 'path';
 import minimatch from 'minimatch';
+import { pathExistsSync } from 'fs-extra';
 
 import type { Plugin } from 'rollup';
-import { pathExistsSync } from 'fs-extra';
 
 function normalizeFileExt(fileName: string) {
   return fileName.replace(/\.ts|\.hbs|\.gts|\.gjs$/, '.js');
 }
-
-const hbsPattern = '**/*.hbs';
 
 export default function publicEntrypoints(args: {
   srcDir: string;
@@ -19,7 +17,7 @@ export default function publicEntrypoints(args: {
     name: 'addon-modules',
     async buildStart() {
       let matches = walkSync(args.srcDir, {
-        globs: [...args.include, hbsPattern],
+        globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
       });
 
       for (let name of matches) {
@@ -37,12 +35,28 @@ export default function publicEntrypoints(args: {
           // match the user's patterns.
           let normalizedName = normalizeFileExt(name);
           let id = join(args.srcDir, normalizedName);
-          if (
-            args.include.some((pattern) =>
-              minimatch(normalizedName, pattern)
-            ) &&
-            !pathExistsSync(id)
-          ) {
+          let normalizedMatch = args.include.some((pattern) =>
+            minimatch(normalizedName, pattern)
+          );
+          let normalizedExists = pathExistsSync(id);
+
+          let matchesDeferred = [...args.include, '**/*.ts'].some((pattern) =>
+            minimatch(name, pattern)
+          );
+
+          // for files that we know are going to be processed by other
+          // plugins, change as little as possible.
+          if (matchesDeferred) {
+            this.emitFile({
+              type: 'chunk',
+              id: join(args.srcDir, name),
+              fileName: normalizedName,
+            });
+
+            continue;
+          }
+
+          if (normalizedMatch && !normalizedExists) {
             this.emitFile({
               type: 'chunk',
               id,

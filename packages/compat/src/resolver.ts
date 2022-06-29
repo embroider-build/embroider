@@ -135,6 +135,7 @@ interface RehydrationParamsBase {
   podModulePrefix?: string;
   options: ResolverOptions;
   activePackageRules: ActivePackageRules[];
+  emberSupportsLexicalScope: boolean;
 }
 
 interface RehydrationParamsWithFile extends RehydrationParamsBase {
@@ -483,6 +484,7 @@ export default class CompatResolver implements Resolver {
           type: 'helper',
           modules: [
             {
+              type: 'global',
               runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
               path: explicitRelative(dirname(from), absPath),
               absPath,
@@ -519,6 +521,7 @@ export default class CompatResolver implements Resolver {
           type: 'modifier',
           modules: [
             {
+              type: 'global',
               runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
               path: explicitRelative(dirname(from), absPath),
               absPath,
@@ -645,6 +648,7 @@ export default class CompatResolver implements Resolver {
       return {
         type: 'component',
         modules: componentModules.map(absPath => ({
+          type: 'global',
           path: explicitRelative(dirname(from), absPath),
           absPath,
           runtimeName: this.absPathToRuntimeName(absPath, targetPackage),

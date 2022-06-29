@@ -46,13 +46,17 @@ export default function make<O>(getCompiler: (opts: O) => TemplateCompiler) {
             }
             let counter = 0;
             for (let dep of state.dependencies.values()) {
-              path.node.body.unshift(amdDefine(dep.runtimeName, counter, t));
-              path.node.body.unshift(
-                t.importDeclaration(
-                  [t.importDefaultSpecifier(t.identifier(`a${counter++}`))],
-                  t.stringLiteral(dep.path)
-                )
-              );
+              if (dep.type === 'global') {
+                path.node.body.unshift(amdDefine(dep.runtimeName, counter, t));
+                path.node.body.unshift(
+                  t.importDeclaration(
+                    [t.importDefaultSpecifier(t.identifier(`a${counter++}`))],
+                    t.stringLiteral(dep.path)
+                  )
+                );
+              } else {
+                throw new Error('local deps not implemented');
+              }
             }
           },
         },

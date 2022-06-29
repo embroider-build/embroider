@@ -40,6 +40,7 @@ describe('audit', function () {
           allowUnsafeDynamicComponents: false,
         },
         activePackageRules: [],
+        emberSupportsLexicalScope: false,
         adjustImportsOptions: {
           renamePackages: {},
           renameModules: {},

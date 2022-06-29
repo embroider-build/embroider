@@ -347,6 +347,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       options: this.options,
       activePackageRules: this.activeRules(),
       adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
+      emberSupportsLexicalScope: false,
     });
   }
 
@@ -408,6 +409,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       options: this.options,
       activePackageRules: this.activeRules(),
       adjustImportsOptions: this.makeAdjustImportOptions(false),
+      emberSupportsLexicalScope: false,
     });
 
     const compilerPath = resolveSync(this.templateCompilerPath(), { basedir: this.root });

@@ -222,7 +222,14 @@ class StubResolver implements Resolver {
     return undefined;
   }
   dependenciesOf(_moduleName: string): ResolvedDep[] {
-    return [{ runtimeName: 'my-app/components/foo', path: './components/foo.js', absPath: '/tmp/components/foo.js' }];
+    return [
+      {
+        type: 'global',
+        runtimeName: 'my-app/components/foo',
+        path: './components/foo.js',
+        absPath: '/tmp/components/foo.js',
+      },
+    ];
   }
 
   absPathToRuntimePath(absPath: string): string {

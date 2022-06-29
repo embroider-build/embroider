@@ -82,6 +82,7 @@ describe('compat-resolver', function () {
       podModulePrefix?: string;
       adjustImportsImports?: Partial<AdjustImportsOptions>;
       plugins?: TemplateCompilerPlugins;
+      emberSupportsLexicalScope?: boolean;
     } = {}
   ) {
     let EmberENV = {};
@@ -97,6 +98,7 @@ describe('compat-resolver', function () {
         let root = rule.package === 'the-test-package' ? appDir : `${appDir}/node_modules/${rule.package}`;
         return Object.assign({ roots: [root] }, rule);
       }),
+      emberSupportsLexicalScope: otherOptions.emberSupportsLexicalScope ?? false,
       adjustImportsOptions: Object.assign(
         {
           renamePackages: {},
@@ -116,10 +118,20 @@ describe('compat-resolver', function () {
     return function (relativePath: string, contents: string) {
       let moduleName = givenFile(relativePath);
       let { dependencies } = compiler.precompile(contents, { filename: moduleName });
-      return sortBy(dependencies, d => d.runtimeName).map(d => ({
-        path: d.path,
-        runtimeName: d.runtimeName,
-      }));
+      return sortBy(dependencies, d => d.runtimeName).map(d => {
+        if (d.type === 'global') {
+          return {
+            path: d.path,
+            runtimeName: d.runtimeName,
+          };
+        } else {
+          return {
+            path: d.path,
+            runtimeName: d.runtimeName,
+            type: 'local',
+          };
+        }
+      });
     };
   }
 
@@ -1923,5 +1935,19 @@ describe('compat-resolver', function () {
     expect(findDependencies('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqual(
       []
     );
+  });
+
+  test('can use lexically-scoped component', function () {
+    let findDependencies = configure({ staticComponents: true }, { emberSupportsLexicalScope: true });
+    givenFile('components/alpha.hbs');
+    givenFile('components/alpha.js');
+
+    expect(findDependencies('templates/application.hbs', `<Alpha />`)).toEqual([
+      {
+        path: '../components/alpha.js',
+        runtimeName: 'Alpha',
+        type: 'local',
+      },
+    ]);
   });
 });

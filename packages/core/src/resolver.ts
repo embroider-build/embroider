@@ -2,6 +2,9 @@ import type { TemplateCompiler } from './template-compiler-common';
 import { Options } from './babel-plugin-adjust-imports';
 
 export interface ResolvedDep {
+  // 'global' means we need to register runtimeName with the legacy global
+  // resolver. 'local' means we can provide runtimeName via lexical scope.
+  type: 'global' | 'local';
   runtimeName: string;
   path: string;
   absPath: string;

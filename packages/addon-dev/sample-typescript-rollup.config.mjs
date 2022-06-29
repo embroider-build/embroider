@@ -55,8 +55,12 @@ export default defineConfig({
       // but we need the ember plugins converted first
       // (template compilation and co-location)
       transpiler: 'babel',
+      // without the browserlist, recently landed JS features are polyfilled.
+      // It should be primarily up to the consuming app whether or not they need to
+      // polyfill whatever JS features.
       browserslist: ['last 2 firefox versions', 'last 2 chrome versions'],
       tsconfig: {
+        // when `hooks` is specified, fileName is required
         fileName: 'tsconfig.json',
         hook: (config) => ({
           ...config,

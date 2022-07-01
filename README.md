@@ -43,15 +43,6 @@ Alternatively, it is totally safe to stick with the traditional build pipeline a
 
 The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
 
-## Compatibility with Classic Builds
-There are a few things you'll need to change to move from your classic builds to Embroider.
-- If you're using lazy loaded engines, the router that loads them needs to be converted from `EmberRouter` to `EmbroiderRouter`
-   ```diff
-   -import EmberRouter from '@ember/routing/router';
-   +import EmbroiderRouter from '@embroider/router';
-
-   -const Router = EmberRouter.extend({
-   +const Router = EmbroiderRouter.extend({
 ## How to try it
 
 1. Add dependencies:
@@ -103,7 +94,7 @@ The options are documented in detail in [Core Options](https://github.com/embroi
 
 The recommended steps when introducing Embroider into an existing app are:
 
-1. First make it work with no options. This is the mode that supports maximum backward compatibility.
+1. First make it work with no options. This is the mode that supports maximum backward compatibility. If you're hitting errors, first look at the "Compatibility with Classic Builds" section below.
 2. Enable `staticAddonTestSupportTrees` and `staticAddonTrees` and test your application. This is usually safe, because most code in these trees gets consumed via `import` statements that we can analyze. But you might find exceptional cases where some code is doing a more dynamic thing.
 3. Enable `staticHelpers` and `staticModifiers` and test. This is usually safe because addon helpers and modifiers get invoked declaratively in templates and we can see all invocations.
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
@@ -122,6 +113,21 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
   },
 });
 ```
+
+## Compatibility with Classic Builds
+
+While we have a strong emphasis on backward compatibility with classic builds, there are a few places where you may need to make changes to your code:
+
+### Lazy Engines
+
+If you're using lazy loaded engines, you need to use `@embroider/router`, which is a drop-in replacement for `@ember/routing/router`:
+
+```diff
+-import EmberRouter from '@ember/routing/router';
++import EmberRouter from '@embroider/router';
+```
+
+See [@embroider/router README](./packages/router/README.md) for more details.
 
 ## Analyzing Bundles
 

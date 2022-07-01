@@ -3,6 +3,8 @@ import { join } from 'path';
 import { BuildPluginParams } from './glimmer/ast-transform';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
+let hasWrappedToTree = false;
+
 export = {
   name: '@embroider/macros',
   included(this: any, parent: any) {
@@ -48,16 +50,20 @@ export = {
 
     appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
 
-    // When we're used inside the traditional ember-cli build pipeline without
-    // Embroider, we unfortunately need to hook into here uncleanly because we
-    // need to delineate the point in time after which writing macro config is
-    // forbidden and consuming it becomes allowed. There's no existing hook with
-    // that timing.
     const originalToTree = appInstance.toTree;
-    appInstance.toTree = function (...args) {
-      macrosConfig.finalize();
-      return originalToTree.apply(appInstance, args);
-    };
+
+    if (!hasWrappedToTree) {
+      // When we're used inside the traditional ember-cli build pipeline without
+      // Embroider, we unfortunately need to hook into here uncleanly because we
+      // need to delineate the point in time after which writing macro config is
+      // forbidden and consuming it becomes allowed. There's no existing hook with
+      // that timing.
+      appInstance.toTree = function (...args) {
+        macrosConfig.finalize();
+        return originalToTree.apply(appInstance, args);
+      };
+      hasWrappedToTree = true;
+    }
   },
 
   // Other addons are allowed to call this. It's needed if an addon needs to

@@ -1,6 +1,6 @@
 {
   "name": "@embroider/test-setup",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -16,7 +16,7 @@
     "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "@embroider/compat": "1.8.0"
+    "@embroider/compat": "1.8.1"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

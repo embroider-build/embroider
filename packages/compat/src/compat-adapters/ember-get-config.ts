@@ -1,6 +1,7 @@
 import V1Addon from '../v1-addon';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
+import semver from 'semver';
 
 function createIndexContents(config: any): string {
   return `export default ${JSON.stringify(config)};`;
@@ -27,5 +28,11 @@ export default class extends V1Addon {
       writeFile('index.js', createIndexContents(appEnvironmentConfig)),
       writeFile('package.json', JSON.stringify(this.newPackageJSON, null, 2)),
     ]);
+  }
+
+  // v2.1.0 now behaves the same under Embroider as it does in a classic build:
+  // https://github.com/mansona/ember-get-config/pull/45
+  static shouldApplyAdapter(addonInstance: any) {
+    return semver.lt(addonInstance.pkg.version, '2.1.0');
   }
 }

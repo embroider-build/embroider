@@ -43,6 +43,15 @@ Alternatively, it is totally safe to stick with the traditional build pipeline a
 
 The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
 
+## Compatibility with Classic Builds
+There are a few things you'll need to change to move from your classic builds to Embroider.
+- If you're using lazy loaded engines, the router that loads them needs to be converted from `EmberRouter` to `EmbroiderRouter`
+   ```diff
+   -import EmberRouter from '@ember/routing/router';
+   +import EmbroiderRouter from '@embroider/router';
+
+   -const Router = EmberRouter.extend({
+   +const Router = EmbroiderRouter.extend({
 ## How to try it
 
 1. Add dependencies:

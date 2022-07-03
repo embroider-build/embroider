@@ -53,7 +53,9 @@ export default class Package {
 
   isEmberPackage(): boolean {
     let keywords = this.packageJSON.keywords;
-    return Boolean(keywords && (keywords as string[]).includes('ember-addon'));
+    let hasKeyword = Boolean(keywords && (keywords as string[]).includes('ember-addon'));
+
+    return hasKeyword || this.isV2Addon();
   }
 
   isEngine(): boolean {
@@ -66,7 +68,7 @@ export default class Package {
   }
 
   isV2Ember(): this is V2Package {
-    return this.isEmberPackage() && get(this.packageJSON, 'ember-addon.version') === 2;
+    return get(this.packageJSON, 'ember-addon.version') === 2;
   }
 
   isV2App(): this is V2AppPackage {

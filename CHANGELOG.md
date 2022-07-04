@@ -10,6 +10,19 @@
 
 
 
+
+## v1.8.3 (2022-07-04)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1231](https://github.com/embroider-build/embroider/pull/1231) Followup to "Detect addons with customized treeForMethod names" ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1232](https://github.com/embroider-build/embroider/pull/1232) regression test coverage for #1231 ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v1.8.2 (2022-07-04)
 
 #### :bug: Bug Fix

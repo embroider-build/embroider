@@ -272,6 +272,26 @@ appScenarios
     externallyCustomized.pkg.name = 'externally-customized';
     troubleMaker.pkg.name = 'trouble-maker';
 
+    // an addon that customizes a tree by mutating treeForMethods
+    let patchesMethodName = baseAddon();
+    merge(patchesMethodName.files, {
+      injected: {
+        hello: { 'world.js': '// hello' },
+      },
+      'index.js': `
+        const { join } = require('path');
+        module.exports = {
+        name: 'patches-method-name',
+        included() {
+          this.treeForMethods['addon'] = 'notTheUsual';
+        },
+        notTheUsual() {
+          return join(this.root, 'injected');
+        }
+      }`,
+    });
+    patchesMethodName.pkg.name = 'patches-method-name';
+
     // an addon that customizes packageJSON['ember-addon'].main and then uses
     // stock trees. Setting the main actually changes the root for *all* stock
     // trees.
@@ -346,6 +366,7 @@ appScenarios
     project.addDependency(movedMain);
     project.addDependency(suppressed);
     project.addDependency(suppressedCustom);
+    project.addDependency(patchesMethodName);
 
     project.pkg['ember-addon'] = { paths: ['lib/disabled-in-repo-addon', 'lib/blacklisted-in-repo-addon'] };
     merge(project.files, loadFromFixtureData('blacklisted-addon-build-options'));
@@ -378,6 +399,10 @@ appScenarios
 
       test('custom tree hooks are detected when they have been patched into the addon instance', function (assert) {
         assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/externally-customized/public/hello/world.js')));
+      });
+
+      test('custom tree hooks are detected when they have been customized via treeForMethod names', function (assert) {
+        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/patches-method-name/hello/world.js')));
       });
 
       test('addon with customized ember-addon.main can still use stock trees', function (assert) {

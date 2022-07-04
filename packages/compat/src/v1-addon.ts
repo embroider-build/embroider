@@ -421,9 +421,14 @@ export default class V1Addon {
   }
 
   private customizesHookName(treeName: string): boolean {
+    if (!this.addonInstance.treeForMethods) {
+      // weird old addons don't even extend ember-cli's Addon base class and
+      // might not have this.
+      return false;
+    }
     for (let [name, methodName] of Object.entries(defaultMethods)) {
       if (methodName === treeName) {
-        return this.addonInstance.treeForMethods?.[name] !== methodName;
+        return this.addonInstance.treeForMethods[name] !== methodName;
       }
     }
     return false;

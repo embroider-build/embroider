@@ -247,6 +247,19 @@ appScenarios
 
     undefinedFastboot.pkg.name = 'undefined-fastboot';
 
+    // An addon that never extends ember-cli's Addon base class. Mostly this is
+    // here to make sure nothing blows up when it is present. We don't actually
+    // try to do anything with the custom code in index.js.
+    let weirdBase = baseAddon();
+    merge(weirdBase.files, {
+      'index.js': `
+      module.exports = class {
+
+      }
+      `,
+    });
+    weirdBase.pkg.name = 'weird-base';
+
     // Use one addon to patch the hook on another (yes, this happens in the
     // wild...), and ensure we still detect the customized hook
     let externallyCustomized = baseAddon();
@@ -367,6 +380,7 @@ appScenarios
     project.addDependency(suppressed);
     project.addDependency(suppressedCustom);
     project.addDependency(patchesMethodName);
+    project.addDependency(weirdBase);
 
     project.pkg['ember-addon'] = { paths: ['lib/disabled-in-repo-addon', 'lib/blacklisted-in-repo-addon'] };
     merge(project.files, loadFromFixtureData('blacklisted-addon-build-options'));

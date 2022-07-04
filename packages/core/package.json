@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -38,8 +38,8 @@
     "@babel/plugin-transform-runtime": "^7.14.5",
     "@babel/runtime": "^7.14.5",
     "@babel/traverse": "^7.14.5",
-    "@embroider/macros": "1.8.1",
-    "@embroider/shared-internals": "1.8.1",
+    "@embroider/macros": "1.8.2",
+    "@embroider/shared-internals": "1.8.2",
     "assert-never": "^1.2.1",
     "babel-import-util": "^1.1.0",
     "babel-plugin-ember-template-compilation": "^1.0.0",

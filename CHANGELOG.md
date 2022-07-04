@@ -9,6 +9,16 @@
 
 
 
+
+## v1.8.2 (2022-07-04)
+
+#### :bug: Bug Fix
+* `compat`, `shared-internals`
+  * [#1230](https://github.com/embroider-build/embroider/pull/1230) Detect addons with customized treeForMethod names ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## v1.8.1 (2022-07-01)
 
 #### :bug: Bug Fix

@@ -47,7 +47,7 @@ export class Addon {
   // By default rollup does not clear the output directory between builds. This
   // does that.
   clean() {
-    return clean({ targets: `${this.#destDir}/*` });
+    return clean({ targets: `${this.#destDir}/*`, hook: 'generateBundle' });
   }
 
   // V2 Addons are allowed to contain imports of .css files. This tells rollup

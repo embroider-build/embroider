@@ -25,7 +25,7 @@ export default function publicEntrypoints(args: {
 
         // anything that doesn't match the users patterns, and wasn't a template-only
         // component needs to be emitted "as-is" so that other plugins may handle it.
-        let isTO = isTemplateOnly(args.srcDir, name);
+        let isTO = isTemplateOnly(matches, name);
 
         let isHbs = path.extname(name) === '.hbs';
 
@@ -72,7 +72,7 @@ export default function publicEntrypoints(args: {
   };
 }
 
-function isTemplateOnly(srcDir: string, filePath: string) {
+function isTemplateOnly(matches: string[], filePath: string) {
   let isHbs = path.extname(filePath) === '.hbs';
 
   if (!isHbs) return false;
@@ -82,10 +82,9 @@ function isTemplateOnly(srcDir: string, filePath: string) {
     path.basename(filePath).replace(/hbs$/, '*')
   );
 
-  let relatedFiles = walkSync(srcDir, {
-    globs: [correspondingFileGlob],
-  });
-
+  let relatedFiles = matches.filter((match) =>
+    minimatch(match, correspondingFileGlob)
+  );
   let isTO = relatedFiles.filter((x) => x !== filePath).length === 0;
 
   return isTO;

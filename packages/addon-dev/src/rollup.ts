@@ -76,6 +76,7 @@ export class Addon {
       format: 'es',
       entryFileNames: '[name]',
       hoistTransitiveImports: false,
+      sourcemap: true,
     };
   }
 

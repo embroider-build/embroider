@@ -109,6 +109,7 @@ interface BaseAddonInstance {
     public: string;
     vendor: string;
   };
+  treeForMethods: Record<string, string>;
 }
 
 export type AddonTreePath = keyof BaseAddonInstance['treePaths'];

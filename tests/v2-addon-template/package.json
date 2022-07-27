@@ -5,7 +5,7 @@
     "ember-addon"
   ],
   "dependencies": {
-    "@embroider/addon-shim": "1.8.0"
+    "@embroider/addon-shim": "1.8.3"
   },
   "ember-addon": {
     "type": "addon",

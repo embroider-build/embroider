@@ -8,6 +8,49 @@
 
 
 
+
+
+
+## v1.8.3 (2022-07-04)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1231](https://github.com/embroider-build/embroider/pull/1231) Followup to "Detect addons with customized treeForMethod names" ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1232](https://github.com/embroider-build/embroider/pull/1232) regression test coverage for #1231 ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v1.8.2 (2022-07-04)
+
+#### :bug: Bug Fix
+* `compat`, `shared-internals`
+  * [#1230](https://github.com/embroider-build/embroider/pull/1230) Detect addons with customized treeForMethod names ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## v1.8.1 (2022-07-01)
+
+#### :bug: Bug Fix
+* `addon-dev`
+  * [#1227](https://github.com/embroider-build/embroider/pull/1227) add-dev: HBS files were not watched for rebuilds ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1224](https://github.com/embroider-build/embroider/pull/1224) Don't apply the `ember-get-config` compat adapter when >= v2.1.0 ([@bertdeblock](https://github.com/bertdeblock))
+* `macros`
+  * [#1213](https://github.com/embroider-build/embroider/pull/1213) Prevent redundant toTree wrapping for macros ([@raycohen](https://github.com/raycohen))
+
+#### :memo: Documentation
+* [#1225](https://github.com/embroider-build/embroider/pull/1225) docs: Add lazy loaded engines EmbroiderRouter details to README ([@richgt](https://github.com/richgt))
+
+#### Committers: 4
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Ray Cohen ([@raycohen](https://github.com/raycohen))
+- Rich Glazerman ([@richgt](https://github.com/richgt))
+
 ## v1.8.0 (2022-06-09)
 
 #### :rocket: Enhancement

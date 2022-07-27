@@ -34,6 +34,7 @@ export default function rollupHbsPlugin(): Plugin {
 
       switch (meta.type) {
         case 'template':
+          this.addWatchFile(meta.originalId);
           let input = readFileSync(meta.originalId, 'utf8');
           let code = hbsToJS(input);
           return {

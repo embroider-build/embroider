@@ -70,6 +70,19 @@ const dynamicTreeHooks = Object.freeze([
   'treeForVendor',
 ]);
 
+const defaultMethods = {
+  app: 'treeForApp',
+  addon: 'treeForAddon',
+  'addon-styles': 'treeForAddonStyles',
+  'addon-templates': 'treeForAddonTemplates',
+  'addon-test-support': 'treeForAddonTestSupport',
+  public: 'treeForPublic',
+  styles: 'treeForStyles',
+  templates: 'treeForTemplates',
+  'test-support': 'treeForTestSupport',
+  vendor: 'treeForVendor',
+};
+
 const appPublicationDir = '_app_';
 const fastbootPublicationDir = '_fastboot_';
 
@@ -400,10 +413,25 @@ export default class V1Addon {
           // customized hook exists in actual code exported from their index.js
           this.mainModule[treeName] ||
           // addon instance doesn't match its own prototype
-          (realAddon.__proto__ && realAddon[treeName] !== realAddon.__proto__[treeName])
+          (realAddon.__proto__ && realAddon[treeName] !== realAddon.__proto__[treeName]) ||
+          this.customizesHookName(treeName)
         );
       })
     );
+  }
+
+  private customizesHookName(treeName: string): boolean {
+    if (!this.addonInstance.treeForMethods) {
+      // weird old addons don't even extend ember-cli's Addon base class and
+      // might not have this.
+      return false;
+    }
+    for (let [name, methodName] of Object.entries(defaultMethods)) {
+      if (methodName === treeName) {
+        return this.addonInstance.treeForMethods[name] !== methodName;
+      }
+    }
+    return false;
   }
 
   @Memoize()

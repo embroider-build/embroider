@@ -104,6 +104,7 @@ const builtInHelpers = [
   'readonly',
   'textarea',
   'unbound',
+  'unique-id',
   'unless',
   'with',
   'yield',

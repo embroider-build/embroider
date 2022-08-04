@@ -1247,13 +1247,13 @@
     ember-cli-test-info "^1.0.0"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/adapter@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/adapter/-/adapter-4.4.0.tgz#7583b3a6785eb38efd4e01fbccdbd3a18c03a075"
-  integrity sha512-idHwfa29/Ki33FhTKUITvg2q2f2JEc7OqRyxCot+/BDJD8tj2AVToqs34wEXAFDCWua4lmR/KAGHLckMG4Eq+g==
+"@ember-data/adapter@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/adapter/-/adapter-4.4.1.tgz#1c61fcb0392cb9b04479f7886f8373e89f71e163"
+  integrity sha512-VIEusESLxpe/M7DGcmb7KTFLB3Joi+x5fbx6mywvYDhzTzsq/U5RCuIkxs9G/PNSlXD3z691GnZVd4T8GtcJXA==
   dependencies:
-    "@ember-data/private-build-infra" "4.4.0"
-    "@ember-data/store" "4.4.0"
+    "@ember-data/private-build-infra" "4.4.1"
+    "@ember-data/store" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     "@ember/string" "^3.0.0"
     ember-auto-import "^2.2.4"
@@ -1285,10 +1285,10 @@
     ember-cli-babel "^7.26.6"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/canary-features@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/canary-features/-/canary-features-4.4.0.tgz#07e761b712a431d32b32f299b7b745f370c6ca12"
-  integrity sha512-PkizCdM5SXCWiAKwq9ybIfhsLtM596IXtBz0cRH+d4YV3sBIsQjnAf+IYsJpwxf+XKvzXnzPLeIcFd7+NL6YPw==
+"@ember-data/canary-features@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/canary-features/-/canary-features-4.4.1.tgz#2e169c235ee095e84040fb01f6ebe171b986a464"
+  integrity sha512-st/MA0DuN/HX2JsE6jabS/ry9oE0tB4kkOqDmu6+uCcgup8gXK85Y9SYUvTKv/v5AlpGa06+ATIFxSVOUQDBtw==
   dependencies:
     ember-cli-babel "^7.26.11"
     ember-cli-typescript "^5.0.0"
@@ -1328,12 +1328,12 @@
     ember-cli-test-info "^1.0.0"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/debug@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/debug/-/debug-4.4.0.tgz#3c12be0fd338a46817001ffdfda8310cbfe11fe0"
-  integrity sha512-gulLWVIIISG5o67fGxGraPI1ByYpR0LRRyU5+UROWweppVSf5zictKyyZwlxkfI8XvqC6rWRlCU0f3CstR7HWw==
+"@ember-data/debug@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/debug/-/debug-4.4.1.tgz#848c32e05f91f6e975c9c7af53f9d3c2d49d1da8"
+  integrity sha512-x5LeVyYSPZQkieJUU26c9mP4Y2Jo+kTBehh6+RgLOkCuNLfJdU5/YIB56IgWPFV0SmEMSoZtWh1rB+SBWAHWgg==
   dependencies:
-    "@ember-data/private-build-infra" "4.4.0"
+    "@ember-data/private-build-infra" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     "@ember/string" "^3.0.0"
     ember-auto-import "^2.2.4"
@@ -1392,14 +1392,14 @@
     ember-compatibility-helpers "^1.2.0"
     inflection "~1.13.1"
 
-"@ember-data/model@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/model/-/model-4.4.0.tgz#7ef589e7513889759aa3e47813b923c6f6c4e8e8"
-  integrity sha512-lv8KhICjccDGu2/20dOcftpSI2V9bgfoOXXB3/7V+3Qxj75ws9U4jEqEZPc5rNQneufMUKVz/VBPgh9q3MJGQQ==
+"@ember-data/model@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/model/-/model-4.4.1.tgz#cd5018579c6648dd40de5c8defc93bf84a342fde"
+  integrity sha512-yLTX6lFOotAYgHB+zD9VRHuVxyrxH9bqBO/+rtL88QpHKixtZZjknLL6DXzkjejgom58PXmXulGcnopiicbd6w==
   dependencies:
-    "@ember-data/canary-features" "4.4.0"
-    "@ember-data/private-build-infra" "4.4.0"
-    "@ember-data/store" "4.4.0"
+    "@ember-data/canary-features" "4.4.1"
+    "@ember-data/private-build-infra" "4.4.1"
+    "@ember-data/store" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     "@ember/string" "^3.0.0"
     ember-auto-import "^2.2.4"
@@ -1507,13 +1507,13 @@
     semver "^7.1.3"
     silent-error "^1.1.1"
 
-"@ember-data/private-build-infra@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/private-build-infra/-/private-build-infra-4.4.0.tgz#38fd9f02500278369249bad7e01099568a85aa69"
-  integrity sha512-M+JGRJavJSBFXfQZgGjB1FtCo39pY3ebvVybtd9Q8qCKkE1YM5hqeEknrogBX/jUfd/r7a33LWl59Kww0JL3Lw==
+"@ember-data/private-build-infra@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/private-build-infra/-/private-build-infra-4.4.1.tgz#cd9ed50072f71b5aaac72946abc44fc6043047b0"
+  integrity sha512-Yg50CZCU1Xll/6N+iUzzG+hqxK3BtiVJziRmWnOapSvExA6HxzD1hnxd/AB9+wECprHElBxLEKo85oNgFtC7zg==
   dependencies:
     "@babel/plugin-transform-block-scoping" "^7.16.7"
-    "@ember-data/canary-features" "4.4.0"
+    "@ember-data/canary-features" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     babel-plugin-debug-macros "^0.3.4"
     babel-plugin-filter-imports "^4.0.0"
@@ -1580,14 +1580,14 @@
     ember-cli-test-info "^1.0.0"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/record-data@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/record-data/-/record-data-4.4.0.tgz#a663e81f952ca16de9e860b8f936278cc6f2f374"
-  integrity sha512-QBP8EMih2tvXMHUv8j/jWzOkW/d/OGfO22maOi9mh/MoCaX+EphupgdCFJL2SjQZYFPVioPosLQmQX4l5ChkDw==
+"@ember-data/record-data@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/record-data/-/record-data-4.4.1.tgz#1524d361e2d1f8c8b24e5f5e7417a82b9b0f51ed"
+  integrity sha512-5wmvcdxuVbA449UJzaMW/jovL3Sca/Yu+nVwiShic0GWcV72hbdO26/6Ii2dDCXqCf9WVXAl30egCGz/mGZgKQ==
   dependencies:
-    "@ember-data/canary-features" "4.4.0"
-    "@ember-data/private-build-infra" "4.4.0"
-    "@ember-data/store" "4.4.0"
+    "@ember-data/canary-features" "4.4.1"
+    "@ember-data/private-build-infra" "4.4.1"
+    "@ember-data/store" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     ember-auto-import "^2.2.4"
     ember-cli-babel "^7.26.11"
@@ -1632,13 +1632,13 @@
     ember-cli-test-info "^1.0.0"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/serializer@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/serializer/-/serializer-4.4.0.tgz#26a57cb7b769508e1809dce253fee1ca442c0b52"
-  integrity sha512-lmNT+Zg+6onR/d0OSBcj/AMbI6XdquUZLahYwElKxG/NWD8TqhVu/uPHTDjmT3tr66JlX7CHvd1zbQahgy4uaA==
+"@ember-data/serializer@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/serializer/-/serializer-4.4.1.tgz#0699bd08e76d298776663d783f819380fe818700"
+  integrity sha512-ffzHcWDJlX5epM8SzQMirRkBU2/N/enJwnJV28DzcxQcrbVfUWZqaPgQWpg8wADLETfumERzy7WIJlcSCGR5ow==
   dependencies:
-    "@ember-data/private-build-infra" "4.4.0"
-    "@ember-data/store" "4.4.0"
+    "@ember-data/private-build-infra" "4.4.1"
+    "@ember-data/store" "4.4.1"
     ember-auto-import "^2.2.4"
     ember-cli-babel "^7.26.11"
     ember-cli-test-info "^1.0.0"
@@ -1683,13 +1683,13 @@
     ember-cli-path-utils "^1.0.0"
     ember-cli-typescript "^4.1.0"
 
-"@ember-data/store@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@ember-data/store/-/store-4.4.0.tgz#37e909494cbefd7e25fe60aa565e76455076eaed"
-  integrity sha512-jugE0yPxrxA5O5jUf3pGUXnuXQG07HnXUd3CXOQ1jSdkGcjJXOrWgNyNgFEOIC9Z8I6iwG7QIC7KIKF4nm3j0Q==
+"@ember-data/store@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@ember-data/store/-/store-4.4.1.tgz#07c49e9228d56e63dcaba793aa4061ba28633e32"
+  integrity sha512-lfEQmm/xaqPdG6S4fSwm3XG/3g1s9R9ir5OcOytng/UNw7wZxDZnUA+wOiFup1gN3ZO/q5y4nCg8B6dC3NEFgA==
   dependencies:
-    "@ember-data/canary-features" "4.4.0"
-    "@ember-data/private-build-infra" "4.4.0"
+    "@ember-data/canary-features" "4.4.1"
+    "@ember-data/private-build-infra" "4.4.1"
     "@ember/string" "^3.0.0"
     "@glimmer/tracking" "^1.0.4"
     ember-auto-import "^2.2.4"
@@ -8480,18 +8480,18 @@ ember-concurrency@^2.1.2:
     ember-cli-typescript "^3.1.3"
     ember-inflector "^3.0.1"
 
-"ember-data-latest@npm:ember-data@latest":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/ember-data/-/ember-data-4.4.0.tgz#4057c3a3673f68c7f75692cec4e4e3b115af8a25"
-  integrity sha512-Ak/CyffnGuaGv7y1TZJFPmHuCNf11cvcPICBGbe9nw5rbTJawakqsxCJ6TaPb9vR+KqE52uzWRcgz4c5HmfLsw==
+"ember-data-latest@npm:ember-data@4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/ember-data/-/ember-data-4.4.1.tgz#86e56d55b49986dff8ae1cc98a740c829e53961e"
+  integrity sha512-Jc8a2OTX3rcnbmVwBjdeOYPSKUHWYRH+RMyDSLN3fpLp/A8pZp1Lkn3b5/ZEi9DmBRirxIDSSSPPZ6RDTMBYlQ==
   dependencies:
-    "@ember-data/adapter" "4.4.0"
-    "@ember-data/debug" "4.4.0"
-    "@ember-data/model" "4.4.0"
-    "@ember-data/private-build-infra" "4.4.0"
-    "@ember-data/record-data" "4.4.0"
-    "@ember-data/serializer" "4.4.0"
-    "@ember-data/store" "4.4.0"
+    "@ember-data/adapter" "4.4.1"
+    "@ember-data/debug" "4.4.1"
+    "@ember-data/model" "4.4.1"
+    "@ember-data/private-build-infra" "4.4.1"
+    "@ember-data/record-data" "4.4.1"
+    "@ember-data/serializer" "4.4.1"
+    "@ember-data/store" "4.4.1"
     "@ember/edition-utils" "^1.2.0"
     "@ember/string" "^3.0.0"
     "@glimmer/env" "^0.1.7"

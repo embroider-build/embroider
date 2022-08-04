@@ -73,6 +73,7 @@
     "edition": "octane"
   },
   "volta": {
-    "extends": "../../package.json"
+    "node": "14.19.3",
+    "yarn": "1.22.19"
   }
 }

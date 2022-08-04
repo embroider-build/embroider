@@ -3,7 +3,7 @@ import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -14,7 +14,7 @@ const { module: Qmodule, test } = QUnit;
 appScenarios
   .skip('lts_3_16')
   .skip('lts_3_24')
-  .map('v2-addon-dev', async project => {
+  .map('v2-addon-dev-js', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     addon.pkg.files = ['dist'];
@@ -37,6 +37,11 @@ appScenarios
           ],
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
+            ["@embroider/addon-dev/template-transform-plugin", {
+              astTransforms: [
+                './lib/custom-transform.js',
+              ],
+            }],
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
             [ "@babel/plugin-proposal-class-properties" ]
           ]
@@ -80,6 +85,22 @@ appScenarios
           ],
         };
       `,
+      lib: {
+        'custom-transform.js': `
+          module.exports = function customTransform(env) {
+            return {
+              name: 'custom-transform',
+              visitor: {
+                PathExpression(node) {
+                  if (node.original === 'transformMe') {
+                    return env.syntax.builders.string("iWasTransformed");
+                  }
+                },
+              },
+            };
+          }
+        `,
+      },
       src: {
         components: {
           demo: {
@@ -110,12 +131,13 @@ appScenarios
                   flip = () => (this.active = !this.active);
                 }
               `,
-            'index.hbs': `
-              Hello there!
+            'index.hbs': `Hello there!
 
               <this.Out>{{this.active}}</this.Out>
 
               <this.Button @onClick={{this.flip}} />
+
+              <div data-test="should-transform">{{transformMe}}</div>
             `,
           },
         },
@@ -154,6 +176,11 @@ appScenarios
               assert.dom('out').containsText('true');
             });
 
+            test('transform worked', async function (assert) {
+              await render(hbs\`<Demo />\`);
+              assert.dom('[data-test="should-transform"]').containsText('iWasTransformed');
+            });
+
             test('<Demo::Out />', async function (assert) {
               await render(hbs\`<Demo::Out>hi</Demo::Out>\`);
 
@@ -173,6 +200,7 @@ appScenarios
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
+      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
@@ -182,47 +210,43 @@ appScenarios
         }
       });
 
+      hooks.beforeEach(assert => {
+        expectFile = expectFilesAt(inDependency(app, 'v2-addon').dir, { qunit: assert });
+      });
+
       Qmodule('The addon', function () {
-        test('output directories exist', async function (assert) {
-          let { dir } = inDependency(app, 'v2-addon');
-          assert.strictEqual(pathExistsSync(path.join(dir, 'dist')), true, 'dist/');
-          assert.strictEqual(pathExistsSync(path.join(dir, 'dist', '_app_')), true, 'dist/_app_');
+        test('output directories exist', async function () {
+          expectFile('dist').exists();
+          expectFile('dist/_app_').exists();
         });
 
-        test('package.json is modified appropriately', async function (assert) {
-          let { dir } = inDependency(app, 'v2-addon');
-          let reExports = readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js'];
-
-          assert.deepEqual(reExports, {
+        test('package.json is modified appropriately', async function () {
+          expectFile('package.json').json('ember-addon.app-js').deepEquals({
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
           });
         });
 
-        test('the addon was built successfully', async function (assert) {
-          let { dir } = inDependency(app, 'v2-addon');
-          let expectedModules = {
-            './dist/_app_/components/demo/index.js': 'export { default } from "v2-addon/components/demo/index";\n',
-            './dist/_app_/components/demo/out.js': 'export { default } from "v2-addon/components/demo/out";\n',
-            './dist/_app_/components/demo/namespace/namespace-me.js':
-              'export { default } from "v2-addon/components/demo/namespace-me";\n',
-          };
-
-          assert.strictEqual(
-            Object.keys(readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js']).length,
-            Object.keys(expectedModules).length
+        test('the addon was built successfully', async function () {
+          expectFile('dist/_app_/components/demo/index.js').matches(
+            'export { default } from "v2-addon/components/demo/index"'
           );
 
-          for (let [pathName, moduleContents] of Object.entries(expectedModules)) {
-            let filePath = path.join(dir, pathName);
-            assert.deepEqual(pathExistsSync(filePath), true, `pathExists: ${pathName}`);
-            assert.strictEqual(
-              readFileSync(filePath, { encoding: 'utf8' }),
-              moduleContents,
-              `has correct reexport: ${pathName}`
-            );
-          }
+          expectFile('dist/_app_/components/demo/out.js').matches(
+            'export { default } from "v2-addon/components/demo/out"'
+          );
+          expectFile('dist/_app_/components/demo/namespace/namespace-me.js').matches(
+            'export { default } from "v2-addon/components/demo/namespace-me"'
+          );
+        });
+
+        test('template transform was run', async function () {
+          expectFile('dist/components/demo/index.js').matches('iWasTransformed');
+          expectFile('dist/components/demo/index.js').matches(
+            /TEMPLATE = hbs\("Hello there/,
+            'template is still in hbs format'
+          );
         });
       });
 

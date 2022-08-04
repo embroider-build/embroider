@@ -9,12 +9,12 @@ type JSONResult = { result: true; data: any } | { result: false; actual: any; ex
 export class BoundExpectFile {
   private consumed = false;
 
-  constructor(readonly basePath: string, readonly path: string, readonly stack: Error) {
+  constructor(readonly basePath: string, readonly path: string, private adapter: AssertionAdapter) {
     Promise.resolve().then(() => {
       if (!this.consumed) {
-        this.stack.message =
-          "expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything";
-        throw this.stack;
+        this.adapter.fail(
+          "expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything"
+        );
       }
     });
   }
@@ -48,7 +48,7 @@ export class BoundExpectFile {
 
   exists(message?: string) {
     this.consumed = true;
-    assert(this.stack, this.path, {
+    this.adapter.assert({
       result: pathExistsSync(this.fullPath),
       actual: 'file missing',
       expected: 'file present',
@@ -58,7 +58,7 @@ export class BoundExpectFile {
 
   doesNotExist(message?: string) {
     this.consumed = true;
-    assert(this.stack, this.path, {
+    this.adapter.assert({
       result: !pathExistsSync(this.fullPath),
       actual: 'file present',
       expected: 'file missing',
@@ -68,7 +68,7 @@ export class BoundExpectFile {
 
   private doMatch(pattern: string | RegExp, message: string | undefined, invert: boolean) {
     if (!this.contents.result) {
-      assert(this.stack, this.path, this.contents);
+      this.adapter.assert(this.contents);
     } else {
       let result;
       if (typeof pattern === 'string') {
@@ -79,7 +79,7 @@ export class BoundExpectFile {
       if (invert) {
         result = !result;
       }
-      assert(this.stack, this.path, {
+      this.adapter.assert({
         result,
         actual: this.contents.data,
         expected: pattern.toString(),
@@ -96,7 +96,7 @@ export class BoundExpectFile {
   }
   json(propertyPath?: string): JSONExpect {
     return new JSONExpect(
-      this.stack,
+      this.adapter,
       this.path,
       () => {
         if (!this.contents.result) {
@@ -123,7 +123,7 @@ export class BoundExpectFile {
   }
   transform(fn: (contents: string, file: BoundExpectFile) => string) {
     this.consumed = true;
-    return new TransformedFileExpect(this.basePath, this.path, this.stack, fn);
+    return new TransformedFileExpect(this.basePath, this.path, this.adapter, fn);
   }
 }
 
@@ -131,10 +131,10 @@ export class TransformedFileExpect extends BoundExpectFile {
   constructor(
     basePath: string,
     path: string,
-    stack: Error,
+    adapter: AssertionAdapter,
     private transformer: (contents: string, file: BoundExpectFile) => string
   ) {
-    super(basePath, path, stack);
+    super(basePath, path, adapter);
   }
   @Memoize()
   protected get contents(): ContentsResult {
@@ -160,27 +160,27 @@ export class TransformedFileExpect extends BoundExpectFile {
 
 export class JSONExpect {
   constructor(
-    private stack: Error,
+    private adapter: AssertionAdapter,
     private path: string,
     private readUpstream: () => JSONResult,
     private propertyPath?: string | string[]
   ) {}
 
   get(propertyPath: string | string[]) {
-    return new JSONExpect(this.stack, this.path, () => this.contents, propertyPath);
+    return new JSONExpect(this.adapter, this.path, () => this.contents, propertyPath);
   }
 
   deepEquals(expected: any): void {
     if (!this.contents.result) {
-      assert(this.stack, this.path, this.contents);
+      this.adapter.assert(this.contents);
       return;
     }
-    expect(this.contents.data).toEqual(expected);
+    this.adapter.deepEquals(this.contents.data, expected);
   }
 
   equals(expected: any): void {
     if (!this.contents.result) {
-      assert(this.stack, this.path, this.contents);
+      this.adapter.assert(this.contents);
       return;
     }
     expect(this.contents.data).toBe(expected);
@@ -188,10 +188,10 @@ export class JSONExpect {
 
   includes(expected: any, message?: string): void {
     if (!this.contents.result) {
-      assert(this.stack, this.path, this.contents);
+      this.adapter.assert(this.contents);
       return;
     }
-    assert(this.stack, this.path, {
+    this.adapter.assert({
       result: Array.isArray(this.contents.data) && this.contents.data.includes(expected),
       actual: this.contents.data,
       expected,
@@ -201,10 +201,10 @@ export class JSONExpect {
 
   doesNotInclude(notExpected: any, message?: string): void {
     if (!this.contents.result) {
-      assert(this.stack, this.path, this.contents);
+      this.adapter.assert(this.contents);
       return;
     }
-    assert(this.stack, this.path, {
+    this.adapter.assert({
       result: Array.isArray(this.contents.data) && !this.contents.data.includes(notExpected),
       actual: this.contents.data,
       expected: `not ${notExpected}`,
@@ -247,9 +247,11 @@ function fileAssertionsMatcher(
   return { actual: state.actual, pass, message };
 }
 
-expect.extend({
-  _fileAssertionsMatcher: fileAssertionsMatcher,
-});
+if (typeof expect !== 'undefined') {
+  expect.extend({
+    _fileAssertionsMatcher: fileAssertionsMatcher,
+  });
+}
 
 declare global {
   namespace jest {
@@ -260,36 +262,86 @@ declare global {
   }
 }
 
-function assert(
-  err: Error,
-  path: string,
-  state: {
-    result: boolean;
-    actual: any;
-    expected: any;
-    message: string;
+interface AssertionAdapter {
+  assert(state: { result: boolean; actual: any; expected: any; message: string }): void;
+
+  fail(message: string): void;
+
+  deepEquals(a: any, b: any): void;
+  equals(a: any, b: any): void;
+}
+
+class JestAdapter implements AssertionAdapter {
+  constructor(private stack: Error, private path: string) {}
+  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
+    try {
+      expect(this.path)._fileAssertionsMatcher(state);
+    } catch (upstreamErr) {
+      (this.stack as any).matcherResult = upstreamErr.matcherResult;
+      this.stack.message = upstreamErr.message;
+      throw this.stack;
+    }
   }
-): void {
-  try {
-    expect(path)._fileAssertionsMatcher(state);
-  } catch (upstreamErr) {
-    (err as any).matcherResult = upstreamErr.matcherResult;
-    err.message = upstreamErr.message;
-    throw err;
+  fail(message: string) {
+    this.stack.message = message;
+    throw this.stack;
+  }
+
+  deepEquals(a: any, b: any) {
+    expect(a).toEqual(b);
+  }
+
+  equals(a: any, b: any) {
+    expect(a).toBe(b);
   }
 }
 
-export function expectFilesAt(basePath: string): ExpectFile {
-  let func = (relativePath: string) => {
-    return expectFile(func, basePath, relativePath);
+class QUnitAdapter implements AssertionAdapter {
+  constructor(private qassert: Assert) {}
+
+  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
+    this.qassert.pushResult(state);
+  }
+
+  fail(message: string) {
+    this.qassert.ok(false, message);
+  }
+
+  deepEquals(a: any, b: any) {
+    this.qassert.deepEqual(a, b);
+  }
+
+  equals(a: any, b: any) {
+    this.qassert.equal(a, b);
+  }
+}
+
+export function expectFilesAt(
+  basePath: string,
+  params: { jest: true } | { qunit: Assert } = { jest: true }
+): ExpectFile {
+  let func: any = (relativePath: string) => {
+    if ('jest' in params) {
+      return jestExpectFile(func, basePath, relativePath);
+    } else {
+      return new BoundExpectFile(basePath, relativePath, new QUnitAdapter(params.qunit));
+    }
   };
+  Object.defineProperty(func, 'basePath', {
+    get() {
+      return basePath;
+    },
+  });
   return func;
 }
 
-export type ExpectFile = (relativePath: string) => BoundExpectFile;
+export interface ExpectFile {
+  (relativePath: string): BoundExpectFile;
+  readonly basePath: string;
+}
 
-function expectFile(callsite: any, basePath: string, relativePath: string): BoundExpectFile {
+function jestExpectFile(callsite: any, basePath: string, relativePath: string): BoundExpectFile {
   let err = new Error();
   Error.captureStackTrace(err, callsite);
-  return new BoundExpectFile(basePath, relativePath, err);
+  return new BoundExpectFile(basePath, relativePath, new JestAdapter(err, relativePath));
 }

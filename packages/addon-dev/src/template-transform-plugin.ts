@@ -15,7 +15,7 @@ function resolvePlugins(plugins: TemplateTransformPlugin[]) {
   return plugins.map((somePlugin: TemplateTransformPlugin) => {
     // If it's a string attempt to resolve the path to a module.
     return typeof somePlugin === 'string'
-      ? require(somePlugin) // eslint-disable-line @typescript-eslint/no-require-imports
+      ? require(require.resolve(somePlugin, { paths: [process.cwd()] })) // eslint-disable-line @typescript-eslint/no-require-imports
       : somePlugin;
   });
 }

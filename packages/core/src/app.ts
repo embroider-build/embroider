@@ -404,12 +404,10 @@ export class AppBuilder<TreeNames> {
         join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
         { templateCompiler: templateCompilerParams },
       ]);
-      babel.plugins.push([
-        require.resolve('babel-plugin-ember-template-compilation'),
-        {
-          precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-        } as InlinePrecompileOptions,
-      ]);
+      let etcOptions: InlinePrecompileOptions = {
+        compilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      };
+      babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), etcOptions]);
     }
 
     // this is @embroider/macros configured for full stage3 resolution

@@ -200,15 +200,13 @@ describe('inline-hbs', () => {
           },
           resolver: new StubResolver(),
         };
+        let etcOptions: InlinePrecompileOptions = {
+          compilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+        };
         return {
           plugins: [
             [join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'), { templateCompiler }],
-            [
-              require.resolve('babel-plugin-ember-template-compilation'),
-              {
-                precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-              } as InlinePrecompileOptions,
-            ],
+            [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
           ],
         };
       },

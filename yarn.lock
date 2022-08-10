@@ -4294,6 +4294,13 @@ babel-plugin-ember-template-compilation@^1.0.0:
     magic-string "^0.26.0"
     string.prototype.matchall "^4.0.5"
 
+babel-plugin-ember-template-compilation@^2.0.0-alpha.0:
+  version "2.0.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.0.tgz#4c8c2f990023716b1c28f9bc3bc882421423134e"
+  integrity sha512-j4fJhM3/W3WQoO/WgoFQbDAhAzdQpVv9T+Uw/seQ3voqEU7tXw0wANhWuHH8midquhmBVY/WqAn0EGaUM2p5cw==
+  dependencies:
+    babel-import-util "^1.2.0"
+
 babel-plugin-filter-imports@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-filter-imports/-/babel-plugin-filter-imports-3.0.0.tgz#a849683837ad29960da17492fb32789ab6b09a11"

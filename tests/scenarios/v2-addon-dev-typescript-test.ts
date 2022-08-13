@@ -8,8 +8,6 @@ import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .skip('lts_3_16')
-  .skip('lts_3_24')
   .map('v2-addon-dev-typescript', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';

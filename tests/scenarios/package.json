@@ -17,8 +17,8 @@
   },
   "scripts": {
     "test": "qunit --require ts-node/register *-test.ts",
-    "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
-    "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
+    "test:list": "scenario-tester list --require ts-node/register --files=**/*-test.ts",
+    "test:output": "scenario-tester output --require ts-node/register --files=**/*-test.ts"
   },
   "license": "MIT",
   "devDependencies": {

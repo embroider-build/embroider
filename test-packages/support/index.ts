@@ -110,3 +110,4 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
 export { Project } from './project';
 export { default as BuildResult } from './build';
 export { expectFilesAt, ExpectFile } from './file-assertions';
+export { Rebuilder } from './rebuilder';

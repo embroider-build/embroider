@@ -9,7 +9,7 @@ import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
-import { dummyAppScenarios } from '../scenarios';
+import { dummyAppScenarios } from './scenarios';
 import { readFileSync } from 'fs';
 
 dummyAppScenarios

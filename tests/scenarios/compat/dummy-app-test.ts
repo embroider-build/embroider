@@ -13,7 +13,7 @@ import { dummyAppScenarios } from '../scenarios';
 import { readFileSync } from 'fs';
 
 dummyAppScenarios
-  .map('dummy app tests', project => {
+  .map('dummy-app-tests', project => {
     merge(project.files, {
       addon: {
         components: {

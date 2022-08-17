@@ -1,19 +1,16 @@
 import { ExpectFile, expectFilesAt, Rebuilder } from '@embroider/test-support';
 import { PreparedApp } from 'scenario-tester';
-
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
-import { writeFileSync } from 'fs-extra';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 import { dummyAppScenarios } from './scenarios';
-import { readFileSync } from 'fs';
 
 dummyAppScenarios
-  .map('dummy-app-tests', project => {
+  .map('compat-dummy-app-tests', project => {
     merge(project.files, {
       addon: {
         components: {

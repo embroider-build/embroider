@@ -44,3 +44,20 @@ export function baseApp() {
 
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
+
+// renames a v1 app
+export function renameApp(project: Project, newName: string) {
+  let oldName = project.pkg.name;
+  let target = new RegExp('\\b' + oldName + '\\b', 'g');
+  function rename(files: Project['files']) {
+    for (let [path, content] of Object.entries(files)) {
+      if (typeof content === 'string') {
+        files[path] = content.replace(target, newName);
+      } else if (content) {
+        rename(content);
+      }
+    }
+  }
+  rename(project.files);
+  project.pkg.name = newName;
+}

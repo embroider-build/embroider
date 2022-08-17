@@ -1,5 +1,5 @@
 import { Node } from 'broccoli-node-api';
-import { join, relative, dirname, isAbsolute } from 'path';
+import { join, relative, dirname, isAbsolute, sep } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -123,7 +123,7 @@ export default class CompatAddons implements Stage {
           // the addon, because that would overwrite the real app build.
           ignore.push(rel);
 
-          if (rel === 'tests/dummy') {
+          if (rel === `tests${sep}dummy`) {
             // special case: classic dummy apps are weird because they put the
             // tests (which are truly part of the app, not the addon) inside the
             // addon instead of inside the app.

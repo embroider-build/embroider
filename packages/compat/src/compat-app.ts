@@ -237,7 +237,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // For TS, we defer to ember-cli-babel, and the setting for
     // "enableTypescriptTransform" can be set with and without
     // ember-cli-typescript
-    return ['.ts', '.wasm', '.mjs', '.js', '.json', '.hbs'];
+    return ['.wasm', '.mjs', '.js', '.json', '.hbs', '.ts'];
   }
 
   private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {

@@ -74,7 +74,7 @@ tsAppScenarios
       });
 
       test(`yarn ember test`, async function (assert) {
-        let result = await app.execute(`yarn ember test`);
+        let result = await app.execute(`ember test`);
         assert.equal(result.exitCode, 0, result.output);
       });
     });

@@ -226,7 +226,7 @@ export default class V1App {
     const babelAddon = (this.app.project as any).findAddonByName('ember-cli-babel');
     const babelConfig = babelAddon.buildBabelOptions({
       'ember-cli-babel': {
-        ...(this.app.options['ember-cli-babel'] || {}),
+        ...this.app.options['ember-cli-babel'],
         includeExternalHelpers: true,
         compileModules: false,
         disableDebugTooling: false,

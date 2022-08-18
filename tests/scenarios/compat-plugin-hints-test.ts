@@ -24,7 +24,7 @@ appScenarios
           babel: {
             plugins: [
               // deliberately non-serializable form
-              require("${__filename.replace(/\.ts$/, '.js')}").samplePlugin
+              require("${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}").samplePlugin
             ]
           }
         });
@@ -37,7 +37,7 @@ appScenarios
           ],
           pluginHints: [
             {
-              resolve: ["${__filename.replace(/\.ts$/, '.js')}"],
+              resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],
               useMethod: 'samplePlugin',
             },
           ],

@@ -152,7 +152,7 @@ export class TransformedFileExpect extends BoundExpectFile {
         result: false,
         actual: err,
         expected: 'transformer to run',
-        message: err.message,
+        message: err.stack,
       };
     }
   }

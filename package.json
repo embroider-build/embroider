@@ -16,6 +16,7 @@
       "types/ember-cli-htmlbars",
       "tests/scenarios",
       "tests/app-template",
+      "tests/ts-app-template",
       "tests/addon-template",
       "tests/v2-addon-template"
     ],

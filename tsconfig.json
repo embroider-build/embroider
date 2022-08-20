@@ -29,6 +29,7 @@
     "test-packages/*/tmp",
     "test-packages/*/dist",
     "test-packages/*/node_modules",
-    "tmp"
+    "tmp",
+    "tests/scenarios/output"
   ]
 }

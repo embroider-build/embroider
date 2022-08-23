@@ -1,0 +1,13 @@
+{
+  "extends": "@tsconfig/ember/tsconfig.json",
+  "compilerOptions": {
+    "noEmitOnError": false
+  },
+  "paths": {
+    "ts-app-template/tests/*": ["tests/*"],
+    "ts-app-template/*": ["app/*"],
+    "*": ["types/*"]
+  },
+  "include": ["app/**/*", "tests/**/*", "types/**/*"]
+}
+

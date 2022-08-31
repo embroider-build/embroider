@@ -42,7 +42,12 @@ export function baseApp() {
   return Project.fromDir(dirname(require.resolve('../app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseTSApp() {
+  return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
+}
+
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
+export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp));
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
 
 // renames a v1 app

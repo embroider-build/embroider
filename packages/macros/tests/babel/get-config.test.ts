@@ -157,7 +157,7 @@ describe(`getConfig`, function () {
         });
       }
 
-      test('inlines runtime config into own source', () => {
+      runTimeTest('inlines runtime config into own source', () => {
         filename = __filename;
         let code = transform(`
           function initializeRuntimeMacrosConfig() {
@@ -171,7 +171,7 @@ describe(`getConfig`, function () {
         expect(run(code, { filename }).packages[coreRoot].beverage).toEqual('coffee');
       });
 
-      test('does not inline runtime config into other packages', () => {
+      runTimeTest('does not inline runtime config into other packages', () => {
         let code = transform(`
           function initializeRuntimeMacrosConfig() {
           }

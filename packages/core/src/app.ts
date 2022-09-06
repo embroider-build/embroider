@@ -290,7 +290,7 @@ export class AppBuilder<TreeNames> {
       result.unshift({
         kind: 'in-memory',
         relativePath: '_ember_env_.js',
-        source: `window.EmberENV=${JSON.stringify(emberENV, null, 2)};`,
+        source: `window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`,
       });
 
       result.push({

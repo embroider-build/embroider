@@ -4,3 +4,7 @@
   border-right-color: blue;
   content: 'lazy-engine/addon/styles/addon.css';
 }
+
+.lazy {
+  background-color: red;
+}

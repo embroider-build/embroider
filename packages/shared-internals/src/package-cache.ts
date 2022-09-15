@@ -78,7 +78,7 @@ export default class PackageCache {
   }
 
   static shared(identifier: string, appRoot: string) {
-    return getOrCreate(shared, identifier, () => new PackageCache(appRoot));
+    return getOrCreate(shared, identifier + appRoot, () => new PackageCache(appRoot));
   }
 }
 

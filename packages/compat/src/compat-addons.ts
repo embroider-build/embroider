@@ -148,7 +148,18 @@ export default class CompatAddons implements Stage {
           // shell for its real module namespace.
           copySync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
         }
+      }
+    });
 
+    // this has to be a separate pass over the packages because
+    // linkNonCopiedDeps resolves dependencies, so we want all the packages
+    // already in their new places before they start trying to resolve each
+    // other.
+    [...this.packageCache.moved.values()].forEach((newPkg, index) => {
+      if (
+        !this.didBuild || // always copy on the first build
+        (newPkg.mayRebuild && changedMap.get(movedAddons[index]))
+      ) {
         // for engines, this isn't the mangled destination (we don't need
         // resolvable node_modules there), this is the empty shell of their real
         // location

@@ -81,6 +81,7 @@
     "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",
     "ember-cli-htmlbars-inline-precompile": "^2.1.0",
     "ember-engines": "^0.8.19",
+    "scenario-tester": "^2.0.1",
     "typescript": "*"
   },
   "peerDependencies": {

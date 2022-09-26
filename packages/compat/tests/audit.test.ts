@@ -1,4 +1,5 @@
-import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
+import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { Project } from 'scenario-tester';
 import { AppMeta, NodeTemplateCompilerParams, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';

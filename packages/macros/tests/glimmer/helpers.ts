@@ -1,6 +1,7 @@
 import { NodeTemplateCompiler } from '@embroider/core';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
-import { emberTemplateCompilerPath, Project } from '@embroider/test-support';
+import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
 

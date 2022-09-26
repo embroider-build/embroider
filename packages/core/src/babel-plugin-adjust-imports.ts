@@ -6,7 +6,6 @@ import type { types as t } from '@babel/core';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { Memoize } from 'typescript-memoize';
 import { compile } from './js-handlebars';
-import { handleImportDeclaration } from './mini-modules-polyfill';
 import { ImportUtil } from 'babel-import-util';
 import { randomBytes } from 'crypto';
 import { outputFileSync, pathExistsSync, renameSync } from 'fs-extra';
@@ -41,7 +40,6 @@ export interface Options {
   };
   relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
-  emberNeedsModulesPolyfill: boolean;
   appRoot: string;
 }
 
@@ -386,7 +384,7 @@ export default function main(babel: typeof Babel) {
         exit(path: NodePath<t.Program>, state: State) {
           for (let child of path.get('body')) {
             if (child.isImportDeclaration() || child.isExportNamedDeclaration() || child.isExportAllDeclaration()) {
-              rewriteTopLevelImport(t, child, state);
+              rewriteTopLevelImport(child, state);
             }
           }
         },
@@ -445,7 +443,6 @@ export default function main(babel: typeof Babel) {
 }
 
 function rewriteTopLevelImport(
-  t: BabelTypes,
   path: NodePath<t.ImportDeclaration | t.ExportNamedDeclaration | t.ExportAllDeclaration>,
   state: State
 ) {
@@ -453,14 +450,6 @@ function rewriteTopLevelImport(
   const { source } = path.node;
   if (source === null || source === undefined) {
     return;
-  }
-
-  if (opts.emberNeedsModulesPolyfill && path.isImportDeclaration()) {
-    let replacement = handleImportDeclaration(t, path);
-    if (replacement) {
-      path.replaceWith(replacement);
-      return;
-    }
   }
 
   let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);

@@ -1,10 +1,21 @@
+import path from 'path';
+
 import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
 import type { ASTv1 } from '@glimmer/syntax';
+
+const STRICT_MODE = ['.gjs', '.gts'];
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 // and puts them into `dependencies`.
 export function makeResolverTransform(resolver: Resolver) {
   function resolverTransform({ filename, contents }: { filename: string; contents: string }) {
+    let ext = path.extname(filename);
+    if (STRICT_MODE.includes(ext)) {
+      return {
+        name: 'embroider-build-time-resolver[skipped]',
+      };
+    }
+
     resolver.enter(filename, contents);
 
     let scopeStack = new ScopeStack();

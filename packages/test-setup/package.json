@@ -16,7 +16,7 @@
     "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "@embroider/compat": "1.8.3"
+    "@embroider/compat": "1.9.0"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

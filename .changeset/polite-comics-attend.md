@@ -2,6 +2,8 @@
 '@embroider/addon-dev': major
 '@embroider/compat': minor
 '@embroider/core': minor
+'@embroider/webpack': minor
+'@embroider/hbs-loader': minor
 ---
 
 <!-- GH Filter: `is:pr closed:>=2022-07-04T20:22:08.544Z `  (Datetime of 1.8.3 release) -->

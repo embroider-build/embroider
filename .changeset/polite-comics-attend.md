@@ -42,4 +42,9 @@
   These are very hi-fi sourcemaps -- for example, in TypeScript projects, you see TypeScript in the dev tools.
   Because rollup/webpack/etc output can be really hard for humans to read, enabling sourcemaps as a default should hopefully help folks debug their addons more easily.
 
+* Run the `clean` plugin as late as possible, #1229 (@simonihmig)
 
+  Previously the cleanup would happen at the earliest point in time, at buildStart,
+  making the time window large enough for Ember CLI to see the transient build output in an inconsistent state.
+  Now it happens at the latest possible time, at generateBundle right before files are written,
+  making the time window small enough to not cause any problems in practice.

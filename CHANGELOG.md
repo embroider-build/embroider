@@ -1,6 +1,6 @@
 # Embroider Changelog
 
-# Release 2022-07-04
+# Release 2022-10-06.0
 
 ## `@embroider/core` 1.8.3 -> 1.9.0 minor
 

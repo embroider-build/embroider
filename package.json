@@ -91,5 +91,8 @@
     "node": "14.19.3",
     "yarn": "1.22.19"
   },
-  "version": "1.8.3"
+  "version": "1.8.3",
+  "dependencies": {
+    "@changesets/cli": "^2.25.0"
+  }
 }

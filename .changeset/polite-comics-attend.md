@@ -14,11 +14,14 @@
 '@embroider/test-support': minor
 ---
 
+<!-- GH Filter: `is:pr closed:>=2022-07-04T20:22:08.544Z `  (Datetime of 1.8.3 release) -->
+
 
 ## `@embroider/compat`
 
-* Use consistent separator on windows, #1248
-* fix a rebuild crash in dummy apps on windows #1247
+* Use consistent separator on windows, #1248 (@ef4)
+* fix a rebuild crash in dummy apps on windows #1247 (@ef4)
+* Support TypeScript without ember-cli-typescript #1236 (@NullVoxPopuli)
 
 ## `@embroider/addon-dev`
 

@@ -1,27 +1,24 @@
 ---
 '@embroider/addon-dev': major
-'@embroider/addon-shim': minor
-'@embroider/babel-loader-8': minor
 '@embroider/compat': minor
 '@embroider/core': minor
-'@embroider/hbs-loader': minor
-'@embroider/macros': minor
-'@embroider/router': minor
-'@embroider/shared-internals': minor
-'@embroider/test-setup': minor
-'@embroider/util': minor
-'@embroider/webpack': minor
-'@embroider/test-support': minor
 ---
 
 <!-- GH Filter: `is:pr closed:>=2022-07-04T20:22:08.544Z `  (Datetime of 1.8.3 release) -->
 
+## `@embroider/core`
+
+* extends existing EmberENV for ember-inspector, #1252 (@patricklx)
+
+  Resolves: [#1251 - production build breaks ember-inspector component tab](https://github.com/embroider-build/embroider/issues/1251)
 
 ## `@embroider/compat`
 
+* Fix an order bug in linkNonCopiedDeps, #1256 (@ef4)
 * Use consistent separator on windows, #1248 (@ef4)
 * fix a rebuild crash in dummy apps on windows, #1247 (@ef4)
 * Support TypeScript without ember-cli-typescript, #1236 (@NullVoxPopuli)
+* Add `unique-id` helper to `builtInHelpers` list, #1239 (@jakesjews)
 
 ## `@embroider/addon-dev`
 

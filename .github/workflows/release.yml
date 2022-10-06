@@ -1,0 +1,26 @@
+# https://github.com/changesets/action
+# Testingout Changeset *without* automated publishing
+#   _but this should still generate the automated PR for previewing_
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - name: Install Dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Create Release Pull Request
+        uses: changesets/action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

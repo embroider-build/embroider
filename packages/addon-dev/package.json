@@ -45,7 +45,8 @@
     "@types/minimatch": "^3.0.4",
     "@types/yargs": "^17.0.3",
     "rollup": "^2.58.0",
-    "tmp": "^0.1.0"
+    "tmp": "^0.1.0",
+    "typescript": "*"
   },
   "peerDependencies": {
     "ember-source": "*"

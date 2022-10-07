@@ -3,7 +3,14 @@
   "changelog": false,
   "commit": false,
   "fixed": [],
-  "linked": [],
+  "linked": [
+    [
+      "@embroider/compat",
+      "@embroider/core",
+      "@embroider/test-setup",
+      "@embroider/webpack"
+    ]
+  ],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

@@ -1,60 +1,25 @@
 # Release Process
 
-Releases are mostly automated using
-[release-it](https://github.com/release-it/release-it/) and
-[lerna-changelog](https://github.com/lerna/lerna-changelog/).
+Release process is currently switching from release-it to https://github.com/changesets/changesets
 
-## Preparation
+## Notes
 
-Since the majority of the actual release process is automated, the primary
-remaining task prior to releasing is confirming that all pull requests that
-have been merged since the last release have been labeled with the appropriate
-`lerna-changelog` labels and the titles have been updated to ensure they
-represent something that would make sense to our users. Some great information
-on why this is important can be found at
-[keepachangelog.com](https://keepachangelog.com/en/1.0.0/), but the overall
-guiding principle here is that changelogs are for humans, not machines.
+Used `changesets` to do release-2022-10-6.0. Didn't go smoothly.
 
-When reviewing merged PR's the labels to be used are:
+1.  Generated a changeset file describing everything since last release.
 
-* breaking - Used when the PR is considered a breaking change.
-* enhancement - Used when the PR adds a new feature or enhancement.
-* bug - Used when the PR fixes a bug included in a previous release.
-* documentation - Used when the PR adds or updates documentation.
-* internal - Used for internal changes that still require a mention in the
-  changelog/release notes.
+    Scan for which packages were touched so nothing gets missed:
 
-## Release
+        git diff --stat v1.8.3..HEAD
 
-Once the prep work is completed, the actual release is straight forward:
+    Find all PRs since previous release to summarize them
 
-* First, ensure that you have installed your projects dependencies:
+        git log v1.8.3..HEAD
 
-```sh
-yarn install
-```
+        And search for "Merge pull"
 
-* Second, ensure that you have obtained a
-  [GitHub personal access token][generate-token] with the `repo` scope (no
-  other permissions are needed). Make sure the token is available as the
-  `GITHUB_AUTH` environment variable.
+2.  Used `changeset version`, manually moved all readme content from changeset into our top-level readme (because the defaults in `changesets` want to create per-package ones).
 
-  For instance:
+3.  Tried using `changeset publish` but that started publishing lots of unintended packages. Followed up by manually releasing the others.
 
-  ```bash
-  export GITHUB_AUTH=abc123def456
-  ```
-
-[generate-token]: https://github.com/settings/tokens/new?scopes=repo&description=GITHUB_AUTH+env+variable
-
-* And last (but not least 😁) do your release.
-
-```sh
-npx release-it
-```
-
-[release-it](https://github.com/release-it/release-it/) manages the actual
-release process. It will prompt you to to choose the version number after which
-you will have the chance to hand tweak the changelog to be used (for the
-`CHANGELOG.md` and GitHub release), then `release-it` continues on to tagging,
-pushing the tag and commits, etc.
+4.  Noticed that `changeset version` bumped a dependency version in `@embroider/util` but didn't bump `@embroider/util`'s version. Had to update and release it manually.

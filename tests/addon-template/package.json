@@ -30,6 +30,7 @@
     "ember-cli-htmlbars": "^6.1.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.19.3",
     "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^2.8.1",
     "@embroider/test-setup": "^1.8.3",

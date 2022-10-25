@@ -73,6 +73,7 @@ disabledTest.skip = disabledTest;
 disabledTest.todo = disabledTest;
 disabledTest.concurrent = disabledTest;
 disabledTest.each = test.each;
+disabledTest.failing = disabledTest;
 
 export function allModes(fn: CreateModeTests): CreateTests {
   return function createTests(transform: Transform) {

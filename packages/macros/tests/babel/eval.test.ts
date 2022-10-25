@@ -3,6 +3,7 @@ import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import { types as t } from '@babel/core';
+import 'code-equality-assertions/jest';
 
 describe('evaluation', function () {
   allBabelVersions({
@@ -25,7 +26,7 @@ describe('evaluation', function () {
 
         test('object literal non-nullish member access parses OK', () => {
           let code = transform(`const result = { ...content\n}?.[0].content;`);
-          expect(code).toMatch(`const result = { ...content\n}?.[0].content;`);
+          expect(code).toEqualCode(`const result = { ...content\n}?.[0].content;`);
         });
 
         test('optional chaining nullish member access', () => {

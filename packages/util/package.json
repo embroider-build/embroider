@@ -36,6 +36,7 @@
     "ember-source": "*"
   },
   "devDependencies": {
+    "@babel/core": "^7.19.6",
     "@ember/jquery": "^2.0.0",
     "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^2.8.1",

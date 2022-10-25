@@ -8091,11 +8091,12 @@ coa@~2.0.1:
     chalk "^2.4.1"
     q "^1.1.2"
 
-code-equality-assertions@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/code-equality-assertions/-/code-equality-assertions-0.6.0.tgz#8e606a73a07d66fff8b54c5fa0a4771e14cfef72"
-  integrity sha512-FZ5+dIROhaVYHq/9ZVTasOs0K/bpBb3SL6e+srq1K/uD5n6MEPy3gY/YzclAmjqhDj7aaOQLKz2KW/TBhiEgQg==
+code-equality-assertions@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/code-equality-assertions/-/code-equality-assertions-0.7.0.tgz#38830cc9d1678dd48d8810e0372a00c4919920f8"
+  integrity sha512-lYBPyAArP5bQmaHa7vn03ikw43BJDkcwYrnTsQTBjgeSnprbo9fw/hx+8uroKbwHn3LPQ+KW4JwKOssnmJSACw==
   dependencies:
+    "@babel/core" "^7.19.6"
     diff "^5.1.0"
     prettier "^2.7.1"
 

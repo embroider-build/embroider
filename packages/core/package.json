@@ -20,7 +20,9 @@
     "./src/babel-plugin-inline-hbs": "./src/babel-plugin-inline-hbs.js",
     "./src/babel-plugin-stage1-inline-hbs": "./src/babel-plugin-stage1-inline-hbs.js",
     "./src/mini-modules-polyfill": "./src/mini-modules-polyfill.js",
-    "./src/load-ember-template-compiler": "./src/load-ember-template-compiler.js"
+    "./src/load-ember-template-compiler": "./src/load-ember-template-compiler.js",
+    "./src/portable-babel-config": "./src/portable-babel-config.js",
+    "./package.json": "./package.json"
   },
   "files": [
     "src/**/*.js",

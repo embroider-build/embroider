@@ -268,7 +268,7 @@ stage2Scenarios
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
             babel: {
-              plugins: ["${require.resolve('ember-auto-import/babel-plugin')}"]
+              plugins: [require.resolve('ember-auto-import/babel-plugin')]
             }
           });
           return maybeEmbroider(app, {

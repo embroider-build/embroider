@@ -1085,7 +1085,7 @@ export class AppBuilder<TreeNames> {
         '^(?:' +
           this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath.replace(/\//g, sep))).join('|') +
           ')(?:$|' +
-          sep +
+          escapeRegExp(sep) +
           ')'
       );
     }

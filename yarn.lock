@@ -11961,9 +11961,9 @@ fixturify-project@^2.1.0, fixturify-project@^2.1.1:
     type-fest "^0.11.0"
 
 fixturify-project@^5.0.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-5.1.0.tgz#f29db5cb02a6bd31d9bf6edda3773212cdd056a7"
-  integrity sha512-Q3IThqyq6gLQbWlvsK0sdL3BIzSd80iEnxwONxldLKSL5yKCOIMYOAj0CCQMVec76XDaDwkpbe1ftMTBtUXX1w==
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/fixturify-project/-/fixturify-project-5.2.0.tgz#9774f6fe1823e29940b2214f4bfd87011f51ebf3"
+  integrity sha512-7H20FpTbA8P586gS/5SuVmKYLBdOs1oPTF7R2If5lhlcmI+ht48p9atbBtD6kOIuRUPrx6W2yLxUCToBl8W22w==
   dependencies:
     bin-links "^3.0.0"
     deepmerge "^4.2.2"

@@ -16,7 +16,7 @@ describe('audit', function () {
   let app: Project;
 
   async function audit() {
-    app.writeSync();
+    await app.write();
     let audit = new Audit(app.baseDir);
     return await audit.run();
   }

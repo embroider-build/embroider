@@ -1,4 +1,4 @@
-import { Project } from '@embroider/test-support';
+import { Project } from 'scenario-tester';
 import { join } from 'path';
 import { templateTests, TemplateTransformOptions } from './helpers';
 

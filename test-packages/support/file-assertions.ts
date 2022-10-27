@@ -152,7 +152,7 @@ export class TransformedFileExpect extends BoundExpectFile {
         result: false,
         actual: err,
         expected: 'transformer to run',
-        message: err.message,
+        message: err.stack,
       };
     }
   }
@@ -183,7 +183,7 @@ export class JSONExpect {
       this.adapter.assert(this.contents);
       return;
     }
-    expect(this.contents.data).toBe(expected);
+    this.adapter.equals(this.contents.data, expected);
   }
 
   includes(expected: any, message?: string): void {

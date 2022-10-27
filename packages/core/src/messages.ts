@@ -37,10 +37,20 @@ export function warn(message: string, ...params: any[]) {
 
 // for use in our test suites
 let hardFailMode = 0;
-export function throwOnWarnings() {
-  // Jest mode
-  beforeAll(() => hardFailMode++);
-  afterAll(() => hardFailMode--);
+export function throwOnWarnings(hooks?: NestedHooks) {
+  if (hooks) {
+    // qunit mode
+    hooks.before(() => {
+      hardFailMode++;
+    });
+    hooks.after(() => {
+      hardFailMode--;
+    });
+  } else {
+    // Jest mode
+    beforeAll(() => hardFailMode++);
+    afterAll(() => hardFailMode--);
+  }
 }
 
 export function expectWarning(pattern: RegExp, fn: () => void) {

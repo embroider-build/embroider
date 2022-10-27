@@ -2,6 +2,5 @@
 *.js
 *.d.ts
 *.map
-/dynamic_suites
 
 !vendor/ember-template-compiler.js

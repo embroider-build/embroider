@@ -4,3 +4,5 @@
   border-left-color: blue;
   content: 'eager-engine/addon/styles/addon.css';
 }
+
+.eager { background-color: blue; }

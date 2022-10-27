@@ -78,7 +78,11 @@ export default class PackageCache {
   }
 
   static shared(identifier: string, appRoot: string) {
-    return getOrCreate(shared, identifier, () => new PackageCache(appRoot));
+    let pk = getOrCreate(shared, identifier + appRoot, () => new PackageCache(appRoot));
+    if (pk.appRoot !== appRoot) {
+      throw new Error(`bug: PackageCache appRoot disagreement ${appRoot}!=${pk.appRoot}`);
+    }
+    return pk;
   }
 }
 

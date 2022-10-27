@@ -1,6 +1,7 @@
 import { MacrosConfig } from '../../src/node';
 import { join, dirname } from 'path';
-import { allBabelVersions as allBabel, Project, runDefault, Transform, toCJS } from '@embroider/test-support';
+import { allBabelVersions as allBabel, runDefault, Transform, toCJS } from '@embroider/test-support';
+import { Project } from 'scenario-tester';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
 import { explicitRelative } from '@embroider/shared-internals';

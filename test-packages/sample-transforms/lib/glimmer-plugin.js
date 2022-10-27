@@ -22,15 +22,4 @@ function sampleTransform(env) {
   };
 }
 
-sampleTransform.parallelBabel = {
-  requireFile: __filename,
-  buildUsing: 'restore',
-};
-
-sampleTransform.baseDir = function () {
-  return require('path').join(__dirname, '..');
-};
-
-sampleTransform.restore = () => sampleTransform;
-
 module.exports = sampleTransform;

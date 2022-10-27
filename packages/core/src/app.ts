@@ -34,7 +34,6 @@ import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
-import type { Params as InlineBabelParams } from './babel-plugin-inline-hbs-node';
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import { getEmberExports } from './load-ember-template-compiler';
@@ -385,32 +384,16 @@ export class AppBuilder<TreeNames> {
     // https://github.com/webpack/webpack/issues/12154
     babel.plugins.push(require.resolve('./rename-require-plugin'));
 
-    if (this.adapter.adjustImportsOptions().emberNeedsModulesPolyfill) {
-      // on older ember versions that need the modules-api-polyfill, we use our
-      // bespoke inline template compiler plugin.
-      babel.plugins.push([
-        join(__dirname, 'babel-plugin-inline-hbs-node.js'),
-        {
-          templateCompiler: templateCompilerParams,
-          stage: 3,
-        } as InlineBabelParams,
-      ]);
-    } else {
-      // on newer ember versions that don't need the modules-api-polyfill, we
-      // can compose with the newer babel-plugin-ember-template-compilation, and
-      // use a simpler plugin that only needs to handle inserting discovered
-      // dependencies.
-      babel.plugins.push([
-        join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-        { templateCompiler: templateCompilerParams },
-      ]);
-      babel.plugins.push([
-        require.resolve('babel-plugin-ember-template-compilation'),
-        {
-          precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-        } as InlinePrecompileOptions,
-      ]);
-    }
+    babel.plugins.push([
+      join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      { templateCompiler: templateCompilerParams },
+    ]);
+    babel.plugins.push([
+      require.resolve('babel-plugin-ember-template-compilation'),
+      {
+        precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      } as InlinePrecompileOptions,
+    ]);
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
@@ -441,7 +424,7 @@ export class AppBuilder<TreeNames> {
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
     for (let { destPath, appFiles } of engines) {
       for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
+        relocatedFiles[join(destPath, relativePath)] = originalPath;
       }
     }
     let relocatedFilesPath = join(this.root, '_relocated_files.json');
@@ -1099,11 +1082,7 @@ export class AppBuilder<TreeNames> {
   private get staticAppPathsPattern(): RegExp | undefined {
     if (this.options.staticAppPaths.length > 0) {
       return new RegExp(
-        '^(?:' +
-          this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath.replace(/\//g, sep))).join('|') +
-          ')(?:$|' +
-          sep +
-          ')'
+        '^(?:' + this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)'
       );
     }
   }

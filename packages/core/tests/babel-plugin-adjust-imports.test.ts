@@ -94,7 +94,6 @@ describe('babel-plugin-adjust-imports', function () {
       relocatedFiles: {},
       externalsDir: 'test',
       resolvableExtensions: ['.js', '.hbs'],
-      emberNeedsModulesPolyfill: false,
       appRoot: '/nonexistent',
     };
 

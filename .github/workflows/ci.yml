@@ -31,7 +31,7 @@ jobs:
         run: yarn lint
       - id: set-matrix
         working-directory: test-packages/support
-        run: echo "::set-output name=matrix::$(node ./suite-setup-util.js --matrix)"
+        run: echo "matrix=$(node ./suite-setup-util.js --matrix)" >> $GITHUB_OUTPUT
 
   test:
     needs: ['preflight']

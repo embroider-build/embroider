@@ -430,6 +430,10 @@ stage2Scenarios
         builder = await Rebuilder.create(app.dir, { STAGE2_ONLY: 'true' });
       });
 
+      hooks.after(async () => {
+        await builder?.shutdown();
+      });
+
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(builder.outputPath, '.stage2-output'), 'utf8'), {
           qunit: assert,

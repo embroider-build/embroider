@@ -1082,11 +1082,7 @@ export class AppBuilder<TreeNames> {
   private get staticAppPathsPattern(): RegExp | undefined {
     if (this.options.staticAppPaths.length > 0) {
       return new RegExp(
-        '^(?:' +
-          this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath.replace(/\//g, sep))).join('|') +
-          ')(?:$|' +
-          escapeRegExp(sep) +
-          ')'
+        '^(?:' + this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)'
       );
     }
   }

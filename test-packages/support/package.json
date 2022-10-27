@@ -20,7 +20,6 @@
     "ember-resolver": "^7.0.0",
     "ember-source": "~3.26",
     "execa": "^4.0.3",
-    "fixturify-project": "^2.1.0",
     "fs-extra": "^7.0.0",
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",

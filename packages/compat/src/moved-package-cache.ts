@@ -3,9 +3,10 @@ import { ensureSymlinkSync, readdirSync, realpathSync, lstatSync } from 'fs-extr
 import { Memoize } from 'typescript-memoize';
 import { PackageCache, Package, getOrCreate } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
+import os from 'os';
 
 function assertNoTildeExpansion(source: string, target: string) {
-  if (target.includes('~')) {
+  if (target.includes('~') && os.platform() !== 'win32') {
     throw new Error(
       `The symbolic link: ${source}'s target: ${target} contained a bash expansion '~' which is not supported.`
     );

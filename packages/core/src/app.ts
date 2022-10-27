@@ -424,7 +424,7 @@ export class AppBuilder<TreeNames> {
     let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
     for (let { destPath, appFiles } of engines) {
       for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[join(destPath, relativePath).split(sep).join('/')] = originalPath;
+        relocatedFiles[join(destPath, relativePath)] = originalPath;
       }
     }
     let relocatedFilesPath = join(this.root, '_relocated_files.json');

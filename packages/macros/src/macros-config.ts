@@ -145,9 +145,7 @@ export default class MacrosConfig {
     this._importSyncImplementation = value;
   }
 
-  private packageCache: PackageCache;
-
-  private constructor(private appRoot: string) {
+  private constructor(private origAppRoot: string) {
     // this uses globalConfig because these things truly are global. Even if a
     // package doesn't have a dep or peerDep on @embroider/macros, it's legit
     // for them to want to know the answer to these questions, and there is only
@@ -165,7 +163,14 @@ export default class MacrosConfig {
       //    true to distinguish the two.
       isTesting: false,
     };
-    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
+  }
+
+  private get packageCache() {
+    return PackageCache.shared('embroider-macros', this.origAppRoot);
+  }
+
+  private get appRoot(): string {
+    return this.moves.get(this.origAppRoot) ?? this.origAppRoot;
   }
 
   private _configWritable = true;
@@ -321,7 +326,11 @@ export default class MacrosConfig {
       owningPackageRoot,
 
       isDevelopingPackageRoots: [...this.isDevelopingPackageRoots].map(root => this.moves.get(root) || root),
-      appPackageRoot: this.moves.get(this.appRoot) ?? this.appRoot,
+
+      // lazy so that packageMoved() can still affect this
+      get appPackageRoot() {
+        return self.appRoot;
+      },
 
       // This is used as a signature so we can detect ourself among the plugins
       // emitted from v1 addons.
@@ -334,7 +343,7 @@ export default class MacrosConfig {
       importSyncImplementation: this.importSyncImplementation,
     };
 
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: opts.appPackageRoot });
+    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: self.appRoot });
 
     if (!lockFilePath) {
       lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });

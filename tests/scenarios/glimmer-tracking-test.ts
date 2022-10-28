@@ -6,7 +6,7 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .only('release')
-  .map('transform @glimmer/tracking', project => {
+  .map('transform-@glimmer/tracking', project => {
     merge(project.files, {
       app: {
         components: {

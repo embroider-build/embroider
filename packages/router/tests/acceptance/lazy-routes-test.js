@@ -70,7 +70,11 @@ module('Acceptance | lazy routes', function (hooks) {
   if (ENV.isClassic) {
     test('classic builds can not see @embroider/core config', async function (assert) {
       let config = getGlobalConfig()['@embroider/core'];
-      assert.equal(config, undefined, 'expected no embroider core config');
+      assert.strictEqual(
+        config,
+        undefined,
+        'expected no embroider core config'
+      );
     });
   } else {
     test('can see @embroider/core config', async function (assert) {

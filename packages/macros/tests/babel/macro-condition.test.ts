@@ -1,5 +1,6 @@
 import { makeRunner, makeBabelConfig, allModes } from './helpers';
-import { allBabelVersions, Project } from '@embroider/test-support';
+import { allBabelVersions } from '@embroider/test-support';
+import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
 

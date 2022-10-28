@@ -20,15 +20,6 @@ module.exports = require('babel-loader').custom(babel => {
         loader.plugins = [];
       }
 
-      // webpack uses acorn and acorn doesn't parse these features yet, so we
-      // always tranpile them away regardless of what preset-env is doing
-      if (!loader.plugins.some(pluginMatches(/@babel\/plugin-proposal-optional-chaining/))) {
-        loader.plugins.push(require.resolve('@babel/plugin-proposal-optional-chaining'));
-      }
-      if (!loader.plugins.some(pluginMatches(/@babel\/plugin-proposal-nullish-coalescing-operator/))) {
-        loader.plugins.push(require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'));
-      }
-
       return {
         custom,
         loader,

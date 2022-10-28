@@ -37,8 +37,6 @@ import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 
-import semver from 'semver';
-
 interface TreeNames {
   appJS: BroccoliNode;
   htmlTree: BroccoliNode;
@@ -360,11 +358,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       activeAddons[addon.name] = addon.root;
     }
 
-    let emberSource = this.activeAddonChildren().find(a => a.name === 'ember-source')!;
-    let emberNeedsModulesPolyfill = semver.satisfies(emberSource.version, '<3.27.0-beta.0', {
-      includePrerelease: true,
-    });
-
     return {
       activeAddons,
       renameModules,
@@ -380,7 +373,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       // up as a side-effect of babel transpilation, and babel is subject to
       // persistent caching.
       externalsDir: join(tmpdir, 'embroider', 'externals'),
-      emberNeedsModulesPolyfill,
       appRoot: this.root,
     };
   }

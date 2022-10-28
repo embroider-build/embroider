@@ -5,8 +5,6 @@ import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 tsAppScenarios
-  .skip('lts_3_16')
-  .skip('lts_3_24')
   .map('typescript-app', project => {
     merge(project.files, {
       app: {

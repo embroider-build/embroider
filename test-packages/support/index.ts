@@ -1,4 +1,3 @@
-import { join } from 'path';
 import 'jest';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
 import escapeRegExp from 'lodash/escapeRegExp';
@@ -93,10 +92,6 @@ export function allBabelVersions(params: {
   } else {
     versions(false);
   }
-}
-
-export function emberTemplateCompilerPath() {
-  return join(__dirname, 'vendor', 'ember-template-compiler.js');
 }
 
 export function definesPattern(runtimeName: string, buildTimeName: string): RegExp {

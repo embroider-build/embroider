@@ -9,10 +9,7 @@ export default templateOnlyComponent();`;
 
 const templateExtension = '.hbs';
 
-// we don't need to worry about all resolvable extensions in here (like .ts)
-// because by the time we see the code it has already been preprocessed down to
-// js.
-const jsExtension = '.js';
+const jsExtensions = ['.js', '.ts', '.mjs', '.mts'];
 
 export default class SynthesizeTemplateOnlyComponents extends Plugin {
   private emitted = new Set() as Set<string>;
@@ -59,14 +56,17 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
 }
 
 function crawl(dir: string) {
-  let needed = new Set<string>();
-  let seen = new Set<string>();
+  const needed = new Set<string>();
+  const seen = new Set<string>();
   if (pathExistsSync(dir)) {
     for (let file of walkSync(dir, { directories: false })) {
       if (file.endsWith(templateExtension)) {
         needed.add(file.slice(0, -1 * templateExtension.length));
-      } else if (file.endsWith(jsExtension)) {
-        seen.add(file.slice(0, -1 * jsExtension.length));
+      } else {
+        const jsExtension = jsExtensions.find(ext => file.endsWith(ext));
+        if (jsExtension) {
+          seen.add(file.slice(0, -1 * jsExtension.length));
+        }
       }
     }
   }

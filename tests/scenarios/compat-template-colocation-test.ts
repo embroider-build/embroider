@@ -18,6 +18,7 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
       templates: {
         'index.hbs': `
             <HasColocatedTemplate />
+            <HasColocatedTSTemplate />
             <TemplateOnlyComponent />
           `,
       },
@@ -27,6 +28,11 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
           export default class extends Component {}
           `,
         'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
+        'has-colocated-ts-template.ts': `
+          import Component from '@glimmer/component';
+          export default class extends Component {}
+          `,
+        'has-colocated-ts-template.hbs': `<div>{{this.title}}</div>`,
         'template-only-component.hbs': `<div>I am template only</div>`,
       },
     },
@@ -110,6 +116,11 @@ scenarios
           /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/,
           'default export is wrapped'
         );
+      });
+
+      test(`app's colocated TS component is NOT synthesized`, function () {
+        let assertFile = expectFile('components/has-colocated-ts-template.js');
+        assertFile.doesNotExist('component stub was not created');
       });
 
       test(`app's colocated components are implicitly included correctly`, function () {

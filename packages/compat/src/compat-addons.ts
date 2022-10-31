@@ -1,5 +1,5 @@
 import { Node } from 'broccoli-node-api';
-import { join, relative, dirname, isAbsolute } from 'path';
+import { join, relative, dirname, isAbsolute, sep } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
 import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -123,7 +123,7 @@ export default class CompatAddons implements Stage {
           // the addon, because that would overwrite the real app build.
           ignore.push(rel);
 
-          if (rel === 'tests/dummy') {
+          if (rel === `tests${sep}dummy`) {
             // special case: classic dummy apps are weird because they put the
             // tests (which are truly part of the app, not the addon) inside the
             // addon instead of inside the app.
@@ -148,7 +148,18 @@ export default class CompatAddons implements Stage {
           // shell for its real module namespace.
           copySync(join(destination, 'package.json'), join(newPkg.root, 'package.json'));
         }
+      }
+    });
 
+    // this has to be a separate pass over the packages because
+    // linkNonCopiedDeps resolves dependencies, so we want all the packages
+    // already in their new places before they start trying to resolve each
+    // other.
+    [...this.packageCache.moved.values()].forEach((newPkg, index) => {
+      if (
+        !this.didBuild || // always copy on the first build
+        (newPkg.mayRebuild && changedMap.get(movedAddons[index]))
+      ) {
         // for engines, this isn't the mangled destination (we don't need
         // resolvable node_modules there), this is the empty shell of their real
         // location

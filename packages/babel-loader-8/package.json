@@ -1,6 +1,6 @@
 {
   "name": "@embroider/babel-loader-8",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -10,10 +10,10 @@
   "main": "index.js",
   "dependencies": {
     "@babel/core": "^7.14.5",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.5",
-    "@babel/plugin-proposal-optional-chaining": "^7.14.5",
-    "@embroider/core": "1.8.3",
     "babel-loader": "8"
+  },
+  "peerDependencies": {
+    "@embroider/core": "^1.8.3"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

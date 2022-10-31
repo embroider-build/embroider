@@ -29,7 +29,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await render(hbs`
       <this.thing />
    `);
-    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+    assert.strictEqual(
+      this.element.textContent.trim(),
+      'hello from some-component'
+    );
   });
 
   test('template-only component class value', async function (assert) {
@@ -37,7 +40,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await render(hbs`
       <this.thing />
    `);
-    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+    assert.strictEqual(
+      this.element.textContent.trim(),
+      'hello from some-component'
+    );
   });
 
   test('co-located component class value', async function (assert) {
@@ -45,7 +51,7 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await render(hbs`
       <this.thing />
    `);
-    assert.equal(
+    assert.strictEqual(
       this.element.textContent.trim(),
       'hello from colocated-example'
     );
@@ -79,7 +85,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
         <this.consumer @custom={{P}}/>
       </this.provider>
     `);
-    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+    assert.strictEqual(
+      this.element.textContent.trim(),
+      'hello from some-component'
+    );
   });
 
   test('template helper with curried component value', async function (assert) {
@@ -98,7 +107,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await render(hbs`
       <this.inner @name={{component "some-component"}} />
     `);
-    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+    assert.strictEqual(
+      this.element.textContent.trim(),
+      'hello from some-component'
+    );
   });
 
   test('template helper with string value', async function (assert) {
@@ -110,7 +122,10 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
       {{/let}}
    `);
     }, /You're trying to invoke the component "some-component" by passing its name as a string/);
-    assert.equal(this.element.textContent.trim(), 'hello from some-component');
+    assert.strictEqual(
+      this.element.textContent.trim(),
+      'hello from some-component'
+    );
   });
 
   test('rerender stability', async function (assert) {
@@ -130,11 +145,11 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
         <Thing @message={{this.message}} />
       {{/let}}
     `);
-    assert.equal(this.element.textContent.trim(), 'first:hello');
+    assert.strictEqual(this.element.textContent.trim(), 'first:hello');
     assert.deepEqual(log, ['target instantiated']);
     this.set('message', 'goodbye');
     await settled();
-    assert.equal(this.element.textContent.trim(), 'first:goodbye');
+    assert.strictEqual(this.element.textContent.trim(), 'first:goodbye');
     assert.deepEqual(log, ['target instantiated']);
 
     this.set(
@@ -150,7 +165,7 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
       )
     );
     await settled();
-    assert.equal(this.element.textContent.trim(), 'second:goodbye');
+    assert.strictEqual(this.element.textContent.trim(), 'second:goodbye');
     assert.deepEqual(log, ['target instantiated', 'new target instantiated']);
   });
 });

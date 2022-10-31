@@ -13,13 +13,21 @@ module.exports = {
 
   setupPreprocessorRegistry(type, registry) {
     if (type === 'parent') {
-      registry.add('htmlbars-ast-plugin', {
-        name: `@embroider/sample-transforms`,
-        plugin: require('./lib/glimmer-plugin'),
-        baseDir() {
-          return __dirname;
-        }
-      });
+      registry.add('htmlbars-ast-plugin', this._plugin());
     }
-  }
+  },
+
+  _plugin() {
+    return {
+      name: `@embroider/sample-transforms`,
+      plugin: require('./lib/glimmer-plugin'),
+      baseDir() {
+        return __dirname;
+      },
+      parallelBabel: {
+        requireFile: __filename,
+        buildUsing: '_plugin',
+      },
+    };
+  },
 };

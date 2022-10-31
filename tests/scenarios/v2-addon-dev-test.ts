@@ -7,13 +7,7 @@ import { ExpectFile, expectFilesAt } from '@embroider/test-support';
 
 const { module: Qmodule, test } = QUnit;
 
-/**
- * The type of addon this is testing with only works in
- * ember-source@3.25+
- */
 appScenarios
-  .skip('lts_3_16')
-  .skip('lts_3_24')
   .map('v2-addon-dev-js', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';

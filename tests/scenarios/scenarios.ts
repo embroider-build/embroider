@@ -1,28 +1,16 @@
 import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
 
-async function lts_3_16(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.16' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.16' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-3.16' });
-
-  // needed because the ember-inflector used by this ember-data version blows up without it
-  project.linkDevDependency('@ember/string', { baseDir: __dirname });
-}
-
-async function lts_3_24(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.24' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.24' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-3.24' });
-
-  // needed because the ember-inflector used by this ember-data version blows up without it
-  project.linkDevDependency('@ember/string', { baseDir: __dirname });
-}
-
 async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data' });
+}
+
+async function lts_4_4(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.4' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.4' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.4' });
 }
 
 async function release(project: Project) {
@@ -33,9 +21,8 @@ async function release(project: Project) {
 
 export function supportMatrix(scenarios: Scenarios) {
   return scenarios.expand({
-    lts_3_16,
-    lts_3_24,
     lts_3_28,
+    lts_4_4,
     release,
   });
 }
@@ -55,5 +42,27 @@ export function baseApp() {
   return Project.fromDir(dirname(require.resolve('../app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseTSApp() {
+  return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
+}
+
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
+export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp));
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
+
+// renames a v1 app
+export function renameApp(project: Project, newName: string) {
+  let oldName = project.pkg.name;
+  let target = new RegExp('\\b' + oldName + '\\b', 'g');
+  function rename(files: Project['files']) {
+    for (let [path, content] of Object.entries(files)) {
+      if (typeof content === 'string') {
+        files[path] = content.replace(target, newName);
+      } else if (content) {
+        rename(content);
+      }
+    }
+  }
+  rename(project.files);
+  project.pkg.name = newName;
+}

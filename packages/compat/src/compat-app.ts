@@ -37,8 +37,6 @@ import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 
-import semver from 'semver';
-
 interface TreeNames {
   appJS: BroccoliNode;
   htmlTree: BroccoliNode;
@@ -233,23 +231,11 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
     // subset in that order is sensible, since many third-party libraries will
     // expect it to work that way.
-    let extensions = ['.wasm', '.mjs', '.js', '.json', '.hbs'];
-
-    // for now, this is hard-coded. If we see ember-cli-typescript, ts files are
-    // resolvable. Once we implement a preprocessor-registration build hook,
-    // this logic can be pushed down first into `@embroider/compat` (which can
-    // generate the appropriate hooks when it upcompiles ember-cli-typescript),
-    // and then later into ember-cli-typescript itself (which can ship a v2
-    // version with the hook).
     //
-    // Typescript is a slightly weird example of a preprocessor because it gets
-    // implemented in babel, so all we realy need to do is make the extension
-    // resolvable and there's no other "loader" or anything to apply.
-    if (this.activeAddonChildren().find(pkg => pkg.name === 'ember-cli-typescript')) {
-      extensions.unshift('.ts');
-    }
-
-    return extensions;
+    // For TS, we defer to ember-cli-babel, and the setting for
+    // "enableTypescriptTransform" can be set with and without
+    // ember-cli-typescript
+    return ['.wasm', '.mjs', '.js', '.json', '.hbs', '.ts'];
   }
 
   private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
@@ -372,11 +358,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       activeAddons[addon.name] = addon.root;
     }
 
-    let emberSource = this.activeAddonChildren().find(a => a.name === 'ember-source')!;
-    let emberNeedsModulesPolyfill = semver.satisfies(emberSource.version, '<3.27.0-beta.0', {
-      includePrerelease: true,
-    });
-
     return {
       activeAddons,
       renameModules,
@@ -392,7 +373,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       // up as a side-effect of babel transpilation, and babel is subject to
       // persistent caching.
       externalsDir: join(tmpdir, 'embroider', 'externals'),
-      emberNeedsModulesPolyfill,
       appRoot: this.root,
     };
   }

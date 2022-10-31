@@ -41,7 +41,10 @@ export default class extends Component {
 Example usage in a template:
 
 ```hbs
-{{#let (ensure-safe-component (or @title (component "default-title"))) as |Title|}}
+{{#let
+  (ensure-safe-component (or @title (component 'default-title')))
+  as |Title|
+}}
   <Title />
 {{/let}}
 ```

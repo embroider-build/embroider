@@ -19,17 +19,9 @@ export function explicitRelative(fromDir: string, toFile: string) {
     return toFile;
   }
 
-  // windows supports both "./" and ".\", but webpack 5 insists on "./"
-  if (result.startsWith('.\\')) {
-    return './' + result.slice(2);
-  }
-
-  // windows supports both "../" and "..\", but webpack 5 insists on "../"
-  if (result.startsWith('..\\')) {
-    return '../' + result.slice(3);
-  }
-
-  return result;
+  // windows supports both kinds of path separators but webpack wants relative
+  // paths to use forward slashes.
+  return result.replace(/\\/g, '/');
 }
 
 // given a list like ['.js', '.ts'], return a regular expression for files ending

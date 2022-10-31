@@ -1,6 +1,6 @@
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
-import { join, dirname, isAbsolute } from 'path';
+import { join, dirname, isAbsolute, sep } from 'path';
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
@@ -226,6 +226,7 @@ export default class V1App {
     const babelAddon = (this.app.project as any).findAddonByName('ember-cli-babel');
     const babelConfig = babelAddon.buildBabelOptions({
       'ember-cli-babel': {
+        ...this.app.options['ember-cli-babel'],
         includeExternalHelpers: true,
         compileModules: false,
         disableDebugTooling: false,
@@ -321,7 +322,7 @@ export default class V1App {
       // `app.import('node_modules/something/...')`, so we go find its answer.
       for (let { name, path } of this.app._nodeModules.values()) {
         if (match[1] === name) {
-          return filename.replace(match[0], path + '/');
+          return filename.replace(match[0], path + sep);
         }
       }
       throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${filename}`);

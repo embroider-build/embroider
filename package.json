@@ -16,6 +16,7 @@
       "types/ember-cli-htmlbars",
       "tests/scenarios",
       "tests/app-template",
+      "tests/ts-app-template",
       "tests/addon-template",
       "tests/v2-addon-template"
     ],
@@ -34,14 +35,21 @@
     "projects": [
       "<rootDir>/packages/*",
       "<rootDir>/test-packages/"
+    ],
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.js"
     ]
   },
   "resolutions": {
     "**/browserslist": "^4.14.0",
-    "**/qunit": "^2.14.1"
+    "**/qunit": "^2.14.1",
+    "**/graceful-fs": "^4.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.0",
+    "@changesets/changelog-github": "^0.4.7",
+    "@changesets/cli": "^2.25.0",
+    "@types/jest": "^29.2.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
     "cross-env": "^7.0.3",
@@ -49,42 +57,12 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "jest": "^24.9.0",
+    "jest": "^29.2.1",
     "prettier": "^2.3.1",
-    "release-it": "^14.2.1",
-    "release-it-lerna-changelog": "^3.1.0",
-    "release-it-yarn-workspaces": "^2.0.0",
     "typescript": "4.4.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
-  },
-  "release-it": {
-    "plugins": {
-      "release-it-lerna-changelog": {
-        "infile": "CHANGELOG.md",
-        "launchEditor": true
-      },
-      "release-it-yarn-workspaces": {
-        "workspaces": [
-          "packages/*"
-        ],
-        "additionalManifests": {
-          "dependencyUpdates": [
-            "test-packages/*/package.json",
-            "tests/**/package.json"
-          ]
-        }
-      }
-    },
-    "git": {
-      "tagName": "v${version}"
-    },
-    "github": {
-      "release": true,
-      "tokenRef": "GITHUB_AUTH"
-    },
-    "npm": false
   },
   "volta": {
     "node": "14.19.3",

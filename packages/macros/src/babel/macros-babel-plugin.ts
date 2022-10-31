@@ -47,7 +47,7 @@ export default function main(context: typeof Babel): unknown {
     FunctionDeclaration: {
       enter(path: NodePath<t.FunctionDeclaration>, state: State) {
         let id = path.get('id');
-        if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig') {
+        if (id.isIdentifier() && id.node.name === 'initializeRuntimeMacrosConfig' && state.opts.mode === 'run-time') {
           let pkg = state.owningPackage();
           if (pkg && pkg.name === '@embroider/macros') {
             inlineRuntimeConfig(path, state, context);

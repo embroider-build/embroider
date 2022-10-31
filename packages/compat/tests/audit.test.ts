@@ -66,7 +66,7 @@ describe('audit', function () {
     babel.plugins!.push([hbsDepsPluginPath, { templateCompiler: templateCompilerParams }]);
 
     let etcOptions: InlinePrecompileOptions = {
-      compilerPath: hbsDepsPluginPath,
+      precompilerPath: hbsDepsPluginPath,
     };
     babel.plugins!.push([require.resolve('babel-plugin-ember-template-compilation'), etcOptions]);
 

@@ -390,7 +390,7 @@ export class AppBuilder<TreeNames> {
     ]);
 
     let etcOptions: InlinePrecompileOptions = {
-      precompilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
+      compilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
     };
 
     babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), etcOptions]);

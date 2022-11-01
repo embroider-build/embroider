@@ -15,8 +15,7 @@ For a guide on porting a V1 addon to V2, see https://github.com/embroider-build/
    - @babel/core
    - @rollup/plugin-babel
 
-2. Copy the `./sample-rollup.config.js` in this repo to your own `rollup.config.js`.
-3. Copy the `./sample-babel.config.json` in this repo to your own `babel.config.json`.
+2. Copy the rollup and babel configs from the [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint)
 
 ## addon-dev command
 

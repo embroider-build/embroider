@@ -1,22 +1,20 @@
 import type { Node } from 'broccoli-node-api';
 import Filter from 'broccoli-persistent-filter';
-import type { TemplateCompiler } from '@embroider/core';
+import { hbsToJS } from '@embroider/core';
 import { join } from 'path';
 
 export default class TemplateCompileTree extends Filter {
-  constructor(inputTree: Node, private templateCompiler: TemplateCompiler) {
+  constructor(inputTree: Node) {
     super(inputTree, {
       name: `embroider-template-compile-stage1`,
       persist: true,
       extensions: ['hbs', 'handlebars'],
+      targetExtension: 'js',
     });
   }
 
   processString(source: string, relativePath: string) {
-    return this.templateCompiler.applyTransforms(relativePath, source);
-  }
-  cacheKeyProcessString(source: string, relativePath: string) {
-    return `1-${this.templateCompiler.cacheKey}` + super.cacheKeyProcessString(source, relativePath);
+    return hbsToJS(source, relativePath);
   }
   baseDir() {
     return join(__dirname, '..');

@@ -52,7 +52,7 @@ appScenarios
           'staticAddonTrees is off so we should include the component implicitly'
         );
         assert.ok(
-          JSON.stringify(assertMeta['implicit-modules']).includes('./templates/components/hello-world.hbs'),
+          JSON.stringify(assertMeta['implicit-modules']).includes('./templates/components/hello-world'),
           'staticAddonTrees is off so we should include the template implicitly'
         );
 
@@ -68,35 +68,33 @@ appScenarios
 
       test('component template in addon tree', function (assert) {
         let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/hello-world.hbs')
+          join(workspaceDir, 'node_modules/my-addon/templates/components/hello-world.js')
         );
         assert.ok(
           fileContents.includes('<div class={{embroider-sample-transforms-result}}>hello world</div>'),
           'template is still hbs and custom transforms have run'
         );
         assert.ok(
-          fileContents.includes('<span>{{macroDependencySatisfies "ember-source" ">3"}}</span>'),
+          fileContents.includes('<span>{{macroDependencySatisfies \\"ember-source\\" \\">3\\"}}</span>'),
           'template macros have not run'
         );
       });
 
       test('test module name added', function (assert) {
         let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.hbs')
+          join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.js')
         );
         let searchRegExp = /\\/gi;
         let replaceWith = '\\\\';
-        assert.ok(
-          fileContents.includes(
-            `<div class={{embroider-sample-transforms-module "${join(
-              'my-addon',
-              'templates',
-              'components',
-              'module-name.hbs'
-            ).replace(searchRegExp, replaceWith)}"}}>hello world</div>`
-          ),
-          'template is still hbs and module name transforms have run'
-        );
+
+        let expected = `<div class={{embroider-sample-transforms-module \\"${join(
+          'my-addon',
+          'templates',
+          'components',
+          'module-name.hbs'
+        ).replace(searchRegExp, replaceWith)}\\"}}>hello world</div>`;
+
+        assert.ok(fileContents.includes(expected), 'template is still hbs and module name transforms have run');
       });
 
       test('component with inline template', function (assert) {

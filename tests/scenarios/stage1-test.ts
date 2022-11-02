@@ -29,10 +29,11 @@ appScenarios
       let app: PreparedApp;
       let workspaceDir: string;
 
-      hooks.before(async () => {
+      hooks.before(async assert => {
         process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
         app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        let result = await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        assert.equal(result.exitCode, 0, result.output);
         workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
       });
 
@@ -68,7 +69,7 @@ appScenarios
 
       test('component template in addon tree', function (assert) {
         let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/hello-world.js')
+          join(workspaceDir, 'node_modules/my-addon/templates/components/hello-world.hbs.js')
         );
         assert.ok(
           fileContents.includes('<div class={{embroider-sample-transforms-result}}>hello world</div>'),
@@ -82,7 +83,7 @@ appScenarios
 
       test('test module name added', function (assert) {
         let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.js')
+          join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.hbs.js')
         );
         let searchRegExp = /\\/gi;
         let replaceWith = '\\\\';

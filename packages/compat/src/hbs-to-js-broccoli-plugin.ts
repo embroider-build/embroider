@@ -9,8 +9,22 @@ export default class TemplateCompileTree extends Filter {
       name: `embroider-template-compile-stage1`,
       persist: true,
       extensions: ['hbs', 'handlebars'],
-      targetExtension: 'js',
     });
+  }
+
+  getDestFilePath(relativePath: string, entry: Parameters<Filter['getDestFilePath']>[1]) {
+    if (this.isDirectory(relativePath, entry)) {
+      return null;
+    }
+    for (let ext of ['hbs', 'handlebars']) {
+      if (relativePath.slice(-ext.length - 1) === '.' + ext) {
+        // we deliberately don't chop off the .hbs before appending .js, because if
+        // the user has both .js` and .hbs` side-by-side we don't want our new file
+        // to collide with theirs.
+        return relativePath + '.js';
+      }
+    }
+    return null;
   }
 
   processString(source: string, relativePath: string) {

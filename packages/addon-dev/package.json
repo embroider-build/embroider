@@ -14,7 +14,6 @@
   },
   "exports": {
     "./template-colocation-plugin": "./src/template-colocation-plugin.js",
-    "./template-transform-plugin": "./src/template-transform-plugin.js",
     "./rollup": "./src/rollup.js"
   },
   "files": [

@@ -6,7 +6,7 @@ export function hbsToJS(hbsContents: string, moduleName?: string): string {
     opts = `,{ moduleName: "${jsStringEscape(moduleName)}" }`;
   }
   return [
-    `import { hbs } from 'ember-cli-htmlbars';`,
-    `export default hbs("${jsStringEscape(hbsContents)}"${opts})`,
+    `import { precompileTemplate } from "@ember/template-compilation";`,
+    `export default precompileTemplate("${jsStringEscape(hbsContents)}"${opts})`,
   ].join('\n');
 }

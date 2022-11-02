@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+# main
+
+## `@embroider/core`, `@embroider/compat`, `@embroidre/webpack`
+
+- BREAKING: drop support for Ember < 3.28.
+
+## `@ember/addon-dev`
+
+- BREAKING: `@embroider/addon-template/template-transform-plugin` is removed
+  because `babel-plugin-ember-template-compilation >= 2.0.0-alpha.2` directly
+  supports source-to-source transformation (and it offers new capabilities to
+  AST transform authors that we would like to be available everywhere).
+
 # Release 2022-10-06.0
 
 ## `@embroider/core` 1.8.3 -> 1.9.0 minor

@@ -5721,10 +5721,10 @@ babel-plugin-ember-template-compilation@^1.0.0:
     magic-string "^0.25.7"
     string.prototype.matchall "^4.0.5"
 
-babel-plugin-ember-template-compilation@^2.0.0-alpha.1:
-  version "2.0.0-alpha.1"
-  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.1.tgz#4286b172470e8d58bafc23e0271dde51fe1676b1"
-  integrity sha512-J1BfMmdVUy4wKPGr94x9OW8BUTzhxOVaN4dPDGj3FSASaPC6FxGOhHWThPi4y5rG62MQ8XIn1tFiIMfIzYLgzQ==
+babel-plugin-ember-template-compilation@^2.0.0-alpha.2:
+  version "2.0.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.2.tgz#3dc0c62ae532485512700eda82e5e62e340dbba3"
+  integrity sha512-zRA/2jzy3LZkmYRDYqIlQCgALrqhQACsuACgesJ3deVTrhGbjCELbxNcKBlKsYD0XiKJ9NbqIr/nz1nIMAUblw==
   dependencies:
     babel-import-util "^1.2.0"
 

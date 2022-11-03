@@ -156,7 +156,7 @@ export function makeResolverTransform(resolver: Resolver) {
                   for (let name of argumentsAreComponents) {
                     let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
                     if (attr) {
-                      handleComponentHelper(attr.value, resolver, filename, scopeStack, {
+                      handleOptionalComponentHelper(attr.value, resolver, filename, scopeStack, {
                         componentName: node.tag,
                         argumentName: name,
                       });
@@ -346,5 +346,42 @@ function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, module
 function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
   if (param.type === 'StringLiteral') {
     resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
+}
+
+function handleOptionalComponentHelper(
+  param: any,
+  resolver: Resolver,
+  moduleName: string,
+  scopeStack: ScopeStack,
+  impliedBecause?: { componentName: string; argumentName: string }
+): void {
+  switch (param.type) {
+    case 'NullLiteral':
+    case 'UndefinedLiteral':
+      return;
+
+    case 'MustacheStatement':
+    case 'SubExpression':
+      if (param.path.type === 'NullLiteral' || param.path.type === 'UndefinedLiteral') {
+        return;
+      }
+
+      // Allow passing `{{ensure-safe-component @argument}}`
+      if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
+        return;
+      }
+
+      // We specifically allow `{{if}}` and `{{unless}}` as long as both branches are valid
+      if (param.path.type === 'PathExpression' && (param.path.original === 'if' || param.path.original === 'unless')) {
+        // Ignore first one, which is the truthy check
+        param.params.slice(1).forEach((param: any) => {
+          handleOptionalComponentHelper(param, resolver, moduleName, scopeStack, impliedBecause);
+        });
+        break;
+      }
+
+    default:
+      handleComponentHelper(param, resolver, moduleName, scopeStack, impliedBecause);
   }
 }

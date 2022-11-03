@@ -399,8 +399,36 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
 
     let colocationOptions: ColocationOptions = {
-      packageGuard: true,
       appRoot: this.root,
+
+      // This extra weirdness is a compromise in favor of build performance.
+      //
+      // 1. When auto-upgrading an addon from v1 to v2, we definitely want to
+      //    run any custom AST transforms in stage1.
+      //
+      // 2. In general case, AST transforms are allowed to manipulate Javascript
+      //    scope. This means that running transforms -- even when we're doing
+      //    source-to-source compilation that emits handlebars and not wire
+      //    format -- implies changing .hbs files into .js files.
+      //
+      // 3. So stage1 may need to rewrite .hbs to .hbs.js (to avoid colliding
+      //    with an existing co-located .js file).
+      //
+      // 4. But stage1 doesn't necessarily want to run babel over the
+      //    corresponding JS file. Most of the time, that's just an
+      //    unnecessarily expensive second parse. (We only run it in stage1 to
+      //    eliminate an addon's custom babel plugins, and many addons don't
+      //    have any.)
+      //
+      // 5. Therefore, the work of template-colocation gets defered until here,
+      //    and it may see co-located templates named `.hbs.js` instead of the
+      //    usual `.hbs.
+      templateExtensions: ['.hbs', '.hbs.js'],
+
+      // All of the above only applies to auto-upgraded packages that were
+      // authored in v1. V2 packages don't get any of this complexity, they're
+      // supposed to take care of colocating their own templates explicitly.
+      packageGuard: true,
     };
     babel.plugins.push([
       require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),

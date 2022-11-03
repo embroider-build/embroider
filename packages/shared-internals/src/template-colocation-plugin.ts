@@ -22,6 +22,14 @@ export interface Options {
   packageGuard?: boolean;
 
   appRoot: string;
+
+  // Defaults to ['.hbs']
+  //
+  // Controls how co-located templates are discovered.
+  //
+  // This option is used by Embroider itself to help with v1 addon
+  // compatibility, other users should probably not use it.
+  templateExtensions?: string[];
 }
 
 interface State {
@@ -51,9 +59,12 @@ export default function main(babel: typeof Babel) {
             }
           }
 
-          let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + '.hbs';
-          if (hbsFilename !== filename && existsSync(hbsFilename)) {
-            state.colocatedTemplate = hbsFilename;
+          let extensions = state.opts.templateExtensions ?? ['.hbs'];
+          for (let ext of extensions) {
+            let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + ext;
+            if (hbsFilename !== filename && existsSync(hbsFilename)) {
+              state.colocatedTemplate = hbsFilename;
+            }
           }
         },
         exit(path: NodePath<t.Program>, state: State) {

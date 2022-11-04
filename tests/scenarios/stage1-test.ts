@@ -85,16 +85,7 @@ appScenarios
         let fileContents = fs.readFileSync(
           join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.hbs.js')
         );
-        let searchRegExp = /\\/gi;
-        let replaceWith = '\\\\';
-
-        let expected = `<div class={{embroider-sample-transforms-module \\"${join(
-          'my-addon',
-          'templates',
-          'components',
-          'module-name.hbs'
-        ).replace(searchRegExp, replaceWith)}\\"}}>hello world</div>`;
-
+        let expected = `<div class={{embroider-sample-transforms-module \\"my-addon/templates/components/module-name.hbs\\"}}>hello world</div>`;
         assert.ok(fileContents.includes(expected), 'template is still hbs and module name transforms have run');
       });
 

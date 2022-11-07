@@ -9,13 +9,13 @@ import { Node } from 'broccoli-node-api';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import {
-  TemplateCompilerPlugins,
   AddonMeta,
   Package,
   EmberAppInstance,
   OutputFileToInputFileMap,
   PackageInfo,
   AddonInstance,
+  TemplateTransforms,
 } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
@@ -564,7 +564,7 @@ export default class V1App {
     return tree;
   }
 
-  get htmlbarsPlugins(): TemplateCompilerPlugins {
+  get htmlbarsPlugins(): TemplateTransforms {
     let addon = this.app.project.addons.find(
       (a: AddonInstance) => a.name === 'ember-cli-htmlbars'
     ) as unknown as EmberCliHTMLBarsAddon;
@@ -574,8 +574,16 @@ export default class V1App {
       // here in favor of our globally-configured one.
       options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
       prepHtmlbarsAstPluginsForUnwrap(this.app.registry);
+
+      // classically, this list was backwards for silly historic reasons. But
+      // we're the compatibility system, so we're putting it back into
+      // reasonable order.
+      options.plugins.ast.reverse();
+
+      return options.plugins.ast;
+    } else {
+      return [];
     }
-    return options.plugins ?? {};
   }
 
   // our own appTree. Not to be confused with the one that combines the app js

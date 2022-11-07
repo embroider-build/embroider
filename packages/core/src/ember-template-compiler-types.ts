@@ -1,3 +1,7 @@
+import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
+
+export type TemplateTransforms = NonNullable<EtcOptions['transforms']>;
+
 export interface Plugins {
   ast?: unknown[];
 }
@@ -9,7 +13,7 @@ export interface AST {
 export interface PreprocessOptions {
   contents: string;
   moduleName: string;
-  plugins?: Plugins;
+  plugins?: unknown;
   filename?: string;
 
   parseOptions?: {

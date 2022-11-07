@@ -11,7 +11,7 @@ import {
   AppBuilder,
   EmberENV,
   Package,
-  TemplateCompilerPlugins,
+  TemplateTransforms,
   Resolver,
   NodeTemplateCompiler,
   AddonPackage,
@@ -428,7 +428,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return flatten(output);
   }
 
-  htmlbarsPlugins(): TemplateCompilerPlugins {
+  htmlbarsPlugins(): TemplateTransforms {
     return this.oldPackage.htmlbarsPlugins;
   }
 

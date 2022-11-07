@@ -36,33 +36,6 @@ export function precompile(templateSource: string, options: Record<string, unkno
   return compiled;
 }
 
-export function _buildCompileOptions(options: unknown) {
-  if (!currentState) {
-    throw new Error(
-      `bug: babel-plugin-ember-template-compilation and babel-plugin-inline-hbs-deps aren't coordinating correctly`
-    );
-  }
-  return compiler(currentState).theExports._buildCompileOptions(options);
-}
-
-export function _print(ast: unknown, options?: unknown): string {
-  if (!currentState) {
-    throw new Error(
-      `bug: babel-plugin-ember-template-compilation and babel-plugin-inline-hbs-deps aren't coordinating correctly`
-    );
-  }
-  return compiler(currentState).theExports._print(ast, options);
-}
-
-export function _preprocess(src: string, options?: unknown): unknown {
-  if (!currentState) {
-    throw new Error(
-      `bug: babel-plugin-ember-template-compilation and babel-plugin-inline-hbs-deps aren't coordinating correctly`
-    );
-  }
-  return compiler(currentState).theExports._preprocess(src, options);
-}
-
 interface State {
   opts: {};
   file: {

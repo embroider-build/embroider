@@ -88,9 +88,13 @@ export class TemplateCompiler {
     return this.setup().cacheKey;
   }
 
+  // Sharing this temporarily as an upgrade path toward babel-plugin-ember-template-compilation 2.0
+  theExports: any;
+
   @Memoize()
   private setup() {
     let { theExports, cacheKey } = this.loadEmberTemplateCompiler();
+    this.theExports = theExports;
     let syntax = loadGlimmerSyntax(theExports);
     initializeEmberENV(syntax, this.EmberENV);
     // todo: get resolver reflected in cacheKey
@@ -131,10 +135,10 @@ export class TemplateCompiler {
     };
 
     let compiled = this.syntax.precompile(stripBom(templateSource), {
+      ...options,
       contents: templateSource,
       moduleName: runtimeName,
       plugins,
-      ...options,
     });
 
     if (this.resolver) {

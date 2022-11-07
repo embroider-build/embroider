@@ -31,8 +31,10 @@ appScenarios
           ],
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
-            ["@embroider/addon-dev/template-transform-plugin", {
-              astTransforms: [
+            ["babel-plugin-ember-template-compilation", {
+              targetFormat: 'hbs',
+              compilerPath: 'ember-source/dist/ember-template-compiler',
+              transforms: [
                 './lib/custom-transform.js',
               ],
             }],
@@ -140,6 +142,7 @@ appScenarios
 
     addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
     addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
+    addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
@@ -238,7 +241,7 @@ appScenarios
         test('template transform was run', async function () {
           expectFile('dist/components/demo/index.js').matches('iWasTransformed');
           expectFile('dist/components/demo/index.js').matches(
-            /TEMPLATE = hbs\("Hello there/,
+            /TEMPLATE = precompileTemplate\("Hello there/,
             'template is still in hbs format'
           );
         });

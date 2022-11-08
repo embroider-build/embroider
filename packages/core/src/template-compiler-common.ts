@@ -88,13 +88,9 @@ export class TemplateCompiler {
     return this.setup().cacheKey;
   }
 
-  // Sharing this temporarily as an upgrade path toward babel-plugin-ember-template-compilation 2.0
-  theExports: any;
-
   @Memoize()
   private setup() {
     let { theExports, cacheKey } = this.loadEmberTemplateCompiler();
-    this.theExports = theExports;
     let syntax = loadGlimmerSyntax(theExports);
     initializeEmberENV(syntax, this.EmberENV);
     // todo: get resolver reflected in cacheKey
@@ -127,7 +123,7 @@ export class TemplateCompiler {
 
       ast: [
         ...this.getReversedASTPlugins(this.plugins.ast!),
-        this.resolver && this.resolver.astTransformer(this),
+        this.resolver && this.resolver.astTransformer(),
 
         // Ember 3.27+ uses _buildCompileOptions will not add AST plugins to its result
         ...(opts?.plugins?.ast ?? []),

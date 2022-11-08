@@ -18,3 +18,11 @@ export function dasherize(key: string) {
 
   return name;
 }
+
+const NAME_FROM_SNIPPET = /<(?:([^\s/]+).*>)|(?:{{\s?component\s+['"]([^'"]+)['"])|(?:\{\{([^\s]+).*\}\})/;
+export function snippetToDasherizedName(snippet: string): string | undefined {
+  let result = NAME_FROM_SNIPPET.exec(snippet);
+  if (result) {
+    return dasherize(result[1] ?? result[2] ?? result[3]);
+  }
+}

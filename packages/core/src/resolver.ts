@@ -1,4 +1,3 @@
-import type { TemplateCompiler } from './template-compiler-common';
 import { Options } from './babel-plugin-adjust-imports';
 
 export interface ResolvedDep {
@@ -8,7 +7,7 @@ export interface ResolvedDep {
 }
 
 export interface Resolver {
-  astTransformer(templateCompiler: TemplateCompiler): unknown;
+  astTransformer(): undefined | string | [string, unknown];
   dependenciesOf(moduleName: string): ResolvedDep[];
 
   // this takes an absolute path to a file and gives back a path like

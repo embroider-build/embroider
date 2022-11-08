@@ -3,7 +3,7 @@ import { hbsToJS } from '@embroider/core';
 
 export default function hbsLoader(this: LoaderContext<{}>, templateContent: string) {
   try {
-    return hbsToJS(templateContent);
+    return hbsToJS(templateContent, this.resourcePath);
   } catch (error) {
     error.type = 'Template Compiler Error';
     error.file = this.resourcePath;

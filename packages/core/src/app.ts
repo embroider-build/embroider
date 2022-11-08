@@ -958,6 +958,11 @@ export class AppBuilder<TreeNames> {
       transforms.push(macroPlugin as any);
     }
 
+    let transform = this.adapter.templateResolver().astTransformer();
+    if (transform) {
+      transforms.push(transform);
+    }
+
     return {
       transforms,
       compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),

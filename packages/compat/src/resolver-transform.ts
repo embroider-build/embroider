@@ -1,27 +1,50 @@
-import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
-import type { ASTv1 } from '@glimmer/syntax';
+import {
+  default as Resolver,
+  ComponentResolution,
+  ComponentLocator,
+  ResolutionFail,
+  ResolutionResult,
+} from './resolver';
+import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment } from '@glimmer/syntax';
+import type { WithJSUtils } from '@embroider/core/src/ember-template-compiler-types';
+
+type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-// and puts them into `dependencies`.
-export function makeResolverTransform(resolver: Resolver) {
-  function resolverTransform({ filename, contents }: { filename: string; contents: string }) {
-    resolver.enter(filename, contents);
-
+export default function makeResolverTransform(resolver: Resolver) {
+  const resolverTransform: ASTPluginBuilder<Env> = ({ filename, contents, meta: { jsutils } }) => {
     let scopeStack = new ScopeStack();
+    let emittedAMDDeps: Set<string> = new Set();
+    let errors: ResolutionFail[] = [];
+
+    function emitAMD(resolution: ResolutionResult) {
+      for (let m of resolution.modules) {
+        if (!emittedAMDDeps.has(m.runtimeName)) {
+          jsutils.emitExpression(context => {
+            let identifier = context.import(m.path, 'default');
+            return `window.define("${m.runtimeName}", () => ${identifier})`;
+          });
+          emittedAMDDeps.add(m.runtimeName);
+        }
+      }
+    }
 
     return {
       name: 'embroider-build-time-resolver',
 
       visitor: {
         Program: {
-          enter(node: ASTv1.Program) {
+          enter(node) {
             scopeStack.push(node.blockParams);
           },
           exit() {
             scopeStack.pop();
+            if (errors.length > 0) {
+              throw new Error(`todo error reporting ${errors} ${contents}`);
+            }
           },
         },
-        BlockStatement(node: ASTv1.BlockStatement) {
+        BlockStatement(node) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -45,22 +68,29 @@ export function makeResolverTransform(resolver: Resolver) {
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          const resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution && resolution.type === 'component') {
-            scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-              for (let name of argumentsAreComponents) {
-                let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
-                if (pair) {
-                  handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                    componentName: (node.path as ASTv1.PathExpression).original,
-                    argumentName: name,
-                  });
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
+          if (resolution) {
+            if (resolution.type === 'error') {
+              errors.push(resolution);
+            } else if (resolution.type === 'component') {
+              emitAMD(resolution);
+              scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                for (let name of argumentsAreComponents) {
+                  let pair = node.hash.pairs.find(pair => pair.key === name);
+                  if (pair) {
+                    handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                      componentName: (node.path as ASTv1.PathExpression).original,
+                      argumentName: name,
+                    });
+                  }
                 }
-              }
-            });
+              });
+            } else if (resolution.type === 'helper') {
+              emitAMD(resolution);
+            }
           }
         },
-        SubExpression(node: ASTv1.SubExpression) {
+        SubExpression(node) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -82,9 +112,14 @@ export function makeResolverTransform(resolver: Resolver) {
             handleDynamicModifier(node.params[0], resolver, filename);
             return;
           }
-          resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
+          let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
+          if (resolution?.type === 'error') {
+            errors.push(resolution);
+          } else if (resolution) {
+            emitAMD(resolution);
+          }
         },
-        MustacheStatement(node: ASTv1.MustacheStatement) {
+        MustacheStatement(node) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -123,7 +158,7 @@ export function makeResolverTransform(resolver: Resolver) {
             }
           }
         },
-        ElementModifierStatement(node: ASTv1.ElementModifierStatement) {
+        ElementModifierStatement(node) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -148,21 +183,26 @@ export function makeResolverTransform(resolver: Resolver) {
           resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
         },
         ElementNode: {
-          enter(node: ASTv1.ElementNode) {
+          enter(node) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
               const resolution = resolver.resolveElement(node.tag, filename, node.loc);
-              if (resolution && resolution.type === 'component') {
-                scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-                  for (let name of argumentsAreComponents) {
-                    let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
-                    if (attr) {
-                      handleComponentHelper(attr.value, resolver, filename, scopeStack, {
-                        componentName: node.tag,
-                        argumentName: name,
-                      });
+              if (resolution) {
+                if (resolution.type === 'error') {
+                  errors.push(resolution);
+                } else {
+                  emitAMD(resolution);
+                  scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                    for (let name of argumentsAreComponents) {
+                      let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
+                      if (attr) {
+                        handleComponentHelper(attr.value, resolver, filename, scopeStack, {
+                          componentName: node.tag,
+                          argumentName: name,
+                        });
+                      }
                     }
-                  }
-                });
+                  });
+                }
               }
             }
             scopeStack.push(node.blockParams);
@@ -173,8 +213,8 @@ export function makeResolverTransform(resolver: Resolver) {
         },
       },
     };
-  }
-  resolverTransform.parallelBabel = {
+  };
+  (resolverTransform as any).parallelBabel = {
     requireFile: __filename,
     buildUsing: 'makeResolverTransform',
     params: Resolver,

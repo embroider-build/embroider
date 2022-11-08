@@ -115,7 +115,7 @@ class V1AddonCompatResolver implements Resolver {
       params,
     };
   }
-  astTransformer(_templateCompiler: NodeTemplateCompiler): unknown {
+  astTransformer(): undefined {
     return;
   }
   dependenciesOf(_moduleName: string): ResolvedDep[] {

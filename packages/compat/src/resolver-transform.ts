@@ -62,7 +62,12 @@ export default function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            if (resolution?.type === 'error') {
+              errors.push(resolution);
+            } else if (resolution) {
+              emitAMD(resolution);
+            }
             return;
           }
           // a block counts as args from our perpsective (it's enough to prove
@@ -78,10 +83,15 @@ export default function makeResolverTransform(resolver: Resolver) {
                 for (let name of argumentsAreComponents) {
                   let pair = node.hash.pairs.find(pair => pair.key === name);
                   if (pair) {
-                    handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                    let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
                       componentName: (node.path as ASTv1.PathExpression).original,
                       argumentName: name,
                     });
+                    if (resolution?.type === 'error') {
+                      errors.push(resolution);
+                    } else if (resolution) {
+                      emitAMD(resolution);
+                    }
                   }
                 }
               });
@@ -101,7 +111,12 @@ export default function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            if (resolution?.type === 'error') {
+              errors.push(resolution);
+            } else if (resolution) {
+              emitAMD(resolution);
+            }
             return;
           }
           if (node.path.original === 'helper' && node.params.length > 0) {
@@ -137,7 +152,12 @@ export default function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            if (resolution?.type === 'error') {
+              errors.push(resolution);
+            } else if (resolution) {
+              emitAMD(resolution);
+            }
             return;
           }
           if (node.path.original === 'helper' && node.params.length > 0) {
@@ -146,14 +166,22 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution && resolution.type === 'component') {
+          if (resolution?.type === 'helper') {
+            emitAMD(resolution);
+          } else if (resolution?.type === 'component') {
+            emitAMD(resolution);
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
               if (pair) {
-                handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
                   componentName: node.path.original,
                   argumentName: name,
                 });
+                if (resolution?.type === 'error') {
+                  errors.push(resolution);
+                } else if (resolution) {
+                  emitAMD(resolution);
+                }
               }
             }
           }
@@ -180,7 +208,12 @@ export default function makeResolverTransform(resolver: Resolver) {
             return;
           }
 
-          resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
+          let resolution = resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
+          if (resolution?.type === 'error') {
+            errors.push(resolution);
+          } else if (resolution) {
+            emitAMD(resolution);
+          }
         },
         ElementNode: {
           enter(node) {
@@ -195,10 +228,15 @@ export default function makeResolverTransform(resolver: Resolver) {
                     for (let name of argumentsAreComponents) {
                       let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
                       if (attr) {
-                        handleComponentHelper(attr.value, resolver, filename, scopeStack, {
+                        let resolution = handleComponentHelper(attr.value, resolver, filename, scopeStack, {
                           componentName: node.tag,
                           argumentName: name,
                         });
+                        if (resolution?.type === 'error') {
+                          errors.push(resolution);
+                        } else if (resolution) {
+                          emitAMD(resolution);
+                        }
                       }
                     }
                   });
@@ -328,7 +366,7 @@ function handleComponentHelper(
   moduleName: string,
   scopeStack: ScopeStack,
   impliedBecause?: { componentName: string; argumentName: string }
-): void {
+): ComponentResolution | ResolutionFail | null {
   let locator: ComponentLocator;
   switch (param.type) {
     case 'StringLiteral':
@@ -339,11 +377,10 @@ function handleComponentHelper(
       break;
     case 'MustacheStatement':
       if (param.hash.pairs.length === 0 && param.params.length === 0) {
-        handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
-        return;
+        return handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
       } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
         // safe because we will handle this inner `{{component ...}}` mustache on its own
-        return;
+        return null;
       } else {
         locator = { type: 'other' };
       }
@@ -354,11 +391,11 @@ function handleComponentHelper(
     case 'SubExpression':
       if (param.path.type === 'PathExpression' && param.path.original === 'component') {
         // safe because we will handle this inner `(component ...)` subexpression on its own
-        return;
+        return null;
       }
       if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
         // safe because we trust ensure-safe-component
-        return;
+        return null;
       }
       locator = { type: 'other' };
       break;
@@ -367,10 +404,10 @@ function handleComponentHelper(
   }
 
   if (locator.type === 'path' && scopeStack.safeComponentInScope(locator.path)) {
-    return;
+    return null;
   }
 
-  resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
+  return resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
 }
 
 function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {

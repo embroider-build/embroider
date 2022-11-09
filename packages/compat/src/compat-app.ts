@@ -11,7 +11,6 @@ import {
   AppBuilder,
   EmberENV,
   Package,
-  TemplateTransforms,
   Resolver,
   AddonPackage,
 } from '@embroider/core';
@@ -34,6 +33,7 @@ import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
+import type { Transform } from 'babel-plugin-ember-template-compilation';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -411,7 +411,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return flatten(output);
   }
 
-  htmlbarsPlugins(): TemplateTransforms {
+  htmlbarsPlugins(): Transform[] {
     return this.oldPackage.htmlbarsPlugins;
   }
 

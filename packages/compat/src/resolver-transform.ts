@@ -6,22 +6,36 @@ import {
   ResolutionResult,
 } from './resolver';
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment } from '@glimmer/syntax';
-import type { WithJSUtils } from '@embroider/core/src/ember-template-compiler-types';
+import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
+import { ResolvedDep } from '@embroider/core/src/resolver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform(resolver: Resolver) {
-  const resolverTransform: ASTPluginBuilder<Env> = ({ filename, contents, meta: { jsutils } }) => {
+  const resolverTransform: ASTPluginBuilder<Env> = ({
+    filename,
+    contents,
+    meta: { jsutils },
+    syntax: { builders },
+  }) => {
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
     let errors: ResolutionFail[] = [];
 
     function emitAMD(resolution: ResolutionResult) {
-      for (let m of resolution.modules) {
+      let modules: ResolvedDep[];
+      if (resolution.type === 'component') {
+        modules = [resolution.hbsModule, resolution.jsModule].filter(Boolean) as ResolvedDep[];
+      } else {
+        modules = [resolution.module];
+      }
+
+      for (let m of modules) {
         if (!emittedAMDDeps.has(m.runtimeName)) {
           jsutils.emitExpression(context => {
-            let identifier = context.import(m.path, 'default');
+            let parts = m.runtimeName.split('/');
+            let identifier = context.import(m.path, 'default', parts[parts.length - 1]);
             return `window.define("${m.runtimeName}", () => ${identifier})`;
           });
           emittedAMDDeps.add(m.runtimeName);
@@ -134,7 +148,7 @@ export default function makeResolverTransform(resolver: Resolver) {
             emitAMD(resolution);
           }
         },
-        MustacheStatement(node) {
+        MustacheStatement(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -169,7 +183,15 @@ export default function makeResolverTransform(resolver: Resolver) {
           if (resolution?.type === 'helper') {
             emitAMD(resolution);
           } else if (resolution?.type === 'component') {
-            emitAMD(resolution);
+            if (resolution.jsModule && !resolution.hbsModule) {
+              node.path = builders.path(
+                jsutils.bindImport(resolution.jsModule.path, 'default', path, {
+                  nameHint: node.path.original,
+                })
+              );
+            } else {
+              emitAMD(resolution);
+            }
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
               if (pair) {

@@ -21,7 +21,8 @@
       "tests/v2-addon-template"
     ],
     "nohoist": [
-      "**/@types/broccoli-plugin"
+      "**/@types/broccoli-plugin",
+      "**/babel-plugin-ember-template-compilation"
     ]
   },
   "scripts": {

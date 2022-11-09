@@ -236,7 +236,12 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
   if (moduleRules.dependsOnComponents) {
     for (let snippet of moduleRules.dependsOnComponents) {
       let found = resolver.resolveComponentSnippet(snippet, moduleRules);
-      for (let { absPath: target, runtimeName } of found.modules) {
+      if (found.jsModule) {
+        let { absPath: target, runtimeName } = found.jsModule;
+        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
+      }
+      if (found.hbsModule) {
+        let { absPath: target, runtimeName } = found.hbsModule;
         output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
       }
     }

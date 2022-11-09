@@ -34,9 +34,8 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
-import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
+import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
-import { TemplateTransforms } from './ember-template-compiler-types';
 
 export type EmberENV = unknown;
 
@@ -113,7 +112,7 @@ export interface AppAdapter<TreeNames> {
   adjustImportsOptionsPath(): string;
 
   // The template preprocessor plugins that are configured in the app.
-  htmlbarsPlugins(): TemplateTransforms;
+  htmlbarsPlugins(): Transform[];
 
   // the app's preferred babel config. No need to worry about making it portable
   // yet, we will do that for you.

@@ -19,7 +19,8 @@ import resolve from 'resolve';
 
 export interface ComponentResolution {
   type: 'component';
-  modules: ResolvedDep[];
+  jsModule: ResolvedDep | null;
+  hbsModule: ResolvedDep | null;
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
@@ -27,12 +28,12 @@ export interface ComponentResolution {
 
 export interface HelperResolution {
   type: 'helper';
-  modules: ResolvedDep[];
+  module: ResolvedDep;
 }
 
 export interface ModifierResolution {
   type: 'modifier';
-  modules: ResolvedDep[];
+  module: ResolvedDep;
 }
 
 export type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -235,7 +236,11 @@ export default class CompatResolver implements Resolver {
             ignoredComponents.push(this.standardDasherize(snippet, rule));
             continue;
           }
-          let resolvedDep = this.resolveComponentSnippet(snippet, rule).modules[0];
+          let resolvedSnippet = this.resolveComponentSnippet(snippet, rule);
+
+          // cast is OK here because a component must have one or the other
+          let resolvedDep = (resolvedSnippet.hbsModule ?? resolvedSnippet.jsModule)!;
+
           let processedRules = preprocessComponentRule(componentRules);
 
           // we always register our rules on the component's own first resolved
@@ -332,11 +337,15 @@ export default class CompatResolver implements Resolver {
               source: contents!, // todo
             });
           }
-        } else {
-          for (let entry of dep.modules) {
-            let { runtimeName } = entry;
-            flatDeps.set(runtimeName, entry);
+        } else if (dep.type === 'component') {
+          if (dep.jsModule) {
+            flatDeps.set(dep.jsModule.runtimeName, dep.jsModule);
           }
+          if (dep.hbsModule) {
+            flatDeps.set(dep.hbsModule.runtimeName, dep.hbsModule);
+          }
+        } else {
+          flatDeps.set(dep.module.runtimeName, dep.module);
         }
       }
     }
@@ -429,13 +438,11 @@ export default class CompatResolver implements Resolver {
       if (pathExistsSync(absPath)) {
         return {
           type: 'helper',
-          modules: [
-            {
-              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-              path: explicitRelative(dirname(from), absPath),
-              absPath,
-            },
-          ],
+          module: {
+            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
+            path: explicitRelative(dirname(from), absPath),
+            absPath,
+          },
         };
       }
     }
@@ -469,13 +476,11 @@ export default class CompatResolver implements Resolver {
       if (pathExistsSync(absPath)) {
         return {
           type: 'modifier',
-          modules: [
-            {
-              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-              path: explicitRelative(dirname(from), absPath),
-              absPath,
-            },
-          ],
+          module: {
+            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
+            path: explicitRelative(dirname(from), absPath),
+            absPath,
+          },
         };
       }
     }
@@ -511,27 +516,22 @@ export default class CompatResolver implements Resolver {
     withRuleLookup: boolean,
     targetPackage: Package | AppPackagePlaceholder
   ): ComponentResolution | null {
-    // The order here is important! We always put our .hbs paths first here, so
-    // that if we have an hbs file of our own, that will be the first resolved
-    // dependency. The first resolved dependency is special because we use that
-    // as a key into the rules, and we want to be able to find our rules when
-    // checking from our own template (among other times).
-
     let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter((e: string) => e !== '.hbs')];
 
-    let componentModules = [] as string[];
+    let hbsModule: string | undefined;
+    let jsModule: string | undefined;
 
     // first, the various places our template might be
     for (let extension of extensions) {
       let absPath = join(targetPackage.root, 'templates', 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        hbsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path, 'template') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        hbsModule = absPath;
         break;
       }
 
@@ -544,7 +544,7 @@ export default class CompatResolver implements Resolver {
 
         absPath = join(targetPackage.root, podPrefix, 'components', path, 'template') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push(absPath);
+          hbsModule = absPath;
           break;
         }
       }
@@ -558,19 +558,19 @@ export default class CompatResolver implements Resolver {
 
       let absPath = join(targetPackage.root, 'components', path, 'index') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path, 'component') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
@@ -583,31 +583,43 @@ export default class CompatResolver implements Resolver {
 
         absPath = join(targetPackage.root, podPrefix, 'components', path, 'component') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push(absPath);
+          jsModule = absPath;
           break;
         }
       }
     }
 
-    if (componentModules.length > 0) {
-      let componentRules;
-      if (withRuleLookup) {
-        componentRules = this.findComponentRules(componentModules[0]);
-      }
-      return {
-        type: 'component',
-        modules: componentModules.map(absPath => ({
-          path: explicitRelative(dirname(from), absPath),
-          absPath,
-          runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-        })),
-        yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-        yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
-        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      };
+    if (jsModule == null && hbsModule == null) {
+      return null;
     }
 
-    return null;
+    let componentRules;
+    if (withRuleLookup) {
+      // the order here is important. We follow the convention that any rules
+      // get attached to the hbsModule if it exists, and only get attached to
+      // the jsModule otherwise
+      componentRules = this.findComponentRules((hbsModule ?? jsModule)!);
+    }
+    return {
+      type: 'component',
+      jsModule: jsModule
+        ? {
+            path: explicitRelative(dirname(from), jsModule),
+            absPath: jsModule,
+            runtimeName: this.absPathToRuntimeName(jsModule, targetPackage),
+          }
+        : null,
+      hbsModule: hbsModule
+        ? {
+            path: explicitRelative(dirname(from), hbsModule),
+            absPath: hbsModule,
+            runtimeName: this.absPathToRuntimeName(hbsModule, targetPackage),
+          }
+        : null,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+    };
   }
 
   resolveSubExpression(path: string, from: string, loc: Loc): HelperResolution | ResolutionFail | null {

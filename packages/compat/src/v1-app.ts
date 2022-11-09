@@ -15,7 +15,6 @@ import {
   OutputFileToInputFileMap,
   PackageInfo,
   AddonInstance,
-  TemplateTransforms,
 } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
@@ -32,6 +31,8 @@ import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
 import { MovablePackageCache } from './moved-package-cache';
+
+import type { Transform } from 'babel-plugin-ember-template-compilation';
 
 // This controls and types the interface between our new world and the classic
 // v1 app instance.
@@ -564,7 +565,7 @@ export default class V1App {
     return tree;
   }
 
-  get htmlbarsPlugins(): TemplateTransforms {
+  get htmlbarsPlugins(): Transform[] {
     let addon = this.app.project.addons.find(
       (a: AddonInstance) => a.name === 'ember-cli-htmlbars'
     ) as unknown as EmberCliHTMLBarsAddon;

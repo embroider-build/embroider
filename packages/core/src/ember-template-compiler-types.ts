@@ -1,8 +1,3 @@
-import type { Options as EtcOptions, WithJSUtils } from 'babel-plugin-ember-template-compilation';
-
-export type TemplateTransforms = NonNullable<EtcOptions['transforms']>;
-export type { WithJSUtils };
-
 export interface Plugins {
   ast?: unknown[];
 }

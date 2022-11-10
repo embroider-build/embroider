@@ -13,20 +13,6 @@ import assertNever from 'assert-never';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
-// function extendPath<N extends ASTv1.Node, K extends keyof N>(
-//   path: WalkerPath<N>,
-//   key: K
-// ): WalkerPath<N[K] extends ASTv1.Node ? N[K] : never> {
-//   const _WalkerPath = path.constructor as {
-//     new <Child extends ASTv1.Node>(
-//       node: Child,
-//       parent?: WalkerPath<ASTv1.Node> | null,
-//       parentKey?: string | null
-//     ): WalkerPath<Child>;
-//   };
-//   return new _WalkerPath(path.node[key], path, key as string);
-// }
-
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform(resolver: Resolver) {
   const resolverTransform: ASTPluginBuilder<Env> = ({
@@ -38,8 +24,6 @@ export default function makeResolverTransform(resolver: Resolver) {
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
     let errors: ResolutionFail[] = [];
-    let impliedComponentArguments: WeakMap<ASTv1.HashPair, { componentName: string; argumentName: string }> =
-      new WeakMap();
 
     function emitAMD(resolution: ResolutionResult) {
       let modules: ResolvedDep[];
@@ -150,18 +134,17 @@ export default function makeResolverTransform(resolver: Resolver) {
           });
           if (resolution?.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
               for (let name of argumentsAreComponents) {
-                let pair = node.hash.pairs.find(pair => pair.key === name);
+                let pair = pairs.find(pair => pair.node.key === name);
                 if (pair) {
-                  let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
                     componentName: (node.path as ASTv1.PathExpression).original,
                     argumentName: name,
                   });
-                  if (resolution?.type === 'error') {
-                    errors.push(resolution);
-                  } else if (resolution) {
-                    emitAMD(resolution);
-                  }
+                  emit(pair, resolution, (node, newId) => {
+                    node.value = newId;
+                  });
                 }
               }
             });
@@ -179,11 +162,9 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
           if (node.path.original === 'component' && node.params.length > 0) {
             let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
-            if (resolution?.type === 'error') {
-              errors.push(resolution);
-            } else if (resolution) {
-              emitAMD(resolution);
-            }
+            emit(path, resolution, (node, newId) => {
+              node.params[0] = newId;
+            });
             return;
           }
           if (node.path.original === 'helper' && node.params.length > 0) {
@@ -225,11 +206,9 @@ export default function makeResolverTransform(resolver: Resolver) {
             }
             if (node.path.original === 'component' && node.params.length > 0) {
               let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
-              if (resolution?.type === 'error') {
-                errors.push(resolution);
-              } else if (resolution) {
-                emitAMD(resolution);
-              }
+              emit(path, resolution, (node, newId) => {
+                node.params[0] = newId;
+              });
               return;
             }
             if (node.path.original === 'helper' && node.params.length > 0) {
@@ -242,41 +221,23 @@ export default function makeResolverTransform(resolver: Resolver) {
               node.path = newIdentifier;
             });
             if (resolution?.type === 'component') {
+              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
               for (let name of resolution.argumentsAreComponents) {
-                let pair = node.hash.pairs.find(pair => pair.key === name);
+                let pair = pairs.find(pair => pair.node.key === name);
                 if (pair) {
-                  impliedComponentArguments.set(pair, {
+                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
                     componentName: node.path.original,
                     argumentName: name,
                   });
-                  // let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                  //   componentName: node.path.original,
-                  //   argumentName: name,
-                  // });
-                  //let x = extendPath(path, 'hash');
-                  // emit(pair, resolution, (node, newId) => {
-                  //   node.value = newId;
-                  // });
-                  // if (resolution?.type === 'error') {
-                  //   errors.push(resolution);
-                  // } else if (resolution) {
-                  //   emitAMD(resolution);
-                  // }
+                  emit(pair, resolution, (node, newId) => {
+                    node.value = newId;
+                  });
                 }
               }
             }
           },
         },
-        HashPair(node, path) {
-          let reason = impliedComponentArguments.get(node);
-          if (reason) {
-            let resolution = handleComponentHelper(node.value, resolver, filename, scopeStack, reason);
-            emit(path, resolution, (node, newId) => {
-              node.value = newId;
-            });
-          }
-        },
-        ElementModifierStatement(node) {
+        ElementModifierStatement(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -299,11 +260,9 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
 
           let resolution = resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
-          if (resolution?.type === 'error') {
-            errors.push(resolution);
-          } else if (resolution) {
-            emitAMD(resolution);
-          }
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
         },
         ElementNode: {
           enter(node) {
@@ -513,5 +472,24 @@ function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, module
 function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
   if (param.type === 'StringLiteral') {
     resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
+}
+
+function extendPath<N extends ASTv1.Node, K extends keyof N>(
+  path: WalkerPath<N>,
+  key: K
+): N[K] extends ASTv1.Node ? WalkerPath<N[K]> : N[K] extends ASTv1.Node[] ? WalkerPath<N[K][0]>[] : never {
+  const _WalkerPath = path.constructor as {
+    new <Child extends ASTv1.Node>(
+      node: Child,
+      parent?: WalkerPath<ASTv1.Node> | null,
+      parentKey?: string | null
+    ): WalkerPath<Child>;
+  };
+  let child = path.node[key];
+  if (Array.isArray(child)) {
+    return child.map(c => new _WalkerPath(c, path, key as string)) as any;
+  } else {
+    return new _WalkerPath(child as any, path, key as string) as any;
   }
 }

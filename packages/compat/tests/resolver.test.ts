@@ -500,18 +500,24 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
     }).toThrow(new RegExp(`Missing component or helper: hello-world in templates/application.hbs`));
   });
-  test.skip('string literal passed to component helper in content position', function () {
-    let findDependencies = configure({
+
+  test('string literal passed to component helper in content position', function () {
+    let transform = configure({
       staticComponents: true,
     });
     givenFile('components/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{component "hello-world"}}`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{component "hello-world"}}`)).toEqualCode(`
+      import helloWorld from "../components/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate('{{component helloWorld}}', {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
+      });
+    `);
   });
+
   test.skip('string literal passed to "helper" keyword in content position', function () {
     let findDependencies = configure({
       staticHelpers: true,
@@ -728,21 +734,24 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to component helper in helper position', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('string literal passed to component helper in helper position', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('components/my-thing.js');
-    expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-      {
-        path: '../components/my-thing.js',
-        runtimeName: 'the-app/components/my-thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqualCode(`
+      import helloWorld from "../components/hello-world.js";
+      import myThing from "../components/my-thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{myThing header=(component helloWorld)}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          myThing,
+          helloWorld,
+        }),
+      });
+    `);
   });
+
   test.skip('string literal passed to "helper" keyword in helper position', function () {
     let findDependencies = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
@@ -982,16 +991,22 @@ describe('compat-resolver', function () {
     givenFile('modifiers/auto-focus.js');
     expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([]);
   });
-  test.skip('modifier on html element', function () {
-    let findDependencies = configure({ staticModifiers: true });
+
+  test('modifier on html element', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([
-      {
-        runtimeName: 'the-app/modifiers/auto-focus',
-        path: '../modifiers/auto-focus.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<input {{auto-focus}} />`)).toEqualCode(`
+      import autoFocus from "../modifiers/auto-focus.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<input {{autoFocus}} />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          autoFocus,
+        }),
+      });
+    `);
   });
+
   test.skip('modifier on component', function () {
     let findDependencies = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
@@ -1316,7 +1331,7 @@ describe('compat-resolver', function () {
     // ]);
   });
 
-  test.skip('acceptsComponentArguments on mustache block with valid literal', function () {
+  test('acceptsComponentArguments on mustache block with valid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1327,21 +1342,34 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    givenFile('templates/components/form-builder.hbs');
-    givenFile('templates/components/fancy-title.hbs');
-    expect(
-      findDependencies('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`)
-    ).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    let transform = configure({ staticComponents: true, packageRules });
+    givenFile('components/form-builder.js');
+    givenFile('components/fancy-title.js');
+    expect(transform('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`))
+      .toEqualCode(`
+      import fancyTitle from "../components/fancy-title.js";
+      import formBuilder from "../components/form-builder.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate(
+        '{{#formBuilder title=fancyTitle}} {{/formBuilder}}',
+        {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder, fancyTitle
+          }),
+        }
+      );
+    `);
+    // expect(transform('templates/application.hbs', `{{#form-builder title="fancy-title"}} {{/form-builder}}`)).toEqual([
+    //   {
+    //     runtimeName: 'the-app/templates/components/fancy-title',
+    //     path: './components/fancy-title.hbs',
+    //   },
+    //   {
+    //     runtimeName: 'the-app/templates/components/form-builder',
+    //     path: './components/form-builder.hbs',
+    //   },
+    // ]);
   });
 
   test.skip('acceptsComponentArguments argument name may include optional @', function () {

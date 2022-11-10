@@ -13,7 +13,6 @@ module.exports = {
     eqeqeq: ['error', 'smart'],
     'no-debugger': 'error',
     'no-new-wrappers': 'error',
-    'no-redeclare': 'error',
     'no-unused-labels': 'error',
     'no-var': 'error',
 

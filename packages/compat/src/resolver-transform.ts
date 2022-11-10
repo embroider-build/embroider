@@ -4,10 +4,12 @@ import {
   ComponentLocator,
   ResolutionFail,
   ResolutionResult,
+  Resolution,
 } from './resolver';
-import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment } from '@glimmer/syntax';
+import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import { ResolvedDep } from '@embroider/core/src/resolver';
+import assertNever from 'assert-never';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
@@ -40,6 +42,42 @@ export default function makeResolverTransform(resolver: Resolver) {
           });
           emittedAMDDeps.add(m.runtimeName);
         }
+      }
+    }
+
+    function emit(
+      parentPath: WalkerPath<ASTv1.SubExpression> | WalkerPath<ASTv1.MustacheStatement>,
+      pathExpression: ASTv1.PathExpression,
+      resolution: Resolution | null
+    ) {
+      const targetProperty = 'path';
+
+      switch (resolution?.type) {
+        case 'error':
+          errors.push(resolution);
+          return;
+        case 'helper':
+        case 'modifier':
+          parentPath.node[targetProperty] = builders.path(
+            jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+              nameHint: pathExpression.original,
+            })
+          );
+          return;
+        case 'component':
+          if (resolution.jsModule && !resolution.hbsModule) {
+            parentPath.node[targetProperty] = builders.path(
+              jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
+                nameHint: pathExpression.original,
+              })
+            );
+          } else {
+            emitAMD(resolution);
+          }
+        case undefined:
+          return;
+        default:
+          assertNever(resolution);
       }
     }
 
@@ -114,7 +152,7 @@ export default function makeResolverTransform(resolver: Resolver) {
             }
           }
         },
-        SubExpression(node) {
+        SubExpression(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -145,7 +183,11 @@ export default function makeResolverTransform(resolver: Resolver) {
           if (resolution?.type === 'error') {
             errors.push(resolution);
           } else if (resolution) {
-            emitAMD(resolution);
+            node.path = builders.path(
+              jsutils.bindImport(resolution.module.path, 'default', path, {
+                nameHint: node.path.original,
+              })
+            );
           }
         },
         MustacheStatement(node, path) {
@@ -180,18 +222,8 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
           let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution?.type === 'helper') {
-            emitAMD(resolution);
-          } else if (resolution?.type === 'component') {
-            if (resolution.jsModule && !resolution.hbsModule) {
-              node.path = builders.path(
-                jsutils.bindImport(resolution.jsModule.path, 'default', path, {
-                  nameHint: node.path.original,
-                })
-              );
-            } else {
-              emitAMD(resolution);
-            }
+          emit(path, node.path, resolution);
+          if (resolution?.type === 'component') {
             for (let name of resolution.argumentsAreComponents) {
               let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
               if (pair) {

@@ -873,17 +873,22 @@ describe('compat-resolver', function () {
       findDependencies('templates/application.hbs', `<HelloWorld />`);
     }).toThrow(new RegExp(`Missing component: HelloWorld in templates/application.hbs`));
   });
-  test.skip('helper in subexpression', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper in subexpression', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
-    expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
-      [
+    expect(transform('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqualCode(`
+      import array from "../helpers/array.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate(
+        "{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}",
         {
-          runtimeName: 'the-app/helpers/array',
-          path: '../helpers/array.js',
-        },
-      ]
-    );
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            array,
+          }),
+        }
+      );
+    `);
   });
   test.skip('missing subexpression with args', function () {
     let findDependencies = configure({ staticHelpers: true });
@@ -934,15 +939,19 @@ describe('compat-resolver', function () {
       },
     ]);
   });
-  test.skip('helper in bare mustache, with args', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper in bare mustache, with args', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(findDependencies('templates/application.hbs', `{{capitalize name}}`)).toEqual([
-      {
-        runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{capitalize name}}`)).toEqualCode(`
+      import capitalize from "../helpers/capitalize.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{capitalize name}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          capitalize
+        }),
+      });
+    `);
   });
   test.skip('missing modifier', function () {
     let findDependencies = configure({ staticModifiers: true });

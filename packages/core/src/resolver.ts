@@ -8,7 +8,6 @@ export interface ResolvedDep {
 
 export interface Resolver {
   astTransformer(): undefined | string | [string, unknown];
-  dependenciesOf(moduleName: string): ResolvedDep[];
 
   // this takes an absolute path to a file and gives back a path like
   // "the-package-name/path/to/the-file.js", while taking into account any

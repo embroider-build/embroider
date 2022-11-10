@@ -1,12 +1,12 @@
-import { NodeTemplateCompiler } from '@embroider/core';
-import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import { emberTemplateCompilerPath } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
+import { hbsToJS } from '@embroider/shared-internals';
+import { transformSync } from '@babel/core';
+import { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 
 const compilerPath = emberTemplateCompilerPath();
-const { cacheKey: compilerChecksum } = getEmberExports(compilerPath);
 
 export { Project };
 
@@ -18,21 +18,57 @@ export interface TemplateTransformOptions {
 }
 
 export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
-  let { plugins, setConfig } = MacrosConfig.astPlugins();
+  let { plugins, setConfig } = MacrosConfig.transforms();
   let config = MacrosConfig.for({}, '/nonexistent');
   setConfig(config);
-  let compiler = new NodeTemplateCompiler({
-    compilerPath,
-    compilerChecksum,
-    EmberENV: {},
-    plugins: {
-      ast: plugins,
-    },
-  });
+
   let transform = (templateContents: string, options: TemplateTransformOptions = {}) => {
     let filename = options.filename ?? join(__dirname, 'sample.hbs');
 
-    return compiler.applyTransforms(filename, templateContents);
+    let etcOptions: EtcOptions = {
+      compilerPath,
+      transforms: plugins as Transform[],
+      targetFormat: 'hbs',
+    };
+
+    let js = transformSync(hbsToJS(templateContents, filename), {
+      plugins: [
+        [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
+        require.resolve('@babel/plugin-transform-modules-amd'),
+      ],
+      filename,
+    })!.code!;
+
+    let deps: string[];
+    let impl: Function;
+
+    // this gets used by the eval below
+    // @ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function define(_deps: string[], _impl: Function) {
+      deps = _deps;
+      impl = _impl;
+    }
+
+    eval(js);
+    let hbs: string | undefined;
+    impl!(
+      ...deps!.map(d => {
+        switch (d) {
+          case 'exports':
+            return {};
+          case '@ember/template-compilation':
+            return {
+              precompileTemplate(theHBS: string) {
+                hbs = theHBS;
+              },
+            };
+          default:
+            throw new Error(`unexpected dependency ${d}`);
+        }
+      })
+    );
+    return hbs ?? `no hbs found`;
   };
   if (createTests.length === 2) {
     (createTests as CreateTestsWithConfig)(transform, config);

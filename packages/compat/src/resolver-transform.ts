@@ -15,7 +15,10 @@ export default function makeResolverTransform(resolver: Resolver) {
   }) => {
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
-    let errors: ResolutionFail[] = [];
+
+    function reportError(err: ResolutionFail) {
+      resolver.reportError(err, filename, contents);
+    }
 
     function emitAMD(resolution: ComponentResolution) {
       for (let m of [resolution.hbsModule, resolution.jsModule]) {
@@ -38,7 +41,7 @@ export default function makeResolverTransform(resolver: Resolver) {
     ) {
       switch (resolution?.type) {
         case 'error':
-          errors.push(resolution);
+          reportError(resolution);
           return;
         case 'helper':
         case 'modifier':
@@ -87,9 +90,6 @@ export default function makeResolverTransform(resolver: Resolver) {
           },
           exit() {
             scopeStack.pop();
-            if (errors.length > 0) {
-              throw new Error(`todo error reporting ${errors} ${contents}`);
-            }
           },
         },
         BlockStatement(node, path) {
@@ -168,7 +168,7 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
           let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
           if (resolution?.type === 'error') {
-            errors.push(resolution);
+            reportError(resolution);
           } else if (resolution) {
             node.path = builders.path(
               jsutils.bindImport(resolution.module.path, 'default', path, {

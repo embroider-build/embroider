@@ -13,7 +13,6 @@ import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import {
   AddonMeta,
-  NodeTemplateCompiler,
   debug,
   PackageCache,
   Resolver,
@@ -37,12 +36,11 @@ import {
   isColocationPlugin,
   isInlinePrecompilePlugin,
 } from './detect-babel-plugins';
-import { ResolvedDep } from '@embroider/core/src/resolver';
 import HbsToJSBroccoliPlugin from './hbs-to-js-broccoli-plugin';
 import { fromPairs } from 'lodash';
-import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
+import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 
 const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',
@@ -118,9 +116,6 @@ class V1AddonCompatResolver implements Resolver {
   astTransformer(): undefined {
     return;
   }
-  dependenciesOf(_moduleName: string): ResolvedDep[] {
-    return [];
-  }
   absPathToRuntimePath(absPath: string) {
     if (isAbsolute(absPath)) {
       return absPath;
@@ -183,26 +178,20 @@ export default class V1Addon {
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         prepHtmlbarsAstPluginsForUnwrap(this.addonInstance.registry);
         if (options.plugins.ast.length > 0) {
-          const { cacheKey: compilerChecksum } = getEmberExports(options.templateCompilerPath);
-
-          return new NodeTemplateCompiler({
+          let opts: EtcOptions = {
             compilerPath: options.templateCompilerPath,
-            compilerChecksum,
-            EmberENV: {},
-            plugins: options.plugins,
-            resolver: this.templateResolver(),
-          }).inlineTransformsBabelPlugin();
+            targetFormat: 'hbs',
+            enableLegacyModules: [
+              'ember-cli-htmlbars',
+              'ember-cli-htmlbars-inline-precompile',
+              'htmlbars-inline-precompile',
+            ],
+            transforms: options.plugins.ast as any,
+          };
+          return [require.resolve('babel-plugin-ember-template-compilation'), opts];
         }
       }
     }
-  }
-
-  @Memoize()
-  templateResolver(): Resolver {
-    return resolver({
-      root: this.app.root,
-      modulePrefix: this.moduleName,
-    });
   }
 
   private updateRegistry(registry: any) {

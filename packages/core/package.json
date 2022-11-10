@@ -11,19 +11,6 @@
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",
-  "exports": {
-    ".": {
-      "browser": "./src/browser-index.js",
-      "default": "./src/index.js"
-    },
-    "./src/messages": "./src/messages.js",
-    "./src/babel-plugin-inline-hbs": "./src/babel-plugin-inline-hbs.js",
-    "./src/babel-plugin-stage1-inline-hbs": "./src/babel-plugin-stage1-inline-hbs.js",
-    "./src/mini-modules-polyfill": "./src/mini-modules-polyfill.js",
-    "./src/load-ember-template-compiler": "./src/load-ember-template-compiler.js",
-    "./src/portable-babel-config": "./src/portable-babel-config.js",
-    "./package.json": "./package.json"
-  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

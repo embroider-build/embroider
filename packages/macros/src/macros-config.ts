@@ -392,6 +392,7 @@ export default class MacrosConfig {
     return result;
   }
 
+  // todo: type adjuments here
   // provides the ast plugins that implement the macro system
   static transforms(owningPackageRoot?: string): {
     plugins: Function[];

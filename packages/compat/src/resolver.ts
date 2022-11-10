@@ -309,43 +309,35 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  dependenciesOf(moduleName: string, contents?: string): ResolvedDep[] {
-    let flatDeps: Map<string, ResolvedDep> = new Map();
-    let deps: Resolution[] = []; // todo
-    if (deps) {
-      for (let dep of deps) {
-        if (dep.type === 'error') {
-          if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
-            let e: ResolverDependencyError = new Error(
-              `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
-            );
-            e.isTemplateResolverError = true;
-            e.loc = dep.loc;
-            e.moduleName = moduleName;
-            throw e;
-          }
-          if (this.auditHandler) {
-            this.auditHandler({
-              message: dep.message,
-              filename: moduleName,
-              detail: dep.detail,
-              loc: dep.loc,
-              source: contents!, // todo
-            });
-          }
-        } else if (dep.type === 'component') {
-          if (dep.jsModule) {
-            flatDeps.set(dep.jsModule.runtimeName, dep.jsModule);
-          }
-          if (dep.hbsModule) {
-            flatDeps.set(dep.hbsModule.runtimeName, dep.hbsModule);
-          }
-        } else {
-          flatDeps.set(dep.module.runtimeName, dep.module);
-        }
-      }
+  private humanReadableFile(file: string) {
+    if (!this.params.root.endsWith('/')) {
+      this.params.root += '/';
     }
-    return [...flatDeps.values()];
+    if (file.startsWith(this.params.root)) {
+      return file.slice(this.params.root.length);
+    }
+    return file;
+  }
+
+  reportError(dep: ResolutionFail, filename: string, source: string) {
+    if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
+      let e: ResolverDependencyError = new Error(
+        `${dep.message}: ${dep.detail} in ${this.humanReadableFile(filename)}`
+      );
+      e.isTemplateResolverError = true;
+      e.loc = dep.loc;
+      e.moduleName = filename;
+      throw e;
+    }
+    if (this.auditHandler) {
+      this.auditHandler({
+        message: dep.message,
+        filename,
+        detail: dep.detail,
+        loc: dep.loc,
+        source,
+      });
+    }
   }
 
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
@@ -849,16 +841,6 @@ export default class CompatResolver implements Resolver {
       };
     }
   }
-}
-
-function humanReadableFile(root: string, file: string) {
-  if (!root.endsWith('/')) {
-    root += '/';
-  }
-  if (file.startsWith(root)) {
-    return file.slice(root.length);
-  }
-  return file;
 }
 
 // we don't have a real Package for the app itself because the resolver has work

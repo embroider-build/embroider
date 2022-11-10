@@ -857,13 +857,15 @@ describe('compat-resolver', function () {
       )
     ).toEqual([]);
   });
-  test.skip('dynamic component helper error in content position', function () {
-    let findDependencies = configure({ staticComponents: true });
+
+  test('dynamic component helper error in content position', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     expect(() => {
-      findDependencies('templates/application.hbs', `{{component this.which}}`);
+      transform('templates/application.hbs', `{{component this.which}}`);
     }).toThrow(/Unsafe dynamic component: this\.which in templates\/application\.hbs/);
   });
+
   test.skip('angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');

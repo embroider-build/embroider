@@ -177,7 +177,7 @@ appScenarios
                 }
 
                 let components = [...document.querySelectorAll("[data-component-name]")].map(elt => elt.dataset.componentName);
-                assert.ok(components.includes('bs-button'), 'expected to find bs-button');
+                assert.ok(!components.includes('bs-button'), 'expected not to find bs-button because it got inserted via lexical scope');
 
                 if (getOwnConfig().isClassic) {
                   assert.ok(components.includes('bs-carousel'), 'expected to find bs-carousel in classic build');

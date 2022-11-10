@@ -77,7 +77,6 @@
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
-    "@types/strip-bom": "^4.0.1",
     "babel-plugin-ember-template-compilation": "2.0.0-alpha.3",
     "code-equality-assertions": "^0.7.0",
     "ember-cli-htmlbars-3": "npm:ember-cli-htmlbars@3",

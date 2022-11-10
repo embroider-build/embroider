@@ -48,10 +48,8 @@
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",
     "resolve-package-path": "^4.0.1",
-    "strip-bom": "^4.0.0",
     "typescript-memoize": "^1.0.1",
-    "walk-sync": "^3.0.0",
-    "wrap-legacy-hbs-plugin-if-needed": "^1.0.1"
+    "walk-sync": "^3.0.0"
   },
   "devDependencies": {
     "@embroider/sample-transforms": "0.0.0",
@@ -64,7 +62,6 @@
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
-    "@types/strip-bom": "^4.0.1",
     "@types/tmp": "^0.1.0",
     "fixturify": "^2.1.1",
     "tmp": "^0.1.0",

@@ -4275,6 +4275,13 @@ babel-plugin-ember-modules-api-polyfill@^3.5.0:
   dependencies:
     ember-rfc176-data "^0.3.17"
 
+babel-plugin-ember-template-compilation@2.0.0-alpha.2:
+  version "2.0.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.2.tgz#3dc0c62ae532485512700eda82e5e62e340dbba3"
+  integrity sha512-zRA/2jzy3LZkmYRDYqIlQCgALrqhQACsuACgesJ3deVTrhGbjCELbxNcKBlKsYD0XiKJ9NbqIr/nz1nIMAUblw==
+  dependencies:
+    babel-import-util "^1.2.0"
+
 babel-plugin-ember-template-compilation@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-1.0.2.tgz#e0695b8ad5a8fe6b2cbdff1eadb01cf402731ad6"
@@ -4284,13 +4291,6 @@ babel-plugin-ember-template-compilation@^1.0.0:
     line-column "^1.0.2"
     magic-string "^0.26.0"
     string.prototype.matchall "^4.0.5"
-
-babel-plugin-ember-template-compilation@^2.0.0-alpha.2:
-  version "2.0.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.2.tgz#3dc0c62ae532485512700eda82e5e62e340dbba3"
-  integrity sha512-zRA/2jzy3LZkmYRDYqIlQCgALrqhQACsuACgesJ3deVTrhGbjCELbxNcKBlKsYD0XiKJ9NbqIr/nz1nIMAUblw==
-  dependencies:
-    babel-import-util "^1.2.0"
 
 babel-plugin-filter-imports@^4.0.0:
   version "4.0.0"
@@ -7350,6 +7350,7 @@ ember-cached-decorator-polyfill@^0.1.4:
     ember-cli-babel-plugin-helpers "^1.1.1"
 
 "ember-cli-4.4@npm:ember-cli@~4.4.0", ember-cli@~4.4.0:
+  name ember-cli-4.4
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/ember-cli/-/ember-cli-4.4.1.tgz#6cd8e571808cf283a780c5c0f5eeeef6c11e055e"
   integrity sha512-+38vmpKrAYTLXzmirFQGQ/9QJHJHhNX4F1/qKh+njdZnkPHDfvqxTdewXw+6+pF68LR+/26cw1bxaWxq52/48A==
@@ -8262,6 +8263,7 @@ ember-concurrency@^2.1.2:
     ember-destroyable-polyfill "^2.0.2"
 
 "ember-data-4.4@npm:ember-data@~4.4.0", "ember-data-latest@npm:ember-data@4.4.1", ember-data@~4.4.0:
+  name ember-data-4.4
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/ember-data/-/ember-data-4.4.1.tgz#86e56d55b49986dff8ae1cc98a740c829e53961e"
   integrity sha512-Jc8a2OTX3rcnbmVwBjdeOYPSKUHWYRH+RMyDSLN3fpLp/A8pZp1Lkn3b5/ZEi9DmBRirxIDSSSPPZ6RDTMBYlQ==
@@ -8579,6 +8581,7 @@ ember-router-generator@^2.0.0:
     recast "^0.18.1"
 
 "ember-source-4.4@npm:ember-source@~4.4.0", ember-source@~4.4.0:
+  name ember-source-4.4
   version "4.4.4"
   resolved "https://registry.yarnpkg.com/ember-source/-/ember-source-4.4.4.tgz#29cd11eb61b1fab2dd11759c67d765ee8fee5487"
   integrity sha512-Ixz7HY4Td2dN78QnuhOafGxW7rYlZuSRdmvCZ0g8Qn1i2RFOZQVU7h81zQj4wFF+ijJdtnfrgG77yBhr7o0gOg==

@@ -1,14 +1,6 @@
-import {
-  default as Resolver,
-  ComponentResolution,
-  ComponentLocator,
-  ResolutionFail,
-  ResolutionResult,
-  Resolution,
-} from './resolver';
+import { default as Resolver, ComponentResolution, ComponentLocator, ResolutionFail, Resolution } from './resolver';
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
-import { ResolvedDep } from '@embroider/core/src/resolver';
 import assertNever from 'assert-never';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
@@ -25,20 +17,14 @@ export default function makeResolverTransform(resolver: Resolver) {
     let emittedAMDDeps: Set<string> = new Set();
     let errors: ResolutionFail[] = [];
 
-    function emitAMD(resolution: ResolutionResult) {
-      let modules: ResolvedDep[];
-      if (resolution.type === 'component') {
-        modules = [resolution.hbsModule, resolution.jsModule].filter(Boolean) as ResolvedDep[];
-      } else {
-        modules = [resolution.module];
-      }
-
-      for (let m of modules) {
-        if (!emittedAMDDeps.has(m.runtimeName)) {
+    function emitAMD(resolution: ComponentResolution) {
+      for (let m of [resolution.hbsModule, resolution.jsModule]) {
+        if (m && !emittedAMDDeps.has(m.runtimeName)) {
+          let parts = m.runtimeName.split('/');
+          let { path, runtimeName } = m;
           jsutils.emitExpression(context => {
-            let parts = m.runtimeName.split('/');
-            let identifier = context.import(m.path, 'default', parts[parts.length - 1]);
-            return `window.define("${m.runtimeName}", () => ${identifier})`;
+            let identifier = context.import(path, 'default', parts[parts.length - 1]);
+            return `window.define("${runtimeName}", () => ${identifier})`;
           });
           emittedAMDDeps.add(m.runtimeName);
         }
@@ -59,24 +45,29 @@ export default function makeResolverTransform(resolver: Resolver) {
           setter(
             parentPath.node,
             builders.path(
-              jsutils.bindImport(resolution.module.path, 'default', parentPath, {
-                nameHint: resolution.nameHint,
-              })
+              jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
             )
           );
           return;
         case 'component':
+          // When people are using octane-style template co-location or
+          // polaris-style first-class templates, we see only JS files for their
+          // components, because the template association is handled before
+          // we're doing any resolving here. In that case, we can safely do
+          // component invocation via lexical scope.
+          //
+          // But when people are using the older non-co-located template style,
+          // we can't safely do that -- ember needs to discover both the
+          // component and the template in the AMD loader to associate them. In
+          // that case, we emit just-in-time AMD definitions for them.
           if (resolution.jsModule && !resolution.hbsModule) {
             setter(
               parentPath.node,
               builders.path(
-                jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
-                  nameHint: resolution.nameHint,
-                })
+                jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, { nameHint: resolution.nameHint })
               )
             );
           } else {
-            // NEXT: this should be the only place calling emitAMD
             emitAMD(resolution);
           }
         case undefined:
@@ -265,31 +256,28 @@ export default function makeResolverTransform(resolver: Resolver) {
           });
         },
         ElementNode: {
-          enter(node) {
+          enter(node, path) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
               const resolution = resolver.resolveElement(node.tag, filename, node.loc);
-              if (resolution) {
-                if (resolution.type === 'error') {
-                  errors.push(resolution);
-                } else {
-                  emitAMD(resolution);
-                  scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-                    for (let name of argumentsAreComponents) {
-                      let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
-                      if (attr) {
-                        let resolution = handleComponentHelper(attr.value, resolver, filename, scopeStack, {
-                          componentName: node.tag,
-                          argumentName: name,
-                        });
-                        if (resolution?.type === 'error') {
-                          errors.push(resolution);
-                        } else if (resolution) {
-                          emitAMD(resolution);
-                        }
-                      }
+              emit(path, resolution, (node, newId) => {
+                node.tag = newId.original;
+              });
+              if (resolution?.type === 'component') {
+                scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                  let attributes = extendPath(path, 'attributes');
+                  for (let name of argumentsAreComponents) {
+                    let attr = attributes.find(attr => attr.node.name === '@' + name);
+                    if (attr) {
+                      let resolution = handleComponentHelper(attr.node.value, resolver, filename, scopeStack, {
+                        componentName: node.tag,
+                        argumentName: name,
+                      });
+                      emit(attr, resolution, (node, newId) => {
+                        node.value = builders.mustache(newId);
+                      });
                     }
-                  });
-                }
+                  }
+                });
               }
             }
             scopeStack.push(node.blockParams);

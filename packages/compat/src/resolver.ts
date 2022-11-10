@@ -730,6 +730,7 @@ export default class CompatResolver implements Resolver {
 
     let found = this.tryComponent(dName, from);
     if (found) {
+      found.nameHint = tagName;
       return this.add(found, from);
     }
 

@@ -317,15 +317,19 @@ describe('compat-resolver', function () {
     // ]);
   });
 
-  test.skip('block form angle component', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('block form angle component', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqualCode(`
+      import HelloWorld from "../components/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<HelloWorld></HelloWorld>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          HelloWorld,
+        }),
+      });
+    `);
   });
 
   test.skip('curly contextual component', function () {
@@ -1424,7 +1428,7 @@ describe('compat-resolver', function () {
     ]);
   });
 
-  test.skip('acceptsComponentArguments on element with component helper mustache', function () {
+  test('acceptsComponentArguments on element with component helper mustache', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1435,21 +1439,24 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    givenFile('templates/components/form-builder.hbs');
-    givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `<FormBuilder @title={{component "fancy-title"}} />`)).toEqual(
-      [
+    let transform = configure({ staticComponents: true, packageRules });
+    givenFile('components/form-builder.js');
+    givenFile('components/fancy-title.js');
+    expect(transform('templates/application.hbs', `<FormBuilder @title={{component "fancy-title"}} />`)).toEqualCode(`
+      import fancyTitle from "../components/fancy-title.js";
+      import FormBuilder from "../components/form-builder.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate(
+        "<FormBuilder @title={{component fancyTitle}} />",
         {
-          runtimeName: 'the-app/templates/components/fancy-title',
-          path: './components/fancy-title.hbs',
-        },
-        {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-      ]
-    );
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            FormBuilder,
+            fancyTitle,
+          }),
+        }
+      );    
+    `);
   });
 
   test.skip('acceptsComponentArguments matches co-located template', function () {
@@ -1540,7 +1547,7 @@ describe('compat-resolver', function () {
     ]);
   });
 
-  test.skip('acceptsComponentArguments on element with valid attribute', function () {
+  test('acceptsComponentArguments on element with valid attribute', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1551,19 +1558,21 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    givenFile('templates/components/form-builder.hbs');
-    givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `<FormBuilder @title="fancy-title" />`)).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    let transform = configure({ staticComponents: true, packageRules });
+    givenFile('components/form-builder.js');
+    givenFile('components/fancy-title.js');
+    expect(transform('templates/application.hbs', `<FormBuilder @title="fancy-title" />`)).toEqualCode(`
+      import fancyTitle from "../components/fancy-title.js";
+      import FormBuilder from "../components/form-builder.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<FormBuilder @title={{fancyTitle}} />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          FormBuilder,
+          fancyTitle,
+        }),
+      });
+    `);
   });
 
   test.skip('acceptsComponentArguments interior usage of path generates no warning', function () {

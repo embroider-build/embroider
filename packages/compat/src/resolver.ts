@@ -176,13 +176,6 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  private add<T extends Resolution>(resolution: T, _from: string): T {
-    // this "!" is safe because we always `enter()` a module before hitting this
-    //this.dependencies.get(from)!.push(resolution);
-    console.log('todo add');
-    return resolution;
-  }
-
   private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
     let rules = this.rules.components.get(absPath);
     if (rules) {
@@ -634,20 +627,17 @@ export default class CompatResolver implements Resolver {
     }
     let found = this.tryHelper(path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
     if (builtInHelpers.includes(path)) {
       return null;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing helper`,
-        detail: path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing helper`,
+      detail: path,
+      loc,
+    };
   }
 
   resolveMustache(
@@ -659,13 +649,13 @@ export default class CompatResolver implements Resolver {
     if (this.staticHelpersEnabled) {
       let found = this.tryHelper(path, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
     }
     if (this.staticComponentsEnabled) {
       let found = this.tryComponent(path, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
     }
     if (
@@ -675,15 +665,12 @@ export default class CompatResolver implements Resolver {
       !builtInHelpers.includes(path) &&
       !this.isIgnoredComponent(path)
     ) {
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing component or helper`,
-          detail: path,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing component or helper`,
+        detail: path,
+        loc,
+      };
     } else {
       return null;
     }
@@ -695,20 +682,17 @@ export default class CompatResolver implements Resolver {
     }
     let found = this.tryModifier(path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
     if (builtInModifiers.includes(path)) {
       return null;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing modifier`,
-        detail: path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing modifier`,
+      detail: path,
+      loc,
+    };
   }
 
   resolveElement(tagName: string, from: string, loc: Loc): ComponentResolution | ResolutionFail | null {
@@ -731,22 +715,19 @@ export default class CompatResolver implements Resolver {
     let found = this.tryComponent(dName, from);
     if (found) {
       found.nameHint = tagName;
-      return this.add(found, from);
+      return found;
     }
 
     if (this.isIgnoredComponent(dName)) {
       return null;
     }
 
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing component`,
-        detail: tagName,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing component`,
+      detail: tagName,
+      loc,
+    };
   }
 
   resolveComponentHelper(
@@ -767,30 +748,24 @@ export default class CompatResolver implements Resolver {
     }
 
     if (component.type === 'other') {
-      return this.add(
-        {
-          type: 'error',
-          message,
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message,
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
     if (component.type === 'path') {
       let ownComponentRules = this.findComponentRules(from);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }
-      return this.add(
-        {
-          type: 'error',
-          message,
-          detail: component.path,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message,
+        detail: component.path,
+        loc,
+      };
     }
 
     if (builtInComponents.includes(component.path)) {
@@ -799,17 +774,14 @@ export default class CompatResolver implements Resolver {
 
     let found = this.tryComponent(component.path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing component`,
-        detail: component.path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing component`,
+      detail: component.path,
+      loc,
+    };
   }
 
   resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): HelperResolution | ResolutionFail | null {
@@ -825,27 +797,21 @@ export default class CompatResolver implements Resolver {
 
       let found = this.tryHelper(helperName, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing helper`,
-          detail: helperName,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing helper`,
+        detail: helperName,
+        loc,
+      };
     } else {
-      return this.add(
-        {
-          type: 'error',
-          message: 'Unsafe dynamic helper',
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: 'Unsafe dynamic helper',
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
   }
 
@@ -866,27 +832,21 @@ export default class CompatResolver implements Resolver {
 
       let found = this.tryModifier(modifierName, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing modifier`,
-          detail: modifierName,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing modifier`,
+        detail: modifierName,
+        loc,
+      };
     } else {
-      return this.add(
-        {
-          type: 'error',
-          message: 'Unsafe dynamic modifier',
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: 'Unsafe dynamic modifier',
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
   }
 }

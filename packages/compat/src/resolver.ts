@@ -24,16 +24,19 @@ export interface ComponentResolution {
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
+  nameHint: string;
 }
 
 export interface HelperResolution {
   type: 'helper';
   module: ResolvedDep;
+  nameHint: string;
 }
 
 export interface ModifierResolution {
   type: 'modifier';
   module: ResolvedDep;
+  nameHint: string;
 }
 
 export type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -443,6 +446,7 @@ export default class CompatResolver implements Resolver {
             path: explicitRelative(dirname(from), absPath),
             absPath,
           },
+          nameHint: path,
         };
       }
     }
@@ -481,6 +485,7 @@ export default class CompatResolver implements Resolver {
             path: explicitRelative(dirname(from), absPath),
             absPath,
           },
+          nameHint: path,
         };
       }
     }
@@ -619,6 +624,7 @@ export default class CompatResolver implements Resolver {
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: path,
     };
   }
 

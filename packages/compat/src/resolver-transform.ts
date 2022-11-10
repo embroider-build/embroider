@@ -13,6 +13,20 @@ import assertNever from 'assert-never';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
+// function extendPath<N extends ASTv1.Node, K extends keyof N>(
+//   path: WalkerPath<N>,
+//   key: K
+// ): WalkerPath<N[K] extends ASTv1.Node ? N[K] : never> {
+//   const _WalkerPath = path.constructor as {
+//     new <Child extends ASTv1.Node>(
+//       node: Child,
+//       parent?: WalkerPath<ASTv1.Node> | null,
+//       parentKey?: string | null
+//     ): WalkerPath<Child>;
+//   };
+//   return new _WalkerPath(path.node[key], path, key as string);
+// }
+
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform(resolver: Resolver) {
   const resolverTransform: ASTPluginBuilder<Env> = ({
@@ -24,6 +38,8 @@ export default function makeResolverTransform(resolver: Resolver) {
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
     let errors: ResolutionFail[] = [];
+    let impliedComponentArguments: WeakMap<ASTv1.HashPair, { componentName: string; argumentName: string }> =
+      new WeakMap();
 
     function emitAMD(resolution: ResolutionResult) {
       let modules: ResolvedDep[];
@@ -45,33 +61,38 @@ export default function makeResolverTransform(resolver: Resolver) {
       }
     }
 
-    function emit(
-      parentPath: WalkerPath<ASTv1.SubExpression> | WalkerPath<ASTv1.MustacheStatement>,
-      pathExpression: ASTv1.PathExpression,
-      resolution: Resolution | null
+    function emit<Target extends WalkerPath<ASTv1.Node>>(
+      parentPath: Target,
+      resolution: Resolution | null,
+      setter: (target: Target['node'], newIdentifier: ASTv1.PathExpression) => void
     ) {
-      const targetProperty = 'path';
-
       switch (resolution?.type) {
         case 'error':
           errors.push(resolution);
           return;
         case 'helper':
         case 'modifier':
-          parentPath.node[targetProperty] = builders.path(
-            jsutils.bindImport(resolution.module.path, 'default', parentPath, {
-              nameHint: pathExpression.original,
-            })
+          setter(
+            parentPath.node,
+            builders.path(
+              jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+                nameHint: resolution.nameHint,
+              })
+            )
           );
           return;
         case 'component':
           if (resolution.jsModule && !resolution.hbsModule) {
-            parentPath.node[targetProperty] = builders.path(
-              jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
-                nameHint: pathExpression.original,
-              })
+            setter(
+              parentPath.node,
+              builders.path(
+                jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
+                  nameHint: resolution.nameHint,
+                })
+              )
             );
           } else {
+            // NEXT: this should be the only place calling emitAMD
             emitAMD(resolution);
           }
         case undefined:
@@ -96,7 +117,7 @@ export default function makeResolverTransform(resolver: Resolver) {
             }
           },
         },
-        BlockStatement(node) {
+        BlockStatement(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -115,41 +136,35 @@ export default function makeResolverTransform(resolver: Resolver) {
           }
           if (node.path.original === 'component' && node.params.length > 0) {
             let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
-            if (resolution?.type === 'error') {
-              errors.push(resolution);
-            } else if (resolution) {
-              emitAMD(resolution);
-            }
+            emit(path, resolution, (node, newIdentifier) => {
+              node.params[0] = newIdentifier;
+            });
             return;
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
           let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution) {
-            if (resolution.type === 'error') {
-              errors.push(resolution);
-            } else if (resolution.type === 'component') {
-              emitAMD(resolution);
-              scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-                for (let name of argumentsAreComponents) {
-                  let pair = node.hash.pairs.find(pair => pair.key === name);
-                  if (pair) {
-                    let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                      componentName: (node.path as ASTv1.PathExpression).original,
-                      argumentName: name,
-                    });
-                    if (resolution?.type === 'error') {
-                      errors.push(resolution);
-                    } else if (resolution) {
-                      emitAMD(resolution);
-                    }
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
+          if (resolution?.type === 'component') {
+            scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+              for (let name of argumentsAreComponents) {
+                let pair = node.hash.pairs.find(pair => pair.key === name);
+                if (pair) {
+                  let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                    componentName: (node.path as ASTv1.PathExpression).original,
+                    argumentName: name,
+                  });
+                  if (resolution?.type === 'error') {
+                    errors.push(resolution);
+                  } else if (resolution) {
+                    emitAMD(resolution);
                   }
                 }
-              });
-            } else if (resolution.type === 'helper') {
-              emitAMD(resolution);
-            }
+              }
+            });
           }
         },
         SubExpression(node, path) {
@@ -190,54 +205,75 @@ export default function makeResolverTransform(resolver: Resolver) {
             );
           }
         },
-        MustacheStatement(node, path) {
-          if (node.path.type !== 'PathExpression') {
-            return;
-          }
-          if (scopeStack.inScope(node.path.parts[0])) {
-            return;
-          }
-          if (node.path.this === true) {
-            return;
-          }
-          if (node.path.parts.length > 1) {
-            // paths with a dot in them (which therefore split into more than
-            // one "part") are classically understood by ember to be contextual
-            // components, which means there's nothing to resolve at this
-            // location.
-            return;
-          }
-          if (node.path.original === 'component' && node.params.length > 0) {
-            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
-            if (resolution?.type === 'error') {
-              errors.push(resolution);
-            } else if (resolution) {
-              emitAMD(resolution);
+        MustacheStatement: {
+          enter(node, path) {
+            if (node.path.type !== 'PathExpression') {
+              return;
             }
-            return;
-          }
-          if (node.path.original === 'helper' && node.params.length > 0) {
-            handleDynamicHelper(node.params[0], resolver, filename);
-            return;
-          }
-          let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          emit(path, node.path, resolution);
-          if (resolution?.type === 'component') {
-            for (let name of resolution.argumentsAreComponents) {
-              let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
-              if (pair) {
-                let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                  componentName: node.path.original,
-                  argumentName: name,
-                });
-                if (resolution?.type === 'error') {
-                  errors.push(resolution);
-                } else if (resolution) {
-                  emitAMD(resolution);
+            if (scopeStack.inScope(node.path.parts[0])) {
+              return;
+            }
+            if (node.path.this === true) {
+              return;
+            }
+            if (node.path.parts.length > 1) {
+              // paths with a dot in them (which therefore split into more than
+              // one "part") are classically understood by ember to be contextual
+              // components, which means there's nothing to resolve at this
+              // location.
+              return;
+            }
+            if (node.path.original === 'component' && node.params.length > 0) {
+              let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+              if (resolution?.type === 'error') {
+                errors.push(resolution);
+              } else if (resolution) {
+                emitAMD(resolution);
+              }
+              return;
+            }
+            if (node.path.original === 'helper' && node.params.length > 0) {
+              handleDynamicHelper(node.params[0], resolver, filename);
+              return;
+            }
+            let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
+            let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
+            emit(path, resolution, (node, newIdentifier) => {
+              node.path = newIdentifier;
+            });
+            if (resolution?.type === 'component') {
+              for (let name of resolution.argumentsAreComponents) {
+                let pair = node.hash.pairs.find(pair => pair.key === name);
+                if (pair) {
+                  impliedComponentArguments.set(pair, {
+                    componentName: node.path.original,
+                    argumentName: name,
+                  });
+                  // let resolution = handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                  //   componentName: node.path.original,
+                  //   argumentName: name,
+                  // });
+                  //let x = extendPath(path, 'hash');
+                  // emit(pair, resolution, (node, newId) => {
+                  //   node.value = newId;
+                  // });
+                  // if (resolution?.type === 'error') {
+                  //   errors.push(resolution);
+                  // } else if (resolution) {
+                  //   emitAMD(resolution);
+                  // }
                 }
               }
             }
+          },
+        },
+        HashPair(node, path) {
+          let reason = impliedComponentArguments.get(node);
+          if (reason) {
+            let resolution = handleComponentHelper(node.value, resolver, filename, scopeStack, reason);
+            emit(path, resolution, (node, newId) => {
+              node.value = newId;
+            });
           }
         },
         ElementModifierStatement(node) {

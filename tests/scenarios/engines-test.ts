@@ -67,6 +67,7 @@ let engineScenarios = appScenarios.map('engines', project => {
   project.linkDependency('ember-truth-helpers', { baseDir: __dirname });
   project.linkDependency('@embroider/macros', { baseDir: __dirname });
   project.addDependency(emberEngines());
+  project.linkDependency('@ember/legacy-built-in-components', { baseDir: __dirname });
   eagerEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
   eagerEngine.addDependency(emberEngines());
   lazyEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });

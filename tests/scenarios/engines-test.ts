@@ -33,51 +33,50 @@ function emberEngines(): Project {
   return engines;
 }
 
-let engineScenarios = appScenarios
-  .only('lts_3_28') // ember-engines doesn't have an ember 4.0 compatible release yet.
-  .map('engines', project => {
-    let eagerEngine = baseAddon();
-    let lazyEngine = baseAddon();
-    let macroSampleAddon = baseAddon();
+let engineScenarios = appScenarios.map('engines', project => {
+  let eagerEngine = baseAddon();
+  let lazyEngine = baseAddon();
+  let macroSampleAddon = baseAddon();
 
-    merge(eagerEngine.files, loadFromFixtureData('eager-engine'));
-    merge(lazyEngine.files, loadFromFixtureData('lazy-engine'));
-    merge(macroSampleAddon.files, loadFromFixtureData('macro-sample-addon'));
+  merge(eagerEngine.files, loadFromFixtureData('eager-engine'));
+  merge(lazyEngine.files, loadFromFixtureData('lazy-engine'));
+  merge(macroSampleAddon.files, loadFromFixtureData('macro-sample-addon'));
 
-    eagerEngine.pkg['ember-addon'] = {
-      configPath: 'tests/dummy/config',
-      paths: ['lib/eager-engine-helper'],
-    };
+  eagerEngine.pkg['ember-addon'] = {
+    configPath: 'tests/dummy/config',
+    paths: ['lib/eager-engine-helper'],
+  };
 
-    macroSampleAddon.pkg.name = 'macro-sample-addon';
-    eagerEngine.pkg.name = 'eager-engine';
-    eagerEngine.pkg.peerDependencies = { 'ember-engines': '*' };
-    lazyEngine.pkg.name = 'lazy-engine';
-    lazyEngine.pkg.peerDependencies = { 'ember-engines': '*' };
+  macroSampleAddon.pkg.name = 'macro-sample-addon';
+  eagerEngine.pkg.name = 'eager-engine';
+  eagerEngine.pkg.peerDependencies = { 'ember-engines': '*' };
+  lazyEngine.pkg.name = 'lazy-engine';
+  lazyEngine.pkg.peerDependencies = { 'ember-engines': '*' };
 
-    project.pkg['ember-addon'] = {
-      paths: ['lib/lazy-in-repo-engine'],
-    };
+  project.pkg['ember-addon'] = {
+    paths: ['lib/lazy-in-repo-engine'],
+  };
 
-    eagerEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
-    lazyEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
+  eagerEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
+  lazyEngine.pkg['keywords'] = ['ember-engine', 'ember-addon'];
 
-    lazyEngine.addDependency(macroSampleAddon);
-    project.addDevDependency(eagerEngine);
-    project.addDevDependency(lazyEngine);
+  lazyEngine.addDependency(macroSampleAddon);
+  project.addDevDependency(eagerEngine);
+  project.addDevDependency(lazyEngine);
 
-    project.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    project.linkDependency('@embroider/macros', { baseDir: __dirname });
-    project.addDependency(emberEngines());
-    eagerEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    eagerEngine.addDependency(emberEngines());
-    lazyEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
-    lazyEngine.addDependency(emberEngines());
-    macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
+  project.linkDependency('ember-truth-helpers', { baseDir: __dirname });
+  project.linkDependency('@embroider/macros', { baseDir: __dirname });
+  project.addDependency(emberEngines());
+  project.linkDependency('@ember/legacy-built-in-components', { baseDir: __dirname });
+  eagerEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
+  eagerEngine.addDependency(emberEngines());
+  lazyEngine.linkDependency('ember-truth-helpers', { baseDir: __dirname });
+  lazyEngine.addDependency(emberEngines());
+  macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
 
-    let engineTestFiles = loadFromFixtureData('engines-host-app');
-    merge(project.files, engineTestFiles);
-  });
+  let engineTestFiles = loadFromFixtureData('engines-host-app');
+  merge(project.files, engineTestFiles);
+});
 
 engineScenarios
   .map('without-fastboot', () => {})

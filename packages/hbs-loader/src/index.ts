@@ -1,9 +1,17 @@
 import type { LoaderContext } from 'webpack';
 import { hbsToJS } from '@embroider/core';
 
-export default function hbsLoader(this: LoaderContext<{}>, templateContent: string) {
+export interface Options {
+  compatModuleNaming?: {
+    rootDir: string;
+    modulePrefix: string;
+  };
+}
+
+export default function hbsLoader(this: LoaderContext<Options>, templateContent: string) {
+  let { compatModuleNaming } = this.getOptions();
   try {
-    return hbsToJS(templateContent, this.resourcePath);
+    return hbsToJS(templateContent, { filename: this.resourcePath, compatModuleNaming });
   } catch (error) {
     error.type = 'Template Compiler Error';
     error.file = this.resourcePath;

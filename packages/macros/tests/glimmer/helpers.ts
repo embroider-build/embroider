@@ -31,7 +31,7 @@ export function templateTests(createTests: CreateTestsWithConfig | CreateTests) 
       targetFormat: 'hbs',
     };
 
-    let js = transformSync(hbsToJS(templateContents, filename), {
+    let js = transformSync(hbsToJS(templateContents, { filename: filename }), {
       plugins: [
         [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
         require.resolve('@babel/plugin-transform-modules-amd'),

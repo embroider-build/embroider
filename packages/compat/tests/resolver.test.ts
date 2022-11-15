@@ -65,7 +65,7 @@ describe('compat-resolver', function () {
     };
 
     return function (relativePath: string, contents: string) {
-      let jsInput = hbsToJS(contents, `my-app/${relativePath}`);
+      let jsInput = hbsToJS(contents, { filename: `my-app/${relativePath}` });
       let moduleName = givenFile(relativePath);
       return transformSync(jsInput, { ...babelConfig, filename: moduleName })!.code!;
     };

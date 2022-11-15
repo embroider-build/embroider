@@ -13,7 +13,13 @@ export class Transpiler {
 
   transpile(contents: string, fileAssert: BoundExpectFile): string {
     if (fileAssert.path.endsWith('.hbs')) {
-      return transform(hbsToJS(contents), Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
+      return transform(
+        hbsToJS(contents, {
+          filename: fileAssert.fullPath,
+          compatModuleNaming: { rootDir: this.outputPath, modulePrefix: this.pkgJSON.name },
+        }),
+        Object.assign({ filename: fileAssert.fullPath }, this.babelConfig)
+      )!.code!;
     } else if (fileAssert.path.endsWith('.js')) {
       return transform(contents, Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
     } else {

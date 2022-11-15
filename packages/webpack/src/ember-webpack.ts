@@ -35,6 +35,7 @@ import { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
+import { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
 
 const debug = makeDebug('embroider:debug');
 
@@ -50,6 +51,7 @@ interface AppInfo {
   rootURL: AppMeta['root-url'];
   publicAssetURL: string;
   resolvableExtensions: AppMeta['resolvable-extensions'];
+  packageName: string;
 }
 
 // AppInfos are equal if they result in the same webpack config.
@@ -162,14 +164,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
   private examineApp(): AppInfo {
     let meta = getAppMeta(this.pathToVanillaApp);
-    let rootURL = meta['root-url'];
-    let babel = meta['babel'];
-    let resolvableExtensions = meta['resolvable-extensions'];
+    let rootURL = meta['ember-addon']['root-url'];
+    let babel = meta['ember-addon']['babel'];
+    let resolvableExtensions = meta['ember-addon']['resolvable-extensions'];
     let entrypoints = [];
     let otherAssets = [];
     let publicAssetURL = this.publicAssetURL || rootURL;
 
-    for (let relativePath of meta.assets) {
+    for (let relativePath of meta['ember-addon'].assets) {
       if (/\.html/i.test(relativePath)) {
         entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, publicAssetURL, relativePath));
       } else {
@@ -177,11 +179,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL };
+    return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL, packageName: meta.name };
   }
 
   private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
-    const { entrypoints, babel, resolvableExtensions, publicAssetURL } = appInfo;
+    const { entrypoints, babel, resolvableExtensions, publicAssetURL, packageName } = appInfo;
 
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
@@ -223,6 +225,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               ),
               {
                 loader: require.resolve('@embroider/hbs-loader'),
+                options: (() => {
+                  let options: HbsLoaderOptions = {
+                    compatModuleNaming: {
+                      rootDir: this.pathToVanillaApp,
+                      modulePrefix: packageName,
+                    },
+                  };
+                  return options;
+                })(),
               },
             ]),
           },

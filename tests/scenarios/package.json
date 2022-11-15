@@ -59,7 +59,7 @@
     "ember-data": "~3.28.0",
     "ember-data-4.4": "npm:ember-data@~4.4.0",
     "ember-data-latest": "npm:ember-data@4.4.1",
-    "ember-engines": "^0.8.17",
+    "ember-engines": "^0.8.23",
     "ember-inline-svg": "^0.2.1",
     "ember-source": "~3.28.0",
     "ember-source-4.4": "npm:ember-source@~4.4.0",

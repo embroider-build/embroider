@@ -62,7 +62,7 @@ export default class Package {
   }
 
   isLazyEngine(): boolean {
-    return this.isEngine() && get(this.packageJSON, 'ember-addon.lazy-engine');
+    return this.isEngine() && Boolean(get(this.packageJSON, 'ember-addon.lazy-engine'));
   }
 
   isV2Ember(): this is V2Package {

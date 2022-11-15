@@ -38,7 +38,7 @@ import {
   isInlinePrecompilePlugin,
 } from './detect-babel-plugins';
 import { ResolvedDep } from '@embroider/core/src/resolver';
-import TemplateCompilerBroccoliPlugin from './template-compiler-broccoli-plugin';
+import HbsToJSBroccoliPlugin from './hbs-to-js-broccoli-plugin';
 import { fromPairs } from 'lodash';
 import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
@@ -174,7 +174,7 @@ export default class V1Addon {
 
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
-  private get templateCompiler(): NodeTemplateCompiler | undefined {
+  private get templateCompilerBabelPlugin(): PluginItem | undefined {
     let htmlbars = this.addonInstance.addons.find(a => a.name === 'ember-cli-htmlbars');
     if (htmlbars) {
       let options = (htmlbars as any).htmlbarsOptions() as HTMLBarsOptions;
@@ -191,7 +191,7 @@ export default class V1Addon {
             EmberENV: {},
             plugins: options.plugins,
             resolver: this.templateResolver(),
-          });
+          }).inlineTransformsBabelPlugin();
         }
       }
     }
@@ -210,9 +210,12 @@ export default class V1Addon {
     registry.remove('js', 'ember-auto-import-analyzer');
 
     // here we're replacing the stock template compiler with our own. Ours
-    // leaves hbs files as hbs, not js. The only transformation it is supposed
-    // to do is applying any custom AST transforms and reserializing the results
-    // back to HBS.
+    // doesn't compile all the way to wire format -- it does source-to-source
+    // transformation just to process custom AST transforms, while leaving the
+    // template as a template. It does turn HBS files into equivalent JS files
+    // (because in the general case, AST transforms may need to emit values in
+    // Javascript scope), but those JS files will contain HBS strings, not wire
+    // format.
     //
     // Even when no AST transforms are registered, we'll still need to register
     // a no-op transform here to avoid an exception coming out of ember-cli like
@@ -224,8 +227,8 @@ export default class V1Addon {
       ext: 'hbs',
       _addon: this,
       toTree(this: { _addon: V1Addon }, tree: Node): Node {
-        if (this._addon.templateCompiler) {
-          return new TemplateCompilerBroccoliPlugin(tree, this._addon.templateCompiler);
+        if (this._addon.templateCompilerBabelPlugin) {
+          return new HbsToJSBroccoliPlugin(tree);
         } else {
           // when there are no custom AST transforms, we don't need to do
           // anything at all.
@@ -263,7 +266,7 @@ export default class V1Addon {
   // we need to run custom inline hbs preprocessing if there are custom hbs
   // plugins and there are inline hbs templates
   private needsInlineHBS(): boolean {
-    if (!this.templateCompiler) {
+    if (!this.templateCompilerBabelPlugin) {
       // no custom transforms
       return false;
     }
@@ -520,6 +523,12 @@ export default class V1Addon {
     // to mimic classic build
     tree = buildFunnel(tree, { destDir: this.moduleName });
 
+    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template')?.length > 0) {
+      tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
+        registry: this.addonInstance.registry,
+      });
+    }
+
     tree = this.addonInstance.preprocessJs(tree, '/', this.moduleName, {
       registry: this.addonInstance.registry,
     });
@@ -529,12 +538,6 @@ export default class V1Addon {
     tree = buildFunnel(tree, {
       srcDir: this.moduleName,
     });
-
-    if (this.addonInstance.shouldCompileTemplates() && this.addonInstance.registry.load('template')?.length > 0) {
-      tree = this.app.preprocessRegistry.preprocessTemplates(tree, {
-        registry: this.addonInstance.registry,
-      });
-    }
 
     return tree;
   }
@@ -586,8 +589,8 @@ export default class V1Addon {
       }
     }
 
-    if (this.templateCompiler) {
-      babelConfig.plugins.push(this.templateCompiler.inlineTransformsBabelPlugin());
+    if (this.templateCompilerBabelPlugin) {
+      babelConfig.plugins.push(this.templateCompilerBabelPlugin);
     }
   }
 

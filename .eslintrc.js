@@ -38,6 +38,12 @@ module.exports = {
     'n/no-missing-import': 'off',
     'n/no-unpublished-import': 'off',
 
+    /**
+     * We manage stdout and stderr output very specifically, and it doesn't always make sense to exit with an error
+     * as the error has already been printed.
+     */
+    'n/no-process-exit': 'off',
+
     'import/no-extraneous-dependencies': ['error', { devDependencies: ['packages/*/tests/**/*.ts'] }],
 
     'prettier/prettier': 'error',

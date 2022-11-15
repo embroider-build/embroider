@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { readFileSync, readJSONSync, writeFileSync } from 'fs-extra';
 import { resolve } from 'path';
 import yargs from 'yargs/yargs';

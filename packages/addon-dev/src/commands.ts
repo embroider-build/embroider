@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { ensureSymlinkSync, readJSONSync, writeJSONSync } from 'fs-extra';
 import { join } from 'path';
 import yargs from 'yargs/yargs';

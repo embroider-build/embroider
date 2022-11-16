@@ -191,7 +191,7 @@ appScenarios
             import { module, test } from 'qunit';
             import { visit } from '@ember/test-helpers';
             import { setupApplicationTest } from 'ember-qunit';
-            import { getOwnConfig } from '@embroider/macros';
+            import { getOwnConfig, dependencySatisfies } from '@embroider/macros';
 
             module('Acceptance | helpers-example', function(hooks) {
               setupApplicationTest(hooks);
@@ -206,7 +206,11 @@ appScenarios
                 );
 
                 let helpers = [...document.querySelectorAll("[data-helper-name]")].map(elt => elt.dataset.helperName);
-                assert.ok(!helpers.includes('reverse'), 'expected not to find reverse, because it is provided directly via scope');
+                if (dependencySatisfies('ember-source', '>=4.2.0-beta.0')) {
+                  assert.ok(!helpers.includes('reverse'), 'expected not to find reverse, because it is provided directly via scope');
+                } else {
+                  assert.ok(helpers.includes('reverse'), 'expected to find reverse due to patchHelpersBug');
+                }
 
                 if (getOwnConfig().isClassic) {
                   assert.ok(helpers.includes('intersect'), 'expected to find intersect');

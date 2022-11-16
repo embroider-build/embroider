@@ -1,4 +1,4 @@
-import { appScenarios, baseV2Addon } from './scenarios';
+import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -6,7 +6,7 @@ import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .map('v2-addon', project => {
+  .map('v2-addon-basics', project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
@@ -49,6 +49,47 @@ appScenarios
 
     project.addDevDependency(addon);
 
+    // a v1 addon, which will have a v2 addon as a dep
+    let intermediate = baseAddon();
+    intermediate.pkg.name = 'intermediate';
+    intermediate.linkDependency('ember-auto-import', { baseDir: __dirname });
+    merge(intermediate.files, {
+      app: {
+        components: {
+          'hello.js': 'export { default } from "intermediate/components/hello"',
+        },
+      },
+      addon: {
+        components: {
+          'hello.hbs': '<div class="intermediate-hello"><Inner /></div>',
+        },
+      },
+    });
+    project.addDevDependency(intermediate);
+
+    // the inner v2 addon, which gets consumed by `intermediate`
+    let inner = baseV2Addon();
+    inner.pkg.name = 'inner';
+    (inner.pkg as any)['ember-addon']['app-js']['./components/inner.js'] = 'app/components/inner.js';
+    merge(inner.files, {
+      app: {
+        components: {
+          'inner.js': `export { default } from 'inner/components/inner';`,
+        },
+      },
+      components: {
+        'inner.js': `
+          import Component from '@glimmer/component';
+          import { hbs } from 'ember-cli-htmlbars';
+          import { setComponentTemplate } from '@ember/component';
+          const TEMPLATE = hbs("<div class='inner'>it works</div>")
+          export default class ExampleComponent extends Component {}
+          setComponentTemplate(TEMPLATE, ExampleComponent);
+        `,
+      },
+    });
+    intermediate.addDependency(inner);
+
     merge(project.files, {
       app: {
         templates: {
@@ -71,6 +112,23 @@ appScenarios
               test('hello world', async function(assert) {
                 await visit('/');
                 assert.ok(document.querySelector('[data-test-example]'), 'it worked');
+              });
+            });
+          `,
+        },
+        intergration: {
+          'intermediate-test.js': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ember-qunit';
+            import { render } from '@ember/test-helpers';
+            import hbs from 'htmlbars-inline-precompile';
+
+            module('Integration | intermediate', function(hooks) {
+              setupRenderingTest(hooks);
+
+              test('v1 addon can invoke v2 addon through the app tree', async function(assert) {
+                await render(hbs('<Hello />'));
+                assert.dom('.intermediate-hello .inner').containsText('it works');
               });
             });
           `,

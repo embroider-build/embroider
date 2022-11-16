@@ -72,7 +72,7 @@ class PortableBabelConfig {
           // trim back down our array, because trailing undefined will get
           // converted into null via json.stringify, and babel will complain
           // about that.
-          while (dehydrated.value[dehydrated.value.length - 1] == null) {
+          while (dehydrated.value.length > 0 && dehydrated.value[dehydrated.value.length - 1] == null) {
             dehydrated.value.pop();
           }
           if (dehydrated.value.length === 1) {

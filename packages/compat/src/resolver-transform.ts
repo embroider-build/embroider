@@ -83,8 +83,8 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
               )
             );
           } else {
-            emitAMD(resolution.jsModule);
             emitAMD(resolution.hbsModule);
+            emitAMD(resolution.jsModule);
           }
         case undefined:
           return;

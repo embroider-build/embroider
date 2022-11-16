@@ -22,10 +22,6 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
 
-    function reportError(err: ResolutionFail) {
-      resolver.reportError(err, filename, contents);
-    }
-
     function emitAMD(dep: ResolvedDep | null) {
       if (dep && !emittedAMDDeps.has(dep.runtimeName)) {
         let parts = dep.runtimeName.split('/');
@@ -45,7 +41,7 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     ) {
       switch (resolution?.type) {
         case 'error':
-          reportError(resolution);
+          resolver.reportError(resolution, filename, contents);
           return;
         case 'helper':
           if (patchHelpersBug) {
@@ -184,15 +180,9 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             return;
           }
           let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
-          if (resolution?.type === 'error') {
-            reportError(resolution);
-          } else if (resolution) {
-            node.path = builders.path(
-              jsutils.bindImport(resolution.module.path, 'default', path, {
-                nameHint: node.path.original,
-              })
-            );
-          }
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
         },
         MustacheStatement: {
           enter(node, path) {

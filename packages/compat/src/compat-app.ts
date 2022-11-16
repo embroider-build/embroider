@@ -325,6 +325,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   @Memoize()
   templateResolver(): Resolver {
     return new CompatResolver({
+      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       root: this.root,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
@@ -381,6 +382,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   @Memoize()
   private internalTemplateResolver(): CompatResolver {
     return new CompatResolver({
+      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       root: this.root,
       modulePrefix: this.modulePrefix(),
       options: this.options,

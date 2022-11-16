@@ -1,4 +1,4 @@
-import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
@@ -6,7 +6,7 @@ import { hbsToJS } from '@embroider/shared-internals';
 import { transformSync } from '@babel/core';
 import { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 
-const compilerPath = emberTemplateCompilerPath();
+const compilerPath = emberTemplateCompiler().path;
 
 export { Project };
 

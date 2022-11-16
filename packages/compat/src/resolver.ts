@@ -16,6 +16,8 @@ import { ResolvedDep } from '@embroider/core/src/resolver';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
+import semver from 'semver';
+import { Options as ResolverTransformOptions } from './resolver-transform';
 
 export interface ComponentResolution {
   type: 'component';
@@ -130,6 +132,7 @@ interface RehydrationParamsBase {
   modulePrefix: string;
   podModulePrefix?: string;
   options: ResolverOptions;
+  emberVersion: string;
   activePackageRules: ActivePackageRules[];
 }
 
@@ -305,7 +308,14 @@ export default class CompatResolver implements Resolver {
 
   astTransformer(): undefined | string | [string, unknown] {
     if (this.staticComponentsEnabled || this.staticHelpersEnabled || this.staticModifiersEnabled) {
-      return [require.resolve('./resolver-transform'), this];
+      let opts: ResolverTransformOptions = {
+        resolver: this,
+        // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
+        patchHelpersBug: semver.satisfies(this.params.emberVersion, '<4.2.0-beta.0', {
+          includePrerelease: true,
+        }),
+      };
+      return [require.resolve('./resolver-transform'), opts];
     }
   }
 

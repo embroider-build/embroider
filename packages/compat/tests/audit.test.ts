@@ -1,4 +1,4 @@
-import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { AppMeta, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
@@ -26,6 +26,7 @@ describe('audit', function () {
     const resolvableExtensions = ['.js', '.hbs'];
 
     let resolver = new CompatResolver({
+      emberVersion: emberTemplateCompiler().version,
       root: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {
@@ -58,7 +59,7 @@ describe('audit', function () {
     }
 
     let etcOptions: InlinePrecompileOptions = {
-      compilerPath: emberTemplateCompilerPath(),
+      compilerPath: emberTemplateCompiler().path,
       transforms: [transform],
       enableLegacyModules: ['ember-cli-htmlbars'],
     };

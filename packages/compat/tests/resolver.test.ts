@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import { hbsToJS, tmpdir } from '@embroider/shared-internals';
 import { throwOnWarnings } from '@embroider/core';
-import { emberTemplateCompilerPath } from '@embroider/test-support';
+import { emberTemplateCompiler } from '@embroider/test-support';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
@@ -26,6 +26,7 @@ describe('compat-resolver', function () {
     appDir = realpathSync(mkdtempSync(join(tmpdir, 'embroider-compat-tests-')));
     writeJSONSync(join(appDir, 'package.json'), { name: 'the-app' });
     let resolver = new Resolver({
+      emberVersion: emberTemplateCompiler().version,
       root: appDir,
       modulePrefix: 'the-app',
       podModulePrefix: otherOptions.podModulePrefix,
@@ -43,7 +44,6 @@ describe('compat-resolver', function () {
           activeAddons: {},
           relocatedFiles: {},
           resolvableExtensions: ['.js', '.hbs'],
-          emberNeedsModulesPolyfill: false,
           appRoot: appDir,
         },
         otherOptions.adjustImportsImports
@@ -56,7 +56,7 @@ describe('compat-resolver', function () {
       transforms.push(resolverTransform);
     }
     let etcOptions: EtcOptions = {
-      compilerPath: emberTemplateCompilerPath(),
+      compilerPath: emberTemplateCompiler().path,
       transforms,
       targetFormat: 'hbs',
     };

@@ -2,11 +2,17 @@ import { default as Resolver, ComponentResolution, ComponentLocator, ResolutionF
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
+import { ResolvedDep } from '@embroider/core/src/resolver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 
+export interface Options {
+  resolver: Resolver;
+  patchHelpersBug: boolean;
+}
+
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform(resolver: Resolver) {
+export default function makeResolverTransform({ resolver, patchHelpersBug }: Options) {
   const resolverTransform: ASTPluginBuilder<Env> = ({
     filename,
     contents,
@@ -20,17 +26,15 @@ export default function makeResolverTransform(resolver: Resolver) {
       resolver.reportError(err, filename, contents);
     }
 
-    function emitAMD(resolution: ComponentResolution) {
-      for (let m of [resolution.hbsModule, resolution.jsModule]) {
-        if (m && !emittedAMDDeps.has(m.runtimeName)) {
-          let parts = m.runtimeName.split('/');
-          let { path, runtimeName } = m;
-          jsutils.emitExpression(context => {
-            let identifier = context.import(path, 'default', parts[parts.length - 1]);
-            return `window.define("${runtimeName}", () => ${identifier})`;
-          });
-          emittedAMDDeps.add(m.runtimeName);
-        }
+    function emitAMD(dep: ResolvedDep | null) {
+      if (dep && !emittedAMDDeps.has(dep.runtimeName)) {
+        let parts = dep.runtimeName.split('/');
+        let { path, runtimeName } = dep;
+        jsutils.emitExpression(context => {
+          let identifier = context.import(path, 'default', parts[parts.length - 1]);
+          return `window.define("${runtimeName}", () => ${identifier})`;
+        });
+        emittedAMDDeps.add(dep.runtimeName);
       }
     }
 
@@ -44,6 +48,18 @@ export default function makeResolverTransform(resolver: Resolver) {
           reportError(resolution);
           return;
         case 'helper':
+          if (patchHelpersBug) {
+            // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
+            emitAMD(resolution.module);
+          } else {
+            setter(
+              parentPath.node,
+              builders.path(
+                jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
+              )
+            );
+          }
+          return;
         case 'modifier':
           setter(
             parentPath.node,
@@ -71,7 +87,8 @@ export default function makeResolverTransform(resolver: Resolver) {
               )
             );
           } else {
-            emitAMD(resolution);
+            emitAMD(resolution.jsModule);
+            emitAMD(resolution.hbsModule);
           }
         case undefined:
           return;

@@ -4179,10 +4179,10 @@ babel-plugin-ember-modules-api-polyfill@^3.5.0:
   dependencies:
     ember-rfc176-data "^0.3.17"
 
-babel-plugin-ember-template-compilation@2.0.0-alpha.3:
-  version "2.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.3.tgz#4f096203e599f27b18ae3d971e4b1b7d036d86d6"
-  integrity sha512-o/DKCH9dazv4R/aBMNkYH69KGBvSxA+DEK7DURd+OnANHHJ581uSlxNrwjAWoSBrXaN1NK/gHj83jTn/IG65oQ==
+babel-plugin-ember-template-compilation@2.0.0-alpha.4:
+  version "2.0.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/babel-plugin-ember-template-compilation/-/babel-plugin-ember-template-compilation-2.0.0-alpha.4.tgz#59b64d57b94070de311cbbccaf4bba2e6d4d96a0"
+  integrity sha512-YwW1Ub/UYcMw0Ttf5FMZYjKgQpr5EcyekZVTvvvqOQCXzTWM7dQgYNv6GUFzx6D/V1pDFnJt7ehnrUUln+weGg==
   dependencies:
     babel-import-util "^1.3.0"
 

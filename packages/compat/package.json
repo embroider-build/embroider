@@ -34,6 +34,7 @@
     "@types/babel__code-frame": "^7.0.2",
     "@types/yargs": "^17.0.3",
     "assert-never": "^1.1.0",
+    "babel-plugin-ember-template-compilation": "^1.0.2",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babylon": "^6.18.0",
     "bind-decorator": "^1.0.11",
@@ -85,7 +86,9 @@
     "typescript": "*"
   },
   "peerDependencies": {
-    "@embroider/core": "^1.8.3"
+    "@embroider/core": "^1.8.3",
+    "ember-cli": "^3.16.0 || ^4.0.0",
+    "ember-cli-htmlbars": "^4..0.0 || ^5.0.0 || ^6.0.0"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

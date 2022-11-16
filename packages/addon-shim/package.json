@@ -20,14 +20,16 @@
   },
   "dependencies": {
     "@embroider/shared-internals": "^1.8.3",
-    "broccoli-funnel": "^3.0.8",
-    "semver": "^7.3.8"
+    "semver": "^7.3.8",
+    "broccoli-funnel": "^3.0.8"
   },
   "devDependencies": {
     "@types/semver": "^7.3.6",
-    "broccoli-node-api": "^1.7.0",
     "typescript": "*",
-    "webpack": "^5"
+    "webpack": "^5",
+    "eslint-plugin-n": "^15.5.1",
+    "eslint": "^7.14.0",
+    "broccoli-node-api": "^1.7.0"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

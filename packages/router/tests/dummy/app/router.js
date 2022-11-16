@@ -1,3 +1,5 @@
+// Disabled because dummy apps are invalid packages
+// eslint-disable-next-line n/no-extraneous-import
 import EmberRouter from '@embroider/router';
 import config from 'dummy/config/environment';
 

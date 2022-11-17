@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { dirname, isAbsolute, join, relative } from 'path';
+import { dirname, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import buildFunnel, { Options as FunnelOptions } from 'broccoli-funnel';
@@ -11,16 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import {
-  AddonMeta,
-  NodeTemplateCompiler,
-  debug,
-  PackageCache,
-  Resolver,
-  extensionsPattern,
-  AddonInstance,
-  AddonTreePath,
-} from '@embroider/core';
+import { AddonMeta, debug, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -37,12 +28,11 @@ import {
   isColocationPlugin,
   isInlinePrecompilePlugin,
 } from './detect-babel-plugins';
-import { ResolvedDep } from '@embroider/core/src/resolver';
 import HbsToJSBroccoliPlugin from './hbs-to-js-broccoli-plugin';
 import { fromPairs } from 'lodash';
-import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
+import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 
 const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',
@@ -85,57 +75,6 @@ const defaultMethods = {
 
 const appPublicationDir = '_app_';
 const fastbootPublicationDir = '_fastboot_';
-
-/**
- * Creating a interface here just to keep the Resolver's structure as it is.
- */
-interface ResolverParams {
-  root: string;
-  modulePrefix: string;
-}
-
-export function resolver(params: ResolverParams): V1AddonCompatResolver {
-  return new V1AddonCompatResolver(params);
-}
-
-class V1AddonCompatResolver implements Resolver {
-  params: ResolverParams;
-
-  _parallelBabel: {
-    requireFile: string;
-    buildUsing: string;
-    params: ResolverParams;
-  };
-
-  constructor(params: ResolverParams) {
-    this.params = params;
-    this._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'resolver',
-      params,
-    };
-  }
-  astTransformer(_templateCompiler: NodeTemplateCompiler): unknown {
-    return;
-  }
-  dependenciesOf(_moduleName: string): ResolvedDep[] {
-    return [];
-  }
-  absPathToRuntimePath(absPath: string) {
-    if (isAbsolute(absPath)) {
-      return absPath;
-    }
-    return join(this.params.modulePrefix, absPath);
-  }
-  absPathToRuntimeName(absPath: string) {
-    return this.absPathToRuntimePath(absPath)
-      .replace(extensionsPattern(['.js', '.hbs']), '')
-      .replace(/\/index$/, '');
-  }
-  get adjustImportsOptions(): Resolver['adjustImportsOptions'] {
-    throw new Error(`bug: the addon compat resolver only supports absPath mapping`);
-  }
-}
 
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.
@@ -183,26 +122,20 @@ export default class V1Addon {
         options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
         prepHtmlbarsAstPluginsForUnwrap(this.addonInstance.registry);
         if (options.plugins.ast.length > 0) {
-          const { cacheKey: compilerChecksum } = getEmberExports(options.templateCompilerPath);
-
-          return new NodeTemplateCompiler({
+          let opts: EtcOptions = {
             compilerPath: options.templateCompilerPath,
-            compilerChecksum,
-            EmberENV: {},
-            plugins: options.plugins,
-            resolver: this.templateResolver(),
-          }).inlineTransformsBabelPlugin();
+            targetFormat: 'hbs',
+            enableLegacyModules: [
+              'ember-cli-htmlbars',
+              'ember-cli-htmlbars-inline-precompile',
+              'htmlbars-inline-precompile',
+            ],
+            transforms: options.plugins.ast as any,
+          };
+          return [require.resolve('babel-plugin-ember-template-compilation'), opts];
         }
       }
     }
-  }
-
-  @Memoize()
-  templateResolver(): Resolver {
-    return resolver({
-      root: this.app.root,
-      modulePrefix: this.moduleName,
-    });
   }
 
   private updateRegistry(registry: any) {

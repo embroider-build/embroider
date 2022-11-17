@@ -92,8 +92,9 @@ export function applyVariantToBabelConfig(variant: Variant, babelConfig: any) {
 /**
  * Get the app meta-data for a package
  */
-export function getAppMeta(pathToVanillaApp: string): AppMeta {
-  return JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'))['ember-addon'] as AppMeta;
+export function getAppMeta(pathToVanillaApp: string) {
+  let pkg = JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'));
+  return pkg as unknown as { name: string; 'ember-addon': AppMeta };
 }
 
 /**

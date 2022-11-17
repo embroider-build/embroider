@@ -26,7 +26,7 @@ describe('getAppMeta', () => {
   });
 
   test('reading the app metadata from a package', () => {
-    const meta: AppMeta = getAppMeta(name);
+    const meta: AppMeta = getAppMeta(name)['ember-addon'];
     expect(meta).toMatchObject({
       version: 2,
       type: 'app',

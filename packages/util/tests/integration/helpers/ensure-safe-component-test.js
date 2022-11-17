@@ -7,9 +7,17 @@ import Component from '@glimmer/component';
 import templateOnlyComponent from '@ember/component/template-only';
 import { setupDeprecationAssertions } from '../../deprecation-assertions';
 import { ensureSafeComponent } from '@embroider/util';
-import SomeComponent from 'dummy/components/some-component';
+import * as SomeComponentModule from 'dummy/components/some-component';
 import ColocatedExample from 'dummy/components/colocated-example';
 import { setOwner } from '@ember/application';
+
+const SomeComponent = SomeComponentModule.default;
+
+// this is here so we can test string resolution even under Embroider with
+// staticComponents where it would otherwise not be guaranteed to work.
+window.define('dummy/components/some-component', () => {
+  return SomeComponentModule;
+});
 
 module('Integration | Helper | ensure-safe-component', function (hooks) {
   setupRenderingTest(hooks);
@@ -92,7 +100,6 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
   });
 
   test('template helper with curried component value', async function (assert) {
-    this.set('name', 'some-component');
     this.inner = ensureSafeComponent(
       setComponentTemplate(
         hbs`

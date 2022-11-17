@@ -6,42 +6,44 @@ import {
   PreprocessedComponentRule,
   preprocessComponentRule,
 } from './dependency-rules';
-import {
-  Package,
-  PackageCache,
-  Resolver,
-  TemplateCompiler,
-  explicitRelative,
-  extensionsPattern,
-} from '@embroider/core';
+import { Package, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
 import { dirname, join, relative, sep } from 'path';
 
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
-import { ResolvedDep } from '@embroider/core/src/resolver';
-import { dasherize } from './dasherize-component-name';
-import { makeResolverTransform } from './resolver-transform';
+import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
-import type { ASTv1 } from '@glimmer/syntax';
+import semver from 'semver';
+import { Options as ResolverTransformOptions } from './resolver-transform';
+
+export interface ResolvedDep {
+  runtimeName: string;
+  path: string;
+  absPath: string;
+}
 
 export interface ComponentResolution {
   type: 'component';
-  modules: ResolvedDep[];
+  jsModule: ResolvedDep | null;
+  hbsModule: ResolvedDep | null;
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
+  nameHint: string;
 }
 
 export interface HelperResolution {
   type: 'helper';
-  modules: ResolvedDep[];
+  module: ResolvedDep;
+  nameHint: string;
 }
 
 export interface ModifierResolution {
   type: 'modifier';
-  modules: ResolvedDep[];
+  module: ResolvedDep;
+  nameHint: string;
 }
 
 export type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -135,6 +137,7 @@ interface RehydrationParamsBase {
   modulePrefix: string;
   podModulePrefix?: string;
   options: ResolverOptions;
+  emberVersion: string;
   activePackageRules: ActivePackageRules[];
 }
 
@@ -160,11 +163,8 @@ export interface AuditMessage {
   filename: string;
 }
 
-export default class CompatResolver implements Resolver {
-  private dependencies: Map<string, Resolution[]> = new Map();
-  private templateCompiler: TemplateCompiler | undefined;
+export default class CompatResolver {
   private auditHandler: undefined | ((msg: AuditMessage) => void);
-  private currentContents: string | undefined;
 
   _parallelBabel: {
     requireFile: string;
@@ -182,24 +182,6 @@ export default class CompatResolver implements Resolver {
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
-  }
-
-  enter(moduleName: string, contents: string) {
-    let rules = this.findComponentRules(moduleName);
-    let deps: Resolution[];
-    if (rules?.dependsOnComponents) {
-      deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
-    } else {
-      deps = [];
-    }
-    this.dependencies.set(moduleName, deps);
-    this.currentContents = contents;
-  }
-
-  private add(resolution: Resolution, from: string) {
-    // this "!" is safe because we always `enter()` a module before hitting this
-    this.dependencies.get(from)!.push(resolution);
-    return resolution;
   }
 
   private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
@@ -242,12 +224,6 @@ export default class CompatResolver implements Resolver {
 
   @Memoize()
   private get rules() {
-    if (!this.templateCompiler) {
-      throw new Error(
-        `Bug: Resolver needs to get linked into a TemplateCompiler before it can understand packageRules`
-      );
-    }
-
     // keyed by their first resolved dependency's runtimeName.
     let components: Map<string, PreprocessedComponentRule> = new Map();
 
@@ -264,7 +240,11 @@ export default class CompatResolver implements Resolver {
             ignoredComponents.push(this.standardDasherize(snippet, rule));
             continue;
           }
-          let resolvedDep = this.resolveComponentSnippet(snippet, rule).modules[0];
+          let resolvedSnippet = this.resolveComponentSnippet(snippet, rule);
+
+          // cast is OK here because a component must have one or the other
+          let resolvedDep = (resolvedSnippet.hbsModule ?? resolvedSnippet.jsModule)!;
+
           let processedRules = preprocessComponentRule(componentRules);
 
           // we always register our rules on the component's own first resolved
@@ -314,10 +294,7 @@ export default class CompatResolver implements Resolver {
     snippet: string,
     rule: PackageRules | ModuleRules,
     from = 'rule-snippet.hbs'
-  ): ResolutionResult & { type: 'component' } {
-    if (!this.templateCompiler) {
-      throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
-    }
+  ): ComponentResolution {
     let name = this.standardDasherize(snippet, rule);
     let found = this.tryComponent(name, from, false);
     if (found && found.type === 'component') {
@@ -327,77 +304,55 @@ export default class CompatResolver implements Resolver {
   }
 
   private standardDasherize(snippet: string, rule: PackageRules | ModuleRules): string {
-    if (!this.templateCompiler) {
-      throw new Error(`bug: tried to use resolveComponentSnippet without a templateCompiler`);
-    }
-    let ast: ASTv1.Template | ASTv1.Program;
-    try {
-      ast = this.templateCompiler.parse('snippet.hbs', snippet) as unknown as ASTv1.Template | ASTv1.Program;
-    } catch (err) {
+    let name = snippetToDasherizedName(snippet);
+    if (name == null) {
       throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);
     }
-    if ((ast.type === 'Program' || ast.type === 'Template') && ast.body.length > 0) {
-      let first = ast.body[0];
-      const isMustachePath = first.type === 'MustacheStatement' && first.path.type === 'PathExpression';
-      const isComponent =
-        isMustachePath && ((first as ASTv1.MustacheStatement).path as ASTv1.PathExpression).original === 'component';
-      const hasStringParam =
-        isComponent &&
-        Array.isArray((first as ASTv1.MustacheStatement).params) &&
-        (first as ASTv1.MustacheStatement).params[0].type === 'StringLiteral';
-      if (isMustachePath && isComponent && hasStringParam) {
-        return ((first as ASTv1.MustacheStatement).params[0] as ASTv1.StringLiteral).value;
-      }
-      if (isMustachePath) {
-        return ((first as ASTv1.MustacheStatement).path as ASTv1.PathExpression).original;
-      }
-      if (first.type === 'ElementNode') {
-        return dasherize(first.tag);
-      }
-    }
-    throw new Error(`cannot identify a component in rule snippet: "${snippet}"`);
+    return name;
   }
 
-  astTransformer(templateCompiler: TemplateCompiler): unknown {
-    this.templateCompiler = templateCompiler;
+  astTransformer(): undefined | string | [string, unknown] {
     if (this.staticComponentsEnabled || this.staticHelpersEnabled || this.staticModifiersEnabled) {
-      return makeResolverTransform(this);
+      let opts: ResolverTransformOptions = {
+        resolver: this,
+        // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
+        patchHelpersBug: semver.satisfies(this.params.emberVersion, '<4.2.0-beta.0', {
+          includePrerelease: true,
+        }),
+      };
+      return [require.resolve('./resolver-transform'), opts];
     }
   }
 
-  dependenciesOf(moduleName: string): ResolvedDep[] {
-    let flatDeps: Map<string, ResolvedDep> = new Map();
-    let deps = this.dependencies.get(moduleName);
-    if (deps) {
-      for (let dep of deps) {
-        if (dep.type === 'error') {
-          if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
-            let e: ResolverDependencyError = new Error(
-              `${dep.message}: ${dep.detail} in ${humanReadableFile(this.params.root, moduleName)}`
-            );
-            e.isTemplateResolverError = true;
-            e.loc = dep.loc;
-            e.moduleName = moduleName;
-            throw e;
-          }
-          if (this.auditHandler) {
-            this.auditHandler({
-              message: dep.message,
-              filename: moduleName,
-              detail: dep.detail,
-              loc: dep.loc,
-              source: this.currentContents!,
-            });
-          }
-        } else {
-          for (let entry of dep.modules) {
-            let { runtimeName } = entry;
-            flatDeps.set(runtimeName, entry);
-          }
-        }
-      }
+  private humanReadableFile(file: string) {
+    if (!this.params.root.endsWith('/')) {
+      this.params.root += '/';
     }
-    return [...flatDeps.values()];
+    if (file.startsWith(this.params.root)) {
+      return file.slice(this.params.root.length);
+    }
+    return file;
+  }
+
+  reportError(dep: ResolutionFail, filename: string, source: string) {
+    if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
+      let e: ResolverDependencyError = new Error(
+        `${dep.message}: ${dep.detail} in ${this.humanReadableFile(filename)}`
+      );
+      e.isTemplateResolverError = true;
+      e.loc = dep.loc;
+      e.moduleName = filename;
+      throw e;
+    }
+    if (this.auditHandler) {
+      this.auditHandler({
+        message: dep.message,
+        filename,
+        detail: dep.detail,
+        loc: dep.loc,
+        source,
+      });
+    }
   }
 
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
@@ -423,7 +378,7 @@ export default class CompatResolver implements Resolver {
     return extensionsPattern(this.adjustImportsOptions.resolvableExtensions);
   }
 
-  absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
     let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
@@ -459,7 +414,7 @@ export default class CompatResolver implements Resolver {
     return this.params.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private tryHelper(path: string, from: string): Resolution | null {
+  private tryHelper(path: string, from: string): HelperResolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
       let cache = PackageCache.shared('embroider-stage3', this.params.root);
@@ -476,26 +431,29 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  private _tryHelper(path: string, from: string, targetPackage: Package | AppPackagePlaceholder): Resolution | null {
+  private _tryHelper(
+    path: string,
+    from: string,
+    targetPackage: Package | AppPackagePlaceholder
+  ): HelperResolution | null {
     for (let extension of this.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(targetPackage.root, 'helpers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
           type: 'helper',
-          modules: [
-            {
-              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-              path: explicitRelative(dirname(from), absPath),
-              absPath,
-            },
-          ],
+          module: {
+            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
+            path: explicitRelative(dirname(from), absPath),
+            absPath,
+          },
+          nameHint: path,
         };
       }
     }
     return null;
   }
 
-  private tryModifier(path: string, from: string): Resolution | null {
+  private tryModifier(path: string, from: string): ModifierResolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
       let cache = PackageCache.shared('embroider-stage3', this.params.root);
@@ -512,19 +470,22 @@ export default class CompatResolver implements Resolver {
     }
   }
 
-  private _tryModifier(path: string, from: string, targetPackage: Package | AppPackagePlaceholder): Resolution | null {
+  private _tryModifier(
+    path: string,
+    from: string,
+    targetPackage: Package | AppPackagePlaceholder
+  ): ModifierResolution | null {
     for (let extension of this.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(targetPackage.root, 'modifiers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
           type: 'modifier',
-          modules: [
-            {
-              runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-              path: explicitRelative(dirname(from), absPath),
-              absPath,
-            },
-          ],
+          module: {
+            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
+            path: explicitRelative(dirname(from), absPath),
+            absPath,
+          },
+          nameHint: path,
         };
       }
     }
@@ -536,7 +497,7 @@ export default class CompatResolver implements Resolver {
     return { root: this.params.root, name: this.params.modulePrefix };
   }
 
-  private tryComponent(path: string, from: string, withRuleLookup = true): Resolution | null {
+  private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
       let cache = PackageCache.shared('embroider-stage3', this.params.root);
@@ -559,28 +520,23 @@ export default class CompatResolver implements Resolver {
     from: string,
     withRuleLookup: boolean,
     targetPackage: Package | AppPackagePlaceholder
-  ): Resolution | null {
-    // The order here is important! We always put our .hbs paths first here, so
-    // that if we have an hbs file of our own, that will be the first resolved
-    // dependency. The first resolved dependency is special because we use that
-    // as a key into the rules, and we want to be able to find our rules when
-    // checking from our own template (among other times).
-
+  ): ComponentResolution | null {
     let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter((e: string) => e !== '.hbs')];
 
-    let componentModules = [] as string[];
+    let hbsModule: string | undefined;
+    let jsModule: string | undefined;
 
     // first, the various places our template might be
     for (let extension of extensions) {
       let absPath = join(targetPackage.root, 'templates', 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        hbsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path, 'template') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        hbsModule = absPath;
         break;
       }
 
@@ -593,7 +549,7 @@ export default class CompatResolver implements Resolver {
 
         absPath = join(targetPackage.root, podPrefix, 'components', path, 'template') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push(absPath);
+          hbsModule = absPath;
           break;
         }
       }
@@ -607,19 +563,19 @@ export default class CompatResolver implements Resolver {
 
       let absPath = join(targetPackage.root, 'components', path, 'index') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path) + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
       absPath = join(targetPackage.root, 'components', path, 'component') + extension;
       if (pathExistsSync(absPath)) {
-        componentModules.push(absPath);
+        jsModule = absPath;
         break;
       }
 
@@ -632,66 +588,81 @@ export default class CompatResolver implements Resolver {
 
         absPath = join(targetPackage.root, podPrefix, 'components', path, 'component') + extension;
         if (pathExistsSync(absPath)) {
-          componentModules.push(absPath);
+          jsModule = absPath;
           break;
         }
       }
     }
 
-    if (componentModules.length > 0) {
-      let componentRules;
-      if (withRuleLookup) {
-        componentRules = this.findComponentRules(componentModules[0]);
-      }
-      return {
-        type: 'component',
-        modules: componentModules.map(absPath => ({
-          path: explicitRelative(dirname(from), absPath),
-          absPath,
-          runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-        })),
-        yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-        yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
-        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      };
+    if (jsModule == null && hbsModule == null) {
+      return null;
     }
 
-    return null;
+    let componentRules;
+    if (withRuleLookup) {
+      // the order here is important. We follow the convention that any rules
+      // get attached to the hbsModule if it exists, and only get attached to
+      // the jsModule otherwise
+      componentRules = this.findComponentRules((hbsModule ?? jsModule)!);
+    }
+    return {
+      type: 'component',
+      jsModule: jsModule
+        ? {
+            path: explicitRelative(dirname(from), jsModule),
+            absPath: jsModule,
+            runtimeName: this.absPathToRuntimeName(jsModule, targetPackage),
+          }
+        : null,
+      hbsModule: hbsModule
+        ? {
+            path: explicitRelative(dirname(from), hbsModule),
+            absPath: hbsModule,
+            runtimeName: this.absPathToRuntimeName(hbsModule, targetPackage),
+          }
+        : null,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: path,
+    };
   }
 
-  resolveSubExpression(path: string, from: string, loc: Loc): Resolution | null {
+  resolveSubExpression(path: string, from: string, loc: Loc): HelperResolution | ResolutionFail | null {
     if (!this.staticHelpersEnabled) {
       return null;
     }
     let found = this.tryHelper(path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
     if (builtInHelpers.includes(path)) {
       return null;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing helper`,
-        detail: path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing helper`,
+      detail: path,
+      loc,
+    };
   }
 
-  resolveMustache(path: string, hasArgs: boolean, from: string, loc: Loc): Resolution | null {
+  resolveMustache(
+    path: string,
+    hasArgs: boolean,
+    from: string,
+    loc: Loc
+  ): HelperResolution | ComponentResolution | ResolutionFail | null {
     if (this.staticHelpersEnabled) {
       let found = this.tryHelper(path, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
     }
     if (this.staticComponentsEnabled) {
       let found = this.tryComponent(path, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
     }
     if (
@@ -701,43 +672,37 @@ export default class CompatResolver implements Resolver {
       !builtInHelpers.includes(path) &&
       !this.isIgnoredComponent(path)
     ) {
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing component or helper`,
-          detail: path,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing component or helper`,
+        detail: path,
+        loc,
+      };
     } else {
       return null;
     }
   }
 
-  resolveElementModifierStatement(path: string, from: string, loc: Loc): Resolution | null {
+  resolveElementModifierStatement(path: string, from: string, loc: Loc): ModifierResolution | ResolutionFail | null {
     if (!this.staticModifiersEnabled) {
       return null;
     }
     let found = this.tryModifier(path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
     if (builtInModifiers.includes(path)) {
       return null;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing modifier`,
-        detail: path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing modifier`,
+      detail: path,
+      loc,
+    };
   }
 
-  resolveElement(tagName: string, from: string, loc: Loc): Resolution | null {
+  resolveElement(tagName: string, from: string, loc: Loc): ComponentResolution | ResolutionFail | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
@@ -756,22 +721,20 @@ export default class CompatResolver implements Resolver {
 
     let found = this.tryComponent(dName, from);
     if (found) {
-      return this.add(found, from);
+      found.nameHint = tagName;
+      return found;
     }
 
     if (this.isIgnoredComponent(dName)) {
       return null;
     }
 
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing component`,
-        detail: tagName,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing component`,
+      detail: tagName,
+      loc,
+    };
   }
 
   resolveComponentHelper(
@@ -779,7 +742,7 @@ export default class CompatResolver implements Resolver {
     from: string,
     loc: Loc,
     impliedBecause?: { componentName: string; argumentName: string }
-  ): Resolution | null {
+  ): ComponentResolution | ResolutionFail | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
@@ -792,30 +755,24 @@ export default class CompatResolver implements Resolver {
     }
 
     if (component.type === 'other') {
-      return this.add(
-        {
-          type: 'error',
-          message,
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message,
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
     if (component.type === 'path') {
       let ownComponentRules = this.findComponentRules(from);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }
-      return this.add(
-        {
-          type: 'error',
-          message,
-          detail: component.path,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message,
+        detail: component.path,
+        loc,
+      };
     }
 
     if (builtInComponents.includes(component.path)) {
@@ -824,20 +781,17 @@ export default class CompatResolver implements Resolver {
 
     let found = this.tryComponent(component.path, from);
     if (found) {
-      return this.add(found, from);
+      return found;
     }
-    return this.add(
-      {
-        type: 'error',
-        message: `Missing component`,
-        detail: component.path,
-        loc,
-      },
-      from
-    );
+    return {
+      type: 'error',
+      message: `Missing component`,
+      detail: component.path,
+      loc,
+    };
   }
 
-  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): Resolution | null {
+  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): HelperResolution | ResolutionFail | null {
     if (!this.staticHelpersEnabled) {
       return null;
     }
@@ -850,31 +804,29 @@ export default class CompatResolver implements Resolver {
 
       let found = this.tryHelper(helperName, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing helper`,
-          detail: helperName,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing helper`,
+        detail: helperName,
+        loc,
+      };
     } else {
-      return this.add(
-        {
-          type: 'error',
-          message: 'Unsafe dynamic helper',
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: 'Unsafe dynamic helper',
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
   }
 
-  resolveDynamicModifier(modifier: ComponentLocator, from: string, loc: Loc): Resolution | null {
+  resolveDynamicModifier(
+    modifier: ComponentLocator,
+    from: string,
+    loc: Loc
+  ): ModifierResolution | ResolutionFail | null {
     if (!this.staticModifiersEnabled) {
       return null;
     }
@@ -887,39 +839,23 @@ export default class CompatResolver implements Resolver {
 
       let found = this.tryModifier(modifierName, from);
       if (found) {
-        return this.add(found, from);
+        return found;
       }
-      return this.add(
-        {
-          type: 'error',
-          message: `Missing modifier`,
-          detail: modifierName,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: `Missing modifier`,
+        detail: modifierName,
+        loc,
+      };
     } else {
-      return this.add(
-        {
-          type: 'error',
-          message: 'Unsafe dynamic modifier',
-          detail: `cannot statically analyze this expression`,
-          loc,
-        },
-        from
-      );
+      return {
+        type: 'error',
+        message: 'Unsafe dynamic modifier',
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
     }
   }
-}
-
-function humanReadableFile(root: string, file: string) {
-  if (!root.endsWith('/')) {
-    root += '/';
-  }
-  if (file.startsWith(root)) {
-    return file.slice(root.length);
-  }
-  return file;
 }
 
 // we don't have a real Package for the app itself because the resolver has work

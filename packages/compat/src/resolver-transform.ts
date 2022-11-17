@@ -1,27 +1,117 @@
-import { default as Resolver, ComponentResolution, ComponentLocator } from './resolver';
-import type { ASTv1 } from '@glimmer/syntax';
+import {
+  default as Resolver,
+  ComponentResolution,
+  ComponentLocator,
+  ResolutionFail,
+  Resolution,
+  ResolvedDep,
+} from './resolver';
+import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
+import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
+import assertNever from 'assert-never';
+
+type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
+
+export interface Options {
+  resolver: Resolver;
+  patchHelpersBug: boolean;
+}
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-// and puts them into `dependencies`.
-export function makeResolverTransform(resolver: Resolver) {
-  function resolverTransform({ filename, contents }: { filename: string; contents: string }) {
-    resolver.enter(filename, contents);
-
+export default function makeResolverTransform({ resolver, patchHelpersBug }: Options) {
+  const resolverTransform: ASTPluginBuilder<Env> = ({
+    filename,
+    contents,
+    meta: { jsutils },
+    syntax: { builders },
+  }) => {
     let scopeStack = new ScopeStack();
+    let emittedAMDDeps: Set<string> = new Set();
+
+    function emitAMD(dep: ResolvedDep | null) {
+      if (dep && !emittedAMDDeps.has(dep.runtimeName)) {
+        let parts = dep.runtimeName.split('/');
+        let { path, runtimeName } = dep;
+        jsutils.emitExpression(context => {
+          let identifier = context.import(path, 'default', parts[parts.length - 1]);
+          return `window.define("${runtimeName}", () => ${identifier})`;
+        });
+        emittedAMDDeps.add(dep.runtimeName);
+      }
+    }
+
+    function emit<Target extends WalkerPath<ASTv1.Node>>(
+      parentPath: Target,
+      resolution: Resolution | null,
+      setter: (target: Target['node'], newIdentifier: ASTv1.PathExpression) => void
+    ) {
+      switch (resolution?.type) {
+        case 'error':
+          resolver.reportError(resolution, filename, contents);
+          return;
+        case 'helper':
+          if (patchHelpersBug) {
+            // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
+            emitAMD(resolution.module);
+          } else {
+            setter(
+              parentPath.node,
+              builders.path(
+                jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
+              )
+            );
+          }
+          return;
+        case 'modifier':
+          setter(
+            parentPath.node,
+            builders.path(
+              jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
+            )
+          );
+          return;
+        case 'component':
+          // When people are using octane-style template co-location or
+          // polaris-style first-class templates, we see only JS files for their
+          // components, because the template association is handled before
+          // we're doing any resolving here. In that case, we can safely do
+          // component invocation via lexical scope.
+          //
+          // But when people are using the older non-co-located template style,
+          // we can't safely do that -- ember needs to discover both the
+          // component and the template in the AMD loader to associate them. In
+          // that case, we emit just-in-time AMD definitions for them.
+          if (resolution.jsModule && !resolution.hbsModule) {
+            setter(
+              parentPath.node,
+              builders.path(
+                jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, { nameHint: resolution.nameHint })
+              )
+            );
+          } else {
+            emitAMD(resolution.hbsModule);
+            emitAMD(resolution.jsModule);
+          }
+        case undefined:
+          return;
+        default:
+          assertNever(resolution);
+      }
+    }
 
     return {
       name: 'embroider-build-time-resolver',
 
       visitor: {
         Program: {
-          enter(node: ASTv1.Program) {
+          enter(node) {
             scopeStack.push(node.blockParams);
           },
           exit() {
             scopeStack.pop();
           },
         },
-        BlockStatement(node: ASTv1.BlockStatement) {
+        BlockStatement(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -39,28 +129,38 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            emit(path, resolution, (node, newIdentifier) => {
+              node.params[0] = newIdentifier;
+            });
             return;
           }
           // a block counts as args from our perpsective (it's enough to prove
           // this thing must be a component, not content)
           let hasArgs = true;
-          const resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution && resolution.type === 'component') {
+          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
+          if (resolution?.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
               for (let name of argumentsAreComponents) {
-                let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
+                let pair = pairs.find(pair => pair.node.key === name);
                 if (pair) {
-                  handleComponentHelper(pair.value, resolver, filename, scopeStack, {
+                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
                     componentName: (node.path as ASTv1.PathExpression).original,
                     argumentName: name,
+                  });
+                  emit(pair, resolution, (node, newId) => {
+                    node.value = newId;
                   });
                 }
               }
             });
           }
         },
-        SubExpression(node: ASTv1.SubExpression) {
+        SubExpression(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -71,7 +171,10 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
           if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+            emit(path, resolution, (node, newId) => {
+              node.params[0] = newId;
+            });
             return;
           }
           if (node.path.original === 'helper' && node.params.length > 0) {
@@ -82,48 +185,63 @@ export function makeResolverTransform(resolver: Resolver) {
             handleDynamicModifier(node.params[0], resolver, filename);
             return;
           }
-          resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
+          let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
         },
-        MustacheStatement(node: ASTv1.MustacheStatement) {
-          if (node.path.type !== 'PathExpression') {
-            return;
-          }
-          if (scopeStack.inScope(node.path.parts[0])) {
-            return;
-          }
-          if (node.path.this === true) {
-            return;
-          }
-          if (node.path.parts.length > 1) {
-            // paths with a dot in them (which therefore split into more than
-            // one "part") are classically understood by ember to be contextual
-            // components, which means there's nothing to resolve at this
-            // location.
-            return;
-          }
-          if (node.path.original === 'component' && node.params.length > 0) {
-            handleComponentHelper(node.params[0], resolver, filename, scopeStack);
-            return;
-          }
-          if (node.path.original === 'helper' && node.params.length > 0) {
-            handleDynamicHelper(node.params[0], resolver, filename);
-            return;
-          }
-          let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-          let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
-          if (resolution && resolution.type === 'component') {
-            for (let name of resolution.argumentsAreComponents) {
-              let pair = node.hash.pairs.find((pair: ASTv1.HashPair) => pair.key === name);
-              if (pair) {
-                handleComponentHelper(pair.value, resolver, filename, scopeStack, {
-                  componentName: node.path.original,
-                  argumentName: name,
-                });
+        MustacheStatement: {
+          enter(node, path) {
+            if (node.path.type !== 'PathExpression') {
+              return;
+            }
+            if (scopeStack.inScope(node.path.parts[0])) {
+              return;
+            }
+            if (node.path.this === true) {
+              return;
+            }
+            if (node.path.parts.length > 1) {
+              // paths with a dot in them (which therefore split into more than
+              // one "part") are classically understood by ember to be contextual
+              // components, which means there's nothing to resolve at this
+              // location.
+              return;
+            }
+            if (node.path.original === 'component' && node.params.length > 0) {
+              let resolution = handleComponentHelper(node.params[0], resolver, filename, scopeStack);
+              emit(path, resolution, (node, newId) => {
+                node.params[0] = newId;
+              });
+              return;
+            }
+            if (node.path.original === 'helper' && node.params.length > 0) {
+              handleDynamicHelper(node.params[0], resolver, filename);
+              return;
+            }
+            let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
+            let resolution = resolver.resolveMustache(node.path.original, hasArgs, filename, node.path.loc);
+            emit(path, resolution, (node, newIdentifier) => {
+              node.path = newIdentifier;
+            });
+            if (resolution?.type === 'component') {
+              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
+              for (let name of resolution.argumentsAreComponents) {
+                let pair = pairs.find(pair => pair.node.key === name);
+                if (pair) {
+                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
+                    componentName: node.path.original,
+                    argumentName: name,
+                  });
+                  emit(pair, resolution, (node, newId) => {
+                    node.value = newId;
+                  });
+                }
               }
             }
-          }
+          },
         },
-        ElementModifierStatement(node: ASTv1.ElementModifierStatement) {
+        ElementModifierStatement(node, path) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -145,20 +263,30 @@ export function makeResolverTransform(resolver: Resolver) {
             return;
           }
 
-          resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
+          let resolution = resolver.resolveElementModifierStatement(node.path.original, filename, node.path.loc);
+          emit(path, resolution, (node, newId) => {
+            node.path = newId;
+          });
         },
         ElementNode: {
-          enter(node: ASTv1.ElementNode) {
+          enter(node, path) {
             if (!scopeStack.inScope(node.tag.split('.')[0])) {
               const resolution = resolver.resolveElement(node.tag, filename, node.loc);
-              if (resolution && resolution.type === 'component') {
+              emit(path, resolution, (node, newId) => {
+                node.tag = newId.original;
+              });
+              if (resolution?.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                  let attributes = extendPath(path, 'attributes');
                   for (let name of argumentsAreComponents) {
-                    let attr = node.attributes.find((attr: ASTv1.AttrNode) => attr.name === '@' + name);
+                    let attr = attributes.find(attr => attr.node.name === '@' + name);
                     if (attr) {
-                      handleComponentHelper(attr.value, resolver, filename, scopeStack, {
+                      let resolution = handleComponentHelper(attr.node.value, resolver, filename, scopeStack, {
                         componentName: node.tag,
                         argumentName: name,
+                      });
+                      emit(attr, resolution, (node, newId) => {
+                        node.value = builders.mustache(newId);
                       });
                     }
                   }
@@ -173,8 +301,8 @@ export function makeResolverTransform(resolver: Resolver) {
         },
       },
     };
-  }
-  resolverTransform.parallelBabel = {
+  };
+  (resolverTransform as any).parallelBabel = {
     requireFile: __filename,
     buildUsing: 'makeResolverTransform',
     params: Resolver,
@@ -288,7 +416,7 @@ function handleComponentHelper(
   moduleName: string,
   scopeStack: ScopeStack,
   impliedBecause?: { componentName: string; argumentName: string }
-): void {
+): ComponentResolution | ResolutionFail | null {
   let locator: ComponentLocator;
   switch (param.type) {
     case 'StringLiteral':
@@ -299,11 +427,10 @@ function handleComponentHelper(
       break;
     case 'MustacheStatement':
       if (param.hash.pairs.length === 0 && param.params.length === 0) {
-        handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
-        return;
+        return handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
       } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
         // safe because we will handle this inner `{{component ...}}` mustache on its own
-        return;
+        return null;
       } else {
         locator = { type: 'other' };
       }
@@ -314,11 +441,11 @@ function handleComponentHelper(
     case 'SubExpression':
       if (param.path.type === 'PathExpression' && param.path.original === 'component') {
         // safe because we will handle this inner `(component ...)` subexpression on its own
-        return;
+        return null;
       }
       if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
         // safe because we trust ensure-safe-component
-        return;
+        return null;
       }
       locator = { type: 'other' };
       break;
@@ -327,10 +454,10 @@ function handleComponentHelper(
   }
 
   if (locator.type === 'path' && scopeStack.safeComponentInScope(locator.path)) {
-    return;
+    return null;
   }
 
-  resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
+  return resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
 }
 
 function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
@@ -346,5 +473,24 @@ function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, module
 function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
   if (param.type === 'StringLiteral') {
     resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
+  }
+}
+
+function extendPath<N extends ASTv1.Node, K extends keyof N>(
+  path: WalkerPath<N>,
+  key: K
+): N[K] extends ASTv1.Node ? WalkerPath<N[K]> : N[K] extends ASTv1.Node[] ? WalkerPath<N[K][0]>[] : never {
+  const _WalkerPath = path.constructor as {
+    new <Child extends ASTv1.Node>(
+      node: Child,
+      parent?: WalkerPath<ASTv1.Node> | null,
+      parentKey?: string | null
+    ): WalkerPath<Child>;
+  };
+  let child = path.node[key];
+  if (Array.isArray(child)) {
+    return child.map(c => new _WalkerPath(c, path, key as string)) as any;
+  } else {
+    return new _WalkerPath(child as any, path, key as string) as any;
   }
 }

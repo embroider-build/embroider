@@ -11,9 +11,6 @@ import {
   AppBuilder,
   EmberENV,
   Package,
-  TemplateCompilerPlugins,
-  Resolver,
-  NodeTemplateCompiler,
   AddonPackage,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -35,7 +32,7 @@ import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import { tmpdir } from '@embroider/shared-internals';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
-import { getEmberExports } from '@embroider/core/src/load-ember-template-compiler';
+import type { Transform } from 'babel-plugin-ember-template-compilation';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -325,15 +322,16 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  templateResolver(): Resolver {
+  resolverTransform(): Transform | undefined {
     return new CompatResolver({
+      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       root: this.root,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
       adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
-    });
+    }).astTransformer();
   }
 
   @Memoize()
@@ -382,28 +380,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   // rules.
   @Memoize()
   private internalTemplateResolver(): CompatResolver {
-    let resolver = new CompatResolver({
+    return new CompatResolver({
+      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       root: this.root,
       modulePrefix: this.modulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
       adjustImportsOptions: this.makeAdjustImportOptions(false),
     });
-
-    const compilerPath = resolveSync(this.templateCompilerPath(), { basedir: this.root });
-    const { cacheKey: compilerChecksum } = getEmberExports(compilerPath);
-    // It's ok that this isn't a fully configured template compiler. We're only
-    // using it to parse component snippets out of rules.
-    resolver.astTransformer(
-      new NodeTemplateCompiler({
-        compilerPath,
-        compilerChecksum,
-
-        EmberENV: {},
-        plugins: {},
-      })
-    );
-    return resolver;
   }
 
   private extraImports() {
@@ -428,7 +412,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
     return flatten(output);
   }
 
-  htmlbarsPlugins(): TemplateCompilerPlugins {
+  htmlbarsPlugins(): Transform[] {
     return this.oldPackage.htmlbarsPlugins;
   }
 

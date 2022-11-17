@@ -28,7 +28,7 @@ export default class TemplateCompileTree extends Filter {
   }
 
   processString(source: string, relativePath: string) {
-    return hbsToJS(source, relativePath);
+    return hbsToJS(source, { filename: relativePath });
   }
   baseDir() {
     return join(__dirname, '..');

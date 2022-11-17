@@ -7,11 +7,7 @@ export {
   getPackagerCacheDir,
 } from './packager';
 export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
-export { Resolver } from './resolver';
 export { default as Stage } from './stage';
-export { NodeTemplateCompiler, NodeTemplateCompilerParams } from './template-compiler-node';
-export { TemplateCompiler, TemplateCompilerParams } from './template-compiler-common';
-export { Plugins as TemplateCompilerPlugins } from './ember-template-compiler-types';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

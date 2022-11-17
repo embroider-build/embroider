@@ -27,9 +27,3 @@ module.exports = require('babel-loader').custom(babel => {
     },
   };
 });
-
-function pluginMatches(pattern) {
-  return function (plugin) {
-    return plugin && pattern.test(Array.isArray(plugin) ? plugin[0] : plugin);
-  };
-}

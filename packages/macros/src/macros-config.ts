@@ -379,7 +379,22 @@ export default class MacrosConfig {
     ];
   }
 
+  // provides the ast plugins that implement the macro system, in reverse order
+  // for compatibility with the classic build, which historically always ran ast
+  // plugins in backwards order.
   static astPlugins(owningPackageRoot?: string): {
+    plugins: Function[];
+    setConfig: (config: MacrosConfig) => void;
+    lazyParams: FirstTransformParams;
+  } {
+    let result = this.transforms(owningPackageRoot);
+    result.plugins.reverse();
+    return result;
+  }
+
+  // todo: type adjuments here
+  // provides the ast plugins that implement the macro system
+  static transforms(owningPackageRoot?: string): {
     plugins: Function[];
     setConfig: (config: MacrosConfig) => void;
     lazyParams: FirstTransformParams;
@@ -404,7 +419,7 @@ export default class MacrosConfig {
       },
     };
 
-    let plugins = [makeFirstTransform(lazyParams), makeSecondTransform()].reverse();
+    let plugins = [makeFirstTransform(lazyParams), makeSecondTransform()];
     function setConfig(c: MacrosConfig) {
       configs = c;
     }

@@ -512,7 +512,7 @@ stage2Scenarios
 
       test('uses-inline-template.js', function () {
         let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
-        assertFile.matches(/import a\d? from ["']\.\.\/templates\/components\/first-choice.hbs/);
+        assertFile.matches(/import firstChoice from ["']\.\.\/templates\/components\/first-choice.hbs/);
         assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
       });
 

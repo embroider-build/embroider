@@ -25,9 +25,6 @@ import Options from './options';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
-import { TemplateCompilerPlugins } from '.';
-import type { NodeTemplateCompilerParams } from './template-compiler-node';
-import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
@@ -36,8 +33,7 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
-import { getEmberExports } from './load-ember-template-compiler';
-import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
+import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
 
 export type EmberENV = unknown;
@@ -106,7 +102,7 @@ export interface AppAdapter<TreeNames> {
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  templateResolver(): Resolver;
+  resolverTransform(): Transform | undefined;
 
   // describes the special module naming rules that we need to achieve
   // compatibility
@@ -115,7 +111,7 @@ export interface AppAdapter<TreeNames> {
   adjustImportsOptionsPath(): string;
 
   // The template preprocessor plugins that are configured in the app.
-  htmlbarsPlugins(): TemplateCompilerPlugins;
+  htmlbarsPlugins(): Transform[];
 
   // the app's preferred babel config. No need to worry about making it portable
   // yet, we will do that for you.
@@ -370,7 +366,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(templateCompilerParams: NodeTemplateCompilerParams, appFiles: Engine[]) {
+  private babelConfig(appFiles: Engine[]) {
     let babel = cloneDeep(this.adapter.babelConfig());
 
     if (!babel.plugins) {
@@ -384,16 +380,7 @@ export class AppBuilder<TreeNames> {
     // https://github.com/webpack/webpack/issues/12154
     babel.plugins.push(require.resolve('./rename-require-plugin'));
 
-    babel.plugins.push([
-      join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-      { templateCompiler: templateCompilerParams },
-    ]);
-
-    let etcOptions: InlinePrecompileOptions = {
-      compilerPath: join(__dirname, '../src/babel-plugin-inline-hbs-deps-node.js'),
-    };
-
-    babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), etcOptions]);
+    babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), this.etcOptions()]);
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
@@ -907,8 +894,7 @@ export class AppBuilder<TreeNames> {
     let assets = this.gatherAssets(inputPaths);
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
-    let templateCompiler = this.templateCompiler(emberENV);
-    let babelConfig = this.babelConfig(templateCompiler, appFiles);
+    let babelConfig = this.babelConfig(appFiles);
     this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
@@ -961,26 +947,24 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private templateCompiler(config: EmberENV): NodeTemplateCompilerParams {
-    let plugins = this.adapter.htmlbarsPlugins();
-    if (!plugins.ast) {
-      plugins.ast = [];
-    }
-    let { plugins: macroPlugins, setConfig } = MacrosConfig.astPlugins();
+  private etcOptions(): EtcOptions {
+    let transforms = this.adapter.htmlbarsPlugins();
+
+    let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
     setConfig(this.macrosConfig);
     for (let macroPlugin of macroPlugins) {
-      plugins.ast.push(macroPlugin);
+      transforms.push(macroPlugin as any);
     }
 
-    const compilerPath = resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root });
-    const compilerChecksum = getEmberExports(compilerPath).cacheKey;
+    let transform = this.adapter.resolverTransform();
+    if (transform) {
+      transforms.push(transform);
+    }
 
     return {
-      plugins,
-      compilerPath,
-      compilerChecksum,
-      resolver: this.adapter.templateResolver(),
-      EmberENV: config,
+      transforms,
+      compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
+      enableLegacyModules: ['ember-cli-htmlbars', 'ember-cli-htmlbars-inline-precompile', 'htmlbars-inline-precompile'],
     };
   }
 

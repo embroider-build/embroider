@@ -1,4 +1,5 @@
 import jsStringEscape from 'js-string-escape';
+import { sep } from 'path';
 
 export interface Options {
   filename?: string;
@@ -21,6 +22,9 @@ export function hbsToJS(hbsContents: string, options?: Options): string {
     if (renaming) {
       if (filename.startsWith(renaming.rootDir)) {
         filename = renaming.modulePrefix + filename.slice(renaming.rootDir.length);
+      }
+      if (sep !== '/') {
+        filename = filename.replace(/\\/g, '/');
       }
     }
     optsSource = `,{ moduleName: "${jsStringEscape(filename)}" }`;

@@ -25,7 +25,6 @@ import Options from './options';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
-import { Resolver } from './resolver';
 import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
@@ -103,7 +102,7 @@ export interface AppAdapter<TreeNames> {
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  templateResolver(): Resolver;
+  resolverTransform(): Transform | undefined;
 
   // describes the special module naming rules that we need to achieve
   // compatibility
@@ -957,7 +956,7 @@ export class AppBuilder<TreeNames> {
       transforms.push(macroPlugin as any);
     }
 
-    let transform = this.adapter.templateResolver().astTransformer();
+    let transform = this.adapter.resolverTransform();
     if (transform) {
       transforms.push(transform);
     }

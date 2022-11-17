@@ -11,7 +11,6 @@ import {
   AppBuilder,
   EmberENV,
   Package,
-  Resolver,
   AddonPackage,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
@@ -323,7 +322,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  templateResolver(): Resolver {
+  resolverTransform(): Transform | undefined {
     return new CompatResolver({
       emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       root: this.root,
@@ -332,7 +331,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       options: this.options,
       activePackageRules: this.activeRules(),
       adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
-    });
+    }).astTransformer();
   }
 
   @Memoize()

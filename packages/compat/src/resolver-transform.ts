@@ -1,8 +1,14 @@
-import { default as Resolver, ComponentResolution, ComponentLocator, ResolutionFail, Resolution } from './resolver';
+import {
+  default as Resolver,
+  ComponentResolution,
+  ComponentLocator,
+  ResolutionFail,
+  Resolution,
+  ResolvedDep,
+} from './resolver';
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
-import { ResolvedDep } from '@embroider/core/src/resolver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
 

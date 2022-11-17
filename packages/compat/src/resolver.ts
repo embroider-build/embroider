@@ -6,18 +6,23 @@ import {
   PreprocessedComponentRule,
   preprocessComponentRule,
 } from './dependency-rules';
-import { Package, PackageCache, Resolver, explicitRelative, extensionsPattern } from '@embroider/core';
+import { Package, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
 import { dirname, join, relative, sep } from 'path';
 
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
-import { ResolvedDep } from '@embroider/core/src/resolver';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { pathExistsSync } from 'fs-extra';
 import resolve from 'resolve';
 import semver from 'semver';
 import { Options as ResolverTransformOptions } from './resolver-transform';
+
+export interface ResolvedDep {
+  runtimeName: string;
+  path: string;
+  absPath: string;
+}
 
 export interface ComponentResolution {
   type: 'component';
@@ -158,7 +163,7 @@ export interface AuditMessage {
   filename: string;
 }
 
-export default class CompatResolver implements Resolver {
+export default class CompatResolver {
   private auditHandler: undefined | ((msg: AuditMessage) => void);
 
   _parallelBabel: {
@@ -373,7 +378,7 @@ export default class CompatResolver implements Resolver {
     return extensionsPattern(this.adjustImportsOptions.resolvableExtensions);
   }
 
-  absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
     let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;

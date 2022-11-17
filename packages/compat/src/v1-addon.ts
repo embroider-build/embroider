@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { dirname, isAbsolute, join, relative } from 'path';
+import { dirname, join, relative } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import buildFunnel, { Options as FunnelOptions } from 'broccoli-funnel';
@@ -11,15 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import {
-  AddonMeta,
-  debug,
-  PackageCache,
-  Resolver,
-  extensionsPattern,
-  AddonInstance,
-  AddonTreePath,
-} from '@embroider/core';
+import { AddonMeta, debug, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
 import Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
@@ -83,54 +75,6 @@ const defaultMethods = {
 
 const appPublicationDir = '_app_';
 const fastbootPublicationDir = '_fastboot_';
-
-/**
- * Creating a interface here just to keep the Resolver's structure as it is.
- */
-interface ResolverParams {
-  root: string;
-  modulePrefix: string;
-}
-
-export function resolver(params: ResolverParams): V1AddonCompatResolver {
-  return new V1AddonCompatResolver(params);
-}
-
-class V1AddonCompatResolver implements Resolver {
-  params: ResolverParams;
-
-  _parallelBabel: {
-    requireFile: string;
-    buildUsing: string;
-    params: ResolverParams;
-  };
-
-  constructor(params: ResolverParams) {
-    this.params = params;
-    this._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'resolver',
-      params,
-    };
-  }
-  astTransformer(): undefined {
-    return;
-  }
-  absPathToRuntimePath(absPath: string) {
-    if (isAbsolute(absPath)) {
-      return absPath;
-    }
-    return join(this.params.modulePrefix, absPath);
-  }
-  absPathToRuntimeName(absPath: string) {
-    return this.absPathToRuntimePath(absPath)
-      .replace(extensionsPattern(['.js', '.hbs']), '')
-      .replace(/\/index$/, '');
-  }
-  get adjustImportsOptions(): Resolver['adjustImportsOptions'] {
-    throw new Error(`bug: the addon compat resolver only supports absPath mapping`);
-  }
-}
 
 // This controls and types the interface between our new world and the classic
 // v1 addon instance.

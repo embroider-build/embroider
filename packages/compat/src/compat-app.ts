@@ -30,7 +30,7 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
-import { tmpdir } from '@embroider/shared-internals';
+import { tmpdir } from '@embroider/core';
 import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 

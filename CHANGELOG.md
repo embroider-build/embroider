@@ -1,5 +1,135 @@
 # Embroider Changelog
 
+# Release 2022-11-21.0
+
+## `@embroider/addon-dev` 2.0.0 -> 3.0.0
+
+- BREAKING: `@embroider/addon-template/template-transform-plugin` is removed
+  because `babel-plugin-ember-template-compilation >= 2.0.0` now directly supports
+  source-to-source transformation.
+
+  This plugin was used to run any custom AST transformations on your templates before publishing. To replace it:
+
+  1. Add `babel-plugin-ember-template-compilation@^2.0.0` as a devDependency.
+  2. Make sure you also have a devDependency on `ember-source`, so we have a template compiler.
+  3. Update the babel config like:
+
+     ```diff
+     plugins: [
+     -   [
+     -     '@embroider/addon-dev/template-transform-plugin',
+     -     {
+     -       astTransforms: [
+     -         ...yourPluginsHere
+     -       ]
+     -     }
+     -   ],
+     +   [
+     +     'babel-plugin-ember-template-compilation',
+     +     {
+     +       compilerPath: 'ember-source/dist/ember-template-compiler',
+     +       targetFormat: 'hbs',
+     +       transforms: [
+     +         ...yourPluginsHere
+     +        ]
+     +     }
+     +   ]
+     ]
+     ```
+
+  See https://github.com/emberjs/babel-plugin-ember-template-compilation for the complete docs on these options.
+
+## `@embroider/addon-shim`: 1.8.3 -> 1.8.4
+
+- BUGFIX: Add missing dependency [1282](https://github.com/embroider-build/embroider/pull/1282)
+
+## `@embroider/babel-loader-8` 1.9.0 -> 2.0.0
+
+- ENHANCEMENT: remove forced optional-chaining and nullish-coalescing-operator babel plugins [1270](https://github.com/embroider-build/embroider/pull/1270)
+- BREAKING: peerDep on `@embroider/core` 2.0
+
+## `@embroider/compat` 1.9.0 -> 2.0.0
+
+- BREAKING: Drop support for Ember < 3.28 [1246](https://github.com/embroider-build/embroider/pull/1246). See details in the `@embroider/core` section of these release notes.
+- BUGFIX: don't generate .js compnent stubs for .ts components [1273](https://github.com/embroider-build/embroider/pull/1273)
+- BUGFIX: several windows-specific issues were caught and fixed when we ported our remaining test suite to run on both unix and windows.
+
+## `@embroider/core` 1.9.0 -> 2.0.0
+
+- DOCS: document how to work with test scenarios [1283](https://github.com/embroider-build/embroider/pull/1283)
+
+- BUGFIX: Defend against infinite loop on broken babel config [1277](https://github.com/embroider-build/embroider/pull/1277)
+
+- BUGFIX: allow v2 addons to use app tree fallback resolution [1278](https://github.com/embroider-build/embroider/pull/1278)
+
+- BREAKING: Drop support for Ember < 3.28 [1246](https://github.com/embroider-build/embroider/pull/1246)
+
+  This allows us to rely on:
+
+  - first-class components, helpers, and modifiers
+  - template lexical scope
+  - the lack of the old modules-api-polyfill
+
+    which greatly simplifies the build.
+
+- ENHANCEMENT: Simplified template compilation pipeline [1242](https://github.com/embroider-build/embroider/pull/1242), [1276](https://github.com/embroider-build/embroider/pull/1276)
+
+  Uses babel-plugin-ember-template-compilation 2.0, which [offers new capabilities to AST transform authors](https://github.com/emberjs/babel-plugin-ember-template-compilation#jsutils-manipulating-javascript-from-within-ast-transforms) that better unlock the power of strict mode templates.
+
+- ENHANCEMENT: For most invocations of components, helpers, and modifiers when `staticComponents`, `staticHelpers`, and `staticModifiers` settings are enabled, we now entirely bypass the AMD loader using template lexical scope. This results in less work at runtime and slightly smaller code.
+
+- BREAKING: The above feature won't have any breaking effects in the vast majority of apps that are doing things correctly. But I'm calling this out as potentially breaking because you may be accidentally relying on the loose old behaviors:
+
+  1.  Using a component in one place would cause it to become globally available to the AMD loader after that point. This would let string-based component resolution work when it actually shouldn't have (if you are resolving strings into components at runtime, you can't use `staticComponents` mode).
+
+  2.  If you have multiple copies of an addon, which copy would get invokved from a given template was hard to predict before, now each one will definitely see it's own dependency.
+
+- INTERNALS: re-enable engines tests [1281](https://github.com/embroider-build/embroider/pull/1281)
+
+## `@embroider/hbs-loader` 1.9.0 -> 2.0.0
+
+- ENHANCEMENT: expose backward-compatible moduleName support
+- BREAKING: peerDep on `@embroider/core` 2.0
+
+## `@embroider/macros` 1.9.0 -> 1.10.0
+
+- BUGFIX: template macros could have pre-moved appRoot in their packageCache
+- ENHANCEMENT: expose simplified transforms API for use with babel-plugin-ember-template-compilation
+
+  Previously, we used MacrosConfig.astTransforms() which gave you transforms in
+  the reverse order they were expected to run, for compatibility with the wacky
+  ordering in class ember-cli-htmlbars. Now we also offer `MacrosConfig.transforms()` which provides them in a format compatible directly with babel-plugin-ember-template-compilation 2.0, which uses the more natural order and which supports plugins-as-strings-to-be-loaded in addition to just plain functions.
+
+## `@embroider/router`: 1.9.0 -> 2.0.0
+
+- BREAKING: peerDep on `@embroider/core` 2.0
+- TODO: check for any places we can drop support code for older ember
+
+## `@embroider/shared-internals`: 1.8.3 -> 2.0.0
+
+- BUGFIX: several windows-specific issues were caught and fixed when we ported our remaining test suite to run on both unix and windows.
+
+- BREAKING: The second argument to `hbsToJS()` has changed formats to accomodate new additional options.
+
+  ```diff
+  import { hbsToJS } from '@embroider/shared-internals';
+
+  -hbsToJS('<SomeTemplate />', 'my-component.hbs');
+  +hbsToJS('<SomeTemplate />', { moduleName: 'my-component.hbs' });
+  ```
+
+## `@embroider/test-setup`: 1.8.3 -> 2.0.0
+
+- BREAKING test under the new 2.0 releases of `@embroider/core` _et al_.
+
+## `@embroider/util`: ??
+
+- TODO: check whether we need a release
+
+## `@embroider/webpack` 1.9.0 -> 2.0.0
+
+- BREAKING: Drop support for Ember < 3.28 [1246](https://github.com/embroider-build/embroider/pull/1246). See details in the `@embroider/core` section of these release notes.
+
 # Release 2022-10-06.0
 
 ## `@embroider/core` 1.8.3 -> 1.9.0 minor

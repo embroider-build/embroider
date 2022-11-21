@@ -23,6 +23,7 @@
     "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
     "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
   },
+  "private": true,
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.17.5",

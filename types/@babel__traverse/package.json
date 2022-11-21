@@ -3,6 +3,7 @@
   "version": "7.0.6",
   "description": "TypeScript definitions for @babel/traverse",
   "license": "MIT",
+  "private": true,
   "contributors": [
     {
       "name": "Troy Gerwien",

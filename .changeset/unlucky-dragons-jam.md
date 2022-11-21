@@ -2,7 +2,7 @@
 '@embroider/shared-internals': major
 ---
 
-The second argument to `hbsToJS()` has changed formats to accomodate new additional options.
+BREAKING: The second argument to `hbsToJS()` has changed formats to accomodate new additional options.
 
 ```diff
 import { hbsToJS } from '@embroider/shared-internals';

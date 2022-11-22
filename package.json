@@ -29,6 +29,7 @@
     "clean": "git clean -x -f",
     "compile": "tsc",
     "lint": "eslint . --cache",
+    "link:all": "./link-all.sh",
     "prepare": "tsc",
     "test": "cd tests/scenarios && yarn test"
   },

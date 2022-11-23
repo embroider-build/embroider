@@ -1,0 +1,7 @@
+{
+  "extends": "@tsconfig/ember/tsconfig.json",
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "typeRoots": []
+  }
+}

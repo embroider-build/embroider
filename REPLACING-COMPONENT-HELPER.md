@@ -7,7 +7,7 @@ statically analyzed, which will prevent you from taking advantage of
 The exact rules for `{{component}}` are:
 
 - it's OK to pass a string literal component name like `{{component "my-title-bar"}}`
-- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`. But make sure you understand what ensure-safe-component itself is doing. Sprinkling existing code with ensure-safe-component without paying attention to the deprecation messages it emits will *not* make your app work in Embroider.
+- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`. But make sure you understand what ensure-safe-component itself is doing. Sprinkling existing code with ensure-safe-component without paying attention to the deprecation messages it emits will _not_ make your app work in Embroider.
 - any other syntax in the first argument to `{{component ...}}` is NOT OK
 
 The following sections explain what to do in the common scenarios where you might have unsafe usage of the `{{component}}` helper.
@@ -78,7 +78,7 @@ export default class extends Component {
 <this.titleBar />
 ```
 
-When `ensureSafeComponent` sees a component class, it converts it into a component definition so it can be safely invoked. In the future, we expect Ember to gain the ability to natively invoke component classes, at which point we can make `ensureSafeComponent` pass component classes through unchanged when it sees those Ember versions.
+On old Ember versions (< 3.25), when `ensureSafeComponent` sees a component class, it converts it into a component definition so it can be safely invoked. On newer Ember versions, it does nothing because component classes are directly invokable.
 
 **Caution**: old-style components that have their template in `app/templates/components` instead of co-located next to their Javascript in `app/components` can't work correctly when discovered via their component class, because there's no way to locate the template. They should either port to being co-located (which is a simple mechanical transformation and highly recommended) or should import their own template and set it as `layout` as was traditional in addons before co-location was available.
 
@@ -87,7 +87,7 @@ When `ensureSafeComponent` sees a component class, it converts it into a compone
 Here's an example `<Menu/>` component that accepts a `@titleBar=`. When the author of `<Menu/>` follows the steps from the previous section, if we try to call it like this:
 
 ```hbs
-<Menu @titleBar="fancy-title-bar" />
+<Menu @titleBar='fancy-title-bar' />
 ```
 
 we'll get a deprecation message like
@@ -97,7 +97,7 @@ we'll get a deprecation message like
 The simplest fix is to add the `{{component}}` helper:
 
 ```hbs
-<Menu @titleBar={{component "fancy-title-bar"}} />
+<Menu @titleBar={{component 'fancy-title-bar'}} />
 ```
 
 This is one of the two safe ways to use `{{component}}`, because we're passing it a **string literal**. String literals are safe because they are statically analyzable, so Embroider can tell exactly what component you're talking about.
@@ -105,13 +105,13 @@ This is one of the two safe ways to use `{{component}}`, because we're passing i
 But if instead you need anything other than a string literal, you'll need a different solution. For example, this is not OK:
 
 ```hbs
-<Menu @titleBar={{component (if this.fancy "fancy-title-bar" "plain-title-bar") }} />
+<Menu @titleBar={{component (if this.fancy 'fancy-title-bar' 'plain-title-bar')}} />
 ```
 
 You can refactor this example into two uses with only string literals inside `{{component}}`, and that makes it OK:
 
 ```hbs
-<Menu @titleBar={{if this.fancy (component "fancy-title-bar") (component "plain-title-bar") }} />
+<Menu @titleBar={{if this.fancy (component 'fancy-title-bar') (component 'plain-title-bar')}} />
 ```
 
 But if your template is getting complicated, you can always move to Javascript and import the components directly:
@@ -129,7 +129,7 @@ export default class extends Component {
 ```
 
 ```hbs
-<Menu @titleBar={{ this.whichComponent }} />
+<Menu @titleBar={{this.whichComponent}} />
 ```
 
 Note that we didn't use `ensureSafeComponent` here because we already stipulated
@@ -143,7 +143,7 @@ whether `<Menu/>` accepts classes, it's always safe to run them through
 A common pattern is yielding a component with some curried arguments:
 
 ```hbs
-{{yield (component "the-header" mode=this.mode) }}
+{{yield (component 'the-header' mode=this.mode)}}
 ```
 
 In this particular example, we're using a **string literal** for the component name, which makes it OK, and you don't need to change it.
@@ -151,13 +151,13 @@ In this particular example, we're using a **string literal** for the component n
 But what if you need to curry arguments onto a component somebody else has passed you?
 
 ```hbs
-{{yield (component this.args.header mode=this.mode) }}
+{{yield (component this.args.header mode=this.mode)}}
 ```
 
 Because we're only adding a `mode=` argument to this component and not invoking it, we can't switch to angle bracket invocation. Instead, we can wrap our component in the `ensure-safe-component` helper from the `@embroider/util` package:
 
 ```hbs
-{{yield (component (ensure-safe-component this.args.header) mode=this.mode) }}
+{{yield (component (ensure-safe-component this.args.header) mode=this.mode)}}
 ```
 
 This works the same as the Javascript `ensureSafeComponent` function, and by appearing **directly** as the argument of the `{{component}}` helper, Embroider will trust that this spot can't unsafely resolve a string into a component.
@@ -207,7 +207,7 @@ export default class extends Component {
 <this.whichComponent @feedItem={{@model}} />
 ```
 
-This code will cause every modules under the `./feed-items/` directory to be eagerly included in your build.
+This code will cause every module under the `./feed-items/` directory to be eagerly included in your build.
 
 To instead _lazily_ include them, refactor to use asynchronous `import()` instead of `importSync`. BUT CAUTION: using `import()` of your own app code is one of the few things that works _only_ under Embroider and not in classic builds, so don't do it until you have committed to Embroider.
 
@@ -219,13 +219,10 @@ If you find yourself defining custom, one-off components to be used in your test
 import { setComponentTemplate } from '@ember/component';
 import Component from '@glimmer/component';
 
-test('my test', async function(assert) {
+test('my test', async function (assert) {
   class TestComponent extends Component {}
 
-  setComponentTemplate(
-    hbs`Test content: {{@message}}`,
-    TestComponent
-  );
+  setComponentTemplate(hbs`Test content: {{@message}}`, TestComponent);
 
   this.owner.register('component:test-component', TestComponent);
 
@@ -241,13 +238,10 @@ This will fail, as `test-component`cannot be statically found. Instead, you can 
 import { setComponentTemplate } from '@ember/component';
 import Component from '@glimmer/component';
 
-test('my test', async function(assert) {
+test('my test', async function (assert) {
   class TestComponent extends Component {}
 
-  setComponentTemplate(
-    hbs`Test content: {{@message}}`,
-    TestComponent
-  );
+  setComponentTemplate(hbs`Test content: {{@message}}`, TestComponent);
 
   this.testComponent = TestComponent;
 

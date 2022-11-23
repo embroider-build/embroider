@@ -1,6 +1,6 @@
 # Embroider Changelog
 
-# Release 2022-11-21.0
+# Release 2022-11-23.0
 
 ## `@embroider/addon-dev` 2.0.0 -> 3.0.0
 

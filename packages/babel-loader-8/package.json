@@ -1,6 +1,6 @@
 {
   "name": "@embroider/babel-loader-8",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -13,7 +13,7 @@
     "babel-loader": "8"
   },
   "peerDependencies": {
-    "@embroider/core": "^1.8.3"
+    "@embroider/core": "^2.0.0"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

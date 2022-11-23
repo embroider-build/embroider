@@ -1,6 +1,6 @@
 {
   "name": "@embroider/webpack",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "private": false,
   "description": "Builds EmberJS apps with Webpack",
   "repository": {
@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@babel/core": "^7.14.5",
-    "@embroider/babel-loader-8": "1.9.0",
-    "@embroider/hbs-loader": "1.9.0",
-    "@embroider/shared-internals": "1.8.3",
+    "@embroider/babel-loader-8": "2.0.0",
+    "@embroider/hbs-loader": "2.0.0",
+    "@embroider/shared-internals": "2.0.0",
     "@types/source-map": "^0.5.7",
     "@types/supports-color": "^8.1.0",
     "babel-loader": "^8.2.2",
@@ -52,7 +52,7 @@
     "webpack": "^5.38.1"
   },
   "peerDependencies": {
-    "@embroider/core": "^1.8.3",
+    "@embroider/core": "^2.0.0",
     "webpack": "^5.0.0"
   },
   "engines": {

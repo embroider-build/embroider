@@ -1,11 +1,11 @@
 {
   "name": "v2-addon-template",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "keywords": [
     "ember-addon"
   ],
   "dependencies": {
-    "@embroider/addon-shim": "1.8.3"
+    "@embroider/addon-shim": "1.8.4"
   },
   "private": true,
   "ember-addon": {

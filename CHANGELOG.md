@@ -103,6 +103,7 @@
 ## `@embroider/router`: 1.9.0 -> 2.0.0
 
 - BREAKING: peerDep on `@embroider/core` 2.0
+- BREAKING: converted to a v2 addon, so consuming apps must have ember-auto-import >= 2.0.0.
 - TODO: check for any places we can drop support code for older ember
 
 ## `@embroider/shared-internals`: 1.8.3 -> 2.0.0

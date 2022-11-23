@@ -75,5 +75,10 @@ tsAppScenarios
         let result = await app.execute(`ember test`);
         assert.equal(result.exitCode, 0, result.output);
       });
+
+      test(`check types`, async function (assert) {
+        let result = await app.execute(`yarn tsc`);
+        assert.equal(result.exitCode, 0, result.output);
+      });
     });
   });

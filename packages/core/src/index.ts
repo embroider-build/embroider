@@ -19,5 +19,5 @@ export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from '
 export { mangledEngineRoot } from './engine-mangler';
 
 // this is reexported because we already make users manage a peerDep from some
-// other packages (like embroider/webpack and @embroider/
+// other packages (like embroider/webpack and @embroider/compat
 export * from '@embroider/shared-internals';

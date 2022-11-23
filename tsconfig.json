@@ -30,6 +30,7 @@
     "test-packages/*/dist",
     "test-packages/*/node_modules",
     "tmp",
-    "tests/scenarios/output"
+    "tests/scenarios/output",
+    "packages/router/src"
   ]
 }

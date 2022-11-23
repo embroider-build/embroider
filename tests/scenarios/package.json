@@ -40,6 +40,7 @@
     "@embroider/util": "1.9.0",
     "@ember/legacy-built-in-components": "^0.4.1",
     "@ember/string": "^3.0.0",
+    "@ember/test-waiters": "^3.0.0",
     "@rollup/plugin-babel": "^5.3.1",
     "@tsconfig/ember": "1.0.1",
     "babel-plugin-ember-template-compilation": "^2.0.0",

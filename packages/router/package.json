@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup --config rollup.config.mjs",
+    "build": "rollup --config",
     "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:hbs": "ember-template-lint . --no-error-on-unmatched-pattern",
@@ -25,9 +25,9 @@
     "lint:hbs:fix": "ember-template-lint . --fix --no-error-on-unmatched-pattern",
     "lint:js:fix": "eslint . --fix",
     "lint:types": "tsc",
-    "start": "rollup --config rollup.config.mjs --watch",
+    "start": "rollup --config --watch",
     "test": "echo 'A v2 addon does not have tests, run tests in test-app'",
-    "prepack": "rollup --config rollup.config.mjs"
+    "prepack": "rollup --config"
   },
   "dependencies": {
     "@ember/test-waiters": "^3.0.0",
@@ -112,5 +112,8 @@
         "dist/*"
       ]
     }
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }

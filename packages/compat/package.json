@@ -20,7 +20,6 @@
     "embroider-compat-audit": "./src/audit-cli.js"
   },
   "scripts": {
-    "prepare": "tsc",
     "test": "jest"
   },
   "dependencies": {

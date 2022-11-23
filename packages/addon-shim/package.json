@@ -15,9 +15,7 @@
     "doc": "doc",
     "test": "tests"
   },
-  "scripts": {
-    "prepare": "tsc"
-  },
+  "scripts": {},
   "dependencies": {
     "@embroider/shared-internals": "^2.0.0",
     "broccoli-funnel": "^3.0.8",

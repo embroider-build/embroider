@@ -18,7 +18,9 @@ ember install @embroider/util
 
 ### `ensureSafeComponent`
 
-This function aids you in eliminating un-analyzable usage of the `{{component}}` helper. For the full explanation of why and how you would do this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/main/ADDON-AUTHOR-GUIDE.md).
+**This function is intended to help addon authors who still need to support Ember < 3.25**. In all other cases, instead of using this you should directly pass components around as values (not as strings) and invoke them directly with angle brackets (not the `{{component}}` helper).
+
+For the full explanation of why and how you would use this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/main/REPLACING-COMPONENT-HELPER.md).
 
 Example usage in Javascript:
 

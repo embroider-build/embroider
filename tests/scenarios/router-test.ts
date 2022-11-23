@@ -13,8 +13,6 @@ tsAppScenarios
     // case.
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
-    project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname });
-
     merge(project.files, {
       'ember-cli-build.js': `
         'use strict';

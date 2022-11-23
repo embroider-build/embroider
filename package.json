@@ -31,9 +31,9 @@
     "lint": "concurrently 'npm:lint:*'",
     "lint:eslint": "eslint . --cache",
     "lint:router-types": "cd packages/router && yarn lint:types",
-    "prepare": "concurrently 'npm:prepare:*'",
-    "prepare:tsc": "tsc",
-    "prepare:router": "cd packages/router && yarn build",
+    "prepare": "tsc && yarn build-v2-addons",
+    "build-v2-addons": "concurrently 'npm:build-v2-addons:*'",
+    "build-v2-addons:router": "cd packages/router && yarn build",
     "test": "cd tests/scenarios && yarn test"
   },
   "jest": {

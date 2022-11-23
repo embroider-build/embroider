@@ -104,7 +104,6 @@
 
 - BREAKING: peerDep on `@embroider/core` 2.0
 - BREAKING: converted to a v2 addon, so consuming apps must have ember-auto-import >= 2.0.0.
-- TODO: check for any places we can drop support code for older ember
 
 ## `@embroider/shared-internals`: 1.8.3 -> 2.0.0
 
@@ -122,10 +121,6 @@
 ## `@embroider/test-setup`: 1.8.3 -> 2.0.0
 
 - BREAKING test under the new 2.0 releases of `@embroider/core` _et al_.
-
-## `@embroider/util`: ??
-
-- TODO: check whether we need a release
 
 ## `@embroider/webpack` 1.9.0 -> 2.0.0
 

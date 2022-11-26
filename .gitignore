@@ -65,3 +65,7 @@ tmp/
 
 # scenario tester debugging output
 tests/scenarios/output/
+
+# Sys files
+.DS_Store
+*.swp

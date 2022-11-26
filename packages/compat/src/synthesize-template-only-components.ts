@@ -7,7 +7,7 @@ import { remove, outputFileSync, pathExistsSync } from 'fs-extra';
 const source = `import templateOnlyComponent from '@ember/component/template-only';
 export default templateOnlyComponent();`;
 
-const templateExtension = '.hbs';
+const templateExtensions = ['.hbs', '.hbs.js'];
 
 const jsExtensions = ['.js', '.ts', '.mjs', '.mts'];
 
@@ -60,12 +60,14 @@ function crawl(dir: string) {
   const seen = new Set<string>();
   if (pathExistsSync(dir)) {
     for (let file of walkSync(dir, { directories: false })) {
-      if (file.endsWith(templateExtension)) {
-        needed.add(file.slice(0, -1 * templateExtension.length));
-      } else {
-        const jsExtension = jsExtensions.find(ext => file.endsWith(ext));
-        if (jsExtension) {
-          seen.add(file.slice(0, -1 * jsExtension.length));
+      for (const templateExtension of templateExtensions) {
+        if (file.endsWith(templateExtension)) {
+          needed.add(file.slice(0, -1 * templateExtension.length));
+        } else {
+          const jsExtension = jsExtensions.find(ext => file.endsWith(ext));
+          if (jsExtension) {
+            seen.add(file.slice(0, -1 * jsExtension.length));
+          }
         }
       }
     }

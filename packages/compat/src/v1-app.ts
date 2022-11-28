@@ -657,7 +657,9 @@ export default class V1App {
 
     let trees: Node[] = [];
     trees.push(appTree);
-    trees.push(new SynthesizeTemplateOnlyComponents(appTree, ['components']));
+    trees.push(
+      new SynthesizeTemplateOnlyComponents(appTree, { allowedPaths: ['components'], templateExtensions: ['.hbs'] })
+    );
 
     trees.push(configReplaced);
     if (testsTree) {

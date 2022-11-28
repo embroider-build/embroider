@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+# Release 2022-11-28.0
+
+## `@embroider/compat`, `@embroider/core`, `@embroider/test-setup`, `@embroider/webpack` 2.0.0 -> 2.0.1
+
+- BUGFIX: 2.0.0 broke template-only components in addons with custom AST transforms [1294](https://github.com/embroider-build/embroider/pull/1294), [1295](https://github.com/embroider-build/embroider/pull/1295)
+
 # Release 2022-11-23.0
 
 ## `@embroider/addon-dev` 2.0.0 -> 3.0.0

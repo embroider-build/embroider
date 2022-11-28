@@ -724,7 +724,13 @@ export default class V1Addon {
     if (!tree) {
       return;
     }
-    let templateOnlyComponents: Node = new SynthesizeTemplateOnlyComponents(tree, ['components']);
+    let templateOnlyComponents: Node = new SynthesizeTemplateOnlyComponents(tree, {
+      allowedPaths: ['components'],
+
+      // if an addon has custom AST transforms, stage1 can rewrite .hbs to
+      // .hbs.js
+      templateExtensions: ['.hbs', '.hbs.js'],
+    });
     if (!this.addonOptions.staticAddonTrees) {
       let filenames: string[] = [];
       let templateOnlyComponentNames: string[] = [];

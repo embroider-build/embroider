@@ -6,6 +6,8 @@ import { loadFromFixtureData } from './helpers';
 import { dummyAppScenarios, baseAddon, appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
+import { expectFilesAt, ExpectFile } from '@embroider/test-support';
+
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -128,6 +130,14 @@ appScenarios
     merge(addon.files, {
       addon: {
         components: {
+          'template-only.hbs': `<div data-test="template-only"></div>`,
+          'colocated.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {
+              identifier = "i-am-colocated";
+            }
+          `,
+          'colocated.hbs': `<div data-test={{this.identifier}}></div>`,
           'has-inline-template.js': `
             import Component from '@ember/component';
             import hbs from 'htmlbars-inline-precompile';
@@ -160,21 +170,43 @@ appScenarios
         workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
       });
 
-      test('component with inline template', function (assert) {
-        let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/components/has-inline-template.js')
-        );
-        assert.ok(
-          fileContents.includes('hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>'),
+      let expectFile: ExpectFile;
+      hooks.beforeEach(assert => {
+        expectFile = expectFilesAt(workspaceDir, { qunit: assert });
+      });
+
+      test('component with inline template', function () {
+        let file = expectFile('node_modules/my-addon/components/has-inline-template.js');
+
+        file.matches(
+          'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
           'tagged template is still hbs and custom transforms have run'
         );
-        assert.ok(
-          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/.test(fileContents.toString()),
+
+        file.matches(
+          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
-        assert.ok(
-          /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/.test(fileContents.toString()),
+
+        file.matches(
+          /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
           'template macros have not run'
+        );
+      });
+
+      test('component with colocated template', function () {
+        // co-located pairs are left alone in stage1 because we deal with them
+        // in stage3
+        expectFile('node_modules/my-addon/components/colocated.js').matches('i-am-colocated');
+        expectFile('node_modules/my-addon/components/colocated.hbs.js').exists();
+      });
+
+      test('template-only component', function () {
+        expectFile('node_modules/my-addon/components/template-only.js').matches(
+          'export default templateOnlyComponent()'
+        );
+        expectFile('node_modules/my-addon/components/template-only.hbs.js').matches(
+          'export default precompileTemplate'
         );
       });
     });

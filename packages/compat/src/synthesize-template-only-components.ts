@@ -7,24 +7,26 @@ import { remove, outputFileSync, pathExistsSync } from 'fs-extra';
 const source = `import templateOnlyComponent from '@ember/component/template-only';
 export default templateOnlyComponent();`;
 
-const templateExtensions = ['.hbs', '.hbs.js'];
-
 const jsExtensions = ['.js', '.ts', '.mjs', '.mts'];
 
 export default class SynthesizeTemplateOnlyComponents extends Plugin {
   private emitted = new Set() as Set<string>;
+  private allowedPaths: string[];
+  private templateExtensions: string[];
 
-  constructor(tree: Node, private allowedPaths: string[]) {
+  constructor(tree: Node, params: { allowedPaths: string[]; templateExtensions: string[] }) {
     super([tree], {
-      annotation: `synthesize-template-only-components:${allowedPaths.join(':')}`,
+      annotation: `synthesize-template-only-components:${params.allowedPaths.join(':')}`,
       persistentOutput: true,
       needsCache: false,
     });
+    this.allowedPaths = params.allowedPaths;
+    this.templateExtensions = params.templateExtensions;
   }
 
   async build() {
     for (let dir of this.allowedPaths) {
-      let { needed, seen } = crawl(join(this.inputPaths[0], dir));
+      let { needed, seen } = this.crawl(join(this.inputPaths[0], dir));
       for (let file of needed) {
         let fullName = join(this.outputPath, dir, file);
         if (seen.has(file)) {
@@ -53,24 +55,24 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
       this.emitted.delete(filename);
     }
   }
-}
 
-function crawl(dir: string) {
-  const needed = new Set<string>();
-  const seen = new Set<string>();
-  if (pathExistsSync(dir)) {
-    for (let file of walkSync(dir, { directories: false })) {
-      for (const templateExtension of templateExtensions) {
-        if (file.endsWith(templateExtension)) {
-          needed.add(file.slice(0, -1 * templateExtension.length));
-        } else {
-          const jsExtension = jsExtensions.find(ext => file.endsWith(ext));
-          if (jsExtension) {
-            seen.add(file.slice(0, -1 * jsExtension.length));
+  private crawl(dir: string) {
+    const needed = new Set<string>();
+    const seen = new Set<string>();
+    if (pathExistsSync(dir)) {
+      for (let file of walkSync(dir, { directories: false })) {
+        for (const templateExtension of this.templateExtensions) {
+          if (file.endsWith(templateExtension)) {
+            needed.add(file.slice(0, -1 * templateExtension.length));
+          } else {
+            const jsExtension = jsExtensions.find(ext => file.endsWith(ext));
+            if (jsExtension) {
+              seen.add(file.slice(0, -1 * jsExtension.length));
+            }
           }
         }
       }
     }
+    return { needed, seen };
   }
-  return { needed, seen };
 }

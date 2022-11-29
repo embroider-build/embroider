@@ -155,8 +155,6 @@ appScenarios
 
     addon.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
-    addon.linkDependency('ember-cli-htmlbars-inline-precompile', { baseDir: __dirname });
-    addon.linkDependency('ember-cli-htmlbars-3', { baseDir: __dirname, resolveName: 'ember-cli-htmlbars' });
     project.addDependency(addon);
   })
   .forEachScenario(async scenario => {

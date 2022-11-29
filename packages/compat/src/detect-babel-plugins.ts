@@ -76,4 +76,5 @@ const htmlbarPathMatches = [
   ['ember-cli-htmlbars', 'lib', 'require-from-worker.js'].join(sep),
   ['ember-cli-htmlbars', 'index'].join(sep),
   ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
+  ['babel-plugin-ember-template-compilation', 'src', 'node-main.js'].join(sep),
 ];

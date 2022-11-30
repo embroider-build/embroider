@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+# Release 2022-11-30.0
+
+## `@embroider/compat`, `@embroider/core`, `@embroider/test-setup`, `@embroider/webpack` 2.0.1 -> 2.0.2
+
+- BUGFIX: detect ember-template-compliation plugin correctly when other plugins are preventing parallelization [1299](https://github.com/embroider-build/embroider/pull/1299)
+
 # Release 2022-11-28.0
 
 ## `@embroider/compat`, `@embroider/core`, `@embroider/test-setup`, `@embroider/webpack` 2.0.0 -> 2.0.1

@@ -1,4 +1,6 @@
-export function ensureSafeComponent(
-  component: unknown,
+import { ComponentLike } from '@glint/template';
+
+export function ensureSafeComponent<C extends string | ComponentLike<S>, S>(
+  component: C,
   thingWithOwner: unknown
-): unknown;
+): C extends string ? ComponentLike<unknown> : C;

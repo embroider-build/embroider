@@ -675,7 +675,7 @@ export default class V1App {
 
   private withoutRootURL(src: string) {
     let rootURL = this.config.readConfig().rootURL;
-    if (src.startsWith(rootURL)) {
+    if ((src.startsWith(rootURL) && rootURL) || (!rootURL && !src.startsWith('/'))) {
       src = '/' + src.slice(rootURL.length);
     } else if (src.startsWith('/' + rootURL)) {
       src = src.slice(rootURL.length);

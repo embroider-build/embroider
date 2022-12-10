@@ -51,7 +51,7 @@ export class HTMLEntrypoint {
   }
 
   private relativeToApp(rootRelativeURL: string) {
-    return rootRelativeURL.replace(this.rootURL, '');
+    return rootRelativeURL.replace(new RegExp(`^${this.rootURL}`), './');
   }
 
   private handledScripts() {

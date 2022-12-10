@@ -188,7 +188,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
       for (let moduleName of entrypoint.modules) {
-        entry[moduleName] = './' + moduleName;
+        entry[moduleName] = require.resolve(moduleName, { paths: [this.pathToVanillaApp] });
       }
     }
 

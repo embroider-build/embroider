@@ -265,36 +265,46 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('bare dasherized component, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('bare dasherized component, js and hbs', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
-    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-      {
-        path: './components/hello-world.hbs',
-        runtimeName: 'the-app/templates/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
+      import helloWorld0 from "../components/hello-world.js";
+      import helloWorld from "./components/hello-world.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/hello-world", () => helloWorld);
+      window.define("the-app/components/hello-world", () => helloWorld0);
+      export default precompileTemplate("{{hello-world}}", {
+        moduleName: "my-app/templates/application.hbs",
+      });
+    `);
   });
 
-  test.skip('coalesces repeated components', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('coalesces repeated components', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{hello-world}}{{hello-world}}`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{hello-world}}{{hello-world}}`)).toEqualCode(`
+      import helloWorld from "../components/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helloWorld}}{{helloWorld}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
+      });
+    `);
   });
 
-  test.skip('tolerates non path mustaches', function () {
-    let findDependencies = configure({ staticComponents: false, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `<Thing @foo={{1}} />`)).toEqual([]);
+  test('tolerates non path mustaches', function () {
+    let transform = configure({ staticComponents: false, staticHelpers: true }, { startingFrom: 'js' });
+    let src = `
+      import { precompileTemplate } from '@ember/template-compilation';
+      precompileTemplate('<Thing @foo={{1}} />', {
+        scope: () => ({ Thing })
+      });
+    `;
+    expect(transform('templates/application.js', src)).toEqualCode(src);
   });
 
   test('block form curly component', function () {
@@ -310,12 +320,6 @@ describe('compat-resolver', function () {
         }),
       });
     `);
-    // expect(transform('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`)).toEqual([
-    //   {
-    //     path: '../components/hello-world.js',
-    //     runtimeName: 'the-app/components/hello-world',
-    //   },
-    // ]);
   });
 
   test('block form angle component', function () {
@@ -333,20 +337,15 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('curly contextual component', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    givenFile('components/hello-world.js');
-    expect(
-      findDependencies(
-        'templates/application.hbs',
-        `{{#hello-world as |h|}} {{h.title flavor="chocolate"}} {{/hello-world}}`
-      )
-    ).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+  test('curly contextual component', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true }, { startingFrom: 'js' });
+    let src = `
+      import { precompileTemplate } from '@ember/template-compilation';
+      precompileTemplate('{{#helloWorld as |h|}} {{h.title flavor="chocolate"}} {{/helloWorld}}', {
+        scope: () => ({ helloWorld })
+      });
+    `;
+    expect(transform('templates/application.js', src)).toEqualCode(src);
   });
 
   test.skip('angle contextual component, upper', function () {

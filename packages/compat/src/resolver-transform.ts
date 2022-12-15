@@ -10,7 +10,7 @@ import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 
-type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string };
+type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string; strict?: boolean };
 
 export interface Options {
   resolver: Resolver;
@@ -24,6 +24,7 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     contents,
     meta: { jsutils },
     syntax: { builders },
+    strict,
   }) => {
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
@@ -97,6 +98,13 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
         default:
           assertNever(resolution);
       }
+    }
+
+    if (strict) {
+      return {
+        name: 'embroider-build-time-resolver-strict-noop',
+        visitor: {},
+      };
     }
 
     return {

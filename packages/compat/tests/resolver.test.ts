@@ -20,6 +20,7 @@ describe('compat-resolver', function () {
       podModulePrefix?: string;
       adjustImportsImports?: Partial<AdjustImportsOptions>;
       plugins?: Transform[];
+      startingFrom?: 'hbs' | 'js';
     } = {}
   ) {
     appDir = realpathSync(mkdtempSync(join(tmpdir, 'embroider-compat-tests-')));
@@ -64,7 +65,8 @@ describe('compat-resolver', function () {
     };
 
     return function (relativePath: string, contents: string) {
-      let jsInput = hbsToJS(contents, { filename: `my-app/${relativePath}` });
+      let jsInput =
+        otherOptions?.startingFrom === 'js' ? contents : hbsToJS(contents, { filename: `my-app/${relativePath}` });
       let moduleName = givenFile(relativePath);
       return transformSync(jsInput, { ...babelConfig, filename: moduleName })!.code!;
     };
@@ -985,6 +987,33 @@ describe('compat-resolver', function () {
       });
     `);
   });
+
+  test('leaves strict mode templates alone', function () {
+    let transform = configure({ staticComponents: true }, { startingFrom: 'js' });
+    // strict mode templates don't need our resolver transform at all, because
+    // they don't do any global resolution.
+
+    // this test deliberately contains a runtime error. we're checking that it
+    // doesn't become a build-time error in our transform (which it would be if
+    // our transform tried to resolve Thing).
+    expect(
+      transform(
+        'components/example.js.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("<Thing />", {
+            strict: true,
+          });
+        `
+      )
+    ).toEqualCode(`
+      import { precompileTemplate } from '@ember/template-compilation';
+      export default precompileTemplate("<Thing />", {
+        strict: true,
+      });
+    `);
+  });
+
   test.skip('missing modifier', function () {
     let findDependencies = configure({ staticModifiers: true });
     expect(() => {

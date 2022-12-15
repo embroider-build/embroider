@@ -298,12 +298,7 @@ describe('compat-resolver', function () {
 
   test('tolerates non path mustaches', function () {
     let transform = configure({ staticComponents: false, staticHelpers: true }, { startingFrom: 'js' });
-    let src = `
-      import { precompileTemplate } from '@ember/template-compilation';
-      precompileTemplate('<Thing @foo={{1}} />', {
-        scope: () => ({ Thing })
-      });
-    `;
+    let src = hbsToJS('<Thing @foo={{1}} />');
     expect(transform('templates/application.js', src)).toEqualCode(src);
   });
 
@@ -348,17 +343,23 @@ describe('compat-resolver', function () {
     expect(transform('templates/application.js', src)).toEqualCode(src);
   });
 
-  test.skip('angle contextual component, upper', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle contextual component, upper', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    expect(
-      findDependencies('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`)
-    ).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`))
+      .toEqualCode(`
+        import HelloWorld from "../components/hello-world.js";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate(
+          '<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>',
+          {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              HelloWorld,
+            }),
+          }
+        );
+      `);
   });
 
   test.skip('angle contextual component, lower', function () {

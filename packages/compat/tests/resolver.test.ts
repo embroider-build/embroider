@@ -998,7 +998,7 @@ describe('compat-resolver', function () {
     // our transform tried to resolve Thing).
     expect(
       transform(
-        'components/example.js.hbs',
+        'components/example.js',
         `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("<Thing />", {
@@ -1010,6 +1010,50 @@ describe('compat-resolver', function () {
       import { precompileTemplate } from '@ember/template-compilation';
       export default precompileTemplate("<Thing />", {
         strict: true,
+      });
+    `);
+  });
+
+  test('respects lexically scoped component', function () {
+    let transform = configure({ staticComponents: true }, { startingFrom: 'js' });
+    expect(
+      transform(
+        'components/example.js',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          import Thing from 'whatever';
+          precompileTemplate("<Thing />", {
+            scope: () => ({ Thing }),
+          });
+        `
+      )
+    ).toEqualCode(`
+      import { precompileTemplate } from '@ember/template-compilation';
+      import Thing from 'whatever';
+      precompileTemplate("<Thing />", {
+        scope: () => ({ Thing }),
+      });
+    `);
+  });
+
+  test('respects lexically scoped helper', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true }, { startingFrom: 'js' });
+    expect(
+      transform(
+        'components/example.js',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          import thing from 'whatever';
+          precompileTemplate("<div class={{thing flavor=1}}></div>", {
+            scope: () => ({ thing }),
+          });
+        `
+      )
+    ).toEqualCode(`
+      import { precompileTemplate } from '@ember/template-compilation';
+      import thing from 'whatever';
+      precompileTemplate("<div class={{thing flavor=1}}></div>", {
+        scope: () => ({ thing }),
       });
     `);
   });

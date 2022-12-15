@@ -10,7 +10,12 @@ import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 
-type Env = WithJSUtils<ASTPluginEnvironment> & { filename: string; contents: string; strict?: boolean };
+type Env = WithJSUtils<ASTPluginEnvironment> & {
+  filename: string;
+  contents: string;
+  strict?: boolean;
+  locals?: string[];
+};
 
 export interface Options {
   resolver: Resolver;
@@ -19,13 +24,16 @@ export interface Options {
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform({ resolver, patchHelpersBug }: Options) {
-  const resolverTransform: ASTPluginBuilder<Env> = ({
-    filename,
-    contents,
-    meta: { jsutils },
-    syntax: { builders },
-    strict,
-  }) => {
+  const resolverTransform: ASTPluginBuilder<Env> = env => {
+    let {
+      filename,
+      contents,
+      meta: { jsutils },
+      syntax: { builders },
+      strict,
+      locals,
+    } = env;
+
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
 
@@ -113,10 +121,16 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
       visitor: {
         Program: {
           enter(node) {
+            if (locals) {
+              scopeStack.push(locals);
+            }
             scopeStack.push(node.blockParams);
           },
           exit() {
             scopeStack.pop();
+            if (locals) {
+              scopeStack.pop();
+            }
           },
         },
         BlockStatement(node, path) {

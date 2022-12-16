@@ -1,19 +1,21 @@
-import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
-import { join, dirname, resolve } from 'path';
+import { join, dirname } from 'path';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
-import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { Memoize } from 'typescript-memoize';
-import { compile } from './js-handlebars';
 import { ImportUtil } from 'babel-import-util';
 import { randomBytes } from 'crypto';
 import { outputFileSync, pathExistsSync, renameSync } from 'fs-extra';
+import { explicitRelative } from '@embroider/shared-internals';
+import { compile } from './js-handlebars';
+import { Options, Resolver } from './module-resolver';
+import assertNever from 'assert-never';
 
 interface State {
-  adjustFile: AdjustFile;
+  resolver: Resolver;
   opts: Options | DeflatedOptions;
 }
+
+export { Options };
 
 export interface DeflatedOptions {
   adjustImportsOptionsPath: string;
@@ -21,27 +23,6 @@ export interface DeflatedOptions {
 }
 
 type BabelTypes = typeof t;
-
-export interface Options {
-  renamePackages: {
-    [fromName: string]: string;
-  };
-  renameModules: {
-    [fromName: string]: string;
-  };
-  extraImports: {
-    absPath: string;
-    target: string;
-    runtimeName?: string;
-  }[];
-  externalsDir: string;
-  activeAddons: {
-    [packageName: string]: string;
-  };
-  relocatedFiles: { [relativePath: string]: string };
-  resolvableExtensions: string[];
-  appRoot: string;
-}
 
 type DefineExpressionPath = NodePath<t.CallExpression> & {
   node: t.CallExpression & {
@@ -90,286 +71,6 @@ export function isDefineExpression(t: BabelTypes, path: NodePath<any>): path is 
   );
 }
 
-function adjustSpecifier(specifier: string, file: AdjustFile, opts: Options, isDynamic: boolean) {
-  if (specifier === '@embroider/macros') {
-    // the macros package is always handled directly within babel (not
-    // necessarily as a real resolvable package), so we should not mess with it.
-    // It might not get compiled away until *after* our plugin has run, which is
-    // why we need to know about it.
-    return specifier;
-  }
-
-  specifier = handleRenaming(specifier, file, opts);
-  specifier = handleExternal(specifier, file, opts, isDynamic);
-  return specifier;
-}
-
-function handleRenaming(specifier: string, sourceFile: AdjustFile, opts: Options) {
-  let packageName = getPackageName(specifier);
-  if (!packageName) {
-    return specifier;
-  }
-
-  for (let [candidate, replacement] of Object.entries(opts.renameModules)) {
-    if (candidate === specifier) {
-      return replacement;
-    }
-    for (let extension of opts.resolvableExtensions) {
-      if (candidate === specifier + '/index' + extension) {
-        return replacement;
-      }
-      if (candidate === specifier + extension) {
-        return replacement;
-      }
-    }
-  }
-
-  if (opts.renamePackages[packageName]) {
-    return specifier.replace(packageName, opts.renamePackages[packageName]);
-  }
-
-  let pkg = sourceFile.owningPackage();
-  if (!pkg || !pkg.isV2Ember()) {
-    return specifier;
-  }
-
-  if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
-    // we found a self-import, make it relative. Only auto-upgraded packages get
-    // this help, v2 packages are natively supposed to use relative imports for
-    // their own modules, and we want to push them all to do that correctly.
-    let fullPath = specifier.replace(packageName, pkg.root);
-    return explicitRelative(dirname(sourceFile.name), fullPath);
-  }
-
-  let relocatedIntoPkg = sourceFile.relocatedIntoPackage();
-  if (relocatedIntoPkg && pkg.meta['auto-upgraded'] && relocatedIntoPkg.name === packageName) {
-    // a file that was relocated into a package does a self-import of that
-    // package's name. This can happen when an addon (like ember-cli-mirage)
-    // emits files from its own treeForApp that contain imports of the app's own
-    // fully qualified name.
-    let fullPath = specifier.replace(packageName, relocatedIntoPkg.root);
-    return explicitRelative(dirname(sourceFile.name), fullPath);
-  }
-
-  return specifier;
-}
-
-function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
-  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
-}
-
-function isResolvable(packageName: string, fromPkg: V2Package, appRoot: string): false | Package {
-  try {
-    let dep = PackageCache.shared('embroider-stage3', appRoot).resolve(packageName, fromPkg);
-    if (!dep.isEmberPackage() && fromPkg.meta['auto-upgraded'] && !fromPkg.hasDependency('ember-auto-import')) {
-      // classic ember addons can only import non-ember dependencies if they
-      // have ember-auto-import.
-      //
-      // whereas native v2 packages can always import any dependency
-      return false;
-    }
-    return dep;
-  } catch (err) {
-    if (err.code !== 'MODULE_NOT_FOUND') {
-      throw err;
-    }
-    return false;
-  }
-}
-
-const dynamicMissingModule = compile(`
-  throw new Error('Could not find module \`{{{js-string-escape moduleName}}}\`');
-`) as (params: { moduleName: string }) => string;
-
-const externalTemplate = compile(`
-{{#if (eq runtimeName "require")}}
-const m = window.requirejs;
-{{else}}
-const m = window.require("{{{js-string-escape runtimeName}}}");
-{{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
-
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
-
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
-}
-module.exports = m;
-`) as (params: { runtimeName: string }) => string;
-
-function handleExternal(specifier: string, sourceFile: AdjustFile, opts: Options, isDynamic: boolean): string {
-  let pkg = sourceFile.owningPackage();
-  if (!pkg || !pkg.isV2Ember()) {
-    return specifier;
-  }
-
-  let packageName = getPackageName(specifier);
-  if (!packageName) {
-    // This is a relative import. We don't automatically externalize those
-    // because it's rare, and by keeping them static we give better errors. But
-    // we do allow them to be explicitly externalized by the package author (or
-    // a compat adapter). In the metadata, they would be listed in
-    // package-relative form, so we need to convert this specifier to that.
-    let absoluteSpecifier = resolve(dirname(sourceFile.name), specifier);
-    let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
-    if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
-      let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
-      return makeExternal(publicSpecifier, sourceFile, opts);
-    } else {
-      return specifier;
-    }
-  }
-
-  // absolute package imports can also be explicitly external based on their
-  // full specifier name
-  if (isExplicitlyExternal(specifier, pkg)) {
-    return makeExternal(specifier, sourceFile, opts);
-  }
-
-  if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
-    // Native v2 addons are allowed to use the emberVirtualPeerDeps like
-    // `@glimmer/component`. And like all v2 addons, it's important that they
-    // see those dependencies after those dependencies have been converted to
-    // v2.
-    //
-    // But unlike auto-upgraded addons, native v2 addons are not necessarily
-    // copied out of their original place in node_modules. And from that
-    // original place they might accidentally resolve the emberVirtualPeerDeps
-    // that are present there in v1 format.
-    //
-    // So before we even check isResolvable, we adjust these imports to point at
-    // the app's copies instead.
-    if (emberVirtualPeerDeps.has(packageName)) {
-      if (!opts.activeAddons[packageName]) {
-        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
-      }
-      return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-    }
-  }
-
-  let relocatedPkg = sourceFile.relocatedIntoPackage();
-  if (relocatedPkg) {
-    // this file has been moved into another package (presumably the app).
-
-    // first try to resolve from the destination package
-    if (isResolvable(packageName, relocatedPkg, opts.appRoot)) {
-      // self-imports are legal in the app tree, even for v2 packages.
-      if (!pkg.meta['auto-upgraded'] && packageName !== pkg.name) {
-        throw new Error(
-          `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
-        );
-      }
-      return specifier;
-    } else {
-      // second try to resolve from the source package
-      let targetPkg = isResolvable(packageName, pkg, opts.appRoot);
-      if (targetPkg) {
-        // self-imports are legal in the app tree, even for v2 packages.
-        if (!pkg.meta['auto-upgraded'] && packageName !== pkg.name) {
-          throw new Error(
-            `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
-          );
-        }
-        // we found it, but we need to rewrite it because it's not really going to
-        // resolve from where its sitting
-        return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, targetPkg.root));
-      }
-    }
-  } else {
-    if (isResolvable(packageName, pkg, opts.appRoot)) {
-      if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
-        throw new Error(
-          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-        );
-      }
-      return specifier;
-    }
-  }
-
-  // auto-upgraded packages can fall back to the set of known active addons
-  //
-  // v2 packages can fall back to the set of known active addons only to find
-  // themselves (which is needed due to app tree merging)
-  if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && opts.activeAddons[packageName]) {
-    return explicitRelative(dirname(sourceFile.name), specifier.replace(packageName, opts.activeAddons[packageName]));
-  }
-
-  if (pkg.meta['auto-upgraded']) {
-    // auto-upgraded packages can fall back to attempting to find dependencies at
-    // runtime. Native v2 packages can only get this behavior in the
-    // isExplicitlyExternal case above because they need to explicitly ask for
-    // externals.
-    return makeExternal(specifier, sourceFile, opts);
-  } else {
-    // native v2 packages don't automatically externalize *everything* the way
-    // auto-upgraded packages do, but they still externalize known and approved
-    // ember virtual packages (like @ember/component)
-    if (emberVirtualPackages.has(packageName)) {
-      return makeExternal(specifier, sourceFile, opts);
-    }
-  }
-
-  // non-resolvable imports in dynamic positions become runtime errors, not
-  // build-time errors, so we emit the runtime error module here before the
-  // stage3 packager has a chance to see the missing module. (Maybe some stage3
-  // packagers will have this behavior by default, because it would make sense,
-  // but webpack at least does not.)
-  if (isDynamic) {
-    return makeMissingModule(specifier, sourceFile, opts);
-  }
-
-  // this is falling through with the original specifier which was
-  // non-resolvable, which will presumably cause a static build error in stage3.
-  return specifier;
-}
-
-function makeMissingModule(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let target = join(opts.externalsDir, 'missing', specifier + '.js');
-  atomicWrite(
-    target,
-    dynamicMissingModule({
-      moduleName: specifier,
-    })
-  );
-  return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
-}
-
-function makeExternal(specifier: string, sourceFile: AdjustFile, opts: Options): string {
-  let target = join(opts.externalsDir, specifier + '.js');
-  atomicWrite(
-    target,
-    externalTemplate({
-      runtimeName: specifier,
-    })
-  );
-  return explicitRelative(dirname(sourceFile.name), target.slice(0, -3));
-}
-
-function atomicWrite(path: string, content: string) {
-  if (pathExistsSync(path)) {
-    return;
-  }
-  let suffix = randomBytes(8).toString('hex');
-  outputFileSync(path + suffix, content);
-  try {
-    renameSync(path + suffix, path);
-  } catch (err: any) {
-    // windows throws EPERM for concurrent access. For us it's not an error
-    // condition because the other thread is writing the exact same value we
-    // would have.
-    if (err.code !== 'EPERM') {
-      throw err;
-    }
-  }
-}
-
 export default function main(babel: typeof Babel) {
   let t = babel.types;
   return {
@@ -377,7 +78,7 @@ export default function main(babel: typeof Babel) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           let opts = ensureOpts(state);
-          state.adjustFile = new AdjustFile(path.hub.file.opts.filename, opts.relocatedFiles, opts.appRoot);
+          state.resolver = new Resolver(path.hub.file.opts.filename, opts);
           let adder = new ImportUtil(t, path);
           addExtraImports(adder, t, path, opts.extraImports);
         },
@@ -392,9 +93,9 @@ export default function main(babel: typeof Babel) {
       CallExpression(path: NodePath<t.CallExpression>, state: State) {
         if (isImportSyncExpression(t, path) || isDynamicImportExpression(t, path)) {
           const [source] = path.get('arguments');
-          let opts = ensureOpts(state);
-          let specifier = adjustSpecifier((source.node as any).value, state.adjustFile, opts, true);
-          source.replaceWith(t.stringLiteral(specifier));
+          resolve((source.node as any).value, true, state, newSpecifier => {
+            source.replaceWith(t.stringLiteral(newSpecifier));
+          });
           return;
         }
 
@@ -403,21 +104,19 @@ export default function main(babel: typeof Babel) {
           return;
         }
 
-        let pkg = state.adjustFile.owningPackage();
+        let pkg = state.resolver.owningPackage();
         if (pkg && pkg.isV2Ember() && !pkg.meta['auto-upgraded']) {
           throw new Error(
-            `The file ${state.adjustFile.originalFile} in package ${pkg.name} tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
+            `The file ${state.resolver.originalFilename} in package ${pkg.name} tried to use AMD define. Native V2 Ember addons are forbidden from using AMD define, they must use ECMA export only.`
           );
         }
-
-        let opts = ensureOpts(state);
 
         const dependencies = path.node.arguments[1];
 
         const specifiers = dependencies.elements.slice();
         specifiers.push(path.node.arguments[0]);
 
-        for (let source of specifiers) {
+        for (const source of specifiers) {
           if (!source) {
             continue;
           }
@@ -431,11 +130,9 @@ export default function main(babel: typeof Babel) {
             continue;
           }
 
-          let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
-
-          if (specifier !== source.value) {
-            source.value = specifier;
-          }
+          resolve(source.value, false, state, newSpecifier => {
+            source.value = newSpecifier;
+          });
         }
       },
     },
@@ -446,16 +143,14 @@ function rewriteTopLevelImport(
   path: NodePath<t.ImportDeclaration | t.ExportNamedDeclaration | t.ExportAllDeclaration>,
   state: State
 ) {
-  let opts = ensureOpts(state);
   const { source } = path.node;
   if (source === null || source === undefined) {
     return;
   }
 
-  let specifier = adjustSpecifier(source.value, state.adjustFile, opts, false);
-  if (specifier !== source.value) {
-    source.value = specifier;
-  }
+  resolve(source.value, false, state, newSpecifier => {
+    source.value = newSpecifier;
+  });
 }
 
 (main as any).baseDir = function () {
@@ -489,39 +184,6 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
   );
 }
 
-class AdjustFile {
-  readonly originalFile: string;
-  private packageCache: PackageCache;
-
-  constructor(public name: string, relocatedFiles: Options['relocatedFiles'], appRoot: string) {
-    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
-    if (!name) {
-      throw new Error(`bug: adjust-imports plugin was run without a filename`);
-    }
-    this.originalFile = relocatedFiles[name] || name;
-  }
-
-  get isRelocated() {
-    return this.originalFile !== this.name;
-  }
-
-  @Memoize()
-  owningPackage(): Package | undefined {
-    return this.packageCache.ownerOfFile(this.originalFile);
-  }
-
-  @Memoize()
-  relocatedIntoPackage(): V2Package | undefined {
-    if (this.isRelocated) {
-      let owning = this.packageCache.ownerOfFile(this.name);
-      if (owning && !owning.isV2Ember()) {
-        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
-      }
-      return owning;
-    }
-  }
-}
-
 function ensureOpts(state: State): Options {
   let { opts } = state;
   if ('adjustImportsOptionsPath' in opts) {
@@ -531,23 +193,92 @@ function ensureOpts(state: State): Options {
   return opts;
 }
 
-// we don't want to allow things that resolve only by accident that are likely
-// to break in other setups. For example: import your dependencies'
-// dependencies, or importing your own name from within a monorepo (which will
-// work because of the symlinking) without setting up "exports" (which makes
-// your own name reliably resolvable)
-function reliablyResolvable(pkg: V2Package, packageName: string) {
-  if (pkg.hasDependency(packageName)) {
-    return true;
-  }
+function makeExternal(specifier: string, sourceFile: string, opts: Options): string {
+  let target = join(opts.externalsDir, specifier + '.js');
+  atomicWrite(
+    target,
+    externalTemplate({
+      runtimeName: specifier,
+    })
+  );
+  return explicitRelative(dirname(sourceFile), target.slice(0, -3));
+}
 
-  if (pkg.name === packageName && pkg.packageJSON.exports) {
-    return true;
+function atomicWrite(path: string, content: string) {
+  if (pathExistsSync(path)) {
+    return;
   }
-
-  if (emberVirtualPeerDeps.has(packageName)) {
-    return true;
+  let suffix = randomBytes(8).toString('hex');
+  outputFileSync(path + suffix, content);
+  try {
+    renameSync(path + suffix, path);
+  } catch (err: any) {
+    // windows throws EPERM for concurrent access. For us it's not an error
+    // condition because the other thread is writing the exact same value we
+    // would have.
+    if (err.code !== 'EPERM') {
+      throw err;
+    }
   }
+}
 
-  return false;
+function makeMissingModule(specifier: string, sourceFile: string, opts: Options): string {
+  let target = join(opts.externalsDir, 'missing', specifier + '.js');
+  atomicWrite(
+    target,
+    dynamicMissingModule({
+      moduleName: specifier,
+    })
+  );
+  return explicitRelative(dirname(sourceFile), target.slice(0, -3));
+}
+
+const dynamicMissingModule = compile(`
+  throw new Error('Could not find module \`{{{js-string-escape moduleName}}}\`');
+`) as (params: { moduleName: string }) => string;
+
+const externalTemplate = compile(`
+{{#if (eq runtimeName "require")}}
+const m = window.requirejs;
+{{else}}
+const m = window.require("{{{js-string-escape runtimeName}}}");
+{{/if}}
+{{!-
+  There are plenty of hand-written AMD defines floating around
+  that lack this, and they will break when other build systems
+  encounter them.
+
+  As far as I can tell, Ember's loader was already treating this
+  case as a module, so in theory we aren't breaking anything by
+  marking it as such when other packagers come looking.
+
+  todo: get review on this part.
+-}}
+if (m.default && !m.__esModule) {
+  m.__esModule = true;
+}
+module.exports = m;
+`) as (params: { runtimeName: string }) => string;
+
+function resolve(specifier: string, isDynamic: boolean, state: State, setter: (specifier: string) => void) {
+  let resolution = state.resolver.resolve(specifier, isDynamic);
+  let newSpecifier: string | undefined;
+  switch (resolution.result) {
+    case 'continue':
+      return;
+    case 'external':
+      newSpecifier = makeExternal(resolution.specifier, state.resolver.filename, ensureOpts(state));
+      break;
+    case 'redirect-to':
+      newSpecifier = resolution.specifier;
+      break;
+    case 'runtime-failure':
+      newSpecifier = makeMissingModule(resolution.specifier, state.resolver.filename, ensureOpts(state));
+      break;
+    default:
+      throw assertNever(resolution);
+  }
+  if (newSpecifier) {
+    setter(newSpecifier);
+  }
 }

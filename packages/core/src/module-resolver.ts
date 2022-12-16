@@ -31,9 +31,10 @@ export type Resolution =
   | { result: 'runtime-failure'; specifier: string };
 
 export class Resolver {
-  private file: AdjustFile;
-  constructor(filename: string, private options: Options) {
-    this.file = new AdjustFile(filename, options.relocatedFiles, options.appRoot);
+  readonly originalFilename: string;
+
+  constructor(readonly filename: string, private options: Options) {
+    this.originalFilename = options.relocatedFiles[filename] || filename;
   }
   resolve(specifier: string, isDynamic: boolean): Resolution {
     if (specifier === '@embroider/macros') {
@@ -52,16 +53,20 @@ export class Resolver {
     return resolution;
   }
 
-  get filename(): string {
-    return this.file.name;
-  }
-
-  get originalFilename(): string {
-    return this.file.originalFile;
-  }
-
+  @Memoize()
   owningPackage(): Package | undefined {
-    return this.file.owningPackage();
+    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(this.originalFilename);
+  }
+
+  @Memoize()
+  private relocatedIntoPackage(): V2Package | undefined {
+    if (this.originalFilename !== this.filename) {
+      let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(this.filename);
+      if (owning && !owning.isV2Ember()) {
+        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
+      }
+      return owning;
+    }
   }
 
   private handleRenaming(specifier: string) {
@@ -88,7 +93,7 @@ export class Resolver {
       return specifier.replace(packageName, this.options.renamePackages[packageName]);
     }
 
-    let pkg = this.file.owningPackage();
+    let pkg = this.owningPackage();
     if (!pkg || !pkg.isV2Ember()) {
       return specifier;
     }
@@ -98,24 +103,24 @@ export class Resolver {
       // this help, v2 packages are natively supposed to use relative imports for
       // their own modules, and we want to push them all to do that correctly.
       let fullPath = specifier.replace(packageName, pkg.root);
-      return explicitRelative(dirname(this.file.name), fullPath);
+      return explicitRelative(dirname(this.filename), fullPath);
     }
 
-    let relocatedIntoPkg = this.file.relocatedIntoPackage();
+    let relocatedIntoPkg = this.relocatedIntoPackage();
     if (relocatedIntoPkg && pkg.meta['auto-upgraded'] && relocatedIntoPkg.name === packageName) {
       // a file that was relocated into a package does a self-import of that
       // package's name. This can happen when an addon (like ember-cli-mirage)
       // emits files from its own treeForApp that contain imports of the app's own
       // fully qualified name.
       let fullPath = specifier.replace(packageName, relocatedIntoPkg.root);
-      return explicitRelative(dirname(this.file.name), fullPath);
+      return explicitRelative(dirname(this.filename), fullPath);
     }
 
     return specifier;
   }
 
   private handleExternal(specifier: string, isDynamic: boolean): Resolution {
-    let pkg = this.file.owningPackage();
+    let pkg = this.owningPackage();
     if (!pkg || !pkg.isV2Ember()) {
       return { result: 'continue' };
     }
@@ -127,7 +132,7 @@ export class Resolver {
       // we do allow them to be explicitly externalized by the package author (or
       // a compat adapter). In the metadata, they would be listed in
       // package-relative form, so we need to convert this specifier to that.
-      let absoluteSpecifier = resolve(dirname(this.file.name), specifier);
+      let absoluteSpecifier = resolve(dirname(this.filename), specifier);
       let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
@@ -165,14 +170,14 @@ export class Resolver {
         return {
           result: 'redirect-to',
           specifier: explicitRelative(
-            dirname(this.file.name),
+            dirname(this.filename),
             specifier.replace(packageName, this.options.activeAddons[packageName])
           ),
         };
       }
     }
 
-    let relocatedPkg = this.file.relocatedIntoPackage();
+    let relocatedPkg = this.relocatedIntoPackage();
     if (relocatedPkg) {
       // this file has been moved into another package (presumably the app).
 
@@ -199,7 +204,7 @@ export class Resolver {
           // resolve from where its sitting
           return {
             result: 'redirect-to',
-            specifier: explicitRelative(dirname(this.file.name), specifier.replace(packageName, targetPkg.root)),
+            specifier: explicitRelative(dirname(this.filename), specifier.replace(packageName, targetPkg.root)),
           };
         }
       }
@@ -222,7 +227,7 @@ export class Resolver {
       return {
         result: 'redirect-to',
         specifier: explicitRelative(
-          dirname(this.file.name),
+          dirname(this.filename),
           specifier.replace(packageName, this.options.activeAddons[packageName])
         ),
       };
@@ -255,39 +260,6 @@ export class Resolver {
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
     return { result: 'continue' };
-  }
-}
-
-class AdjustFile {
-  readonly originalFile: string;
-  private packageCache: PackageCache;
-
-  constructor(public name: string, relocatedFiles: Options['relocatedFiles'], appRoot: string) {
-    this.packageCache = PackageCache.shared('embroider-stage3', appRoot);
-    if (!name) {
-      throw new Error(`bug: adjust-imports plugin was run without a filename`);
-    }
-    this.originalFile = relocatedFiles[name] || name;
-  }
-
-  get isRelocated() {
-    return this.originalFile !== this.name;
-  }
-
-  @Memoize()
-  owningPackage(): Package | undefined {
-    return this.packageCache.ownerOfFile(this.originalFile);
-  }
-
-  @Memoize()
-  relocatedIntoPackage(): V2Package | undefined {
-    if (this.isRelocated) {
-      let owning = this.packageCache.ownerOfFile(this.name);
-      if (owning && !owning.isV2Ember()) {
-        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
-      }
-      return owning;
-    }
   }
 }
 

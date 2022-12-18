@@ -362,6 +362,132 @@ describe('compat-resolver', function () {
       `);
   });
 
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, element syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<HelloWorld />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello-world.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("<HelloWorld @iAmAComponent='first-target' /><HelloWorld @iAmAComponent='second-target' />");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import HelloWorld from "../components/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        "<HelloWorld @iAmAComponent={{firstTarget}} /><HelloWorld @iAmAComponent={{secondTarget}} />",
+        {
+          scope: () => ({
+            HelloWorld,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<Hello />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("{{hello iAmAComponent='first-target' }}{{hello iAmAComponent='second-target' }}");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import hello from "../components/hello.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        "{{hello iAmAComponent=firstTarget}}{{hello iAmAComponent=secondTarget}}",
+        {
+          scope: () => ({
+            hello,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache-block syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<Hello />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("{{#hello iAmAComponent='first-target' }}{{/hello}}{{#hello iAmAComponent='second-target' }}{{/hello}}");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import hello from "../components/hello.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        '{{#hello iAmAComponent=firstTarget}}{{/hello}}{{#hello iAmAComponent=secondTarget}}{{/hello}}',
+        {
+          scope: () => ({
+            hello,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
   test.skip('angle contextual component, lower', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');

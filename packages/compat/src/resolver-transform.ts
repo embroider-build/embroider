@@ -37,6 +37,18 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
 
+    // The first time we insert a component as a lexical binding
+    //   - if there's no JS-scope collision with the name, we're going to bind the existing name
+    //     - in this case, any subsequent invocations of the same component just got automatically fixed too
+    //     - but that means we need to remember that we did this, in order to
+    //       give those other invocation sites support for features like argumentsAreComponents. That is what
+    //       emittedLexicalBindings is for.
+    //   - else there is a JS-scope collision, we're going to bind a mangled name and rewrite the callsite
+    //     - in this case, subequent callsites will get their own independent
+    //       resolution and they will get correctly aggregated by the
+    //       jsutils.bindImport logic.
+    let emittedLexicalBindings: Map<string, Resolution> = new Map();
+
     function emitAMD(dep: ResolvedDep | null) {
       if (dep && !emittedAMDDeps.has(dep.runtimeName)) {
         let parts = dep.runtimeName.split('/');
@@ -63,21 +75,19 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
             emitAMD(resolution.module);
           } else {
-            setter(
-              parentPath.node,
-              builders.path(
-                jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
-              )
-            );
+            let name = jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+              nameHint: resolution.nameHint,
+            });
+            emittedLexicalBindings.set(name, resolution);
+            setter(parentPath.node, builders.path(name));
           }
           return;
         case 'modifier':
-          setter(
-            parentPath.node,
-            builders.path(
-              jsutils.bindImport(resolution.module.path, 'default', parentPath, { nameHint: resolution.nameHint })
-            )
-          );
+          let name = jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+            nameHint: resolution.nameHint,
+          });
+          emittedLexicalBindings.set(name, resolution);
+          setter(parentPath.node, builders.path(name));
           return;
         case 'component':
           // When people are using octane-style template co-location or
@@ -91,12 +101,11 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           // component and the template in the AMD loader to associate them. In
           // that case, we emit just-in-time AMD definitions for them.
           if (resolution.jsModule && !resolution.hbsModule) {
-            setter(
-              parentPath.node,
-              builders.path(
-                jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, { nameHint: resolution.nameHint })
-              )
-            );
+            let name = jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
+              nameHint: resolution.nameHint,
+            });
+            emittedLexicalBindings.set(name, resolution);
+            setter(parentPath.node, builders.path(name));
           } else {
             emitAMD(resolution.hbsModule);
             emitAMD(resolution.jsModule);
@@ -105,6 +114,35 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           return;
         default:
           assertNever(resolution);
+      }
+    }
+
+    function handleDynamicComponentArguments(
+      componentName: string,
+      argumentsAreComponents: string[],
+      attributes: WalkerPath<ASTv1.AttrNode | ASTv1.HashPair>[]
+    ) {
+      for (let name of argumentsAreComponents) {
+        let attr = attributes.find(attr => {
+          if (attr.node.type === 'AttrNode') {
+            return attr.node.name === '@' + name;
+          } else {
+            return attr.node.key === name;
+          }
+        });
+        if (attr) {
+          let resolution = handleComponentHelper(attr.node.value, resolver, filename, scopeStack, {
+            componentName,
+            argumentName: name,
+          });
+          emit(attr, resolution, (node, newId) => {
+            if (node.type === 'AttrNode') {
+              node.value = builders.mustache(newId);
+            } else {
+              node.value = newId;
+            }
+          });
+        }
       }
     }
 
@@ -137,7 +175,18 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (scopeStack.inScope(node.path.parts[0])) {
+          let rootName = node.path.parts[0];
+          if (scopeStack.inScope(rootName)) {
+            let resolution = emittedLexicalBindings.get(rootName);
+            if (resolution?.type === 'component') {
+              scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                handleDynamicComponentArguments(
+                  rootName,
+                  argumentsAreComponents,
+                  extendPath(extendPath(path, 'hash'), 'pairs')
+                );
+              });
+            }
             return;
           }
           if (node.path.this === true) {
@@ -166,19 +215,11 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           });
           if (resolution?.type === 'component') {
             scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
-              for (let name of argumentsAreComponents) {
-                let pair = pairs.find(pair => pair.node.key === name);
-                if (pair) {
-                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
-                    componentName: (node.path as ASTv1.PathExpression).original,
-                    argumentName: name,
-                  });
-                  emit(pair, resolution, (node, newId) => {
-                    node.value = newId;
-                  });
-                }
-              }
+              handleDynamicComponentArguments(
+                rootName,
+                argumentsAreComponents,
+                extendPath(extendPath(path, 'hash'), 'pairs')
+              );
             });
           }
         },
@@ -217,7 +258,16 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             if (node.path.type !== 'PathExpression') {
               return;
             }
-            if (scopeStack.inScope(node.path.parts[0])) {
+            let rootName = node.path.parts[0];
+            if (scopeStack.inScope(rootName)) {
+              let resolution = emittedLexicalBindings.get(rootName);
+              if (resolution && resolution.type === 'component') {
+                handleDynamicComponentArguments(
+                  rootName,
+                  resolution.argumentsAreComponents,
+                  extendPath(extendPath(path, 'hash'), 'pairs')
+                );
+              }
               return;
             }
             if (node.path.this === true) {
@@ -247,19 +297,11 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
               node.path = newIdentifier;
             });
             if (resolution?.type === 'component') {
-              let pairs = extendPath(extendPath(path, 'hash'), 'pairs');
-              for (let name of resolution.argumentsAreComponents) {
-                let pair = pairs.find(pair => pair.node.key === name);
-                if (pair) {
-                  let resolution = handleComponentHelper(pair.node.value, resolver, filename, scopeStack, {
-                    componentName: node.path.original,
-                    argumentName: name,
-                  });
-                  emit(pair, resolution, (node, newId) => {
-                    node.value = newId;
-                  });
-                }
-              }
+              handleDynamicComponentArguments(
+                node.path.original,
+                resolution.argumentsAreComponents,
+                extendPath(extendPath(path, 'hash'), 'pairs')
+              );
             }
           },
         },
@@ -292,26 +334,22 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
         },
         ElementNode: {
           enter(node, path) {
-            if (!scopeStack.inScope(node.tag.split('.')[0])) {
+            let rootName = node.tag.split('.')[0];
+            if (scopeStack.inScope(rootName)) {
+              const resolution = emittedLexicalBindings.get(rootName);
+              if (resolution?.type === 'component') {
+                scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
+                  handleDynamicComponentArguments(node.tag, argumentsAreComponents, extendPath(path, 'attributes'));
+                });
+              }
+            } else {
               const resolution = resolver.resolveElement(node.tag, filename, node.loc);
               emit(path, resolution, (node, newId) => {
                 node.tag = newId.original;
               });
               if (resolution?.type === 'component') {
                 scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-                  let attributes = extendPath(path, 'attributes');
-                  for (let name of argumentsAreComponents) {
-                    let attr = attributes.find(attr => attr.node.name === '@' + name);
-                    if (attr) {
-                      let resolution = handleComponentHelper(attr.node.value, resolver, filename, scopeStack, {
-                        componentName: node.tag,
-                        argumentName: name,
-                      });
-                      emit(attr, resolution, (node, newId) => {
-                        node.value = builders.mustache(newId);
-                      });
-                    }
-                  }
+                  handleDynamicComponentArguments(node.tag, argumentsAreComponents, extendPath(path, 'attributes'));
                 });
               }
             }

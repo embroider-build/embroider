@@ -362,6 +362,132 @@ describe('compat-resolver', function () {
       `);
   });
 
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, element syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<HelloWorld />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello-world.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("<HelloWorld @iAmAComponent='first-target' /><HelloWorld @iAmAComponent='second-target' />");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import HelloWorld from "../components/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        "<HelloWorld @iAmAComponent={{firstTarget}} /><HelloWorld @iAmAComponent={{secondTarget}} />",
+        {
+          scope: () => ({
+            HelloWorld,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<Hello />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("{{hello iAmAComponent='first-target' }}{{hello iAmAComponent='second-target' }}");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import hello from "../components/hello.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        "{{hello iAmAComponent=firstTarget}}{{hello iAmAComponent=secondTarget}}",
+        {
+          scope: () => ({
+            hello,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
+  test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache-block syntax', function () {
+    let packageRules = [
+      {
+        package: 'the-test-package',
+        components: {
+          '<Hello />': {
+            acceptsComponentArguments: ['iAmAComponent'],
+          },
+        },
+      },
+    ];
+    let transform = configure({ staticComponents: true, packageRules }, { startingFrom: 'js' });
+    givenFile('components/hello.js');
+    givenFile('components/first-target.js');
+    givenFile('components/second-target.js');
+
+    expect(
+      transform(
+        'templates/application.hbs',
+        `
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate("{{#hello iAmAComponent='first-target' }}{{/hello}}{{#hello iAmAComponent='second-target' }}{{/hello}}");
+        `
+      )
+    ).toEqualCode(`
+      import secondTarget from "../components/second-target.js";
+      import firstTarget from "../components/first-target.js";
+      import hello from "../components/hello.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      precompileTemplate(
+        '{{#hello iAmAComponent=firstTarget}}{{/hello}}{{#hello iAmAComponent=secondTarget}}{{/hello}}',
+        {
+          scope: () => ({
+            hello,
+            firstTarget,
+            secondTarget,
+          }),
+        }
+      );
+    `);
+  });
+
   test.skip('angle contextual component, lower', function () {
     let findDependencies = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
@@ -1595,7 +1721,7 @@ describe('compat-resolver', function () {
     }).toThrow(/Missing component: fancy-title in templates\/application\.hbs/);
   });
 
-  test.skip('acceptsComponentArguments on element with valid literal', function () {
+  test('acceptsComponentArguments on element with valid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1606,19 +1732,21 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    givenFile('templates/components/form-builder.hbs');
-    givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`)).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    let transform = configure({ staticComponents: true, packageRules });
+    givenFile('components/form-builder.js');
+    givenFile('components/fancy-title.js');
+    expect(transform('templates/application.hbs', `<FormBuilder @title={{"fancy-title"}} />`)).toEqualCode(`
+      import fancyTitle from "../components/fancy-title.js";
+      import FormBuilder from "../components/form-builder.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<FormBuilder @title={{fancyTitle}} />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          FormBuilder,
+          fancyTitle,
+        }),
+      });
+    `);
   });
 
   test('acceptsComponentArguments on element with valid attribute', function () {

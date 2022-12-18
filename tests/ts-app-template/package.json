@@ -33,6 +33,7 @@
     "@embroider/webpack": "2.0.2",
     "@glimmer/component": "^1.1.2",
     "@glimmer/tracking": "^1.1.2",
+    "@glimmer/interfaces": "^0.84.2",
     "@tsconfig/ember": "^1.0.0",
     "@types/ember": "^4.0.2",
     "@types/ember-qunit": "^5.0.0",

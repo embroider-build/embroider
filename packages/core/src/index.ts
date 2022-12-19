@@ -17,6 +17,7 @@ export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { AppAdapter, AppBuilder, EmberENV } from './app';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
 export { mangledEngineRoot } from './engine-mangler';
+export { resolverPlugin, ResolverPluginOptions } from './resolver-plugin';
 
 // this is reexported because we already make users manage a peerDep from some
 // other packages (like embroider/webpack and @embroider/compat

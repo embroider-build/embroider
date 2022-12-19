@@ -27,8 +27,7 @@ export interface Options {
 export type Resolution =
   | { result: 'continue' }
   | { result: 'redirect-to'; specifier: string }
-  | { result: 'external'; specifier: string }
-  | { result: 'runtime-failure'; specifier: string };
+  | { result: 'external'; specifier: string };
 
 export class Resolver {
   readonly originalFilename: string;
@@ -36,7 +35,7 @@ export class Resolver {
   constructor(readonly filename: string, private options: Options) {
     this.originalFilename = options.relocatedFiles[filename] || filename;
   }
-  resolve(specifier: string, isDynamic: boolean): Resolution {
+  resolve(specifier: string): Resolution {
     if (specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -46,7 +45,7 @@ export class Resolver {
     }
 
     let maybeRenamed = this.handleRenaming(specifier);
-    let resolution = this.handleExternal(maybeRenamed, isDynamic);
+    let resolution = this.handleExternal(maybeRenamed);
     if (resolution.result === 'continue' && maybeRenamed !== specifier) {
       return { result: 'redirect-to', specifier: maybeRenamed };
     }
@@ -119,7 +118,7 @@ export class Resolver {
     return specifier;
   }
 
-  private handleExternal(specifier: string, isDynamic: boolean): Resolution {
+  private handleExternal(specifier: string): Resolution {
     let pkg = this.owningPackage();
     if (!pkg || !pkg.isV2Ember()) {
       return { result: 'continue' };
@@ -246,15 +245,6 @@ export class Resolver {
       if (emberVirtualPackages.has(packageName)) {
         return { result: 'external', specifier };
       }
-    }
-
-    // non-resolvable imports in dynamic positions become runtime errors, not
-    // build-time errors, so we emit the runtime error module here before the
-    // stage3 packager has a chance to see the missing module. (Maybe some stage3
-    // packagers will have this behavior by default, because it would make sense,
-    // but webpack at least does not.)
-    if (isDynamic) {
-      return { result: 'runtime-failure', specifier };
     }
 
     // this is falling through with the original specifier which was

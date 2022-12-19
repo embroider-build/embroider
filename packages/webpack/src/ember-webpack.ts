@@ -19,10 +19,21 @@ import {
   getAppMeta,
   getPackagerCacheDir,
   getOrCreate,
+  resolverPlugin,
+  ResolverPluginOptions,
 } from '@embroider/core';
 import { tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
+import {
+  readFileSync,
+  outputFileSync,
+  copySync,
+  realpathSync,
+  Stats,
+  statSync,
+  readJsonSync,
+  readJSONSync,
+} from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -194,6 +205,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
+    let resolverConfig: ResolverPluginOptions = readJSONSync(join(this.pathToVanillaApp, '_adjust_imports.json'));
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -203,6 +216,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
       plugins: [
         ...stylePlugins,
+        resolverPlugin.webpack(resolverConfig),
         compiler => {
           compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
             this.summarizeStats(stats, variant, variantIndex);

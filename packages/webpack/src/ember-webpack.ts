@@ -24,16 +24,7 @@ import {
 } from '@embroider/core';
 import { tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import {
-  readFileSync,
-  outputFileSync,
-  copySync,
-  realpathSync,
-  Stats,
-  statSync,
-  readJsonSync,
-  readJSONSync,
-} from 'fs-extra';
+import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -333,7 +324,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
       let content;
       try {
-        content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
+        content = readJSONSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
       } catch (err) {
         // the script refers to a sourcemap that doesn't exist, so we just leave
         // the map out.

@@ -1694,6 +1694,13 @@
   dependencies:
     "@glimmer/env" "^0.1.7"
 
+"@glimmer/global-context@0.84.2":
+  version "0.84.2"
+  resolved "https://registry.yarnpkg.com/@glimmer/global-context/-/global-context-0.84.2.tgz#cd4612925dbd68787b9270e91b213691150c307f"
+  integrity sha512-6FycLh/Eq0P3LA94bJL6WHPJyOTKeQD4KBWhowZ9TbeO3p4/WUr+POKPVEyfIx6YHybhpL9MGj45Y2r0hqVigw==
+  dependencies:
+    "@glimmer/env" "^0.1.7"
+
 "@glimmer/interfaces@0.65.4":
   version "0.65.4"
   resolved "https://registry.yarnpkg.com/@glimmer/interfaces/-/interfaces-0.65.4.tgz#d298cc2b12b8ebcf269f39246ca7ab92816f6680"
@@ -1736,6 +1743,17 @@
     "@glimmer/interfaces" "0.83.1"
     "@glimmer/util" "0.83.1"
     "@glimmer/validator" "0.83.1"
+
+"@glimmer/reference@^0.84.2":
+  version "0.84.2"
+  resolved "https://registry.yarnpkg.com/@glimmer/reference/-/reference-0.84.2.tgz#c8d91a3ba0b92a9430b6023d7b6f39dd56c79af1"
+  integrity sha512-hH0VD76OXMsGSHbqaqD64u1aBEqy//jhZtIaHGwAHNpTEX+zDtW3ka298KbAn2CZyDDrNAnuc2U1Vy4COR3zlA==
+  dependencies:
+    "@glimmer/env" "^0.1.7"
+    "@glimmer/global-context" "0.84.2"
+    "@glimmer/interfaces" "0.84.2"
+    "@glimmer/util" "0.84.2"
+    "@glimmer/validator" "0.84.2"
 
 "@glimmer/syntax@^0.65.0":
   version "0.65.4"
@@ -1822,6 +1840,14 @@
   dependencies:
     "@glimmer/env" "^0.1.7"
     "@glimmer/global-context" "0.83.1"
+
+"@glimmer/validator@0.84.2":
+  version "0.84.2"
+  resolved "https://registry.yarnpkg.com/@glimmer/validator/-/validator-0.84.2.tgz#29394d262cf8373fe20f4e225c1adc9857a4164b"
+  integrity sha512-9tpSmwiktsJDqriNEiFfyP+9prMSdk08THA6Ik71xS/sudBKxoDpul678uvyEYST/+Z23F8MxwKccC+QxCMXNA==
+  dependencies:
+    "@glimmer/env" "^0.1.7"
+    "@glimmer/global-context" "0.84.2"
 
 "@glimmer/validator@^0.44.0":
   version "0.44.0"
@@ -2533,7 +2559,7 @@
     "@types/ember__object" "*"
     "@types/rsvp" "*"
 
-"@types/ember__owner@*":
+"@types/ember__owner@*", "@types/ember__owner@^4.0.3":
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/@types/ember__owner/-/ember__owner-4.0.3.tgz#0e85b4ca84bbf8063c24f7eee0ad8d628c20e0aa"
   integrity sha512-vwVKdLNYKXMOxJXwMnFQh7TkWfkp6berH6Kc/VK8is1bPgaBB7X/c50rjNmM2o7zI5LJSPm1khxcDidfyXnimg==

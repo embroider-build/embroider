@@ -58,7 +58,6 @@
     "@types/ember__error": "^4.0.0",
     "@types/ember__component": "^4.0.0",
     "@types/ember__routing": "^4.0.0",
-    "@types/ember__test-helpers": "^2.6.1",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "concurrently": "^7.2.1",

@@ -9,6 +9,8 @@ runs:
   using: 'composite'
   steps:
     - uses: volta-cli/action@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
       env:
         ACTIONS_STEP_DEBUG: true
     - name: Get yarn cache directory path

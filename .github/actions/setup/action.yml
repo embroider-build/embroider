@@ -10,7 +10,7 @@ runs:
   steps:
     - uses: volta-cli/action@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ github.token }}
       env:
         ACTIONS_STEP_DEBUG: true
     - name: Get yarn cache directory path

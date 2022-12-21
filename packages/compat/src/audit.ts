@@ -551,7 +551,7 @@ export class Audit {
         throw assertNever(resolution);
     }
 
-    if (specifier === '@embroider/macros') {
+    if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
       // the audit process deliberately removes the @embroider/macros babel
       // plugins, so the imports are still present and should be left alone.
       return;

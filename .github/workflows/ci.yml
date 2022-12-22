@@ -41,6 +41,7 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 50 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
       matrix: ${{fromJson(needs.preflight.outputs.matrix)}}
 
     steps:

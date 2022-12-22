@@ -1,10 +1,11 @@
-import { join } from 'path';
+import { dirname, join } from 'path';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
 import { Options, Resolver } from './module-resolver';
 import assertNever from 'assert-never';
+import { explicitRelative } from '@embroider/shared-internals';
 
 interface State {
   resolver: Resolver;
@@ -193,7 +194,7 @@ function resolve(specifier: string, state: State, setter: (specifier: string) =>
   let resolution = state.resolver.resolve(specifier);
   switch (resolution.result) {
     case 'redirect-to':
-      setter(resolution.specifier);
+      setter(explicitRelative(dirname(state.resolver.filename), resolution.specifier));
       break;
     case 'continue':
     case 'external':

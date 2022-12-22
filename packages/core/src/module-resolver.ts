@@ -98,11 +98,11 @@ export class Resolver {
     }
 
     if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
-      // we found a self-import, make it relative. Only auto-upgraded packages get
-      // this help, v2 packages are natively supposed to use relative imports for
-      // their own modules, and we want to push them all to do that correctly.
-      let fullPath = specifier.replace(packageName, pkg.root);
-      return explicitRelative(dirname(this.filename), fullPath);
+      // we found a self-import, resolve it for them. Only auto-upgraded
+      // packages get this help, v2 packages are natively supposed to use
+      // relative imports for their own modules, and we want to push them all to
+      // do that correctly.
+      return specifier.replace(packageName, pkg.root);
     }
 
     let relocatedIntoPkg = this.relocatedIntoPackage();
@@ -111,8 +111,7 @@ export class Resolver {
       // package's name. This can happen when an addon (like ember-cli-mirage)
       // emits files from its own treeForApp that contain imports of the app's own
       // fully qualified name.
-      let fullPath = specifier.replace(packageName, relocatedIntoPkg.root);
-      return explicitRelative(dirname(this.filename), fullPath);
+      return specifier.replace(packageName, relocatedIntoPkg.root);
     }
 
     return specifier;
@@ -168,10 +167,7 @@ export class Resolver {
         }
         return {
           result: 'redirect-to',
-          specifier: explicitRelative(
-            dirname(this.filename),
-            specifier.replace(packageName, this.options.activeAddons[packageName])
-          ),
+          specifier: specifier.replace(packageName, this.options.activeAddons[packageName]),
         };
       }
     }
@@ -203,7 +199,7 @@ export class Resolver {
           // resolve from where its sitting
           return {
             result: 'redirect-to',
-            specifier: explicitRelative(dirname(this.filename), specifier.replace(packageName, targetPkg.root)),
+            specifier: specifier.replace(packageName, targetPkg.root),
           };
         }
       }
@@ -225,10 +221,7 @@ export class Resolver {
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
       return {
         result: 'redirect-to',
-        specifier: explicitRelative(
-          dirname(this.filename),
-          specifier.replace(packageName, this.options.activeAddons[packageName])
-        ),
+        specifier: specifier.replace(packageName, this.options.activeAddons[packageName]),
       };
     }
 

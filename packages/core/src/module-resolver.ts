@@ -2,6 +2,7 @@ import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageNa
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { Memoize } from 'typescript-memoize';
+import { compile } from './js-handlebars';
 
 export interface Options {
   renamePackages: {
@@ -289,3 +290,26 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 
   return false;
 }
+
+export const externalShim = compile(`
+{{#if (eq moduleName "require")}}
+const m = window.requirejs;
+{{else}}
+const m = window.require("{{{js-string-escape moduleName}}}");
+{{/if}}
+{{!-
+  There are plenty of hand-written AMD defines floating around
+  that lack this, and they will break when other build systems
+  encounter them.
+
+  As far as I can tell, Ember's loader was already treating this
+  case as a module, so in theory we aren't breaking anything by
+  marking it as such when other packagers come looking.
+
+  todo: get review on this part.
+-}}
+if (m.default && !m.__esModule) {
+  m.__esModule = true;
+}
+module.exports = m;
+`) as (params: { moduleName: string }) => string;

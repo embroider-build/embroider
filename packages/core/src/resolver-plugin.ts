@@ -1,6 +1,5 @@
 import { createUnplugin } from 'unplugin';
-import { Options as ResolverPluginOptions, Resolver } from './module-resolver';
-import { compile } from './js-handlebars';
+import { externalShim, Options as ResolverPluginOptions, Resolver } from './module-resolver';
 import assertNever from 'assert-never';
 
 export { ResolverPluginOptions };
@@ -41,34 +40,11 @@ export const resolverPlugin = createUnplugin((resolverOptions: ResolverPluginOpt
     async load(id: string) {
       if (id.startsWith('@embroider/externals/')) {
         let moduleName = id.slice('@embroider/externals/'.length);
-        return externalTemplate({ moduleName });
+        return externalShim({ moduleName });
       }
     },
   };
 });
-
-const externalTemplate = compile(`
-{{#if (eq moduleName "require")}}
-const m = window.requirejs;
-{{else}}
-const m = window.require("{{{js-string-escape moduleName}}}");
-{{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
-
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
-
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
-}
-module.exports = m;
-`) as (params: { moduleName: string }) => string;
 
 let prev:
   | {

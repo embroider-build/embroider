@@ -1,6 +1,7 @@
 import { createUnplugin } from 'unplugin';
 import { Options as ResolverPluginOptions, Resolver } from './module-resolver';
 import { compile } from './js-handlebars';
+import assertNever from 'assert-never';
 
 export { ResolverPluginOptions };
 
@@ -28,9 +29,13 @@ export const resolverPlugin = createUnplugin((resolverOptions: ResolverPluginOpt
           // that doesn't work, so we will generate our own runtime stubs via the
           // load hook below.
           return `@embroider/externals/${resolution.specifier}`;
-        default:
+        case 'continue':
           // null is the "defer to other plugins and default resolution" outcome
           return null;
+        case 'redirect-to':
+          return null;
+        default:
+          throw assertNever(resolution);
       }
     },
     async load(id: string) {

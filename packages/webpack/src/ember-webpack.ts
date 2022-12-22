@@ -196,7 +196,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
-    let resolverConfig: ResolverPluginOptions = readJSONSync(join(this.pathToVanillaApp, '_adjust_imports.json'));
+    let resolverConfig: ResolverPluginOptions = {
+      ...readJSONSync(join(this.pathToVanillaApp, '_adjust_imports.json')),
+      ...readJSONSync(join(this.pathToVanillaApp, '_relocated_files.json')),
+    };
 
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',

@@ -1,5 +1,11 @@
 # Embroider Changelog
 
+# Release 2023-01-03.0
+
+## `@embroider/webpack` 1.9.0 -> 1.9.1
+
+- BUGFIX: [don't prevent ember-cli's traditional livereload system from hot-reloading CSS](https://github.com/embroider-build/embroider/pull/1317)
+
 # Release 2022-10-06.0
 
 ## `@embroider/core` 1.8.3 -> 1.9.0 minor
@@ -15,6 +21,10 @@
 - fix a rebuild crash in dummy apps on windows, #1247 (@ef4)
 - Support TypeScript without ember-cli-typescript, #1236 (@NullVoxPopuli)
 - Add `unique-id` helper to `builtInHelpers` list, #1239 & #1241 (@jakesjews)
+
+## `@embroider/webpack` 1.8.3 -> 1.9.0 minor
+
+- Uses updated core and compat packages.
 
 ## `@embroider/addon-dev` 1.8.3 -> 2.0.0 major
 

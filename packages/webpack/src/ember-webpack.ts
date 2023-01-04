@@ -429,7 +429,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     // only the first variant should write it.
     if (variantIndex === 0) {
       for (let entrypoint of entrypoints) {
-        outputFileSync(join(this.outputPath, entrypoint.filename), entrypoint.render(stats), 'utf8');
+        this.writeIfChanged(join(this.outputPath, entrypoint.filename), entrypoint.render(stats));
         written.add(entrypoint.filename);
       }
     }
@@ -441,6 +441,19 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           this.copyThrough(relativePath);
         });
       }
+    }
+  }
+
+  private lastContents = new Map<string, string>();
+
+  // The point of this caching isn't really performance (we generate the
+  // contents either way, and the actual write is unlikely to be expensive).
+  // It's helping ember-cli's traditional livereload system to avoid triggering
+  // a full page reload when that wasn't really necessary.
+  private writeIfChanged(filename: string, content: string) {
+    if (this.lastContents.get(filename) !== content) {
+      outputFileSync(filename, content, 'utf8');
+      this.lastContents.set(filename, content);
     }
   }
 

@@ -507,8 +507,8 @@ describe('compat-resolver', function () {
       `);
   });
 
-  test.skip('optional component missing in mustache', function () {
-    let findDependencies = configure({
+  test('optional component missing in mustache', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -520,7 +520,12 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{this-one x=true}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{this-one x=true}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('component rules can be expressed via component helper', function () {

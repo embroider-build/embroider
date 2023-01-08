@@ -488,17 +488,23 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('angle contextual component, lower', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle contextual component, lower', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    expect(
-      findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`)
-    ).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`))
+      .toEqualCode(`
+        import HelloWorld from "../components/hello-world.js";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate(
+          '<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>',
+          {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              HelloWorld,
+            }),
+          }
+        );
+      `);
   });
 
   test.skip('optional component missing in mustache', function () {

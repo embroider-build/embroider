@@ -645,9 +645,14 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('class defined component not failing with arguments', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{#this.myComponent 42}}{{/this.myComponent}}`)).toEqual([]);
+  test('class defined component not failing with arguments', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{#this.myComponent 42}}{{/this.myComponent}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this.myComponent 42}}{{/this.myComponent}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('mustache missing, no args', function () {
     let findDependencies = configure({

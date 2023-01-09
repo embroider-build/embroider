@@ -636,11 +636,14 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('class defined component not failing if there is a block', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{#this.myComponent}}hello{{/this.myComponent}}`)).toEqual(
-      []
-    );
+  test('class defined component not failing if there is a block', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{#this.myComponent}}hello{{/this.myComponent}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this.myComponent}}hello{{/this.myComponent}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('class defined component not failing with arguments', function () {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });

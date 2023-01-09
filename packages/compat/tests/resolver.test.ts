@@ -693,17 +693,17 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in content position', function () {
-    let findDependencies = configure({
+  test('string literal passed to "helper" keyword in content position', function () {
+    let transform = configure({
       staticHelpers: true,
     });
     givenFile('helpers/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{helper "hello-world"}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper \\"hello-world\\"}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "modifier" keyword in content position', function () {
     let findDependencies = configure({

@@ -705,22 +705,22 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword in content position', function () {
-    let findDependencies = configure({
+  test('string literal passed to "modifier" keyword in content position', function () {
+    let transform = configure({
       staticModifiers: true,
     });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<button {{(modifier \\"add-listener\\" \\"click\\" this.handleClick)}}>Test</button>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('modifier currying using the "modifier" keyword', function () {
     let findDependencies = configure({ staticModifiers: true });

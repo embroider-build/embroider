@@ -569,21 +569,6 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('optional component missing in mustache', function () {
-    let findDependencies = configure({
-      staticComponents: true,
-      staticHelpers: true,
-      packageRules: [
-        {
-          package: 'the-test-package',
-          components: {
-            '{{this-one}}': { safeToIgnore: true },
-          },
-        },
-      ],
-    });
-    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
-  });
   test.skip('optional component declared as element missing in mustache block', function () {
     let findDependencies = configure({
       staticComponents: true,

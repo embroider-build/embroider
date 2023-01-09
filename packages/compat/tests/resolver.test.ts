@@ -654,12 +654,17 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('mustache missing, no args', function () {
-    let findDependencies = configure({
+  test('mustache missing, no args', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
     });
-    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{hello-world}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('mustache missing, with args', function () {
     let findDependencies = configure({

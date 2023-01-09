@@ -589,8 +589,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('optional component missing in element', function () {
-    let findDependencies = configure({
+  test('optional component missing in element', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -602,7 +602,12 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `<ThisOne/>`)).toEqual([]);
+    expect(transform('templates/application.hbs', `<ThisOne/>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<ThisOne />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('class defined helper not failing if there is no arguments', function () {
     let findDependencies = configure({ staticHelpers: true });

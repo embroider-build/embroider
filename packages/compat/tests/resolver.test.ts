@@ -618,9 +618,14 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('class defined helper not failing with arguments', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqual([]);
+  test('class defined helper not failing with arguments', function () {
+    let transform = configure({ staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{(this.myHelper 42)}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('helper defined in component not failing if there is no arguments', function () {
     let findDependencies = configure({ staticComponents: true, staticHelpers: true });

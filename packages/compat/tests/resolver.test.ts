@@ -666,13 +666,13 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('mustache missing, with args', function () {
-    let findDependencies = configure({
+  test('mustache missing, with args', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
     });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
+      transform('templates/application.hbs', `{{hello-world foo=bar}}`);
     }).toThrow(new RegExp(`Missing component or helper: hello-world in templates/application.hbs`));
   });
 

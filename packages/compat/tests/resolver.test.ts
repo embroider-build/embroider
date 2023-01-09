@@ -569,8 +569,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('optional component declared as element missing in mustache block', function () {
-    let findDependencies = configure({
+  test('optional component declared as element missing in mustache block', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -582,7 +582,12 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this-one}} {{/this-one}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('optional component missing in element', function () {
     let findDependencies = configure({

@@ -761,12 +761,12 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('built-in helpers are ignored when used with the "helper" keyword', function () {
-    let findDependencies = configure({
+  test('built-in helpers are ignored when used with the "helper" keyword', function () {
+    let transform = configure({
       staticHelpers: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       {{helper "fn"}}
@@ -774,7 +774,12 @@ describe('compat-resolver', function () {
       {{helper "concat"}}
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      {{helper \\"fn\\"}}\\n      {{helper \\"array\\"}}\\n      {{helper \\"concat\\"}}\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('built-in modifiers are ignored when used with the "modifier" keyword', function () {
     let findDependencies = configure({

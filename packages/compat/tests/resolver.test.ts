@@ -722,26 +722,24 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('modifier currying using the "modifier" keyword', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier currying using the "modifier" keyword', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
-        `
-        {{#let (modifier "add-listener") as |addListener|}}
+        `{{#let (modifier "add-listener") as |addListener|}}
           {{#let (modifier addListener "click") as |addClickListener|}}
             <button {{addClickListener this.handleClick}}>Test</button>
           {{/let}}
-        {{/let}}
-        `
+        {{/let}}`
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#let (modifier \\"add-listener\\") as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('built-in components are ignored when used with the component helper', function () {
     let findDependencies = configure({

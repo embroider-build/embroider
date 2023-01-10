@@ -781,19 +781,24 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('built-in modifiers are ignored when used with the "modifier" keyword', function () {
-    let findDependencies = configure({
+  test('built-in modifiers are ignored when used with the "modifier" keyword', function () {
+    let transform = configure({
       staticModifiers: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       <button {{(modifier "on" "click" this.handleClick)}}>Test</button>
       <button {{(modifier "action" "handleClick")}}>Test</button>
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      <button {{(modifier \\"on\\" \\"click\\" this.handleClick)}}>Test</button>\\n      <button {{(modifier \\"action\\" \\"handleClick\\")}}>Test</button>\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('component helper with direct addon package reference', function () {
     let findDependencies = configure({

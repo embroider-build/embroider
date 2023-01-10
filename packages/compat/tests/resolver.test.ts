@@ -843,8 +843,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('angle bracket invocation of component with @ syntax', function () {
-    let findDependencies = configure(
+  test('angle bracket invocation of component with @ syntax', function () {
+    let transform = configure(
       {
         staticComponents: true,
       },
@@ -852,12 +852,16 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `<MyAddon$Thing />`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'my-addon/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<MyAddon@Thing />`)).toEqualCode(`
+      import MyAddonThing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<MyAddonThing />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          MyAddonThing
+        })
+      });
+    `);
   });
   test.skip('angle bracket invocation of component with @ syntax - self reference inside node_modules', function () {
     let findDependencies = configure(

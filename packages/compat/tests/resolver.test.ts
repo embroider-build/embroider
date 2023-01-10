@@ -741,12 +741,12 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('built-in components are ignored when used with the component helper', function () {
-    let findDependencies = configure({
+  test('built-in components are ignored when used with the component helper', function () {
+    let transform = configure({
       staticComponents: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       {{component "input"}}
@@ -754,7 +754,12 @@ describe('compat-resolver', function () {
       {{component "textarea"}}
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      {{component \\"input\\"}}\\n      {{component \\"link-to\\"}}\\n      {{component \\"textarea\\"}}\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('built-in helpers are ignored when used with the "helper" keyword', function () {
     let findDependencies = configure({

@@ -817,8 +817,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('component helper with direct addon package reference to a renamed package', function () {
-    let findDependencies = configure(
+  test('component helper with direct addon package reference to a renamed package', function () {
+    let transform = configure(
       {
         staticComponents: true,
       },
@@ -832,12 +832,16 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'has-been-renamed/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
   test.skip('angle bracket invocation of component with @ syntax', function () {
     let findDependencies = configure(

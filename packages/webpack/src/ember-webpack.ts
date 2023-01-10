@@ -214,6 +214,17 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       module: {
         rules: [
           {
+            test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
+            use: [
+              {
+                loader: 'url-loader',
+                options: {
+                  limit: 8192,
+                },
+              },
+            ],
+          },          
+          {
             test: /\.hbs$/,
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),

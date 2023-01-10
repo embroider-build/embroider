@@ -800,18 +800,22 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('component helper with direct addon package reference', function () {
-    let findDependencies = configure({
+  test('component helper with direct addon package reference', function () {
+    let transform = configure({
       staticComponents: true,
     });
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'my-addon/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
   test.skip('component helper with direct addon package reference to a renamed package', function () {
     let findDependencies = configure(

@@ -1378,12 +1378,16 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('local binding takes precedence over helper in bare mustache', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('local binding takes precedence over helper in bare mustache', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(
-      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`)
-    ).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`))
+      .toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize}} {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('local binding takes precedence over component in element position', function () {
     let findDependencies = configure({ staticHelpers: true });

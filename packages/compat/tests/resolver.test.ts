@@ -1472,16 +1472,14 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('ignores dot-rule curly component invocation, inline', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
-    expect(
-      findDependencies(
-        'templates/application.hbs',
-        `
-        {{thing.body x=1}}
-        `
-      )
-    ).toEqual([]);
+  test('ignores dot-rule curly component invocation, inline', function () {
+    let transform = configure({ staticHelpers: true, staticComponents: true });
+    expect(transform('templates/application.hbs', `{{thing.body x=1}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing.body x=1}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('ignores dot-rule curly component invocation, block', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true });

@@ -1304,10 +1304,15 @@ describe('compat-resolver', function () {
       transform('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
     }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
   });
-  test.skip('emits no modifiers when staticModifiers is off', function () {
-    let findDependencies = configure({ staticModifiers: false });
+  test('emits no modifiers when staticModifiers is off', function () {
+    let transform = configure({ staticModifiers: false });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([]);
+    expect(transform('templates/application.hbs', `<input {{auto-focus}} />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<input {{auto-focus}} />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test('modifier on html element', function () {

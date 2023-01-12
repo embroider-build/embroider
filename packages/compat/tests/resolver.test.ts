@@ -1161,12 +1161,15 @@ describe('compat-resolver', function () {
       transform('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
   });
-  test.skip('emits no helpers when staticHelpers is off', function () {
-    let findDependencies = configure({ staticHelpers: false });
+  test('emits no helpers when staticHelpers is off', function () {
+    let transform = configure({ staticHelpers: false });
     givenFile('helpers/array.js');
-    expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('helper as component argument', function () {
     let findDependencies = configure({ staticHelpers: true });

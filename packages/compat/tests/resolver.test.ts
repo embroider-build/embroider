@@ -907,8 +907,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('helper with @ syntax and direct addon package reference to a renamed package', function () {
-    let findDependencies = configure(
+  test('helper with @ syntax and direct addon package reference to a renamed package', function () {
+    let transform = configure(
       {
         staticHelpers: true,
       },
@@ -923,12 +923,16 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/helpers/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/helpers/thing.js',
-        runtimeName: 'has-been-renamed/helpers/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/helpers/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
   test('string literal passed to component helper with block', function () {
     let transform = configure({

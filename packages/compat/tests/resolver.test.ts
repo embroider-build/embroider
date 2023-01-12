@@ -887,8 +887,8 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('helper with @ syntax', function () {
-    let findDependencies = configure(
+  test('helper with @ syntax', function () {
+    let transform = configure(
       {
         staticHelpers: true,
       },
@@ -896,12 +896,16 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon" }`);
     givenFile('node_modules/my-addon/helpers/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{my-addon$thing}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/helpers/thing.js',
-        runtimeName: 'my-addon/helpers/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{my-addon$thing}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/helpers/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
   test.skip('helper with @ syntax and direct addon package reference to a renamed package', function () {
     let findDependencies = configure(

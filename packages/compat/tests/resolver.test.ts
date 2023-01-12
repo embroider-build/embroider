@@ -52,6 +52,10 @@ describe('compat-resolver', function () {
 
     let transforms: Transform[] = [];
     let resolverTransform = resolver.astTransformer();
+
+    if (otherOptions.plugins) {
+      transforms.push.apply(transforms, otherOptions.plugins);
+    }
     if (resolverTransform) {
       transforms.push(resolverTransform);
     }
@@ -852,7 +856,7 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(transform('templates/application.hbs', `<MyAddon@Thing />`)).toEqualCode(`
+    expect(transform('templates/application.hbs', `<MyAddon$Thing />`)).toEqualCode(`
       import MyAddonThing from "../node_modules/my-addon/components/thing.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("<MyAddonThing />", {

@@ -2297,7 +2297,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects invokes rule on a non-component addon template', function () {
+  test('respects invokes rule on a non-component addon template', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'my-addon',
@@ -2308,22 +2308,18 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/templates/index.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');
 
-    expect(findDependencies('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqual([
-      {
-        path: '../../../components/alpha.js',
-        runtimeName: 'the-app/components/alpha',
-      },
-      {
-        path: '../../../templates/components/alpha.hbs',
-        runtimeName: 'the-app/templates/components/alpha',
-      },
-    ]);
+    expect(transform('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.which}}", {
+        moduleName: "my-app/node_modules/my-addon/templates/index.hbs"
+      });
+    `);
   });
 
   test.skip('rejects arbitrary expression in component helper', function () {

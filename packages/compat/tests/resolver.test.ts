@@ -1389,12 +1389,16 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('local binding takes precedence over component in element position', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('local binding takes precedence over component in element position', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('components/the-thing.js');
-    expect(
-      findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
-    ).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`))
+      .toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each things as |TheThing|}} <TheThing /> {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('local binding takes precedence over modifier', function () {
     let findDependencies = configure({ staticModifiers: true });

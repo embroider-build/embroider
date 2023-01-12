@@ -1096,20 +1096,20 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: this\.which in templates\/application\.hbs/);
   });
 
-  test.skip('angle component, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle component, js and hbs', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
-    expect(findDependencies('templates/application.hbs', `<HelloWorld />`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-      {
-        path: './components/hello-world.hbs',
-        runtimeName: 'the-app/templates/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld />`)).toEqualCode(`
+      import helloWorld0 from "../components/hello-world.js";
+      import helloWorld from "./components/hello-world.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/hello-world", () => helloWorld);
+      window.define("the-app/components/hello-world", () => helloWorld0);
+      export default precompileTemplate("<HelloWorld />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('nested angle component, js and hbs', function () {
     let findDependencies = configure({ staticComponents: true });

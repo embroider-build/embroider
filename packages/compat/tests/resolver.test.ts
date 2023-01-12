@@ -1958,7 +1958,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('acceptsComponentArguments interior usage of this.path generates no warning', function () {
+  test('acceptsComponentArguments interior usage of this.path generates no warning', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1974,8 +1974,13 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.title}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
   test.skip('acceptsComponentArguments interior usage of @path generates no warning', function () {

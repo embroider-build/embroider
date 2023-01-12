@@ -2329,9 +2329,14 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('ignores any non-string-literal in "helper" keyword', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{helper this.which}}`)).toEqual([]);
+  test('ignores any non-string-literal in "helper" keyword', function () {
+    let transform = configure({ staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{helper this.which}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper this.which}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('ignores any non-string-literal in "modifier" keyword', function () {

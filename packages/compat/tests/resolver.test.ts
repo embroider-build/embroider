@@ -1171,15 +1171,19 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('helper as component argument', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper as component argument', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
-    expect(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqual([
-      {
-        runtimeName: 'the-app/helpers/array',
-        path: '../helpers/array.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqualCode(`
+      import array from "../helpers/array.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{my-component value=(array 1 2 3)}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          array
+        })
+      });
+    `);
   });
   test.skip('helper as html attribute', function () {
     let findDependencies = configure({ staticHelpers: true });

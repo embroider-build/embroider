@@ -1400,15 +1400,20 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('local binding takes precedence over modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('local binding takes precedence over modifier', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/some-modifier.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}`
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('angle components can establish local bindings', function () {
     let findDependencies = configure({ staticHelpers: true });

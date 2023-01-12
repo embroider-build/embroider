@@ -1596,12 +1596,12 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({
+    let transform = configure({
       staticComponents: true,
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       {{#form-builder as |f| }}
@@ -1610,7 +1610,7 @@ describe('compat-resolver', function () {
     `
     );
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#form-builder as |f| }}

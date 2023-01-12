@@ -2023,7 +2023,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('safeToIgnore a present component', function () {
+  test('safeToIgnore a present component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2034,14 +2034,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    expect(transform('templates/components/x.hbs', `<FormBuilder />`)).toEqualCode(`
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      export default precompileTemplate("<FormBuilder />", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test.skip('respects yieldsArguments rule for positional block param, angle', function () {

@@ -2046,7 +2046,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsArguments rule for positional block param, angle', function () {
+  test('respects yieldsArguments rule for positional block param, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2057,11 +2057,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
     expect(
-      findDependencies(
+      transform(
         'templates/components/x.hbs',
         `
         <FormBuilder @navbar={{component "fancy-navbar"}} as |bar|>
@@ -2069,16 +2069,16 @@ describe('compat-resolver', function () {
         </FormBuilder>
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        <FormBuilder @navbar={{component \\"fancy-navbar\\"}} as |bar|>\\n          {{component bar}}\\n        </FormBuilder>\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test.skip('respects yieldsArguments rule for positional block param, curly', function () {

@@ -1038,9 +1038,9 @@ describe('compat-resolver', function () {
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "helper" keyword fails to resolve', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let transform = configure({ staticHelpers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{helper "hello-world"}}`);
+      transform('templates/application.hbs', `{{helper "hello-world"}}`);
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "modifier" keyword fails to resolve', function () {

@@ -1841,7 +1841,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip(`element block params are not in scope for element's own attributes`, function () {
+  test(`element block params are not in scope for element's own attributes`, function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1853,17 +1853,12 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
       expect(
-        findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
-      ).toEqual([
-        {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-      ]);
+        transform('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
+      ).toEqualCode(``);
     }).toThrow(
       /argument "title" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: title/
     );

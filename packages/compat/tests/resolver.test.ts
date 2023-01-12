@@ -1044,9 +1044,9 @@ describe('compat-resolver', function () {
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "modifier" keyword fails to resolve', function () {
-    let findDependencies = configure({ staticModifiers: true });
+    let transform = configure({ staticModifiers: true });
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       );

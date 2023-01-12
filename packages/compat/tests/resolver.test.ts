@@ -1298,10 +1298,10 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('missing modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('missing modifier', function () {
+    let transform = configure({ staticModifiers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
+      transform('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
     }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
   });
   test.skip('emits no modifiers when staticModifiers is off', function () {

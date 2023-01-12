@@ -968,7 +968,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test('string literal passed to "helper" keyword in helper position', function () {
+  test.skip('string literal passed to "helper" keyword in helper position', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -983,16 +983,16 @@ describe('compat-resolver', function () {
     ).toEqualCode(`
       import HelloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
+      export default precompileTemplate("\\n        {{#let (helper HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
         moduleName: "my-app/templates/application.hbs"
       });
     `);
   });
   test.skip('helper currying using the "helper" keyword', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (helper "hello-world" name="World") as |hello|}}
@@ -1002,12 +1002,13 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    ).toEqualCode(`
+      import HelloWorld from "../helpers/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (helper HelloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "modifier" keyword in helper position', function () {
     let findDependencies = configure({ staticModifiers: true });

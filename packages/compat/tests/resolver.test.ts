@@ -1330,15 +1330,19 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('modifier on component', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier on component', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqual([
-      {
-        runtimeName: 'the-app/modifiers/auto-focus',
-        path: '../modifiers/auto-focus.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqualCode(`
+      import autoFocus from "../modifiers/auto-focus.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<StyledInput {{autoFocus}} />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          autoFocus
+        })
+      });
+    `);
   });
   test.skip('modifier on contextual component', function () {
     let findDependencies = configure({ staticModifiers: true });

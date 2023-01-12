@@ -1425,28 +1425,30 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('local binding only applies within block', function () {
-    let findDependencies = configure({ staticHelpers: true, staticModifiers: true });
+  test('local binding only applies within block', function () {
+    let transform = configure({ staticHelpers: true, staticModifiers: true });
     givenFile('helpers/capitalize.js');
     givenFile('modifiers/validate.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}
         <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
         `
       )
-    ).toEqual([
-      {
-        runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
-      },
-      {
-        runtimeName: 'the-app/modifiers/validate',
-        path: '../modifiers/validate.js',
-      },
-    ]);
+    ).toEqualCode(`
+      import validate from "../modifiers/validate.js";
+      import capitalize from "../helpers/capitalize.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}\\n        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          capitalize,
+          validate
+        })
+      });
+    `);
   });
   test.skip('ignores builtins', function () {
     let findDependencies = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });

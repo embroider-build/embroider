@@ -1358,10 +1358,15 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('modifier provided as an argument', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier provided as an argument', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('components/test.hbs', `<input {{@auto-focus}} />`)).toEqual([]);
+    expect(transform('components/test.hbs', `<input {{@auto-focus}} />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<input {{@auto-focus}} />", {
+        moduleName: "my-app/components/test.hbs"
+      });
+    `);
   });
   test.skip('contextual modifier', function () {
     let findDependencies = configure({ staticModifiers: true });

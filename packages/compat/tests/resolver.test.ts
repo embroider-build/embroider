@@ -1415,12 +1415,15 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('angle components can establish local bindings', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('angle components can establish local bindings', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<Outer as |capitalize|> {{capitalize}} </Outer>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('local binding only applies within block', function () {
     let findDependencies = configure({ staticHelpers: true, staticModifiers: true });

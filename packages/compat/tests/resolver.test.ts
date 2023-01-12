@@ -2155,7 +2155,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, angle', function () {
+  test('yieldsArguments causes warning to propagate up lexically, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2166,11 +2166,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
       expect(
-        findDependencies(
+        transform(
           'templates/components/x.hbs',
           `
           <FormBuilder @navbar={{this.unknown}} as |bar|>
@@ -2178,12 +2178,7 @@ describe('compat-resolver', function () {
           </FormBuilder>
           `
         )
-      ).toEqual([
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]);
+      ).toEqualCode(``);
     }).toThrow(
       /argument "navbar" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );

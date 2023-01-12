@@ -1522,7 +1522,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects yieldsSafeComponents rule on element, position 0', function () {
+  test('respects yieldsSafeComponents rule on element, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1533,9 +1533,9 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       <FormBuilder as |field| >

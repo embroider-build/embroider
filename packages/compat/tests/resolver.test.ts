@@ -2003,7 +2003,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('safeToIgnore a missing component', function () {
+  test('safeToIgnore a missing component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2014,8 +2014,13 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/x.hbs', `<FormBuilder />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<FormBuilder />", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test.skip('safeToIgnore a present component', function () {

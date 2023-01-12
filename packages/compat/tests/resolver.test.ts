@@ -1011,10 +1011,10 @@ describe('compat-resolver', function () {
     `);
   });
   test.skip('string literal passed to "modifier" keyword in helper position', function () {
-    let findDependencies = configure({ staticModifiers: true });
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (modifier "add-listener" "click") as |addClickListener|}}
@@ -1022,12 +1022,13 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqual(`
+      import AddListener from D../modifiers/add-listener.jsD;
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (modifier AddListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to component helper fails to resolve', function () {
     let findDependencies = configure({ staticComponents: true });

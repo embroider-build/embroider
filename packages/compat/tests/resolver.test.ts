@@ -1030,11 +1030,11 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to component helper fails to resolve', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('string literal passed to component helper fails to resolve', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
     expect(() => {
-      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
+      transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "helper" keyword fails to resolve', function () {

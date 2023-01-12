@@ -14,9 +14,10 @@ export interface PipelineOptions<PackagerOptions> extends Options {
   variants?: Variant[];
 }
 
-export function stableWorkspaceDir(appRoot: string) {
+export function stableWorkspaceDir(appRoot: string, environment: string) {
   let hash = createHash('md5');
   hash.update(dirname(pkgUpSync({ cwd: appRoot })!));
+  hash.update(environment);
   return join(tmpdir, 'embroider', hash.digest('hex').slice(0, 6));
 }
 
@@ -34,7 +35,7 @@ export default function defaultPipeline<PackagerOptions>(
     if (process.env.SAVE_WORKSPACE) {
       options.workspaceDir = process.env.SAVE_WORKSPACE;
     } else {
-      options.workspaceDir = stableWorkspaceDir(emberApp.project.root);
+      options.workspaceDir = stableWorkspaceDir(emberApp.project.root, emberApp.env);
     }
 
     emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);

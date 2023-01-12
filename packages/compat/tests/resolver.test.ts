@@ -1450,10 +1450,10 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('ignores builtins', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
+  test('ignores builtins', function () {
+    let transform = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{outlet}}
@@ -1464,7 +1464,12 @@ describe('compat-resolver', function () {
         <form {{on "submit" doit}}></form>
       `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('ignores dot-rule curly component invocation, inline', function () {

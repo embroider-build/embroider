@@ -1155,10 +1155,10 @@ describe('compat-resolver', function () {
       transform('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
   });
-  test.skip('missing subexpression no args', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('missing subexpression no args', function () {
+    let transform = configure({ staticHelpers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
+      transform('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
   });
   test.skip('emits no helpers when staticHelpers is off', function () {

@@ -968,11 +968,11 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in helper position', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('string literal passed to "helper" keyword in helper position', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (helper "hello-world") as |helloWorld|}}
@@ -980,12 +980,13 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    ).toEqualCode(`
+      import HelloWorld from "../helpers/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('helper currying using the "helper" keyword', function () {
     let findDependencies = configure({ staticHelpers: true });

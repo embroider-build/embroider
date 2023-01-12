@@ -1737,7 +1737,7 @@ describe('compat-resolver', function () {
     // ]);
   });
 
-  test.skip('acceptsComponentArguments argument name may include optional @', function () {
+  test('acceptsComponentArguments argument name may include optional @', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1748,19 +1748,19 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqualCode(`
+      import fancyTitle from "./components/fancy-title.hbs";
+      import formBuilder from "./components/form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-title", () => fancyTitle);
+      export default precompileTemplate("{{form-builder title=\\"fancy-title\\"}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('acceptsComponentArguments on mustache with component subexpression', function () {

@@ -1062,10 +1062,15 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
-    let findDependencies = configure({ staticHelpers: false });
+  test('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
+    let transform = configure({ staticHelpers: false });
     givenFile('helpers/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{helper "hello-world"}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper \\"hello-world\\"}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
     let findDependencies = configure({ staticModifiers: false });

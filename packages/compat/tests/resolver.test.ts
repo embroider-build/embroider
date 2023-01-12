@@ -2224,11 +2224,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
       expect(
-        findDependencies(
+        transform(
           'templates/components/x.hbs',
           `
           {{#form-builder navbar=this.unknown as |bar1|}}
@@ -2238,12 +2238,12 @@ describe('compat-resolver', function () {
           {{/form-builder}}
           `
         )
-      ).toEqual([
+      ).toEqualCode(`[
         {
           path: './form-builder.hbs',
           runtimeName: 'the-app/templates/components/form-builder',
         },
-      ]);
+      ]`);
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );

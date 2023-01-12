@@ -1052,10 +1052,15 @@ describe('compat-resolver', function () {
       );
     }).toThrow(new RegExp(`Missing modifier: add-listener in templates/application.hbs`));
   });
-  test.skip('string literal passed to component helper fails to resolve when staticComponents is off', function () {
-    let findDependencies = configure({ staticComponents: false });
+  test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
+    let transform = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
-    expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{my-thing header=(component \\"hello-world\\")}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
     let findDependencies = configure({ staticHelpers: false });

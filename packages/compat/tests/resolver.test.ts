@@ -1185,15 +1185,19 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('helper as html attribute', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper as html attribute', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqual([
-      {
-        runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqualCode(`
+      import capitalize from "../helpers/capitalize.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div data-foo={{capitalize name}}></div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          capitalize
+        })
+      });
+    `);
   });
   test('helper in bare mustache, no args', function () {
     let transform = configure({ staticHelpers: true });

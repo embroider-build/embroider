@@ -1864,7 +1864,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('acceptsComponentArguments on mustache with invalid literal', function () {
+  test('acceptsComponentArguments on mustache with invalid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1875,10 +1875,10 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
+      transform('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
     }).toThrow(/Missing component: fancy-title in templates\/application\.hbs/);
   });
 

@@ -2249,7 +2249,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects invokes rule on a component', function () {
+  test('respects invokes rule on a component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2260,21 +2260,17 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');
 
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqual([
-      {
-        path: '../../components/alpha.js',
-        runtimeName: 'the-app/components/alpha',
-      },
-      {
-        path: './alpha.hbs',
-        runtimeName: 'the-app/templates/components/alpha',
-      },
-    ]);
+    expect(transform('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.which}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
   test.skip('respects invokes rule on a non-component app template', function () {

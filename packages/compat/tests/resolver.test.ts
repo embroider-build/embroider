@@ -2322,9 +2322,9 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('rejects arbitrary expression in component helper', function () {
-    let findDependencies = configure({ staticComponents: true });
-    expect(() => findDependencies('templates/application.hbs', `{{component (some-helper this.which) }}`)).toThrow(
+  test('rejects arbitrary expression in component helper', function () {
+    let transform = configure({ staticComponents: true });
+    expect(() => transform('templates/application.hbs', `{{component (some-helper this.which) }}`)).toThrow(
       `Unsafe dynamic component: cannot statically analyze this expression`
     );
   });

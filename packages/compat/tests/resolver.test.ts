@@ -1072,15 +1072,20 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
-    let findDependencies = configure({ staticModifiers: false });
+  test('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
+    let transform = configure({ staticModifiers: false });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<button {{(modifier \\"add-listener\\" \\"click\\" this.handleClick)}}>Test</button>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test('dynamic component helper error in content position', function () {

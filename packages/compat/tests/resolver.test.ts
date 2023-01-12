@@ -2349,11 +2349,14 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('trusts inline ensure-safe-component helper', function () {
-    let findDependencies = configure({ staticComponents: true });
-    expect(findDependencies('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqual(
-      []
-    );
+  test('trusts inline ensure-safe-component helper', function () {
+    let transform = configure({ staticComponents: true });
+    expect(transform('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component (ensure-safe-component this.which)}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 });
 

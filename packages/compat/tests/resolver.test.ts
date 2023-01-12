@@ -1126,10 +1126,10 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('angle component missing', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle component missing', function () {
+    let transform = configure({ staticComponents: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `<HelloWorld />`);
+      transform('templates/application.hbs', `<HelloWorld />`);
     }).toThrow(new RegExp(`Missing component: HelloWorld in templates/application.hbs`));
   });
   test('helper in subexpression', function () {

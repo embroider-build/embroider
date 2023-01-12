@@ -1820,7 +1820,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('acceptsComponentArguments matches co-located template', function () {
+  test('acceptsComponentArguments matches co-located template', function () {
     let packageRules = [
       {
         package: 'the-app',
@@ -1831,9 +1831,14 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('components/form-builder.js');
-    expect(findDependencies('components/form-builder.hbs', `{{component title}}`)).toEqual([]);
+    expect(transform('components/form-builder.hbs', `{{component title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component title}}", {
+        moduleName: "my-app/components/form-builder.hbs"
+      });
+    `);
   });
 
   test.skip(`element block params are not in scope for element's own attributes`, function () {

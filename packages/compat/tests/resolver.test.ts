@@ -1111,20 +1111,20 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('nested angle component, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('nested angle component, js and hbs', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
     givenFile('templates/components/something/hello-world.hbs');
-    expect(findDependencies('templates/application.hbs', `<Something::HelloWorld />`)).toEqual([
-      {
-        path: '../components/something/hello-world.js',
-        runtimeName: 'the-app/components/something/hello-world',
-      },
-      {
-        path: './components/something/hello-world.hbs',
-        runtimeName: 'the-app/templates/components/something/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<Something::HelloWorld />`)).toEqualCode(`
+      import helloWorld0 from "../components/something/hello-world.js";
+      import helloWorld from "./components/something/hello-world.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/something/hello-world", () => helloWorld);
+      window.define("the-app/components/something/hello-world", () => helloWorld0);
+      export default precompileTemplate("<Something::HelloWorld />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('angle component missing', function () {
     let findDependencies = configure({ staticComponents: true });

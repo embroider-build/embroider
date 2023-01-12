@@ -1368,12 +1368,15 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('contextual modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('contextual modifier', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('local binding takes precedence over helper in bare mustache', function () {
     let findDependencies = configure({ staticHelpers: true });

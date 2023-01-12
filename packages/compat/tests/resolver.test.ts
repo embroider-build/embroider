@@ -2092,11 +2092,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
     expect(
-      findDependencies(
+      transform(
         'templates/components/x.hbs',
         `
         {{#form-builder navbar=(component "fancy-navbar") as |bar|}}

@@ -2339,9 +2339,14 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('ignores any non-string-literal in "modifier" keyword', function () {
-    let findDependencies = configure({ staticModifiers: true });
-    expect(findDependencies('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqual([]);
+  test('ignores any non-string-literal in "modifier" keyword', function () {
+    let transform = configure({ staticModifiers: true });
+    expect(transform('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{(modifier this.which)}}></div>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('trusts inline ensure-safe-component helper', function () {

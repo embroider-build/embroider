@@ -74,6 +74,7 @@ describe('audit', function () {
         null,
         2
       )}`,
+      '_adjust_imports.json': JSON.stringify(resolver.adjustImportsOptions),
     });
     let appMeta: AppMeta = {
       type: 'app',

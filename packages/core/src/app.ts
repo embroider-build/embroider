@@ -422,7 +422,9 @@ export class AppBuilder<TreeNames> {
       colocationOptions,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
+    // TODO: Keeping this just for the side effect of emitting the config json
+    this.adjustImportsPlugin(appFiles);
+    // babel.plugins.push();
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([

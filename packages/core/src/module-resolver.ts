@@ -1,7 +1,7 @@
 import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { Memoize } from 'typescript-memoize';
+import { compile } from './js-handlebars';
 
 export interface Options {
   renamePackages: {
@@ -26,17 +26,14 @@ export interface Options {
 
 export type Resolution =
   | { result: 'continue' }
-  | { result: 'redirect-to'; specifier: string }
-  | { result: 'external'; specifier: string }
-  | { result: 'runtime-failure'; specifier: string };
+  | { result: 'alias'; specifier: string; fromFile?: string }
+  | { result: 'rehome'; fromFile: string }
+  | { result: 'virtual'; filename: string; content: string };
 
 export class Resolver {
-  readonly originalFilename: string;
+  constructor(private options: Options) {}
 
-  constructor(readonly filename: string, private options: Options) {
-    this.originalFilename = options.relocatedFiles[filename] || filename;
-  }
-  resolve(specifier: string, isDynamic: boolean): Resolution {
+  beforeResolve(specifier: string, fromFile: string): Resolution {
     if (specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -45,23 +42,26 @@ export class Resolver {
       return { result: 'continue' };
     }
 
-    let maybeRenamed = this.handleRenaming(specifier);
-    let resolution = this.handleExternal(maybeRenamed, isDynamic);
+    let maybeRenamed = this.handleRenaming(specifier, fromFile);
+    let resolution = this.preHandleExternal(maybeRenamed, fromFile);
     if (resolution.result === 'continue' && maybeRenamed !== specifier) {
-      return { result: 'redirect-to', specifier: maybeRenamed };
+      return { result: 'alias', specifier: maybeRenamed };
     }
-    return resolution;
+    return { result: 'continue' };
   }
 
-  @Memoize()
-  owningPackage(): Package | undefined {
-    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(this.originalFilename);
+  fallbackResolve(specifier: string, fromFile: string): Resolution {
+    return this.postHandleExternal(specifier, fromFile);
   }
 
-  @Memoize()
-  private relocatedIntoPackage(): V2Package | undefined {
-    if (this.originalFilename !== this.filename) {
-      let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(this.filename);
+  private owningPackage(fromFile: string): Package | undefined {
+    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
+  }
+
+  private relocatedIntoPackage(fromFile: string): V2Package | undefined {
+    let originalFile = this.options.relocatedFiles[fromFile];
+    if (originalFile) {
+      let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(originalFile);
       if (owning && !owning.isV2Ember()) {
         throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
       }
@@ -69,7 +69,7 @@ export class Resolver {
     }
   }
 
-  private handleRenaming(specifier: string) {
+  private handleRenaming(specifier: string, fromFile: string) {
     let packageName = getPackageName(specifier);
     if (!packageName) {
       return specifier;
@@ -93,34 +93,33 @@ export class Resolver {
       return specifier.replace(packageName, this.options.renamePackages[packageName]);
     }
 
-    let pkg = this.owningPackage();
+    let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return specifier;
     }
 
     if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
-      // we found a self-import, make it relative. Only auto-upgraded packages get
-      // this help, v2 packages are natively supposed to use relative imports for
-      // their own modules, and we want to push them all to do that correctly.
-      let fullPath = specifier.replace(packageName, pkg.root);
-      return explicitRelative(dirname(this.filename), fullPath);
+      // we found a self-import, resolve it for them. Only auto-upgraded
+      // packages get this help, v2 packages are natively supposed to use
+      // relative imports for their own modules, and we want to push them all to
+      // do that correctly.
+      return specifier.replace(packageName, pkg.root);
     }
 
-    let relocatedIntoPkg = this.relocatedIntoPackage();
+    let relocatedIntoPkg = this.relocatedIntoPackage(fromFile);
     if (relocatedIntoPkg && pkg.meta['auto-upgraded'] && relocatedIntoPkg.name === packageName) {
       // a file that was relocated into a package does a self-import of that
       // package's name. This can happen when an addon (like ember-cli-mirage)
       // emits files from its own treeForApp that contain imports of the app's own
       // fully qualified name.
-      let fullPath = specifier.replace(packageName, relocatedIntoPkg.root);
-      return explicitRelative(dirname(this.filename), fullPath);
+      return specifier.replace(packageName, relocatedIntoPkg.root);
     }
 
     return specifier;
   }
 
-  private handleExternal(specifier: string, isDynamic: boolean): Resolution {
-    let pkg = this.owningPackage();
+  private preHandleExternal(specifier: string, fromFile: string): Resolution {
+    let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return { result: 'continue' };
     }
@@ -132,11 +131,11 @@ export class Resolver {
       // we do allow them to be explicitly externalized by the package author (or
       // a compat adapter). In the metadata, they would be listed in
       // package-relative form, so we need to convert this specifier to that.
-      let absoluteSpecifier = resolve(dirname(this.filename), specifier);
+      let absoluteSpecifier = resolve(dirname(fromFile), specifier);
       let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
-        return { result: 'external', specifier: publicSpecifier };
+        return external(publicSpecifier);
       } else {
         return { result: 'continue' };
       }
@@ -145,7 +144,7 @@ export class Resolver {
     // absolute package imports can also be explicitly external based on their
     // full specifier name
     if (isExplicitlyExternal(specifier, pkg)) {
-      return { result: 'external', specifier };
+      return external(specifier);
     }
 
     if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
@@ -159,64 +158,76 @@ export class Resolver {
       // original place they might accidentally resolve the emberVirtualPeerDeps
       // that are present there in v1 format.
       //
-      // So before we even check isResolvable, we adjust these imports to point at
-      // the app's copies instead.
-      if (emberVirtualPeerDeps.has(packageName)) {
-        if (!this.options.activeAddons[packageName]) {
-          throw new Error(
-            `${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`
-          );
+      // So before we let normal resolving happen, we adjust these imports to
+      // point at the app's copies instead.
+      if (!this.options.activeAddons[packageName]) {
+        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
+      }
+      return {
+        result: 'rehome',
+        fromFile: this.options.appRoot + './package.json',
+      };
+    }
+
+    if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
+      try {
+        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        if (!dep.isEmberPackage()) {
+          // classic ember addons can only import non-ember dependencies if they
+          // have ember-auto-import.
+          return external(specifier);
         }
-        return {
-          result: 'redirect-to',
-          specifier: explicitRelative(
-            dirname(this.filename),
-            specifier.replace(packageName, this.options.activeAddons[packageName])
-          ),
-        };
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
       }
     }
 
-    let relocatedPkg = this.relocatedIntoPackage();
-    if (relocatedPkg) {
-      // this file has been moved into another package (presumably the app).
-
-      // first try to resolve from the destination package
-      if (isResolvable(packageName, relocatedPkg, this.options.appRoot)) {
-        // self-imports are legal in the app tree, even for v2 packages.
-        if (!pkg.meta['auto-upgraded'] && packageName !== pkg.name) {
+    // assertions on what native v2 addons can import
+    if (!pkg.meta['auto-upgraded']) {
+      let relocatedPkg = this.relocatedIntoPackage(fromFile);
+      if (relocatedPkg) {
+        // this file has been moved into another package (presumably the app).
+        if (packageName !== pkg.name) {
+          // the only thing that native v2 addons are allowed to import from
+          // within the app tree is their own name.
           throw new Error(
             `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
           );
         }
-        return { result: 'continue' };
       } else {
-        // second try to resolve from the source package
-        let targetPkg = isResolvable(packageName, pkg, this.options.appRoot);
-        if (targetPkg) {
-          // self-imports are legal in the app tree, even for v2 packages.
-          if (!pkg.meta['auto-upgraded'] && packageName !== pkg.name) {
-            throw new Error(
-              `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
-            );
-          }
-          // we found it, but we need to rewrite it because it's not really going to
-          // resolve from where its sitting
-          return {
-            result: 'redirect-to',
-            specifier: explicitRelative(dirname(this.filename), specifier.replace(packageName, targetPkg.root)),
-          };
-        }
-      }
-    } else {
-      if (isResolvable(packageName, pkg, this.options.appRoot)) {
+        // this file has not been moved. The normal case.
         if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
           throw new Error(
             `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
           );
         }
-        return { result: 'continue' };
       }
+    }
+    return { result: 'continue' };
+  }
+
+  private postHandleExternal(specifier: string, fromFile: string): Resolution {
+    let pkg = this.owningPackage(fromFile);
+    if (!pkg || !pkg.isV2Ember()) {
+      return { result: 'continue' };
+    }
+
+    let packageName = getPackageName(specifier);
+    if (!packageName) {
+      // this is a relative import, we have nothing more to for it.
+      return { result: 'continue' };
+    }
+
+    let relocatedPkg = this.relocatedIntoPackage(fromFile);
+    if (relocatedPkg) {
+      // we didn't find it from the original package, so try from the relocated
+      // package
+      return {
+        result: 'rehome',
+        fromFile: relocatedPkg.root + '/package.json',
+      };
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
@@ -225,11 +236,8 @@ export class Resolver {
     // themselves (which is needed due to app tree merging)
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
       return {
-        result: 'redirect-to',
-        specifier: explicitRelative(
-          dirname(this.filename),
-          specifier.replace(packageName, this.options.activeAddons[packageName])
-        ),
+        result: 'alias',
+        specifier: specifier.replace(packageName, this.options.activeAddons[packageName]),
       };
     }
 
@@ -238,23 +246,14 @@ export class Resolver {
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
       // externals.
-      return { result: 'external', specifier };
+      return external(specifier);
     } else {
       // native v2 packages don't automatically externalize *everything* the way
       // auto-upgraded packages do, but they still externalize known and approved
       // ember virtual packages (like @ember/component)
       if (emberVirtualPackages.has(packageName)) {
-        return { result: 'external', specifier };
+        return external(specifier);
       }
-    }
-
-    // non-resolvable imports in dynamic positions become runtime errors, not
-    // build-time errors, so we emit the runtime error module here before the
-    // stage3 packager has a chance to see the missing module. (Maybe some stage3
-    // packagers will have this behavior by default, because it would make sense,
-    // but webpack at least does not.)
-    if (isDynamic) {
-      return { result: 'runtime-failure', specifier };
     }
 
     // this is falling through with the original specifier which was
@@ -265,25 +264,6 @@ export class Resolver {
 
 function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
   return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
-}
-
-function isResolvable(packageName: string, fromPkg: V2Package, appRoot: string): false | Package {
-  try {
-    let dep = PackageCache.shared('embroider-stage3', appRoot).resolve(packageName, fromPkg);
-    if (!dep.isEmberPackage() && fromPkg.meta['auto-upgraded'] && !fromPkg.hasDependency('ember-auto-import')) {
-      // classic ember addons can only import non-ember dependencies if they
-      // have ember-auto-import.
-      //
-      // whereas native v2 packages can always import any dependency
-      return false;
-    }
-    return dep;
-  } catch (err) {
-    if (err.code !== 'MODULE_NOT_FOUND') {
-      throw err;
-    }
-    return false;
-  }
 }
 
 // we don't want to allow things that resolve only by accident that are likely
@@ -306,3 +286,34 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 
   return false;
 }
+
+function external(specifier: string): Resolution {
+  return {
+    result: 'virtual',
+    filename: `@embroider/external/${specifier}`,
+    content: externalShim({ moduleName: specifier }),
+  };
+}
+
+const externalShim = compile(`
+{{#if (eq moduleName "require")}}
+const m = window.requirejs;
+{{else}}
+const m = window.require("{{{js-string-escape moduleName}}}");
+{{/if}}
+{{!-
+  There are plenty of hand-written AMD defines floating around
+  that lack this, and they will break when other build systems
+  encounter them.
+
+  As far as I can tell, Ember's loader was already treating this
+  case as a module, so in theory we aren't breaking anything by
+  marking it as such when other packagers come looking.
+
+  todo: get review on this part.
+-}}
+if (m.default && !m.__esModule) {
+  m.__esModule = true;
+}
+module.exports = m;
+`) as (params: { moduleName: string }) => string;

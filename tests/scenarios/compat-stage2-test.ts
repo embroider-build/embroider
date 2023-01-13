@@ -485,10 +485,6 @@ stage2Scenarios
         assertFile.matches(
           /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
         );
-        assertFile.matches(
-          /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,
-          'externals are handled correctly'
-        );
       });
 
       test('app/hello-world.js', function () {

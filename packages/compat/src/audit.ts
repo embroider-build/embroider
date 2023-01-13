@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, ResolverPluginOptions, Resolver } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -18,6 +18,7 @@ import {
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 import { AuditMessage } from './resolver';
+import assertNever from 'assert-never';
 
 const { JSDOM } = jsdom;
 
@@ -249,6 +250,13 @@ export class Audit {
     return config;
   }
 
+  @Memoize()
+  private get resolverParams(): ResolverPluginOptions {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    let config = require(join(this.appDir, '_adjust_imports.json'));
+    return config;
+  }
+
   private debug(message: string, ...args: any[]) {
     if (this.options.debug) {
       console.log(message, ...args);
@@ -294,8 +302,9 @@ export class Audit {
       } else {
         module.parsed = visitResult;
         let resolved = new Map() as NonNullable<InternalModule['resolved']>;
+        let resolver = new Resolver(filename, this.resolverParams);
         for (let dep of visitResult.dependencies) {
-          let depFilename = await this.resolve(dep, filename);
+          let depFilename = await this.resolve(dep, filename, resolver);
           if (depFilename) {
             resolved.set(dep, depFilename);
             if (!isResolutionFailure(depFilename)) {
@@ -520,8 +529,30 @@ export class Audit {
     return this.visitJS(filename, js);
   }
 
-  private async resolve(specifier: string, fromPath: string): Promise<string | ResolutionFailure | undefined> {
+  private async resolve(
+    specifier: string,
+    fromPath: string,
+    resolver: Resolver
+  ): Promise<string | ResolutionFailure | undefined> {
+    let resolution = resolver.resolve(specifier);
+    switch (resolution.result) {
+      case 'external':
+        // nothing to audit
+        return;
+      case 'redirect-to':
+        // follow the redirect
+        specifier = resolution.specifier;
+        break;
+      case 'continue':
+        // nothing to do
+        break;
+      default:
+        throw assertNever(resolution);
+    }
+
     if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
+      // the audit process deliberately removes the @embroider/macros babel
+      // plugins, so the imports are still present and should be left alone.
       return;
     }
     try {

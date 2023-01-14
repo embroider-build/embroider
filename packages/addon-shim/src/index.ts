@@ -158,8 +158,12 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       return isInside(directory, appInstance.project.root);
     },
 
-    registerV2Addon(name: string, root: string): void {
-      autoImportInstance!.registerV2Addon(name, root);
+    registerV2Addon(this: AddonInstance, name: string, root: string): void {
+      if (autoImportInstance) {
+        autoImportInstance.registerV2Addon(name, root);
+      } else {
+        (this.parent as EAI2Instance).registerV2Addon(name, root);
+      }
     },
   };
 }

@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS, ResolverPluginOptions, Resolver } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, Resolver, ResolverOptions } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -251,7 +251,7 @@ export class Audit {
   }
 
   @Memoize()
-  private get resolverParams(): ResolverPluginOptions {
+  private get resolverParams(): ResolverOptions {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     let config = require(join(this.appDir, '_adjust_imports.json'));
     return config;
@@ -302,7 +302,7 @@ export class Audit {
       } else {
         module.parsed = visitResult;
         let resolved = new Map() as NonNullable<InternalModule['resolved']>;
-        let resolver = new Resolver(filename, this.resolverParams);
+        let resolver = new Resolver(this.resolverParams);
         for (let dep of visitResult.dependencies) {
           let depFilename = await this.resolve(dep, filename, resolver);
           if (depFilename) {
@@ -531,17 +531,23 @@ export class Audit {
 
   private async resolve(
     specifier: string,
-    fromPath: string,
+    fromFile: string,
     resolver: Resolver
   ): Promise<string | ResolutionFailure | undefined> {
-    let resolution = resolver.resolve(specifier);
+    let resolution = resolver.beforeResolve(specifier, fromFile);
     switch (resolution.result) {
-      case 'external':
+      case 'virtual':
         // nothing to audit
         return;
-      case 'redirect-to':
+      case 'alias':
         // follow the redirect
         specifier = resolution.specifier;
+        if (resolution.fromFile) {
+          fromFile = resolution.fromFile;
+        }
+        break;
+      case 'rehome':
+        fromFile = resolution.fromFile;
         break;
       case 'continue':
         // nothing to do
@@ -557,12 +563,44 @@ export class Audit {
     }
     try {
       return resolveModule.sync(specifier, {
-        basedir: dirname(fromPath),
+        basedir: dirname(fromFile),
         extensions: this.meta['resolvable-extensions'],
       });
     } catch (err) {
       if (err.code === 'MODULE_NOT_FOUND') {
-        return { isResolutionFailure: true };
+        resolution = resolver.fallbackResolve(specifier, fromFile);
+        switch (resolution.result) {
+          case 'virtual':
+            // nothing to audit
+            return;
+          case 'alias':
+            // follow the redirect
+            specifier = resolution.specifier;
+            if (resolution.fromFile) {
+              fromFile = resolution.fromFile;
+            }
+            break;
+          case 'rehome':
+            fromFile = resolution.fromFile;
+            break;
+          case 'continue':
+            // nothing to do
+            break;
+          default:
+            throw assertNever(resolution);
+        }
+        try {
+          return resolveModule.sync(specifier, {
+            basedir: dirname(fromFile),
+            extensions: this.meta['resolvable-extensions'],
+          });
+        } catch (err) {
+          if (err.code === 'MODULE_NOT_FOUND') {
+            return { isResolutionFailure: true };
+          } else {
+            throw err;
+          }
+        }
       } else {
         throw err;
       }

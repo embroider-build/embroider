@@ -30,8 +30,7 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
-import { tmpdir } from '@embroider/core';
-import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
+import { tmpdir, ResolverOptions } from '@embroider/core';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 
 interface TreeNames {
@@ -337,21 +336,21 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   @Memoize()
   adjustImportsOptionsPath(): string {
     let file = join(this.root, '_adjust_imports.json');
-    writeFileSync(file, JSON.stringify(this.adjustImportsOptions()));
+    writeFileSync(file, JSON.stringify(this.resolverConfig()));
     return file;
   }
 
   @Memoize()
-  adjustImportsOptions(): AdjustImportsOptions {
+  resolverConfig(): ResolverOptions {
     return this.makeAdjustImportOptions(true);
   }
 
   // this gets serialized out by babel plugin and ast plugin
-  private makeAdjustImportOptions(outer: boolean): AdjustImportsOptions {
+  private makeAdjustImportOptions(outer: boolean): ResolverOptions {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
-    let activeAddons: AdjustImportsOptions['activeAddons'] = {};
+    let activeAddons: ResolverOptions['activeAddons'] = {};
     for (let addon of this.allActiveAddons) {
       activeAddons[addon.name] = addon.root;
     }

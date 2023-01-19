@@ -290,7 +290,7 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 function external(specifier: string): Resolution {
   return {
     result: 'virtual',
-    filename: `@embroider/external/${specifier}`,
+    filename: specifier,
     content: externalShim({ moduleName: specifier }),
   };
 }

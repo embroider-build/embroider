@@ -103,12 +103,16 @@ class ResolverPlugin {
     // webpack's built-in `resolve.alias` takes effect. It's supposed to take
     // precedence over other resolving decisions.
     resolver.getHook('raw-resolve').tapAsync('my-resolver-plugin', async (request, context, callback) => {
-      if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
-        callback();
-        return;
+      try {
+        if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
+          callback();
+          return;
+        }
+        let result = this.resolver.beforeResolve(request.request, request.context.issuer);
+        this.#resolve(result, resolver, request, context, callback);
+      } catch (err) {
+        callback(err);
       }
-      let result = this.resolver.beforeResolve(request.request, request.context.issuer);
-      this.#resolve(result, resolver, request, context, callback);
     });
 
     // described-resolve -> internal-resolve is the same place in the pipeline
@@ -124,12 +128,16 @@ class ResolverPlugin {
       // defaults (tapable assigned them stage 0 by default).
       { name: 'my-resolver-plugin', stage: 10 },
       async (request, context, callback) => {
-        if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
-          callback();
-          return;
+        try {
+          if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
+            callback();
+            return;
+          }
+          let result = this.resolver.fallbackResolve(request.request, request.context.issuer);
+          this.#resolve(result, resolver, request, context, callback);
+        } catch (err) {
+          callback(err);
         }
-        let result = this.resolver.fallbackResolve(request.request, request.context.issuer);
-        this.#resolve(result, resolver, request, context, callback);
       }
     );
   }

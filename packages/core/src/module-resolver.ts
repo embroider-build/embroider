@@ -47,7 +47,7 @@ export class Resolver {
     if (resolution.result === 'continue' && maybeRenamed !== specifier) {
       return { result: 'alias', specifier: maybeRenamed };
     }
-    return { result: 'continue' };
+    return resolution;
   }
 
   fallbackResolve(specifier: string, fromFile: string): Resolution {
@@ -280,7 +280,7 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
     return true;
   }
 
-  if (emberVirtualPeerDeps.has(packageName)) {
+  if (emberVirtualPeerDeps.has(packageName) || emberVirtualPackages.has(packageName)) {
     return true;
   }
 

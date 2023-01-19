@@ -9,6 +9,7 @@ import { definesPattern, ExpectFile, expectFilesAt, Transpiler } from '@embroide
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
+import { Audit, AuditResults } from '@embroider/compat/src/audit';
 
 appScenarios
   .map('compat-renaming', app => {
@@ -155,57 +156,117 @@ appScenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
+      let expectAudit: ExpectAuditResults;
       let build: Transpiler;
+      let result: AuditResults;
 
-      hooks.before(async assert => {
+      class ExpectAuditResults {
+        constructor(private result: AuditResults, private assert: Assert) {}
+
+        module(name: string) {
+          let m = this.result.modules[name];
+          if (!m) {
+            this.assert.pushResult({
+              result: false,
+              actual: `${name} is not in audit results`,
+              expected: `${name} in audit results`,
+            });
+          }
+          return new ExpectModule(this.assert, m);
+        }
+      }
+
+      class ExpectModule {
+        constructor(private assert: Assert, private module: AuditResults['modules'][string] | undefined) {}
+
+        resolves(specifier: string) {
+          return {
+            to: (filename: string) => {
+              if (this.module) {
+                if (specifier in this.module.resolutions) {
+                  this.assert.pushResult({
+                    result: this.module.resolutions[specifier] === filename,
+                    expected: filename,
+                    actual: this.module.resolutions[specifier],
+                  });
+                } else {
+                  this.assert.pushResult({
+                    result: false,
+                    expected: specifier,
+                    actual: Object.keys(this.module.resolutions),
+                  });
+                }
+              }
+            },
+          };
+        }
+      }
+
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        result = await Audit.run({ app: app.dir, 'reuse-build': false });
       });
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+        expectAudit = new ExpectAuditResults(result, assert);
         build = new Transpiler(expectFile.basePath);
       });
 
-      test('whole package renaming works for top-level module', function () {
-        let assertFile = expectFile('components/import-lodash.js').transform(build.transpile);
-        assertFile.matches(/import lodash from ["']ember-lodash["']/);
+      test('whole package renaming works for top-level module', function (assert) {
+        expectAudit
+          .module('./components/import-lodash.js')
+          .resolves('lodash')
+          .to('./node_modules/ember-lodash/index.js');
+        assert.equal(
+          result.modules['./components/import-lodash.js']?.resolutions['lodash'],
+          './node_modules/ember-lodash/index.js'
+        );
         expectFile('node_modules/ember-lodash/index.js').matches(/lodash index/);
       });
+
       test('whole package renaming works for interior module', function () {
-        let assertFile = expectFile('components/import-capitalize.js').transform(build.transpile);
-        assertFile.matches(/import capitalize from ["']ember-lodash\/capitalize["']/);
+        expectAudit
+          .module('./components/import-capitalize.js')
+          .resolves('lodash/capitalize')
+          .to('./node_modules/ember-lodash/capitalize.js');
+
         expectFile('node_modules/ember-lodash/capitalize.js').matches(/lodash capitalize/);
       });
+
       test("modules in own namespace don't get renamed", function () {
-        let assertFile = expectFile('components/import-own-thing.js').transform(build.transpile);
-        assertFile.matches(/import ownThing from ["']emits-multiple-packages\/own-thing["']/);
+        expectAudit
+          .module('./components/import-own-thing.js')
+          .resolves('emits-multiple-packages/own-thing')
+          .to('./node_modules/emits-multiple-packages/own-thing.js');
         expectFile('node_modules/emits-multiple-packages/own-thing.js').matches(/own thing/);
       });
+
       test('modules outside our namespace do get renamed', function () {
-        let assertFile = expectFile('components/import-somebody-elses.js').transform(build.transpile);
-        assertFile.matches(
-          /import environment from ["']emits-multiple-packages\/somebody-elses-package\/environment(\.js)?["']/
-        );
+        expectAudit
+          .module('./components/import-somebody-elses.js')
+          .resolves('somebody-elses-package/environment')
+          .to('./node_modules/emits-multiple-packages/somebody-elses-package/environment.js');
         expectFile('node_modules/emits-multiple-packages/somebody-elses-package/environment.js').matches(
           /somebody elses environment/
         );
       });
+
       test('modules outside our namespace do get renamed, with index.js', function () {
-        let assertFile = expectFile('components/import-somebody-elses-utils.js').transform(build.transpile);
-        assertFile.matches(
-          /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
-        );
+        expectAudit
+          .module('./components/import-somebody-elses-utils.js')
+          .resolves('somebody-elses-package/utils')
+          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
         expectFile('node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js').matches(
           /somebody elses utils/
         );
       });
+
       test('modules outside our namespace do get renamed, with index', function () {
-        let assertFile = expectFile('components/import-somebody-elses-utils-index.js').transform(build.transpile);
-        assertFile.matches(
-          /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
-        );
+        expectAudit
+          .module('./components/import-somebody-elses-utils-index.js')
+          .resolves('somebody-elses-package/utils/index')
+          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
       });
       test('modules outside our namespace do get renamed, with index with extension', function () {
         let assertFile = expectFile('components/import-somebody-elses-utils-index-explicit.js').transform(

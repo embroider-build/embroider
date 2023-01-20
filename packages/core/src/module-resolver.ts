@@ -165,7 +165,7 @@ export class Resolver {
       }
       return {
         result: 'rehome',
-        fromFile: this.options.appRoot + './package.json',
+        fromFile: this.options.appRoot + '/package.json',
       };
     }
 

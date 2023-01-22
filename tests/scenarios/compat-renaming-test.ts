@@ -181,7 +181,7 @@ appScenarios
 
         resolves(specifier: string) {
           return {
-            to: (filename: string) => {
+            to: (filename: string | null) => {
               if (this.module) {
                 if (specifier in this.module.resolutions) {
                   this.assert.pushResult({
@@ -269,12 +269,10 @@ appScenarios
           .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
       });
       test('modules outside our namespace do get renamed, with index with extension', function () {
-        let assertFile = expectFile('components/import-somebody-elses-utils-index-explicit.js').transform(
-          build.transpile
-        );
-        assertFile.matches(
-          /import environment from ["']emits-multiple-packages\/somebody-elses-package\/utils\/index\.js["']/
-        );
+        expectAudit
+          .module('./components/import-somebody-elses-utils-index-explicit.js')
+          .resolves('somebody-elses-package/utils/index.js')
+          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
         let assertFile = expectFile('assets/app-template.js').transform(build.transpile);
@@ -286,25 +284,34 @@ appScenarios
         );
       });
       test('rewriting one modules does not capture entire package namespace', function () {
-        let assertFile = expectFile('components/import-somebody-elses-original.js').transform(build.transpile);
-        assertFile.matches(/import topLevel from ["']somebody-elses-package["']/);
-        assertFile.matches(/import deeper from ["']somebody-elses-package\/deeper["']/);
+        expectAudit
+          .module('./components/import-somebody-elses-original.js')
+          .resolves('somebody-elses-package')
+          .to(null);
+
+        expectAudit
+          .module('./components/import-somebody-elses-original.js')
+          .resolves('somebody-elses-package/deeper')
+          .to(null);
       });
       test('single file package gets captured and renamed', function () {
-        let assertFile = expectFile('components/import-single-file-package.js').transform(build.transpile);
-        assertFile.matches(/import whatever from ["']emits-multiple-packages\/single-file-package\/index.js['"]/);
+        expectAudit
+          .module('./components/import-single-file-package.js')
+          .resolves('single-file-package')
+          .to('./node_modules/emits-multiple-packages/single-file-package/index.js');
         expectFile('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(
           /single file package/
         );
       });
       test('files copied into app from addons resolve their own original packages', function () {
-        let assertFile = expectFile('first.js').transform(build.transpile);
-        assertFile.matches(/export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import['"]/);
-
-        assertFile = expectFile('second.js').transform(build.transpile);
-        assertFile.matches(
-          /export \{ default \} from ['"]\.\/node_modules\/intermediate\/node_modules\/has-app-tree-import['"]/
-        );
+        expectAudit
+          .module('./first.js')
+          .resolves('has-app-tree-import')
+          .to('./node_modules/has-app-tree-import/index.js');
+        expectAudit
+          .module('./second.js')
+          .resolves('has-app-tree-import')
+          .to('./node_modules/intermediate/node_modules/has-app-tree-import/index.js');
       });
       test(`files copied into app from addons resolve the addon's deps`, function () {
         let assertFile = expectFile('imports-dep.js').transform(build.transpile);

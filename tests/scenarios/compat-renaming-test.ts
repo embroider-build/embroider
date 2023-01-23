@@ -9,7 +9,7 @@ import { definesPattern, ExpectFile, expectFilesAt, Transpiler } from '@embroide
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
-import { Audit, AuditResults } from '@embroider/compat/src/audit';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 appScenarios
   .map('compat-renaming', app => {
@@ -156,72 +156,24 @@ appScenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
-      let expectAudit: ExpectAuditResults;
       let build: Transpiler;
-      let result: AuditResults;
-
-      class ExpectAuditResults {
-        constructor(private result: AuditResults, private assert: Assert) {}
-
-        module(name: string) {
-          let m = this.result.modules[name];
-          if (!m) {
-            this.assert.pushResult({
-              result: false,
-              actual: `${name} is not in audit results`,
-              expected: `${name} in audit results`,
-            });
-          }
-          return new ExpectModule(this.assert, m);
-        }
-      }
-
-      class ExpectModule {
-        constructor(private assert: Assert, private module: AuditResults['modules'][string] | undefined) {}
-
-        resolves(specifier: string) {
-          return {
-            to: (filename: string | null) => {
-              if (this.module) {
-                if (specifier in this.module.resolutions) {
-                  this.assert.pushResult({
-                    result: this.module.resolutions[specifier] === filename,
-                    expected: filename,
-                    actual: this.module.resolutions[specifier],
-                  });
-                } else {
-                  this.assert.pushResult({
-                    result: false,
-                    expected: specifier,
-                    actual: Object.keys(this.module.resolutions),
-                  });
-                }
-              }
-            },
-          };
-        }
-      }
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        result = await Audit.run({ app: app.dir, 'reuse-build': false });
       });
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAudit = new ExpectAuditResults(result, assert);
         build = new Transpiler(expectFile.basePath);
       });
 
-      test('whole package renaming works for top-level module', function (assert) {
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
+
+      test('whole package renaming works for top-level module', function () {
         expectAudit
           .module('./components/import-lodash.js')
           .resolves('lodash')
           .to('./node_modules/ember-lodash/index.js');
-        assert.equal(
-          result.modules['./components/import-lodash.js']?.resolutions['lodash'],
-          './node_modules/ember-lodash/index.js'
-        );
         expectFile('node_modules/ember-lodash/index.js').matches(/lodash index/);
       });
 

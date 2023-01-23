@@ -58,12 +58,12 @@ export class Resolver {
     return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
   }
 
-  private relocatedIntoPackage(fromFile: string): V2Package | undefined {
+  private originalPackage(fromFile: string): V2Package | undefined {
     let originalFile = this.options.relocatedFiles[fromFile];
     if (originalFile) {
       let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(originalFile);
       if (owning && !owning.isV2Ember()) {
-        throw new Error(`bug: it should only be possible to get relocated into a v2 ember package here`);
+        throw new Error(`bug: it should only be possible for a v2 ember package to own relocated files`);
       }
       return owning;
     }
@@ -100,19 +100,19 @@ export class Resolver {
 
     if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
       // we found a self-import, resolve it for them. Only auto-upgraded
-      // packages get this help, v2 packages are natively supposed to use
-      // relative imports for their own modules, and we want to push them all to
-      // do that correctly.
+      // packages get this help, v2 packages are natively supposed to make their
+      // own modules resolvable, and we want to push them all to do that
+      // correctly.
       return specifier.replace(packageName, pkg.root);
     }
 
-    let relocatedIntoPkg = this.relocatedIntoPackage(fromFile);
-    if (relocatedIntoPkg && pkg.meta['auto-upgraded'] && relocatedIntoPkg.name === packageName) {
+    let originalPkg = this.originalPackage(fromFile);
+    if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
       // a file that was relocated into a package does a self-import of that
       // package's name. This can happen when an addon (like ember-cli-mirage)
       // emits files from its own treeForApp that contain imports of the app's own
       // fully qualified name.
-      return specifier.replace(packageName, relocatedIntoPkg.root);
+      return specifier.replace(packageName, originalPkg.root);
     }
 
     return specifier;
@@ -186,8 +186,8 @@ export class Resolver {
 
     // assertions on what native v2 addons can import
     if (!pkg.meta['auto-upgraded']) {
-      let relocatedPkg = this.relocatedIntoPackage(fromFile);
-      if (relocatedPkg) {
+      let originalPkg = this.originalPackage(fromFile);
+      if (originalPkg) {
         // this file has been moved into another package (presumably the app).
         if (packageName !== pkg.name) {
           // the only thing that native v2 addons are allowed to import from
@@ -220,13 +220,13 @@ export class Resolver {
       return { result: 'continue' };
     }
 
-    let relocatedPkg = this.relocatedIntoPackage(fromFile);
-    if (relocatedPkg) {
+    let originalPkg = this.originalPackage(fromFile);
+    if (originalPkg) {
       // we didn't find it from the original package, so try from the relocated
       // package
       return {
         result: 'rehome',
-        fromFile: resolve(relocatedPkg.root, 'package.json'),
+        fromFile: resolve(originalPkg.root, 'package.json'),
       };
     }
 

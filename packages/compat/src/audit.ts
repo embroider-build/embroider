@@ -252,8 +252,10 @@ export class Audit {
 
   @Memoize()
   private get resolverParams(): ResolverOptions {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let config = require(join(this.appDir, '_adjust_imports.json'));
+    let config = {
+      ...readJSONSync(join(this.appDir, '_adjust_imports.json')),
+      ...readJSONSync(join(this.appDir, '_relocated_files.json')),
+    };
     return config;
   }
 

@@ -314,14 +314,16 @@ appScenarios
           .to('./node_modules/intermediate/node_modules/has-app-tree-import/index.js');
       });
       test(`files copied into app from addons resolve the addon's deps`, function () {
-        let assertFile = expectFile('imports-dep.js').transform(build.transpile);
-        assertFile.matches(
-          /export \{ default \} from ['"]\.\/node_modules\/has-app-tree-import\/node_modules\/inner-dep['"]/
-        );
+        expectAudit
+          .module('./imports-dep.js')
+          .resolves('inner-dep')
+          .to('./node_modules/has-app-tree-import/node_modules/inner-dep/index.js');
       });
       test(`app-tree files from addons that import from the app get rewritten to relative imports`, function () {
-        let assertFile = expectFile('mirage/config.js').transform(build.transpile);
-        assertFile.matches(/import ['"]\.\.\/components\/import-lodash['"]/);
+        expectAudit
+          .module('./mirage/config.js')
+          .resolves('app-template/components/import-lodash')
+          .to('./components/import-lodash.js');
       });
       test(`files copied into app from addons can resolve the app's deps`, function () {
         let assertFile = expectFile('mirage/config.js').transform(build.transpile);

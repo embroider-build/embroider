@@ -5,7 +5,7 @@ import type { Webpack } from '@embroider/webpack';
 type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const currentEmbroiderVersion = require('../package.json').version;
+const currentEmbroiderVersion = `^${require('../package.json').version}`;
 
 /*
   Use this instead of `app.toTree()` in your ember-cli-build.js:

@@ -1,0 +1,5 @@
+---
+'@embroider/util': minor
+---
+
+a

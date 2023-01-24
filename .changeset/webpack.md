@@ -1,0 +1,5 @@
+---
+'@embroider/webpack': patch
+---
+
+a

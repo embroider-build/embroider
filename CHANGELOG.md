@@ -2,7 +2,7 @@
 
 # Release 2023-01-24.0
 
-## `@embroider/compat` patch
+## `@embroider/compat` 2.0.2 -> 2.1.0
 
 - BUGFIX: hash current env into the temp workspace dir path [1318](https://github.com/embroider-build/embroider/pull/1318)
 - BUGFIX: add .hbs.js to the list of resolvable extensions by webpack [1307](https://github.com/embroider-build/embroider/pull/1307)
@@ -10,19 +10,19 @@
 - BUGFIX: handle special case where rootURL is empty string [1285](https://github.com/embroider-build/embroider/pull/1285)
 - BUGFIX: tmpdir handling for @glimmer/tracking compat adapter [1302](https://github.com/embroider-build/embroider/pull/1302)
 
-## `@embroider/core` minor
+## `@embroider/core` 2.0.2 -> 2.1.0
 
 - INTERNAL: Split resolution decisions out of babel-plugin-adjust-specifiers [1309](https://github.com/embroider-build/embroider/pull/1309)
 
-## `@embroider/test-setup` patch
+## `@embroider/test-setup` 2.0.2 -> 2.1.0
 
 - BUGFIX: test-setup: use caret version modifier for Embroider dependencies [1328](https://github.com/embroider-build/embroider/pull/1328)
 
-## `@embroider/util` minor
+## `@embroider/util` 1.9.0 -> 1.10.0
 
 - FEATURE: Make ensureSafeComponent usable with Glint [1301](https://github.com/embroider-build/embroider/pull/1301)
 
-## `@ember/webpack` patch
+## `@ember/webpack` 2.0.2 -> 2.1.0
 
 - BUGFIX: fix css livereload [1317](https://github.com/embroider-build/embroider/pull/1317)
 

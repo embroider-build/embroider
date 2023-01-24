@@ -1,5 +1,0 @@
----
-'@embroider/compat': patch
----
-
-a

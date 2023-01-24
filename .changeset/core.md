@@ -1,5 +1,0 @@
----
-'@embroider/core': minor
----
-
-a

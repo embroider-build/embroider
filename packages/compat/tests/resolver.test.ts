@@ -1026,7 +1026,7 @@ describe('compat-resolver', function () {
         `
       )
     ).toEqual(`
-      import AddListener from D../modifiers/add-listener.jsD;
+      import AddListener from ../modifiers/add-listener.js;
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("\\n        {{#let (modifier AddListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
         moduleName: "my-app/templates/application.hbs"

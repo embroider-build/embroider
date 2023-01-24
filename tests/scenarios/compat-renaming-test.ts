@@ -63,8 +63,8 @@ appScenarios
         }
       `,
       addon: {
-        'index.js': `// lodash index`,
-        'capitalize.js': `// lodash capitalize`,
+        'index.js': `// lodash index\nexport default function() {}`,
+        'capitalize.js': `// lodash capitalize\nexport default function() {}`,
       },
     });
     app.addDevDependency(emberLodash);
@@ -83,15 +83,15 @@ appScenarios
       `,
       addon: {
         'emits-multiple-packages': {
-          'own-thing.js': '// own thing',
+          'own-thing.js': '// own thing\nexport default function() {}',
         },
         'somebody-elses-package': {
-          'environment.js': '// somebody elses environment',
+          'environment.js': '// somebody elses environment\nexport default function() {}',
           utils: {
-            'index.js': '// somebody elses utils',
+            'index.js': '// somebody elses utils\nexport default function() {}',
           },
         },
-        'single-file-package.js': '// single file package',
+        'single-file-package.js': '// single file package\nexport default function() {}',
       },
     });
     app.addDependency(emitsMultiple);
@@ -149,6 +149,13 @@ appScenarios
         },
       },
     });
+
+    app.addDevDependency('somebody-elses-package', {
+      files: {
+        'index.js': `export default function() {}`,
+        'deeper.js': `export default function() {}`,
+      },
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -168,6 +175,10 @@ appScenarios
       });
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
+
+      test('audit issues', function (assert) {
+        assert.deepEqual(expectAudit.findings, [], 'expected no problem findings in audit');
+      });
 
       test('whole package renaming works for top-level module', function () {
         expectAudit
@@ -239,12 +250,12 @@ appScenarios
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package')
-          .to(null);
+          .to('./node_modules/somebody-elses-package/index.js');
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package/deeper')
-          .to(null);
+          .to('./node_modules/somebody-elses-package/deeper.js');
       });
       test('single file package gets captured and renamed', function () {
         expectAudit

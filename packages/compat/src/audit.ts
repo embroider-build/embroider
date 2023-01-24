@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS, Resolver, ResolverOptions } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, Resolution, Resolver, ResolverOptions } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -82,6 +82,11 @@ type LinkedInternalModule = Omit<ResolvedInternalModule, 'linked'> & {
 
 function isLinked(module: InternalModule | undefined): module is LinkedInternalModule {
   return Boolean(module?.parsed && module.resolved && module.linked);
+}
+
+interface Request {
+  specifier: string;
+  fromFile: string;
 }
 
 export interface Import {
@@ -306,7 +311,7 @@ export class Audit {
         let resolved = new Map() as NonNullable<InternalModule['resolved']>;
         let resolver = new Resolver(this.resolverParams);
         for (let dep of visitResult.dependencies) {
-          let depFilename = await this.resolve(dep, filename, resolver);
+          let depFilename = await this.resolve({ specifier: dep, fromFile: filename }, resolver);
           if (depFilename) {
             resolved.set(dep, depFilename);
             if (!isResolutionFailure(depFilename)) {
@@ -531,80 +536,61 @@ export class Audit {
     return this.visitJS(filename, js);
   }
 
-  private async resolve(
-    specifier: string,
-    fromFile: string,
-    resolver: Resolver
-  ): Promise<string | ResolutionFailure | undefined> {
-    let resolution = resolver.beforeResolve(specifier, fromFile);
+  private nextRequest(
+    prevRequest: { specifier: string; fromFile: string },
+    resolution: Resolution
+  ): { specifier: string; fromFile: string } | undefined {
     switch (resolution.result) {
       case 'virtual':
         // nothing to audit
-        return;
+        return undefined;
       case 'alias':
         // follow the redirect
-        specifier = resolution.specifier;
-        if (resolution.fromFile) {
-          fromFile = resolution.fromFile;
-        }
-        break;
+        let specifier = resolution.specifier;
+        let fromFile = resolution.fromFile ?? prevRequest.fromFile;
+        return { specifier, fromFile };
       case 'rehome':
-        fromFile = resolution.fromFile;
-        break;
+        return { specifier: prevRequest.specifier, fromFile: resolution.fromFile };
       case 'continue':
-        // nothing to do
-        break;
+        return prevRequest;
       default:
         throw assertNever(resolution);
     }
+  }
 
-    if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
-      // the audit process deliberately removes the @embroider/macros babel
-      // plugins, so the imports are still present and should be left alone.
-      return;
-    }
-    try {
-      return resolveModule.sync(specifier, {
-        basedir: dirname(fromFile),
-        extensions: this.meta['resolvable-extensions'],
-      });
-    } catch (err) {
-      if (err.code === 'MODULE_NOT_FOUND') {
-        resolution = resolver.fallbackResolve(specifier, fromFile);
-        switch (resolution.result) {
-          case 'virtual':
-            // nothing to audit
-            return;
-          case 'alias':
-            // follow the redirect
-            specifier = resolution.specifier;
-            if (resolution.fromFile) {
-              fromFile = resolution.fromFile;
-            }
-            break;
-          case 'rehome':
-            fromFile = resolution.fromFile;
-            break;
-          case 'continue':
-            // nothing to do
-            break;
-          default:
-            throw assertNever(resolution);
+  private async resolve(request: Request, resolver: Resolver): Promise<string | ResolutionFailure | undefined> {
+    let current: Request | undefined = request;
+
+    while (true) {
+      current = this.nextRequest(current, resolver.beforeResolve(current.specifier, current.fromFile));
+      if (!current) {
+        return;
+      }
+
+      if (['@embroider/macros', '@ember/template-factory'].includes(current.specifier)) {
+        // the audit process deliberately removes the @embroider/macros babel
+        // plugins, so the imports are still present and should be left alone.
+        return;
+      }
+      try {
+        return resolveModule.sync(current.specifier, {
+          basedir: dirname(current.fromFile),
+          extensions: this.meta['resolvable-extensions'],
+        });
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
         }
-        try {
-          return resolveModule.sync(specifier, {
-            basedir: dirname(fromFile),
-            extensions: this.meta['resolvable-extensions'],
-          });
-        } catch (err) {
-          if (err.code === 'MODULE_NOT_FOUND') {
-            return { isResolutionFailure: true };
-          } else {
-            throw err;
-          }
+        let retry = this.nextRequest(current, resolver.fallbackResolve(current.specifier, current.fromFile));
+        if (!retry) {
+          // the request got virtualized
+          return;
         }
-      } else {
-        throw err;
+        if (retry === current) {
+          // the fallback has nothing new to offer, so this is a real resolution failure
+          return { isResolutionFailure: true };
+        }
+        current = retry;
       }
     }
   }

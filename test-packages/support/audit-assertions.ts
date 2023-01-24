@@ -22,6 +22,9 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
     module(name: string) {
       return expectAudit.module(name);
     },
+    get findings() {
+      return expectAudit.findings;
+    },
   };
 }
 
@@ -38,6 +41,10 @@ class ExpectAuditResults {
       });
     }
     return new ExpectModule(this.assert, m);
+  }
+
+  get findings() {
+    return this.result.findings;
   }
 }
 

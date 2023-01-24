@@ -1859,9 +1859,7 @@ describe('compat-resolver', function () {
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        transform('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
-      ).toEqualCode(``);
+      transform('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`);
     }).toThrow(
       /argument "title" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: title/
     );
@@ -2172,16 +2170,14 @@ describe('compat-resolver', function () {
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        transform(
-          'templates/components/x.hbs',
-          `
-          <FormBuilder @navbar={{this.unknown}} as |bar|>
-            {{component bar}}
-          </FormBuilder>
-          `
-        )
-      ).toEqualCode(``);
+      transform(
+        'templates/components/x.hbs',
+        `
+        <FormBuilder @navbar={{this.unknown}} as |bar|>
+          {{component bar}}
+        </FormBuilder>
+        `
+      );
     }).toThrow(
       /argument "navbar" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );
@@ -2201,16 +2197,14 @@ describe('compat-resolver', function () {
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        transform(
-          'templates/components/x.hbs',
-          `
-          {{#form-builder navbar=this.unknown as |bar|}}
-            {{component bar}}
-          {{/form-builder}}
-          `
-        )
-      ).toEqualCode(``);
+      transform(
+        'templates/components/x.hbs',
+        `
+        {{#form-builder navbar=this.unknown as |bar|}}
+          {{component bar}}
+        {{/form-builder}}
+        `
+      );
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );

@@ -286,11 +286,23 @@ export default class V1App {
   babelMajorVersion(): 7 {
     let babelAddon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-babel');
     if (babelAddon) {
-      let major = Number(babelAddon.pkg.version.split('.')[0]);
-      if (major !== 7) {
-        throw new Error(`@embroider/compat only supports v1 addons that use babel 7`);
+      let babelAddonMajor = Number(babelAddon.pkg.version.split('.')[0]);
+      let babelMajor = babelAddonMajor;
+      if (babelAddonMajor >= 8) {
+        // `ember-cli-babel` v8 breaks lockstep with Babel, because it now
+        // defines `@babel/core` as a peer dependency, so we need to check the
+        // project's version of `@babel/core`:
+        let babelVersion = this.app.project.pkg.devDependencies?.['@babel/core'];
+        if (babelVersion) {
+          babelMajor = Number(babelVersion.split('.')[0]);
+        } else {
+          babelMajor = 7;
+        }
       }
-      return major;
+      if (babelMajor !== 7) {
+        throw new Error('`@embroider/compat` only supports apps and addons that use Babel v7.');
+      }
+      return babelMajor;
     }
     // if we didn't have our own babel plugin at all, it's safe to parse our
     // code with 7.

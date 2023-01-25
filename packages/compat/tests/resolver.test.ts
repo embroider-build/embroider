@@ -52,6 +52,10 @@ describe('compat-resolver', function () {
 
     let transforms: Transform[] = [];
     let resolverTransform = resolver.astTransformer();
+
+    if (otherOptions.plugins) {
+      transforms.push.apply(transforms, otherOptions.plugins);
+    }
     if (resolverTransform) {
       transforms.push(resolverTransform);
     }
@@ -488,21 +492,27 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('angle contextual component, lower', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle contextual component, lower', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
-    expect(
-      findDependencies('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`)
-    ).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>`))
+      .toEqualCode(`
+        import HelloWorld from "../components/hello-world.js";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate(
+          '<HelloWorld as |h|> <h.title @flavor="chocolate" /> </HelloWorld>',
+          {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              HelloWorld,
+            }),
+          }
+        );
+      `);
   });
 
-  test.skip('optional component missing in mustache', function () {
-    let findDependencies = configure({
+  test('optional component missing in mustache', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -514,11 +524,16 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{this-one x=true}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{this-one x=true}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('component rules can be expressed via component helper', function () {
-    let findDependencies = configure({
+  test('component rules can be expressed via component helper', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -530,11 +545,16 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{this-one x=true}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{this-one x=true}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('optional component missing in mustache block', function () {
-    let findDependencies = configure({
+  test('optional component missing in mustache block', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -546,25 +566,15 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this-one}} {{/this-one}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('optional component missing in mustache', function () {
-    let findDependencies = configure({
-      staticComponents: true,
-      staticHelpers: true,
-      packageRules: [
-        {
-          package: 'the-test-package',
-          components: {
-            '{{this-one}}': { safeToIgnore: true },
-          },
-        },
-      ],
-    });
-    expect(findDependencies('templates/application.hbs', `{{this-one x=true}}`)).toEqual([]);
-  });
-  test.skip('optional component declared as element missing in mustache block', function () {
-    let findDependencies = configure({
+  test('optional component declared as element missing in mustache block', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -576,10 +586,15 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#this-one}} {{/this-one}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this-one}} {{/this-one}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('optional component missing in element', function () {
-    let findDependencies = configure({
+  test('optional component missing in element', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
       packageRules: [
@@ -591,44 +606,77 @@ describe('compat-resolver', function () {
         },
       ],
     });
-    expect(findDependencies('templates/application.hbs', `<ThisOne/>`)).toEqual([]);
+    expect(transform('templates/application.hbs', `<ThisOne/>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<ThisOne />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('class defined helper not failing if there is no arguments', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{(this.myHelper)}}`)).toEqual([]);
+  test('class defined helper not failing if there is no arguments', function () {
+    let transform = configure({ staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{(this.myHelper)}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{(this.myHelper)}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('class defined helper not failing with arguments', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqual([]);
+  test('class defined helper not failing with arguments', function () {
+    let transform = configure({ staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{(this.myHelper 42)}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{(this.myHelper 42)}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('helper defined in component not failing if there is no arguments', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{#if (this.myHelper)}}{{/if}}`)).toEqual([]);
+  test('helper defined in component not failing if there is no arguments', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{#if (this.myHelper)}}{{/if}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#if (this.myHelper)}}{{/if}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('class defined component not failing if there is a block', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{#this.myComponent}}hello{{/this.myComponent}}`)).toEqual(
-      []
-    );
+  test('class defined component not failing if there is a block', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{#this.myComponent}}hello{{/this.myComponent}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this.myComponent}}hello{{/this.myComponent}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('class defined component not failing with arguments', function () {
-    let findDependencies = configure({ staticComponents: true, staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{#this.myComponent 42}}{{/this.myComponent}}`)).toEqual([]);
+  test('class defined component not failing with arguments', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{#this.myComponent 42}}{{/this.myComponent}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#this.myComponent 42}}{{/this.myComponent}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('mustache missing, no args', function () {
-    let findDependencies = configure({
+  test('mustache missing, no args', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
     });
-    expect(findDependencies('templates/application.hbs', `{{hello-world}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{hello-world}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('mustache missing, with args', function () {
-    let findDependencies = configure({
+  test('mustache missing, with args', function () {
+    let transform = configure({
       staticComponents: true,
       staticHelpers: true,
     });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{hello-world foo=bar}}`);
+      transform('templates/application.hbs', `{{hello-world foo=bar}}`);
     }).toThrow(new RegExp(`Missing component or helper: hello-world in templates/application.hbs`));
   });
 
@@ -650,61 +698,62 @@ describe('compat-resolver', function () {
   });
 
   test.skip('string literal passed to "helper" keyword in content position', function () {
-    let findDependencies = configure({
+    let transform = configure({
       staticHelpers: true,
     });
     givenFile('helpers/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{helper "hello-world"}}`)).toEqualCode(`
+      import helloWorld from "../helpers/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper helloWorld}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "modifier" keyword in content position', function () {
-    let findDependencies = configure({
+    let transform = configure({
       staticModifiers: true,
     });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqualCode(`
+      import addListener from "../modifiers/add-listener.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<button {{(modifier addListener \\"click\\" this.handleClick)}}>Test</button>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('modifier currying using the "modifier" keyword', function () {
-    let findDependencies = configure({ staticModifiers: true });
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
-        `
-        {{#let (modifier "add-listener") as |addListener|}}
+        `{{#let (modifier "add-listener") as |addListener|}}
           {{#let (modifier addListener "click") as |addClickListener|}}
             <button {{addClickListener this.handleClick}}>Test</button>
           {{/let}}
-        {{/let}}
-        `
+        {{/let}}`
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqualCode(`
+      import addListener from "../modifiers/add-listener.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#let (modifier addListener) as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('built-in components are ignored when used with the component helper', function () {
-    let findDependencies = configure({
+  test('built-in components are ignored when used with the component helper', function () {
+    let transform = configure({
       staticComponents: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       {{component "input"}}
@@ -712,14 +761,19 @@ describe('compat-resolver', function () {
       {{component "textarea"}}
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      {{component \\"input\\"}}\\n      {{component \\"link-to\\"}}\\n      {{component \\"textarea\\"}}\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('built-in helpers are ignored when used with the "helper" keyword', function () {
-    let findDependencies = configure({
+  test('built-in helpers are ignored when used with the "helper" keyword', function () {
+    let transform = configure({
       staticHelpers: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       {{helper "fn"}}
@@ -727,37 +781,51 @@ describe('compat-resolver', function () {
       {{helper "concat"}}
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      {{helper \\"fn\\"}}\\n      {{helper \\"array\\"}}\\n      {{helper \\"concat\\"}}\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('built-in modifiers are ignored when used with the "modifier" keyword', function () {
-    let findDependencies = configure({
+  test('built-in modifiers are ignored when used with the "modifier" keyword', function () {
+    let transform = configure({
       staticModifiers: true,
     });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
       <button {{(modifier "on" "click" this.handleClick)}}>Test</button>
       <button {{(modifier "action" "handleClick")}}>Test</button>
     `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n      <button {{(modifier \\"on\\" \\"click\\" this.handleClick)}}>Test</button>\\n      <button {{(modifier \\"action\\" \\"handleClick\\")}}>Test</button>\\n    ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('component helper with direct addon package reference', function () {
-    let findDependencies = configure({
+  test('component helper with direct addon package reference', function () {
+    let transform = configure({
       staticComponents: true,
     });
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'my-addon/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
-  test.skip('component helper with direct addon package reference to a renamed package', function () {
-    let findDependencies = configure(
+  test('component helper with direct addon package reference to a renamed package', function () {
+    let transform = configure(
       {
         staticComponents: true,
       },
@@ -771,15 +839,19 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'has-been-renamed/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
-  test.skip('angle bracket invocation of component with @ syntax', function () {
-    let findDependencies = configure(
+  test('angle bracket invocation of component with @ syntax', function () {
+    let transform = configure(
       {
         staticComponents: true,
       },
@@ -787,15 +859,19 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('templates/application.hbs', `<MyAddon$Thing />`)).toEqual([
-      {
-        path: '../node_modules/my-addon/components/thing.js',
-        runtimeName: 'my-addon/components/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<MyAddon$Thing />`)).toEqualCode(`
+      import MyAddonThing from "../node_modules/my-addon/components/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<MyAddonThing />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          MyAddonThing
+        })
+      });
+    `);
   });
-  test.skip('angle bracket invocation of component with @ syntax - self reference inside node_modules', function () {
-    let findDependencies = configure(
+  test('angle bracket invocation of component with @ syntax - self reference inside node_modules', function () {
+    let transform = configure(
       {
         staticComponents: true,
       },
@@ -803,15 +879,19 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/components/thing.js');
-    expect(findDependencies('node_modules/my-addon/components/foo.hbs', `<MyAddon$Thing />`)).toEqual([
-      {
-        path: './thing.js',
-        runtimeName: 'my-addon/components/thing',
-      },
-    ]);
+    expect(transform('node_modules/my-addon/components/foo.hbs', `<MyAddon$Thing />`)).toEqualCode(`
+      import MyAddonThing from "./thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<MyAddonThing />", {
+        moduleName: "my-app/node_modules/my-addon/components/foo.hbs",
+        scope: () => ({
+          MyAddonThing
+        })
+      });
+    `);
   });
-  test.skip('helper with @ syntax', function () {
-    let findDependencies = configure(
+  test('helper with @ syntax', function () {
+    let transform = configure(
       {
         staticHelpers: true,
       },
@@ -819,15 +899,19 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon" }`);
     givenFile('node_modules/my-addon/helpers/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{my-addon$thing}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/helpers/thing.js',
-        runtimeName: 'my-addon/helpers/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{my-addon$thing}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/helpers/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
-  test.skip('helper with @ syntax and direct addon package reference to a renamed package', function () {
-    let findDependencies = configure(
+  test('helper with @ syntax and direct addon package reference to a renamed package', function () {
+    let transform = configure(
       {
         staticHelpers: true,
       },
@@ -842,12 +926,16 @@ describe('compat-resolver', function () {
     );
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/helpers/thing.js');
-    expect(findDependencies('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqual([
-      {
-        path: '../node_modules/my-addon/helpers/thing.js',
-        runtimeName: 'has-been-renamed/helpers/thing',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqualCode(`
+      import thing from "../node_modules/my-addon/helpers/thing.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          thing
+        })
+      });
+    `);
   });
   test('string literal passed to component helper with block', function () {
     let transform = configure({
@@ -884,10 +972,10 @@ describe('compat-resolver', function () {
   });
 
   test.skip('string literal passed to "helper" keyword in helper position', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (helper "hello-world") as |helloWorld|}}
@@ -895,18 +983,19 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    ).toEqualCode(`
+      import HelloWorld from "../helpers/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (helper HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('helper currying using the "helper" keyword', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (helper "hello-world" name="World") as |hello|}}
@@ -916,18 +1005,19 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../helpers/hello-world.js',
-        runtimeName: 'the-app/helpers/hello-world',
-      },
-    ]);
+    ).toEqualCode(`
+      import HelloWorld from "../helpers/hello-world.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (helper HelloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
   test.skip('string literal passed to "modifier" keyword in helper position', function () {
-    let findDependencies = configure({ staticModifiers: true });
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#let (modifier "add-listener" "click") as |addClickListener|}}
@@ -935,54 +1025,70 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual([
-      {
-        path: '../modifiers/add-listener.js',
-        runtimeName: 'the-app/modifiers/add-listener',
-      },
-    ]);
+    ).toEqual(`
+      import AddListener from ../modifiers/add-listener.js;
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#let (modifier AddListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('string literal passed to component helper fails to resolve', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('string literal passed to component helper fails to resolve', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/my-thing.js');
     expect(() => {
-      findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
+      transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "helper" keyword fails to resolve', function () {
-    let findDependencies = configure({ staticHelpers: true });
+    let transform = configure({ staticHelpers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{helper "hello-world"}}`);
+      transform('templates/application.hbs', `{{helper "hello-world"}}`);
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
   });
   test.skip('string literal passed to "modifier" keyword fails to resolve', function () {
-    let findDependencies = configure({ staticModifiers: true });
+    let transform = configure({ staticModifiers: true });
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       );
     }).toThrow(new RegExp(`Missing modifier: add-listener in templates/application.hbs`));
   });
-  test.skip('string literal passed to component helper fails to resolve when staticComponents is off', function () {
-    let findDependencies = configure({ staticComponents: false });
+  test('string literal passed to component helper fails to resolve when staticComponents is off', function () {
+    let transform = configure({ staticComponents: false });
     givenFile('components/my-thing.js');
-    expect(findDependencies('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{my-thing header=(component \\"hello-world\\")}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
-    let findDependencies = configure({ staticHelpers: false });
+  test('string literal passed to "helper" keyword fails to resolve when staticHelpers is off', function () {
+    let transform = configure({ staticHelpers: false });
     givenFile('helpers/hello-world.js');
-    expect(findDependencies('templates/application.hbs', `{{helper "hello-world"}}`)).toEqual([]);
+    expect(transform('templates/application.hbs', `{{helper "hello-world"}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper \\"hello-world\\"}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
-    let findDependencies = configure({ staticModifiers: false });
+  test('string literal passed to "modifier" keyword fails to resolve when staticModifiers is off', function () {
+    let transform = configure({ staticModifiers: false });
     givenFile('modifiers/add-listener.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<button {{(modifier \\"add-listener\\" \\"click\\" this.handleClick)}}>Test</button>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test('dynamic component helper error in content position', function () {
@@ -993,40 +1099,40 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: this\.which in templates\/application\.hbs/);
   });
 
-  test.skip('angle component, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle component, js and hbs', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
     givenFile('templates/components/hello-world.hbs');
-    expect(findDependencies('templates/application.hbs', `<HelloWorld />`)).toEqual([
-      {
-        path: '../components/hello-world.js',
-        runtimeName: 'the-app/components/hello-world',
-      },
-      {
-        path: './components/hello-world.hbs',
-        runtimeName: 'the-app/templates/components/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<HelloWorld />`)).toEqualCode(`
+      import helloWorld0 from "../components/hello-world.js";
+      import helloWorld from "./components/hello-world.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/hello-world", () => helloWorld);
+      window.define("the-app/components/hello-world", () => helloWorld0);
+      export default precompileTemplate("<HelloWorld />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('nested angle component, js and hbs', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('nested angle component, js and hbs', function () {
+    let transform = configure({ staticComponents: true });
     givenFile('components/something/hello-world.js');
     givenFile('templates/components/something/hello-world.hbs');
-    expect(findDependencies('templates/application.hbs', `<Something::HelloWorld />`)).toEqual([
-      {
-        path: '../components/something/hello-world.js',
-        runtimeName: 'the-app/components/something/hello-world',
-      },
-      {
-        path: './components/something/hello-world.hbs',
-        runtimeName: 'the-app/templates/components/something/hello-world',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<Something::HelloWorld />`)).toEqualCode(`
+      import helloWorld0 from "../components/something/hello-world.js";
+      import helloWorld from "./components/something/hello-world.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/something/hello-world", () => helloWorld);
+      window.define("the-app/components/something/hello-world", () => helloWorld0);
+      export default precompileTemplate("<Something::HelloWorld />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('angle component missing', function () {
-    let findDependencies = configure({ staticComponents: true });
+  test('angle component missing', function () {
+    let transform = configure({ staticComponents: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `<HelloWorld />`);
+      transform('templates/application.hbs', `<HelloWorld />`);
     }).toThrow(new RegExp(`Missing component: HelloWorld in templates/application.hbs`));
   });
   test('helper in subexpression', function () {
@@ -1046,44 +1152,55 @@ describe('compat-resolver', function () {
       );
     `);
   });
-  test.skip('missing subexpression with args', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('missing subexpression with args', function () {
+    let transform = configure({ staticHelpers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
+      transform('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
   });
-  test.skip('missing subexpression no args', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('missing subexpression no args', function () {
+    let transform = configure({ staticHelpers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
+      transform('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
     }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
   });
-  test.skip('emits no helpers when staticHelpers is off', function () {
-    let findDependencies = configure({ staticHelpers: false });
+  test('emits no helpers when staticHelpers is off', function () {
+    let transform = configure({ staticHelpers: false });
     givenFile('helpers/array.js');
-    expect(findDependencies('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('helper as component argument', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper as component argument', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/array.js');
-    expect(findDependencies('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqual([
-      {
-        runtimeName: 'the-app/helpers/array',
-        path: '../helpers/array.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqualCode(`
+      import array from "../helpers/array.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{my-component value=(array 1 2 3)}}", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          array
+        })
+      });
+    `);
   });
-  test.skip('helper as html attribute', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('helper as html attribute', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(findDependencies('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqual([
-      {
-        runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<div data-foo={{capitalize name}}></div>`)).toEqualCode(`
+      import capitalize from "../helpers/capitalize.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div data-foo={{capitalize name}}></div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          capitalize
+        })
+      });
+    `);
   });
   test('helper in bare mustache, no args', function () {
     let transform = configure({ staticHelpers: true });
@@ -1184,16 +1301,21 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('missing modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('missing modifier', function () {
+    let transform = configure({ staticModifiers: true });
     expect(() => {
-      findDependencies('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
+      transform('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
     }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
   });
-  test.skip('emits no modifiers when staticModifiers is off', function () {
-    let findDependencies = configure({ staticModifiers: false });
+  test('emits no modifiers when staticModifiers is off', function () {
+    let transform = configure({ staticModifiers: false });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<input {{auto-focus}} />`)).toEqual([]);
+    expect(transform('templates/application.hbs', `<input {{auto-focus}} />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<input {{auto-focus}} />", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test('modifier on html element', function () {
@@ -1211,96 +1333,130 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('modifier on component', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier on component', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqual([
-      {
-        runtimeName: 'the-app/modifiers/auto-focus',
-        path: '../modifiers/auto-focus.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqualCode(`
+      import autoFocus from "../modifiers/auto-focus.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<StyledInput {{autoFocus}} />", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          autoFocus
+        })
+      });
+    `);
   });
-  test.skip('modifier on contextual component', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier on contextual component', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<Form as |f|> <f.Input {{auto-focus}} /></Form>`)).toEqual([
-      {
-        runtimeName: 'the-app/modifiers/auto-focus',
-        path: '../modifiers/auto-focus.js',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `<Form as |f|> <f.Input {{auto-focus}} /></Form>`)).toEqualCode(`
+      import autoFocus from "../modifiers/auto-focus.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<Form as |f|> <f.Input {{autoFocus}} /></Form>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          autoFocus
+        })
+      });
+    `);
   });
-  test.skip('modifier provided as an argument', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('modifier provided as an argument', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('components/test.hbs', `<input {{@auto-focus}} />`)).toEqual([]);
+    expect(transform('components/test.hbs', `<input {{@auto-focus}} />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<input {{@auto-focus}} />", {
+        moduleName: "my-app/components/test.hbs"
+      });
+    `);
   });
-  test.skip('contextual modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('contextual modifier', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');
-    expect(findDependencies('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('local binding takes precedence over helper in bare mustache', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('local binding takes precedence over helper in bare mustache', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(
-      findDependencies('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`)
-    ).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`))
+      .toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize}} {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('local binding takes precedence over component in element position', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('local binding takes precedence over component in element position', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('components/the-thing.js');
-    expect(
-      findDependencies('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`)
-    ).toEqual([]);
+    expect(transform('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`))
+      .toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each things as |TheThing|}} <TheThing /> {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('local binding takes precedence over modifier', function () {
-    let findDependencies = configure({ staticModifiers: true });
+  test('local binding takes precedence over modifier', function () {
+    let transform = configure({ staticModifiers: true });
     givenFile('modifiers/some-modifier.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}`
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('angle components can establish local bindings', function () {
-    let findDependencies = configure({ staticHelpers: true });
+  test('angle components can establish local bindings', function () {
+    let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
-    expect(findDependencies('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqual(
-      []
-    );
+    expect(transform('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<Outer as |capitalize|> {{capitalize}} </Outer>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('local binding only applies within block', function () {
-    let findDependencies = configure({ staticHelpers: true, staticModifiers: true });
+  test('local binding only applies within block', function () {
+    let transform = configure({ staticHelpers: true, staticModifiers: true });
     givenFile('helpers/capitalize.js');
     givenFile('modifiers/validate.js');
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}
         <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
         `
       )
-    ).toEqual([
-      {
-        runtimeName: 'the-app/helpers/capitalize',
-        path: '../helpers/capitalize.js',
-      },
-      {
-        runtimeName: 'the-app/modifiers/validate',
-        path: '../modifiers/validate.js',
-      },
-    ]);
+    ).toEqualCode(`
+      import validate from "../modifiers/validate.js";
+      import capitalize from "../helpers/capitalize.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}\\n        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          capitalize,
+          validate
+        })
+      });
+    `);
   });
-  test.skip('ignores builtins', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
+  test('ignores builtins', function () {
+    let transform = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{outlet}}
@@ -1311,31 +1467,39 @@ describe('compat-resolver', function () {
         <form {{on "submit" doit}}></form>
       `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('ignores dot-rule curly component invocation, inline', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
-    expect(
-      findDependencies(
-        'templates/application.hbs',
-        `
-        {{thing.body x=1}}
-        `
-      )
-    ).toEqual([]);
+  test('ignores dot-rule curly component invocation, inline', function () {
+    let transform = configure({ staticHelpers: true, staticComponents: true });
+    expect(transform('templates/application.hbs', `{{thing.body x=1}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{thing.body x=1}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
-  test.skip('ignores dot-rule curly component invocation, block', function () {
-    let findDependencies = configure({ staticHelpers: true, staticComponents: true });
+  test('ignores dot-rule curly component invocation, block', function () {
+    let transform = configure({ staticHelpers: true, staticComponents: true });
     expect(
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#thing.body}}
         {{/thing.body}}
         `
       )
-    ).toEqual([]);
+    ).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("\\n        {{#thing.body}}\\n        {{/thing.body}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test.skip('respects yieldsSafeComponents rule, position 0', function () {
@@ -1349,9 +1513,9 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       {{#form-builder as |field| }}
@@ -1361,7 +1525,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects yieldsSafeComponents rule on element, position 0', function () {
+  test('respects yieldsSafeComponents rule on element, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1372,9 +1536,9 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       <FormBuilder as |field| >
@@ -1395,12 +1559,12 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({
+    let transform = configure({
       staticComponents: true,
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       {{#form-builder as |other field| }}
@@ -1409,7 +1573,7 @@ describe('compat-resolver', function () {
     `
     );
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#form-builder as |other field| }}
@@ -1435,12 +1599,12 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({
+    let transform = configure({
       staticComponents: true,
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       {{#form-builder as |f| }}
@@ -1449,7 +1613,7 @@ describe('compat-resolver', function () {
     `
     );
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#form-builder as |f| }}
@@ -1476,9 +1640,9 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    findDependencies(
+    transform(
       'templates/application.hbs',
       `
       {{#form-builder as |x f| }}
@@ -1487,7 +1651,7 @@ describe('compat-resolver', function () {
     `
     );
     expect(() => {
-      findDependencies(
+      transform(
         'templates/application.hbs',
         `
         {{#form-builder as |x f| }}
@@ -1576,7 +1740,7 @@ describe('compat-resolver', function () {
     // ]);
   });
 
-  test.skip('acceptsComponentArguments argument name may include optional @', function () {
+  test('acceptsComponentArguments argument name may include optional @', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1587,22 +1751,22 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{form-builder title="fancy-title"}}`)).toEqualCode(`
+      import fancyTitle from "./components/fancy-title.hbs";
+      import formBuilder from "./components/form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-title", () => fancyTitle);
+      export default precompileTemplate("{{form-builder title=\\"fancy-title\\"}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('acceptsComponentArguments on mustache with component subexpression', function () {
+  test('acceptsComponentArguments on mustache with component subexpression', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1613,19 +1777,19 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-title.hbs');
-    expect(findDependencies('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`)).toEqual([
-      {
-        runtimeName: 'the-app/templates/components/fancy-title',
-        path: './components/fancy-title.hbs',
-      },
-      {
-        runtimeName: 'the-app/templates/components/form-builder',
-        path: './components/form-builder.hbs',
-      },
-    ]);
+    expect(transform('templates/application.hbs', `{{form-builder title=(component "fancy-title") }}`)).toEqualCode(`
+      import fancyTitle from "./components/fancy-title.hbs";
+      import formBuilder from "./components/form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-title", () => fancyTitle);
+      export default precompileTemplate("{{form-builder title=(component \\"fancy-title\\")}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
   test('acceptsComponentArguments on element with component helper mustache', function () {
@@ -1659,7 +1823,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('acceptsComponentArguments matches co-located template', function () {
+  test('acceptsComponentArguments matches co-located template', function () {
     let packageRules = [
       {
         package: 'the-app',
@@ -1670,12 +1834,17 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('components/form-builder.js');
-    expect(findDependencies('components/form-builder.hbs', `{{component title}}`)).toEqual([]);
+    expect(transform('components/form-builder.hbs', `{{component title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component title}}", {
+        moduleName: "my-app/components/form-builder.hbs"
+      });
+    `);
   });
 
-  test.skip(`element block params are not in scope for element's own attributes`, function () {
+  test(`element block params are not in scope for element's own attributes`, function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1687,23 +1856,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        findDependencies('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`)
-      ).toEqual([
-        {
-          runtimeName: 'the-app/templates/components/form-builder',
-          path: './components/form-builder.hbs',
-        },
-      ]);
+      transform('templates/application.hbs', `<FormBuilder @title={{title}} as |title|></FormBuilder>`);
     }).toThrow(
       /argument "title" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: title/
     );
   });
 
-  test.skip('acceptsComponentArguments on mustache with invalid literal', function () {
+  test('acceptsComponentArguments on mustache with invalid literal', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1714,10 +1876,10 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      findDependencies('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
+      transform('templates/application.hbs', `{{form-builder title="fancy-title"}}`);
     }).toThrow(/Missing component: fancy-title in templates\/application\.hbs/);
   });
 
@@ -1777,7 +1939,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('acceptsComponentArguments interior usage of path generates no warning', function () {
+  test('acceptsComponentArguments interior usage of path generates no warning', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1788,11 +1950,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component title}}`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/form-builder.hbs', `{{component title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component title}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
-  test.skip('acceptsComponentArguments interior usage of this.path generates no warning', function () {
+  test('acceptsComponentArguments interior usage of this.path generates no warning', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1808,11 +1975,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/form-builder.hbs', `{{component this.title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.title}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
-  test.skip('acceptsComponentArguments interior usage of @path generates no warning', function () {
+  test('acceptsComponentArguments interior usage of @path generates no warning', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1823,11 +1995,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component @title}}`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/form-builder.hbs', `{{component @title}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component @title}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
-  test.skip('safeToIgnore a missing component', function () {
+  test('safeToIgnore a missing component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1838,11 +2015,16 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
-    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([]);
+    let transform = configure({ staticComponents: true, packageRules });
+    expect(transform('templates/components/x.hbs', `<FormBuilder />`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<FormBuilder />", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
-  test.skip('safeToIgnore a present component', function () {
+  test('safeToIgnore a present component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1853,17 +2035,19 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    expect(findDependencies('templates/components/x.hbs', `<FormBuilder />`)).toEqual([
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    expect(transform('templates/components/x.hbs', `<FormBuilder />`)).toEqualCode(`
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      export default precompileTemplate("<FormBuilder />", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
-  test.skip('respects yieldsArguments rule for positional block param, angle', function () {
+  test('respects yieldsArguments rule for positional block param, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1874,11 +2058,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
     expect(
-      findDependencies(
+      transform(
         'templates/components/x.hbs',
         `
         <FormBuilder @navbar={{component "fancy-navbar"}} as |bar|>
@@ -1886,16 +2070,16 @@ describe('compat-resolver', function () {
         </FormBuilder>
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        <FormBuilder @navbar={{component \\"fancy-navbar\\"}} as |bar|>\\n          {{component bar}}\\n        </FormBuilder>\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test.skip('respects yieldsArguments rule for positional block param, curly', function () {
@@ -1909,11 +2093,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
     expect(
-      findDependencies(
+      transform(
         'templates/components/x.hbs',
         `
         {{#form-builder navbar=(component "fancy-navbar") as |bar|}}
@@ -1933,7 +2117,7 @@ describe('compat-resolver', function () {
     ]);
   });
 
-  test.skip('respects yieldsArguments rule for hash block param', function () {
+  test('respects yieldsArguments rule for hash block param', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1948,11 +2132,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/fancy-navbar.hbs');
     expect(
-      findDependencies(
+      transform(
         'templates/components/x.hbs',
         `
         <FormBuilder @navbar={{component "fancy-navbar"}} as |f|>
@@ -1960,19 +2144,19 @@ describe('compat-resolver', function () {
         </FormBuilder>
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        <FormBuilder @navbar={{component \\"fancy-navbar\\"}} as |f|>\\n          {{component f.bar}}\\n        </FormBuilder>\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, angle', function () {
+  test('yieldsArguments causes warning to propagate up lexically, angle', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -1983,24 +2167,17 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        findDependencies(
-          'templates/components/x.hbs',
-          `
-          <FormBuilder @navbar={{this.unknown}} as |bar|>
-            {{component bar}}
-          </FormBuilder>
-          `
-        )
-      ).toEqual([
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]);
+      transform(
+        'templates/components/x.hbs',
+        `
+        <FormBuilder @navbar={{this.unknown}} as |bar|>
+          {{component bar}}
+        </FormBuilder>
+        `
+      );
     }).toThrow(
       /argument "navbar" to component "FormBuilder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );
@@ -2017,24 +2194,17 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        findDependencies(
-          'templates/components/x.hbs',
-          `
-          {{#form-builder navbar=this.unknown as |bar|}}
-            {{component bar}}
-          {{/form-builder}}
-          `
-        )
-      ).toEqual([
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]);
+      transform(
+        'templates/components/x.hbs',
+        `
+        {{#form-builder navbar=this.unknown as |bar|}}
+          {{component bar}}
+        {{/form-builder}}
+        `
+      );
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );
@@ -2051,11 +2221,11 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
       expect(
-        findDependencies(
+        transform(
           'templates/components/x.hbs',
           `
           {{#form-builder navbar=this.unknown as |bar1|}}
@@ -2065,12 +2235,12 @@ describe('compat-resolver', function () {
           {{/form-builder}}
           `
         )
-      ).toEqual([
+      ).toEqualCode(`[
         {
           path: './form-builder.hbs',
           runtimeName: 'the-app/templates/components/form-builder',
         },
-      ]);
+      ]`);
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );
@@ -2087,21 +2257,19 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');
 
-    expect(findDependencies('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqual([
-      {
-        path: '../../components/alpha.js',
-        runtimeName: 'the-app/components/alpha',
-      },
-      {
-        path: './alpha.hbs',
-        runtimeName: 'the-app/templates/components/alpha',
-      },
-    ]);
+    expect(transform('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqualCode(`
+      import "../../components/alpha.js";
+      import "./components/alpha.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.which}}", {
+        moduleName: "my-app/templates/components/form-builder.hbs"
+      });
+    `);
   });
 
   test.skip('respects invokes rule on a non-component app template', function () {
@@ -2115,21 +2283,19 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/index.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');
 
-    expect(findDependencies('templates/index.hbs', `{{component this.which}}`)).toEqual([
-      {
-        path: '../components/alpha.js',
-        runtimeName: 'the-app/components/alpha',
-      },
-      {
-        path: './components/alpha.hbs',
-        runtimeName: 'the-app/templates/components/alpha',
-      },
-    ]);
+    expect(transform('templates/index.hbs', `{{component this.which}}`)).toEqualCode(`
+      import "../../components/alpha.js";
+      import "./components/alpha.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.which}}", {
+        moduleName: "my-app/templates/index.hbs"
+      });
+    `);
   });
 
   test.skip('respects invokes rule on a non-component addon template', function () {
@@ -2143,46 +2309,57 @@ describe('compat-resolver', function () {
         },
       },
     ];
-    let findDependencies = configure({ staticComponents: true, packageRules });
+    let transform = configure({ staticComponents: true, packageRules });
     givenFile('node_modules/my-addon/package.json', `{ "name": "my-addon"}`);
     givenFile('node_modules/my-addon/templates/index.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');
 
-    expect(findDependencies('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqual([
-      {
-        path: '../../../components/alpha.js',
-        runtimeName: 'the-app/components/alpha',
-      },
-      {
-        path: '../../../templates/components/alpha.hbs',
-        runtimeName: 'the-app/templates/components/alpha',
-      },
-    ]);
+    expect(transform('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqualCode(`
+      import "../../components/alpha.js";
+      import "./components/alpha.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component this.which}}", {
+        moduleName: "my-app/node_modules/my-addon/templates/index.hbs"
+      });
+    `);
   });
 
-  test.skip('rejects arbitrary expression in component helper', function () {
-    let findDependencies = configure({ staticComponents: true });
-    expect(() => findDependencies('templates/application.hbs', `{{component (some-helper this.which) }}`)).toThrow(
+  test('rejects arbitrary expression in component helper', function () {
+    let transform = configure({ staticComponents: true });
+    expect(() => transform('templates/application.hbs', `{{component (some-helper this.which) }}`)).toThrow(
       `Unsafe dynamic component: cannot statically analyze this expression`
     );
   });
 
-  test.skip('ignores any non-string-literal in "helper" keyword', function () {
-    let findDependencies = configure({ staticHelpers: true });
-    expect(findDependencies('templates/application.hbs', `{{helper this.which}}`)).toEqual([]);
+  test('ignores any non-string-literal in "helper" keyword', function () {
+    let transform = configure({ staticHelpers: true });
+    expect(transform('templates/application.hbs', `{{helper this.which}}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{helper this.which}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('ignores any non-string-literal in "modifier" keyword', function () {
-    let findDependencies = configure({ staticModifiers: true });
-    expect(findDependencies('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqual([]);
+  test('ignores any non-string-literal in "modifier" keyword', function () {
+    let transform = configure({ staticModifiers: true });
+    expect(transform('templates/application.hbs', `<div {{(modifier this.which)}}></div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{(modifier this.which)}}></div>", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 
-  test.skip('trusts inline ensure-safe-component helper', function () {
-    let findDependencies = configure({ staticComponents: true });
-    expect(findDependencies('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqual(
-      []
-    );
+  test('trusts inline ensure-safe-component helper', function () {
+    let transform = configure({ staticComponents: true });
+    expect(transform('templates/application.hbs', `{{component (ensure-safe-component this.which) }}`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("{{component (ensure-safe-component this.which)}}", {
+        moduleName: "my-app/templates/application.hbs"
+      });
+    `);
   });
 });
 

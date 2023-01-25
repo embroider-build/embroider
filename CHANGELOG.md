@@ -1,5 +1,12 @@
 # Embroider Changelog
 
+# Release 2023-01-25.0
+
+## `@embroider/compat`, `@embroider/core`, `@embroider/test-setup`, `@embroider/webpack` 2.1.0 -> 2.1.1
+
+- BUGFIX: Support ember-cli-babel >= 8 [1334](https://github.com/embroider-build/embroider/pull/1334)
+- INTERNAL: Upgrade resolver tests [1321](https://github.com/embroider-build/embroider/pull/1321)
+
 # Release 2023-01-24.0
 
 ## `@embroider/compat` 2.0.2 -> 2.1.0

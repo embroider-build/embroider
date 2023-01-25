@@ -1,9 +1,9 @@
 {
   "name": "@embroider/test-scenarios",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "dependencies": {
-    "@embroider/core": "2.1.0",
-    "@embroider/compat": "2.1.0",
+    "@embroider/core": "2.1.1",
+    "@embroider/compat": "2.1.1",
     "@embroider/shared-internals": "2.0.0",
     "@embroider/test-support": "0.36.0",
     "@types/qunit": "^2.11.1",

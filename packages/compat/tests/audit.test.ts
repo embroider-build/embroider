@@ -74,6 +74,8 @@ describe('audit', function () {
         null,
         2
       )}`,
+      '_adjust_imports.json': JSON.stringify(resolver.adjustImportsOptions),
+      '_relocated_files.json': JSON.stringify({}),
     });
     let appMeta: AppMeta = {
       type: 'app',

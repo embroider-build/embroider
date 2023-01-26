@@ -24,9 +24,9 @@
     "@embroider/shared-internals": "2.0.0",
     "@types/source-map": "^0.5.7",
     "@types/supports-color": "^8.1.0",
+    "assert-never": "^1.2.1",
     "babel-loader": "^8.2.2",
     "babel-preset-env": "^1.7.0",
-    "supports-color": "^8.1.0",
     "css-loader": "^5.2.6",
     "csso": "^4.2.0",
     "debug": "^4.3.2",
@@ -37,8 +37,10 @@
     "semver": "^7.3.5",
     "source-map-url": "^0.4.1",
     "style-loader": "^2.0.0",
+    "supports-color": "^8.1.0",
     "terser": "^5.7.0",
-    "thread-loader": "^3.0.4"
+    "thread-loader": "^3.0.4",
+    "webpack-virtual-modules": "^0.5.0"
   },
   "devDependencies": {
     "@types/csso": "^3.5.1",

@@ -25,7 +25,7 @@ import Options from './options';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from './portable-babel-config';
-import { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
+import { Options as ResolverConfig } from './module-resolver';
 import { mangledEngineRoot } from './engine-mangler';
 import { AppFiles, Engine, EngineSummary, RouteFiles } from './app-files';
 import partition from 'lodash/partition';
@@ -106,7 +106,7 @@ export interface AppAdapter<TreeNames> {
 
   // describes the special module naming rules that we need to achieve
   // compatibility
-  adjustImportsOptions(): AdjustImportsOptions;
+  resolverConfig(): ResolverConfig;
 
   adjustImportsOptionsPath(): string;
 
@@ -254,7 +254,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get resolvableExtensionsPattern(): RegExp {
-    return extensionsPattern(this.adapter.adjustImportsOptions().resolvableExtensions);
+    return extensionsPattern(this.adapter.resolverConfig().resolvableExtensions);
   }
 
   private impliedAssets(
@@ -436,7 +436,7 @@ export class AppBuilder<TreeNames> {
   }
 
   private adjustImportsPlugin(engines: Engine[]): PluginItem {
-    let relocatedFiles: AdjustImportsOptions['relocatedFiles'] = {};
+    let relocatedFiles: ResolverConfig['relocatedFiles'] = {};
     for (let { destPath, appFiles } of engines) {
       for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
         relocatedFiles[join(destPath, relativePath)] = originalPath;
@@ -923,7 +923,7 @@ export class AppBuilder<TreeNames> {
         majorVersion: this.adapter.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
-      'resolvable-extensions': this.adapter.adjustImportsOptions().resolvableExtensions,
+      'resolvable-extensions': this.adapter.resolverConfig().resolvableExtensions,
       'root-url': this.adapter.rootURL(),
     };
 

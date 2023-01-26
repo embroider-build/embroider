@@ -6,10 +6,15 @@ import {
   PreprocessedComponentRule,
   preprocessComponentRule,
 } from './dependency-rules';
-import { Package, PackageCache, explicitRelative, extensionsPattern } from '@embroider/core';
+import {
+  Package,
+  PackageCache,
+  explicitRelative,
+  extensionsPattern,
+  ResolverOptions as CoreResolverOptions,
+} from '@embroider/core';
 import { dirname, join, relative, sep } from 'path';
 
-import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
@@ -146,7 +151,7 @@ interface RehydrationParamsWithFile extends RehydrationParamsBase {
 }
 
 interface RehydrationParamsWithOptions extends RehydrationParamsBase {
-  adjustImportsOptions: AdjustImportsOptions;
+  adjustImportsOptions: CoreResolverOptions;
 }
 
 type RehydrationParams = RehydrationParamsWithFile | RehydrationParamsWithOptions;
@@ -214,7 +219,7 @@ export default class CompatResolver {
   }
 
   @Memoize()
-  get adjustImportsOptions(): AdjustImportsOptions {
+  get adjustImportsOptions(): CoreResolverOptions {
     const { params } = this;
     return 'adjustImportsOptionsPath' in params
       ? // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -22,7 +22,7 @@ import {
 } from '@embroider/core';
 import { tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJsonSync } from 'fs-extra';
+import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -36,6 +36,7 @@ import crypto from 'crypto';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
 import { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
+import { EmbroiderPlugin, Options as EmbroiderPluginOptions } from './webpack-resolver-plugin';
 
 const debug = makeDebug('embroider:debug');
 
@@ -194,6 +195,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
+    let resolverConfig: EmbroiderPluginOptions = {
+      ...readJSONSync(join(this.pathToVanillaApp, '_adjust_imports.json')),
+      ...readJSONSync(join(this.pathToVanillaApp, '_relocated_files.json')),
+    };
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -203,6 +209,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
       plugins: [
         ...stylePlugins,
+        new EmbroiderPlugin(resolverConfig),
         compiler => {
           compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
             this.summarizeStats(stats, variant, variantIndex);
@@ -319,7 +326,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
       let content;
       try {
-        content = readJsonSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
+        content = readJSONSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
       } catch (err) {
         // the script refers to a sourcemap that doesn't exist, so we just leave
         // the map out.
@@ -620,7 +627,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
     }
     if (typeof error.message === 'string') {
-      error.message = error.message.replace(error.module.context, error.module.userRequest);
+      if (error.module?.context) {
+        error.message = error.message.replace(error.module.context, error.module.userRequest);
+      }
 
       // the tmpdir on OSX is horribly long and makes error messages hard to
       // read. This is doing the same as String.prototype.replaceAll, which node

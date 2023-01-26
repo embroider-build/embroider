@@ -9,6 +9,8 @@ import { ExpectFile, expectFilesAt, Rebuilder, Transpiler } from '@embroider/tes
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+
 const { module: Qmodule, test } = QUnit;
 
 let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
@@ -287,6 +289,7 @@ stage2Scenarios
           <HelloWorld @useDynamic="first-choice" />
           <HelloWorld @useDynamic={{"second-choice"}} />
           <HelloWorld @useDynamic={{component "third-choice"}} />
+          <DirectTemplateReexport />
         `,
           'curly.hbs': `
           {{hello-world useDynamic="first-choice" }}
@@ -441,6 +444,8 @@ stage2Scenarios
         build = new Transpiler(expectFile.basePath);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
+
       test('index.hbs', function () {
         let assertFile = expectFile('templates/index.hbs').transform(build.transpile);
         assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
@@ -485,10 +490,6 @@ stage2Scenarios
         assertFile.matches(
           /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
         );
-        assertFile.matches(
-          /import somethingExternal from ["'].*\/externals\/not-a-resolvable-package["']/,
-          'externals are handled correctly'
-        );
       });
 
       test('app/hello-world.js', function () {
@@ -496,18 +497,18 @@ stage2Scenarios
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
         );
-        assertFile.matches(
-          /export \{ default \} from ['"]\.\.\/node_modules\/my-addon\/components\/hello-world['"]/,
-          'remapped to precise copy of my-addon'
-        );
+
+        expectAudit
+          .module('./components/hello-world.js')
+          .resolves('my-addon/components/hello-world')
+          .to('./node_modules/my-addon/components/hello-world.js', 'remapped to precise copy of my-addon');
       });
 
       test('app/templates/components/direct-template-reexport.js', function () {
-        let assertFile = expectFile('./templates/components/direct-template-reexport.js').transform(build.transpile);
-        assertFile.matches(
-          /export \{ default \} from ['"]\.\.\/\.\.\/node_modules\/my-addon\/templates\/components\/hello-world['"]/,
-          'rewrites reexports of templates'
-        );
+        expectAudit
+          .module('./templates/components/direct-template-reexport.js')
+          .resolves('my-addon/templates/components/hello-world')
+          .to('./node_modules/my-addon/templates/components/hello-world.hbs', 'rewrites reexports of templates');
       });
 
       test('uses-inline-template.js', function () {
@@ -524,8 +525,10 @@ stage2Scenarios
       });
 
       test('app can import a deep addon', function () {
-        let assertFile = expectFile('use-deep-addon.js').transform(build.transpile);
-        assertFile.matches(/import thing from ["']\.\/node_modules\/my-addon\/node_modules\/deep-addon['"]/);
+        expectAudit
+          .module('./use-deep-addon.js')
+          .resolves('deep-addon')
+          .to('./node_modules/my-addon/node_modules/deep-addon/index.js');
       });
 
       test('amd require in an addon gets rewritten to window.require', function () {

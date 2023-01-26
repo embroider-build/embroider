@@ -1,9 +1,8 @@
 import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, realpathSync } from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
-import { hbsToJS, tmpdir, throwOnWarnings } from '@embroider/core';
+import { hbsToJS, tmpdir, throwOnWarnings, ResolverOptions } from '@embroider/core';
 import { emberTemplateCompiler } from '@embroider/test-support';
-import { Options as AdjustImportsOptions } from '@embroider/core/src/babel-plugin-adjust-imports';
 import Resolver from '../src/resolver';
 import { PackageRules } from '../src';
 import type { AST, ASTPluginEnvironment } from '@glimmer/syntax';
@@ -18,7 +17,7 @@ describe('compat-resolver', function () {
     compatOptions: Options,
     otherOptions: {
       podModulePrefix?: string;
-      adjustImportsImports?: Partial<AdjustImportsOptions>;
+      adjustImportsImports?: Partial<ResolverOptions>;
       plugins?: Transform[];
       startingFrom?: 'hbs' | 'js';
     } = {}

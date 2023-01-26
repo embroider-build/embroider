@@ -734,6 +734,62 @@ describe('compat-resolver', function () {
       });
     `);
   });
+  test('modifier in bare mustache, no args', function () {
+    let transform = configure({
+      staticModifiers: false,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top}}>Test</div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scroll-top}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+      });
+    `);
+  });
+  test('modifier in bare mustache, with args', function () {
+    let transform = configure({
+      staticModifiers: false,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top @scrollTopPosition}}>Test</div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scroll-top @scrollTopPosition}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+      });
+    `);
+  });
+  test('modifier in bare mustache, no args', function () {
+    let transform = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top}}>Test</div>`)).toEqualCode(`
+      import scrollTop from "../modifiers/scroll-top.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scrollTop}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          scrollTop
+        })
+      });
+    `);
+  });
+  test('modifier in bare mustache, with args', function () {
+    let transform = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top @scrollTopPosition}}>Test</div>`)).toEqualCode(`
+      import scrollTop from "../modifiers/scroll-top.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scrollTop @scrollTopPosition}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          scrollTop
+        })
+      });
+    `);
+  });
   test('modifier currying using the "modifier" keyword', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');

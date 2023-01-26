@@ -697,7 +697,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in content position', function () {
+  test('string literal passed to "helper" keyword in content position', function () {
     let transform = configure({
       staticHelpers: true,
     });
@@ -706,7 +706,10 @@ describe('compat-resolver', function () {
       import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("{{helper helloWorld}}", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });
@@ -971,7 +974,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in helper position', function () {
+  test('string literal passed to "helper" keyword in helper position', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -984,14 +987,17 @@ describe('compat-resolver', function () {
         `
       )
     ).toEqualCode(`
-      import HelloWorld from "../helpers/hello-world.js";
+      import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (helper HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (helper helloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });
-  test.skip('helper currying using the "helper" keyword', function () {
+  test('helper currying using the "helper" keyword', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -1006,10 +1012,13 @@ describe('compat-resolver', function () {
         `
       )
     ).toEqualCode(`
-      import HelloWorld from "../helpers/hello-world.js";
+      import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (helper HelloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (helper helloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });

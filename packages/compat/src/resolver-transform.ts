@@ -5,6 +5,7 @@ import {
   ResolutionFail,
   Resolution,
   ResolvedDep,
+  HelperResolution,
 } from './resolver';
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -241,7 +242,10 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             return;
           }
           if (node.path.original === 'helper' && node.params.length > 0) {
-            handleDynamicHelper(node.params[0], resolver, filename);
+            let resolution = handleDynamicHelper(node.params[0], resolver, filename);
+            emit(path, resolution, (node, newId) => {
+              node.params[0] = newId;
+            });
             return;
           }
           if (node.path.original === 'modifier' && node.params.length > 0) {
@@ -288,7 +292,10 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
               return;
             }
             if (node.path.original === 'helper' && node.params.length > 0) {
-              handleDynamicHelper(node.params[0], resolver, filename);
+              let resolution = handleDynamicHelper(node.params[0], resolver, filename);
+              emit(path, resolution, (node, newIdentifier) => {
+                node.params[0] = newIdentifier;
+              });
               return;
             }
             let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
@@ -520,14 +527,19 @@ function handleComponentHelper(
   return resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
 }
 
-function handleDynamicHelper(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+function handleDynamicHelper(
+  param: ASTv1.Expression,
+  resolver: Resolver,
+  moduleName: string
+): HelperResolution | ResolutionFail | null {
   // We only need to handle StringLiterals since Ember already throws an error if unsupported values
   // are passed to the helper keyword.
   // If a helper reference is passed in we don't need to do anything since it's either the result of a previous
   // helper keyword invocation, or a helper reference that was imported somewhere.
   if (param.type === 'StringLiteral') {
-    resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
+    return resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
   }
+  return null;
 }
 
 function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {

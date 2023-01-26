@@ -229,7 +229,7 @@ export default class CompatResolver {
 
   @Memoize()
   private get rules() {
-    // keyed by their first resolved dependency's runtimeName.
+    // keyed by their first resolved dependency's absPath.
     let components: Map<string, PreprocessedComponentRule> = new Map();
 
     // keyed by our own dasherized interpretation of the component's name.

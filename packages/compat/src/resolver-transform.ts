@@ -9,6 +9,8 @@ import {
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
+import { explicitRelative } from '@embroider/core';
+import { dirname } from 'path';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -37,6 +39,10 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
 
+    function relativeToFile(absPath: string): string {
+      return explicitRelative(dirname(filename), absPath);
+    }
+
     // The first time we insert a component as a lexical binding
     //   - if there's no JS-scope collision with the name, we're going to bind the existing name
     //     - in this case, any subsequent invocations of the same component just got automatically fixed too
@@ -52,9 +58,9 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     function emitAMD(dep: ResolvedDep | null) {
       if (dep && !emittedAMDDeps.has(dep.runtimeName)) {
         let parts = dep.runtimeName.split('/');
-        let { path, runtimeName } = dep;
+        let { absPath, runtimeName } = dep;
         jsutils.emitExpression(context => {
-          let identifier = context.import(path, 'default', parts[parts.length - 1]);
+          let identifier = context.import(relativeToFile(absPath), 'default', parts[parts.length - 1]);
           return `window.define("${runtimeName}", () => ${identifier})`;
         });
         emittedAMDDeps.add(dep.runtimeName);
@@ -75,7 +81,7 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
             emitAMD(resolution.module);
           } else {
-            let name = jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+            let name = jsutils.bindImport(relativeToFile(resolution.module.absPath), 'default', parentPath, {
               nameHint: resolution.nameHint,
             });
             emittedLexicalBindings.set(name, resolution);
@@ -83,7 +89,7 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           }
           return;
         case 'modifier':
-          let name = jsutils.bindImport(resolution.module.path, 'default', parentPath, {
+          let name = jsutils.bindImport(relativeToFile(resolution.module.absPath), 'default', parentPath, {
             nameHint: resolution.nameHint,
           });
           emittedLexicalBindings.set(name, resolution);
@@ -101,7 +107,7 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
           // component and the template in the AMD loader to associate them. In
           // that case, we emit just-in-time AMD definitions for them.
           if (resolution.jsModule && !resolution.hbsModule) {
-            let name = jsutils.bindImport(resolution.jsModule.path, 'default', parentPath, {
+            let name = jsutils.bindImport(relativeToFile(resolution.jsModule.absPath), 'default', parentPath, {
               nameHint: resolution.nameHint,
             });
             emittedLexicalBindings.set(name, resolution);

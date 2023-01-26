@@ -6,13 +6,7 @@ import {
   PreprocessedComponentRule,
   preprocessComponentRule,
 } from './dependency-rules';
-import {
-  Package,
-  PackageCache,
-  explicitRelative,
-  extensionsPattern,
-  ResolverOptions as CoreResolverOptions,
-} from '@embroider/core';
+import { Package, PackageCache, extensionsPattern, ResolverOptions as CoreResolverOptions } from '@embroider/core';
 import { dirname, join, relative, sep } from 'path';
 
 import { Memoize } from 'typescript-memoize';
@@ -25,7 +19,6 @@ import { Options as ResolverTransformOptions } from './resolver-transform';
 
 export interface ResolvedDep {
   runtimeName: string;
-  path: string;
   absPath: string;
 }
 
@@ -47,7 +40,7 @@ export interface HelperResolution {
 
 export interface ModifierResolution {
   type: 'modifier';
-  module: ResolvedDep;
+  module: { absPath: string };
   nameHint: string;
 }
 
@@ -430,27 +423,19 @@ export default class CompatResolver {
       }
       let owner = cache.ownerOfFile(from)!;
       let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryHelper(parts[1], from, targetPackage);
+      return this._tryHelper(parts[1], targetPackage);
     } else {
-      return this._tryHelper(path, from, this.appPackage);
+      return this._tryHelper(path, this.appPackage);
     }
   }
 
-  private _tryHelper(
-    path: string,
-    from: string,
-    targetPackage: Package | AppPackagePlaceholder
-  ): HelperResolution | null {
+  private _tryHelper(path: string, targetPackage: Package | AppPackagePlaceholder): HelperResolution | null {
     for (let extension of this.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(targetPackage.root, 'helpers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
           type: 'helper',
-          module: {
-            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-            path: explicitRelative(dirname(from), absPath),
-            absPath,
-          },
+          module: this.resolvedDep(absPath, targetPackage),
           nameHint: path,
         };
       }
@@ -469,27 +454,19 @@ export default class CompatResolver {
       }
       let owner = cache.ownerOfFile(from)!;
       let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryModifier(parts[1], from, targetPackage);
+      return this._tryModifier(parts[1], targetPackage);
     } else {
-      return this._tryModifier(path, from, this.appPackage);
+      return this._tryModifier(path, this.appPackage);
     }
   }
 
-  private _tryModifier(
-    path: string,
-    from: string,
-    targetPackage: Package | AppPackagePlaceholder
-  ): ModifierResolution | null {
+  private _tryModifier(path: string, targetPackage: Package | AppPackagePlaceholder): ModifierResolution | null {
     for (let extension of this.adjustImportsOptions.resolvableExtensions) {
       let absPath = join(targetPackage.root, 'modifiers', path) + extension;
       if (pathExistsSync(absPath)) {
         return {
           type: 'modifier',
-          module: {
-            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-            path: explicitRelative(dirname(from), absPath),
-            absPath,
-          },
+          module: { absPath },
           nameHint: path,
         };
       }
@@ -514,15 +491,14 @@ export default class CompatResolver {
       let owner = cache.ownerOfFile(from)!;
       let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
 
-      return this._tryComponent(parts[1], from, withRuleLookup, targetPackage);
+      return this._tryComponent(parts[1], withRuleLookup, targetPackage);
     } else {
-      return this._tryComponent(path, from, withRuleLookup, this.appPackage);
+      return this._tryComponent(path, withRuleLookup, this.appPackage);
     }
   }
 
   private _tryComponent(
     path: string,
-    from: string,
     withRuleLookup: boolean,
     targetPackage: Package | AppPackagePlaceholder
   ): ComponentResolution | null {
@@ -612,20 +588,8 @@ export default class CompatResolver {
     }
     return {
       type: 'component',
-      jsModule: jsModule
-        ? {
-            path: explicitRelative(dirname(from), jsModule),
-            absPath: jsModule,
-            runtimeName: this.absPathToRuntimeName(jsModule, targetPackage),
-          }
-        : null,
-      hbsModule: hbsModule
-        ? {
-            path: explicitRelative(dirname(from), hbsModule),
-            absPath: hbsModule,
-            runtimeName: this.absPathToRuntimeName(hbsModule, targetPackage),
-          }
-        : null,
+      jsModule: jsModule ? this.resolvedDep(jsModule, targetPackage) : null,
+      hbsModule: hbsModule ? this.resolvedDep(hbsModule, targetPackage) : null,
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
@@ -860,6 +824,16 @@ export default class CompatResolver {
         loc,
       };
     }
+  }
+  private resolvedDep(absPath: string, targetPackage: Package | AppPackagePlaceholder | undefined): ResolvedDep {
+    let self = this;
+    const a = absPath;
+    return {
+      absPath,
+      get runtimeName() {
+        return self.absPathToRuntimeName(a, targetPackage);
+      },
+    };
   }
 }
 

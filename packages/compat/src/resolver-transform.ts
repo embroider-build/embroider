@@ -6,6 +6,7 @@ import {
   Resolution,
   ResolvedDep,
   HelperResolution,
+  ModifierResolution,
 } from './resolver';
 import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -249,7 +250,10 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
             return;
           }
           if (node.path.original === 'modifier' && node.params.length > 0) {
-            handleDynamicModifier(node.params[0], resolver, filename);
+            let resolution = handleDynamicModifier(node.params[0], resolver, filename);
+            emit(path, resolution, (node, newId) => {
+              node.params[0] = newId;
+            });
             return;
           }
           let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
@@ -542,10 +546,15 @@ function handleDynamicHelper(
   return null;
 }
 
-function handleDynamicModifier(param: ASTv1.Expression, resolver: Resolver, moduleName: string): void {
+function handleDynamicModifier(
+  param: ASTv1.Expression,
+  resolver: Resolver,
+  moduleName: string
+): ModifierResolution | ResolutionFail | null {
   if (param.type === 'StringLiteral') {
-    resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
+    return resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
   }
+  return null;
 }
 
 function extendPath<N extends ASTv1.Node, K extends keyof N>(

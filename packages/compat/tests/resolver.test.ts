@@ -713,7 +713,7 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword in content position', function () {
+  test('string literal passed to "modifier" keyword in content position', function () {
     let transform = configure({
       staticModifiers: true,
     });
@@ -727,11 +727,14 @@ describe('compat-resolver', function () {
       import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("<button {{(modifier addListener \\"click\\" this.handleClick)}}>Test</button>", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        })
       });
     `);
   });
-  test.skip('modifier currying using the "modifier" keyword', function () {
+  test('modifier currying using the "modifier" keyword', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
@@ -747,7 +750,10 @@ describe('compat-resolver', function () {
       import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("{{#let (modifier addListener) as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        })
       });
     `);
   });
@@ -1022,7 +1028,7 @@ describe('compat-resolver', function () {
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword in helper position', function () {
+  test('string literal passed to "modifier" keyword in helper position', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
@@ -1034,11 +1040,14 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual(`
-      import AddListener from ../modifiers/add-listener.js;
+    ).toEqualCode(`
+      import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (modifier AddListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        }),
       });
     `);
   });
@@ -1049,13 +1058,13 @@ describe('compat-resolver', function () {
       transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
-  test.skip('string literal passed to "helper" keyword fails to resolve', function () {
+  test('string literal passed to "helper" keyword fails to resolve', function () {
     let transform = configure({ staticHelpers: true });
     expect(() => {
       transform('templates/application.hbs', `{{helper "hello-world"}}`);
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
   });
-  test.skip('string literal passed to "modifier" keyword fails to resolve', function () {
+  test('string literal passed to "modifier" keyword fails to resolve', function () {
     let transform = configure({ staticModifiers: true });
     expect(() => {
       transform(

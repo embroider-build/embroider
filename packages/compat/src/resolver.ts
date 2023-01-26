@@ -401,7 +401,7 @@ export default class CompatResolver {
     }
   }
 
-  absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
     return this.absPathToRuntimePath(absPath, owningPackage)
       .replace(this.resolvableExtensionsPattern, '')
       .replace(/\/index$/, '');

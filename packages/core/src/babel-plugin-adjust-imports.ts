@@ -18,53 +18,6 @@ export interface DeflatedOptions {
 
 type BabelTypes = typeof t;
 
-type DefineExpressionPath = NodePath<t.CallExpression> & {
-  node: t.CallExpression & {
-    arguments: [t.StringLiteral, t.ArrayExpression, Function];
-  };
-};
-
-export function isImportSyncExpression(t: BabelTypes, path: NodePath<any>) {
-  if (
-    !path ||
-    !path.isCallExpression() ||
-    path.node.callee.type !== 'Identifier' ||
-    !path.get('callee').referencesImport('@embroider/macros', 'importSync')
-  ) {
-    return false;
-  }
-
-  const args = path.node.arguments;
-  return Array.isArray(args) && args.length === 1 && t.isStringLiteral(args[0]);
-}
-
-export function isDynamicImportExpression(t: BabelTypes, path: NodePath<any>) {
-  if (!path || !path.isCallExpression() || path.node.callee.type !== 'Import') {
-    return false;
-  }
-
-  const args = path.node.arguments;
-  return Array.isArray(args) && args.length === 1 && t.isStringLiteral(args[0]);
-}
-
-export function isDefineExpression(t: BabelTypes, path: NodePath<any>): path is DefineExpressionPath {
-  // should we allow nested defines, or stop at the top level?
-  if (!path.isCallExpression() || path.node.callee.type !== 'Identifier' || path.node.callee.name !== 'define') {
-    return false;
-  }
-
-  const args = path.node.arguments;
-
-  // only match define with 3 arguments define(name: string, deps: string[], cb: Function);
-  return (
-    Array.isArray(args) &&
-    args.length === 3 &&
-    t.isStringLiteral(args[0]) &&
-    t.isArrayExpression(args[1]) &&
-    t.isFunction(args[2])
-  );
-}
-
 export default function main(babel: typeof Babel) {
   let t = babel.types;
   return {

@@ -1,6 +1,6 @@
 import { sep } from 'path';
 import { Package, AddonPackage } from '@embroider/shared-internals';
-import AppDiffer from './app-differ';
+import type AppDiffer from './app-differ';
 
 export interface RouteFiles {
   route?: string;

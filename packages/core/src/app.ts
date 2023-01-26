@@ -703,9 +703,10 @@ export class AppBuilder<TreeNames> {
       .reverse()
       .forEach(a => a.differ.update());
     return this.appDiffers.map(a => {
-      return Object.assign({}, a.engine, {
+      return {
+        ...a.engine,
         appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern, this.adapter.podModulePrefix()),
-      });
+      };
     });
   }
 

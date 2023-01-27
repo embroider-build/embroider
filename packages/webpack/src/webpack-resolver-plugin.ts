@@ -129,7 +129,7 @@ class ResolverPlugin {
       { name: 'my-resolver-plugin', stage: 10 },
       async (request, context, callback) => {
         try {
-          if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
+          if (!isRelevantRequest(request) || request.request.startsWith('/@embroider/externals/')) {
             callback();
             return;
           }

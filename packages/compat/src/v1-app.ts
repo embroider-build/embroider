@@ -287,14 +287,14 @@ export default class V1App {
     let babelAddon = this.app.project.addons.find((a: any) => a.name === 'ember-cli-babel');
     if (babelAddon) {
       let babelAddonMajor = Number(babelAddon.pkg.version.split('.')[0]);
-      let babelMajor = babelAddonMajor;
+      let babelMajor: number | undefined = babelAddonMajor;
       if (babelAddonMajor >= 8) {
         // `ember-cli-babel` v8 breaks lockstep with Babel, because it now
         // defines `@babel/core` as a peer dependency, so we need to check the
         // project's version of `@babel/core`:
         let babelVersion = this.app.project.pkg.devDependencies?.['@babel/core'];
         if (babelVersion) {
-          babelMajor = Number(babelVersion.split('.')[0]);
+          babelMajor = semver.coerce(babelVersion)?.major;
         } else {
           babelMajor = 7;
         }

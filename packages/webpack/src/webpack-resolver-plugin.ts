@@ -104,7 +104,7 @@ class ResolverPlugin {
     // precedence over other resolving decisions.
     resolver.getHook('raw-resolve').tapAsync('my-resolver-plugin', async (request, context, callback) => {
       try {
-        if (!isRelevantRequest(request) || request.request.startsWith('@embroider/externals/')) {
+        if (!isRelevantRequest(request) || request.request.startsWith('/@embroider/externals/')) {
           callback();
           return;
         }

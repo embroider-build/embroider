@@ -2161,7 +2161,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsArguments rule for positional block param, curly', function () {
+  test('respects yieldsArguments rule for positional block param, curly', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2184,16 +2184,16 @@ describe('compat-resolver', function () {
         {{/form-builder}}
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        {{#form-builder navbar=(component \\"fancy-navbar\\") as |bar|}}\\n          {{component bar}}\\n        {{/form-builder}}\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test('respects yieldsArguments rule for hash block param', function () {

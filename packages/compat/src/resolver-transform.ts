@@ -161,10 +161,10 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
       visitor: {
         Program: {
           enter(node) {
+            scopeStack.push(node.blockParams);
             if (locals) {
               scopeStack.push(locals);
             }
-            scopeStack.push(node.blockParams);
           },
           exit() {
             scopeStack.pop();

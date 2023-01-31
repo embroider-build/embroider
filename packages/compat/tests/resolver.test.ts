@@ -1575,7 +1575,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 0', function () {
+  test('respects yieldsSafeComponents rule, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1621,7 +1621,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 1', function () {
+  test('respects yieldsSafeComponents rule, position 1', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1637,14 +1637,16 @@ describe('compat-resolver', function () {
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
+        {{#form-builder as |other field| }}
+          {{component field}}
+        {{/form-builder}}
       `
-      {{#form-builder as |other field| }}
-        {{component field}}
-      {{/form-builder}}
-    `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -1657,7 +1659,7 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: other in templates\/application\.hbs/);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 0.field', function () {
+  test('respects yieldsSafeComponents rule, position 0.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1677,14 +1679,16 @@ describe('compat-resolver', function () {
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
-      `
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
       {{#form-builder as |f| }}
         {{component f.field}}
       {{/form-builder}}
     `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -1697,7 +1701,7 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: f.other/);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 1.field', function () {
+  test('respects yieldsSafeComponents rule, position 1.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1715,14 +1719,16 @@ describe('compat-resolver', function () {
     ];
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
-      `
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
       {{#form-builder as |x f| }}
         {{component f.field}}
       {{/form-builder}}
     `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -2155,7 +2161,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsArguments rule for positional block param, curly', function () {
+  test('respects yieldsArguments rule for positional block param, curly', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2178,16 +2184,16 @@ describe('compat-resolver', function () {
         {{/form-builder}}
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        {{#form-builder navbar=(component \\"fancy-navbar\\") as |bar|}}\\n          {{component bar}}\\n        {{/form-builder}}\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test('respects yieldsArguments rule for hash block param', function () {
@@ -2256,7 +2262,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, curl', function () {
+  test('yieldsArguments causes warning to propagate up lexically, curl', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2283,7 +2289,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
+  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2297,23 +2303,16 @@ describe('compat-resolver', function () {
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        transform(
-          'templates/components/x.hbs',
-          `
+      transform(
+        'templates/components/x.hbs',
+        `
           {{#form-builder navbar=this.unknown as |bar1|}}
             {{#form-builder navbar=bar1 as |bar2|}}
               {{component bar2}}
             {{/form-builder}}
           {{/form-builder}}
           `
-        )
-      ).toEqualCode(`[
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]`);
+      );
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );

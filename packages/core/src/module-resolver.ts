@@ -48,7 +48,7 @@ export class Resolver {
 
   constructor(private options: Options) {}
 
-  beforeResolve(specifier: string, fromFile: string): Resolution {
+  async beforeResolve(specifier: string, fromFile: string): Promise<Resolution> {
     let resolution = this.internalBeforeResolve(specifier, fromFile);
     debug('[%s] %s %s => %r', 'before', specifier, fromFile, resolution);
     return resolution;
@@ -71,7 +71,7 @@ export class Resolver {
     return resolution;
   }
 
-  fallbackResolve(specifier: string, fromFile: string): Resolution {
+  async fallbackResolve(specifier: string, fromFile: string): Promise<Resolution> {
     let resolution = this.postHandleExternal(specifier, fromFile);
     debug('[%s] %s %s => %r', 'fallback', specifier, fromFile, resolution);
     return resolution;

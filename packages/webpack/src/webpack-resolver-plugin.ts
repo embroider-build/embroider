@@ -54,27 +54,27 @@ export class EmbroiderPlugin {
     }
   }
 
-  #resolve(defaultResolve: (state: unknown, callback: CB) => void, state: unknown, callback: CB) {
+  async #resolve(defaultResolve: (state: unknown) => Promise<Module>, state: unknown): Promise<Module> {
     if (isRelevantRequest(state)) {
-      let resolution = this.#resolver.beforeResolve(state.request, state.contextInfo.issuer);
+      let resolution = await this.#resolver.beforeResolve(state.request, state.contextInfo.issuer);
       if (resolution.result !== 'continue') {
         this.#handle(resolution, state);
       }
     }
-
-    defaultResolve(state, (err, result) => {
-      if (err && isRelevantRequest(state)) {
-        let resolution = this.#resolver.fallbackResolve(state.request, state.contextInfo.issuer);
-        if (resolution.result === 'continue') {
-          callback(err);
-        } else {
-          this.#handle(resolution, state);
-          this.#resolve(defaultResolve, state, callback);
-        }
-      } else {
-        callback(null, result);
+    try {
+      return await defaultResolve(state);
+    } catch (err) {
+      if (!isRelevantRequest(state)) {
+        throw err;
       }
-    });
+      let resolution = await this.#resolver.fallbackResolve(state.request, state.contextInfo.issuer);
+      if (resolution.result === 'continue') {
+        throw err;
+      } else {
+        this.#handle(resolution, state);
+        return await this.#resolve(defaultResolve, state);
+      }
+    }
   }
 
   apply(compiler: Compiler) {
@@ -86,10 +86,15 @@ export class EmbroiderPlugin {
       // fallback to the default resolve hook in the NormalModuleFactory. So
       // instead we will find the default behavior and call it from our own tap,
       // giving us a chance to handle its failures.
-      let { fn: defaultResolve } = nmf.hooks.resolve.taps.find(t => t.name === 'NormalModuleFactory')!;
+      let { fn } = nmf.hooks.resolve.taps.find(t => t.name === 'NormalModuleFactory')!;
+      let defaultResolve = fn as unknown as (state: unknown, callback: CB) => void;
+      let pDefaultResolve = promisifyDefaultResolve(defaultResolve);
 
       nmf.hooks.resolve.tapAsync({ name: 'my-experiment', stage: 50 }, (state: unknown, callback: CB) =>
-        this.#resolve(defaultResolve as any, state, callback)
+        this.#resolve(pDefaultResolve, state).then(
+          result => callback(null, result),
+          err => callback(err)
+        )
       );
     });
   }
@@ -104,6 +109,20 @@ interface Request {
 }
 
 type CB = (err: Error | null, result?: Module) => void;
+
+function promisifyDefaultResolve(defaultResolve: (state: unknown, callback: CB) => void) {
+  return async function (state: unknown): Promise<Module> {
+    return new Promise((resolve, reject) => {
+      defaultResolve(state, (err, value) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(value!);
+        }
+      });
+    });
+  };
+}
 
 function isRelevantRequest(request: any): request is Request {
   return (

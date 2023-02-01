@@ -562,7 +562,7 @@ export class Audit {
     let current: Request | undefined = request;
 
     while (true) {
-      current = this.nextRequest(current, resolver.beforeResolve(current.specifier, current.fromFile));
+      current = this.nextRequest(current, await resolver.beforeResolve(current.specifier, current.fromFile));
       if (!current) {
         return;
       }
@@ -581,7 +581,7 @@ export class Audit {
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
-        let retry = this.nextRequest(current, resolver.fallbackResolve(current.specifier, current.fromFile));
+        let retry = this.nextRequest(current, await resolver.fallbackResolve(current.specifier, current.fromFile));
         if (!retry) {
           // the request got virtualized
           return;

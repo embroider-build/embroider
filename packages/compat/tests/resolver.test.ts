@@ -696,7 +696,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in content position', function () {
+  test('string literal passed to "helper" keyword in content position', function () {
     let transform = configure({
       staticHelpers: true,
     });
@@ -705,11 +705,14 @@ describe('compat-resolver', function () {
       import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("{{helper helloWorld}}", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword in content position', function () {
+  test('string literal passed to "modifier" keyword in content position', function () {
     let transform = configure({
       staticModifiers: true,
     });
@@ -723,11 +726,70 @@ describe('compat-resolver', function () {
       import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("<button {{(modifier addListener \\"click\\" this.handleClick)}}>Test</button>", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        })
       });
     `);
   });
-  test.skip('modifier currying using the "modifier" keyword', function () {
+  test('modifier in bare mustache, no args', function () {
+    let transform = configure({
+      staticModifiers: false,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top}}>Test</div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scroll-top}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+      });
+    `);
+  });
+  test('modifier in bare mustache, with args', function () {
+    let transform = configure({
+      staticModifiers: false,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top @scrollTopPosition}}>Test</div>`)).toEqualCode(`
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scroll-top @scrollTopPosition}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+      });
+    `);
+  });
+  test('modifier in bare mustache, no args', function () {
+    let transform = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top}}>Test</div>`)).toEqualCode(`
+      import scrollTop from "../modifiers/scroll-top.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scrollTop}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          scrollTop
+        })
+      });
+    `);
+  });
+  test('modifier in bare mustache, with args', function () {
+    let transform = configure({
+      staticModifiers: true,
+    });
+    givenFile('modifiers/scroll-top.js');
+    expect(transform('templates/application.hbs', `<div {{scroll-top @scrollTopPosition}}>Test</div>`)).toEqualCode(`
+      import scrollTop from "../modifiers/scroll-top.js";
+      import { precompileTemplate } from "@ember/template-compilation";
+      export default precompileTemplate("<div {{scrollTop @scrollTopPosition}}>Test</div>", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          scrollTop
+        })
+      });
+    `);
+  });
+  test('modifier currying using the "modifier" keyword', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
@@ -743,7 +805,10 @@ describe('compat-resolver', function () {
       import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("{{#let (modifier addListener) as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
-        moduleName: "my-app/templates/application.hbs"
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        })
       });
     `);
   });
@@ -970,7 +1035,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('string literal passed to "helper" keyword in helper position', function () {
+  test('string literal passed to "helper" keyword in helper position', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -983,14 +1048,17 @@ describe('compat-resolver', function () {
         `
       )
     ).toEqualCode(`
-      import HelloWorld from "../helpers/hello-world.js";
+      import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (helper HelloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (helper helloWorld) as |helloWorld|}}\\n          {{helloWorld}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });
-  test.skip('helper currying using the "helper" keyword', function () {
+  test('helper currying using the "helper" keyword', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/hello-world.js');
     expect(
@@ -1005,14 +1073,17 @@ describe('compat-resolver', function () {
         `
       )
     ).toEqualCode(`
-      import HelloWorld from "../helpers/hello-world.js";
+      import helloWorld from "../helpers/hello-world.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (helper HelloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (helper helloWorld name=\\"World\\") as |hello|}}\\n          {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n            {{helloTomster name=\\"Zoey\\"}}\\n          {{/let}}\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          helloWorld,
+        }),
       });
     `);
   });
-  test.skip('string literal passed to "modifier" keyword in helper position', function () {
+  test('string literal passed to "modifier" keyword in helper position', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/add-listener.js');
     expect(
@@ -1024,11 +1095,14 @@ describe('compat-resolver', function () {
         {{/let}}
         `
       )
-    ).toEqual(`
-      import AddListener from ../modifiers/add-listener.js;
+    ).toEqualCode(`
+      import addListener from "../modifiers/add-listener.js";
       import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#let (modifier AddListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
+      export default precompileTemplate("\\n        {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n          <button {{addClickListener this.handleClick}}>Test</button>\\n        {{/let}}\\n        ", {
+        moduleName: "my-app/templates/application.hbs",
+        scope: () => ({
+          addListener
+        }),
       });
     `);
   });
@@ -1039,13 +1113,13 @@ describe('compat-resolver', function () {
       transform('templates/application.hbs', `{{my-thing header=(component "hello-world") }}`);
     }).toThrow(new RegExp(`Missing component: hello-world in templates/application.hbs`));
   });
-  test.skip('string literal passed to "helper" keyword fails to resolve', function () {
+  test('string literal passed to "helper" keyword fails to resolve', function () {
     let transform = configure({ staticHelpers: true });
     expect(() => {
       transform('templates/application.hbs', `{{helper "hello-world"}}`);
     }).toThrow(new RegExp(`Missing helper: hello-world in templates/application.hbs`));
   });
-  test.skip('string literal passed to "modifier" keyword fails to resolve', function () {
+  test('string literal passed to "modifier" keyword fails to resolve', function () {
     let transform = configure({ staticModifiers: true });
     expect(() => {
       transform(
@@ -1501,7 +1575,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 0', function () {
+  test('respects yieldsSafeComponents rule, position 0', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1547,7 +1621,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 1', function () {
+  test('respects yieldsSafeComponents rule, position 1', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1563,14 +1637,16 @@ describe('compat-resolver', function () {
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
+        {{#form-builder as |other field| }}
+          {{component field}}
+        {{/form-builder}}
       `
-      {{#form-builder as |other field| }}
-        {{component field}}
-      {{/form-builder}}
-    `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -1583,7 +1659,7 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: other in templates\/application\.hbs/);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 0.field', function () {
+  test('respects yieldsSafeComponents rule, position 0.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1603,14 +1679,16 @@ describe('compat-resolver', function () {
       packageRules,
     });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
-      `
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
       {{#form-builder as |f| }}
         {{component f.field}}
       {{/form-builder}}
     `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -1623,7 +1701,7 @@ describe('compat-resolver', function () {
     }).toThrow(/Unsafe dynamic component: f.other/);
   });
 
-  test.skip('respects yieldsSafeComponents rule, position 1.field', function () {
+  test('respects yieldsSafeComponents rule, position 1.field', function () {
     let packageRules = [
       {
         package: 'the-test-package',
@@ -1641,14 +1719,16 @@ describe('compat-resolver', function () {
     ];
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
-    transform(
-      'templates/application.hbs',
-      `
+    expect(() => {
+      transform(
+        'templates/application.hbs',
+        `
       {{#form-builder as |x f| }}
         {{component f.field}}
       {{/form-builder}}
     `
-    );
+      );
+    }).not.toThrow();
     expect(() => {
       transform(
         'templates/application.hbs',
@@ -2081,7 +2161,7 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test.skip('respects yieldsArguments rule for positional block param, curly', function () {
+  test('respects yieldsArguments rule for positional block param, curly', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2104,16 +2184,16 @@ describe('compat-resolver', function () {
         {{/form-builder}}
         `
       )
-    ).toEqual([
-      {
-        path: './fancy-navbar.hbs',
-        runtimeName: 'the-app/templates/components/fancy-navbar',
-      },
-      {
-        path: './form-builder.hbs',
-        runtimeName: 'the-app/templates/components/form-builder',
-      },
-    ]);
+    ).toEqualCode(`
+      import fancyNavbar from "./fancy-navbar.hbs";
+      import formBuilder from "./form-builder.hbs";
+      import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/form-builder", () => formBuilder);
+      window.define("the-app/templates/components/fancy-navbar", () => fancyNavbar);
+      export default precompileTemplate("\\n        {{#form-builder navbar=(component \\"fancy-navbar\\") as |bar|}}\\n          {{component bar}}\\n        {{/form-builder}}\\n        ", {
+        moduleName: "my-app/templates/components/x.hbs"
+      });
+    `);
   });
 
   test('respects yieldsArguments rule for hash block param', function () {
@@ -2182,7 +2262,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, curl', function () {
+  test('yieldsArguments causes warning to propagate up lexically, curl', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2209,7 +2289,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
+  test('yieldsArguments causes warning to propagate up lexically, multiple levels', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2223,23 +2303,16 @@ describe('compat-resolver', function () {
     let transform = configure({ staticComponents: true, packageRules });
     givenFile('templates/components/form-builder.hbs');
     expect(() => {
-      expect(
-        transform(
-          'templates/components/x.hbs',
-          `
+      transform(
+        'templates/components/x.hbs',
+        `
           {{#form-builder navbar=this.unknown as |bar1|}}
             {{#form-builder navbar=bar1 as |bar2|}}
               {{component bar2}}
             {{/form-builder}}
           {{/form-builder}}
           `
-        )
-      ).toEqualCode(`[
-        {
-          path: './form-builder.hbs',
-          runtimeName: 'the-app/templates/components/form-builder',
-        },
-      ]`);
+      );
     }).toThrow(
       /argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this\.unknown/
     );

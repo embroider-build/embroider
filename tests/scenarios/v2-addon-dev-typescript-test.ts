@@ -13,7 +13,7 @@ appScenarios
     addon.pkg.name = 'v2-addon';
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
-      './*': './dist/*',
+      './*': './dist/*.js',
       './addon-main.js': './addon-main.js',
       './package.json': './package.json',
     };

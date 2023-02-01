@@ -2,6 +2,8 @@ import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageNa
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { compile } from './js-handlebars';
+import makeDebug from 'debug';
+import assertNever from 'assert-never';
 
 export interface Options {
   renamePackages: {
@@ -24,16 +26,35 @@ export interface Options {
   appRoot: string;
 }
 
+const externalPrefix = '/@embroider/external/';
+
 export type Resolution =
   | { result: 'continue' }
   | { result: 'alias'; specifier: string; fromFile?: string }
   | { result: 'rehome'; fromFile: string }
-  | { result: 'virtual'; filename: string; content: string };
+  | { result: 'virtual'; filename: string };
 
 export class Resolver {
+  // Given a filename that was returned with result === 'virtual', this produces
+  // the corresponding contents. It's a static, stateless function because we
+  // recognize that that process that did resolution might not be the same one
+  // that loads the content.
+  static virtualContent(filename: string): string | undefined {
+    if (filename.startsWith(externalPrefix)) {
+      return externalShim({ moduleName: filename.slice(externalPrefix.length) });
+    }
+    return undefined;
+  }
+
   constructor(private options: Options) {}
 
   beforeResolve(specifier: string, fromFile: string): Resolution {
+    let resolution = this.internalBeforeResolve(specifier, fromFile);
+    debug('[%s] %s %s => %r', 'before', specifier, fromFile, resolution);
+    return resolution;
+  }
+
+  private internalBeforeResolve(specifier: string, fromFile: string): Resolution {
     if (specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -51,7 +72,9 @@ export class Resolver {
   }
 
   fallbackResolve(specifier: string, fromFile: string): Resolution {
-    return this.postHandleExternal(specifier, fromFile);
+    let resolution = this.postHandleExternal(specifier, fromFile);
+    debug('[%s] %s %s => %r', 'fallback', specifier, fromFile, resolution);
+    return resolution;
   }
 
   private owningPackage(fromFile: string): Package | undefined {
@@ -103,19 +126,26 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return specifier.replace(packageName, pkg.root);
+      return this.resolveWithinPackage(specifier, pkg);
     }
 
     let originalPkg = this.originalPackage(fromFile);
     if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
-      // a file that was relocated into a package does a self-import of that
-      // package's name. This can happen when an addon (like ember-cli-mirage)
-      // emits files from its own treeForApp that contain imports of the app's own
-      // fully qualified name.
-      return specifier.replace(packageName, originalPkg.root);
+      // A file that was relocated out of a package is importing that package's
+      // name, it should find its own original copy.
+      return this.resolveWithinPackage(specifier, originalPkg);
     }
 
     return specifier;
+  }
+
+  private resolveWithinPackage(specifier: string, pkg: Package): string {
+    if ('exports' in pkg.packageJSON) {
+      // this is the easy case -- a package that uses exports can safely resolve
+      // its own name
+      return require.resolve(specifier, { paths: [pkg.root] });
+    }
+    return specifier.replace(pkg.name, pkg.root);
   }
 
   private preHandleExternal(specifier: string, fromFile: string): Resolution {
@@ -237,7 +267,10 @@ export class Resolver {
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
       return {
         result: 'alias',
-        specifier: specifier.replace(packageName, this.options.activeAddons[packageName]),
+        specifier: this.resolveWithinPackage(
+          specifier,
+          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+        ),
       };
     }
 
@@ -290,8 +323,7 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 function external(specifier: string): Resolution {
   return {
     result: 'virtual',
-    filename: specifier,
-    content: externalShim({ moduleName: specifier }),
+    filename: externalPrefix + specifier,
   };
 }
 
@@ -317,3 +349,23 @@ if (m.default && !m.__esModule) {
 }
 module.exports = m;
 `) as (params: { moduleName: string }) => string;
+
+const debug = makeDebug('embroider:resolver');
+makeDebug.formatters.r = (r: Resolution) => {
+  switch (r.result) {
+    case 'alias':
+      if (r.fromFile) {
+        return `alias:${r.specifier} from ${r.fromFile}`;
+      } else {
+        return `alias:${r.specifier}`;
+      }
+    case 'rehome':
+      return `rehome:${r.fromFile}`;
+    case 'continue':
+      return 'continue';
+    case 'virtual':
+      return 'virtual';
+    default:
+      throw assertNever(r);
+  }
+};

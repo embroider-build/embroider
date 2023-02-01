@@ -1,9 +1,5 @@
 import { dirname, resolve } from 'path';
-import {
-  Resolver as EmbroiderResolver,
-  ResolverOptions as EmbroiderResolverOptions,
-  Resolution,
-} from '@embroider/core';
+import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions, Decision } from '@embroider/core';
 import type { Compiler, Module } from 'webpack';
 import assertNever from 'assert-never';
 
@@ -31,34 +27,34 @@ export class EmbroiderPlugin {
     }
   }
 
-  #handle(resolution: Resolution, state: Request) {
-    switch (resolution.result) {
+  #handle(decision: Decision, state: Request) {
+    switch (decision.result) {
       case 'alias':
-        state.request = resolution.specifier;
-        if (resolution.fromFile) {
-          state.contextInfo.issuer = resolution.fromFile;
-          state.context = dirname(resolution.fromFile);
+        state.request = decision.specifier;
+        if (decision.fromFile) {
+          state.contextInfo.issuer = decision.fromFile;
+          state.context = dirname(decision.fromFile);
         }
         break;
       case 'rehome':
-        state.contextInfo.issuer = resolution.fromFile;
-        state.context = dirname(resolution.fromFile);
+        state.contextInfo.issuer = decision.fromFile;
+        state.context = dirname(decision.fromFile);
         break;
       case 'virtual':
-        state.request = `${virtualLoaderName}?${resolution.filename}!`;
+        state.request = `${virtualLoaderName}?${decision.filename}!`;
         break;
       case 'continue':
         break;
       default:
-        throw assertNever(resolution);
+        throw assertNever(decision);
     }
   }
 
   async #resolve(defaultResolve: (state: unknown) => Promise<Module>, state: unknown): Promise<Module> {
     if (isRelevantRequest(state)) {
-      let resolution = await this.#resolver.beforeResolve(state.request, state.contextInfo.issuer);
-      if (resolution.result !== 'continue') {
-        this.#handle(resolution, state);
+      let decision = await this.#resolver.beforeResolve(state.request, state.contextInfo.issuer);
+      if (decision.result !== 'continue') {
+        this.#handle(decision, state);
       }
     }
     try {
@@ -67,11 +63,11 @@ export class EmbroiderPlugin {
       if (!isRelevantRequest(state)) {
         throw err;
       }
-      let resolution = await this.#resolver.fallbackResolve(state.request, state.contextInfo.issuer);
-      if (resolution.result === 'continue') {
+      let decision = await this.#resolver.fallbackResolve(state.request, state.contextInfo.issuer);
+      if (decision.result === 'continue') {
         throw err;
       } else {
-        this.#handle(resolution, state);
+        this.#handle(decision, state);
         return await this.#resolve(defaultResolve, state);
       }
     }

@@ -28,7 +28,7 @@ export interface Options {
 
 const externalPrefix = '/@embroider/external/';
 
-export type Resolution =
+export type Decision =
   | { result: 'continue' }
   | { result: 'alias'; specifier: string; fromFile?: string }
   | { result: 'rehome'; fromFile: string }
@@ -48,13 +48,13 @@ export class Resolver {
 
   constructor(private options: Options) {}
 
-  async beforeResolve(specifier: string, fromFile: string): Promise<Resolution> {
+  async beforeResolve(specifier: string, fromFile: string): Promise<Decision> {
     let resolution = this.internalBeforeResolve(specifier, fromFile);
     debug('[%s] %s %s => %r', 'before', specifier, fromFile, resolution);
     return resolution;
   }
 
-  private internalBeforeResolve(specifier: string, fromFile: string): Resolution {
+  private internalBeforeResolve(specifier: string, fromFile: string): Decision {
     if (specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -71,7 +71,7 @@ export class Resolver {
     return resolution;
   }
 
-  async fallbackResolve(specifier: string, fromFile: string): Promise<Resolution> {
+  async fallbackResolve(specifier: string, fromFile: string): Promise<Decision> {
     let resolution = this.postHandleExternal(specifier, fromFile);
     debug('[%s] %s %s => %r', 'fallback', specifier, fromFile, resolution);
     return resolution;
@@ -148,7 +148,7 @@ export class Resolver {
     return specifier.replace(pkg.name, pkg.root);
   }
 
-  private preHandleExternal(specifier: string, fromFile: string): Resolution {
+  private preHandleExternal(specifier: string, fromFile: string): Decision {
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return { result: 'continue' };
@@ -238,7 +238,7 @@ export class Resolver {
     return { result: 'continue' };
   }
 
-  private postHandleExternal(specifier: string, fromFile: string): Resolution {
+  private postHandleExternal(specifier: string, fromFile: string): Decision {
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return { result: 'continue' };
@@ -320,7 +320,7 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
   return false;
 }
 
-function external(specifier: string): Resolution {
+function external(specifier: string): Decision {
   return {
     result: 'virtual',
     filename: externalPrefix + specifier,
@@ -351,7 +351,7 @@ module.exports = m;
 `) as (params: { moduleName: string }) => string;
 
 const debug = makeDebug('embroider:resolver');
-makeDebug.formatters.r = (r: Resolution) => {
+makeDebug.formatters.r = (r: Decision) => {
   switch (r.result) {
     case 'alias':
       if (r.fromFile) {

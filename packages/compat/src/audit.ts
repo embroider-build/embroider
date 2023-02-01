@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS, Resolution, Resolver, ResolverOptions } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, Decision, Resolver, ResolverOptions } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -538,23 +538,23 @@ export class Audit {
 
   private nextRequest(
     prevRequest: { specifier: string; fromFile: string },
-    resolution: Resolution
+    decision: Decision
   ): { specifier: string; fromFile: string } | undefined {
-    switch (resolution.result) {
+    switch (decision.result) {
       case 'virtual':
         // nothing to audit
         return undefined;
       case 'alias':
         // follow the redirect
-        let specifier = resolution.specifier;
-        let fromFile = resolution.fromFile ?? prevRequest.fromFile;
+        let specifier = decision.specifier;
+        let fromFile = decision.fromFile ?? prevRequest.fromFile;
         return { specifier, fromFile };
       case 'rehome':
-        return { specifier: prevRequest.specifier, fromFile: resolution.fromFile };
+        return { specifier: prevRequest.specifier, fromFile: decision.fromFile };
       case 'continue':
         return prevRequest;
       default:
-        throw assertNever(resolution);
+        throw assertNever(decision);
     }
   }
 

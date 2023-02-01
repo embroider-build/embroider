@@ -126,19 +126,26 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return specifier.replace(packageName, pkg.root);
+      return this.resolveWithinPackage(specifier, pkg);
     }
 
     let originalPkg = this.originalPackage(fromFile);
     if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
-      // a file that was relocated into a package does a self-import of that
-      // package's name. This can happen when an addon (like ember-cli-mirage)
-      // emits files from its own treeForApp that contain imports of the app's own
-      // fully qualified name.
-      return specifier.replace(packageName, originalPkg.root);
+      // A file that was relocated out of a package is importing that package's
+      // name, it should find its own original copy.
+      return this.resolveWithinPackage(specifier, originalPkg);
     }
 
     return specifier;
+  }
+
+  private resolveWithinPackage(specifier: string, pkg: Package): string {
+    if ('exports' in pkg.packageJSON) {
+      // this is the easy case -- a package that uses exports can safely resolve
+      // its own name
+      return require.resolve(specifier, { paths: [pkg.root] });
+    }
+    return specifier.replace(pkg.name, pkg.root);
   }
 
   private preHandleExternal(specifier: string, fromFile: string): Resolution {
@@ -260,7 +267,10 @@ export class Resolver {
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
       return {
         result: 'alias',
-        specifier: specifier.replace(packageName, this.options.activeAddons[packageName]),
+        specifier: this.resolveWithinPackage(
+          specifier,
+          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+        ),
       };
     }
 

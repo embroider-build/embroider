@@ -1,169 +1,116 @@
-import { dirname } from 'path';
-import VirtualModulesPlugin from 'webpack-virtual-modules';
+import { dirname, resolve } from 'path';
 import {
   Resolver as EmbroiderResolver,
   ResolverOptions as EmbroiderResolverOptions,
   Resolution,
 } from '@embroider/core';
-import type { Compiler, Resolver as WebpackResolver } from 'webpack';
+import type { Compiler, Module } from 'webpack';
 import assertNever from 'assert-never';
 
 export { EmbroiderResolverOptions as Options };
 
+const virtualLoaderName = '@embroider/webpack/src/virtual-loader';
+
 export class EmbroiderPlugin {
-  constructor(private opts: EmbroiderResolverOptions) {}
-  apply(compiler: Compiler) {
-    if (!compiler.options.resolve.plugins) {
-      compiler.options.resolve.plugins = [];
-    }
+  #resolver: EmbroiderResolver;
 
-    let vfs = compiler.options.plugins.find((i: unknown) => i instanceof VirtualModulesPlugin) as
-      | VirtualModulesPlugin
-      | undefined;
-
-    if (!vfs) {
-      vfs = new VirtualModulesPlugin();
-      compiler.options.plugins.push(vfs);
-    }
-
-    let resolverPlugin = new ResolverPlugin(vfs, this.opts);
-    compiler.options.resolve.plugins.push(resolverPlugin);
-  }
-}
-
-class ResolverPlugin {
-  private resolver: EmbroiderResolver;
-
-  constructor(private vfs: VirtualModulesPlugin, opts: EmbroiderResolverOptions) {
-    this.resolver = new EmbroiderResolver(opts);
+  constructor(opts: EmbroiderResolverOptions) {
+    this.#resolver = new EmbroiderResolver(opts);
   }
 
-  #resolve(
-    resolution: Resolution,
-    resolver: WebpackResolver,
-    request: Request,
-    context: unknown,
-    callback: (err?: Error | null, result?: any) => void
-  ) {
-    if (resolution.result === 'virtual') {
-      this.vfs.writeModule(`/@embroider/externals/${resolution.filename}`, resolution.content);
-      resolution = {
-        result: 'alias',
-        specifier: `/@embroider/externals/${resolution.filename}`,
+  #addLoaderAlias(compiler: Compiler, name: string, alias: string) {
+    let { resolveLoader } = compiler.options;
+    if (Array.isArray(resolveLoader.alias)) {
+      resolveLoader.alias.push({ name, alias });
+    } else if (resolveLoader.alias) {
+      resolveLoader.alias[name] = alias;
+    } else {
+      resolveLoader.alias = {
+        [name]: alias,
       };
     }
+  }
 
+  #handle(resolution: Resolution, state: Request) {
     switch (resolution.result) {
-      case 'alias': {
-        let newRequest = {
-          request: resolution.specifier,
-          path: resolution.fromFile ? dirname(resolution.fromFile) : request.path,
-          fullySpecified: false,
-          context: {
-            issuer: resolution.fromFile ?? request.context.issuer,
-          },
-        };
-        resolver.doResolve(
-          resolver.ensureHook('internal-resolve'),
-          newRequest,
-          '@embroider/webpack',
-          context,
-          wrapCallback(callback)
-        );
-        return;
-      }
-      case 'rehome': {
-        let newRequest = {
-          request: request.request,
-          path: dirname(resolution.fromFile),
-          fullySpecified: false,
-          context: {
-            issuer: resolution.fromFile,
-          },
-        };
-        resolver.doResolve(
-          resolver.ensureHook('internal-resolve'),
-          newRequest,
-          '@embroider/webpack',
-          context,
-          wrapCallback(callback)
-        );
-        return;
-      }
+      case 'alias':
+        state.request = resolution.specifier;
+        if (resolution.fromFile) {
+          state.contextInfo.issuer = resolution.fromFile;
+          state.context = dirname(resolution.fromFile);
+        }
+        break;
+      case 'rehome':
+        state.contextInfo.issuer = resolution.fromFile;
+        state.context = dirname(resolution.fromFile);
+        break;
+      case 'virtual':
+        state.request = `${virtualLoaderName}?${resolution.filename}!`;
+        break;
       case 'continue':
-        callback();
-        return;
+        break;
       default:
         throw assertNever(resolution);
     }
   }
 
-  apply(resolver: WebpackResolver) {
-    // raw-resolve -> internal-resolve is the same place in the pipeline that
-    // webpack's built-in `resolve.alias` takes effect. It's supposed to take
-    // precedence over other resolving decisions.
-    resolver.getHook('raw-resolve').tapAsync('my-resolver-plugin', async (request, context, callback) => {
-      try {
-        if (!isRelevantRequest(request) || request.request.startsWith('/@embroider/externals/')) {
-          callback();
-          return;
+  #resolve(defaultResolve: (state: unknown, callback: CB) => void, state: unknown, callback: CB) {
+    if (isRelevantRequest(state)) {
+      let resolution = this.#resolver.beforeResolve(state.request, state.contextInfo.issuer);
+      if (resolution.result !== 'continue') {
+        this.#handle(resolution, state);
+      }
+    }
+
+    defaultResolve(state, (err, result) => {
+      if (err && isRelevantRequest(state)) {
+        let resolution = this.#resolver.fallbackResolve(state.request, state.contextInfo.issuer);
+        if (resolution.result === 'continue') {
+          callback(err);
+        } else {
+          this.#handle(resolution, state);
+          this.#resolve(defaultResolve, state, callback);
         }
-        let result = this.resolver.beforeResolve(request.request, request.context.issuer);
-        this.#resolve(result, resolver, request, context, callback);
-      } catch (err) {
-        callback(err);
+      } else {
+        callback(null, result);
       }
     });
+  }
 
-    // described-resolve -> internal-resolve is the same place in the pipeline
-    // that webpack's built-in `resolve.fallback` takes effect. It's supposed to
-    // only run when the rest of resolving fails to find something.
-    resolver.getHook('described-resolve').tapAsync(
-      // we need to set the stage here because otherwise we end up before the
-      // built-in NextPlugin. Instead we want to behave like the built-in
-      // AliasPlugin that implements resolve.fallback -- it comes after
-      // NextPlugin.
-      //
-      // The number just needs to be greater than zero to come after the
-      // defaults (tapable assigned them stage 0 by default).
-      { name: 'my-resolver-plugin', stage: 10 },
-      async (request, context, callback) => {
-        try {
-          if (!isRelevantRequest(request) || request.request.startsWith('/@embroider/externals/')) {
-            callback();
-            return;
-          }
-          let result = this.resolver.fallbackResolve(request.request, request.context.issuer);
-          this.#resolve(result, resolver, request, context, callback);
-        } catch (err) {
-          callback(err);
-        }
-      }
-    );
+  apply(compiler: Compiler) {
+    this.#addLoaderAlias(compiler, virtualLoaderName, resolve(__dirname, './virtual-loader'));
+
+    compiler.hooks.normalModuleFactory.tap('my-experiment', nmf => {
+      // Despite being absolutely riddled with way-too-powerful tap points,
+      // webpack still doesn't succeed in making it possible to provide a
+      // fallback to the default resolve hook in the NormalModuleFactory. So
+      // instead we will find the default behavior and call it from our own tap,
+      // giving us a chance to handle its failures.
+      let { fn: defaultResolve } = nmf.hooks.resolve.taps.find(t => t.name === 'NormalModuleFactory')!;
+
+      nmf.hooks.resolve.tapAsync({ name: 'my-experiment', stage: 50 }, (state: unknown, callback: CB) =>
+        this.#resolve(defaultResolve as any, state, callback)
+      );
+    });
   }
 }
 
 interface Request {
   request: string;
-  path: string;
-  context: {
+  context: string;
+  contextInfo: {
     issuer: string;
   };
 }
 
+type CB = (err: Error | null, result?: Module) => void;
+
 function isRelevantRequest(request: any): request is Request {
   return (
     typeof request.request === 'string' &&
-    typeof request.context?.issuer === 'string' &&
-    request.context.issuer !== '' &&
-    typeof request.path === 'string'
+    typeof request.context === 'string' &&
+    typeof request.contextInfo?.issuer === 'string' &&
+    request.contextInfo.issuer !== '' &&
+    !request.request.startsWith(virtualLoaderName) // prevents recursion on requests we have already sent to our virtual loader
   );
-}
-
-function wrapCallback<T>(callback: (err?: Error | null, result?: T) => void) {
-  return (err: Error | null, result: T) => {
-    if (err) return callback(err);
-    if (result) return callback(null, result);
-    return callback();
-  };
 }

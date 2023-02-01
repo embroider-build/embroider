@@ -24,13 +24,26 @@ export interface Options {
   appRoot: string;
 }
 
+const externalPrefix = '/@embroider/external/';
+
 export type Resolution =
   | { result: 'continue' }
   | { result: 'alias'; specifier: string; fromFile?: string }
   | { result: 'rehome'; fromFile: string }
-  | { result: 'virtual'; filename: string; content: string };
+  | { result: 'virtual'; filename: string };
 
 export class Resolver {
+  // Given a filename that was returned with result === 'virtual', this produces
+  // the corresponding contents. It's a static, stateless function because we
+  // recognize that that process that did resolution might not be the same one
+  // that loads the content.
+  static virtualContent(filename: string): string | undefined {
+    if (filename.startsWith(externalPrefix)) {
+      return externalShim({ moduleName: filename.slice(externalPrefix.length) });
+    }
+    return undefined;
+  }
+
   constructor(private options: Options) {}
 
   beforeResolve(specifier: string, fromFile: string): Resolution {
@@ -290,8 +303,7 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 function external(specifier: string): Resolution {
   return {
     result: 'virtual',
-    filename: specifier,
-    content: externalShim({ moduleName: specifier }),
+    filename: externalPrefix + specifier,
   };
 }
 

@@ -2,6 +2,8 @@ import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageNa
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import { compile } from './js-handlebars';
+import makeDebug from 'debug';
+import assertNever from 'assert-never';
 
 export interface Options {
   renamePackages: {
@@ -47,6 +49,12 @@ export class Resolver {
   constructor(private options: Options) {}
 
   beforeResolve(specifier: string, fromFile: string): Resolution {
+    let resolution = this.internalBeforeResolve(specifier, fromFile);
+    debug('[%s] %s %s => %r', 'before', specifier, fromFile, resolution);
+    return resolution;
+  }
+
+  private internalBeforeResolve(specifier: string, fromFile: string): Resolution {
     if (specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -64,7 +72,9 @@ export class Resolver {
   }
 
   fallbackResolve(specifier: string, fromFile: string): Resolution {
-    return this.postHandleExternal(specifier, fromFile);
+    let resolution = this.postHandleExternal(specifier, fromFile);
+    debug('[%s] %s %s => %r', 'fallback', specifier, fromFile, resolution);
+    return resolution;
   }
 
   private owningPackage(fromFile: string): Package | undefined {
@@ -329,3 +339,23 @@ if (m.default && !m.__esModule) {
 }
 module.exports = m;
 `) as (params: { moduleName: string }) => string;
+
+const debug = makeDebug('embroider:resolver');
+makeDebug.formatters.r = (r: Resolution) => {
+  switch (r.result) {
+    case 'alias':
+      if (r.fromFile) {
+        return `alias:${r.specifier} from ${r.fromFile}`;
+      } else {
+        return `alias:${r.specifier}`;
+      }
+    case 'rehome':
+      return `rehome:${r.fromFile}`;
+    case 'continue':
+      return 'continue';
+    case 'virtual':
+      return 'virtual';
+    default:
+      throw assertNever(r);
+  }
+};

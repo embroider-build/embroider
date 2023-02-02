@@ -1,7 +1,7 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
 import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS, Decision, Resolver, ResolverOptions } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, ModuleRequest, Resolver, ResolverOptions } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -84,9 +84,17 @@ function isLinked(module: InternalModule | undefined): module is LinkedInternalM
   return Boolean(module?.parsed && module.resolved && module.linked);
 }
 
-interface Request {
-  specifier: string;
-  fromFile: string;
+class AuditModuleRequest implements ModuleRequest {
+  constructor(public specifier: string, public fromFile: string, public isVirtual = false) {}
+  alias(specifier: string, fromFile?: string) {
+    return new AuditModuleRequest(specifier, fromFile ?? this.fromFile) as this;
+  }
+  rehome(fromFile: string) {
+    return new AuditModuleRequest(this.specifier, fromFile) as this;
+  }
+  virtualize(filename: string) {
+    return new AuditModuleRequest(filename, this.fromFile, true) as this;
+  }
 }
 
 export interface Import {
@@ -264,6 +272,8 @@ export class Audit {
     return config;
   }
 
+  private resolver = new Resolver(this.resolverParams);
+
   private debug(message: string, ...args: any[]) {
     if (this.options.debug) {
       console.log(message, ...args);
@@ -309,9 +319,8 @@ export class Audit {
       } else {
         module.parsed = visitResult;
         let resolved = new Map() as NonNullable<InternalModule['resolved']>;
-        let resolver = new Resolver(this.resolverParams);
         for (let dep of visitResult.dependencies) {
-          let depFilename = await this.resolve({ specifier: dep, fromFile: filename }, resolver);
+          let depFilename = await this.resolve(new AuditModuleRequest(dep, filename));
           if (depFilename) {
             resolved.set(dep, depFilename);
             if (!isResolutionFailure(depFilename)) {
@@ -536,62 +545,36 @@ export class Audit {
     return this.visitJS(filename, js);
   }
 
-  private nextRequest(
-    prevRequest: { specifier: string; fromFile: string },
-    decision: Decision
-  ): { specifier: string; fromFile: string } | undefined {
-    switch (decision.result) {
-      case 'virtual':
-        // nothing to audit
-        return undefined;
-      case 'alias':
-        // follow the redirect
-        let specifier = decision.specifier;
-        let fromFile = decision.fromFile ?? prevRequest.fromFile;
-        return { specifier, fromFile };
-      case 'rehome':
-        return { specifier: prevRequest.specifier, fromFile: decision.fromFile };
-      case 'continue':
-        return prevRequest;
-      default:
-        throw assertNever(decision);
-    }
-  }
-
-  private async resolve(request: Request, resolver: Resolver): Promise<string | ResolutionFailure | undefined> {
-    let current: Request | undefined = request;
-
-    while (true) {
-      current = this.nextRequest(current, await resolver.beforeResolve(current.specifier, current.fromFile));
-      if (!current) {
-        return;
+  private async resolve(request: AuditModuleRequest) {
+    let resolution = await this.resolver.resolve(request, async request => {
+      if (request.isVirtual) {
+        return { type: 'found', result: undefined };
       }
-
-      if (['@embroider/macros', '@ember/template-factory'].includes(current.specifier)) {
+      if (['@embroider/macros', '@ember/template-factory'].includes(request.specifier)) {
         // the audit process deliberately removes the @embroider/macros babel
         // plugins, so the imports are still present and should be left alone.
-        return;
+        return { type: 'found', result: undefined };
       }
       try {
-        return resolveModule.sync(current.specifier, {
-          basedir: dirname(current.fromFile),
+        let filename = resolveModule.sync(request.specifier, {
+          basedir: dirname(request.fromFile),
           extensions: this.meta['resolvable-extensions'],
         });
+        return { type: 'found', result: filename };
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
-        let retry = this.nextRequest(current, await resolver.fallbackResolve(current.specifier, current.fromFile));
-        if (!retry) {
-          // the request got virtualized
-          return;
-        }
-        if (retry === current) {
-          // the fallback has nothing new to offer, so this is a real resolution failure
-          return { isResolutionFailure: true };
-        }
-        current = retry;
+        return { type: 'not_found', err };
       }
+    });
+    switch (resolution.type) {
+      case 'not_found':
+        return { isResolutionFailure: true as true };
+      case 'found':
+        return resolution.result;
+      default:
+        throw assertNever(resolution);
     }
   }
 

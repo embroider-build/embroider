@@ -41,12 +41,13 @@ export class EmbroiderPlugin {
       let adaptedResolve = getAdaptedResolve(defaultResolve);
 
       nmf.hooks.resolve.tapAsync({ name: '@embroider/webpack', stage: 50 }, (state: unknown, callback: CB) => {
-        if (!isRelevantRequest(state)) {
+        let request = WebpackModuleRequest.from(state);
+        if (!request) {
           defaultResolve(state, callback);
           return;
         }
 
-        this.#resolver.resolve(new WebpackModuleRequest(state), adaptedResolve).then(
+        this.#resolver.resolve(request, adaptedResolve).then(
           resolution => {
             switch (resolution.type) {
               case 'not_found':
@@ -64,14 +65,6 @@ export class EmbroiderPlugin {
       });
     });
   }
-}
-
-interface Request {
-  request: string;
-  context: string;
-  contextInfo: {
-    issuer: string;
-  };
 }
 
 type CB = (err: null | Error, result?: Module | undefined) => void;
@@ -111,7 +104,28 @@ class WebpackModuleRequest implements ModuleRequest {
   specifier: string;
   fromFile: string;
 
-  constructor(public state: Request, public isVirtual = false) {
+  static from(state: any): WebpackModuleRequest | undefined {
+    if (
+      typeof state.request === 'string' &&
+      typeof state.context === 'string' &&
+      typeof state.contextInfo?.issuer === 'string' &&
+      state.contextInfo.issuer !== '' &&
+      !state.request.startsWith(virtualLoaderName) // prevents recursion on requests we have already sent to our virtual loader
+    ) {
+      return new WebpackModuleRequest(state);
+    }
+  }
+
+  constructor(
+    public state: {
+      request: string;
+      context: string;
+      contextInfo: {
+        issuer: string;
+      };
+    },
+    public isVirtual = false
+  ) {
     // these get copied here because we mutate the underlying state as we
     // convert one request into the next, and it seems better for debuggability
     // if the fields on the previous request don't change when you make a new
@@ -138,14 +152,4 @@ class WebpackModuleRequest implements ModuleRequest {
     this.state.request = `${virtualLoaderName}?${filename}!`;
     return new WebpackModuleRequest(this.state, true) as this;
   }
-}
-
-function isRelevantRequest(request: any): request is Request {
-  return (
-    typeof request.request === 'string' &&
-    typeof request.context === 'string' &&
-    typeof request.contextInfo?.issuer === 'string' &&
-    request.contextInfo.issuer !== '' &&
-    !request.request.startsWith(virtualLoaderName) // prevents recursion on requests we have already sent to our virtual loader
-  );
 }

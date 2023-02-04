@@ -2318,7 +2318,7 @@ describe('compat-resolver', function () {
     );
   });
 
-  test.skip('respects invokes rule on a component', function () {
+  test('respects invokes rule on a component', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2335,16 +2335,18 @@ describe('compat-resolver', function () {
     givenFile('components/alpha.js');
 
     expect(transform('templates/components/form-builder.hbs', `{{component this.which}}`)).toEqualCode(`
-      import "../../components/alpha.js";
-      import "./components/alpha.hbs";
+      import alpha0 from "../../components/alpha.js";
+      import alpha from "./alpha.hbs";
       import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/alpha", () => alpha);
+      window.define("the-app/components/alpha", () => alpha0);
       export default precompileTemplate("{{component this.which}}", {
         moduleName: "my-app/templates/components/form-builder.hbs"
       });
     `);
   });
 
-  test.skip('respects invokes rule on a non-component app template', function () {
+  test('respects invokes rule on a non-component app template', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'the-test-package',
@@ -2361,16 +2363,18 @@ describe('compat-resolver', function () {
     givenFile('components/alpha.js');
 
     expect(transform('templates/index.hbs', `{{component this.which}}`)).toEqualCode(`
-      import "../../components/alpha.js";
-      import "./components/alpha.hbs";
+      import alpha0 from "../components/alpha.js";
+      import alpha from "./components/alpha.hbs";
       import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/alpha", () => alpha);
+      window.define("the-app/components/alpha", () => alpha0);
       export default precompileTemplate("{{component this.which}}", {
         moduleName: "my-app/templates/index.hbs"
       });
     `);
   });
 
-  test.skip('respects invokes rule on a non-component addon template', function () {
+  test('respects invokes rule on a non-component addon template', function () {
     let packageRules: PackageRules[] = [
       {
         package: 'my-addon',
@@ -2388,9 +2392,11 @@ describe('compat-resolver', function () {
     givenFile('components/alpha.js');
 
     expect(transform('node_modules/my-addon/templates/index.hbs', `{{component this.which}}`)).toEqualCode(`
-      import "../../components/alpha.js";
-      import "./components/alpha.hbs";
+      import alpha0 from "../../../components/alpha.js";
+      import alpha from "../../../templates/components/alpha.hbs";
       import { precompileTemplate } from "@ember/template-compilation";
+      window.define("the-app/templates/components/alpha", () => alpha);
+      window.define("the-app/components/alpha", () => alpha0);
       export default precompileTemplate("{{component this.which}}", {
         moduleName: "my-app/node_modules/my-addon/templates/index.hbs"
       });

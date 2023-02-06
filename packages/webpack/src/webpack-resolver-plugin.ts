@@ -84,7 +84,7 @@ function getDefaultResolveHook(taps: { name: string; fn: Function }[]): DefaultR
 // for use by @embroider/core's resolver.
 function getAdaptedResolve(
   defaultResolve: DefaultResolve
-): ResolverFunction<WebpackModuleRequest, Module, null | Error> {
+): ResolverFunction<WebpackModuleRequest, Resolution<Module, null | Error>> {
   return function (request: WebpackModuleRequest): Promise<Resolution<Module, null | Error>> {
     return new Promise(resolve => {
       defaultResolve(request.state, (err, value) => {

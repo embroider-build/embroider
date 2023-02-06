@@ -42,9 +42,13 @@ export interface ModuleRequest {
 // representing a found module, and we just pass those values through.
 export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
 
-export type ResolverFunction<R extends ModuleRequest = ModuleRequest, T = unknown, E = unknown> = (
+export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
   request: R
-) => Promise<Resolution<T, E>>;
+) => Promise<Res>;
+
+export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
+  request: R
+) => Res;
 
 export class Resolver {
   // Given a filename that was passed to your ModuleRequest's `virtualize()`,
@@ -60,7 +64,7 @@ export class Resolver {
 
   constructor(private options: Options) {}
 
-  async beforeResolve<R extends ModuleRequest>(request: R): Promise<R> {
+  beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -72,10 +76,6 @@ export class Resolver {
     return this.preHandleExternal(this.handleRenaming(request));
   }
 
-  async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
-    return this.postHandleExternal(request);
-  }
-
   // This encapsulates the whole resolving process. Given a `defaultResolve`
   // that calls your build system's normal module resolver, this does both pre-
   // and post-resolution adjustments as needed to implement our compatibility
@@ -84,12 +84,44 @@ export class Resolver {
   // Depending on the plugin architecture you're working in, it may be easier to
   // call beforeResolve and fallbackResolve directly, in which case matching the
   // details of the recursion to what this method does are your responsibility.
-  async resolve<R extends ModuleRequest, T, E>(
-    request: R,
-    defaultResolve: ResolverFunction<R, T, E>
-  ): Promise<Resolution<T, E>> {
-    request = await this.beforeResolve(request);
-    let resolution = await defaultResolve(request);
+  async resolve<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: ResolverFunction<Req, Res>
+  ): Promise<Res> {
+    let gen = this.internalResolve<Req, Res, Promise<Res>>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(await out.value);
+    }
+    return out.value;
+  }
+
+  // synchronous alternative to resolve() above. Because our own internals are
+  // all synchronous, you can use this if your defaultResolve function is
+  // synchronous. At present, we need this for the case where we are compiling
+  // non-strict templates and doing component resolutions inside the template
+  // compiler inside babel, which is a synchronous context.
+  resolveSync<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: SyncResolverFunction<Req, Res>
+  ): Res {
+    let gen = this.internalResolve<Req, Res, Res>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(out.value);
+    }
+    return out.value;
+  }
+
+  // Our core implementation is a generator so it can power both resolve() and
+  // resolveSync()
+  private *internalResolve<Req extends ModuleRequest, Res extends Resolution, Yielded>(
+    request: Req,
+    defaultResolve: (req: Req) => Yielded
+  ): Generator<Yielded, Res, Res> {
+    request = this.beforeResolve(request);
+    let resolution = yield defaultResolve(request);
+
     switch (resolution.type) {
       case 'found':
         return resolution;
@@ -98,7 +130,7 @@ export class Resolver {
       default:
         throw assertNever(resolution);
     }
-    let nextRequest = await this.fallbackResolve(request);
+    let nextRequest = this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
       return resolution;
@@ -107,9 +139,9 @@ export class Resolver {
       // virtual requests are terminal, there is no more beforeResolve or
       // fallbackResolve around them. The defaultResolve is expected to know how
       // to implement them.
-      return await defaultResolve(nextRequest);
+      return yield defaultResolve(nextRequest);
     }
-    return await this.resolve(nextRequest, defaultResolve);
+    return yield* this.internalResolve(nextRequest, defaultResolve);
   }
 
   private owningPackage(fromFile: string): Package | undefined {
@@ -274,7 +306,7 @@ export class Resolver {
     return request;
   }
 
-  private postHandleExternal<R extends ModuleRequest>(request: R): R {
+  fallbackResolve<R extends ModuleRequest>(request: R): R {
     let { specifier, fromFile } = request;
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {

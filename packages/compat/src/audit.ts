@@ -1,7 +1,6 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
-import resolveModule from 'resolve';
-import { AppMeta, explicitRelative, hbsToJS, ModuleRequest, Resolver, ResolverOptions } from '@embroider/core';
+import { AppMeta, explicitRelative, hbsToJS, Resolver, ResolverOptions } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -18,7 +17,6 @@ import {
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 import { AuditMessage } from './resolver';
-import assertNever from 'assert-never';
 
 const { JSDOM } = jsdom;
 
@@ -82,19 +80,6 @@ type LinkedInternalModule = Omit<ResolvedInternalModule, 'linked'> & {
 
 function isLinked(module: InternalModule | undefined): module is LinkedInternalModule {
   return Boolean(module?.parsed && module.resolved && module.linked);
-}
-
-class AuditModuleRequest implements ModuleRequest {
-  constructor(public specifier: string, public fromFile: string, public isVirtual = false) {}
-  alias(specifier: string, fromFile?: string) {
-    return new AuditModuleRequest(specifier, fromFile ?? this.fromFile) as this;
-  }
-  rehome(fromFile: string) {
-    return new AuditModuleRequest(this.specifier, fromFile) as this;
-  }
-  virtualize(filename: string) {
-    return new AuditModuleRequest(filename, this.fromFile, true) as this;
-  }
 }
 
 export interface Import {
@@ -320,7 +305,7 @@ export class Audit {
         module.parsed = visitResult;
         let resolved = new Map() as NonNullable<InternalModule['resolved']>;
         for (let dep of visitResult.dependencies) {
-          let depFilename = await this.resolve(new AuditModuleRequest(dep, filename));
+          let depFilename = await this.resolve(dep, filename);
           if (depFilename) {
             resolved.set(dep, depFilename);
             if (!isResolutionFailure(depFilename)) {
@@ -545,36 +530,24 @@ export class Audit {
     return this.visitJS(filename, js);
   }
 
-  private async resolve(request: AuditModuleRequest) {
-    let resolution = await this.resolver.resolve(request, async request => {
-      if (request.isVirtual) {
-        return { type: 'found', result: undefined };
+  private async resolve(specifier: string, fromFile: string) {
+    try {
+      let resolution = await this.resolver.nodeResolve(specifier, fromFile);
+      if (resolution.type === 'virtual') {
+        // nothing to audit
+        return undefined;
       }
-      if (['@embroider/macros', '@ember/template-factory'].includes(request.specifier)) {
+      return resolution.filename;
+    } catch (err) {
+      if (err.code !== 'MODULE_NOT_FOUND') {
+        throw err;
+      }
+      if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
         // the audit process deliberately removes the @embroider/macros babel
         // plugins, so the imports are still present and should be left alone.
-        return { type: 'found', result: undefined };
+        return;
       }
-      try {
-        let filename = resolveModule.sync(request.specifier, {
-          basedir: dirname(request.fromFile),
-          extensions: this.meta['resolvable-extensions'],
-        });
-        return { type: 'found', result: filename };
-      } catch (err) {
-        if (err.code !== 'MODULE_NOT_FOUND') {
-          throw err;
-        }
-        return { type: 'not_found', err };
-      }
-    });
-    switch (resolution.type) {
-      case 'not_found':
-        return { isResolutionFailure: true as true };
-      case 'found':
-        return resolution.result;
-      default:
-        throw assertNever(resolution);
+      return { isResolutionFailure: true as true };
     }
   }
 

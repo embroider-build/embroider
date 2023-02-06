@@ -6,14 +6,19 @@ import {
   PreprocessedComponentRule,
   preprocessComponentRule,
 } from './dependency-rules';
-import { Package, PackageCache, extensionsPattern, ResolverOptions as CoreResolverOptions } from '@embroider/core';
-import { dirname, join, relative, sep } from 'path';
+import {
+  Package,
+  PackageCache,
+  extensionsPattern,
+  ResolverOptions as CoreResolverOptions,
+  Resolver,
+} from '@embroider/core';
+import { join, relative, sep } from 'path';
 
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { pathExistsSync } from 'fs-extra';
-import resolve from 'resolve';
 import semver from 'semver';
 import { Options as ResolverTransformOptions } from './resolver-transform';
 
@@ -170,6 +175,8 @@ export default class CompatResolver {
     params: RehydrationParams;
   };
 
+  private resolver: Resolver;
+
   constructor(private params: RehydrationParams) {
     this.params.options = extractOptions(this.params.options);
     this._parallelBabel = {
@@ -177,6 +184,7 @@ export default class CompatResolver {
       buildUsing: 'rehydrate',
       params,
     };
+    this.resolver = new Resolver(this.adjustImportsOptions);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
@@ -354,19 +362,11 @@ export default class CompatResolver {
   }
 
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
-    let absPath;
-    try {
-      absPath = resolve.sync(path, {
-        basedir: dirname(from),
-        extensions: this.adjustImportsOptions.resolvableExtensions,
-      });
-    } catch (err) {
-      return;
-    }
-    if (absPath) {
-      let runtimeName = this.absPathToRuntimeName(absPath);
+    let resolution = this.resolver.nodeResolve(path, from);
+    if (resolution.type === 'real') {
+      let runtimeName = this.absPathToRuntimeName(resolution.filename);
       if (runtimeName) {
-        return { runtimeName, absPath };
+        return { runtimeName, absPath: resolution.filename };
       }
     }
   }

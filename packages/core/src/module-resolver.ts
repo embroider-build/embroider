@@ -4,6 +4,8 @@ import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/s
 import { compile } from './js-handlebars';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
+import resolveModule from 'resolve';
+
 const debug = makeDebug('embroider:resolver');
 
 export interface Options {
@@ -38,6 +40,19 @@ export interface ModuleRequest {
   virtualize(virtualFilename: string): this;
 }
 
+class NodeModuleRequest implements ModuleRequest {
+  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) {}
+  alias(specifier: string): this {
+    return new NodeModuleRequest(specifier, this.fromFile) as this;
+  }
+  rehome(fromFile: string): this {
+    return new NodeModuleRequest(this.specifier, fromFile) as this;
+  }
+  virtualize(filename: string) {
+    return new NodeModuleRequest(filename, this.fromFile, true) as this;
+  }
+}
+
 // This is generic because different build systems have different ways of
 // representing a found module, and we just pass those values through.
 export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
@@ -55,11 +70,11 @@ export class Resolver {
   // this produces the corresponding contents. It's a static, stateless function
   // because we recognize that that process that did resolution might not be the
   // same one that loads the content.
-  static virtualContent(filename: string): string | undefined {
+  static virtualContent(filename: string): string {
     if (filename.startsWith(externalPrefix)) {
       return externalShim({ moduleName: filename.slice(externalPrefix.length) });
     }
-    return undefined;
+    throw new Error(`not an @embroider/core virtual file: ${filename}`);
   }
 
   constructor(private options: Options) {}
@@ -142,6 +157,43 @@ export class Resolver {
       return yield defaultResolve(nextRequest);
     }
     return yield* this.internalResolve(nextRequest, defaultResolve);
+  }
+
+  // Use standard NodeJS resolving, with our required compatibility rules on
+  // top. This is a convenience method for calling resolveSync with the
+  // defaultResolve already configured to be "do the normal node thing".
+  nodeResolve(
+    specifier: string,
+    fromFile: string
+  ): { type: 'virtual'; content: string } | { type: 'real'; filename: string } {
+    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile), request => {
+      if (request.isVirtual) {
+        return {
+          type: 'found',
+          result: { type: 'virtual' as 'virtual', content: Resolver.virtualContent(request.fromFile) },
+        };
+      }
+      try {
+        let filename = resolveModule.sync(request.specifier, {
+          basedir: dirname(request.fromFile),
+          extensions: this.options.resolvableExtensions,
+        });
+        return { type: 'found', result: { type: 'real' as 'real', filename } };
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
+        return { type: 'not_found', err };
+      }
+    });
+    switch (resolution.type) {
+      case 'not_found':
+        throw resolution.err;
+      case 'found':
+        return resolution.result;
+      default:
+        throw assertNever(resolution);
+    }
   }
 
   private owningPackage(fromFile: string): Package | undefined {

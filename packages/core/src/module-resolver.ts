@@ -170,7 +170,7 @@ export class Resolver {
       if (request.isVirtual) {
         return {
           type: 'found',
-          result: { type: 'virtual' as 'virtual', content: Resolver.virtualContent(request.fromFile) },
+          result: { type: 'virtual' as 'virtual', content: Resolver.virtualContent(request.specifier) },
         };
       }
       try {

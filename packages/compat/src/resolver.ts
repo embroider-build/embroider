@@ -433,7 +433,7 @@ export default class CompatResolver {
   private tryHelper(path: string, from: string): HelperResolution | null {
     let target = this.parsePath(path, from);
     let runtimeName = `${target.packageName}/helpers/${target.memberName}`;
-    let resolution = this.resolver.nodeResolve(`${target.packageName}/helpers/${target.memberName}`, target.from);
+    let resolution = this.resolver.nodeResolve(runtimeName, target.from);
     if (resolution.type === 'real') {
       return {
         type: 'helper',
@@ -441,39 +441,23 @@ export default class CompatResolver {
           absPath: resolution.filename,
           runtimeName,
         },
-        nameHint: path,
+        nameHint: target.memberName,
       };
     }
     return null;
   }
 
   private tryModifier(path: string, from: string): ModifierResolution | null {
-    let parts = path.split('@');
-    if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryModifier(parts[1], targetPackage);
-    } else {
-      return this._tryModifier(path, this.appPackage);
-    }
-  }
-
-  private _tryModifier(path: string, targetPackage: Package | AppPackagePlaceholder): ModifierResolution | null {
-    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
-      let absPath = join(targetPackage.root, 'modifiers', path) + extension;
-      if (pathExistsSync(absPath)) {
-        return {
-          type: 'modifier',
-          module: { absPath },
-          nameHint: path,
-        };
-      }
+    let target = this.parsePath(path, from);
+    let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
+    if (resolution.type === 'real') {
+      return {
+        type: 'modifier',
+        module: {
+          absPath: resolution.filename,
+        },
+        nameHint: path,
+      };
     }
     return null;
   }

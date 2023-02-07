@@ -18,7 +18,6 @@ import { join, relative, sep, resolve as pathResolve } from 'path';
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import { pathExistsSync } from 'fs-extra';
 import semver from 'semver';
 import { Options as ResolverTransformOptions } from './resolver-transform';
 
@@ -467,99 +466,56 @@ export default class CompatResolver {
     return { root: this.params.root, name: this.params.modulePrefix };
   }
 
-  private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
-    let parts = path.split('@');
-    if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
+  private *componentTemplateCandidates(target: { packageName: string; memberName: string }) {
+    yield join(target.packageName, 'templates', 'components', target.memberName);
+    yield join(target.packageName, 'components', target.memberName, 'template');
 
-      return this._tryComponent(parts[1], withRuleLookup, targetPackage);
-    } else {
-      return this._tryComponent(path, withRuleLookup, this.appPackage);
+    if (
+      typeof this.params.podModulePrefix !== 'undefined' &&
+      this.params.podModulePrefix !== '' &&
+      target.packageName === this.appPackage.name
+    ) {
+      yield join(this.params.podModulePrefix, 'components', target.memberName, 'template');
     }
   }
 
-  private _tryComponent(
-    path: string,
-    withRuleLookup: boolean,
-    targetPackage: Package | AppPackagePlaceholder
-  ): ComponentResolution | null {
-    let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter((e: string) => e !== '.hbs')];
+  private *componentJSCandidates(target: { packageName: string; memberName: string }) {
+    yield join(target.packageName, 'components', target.memberName);
+    yield join(target.packageName, 'components', target.memberName, 'component');
 
-    let hbsModule: string | undefined;
-    let jsModule: string | undefined;
+    if (
+      typeof this.params.podModulePrefix !== 'undefined' &&
+      this.params.podModulePrefix !== '' &&
+      target.packageName === this.appPackage.name
+    ) {
+      yield join(this.params.podModulePrefix, 'components', target.memberName, 'component');
+    }
+  }
 
-    // first, the various places our template might be
-    for (let extension of extensions) {
-      let absPath = join(targetPackage.root, 'templates', 'components', path) + extension;
-      if (pathExistsSync(absPath)) {
-        hbsModule = absPath;
+  private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
+    let target = this.parsePath(path, from);
+
+    let hbsModule: ResolvedDep | null = null;
+    let jsModule: ResolvedDep | null = null;
+
+    // first, the various places our template might be.
+    for (let candidate of this.componentTemplateCandidates(target)) {
+      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      if (resolution.type === 'real') {
+        hbsModule = { absPath: resolution.filename, runtimeName: candidate };
         break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path, 'template') + extension;
-      if (pathExistsSync(absPath)) {
-        hbsModule = absPath;
-        break;
-      }
-
-      if (
-        typeof this.params.podModulePrefix !== 'undefined' &&
-        this.params.podModulePrefix !== '' &&
-        targetPackage === this.appPackage
-      ) {
-        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
-
-        absPath = join(targetPackage.root, podPrefix, 'components', path, 'template') + extension;
-        if (pathExistsSync(absPath)) {
-          hbsModule = absPath;
-          break;
-        }
       }
     }
 
-    // then the various places our javascript might be
-    for (let extension of extensions) {
-      if (extension === '.hbs') {
-        continue;
-      }
-
-      let absPath = join(targetPackage.root, 'components', path, 'index') + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
+    // then the various places our javascript might be.
+    for (let candidate of this.componentJSCandidates(target)) {
+      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      // .hbs is a resolvable extension for us, so we need to exclude it here.
+      // It matches as a priority lower than .js, so finding an .hbs means
+      // there's definitely not a .js.
+      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = { absPath: resolution.filename, runtimeName: candidate };
         break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path) + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
-        break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path, 'component') + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
-        break;
-      }
-
-      if (
-        typeof this.params.podModulePrefix !== 'undefined' &&
-        this.params.podModulePrefix !== '' &&
-        targetPackage === this.appPackage
-      ) {
-        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
-
-        absPath = join(targetPackage.root, podPrefix, 'components', path, 'component') + extension;
-        if (pathExistsSync(absPath)) {
-          jsModule = absPath;
-          break;
-        }
       }
     }
 
@@ -572,16 +528,16 @@ export default class CompatResolver {
       // the order here is important. We follow the convention that any rules
       // get attached to the hbsModule if it exists, and only get attached to
       // the jsModule otherwise
-      componentRules = this.findComponentRules((hbsModule ?? jsModule)!);
+      componentRules = this.findComponentRules((hbsModule ?? jsModule)!.absPath);
     }
     return {
       type: 'component',
-      jsModule: jsModule ? this.resolvedDep(jsModule, targetPackage) : null,
-      hbsModule: hbsModule ? this.resolvedDep(hbsModule, targetPackage) : null,
+      jsModule: jsModule,
+      hbsModule: hbsModule,
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: path,
+      nameHint: target.memberName,
     };
   }
 

@@ -39,6 +39,12 @@ export default function makeResolverTransform({ resolver, patchHelpersBug }: Opt
     let scopeStack = new ScopeStack();
     let emittedAMDDeps: Set<string> = new Set();
 
+    const invokeDependencies = resolver.enter(filename);
+    for (let packageRuleInvokeDependency of invokeDependencies) {
+      emitAMD(packageRuleInvokeDependency.hbsModule);
+      emitAMD(packageRuleInvokeDependency.jsModule);
+    }
+
     // The first time we insert a component as a lexical binding
     //   - if there's no JS-scope collision with the name, we're going to bind the existing name
     //     - in this case, any subsequent invocations of the same component just got automatically fixed too

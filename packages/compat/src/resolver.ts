@@ -188,7 +188,16 @@ export default class CompatResolver {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
   }
-
+  enter(moduleName: string) {
+    let rules = this.findComponentRules(moduleName);
+    let deps: ComponentResolution[];
+    if (rules?.dependsOnComponents) {
+      deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
+    } else {
+      deps = [];
+    }
+    return deps;
+  }
   private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
     let rules = this.rules.components.get(absPath);
     if (rules) {

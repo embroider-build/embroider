@@ -40,7 +40,6 @@ describe('audit', function () {
         renamePackages: {},
         renameModules: {},
         extraImports: [],
-        externalsDir: '/tmp/embroider-externals',
         activeAddons: {},
         relocatedFiles: {},
         resolvableExtensions,

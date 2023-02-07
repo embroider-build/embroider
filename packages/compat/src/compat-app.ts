@@ -30,7 +30,7 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
-import { tmpdir, ResolverOptions } from '@embroider/core';
+import { ResolverOptions } from '@embroider/core';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 
 interface TreeNames {
@@ -365,11 +365,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
       extraImports: outer ? this.extraImports() : [],
       relocatedFiles: {}, // this is the only part we can't completely fill out here. It needs to wait for the AppBuilder to finish smooshing together all appTrees
       resolvableExtensions: this.resolvableExtensions(),
-
-      // it's important that this is a persistent location, because we fill it
-      // up as a side-effect of babel transpilation, and babel is subject to
-      // persistent caching.
-      externalsDir: join(tmpdir, 'embroider', 'externals'),
       appRoot: this.root,
     };
   }

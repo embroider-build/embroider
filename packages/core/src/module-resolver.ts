@@ -20,7 +20,6 @@ export interface Options {
     target: string;
     runtimeName?: string;
   }[];
-  externalsDir: string;
   activeAddons: {
     [packageName: string]: string;
   };

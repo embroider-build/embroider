@@ -53,6 +53,12 @@ export default function makeResolverTransform({ appRoot, emberVersion }: Options
       return explicitRelative(dirname(filename), absPath);
     }
 
+    const invokeDependencies = resolver.enter(filename);
+    for (let packageRuleInvokeDependency of invokeDependencies) {
+      emitAMD(packageRuleInvokeDependency.hbsModule);
+      emitAMD(packageRuleInvokeDependency.jsModule);
+    }
+
     // The first time we insert a component as a lexical binding
     //   - if there's no JS-scope collision with the name, we're going to bind the existing name
     //     - in this case, any subsequent invocations of the same component just got automatically fixed too

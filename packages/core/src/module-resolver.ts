@@ -165,7 +165,7 @@ export class Resolver {
   nodeResolve(
     specifier: string,
     fromFile: string
-  ): { type: 'virtual'; content: string } | { type: 'real'; filename: string } {
+  ): { type: 'virtual'; content: string } | { type: 'real'; filename: string } | { type: 'not_found'; err: Error } {
     let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile), request => {
       if (request.isVirtual) {
         return {
@@ -188,7 +188,7 @@ export class Resolver {
     });
     switch (resolution.type) {
       case 'not_found':
-        throw resolution.err;
+        return resolution;
       case 'found':
         return resolution.result;
       default:

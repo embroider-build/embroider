@@ -531,17 +531,12 @@ export class Audit {
   }
 
   private async resolve(specifier: string, fromFile: string) {
-    try {
-      let resolution = await this.resolver.nodeResolve(specifier, fromFile);
-      if (resolution.type === 'virtual') {
-        // nothing to audit
-        return undefined;
-      }
-      return resolution.filename;
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
-      }
+    let resolution = await this.resolver.nodeResolve(specifier, fromFile);
+    if (resolution.type === 'virtual') {
+      // nothing to audit
+      return undefined;
+    }
+    if (resolution.type === 'not_found') {
       if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
         // the audit process deliberately removes the @embroider/macros babel
         // plugins, so the imports are still present and should be left alone.
@@ -549,6 +544,7 @@ export class Audit {
       }
       return { isResolutionFailure: true as true };
     }
+    return resolution.filename;
   }
 
   private pushFinding(finding: Finding) {

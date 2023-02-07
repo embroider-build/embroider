@@ -13,7 +13,7 @@ import {
   ResolverOptions as CoreResolverOptions,
   Resolver,
 } from '@embroider/core';
-import { join, relative, sep } from 'path';
+import { join, relative, sep, resolve as pathResolve } from 'path';
 
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
@@ -412,33 +412,37 @@ export default class CompatResolver {
     return this.params.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private tryHelper(path: string, from: string): HelperResolution | null {
+  private containingEngine(_filename: string): Package | AppPackagePlaceholder {
+    // FIXME: when using engines, template global resolution is scoped to the
+    // engine not always the app. We already have code in the app-tree-merging
+    // to deal with that, so as we unify that with the module-resolving system
+    // we should be able to generate a better answer here.
+    return this.appPackage;
+  }
+
+  private parsePath(path: string, fromFile: string) {
+    let engine = this.containingEngine(fromFile);
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryHelper(parts[1], targetPackage);
+      return { packageName: parts[0], memberName: parts[1], from: pathResolve(engine.root, './package.json') };
     } else {
-      return this._tryHelper(path, this.appPackage);
+      return { packageName: engine.name, memberName: path, from: pathResolve(engine.root, './package.json') };
     }
   }
 
-  private _tryHelper(path: string, targetPackage: Package | AppPackagePlaceholder): HelperResolution | null {
-    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
-      let absPath = join(targetPackage.root, 'helpers', path) + extension;
-      if (pathExistsSync(absPath)) {
-        return {
-          type: 'helper',
-          module: this.resolvedDep(absPath, targetPackage),
-          nameHint: path,
-        };
-      }
+  private tryHelper(path: string, from: string): HelperResolution | null {
+    let target = this.parsePath(path, from);
+    let runtimeName = `${target.packageName}/helpers/${target.memberName}`;
+    let resolution = this.resolver.nodeResolve(`${target.packageName}/helpers/${target.memberName}`, target.from);
+    if (resolution.type === 'real') {
+      return {
+        type: 'helper',
+        module: {
+          absPath: resolution.filename,
+          runtimeName,
+        },
+        nameHint: path,
+      };
     }
     return null;
   }

@@ -1,4 +1,4 @@
-import {
+import CompatResolver, {
   default as Resolver,
   ComponentResolution,
   ComponentLocator,
@@ -12,7 +12,9 @@ import type { ASTv1, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 import { explicitRelative } from '@embroider/core';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
+import { readJSONSync } from 'fs-extra';
+import semver from 'semver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -22,12 +24,18 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 };
 
 export interface Options {
-  resolver: Resolver;
-  patchHelpersBug: boolean;
+  appRoot: string;
+  emberVersion: string;
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ resolver, patchHelpersBug }: Options) {
+export default function makeResolverTransform({ appRoot, emberVersion }: Options) {
+  // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
+  let patchHelpersBug = semver.satisfies(emberVersion, '<4.2.0-beta.0', {
+    includePrerelease: true,
+  });
+
+  let resolver = new CompatResolver(readJSONSync(join(appRoot, '.embroider', 'resolver.json')));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     let {
       filename,

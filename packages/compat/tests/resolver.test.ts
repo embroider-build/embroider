@@ -1,14 +1,23 @@
-import { removeSync, mkdtempSync, writeFileSync, ensureDirSync, writeJSONSync, realpathSync } from 'fs-extra';
+import {
+  removeSync,
+  mkdtempSync,
+  writeFileSync,
+  ensureDirSync,
+  writeJSONSync,
+  realpathSync,
+  outputJSONSync,
+} from 'fs-extra';
 import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import { hbsToJS, tmpdir, throwOnWarnings, ResolverOptions, AddonMeta } from '@embroider/core';
 import { emberTemplateCompiler } from '@embroider/test-support';
-import Resolver from '../src/resolver';
+import { CompatResolverOptions } from '../src/resolver';
 import { PackageRules } from '../src';
 import type { AST, ASTPluginEnvironment } from '@glimmer/syntax';
 import 'code-equality-assertions/jest';
 import type { Transform, Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { TransformOptions, transformSync } from '@babel/core';
+import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
 
 describe('compat-resolver', function () {
   let appDir: string;
@@ -37,9 +46,9 @@ describe('compat-resolver', function () {
       keywords: ['ember-addon'],
       'ember-addon': { type: 'app', version: 2, 'auto-upgraded': true },
     });
-    let resolver = new Resolver({
+    let resolverConfig: CompatResolverOptions = {
       emberVersion: emberTemplateCompiler().version,
-      root: appDir,
+      appRoot: appDir,
       modulePrefix: 'the-app',
       podModulePrefix: otherOptions.podModulePrefix,
       options: optionsWithDefaults(compatOptions),
@@ -47,23 +56,22 @@ describe('compat-resolver', function () {
         let root = rule.package === 'the-test-package' ? appDir : `${appDir}/node_modules/${rule.package}`;
         return Object.assign({ roots: [root] }, rule);
       }),
-      adjustImportsOptions: Object.assign(
-        {
-          renamePackages: {},
-          renameModules: {},
-          extraImports: [],
-          externalsDir: '/tmp/embroider-externals',
-          activeAddons: {},
-          relocatedFiles: {},
-          resolvableExtensions: ['.js', '.hbs'],
-          appRoot: appDir,
-        },
-        otherOptions.adjustImportsImports
-      ),
-    });
+      renamePackages: {},
+      renameModules: {},
+      extraImports: [],
+      activeAddons: {},
+      relocatedFiles: {},
+      resolvableExtensions: ['.js', '.hbs'],
+      ...otherOptions.adjustImportsImports,
+    };
 
     let transforms: Transform[] = [];
-    let resolverTransform = resolver.astTransformer();
+
+    let transformOpts: ResolverTransformOptions = {
+      appRoot: resolverConfig.appRoot,
+      emberVersion: resolverConfig.emberVersion,
+    };
+    let resolverTransform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
 
     if (otherOptions.plugins) {
       transforms.push.apply(transforms, otherOptions.plugins);
@@ -79,6 +87,8 @@ describe('compat-resolver', function () {
     let babelConfig: TransformOptions = {
       plugins: [[require.resolve('babel-plugin-ember-template-compilation'), etcOptions]],
     };
+
+    outputJSONSync(join(appDir, '.embroider', 'resolver.json'), resolverConfig);
 
     return function (relativePath: string, contents: string) {
       let jsInput =

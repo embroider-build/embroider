@@ -11,7 +11,7 @@ import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
-import { copySync, ensureDirSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { copySync, ensureDirSync, outputJSONSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath, sep } from 'path';
 import { debug, warn } from './messages';
 import sortBy from 'lodash/sortBy';
@@ -35,6 +35,7 @@ import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
+import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -48,7 +49,7 @@ export type EmberENV = unknown;
       building apps that don't need an EmberApp instance at all (presumably
       because they opt into new authoring standards.
 */
-export interface AppAdapter<TreeNames> {
+export interface AppAdapter<TreeNames, SpecificResolverConfig extends ResolverConfig = ResolverConfig> {
   // the set of all addon packages that are active (recursive)
   readonly allActiveAddons: AddonPackage[];
 
@@ -102,13 +103,13 @@ export interface AppAdapter<TreeNames> {
 
   // Path to a build-time Resolver module to be used during template
   // compilation.
-  resolverTransform(): Transform | undefined;
+  resolverTransform(resolverConfig: SpecificResolverConfig): Transform | undefined;
 
   // describes the special module naming rules that we need to achieve
   // compatibility
-  resolverConfig(): ResolverConfig;
+  resolverConfig(engines: Engine[]): SpecificResolverConfig;
 
-  adjustImportsOptionsPath(): string;
+  resolvableExtensions(): string[];
 
   // The template preprocessor plugins that are configured in the app.
   htmlbarsPlugins(): Transform[];
@@ -254,7 +255,7 @@ export class AppBuilder<TreeNames> {
 
   @Memoize()
   private get resolvableExtensionsPattern(): RegExp {
-    return extensionsPattern(this.adapter.resolverConfig().resolvableExtensions);
+    return extensionsPattern(this.adapter.resolvableExtensions());
   }
 
   private impliedAssets(
@@ -366,7 +367,7 @@ export class AppBuilder<TreeNames> {
   }
 
   @Memoize()
-  private babelConfig(appFiles: Engine[]) {
+  private babelConfig(resolverConfig: ResolverConfig) {
     let babel = cloneDeep(this.adapter.babelConfig());
 
     if (!babel.plugins) {
@@ -380,7 +381,7 @@ export class AppBuilder<TreeNames> {
     // https://github.com/webpack/webpack/issues/12154
     babel.plugins.push(require.resolve('./rename-require-plugin'));
 
-    babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), this.etcOptions()]);
+    babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), this.etcOptions(resolverConfig)]);
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
@@ -422,7 +423,7 @@ export class AppBuilder<TreeNames> {
       colocationOptions,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(appFiles));
+    babel.plugins.push(this.adjustImportsPlugin(resolverConfig));
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -435,22 +436,11 @@ export class AppBuilder<TreeNames> {
     return portable;
   }
 
-  private adjustImportsPlugin(engines: Engine[]): PluginItem {
-    let relocatedFiles: ResolverConfig['relocatedFiles'] = {};
-    for (let { destPath, appFiles } of engines) {
-      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[join(destPath, relativePath)] = originalPath;
-      }
-    }
-    let relocatedFilesPath = join(this.root, '_relocated_files.json');
-    writeFileSync(relocatedFilesPath, JSON.stringify({ relocatedFiles }));
-    return [
-      require.resolve('./babel-plugin-adjust-imports'),
-      {
-        adjustImportsOptionsPath: this.adapter.adjustImportsOptionsPath(),
-        relocatedFilesPath,
-      },
-    ];
+  private adjustImportsPlugin(resolverConfig: ResolverConfig): PluginItem {
+    let pluginConfig: AdjustImportsOptions = {
+      extraImports: resolverConfig.extraImports,
+    };
+    return [require.resolve('./babel-plugin-adjust-imports'), pluginConfig];
   }
 
   private insertEmberApp(
@@ -895,8 +885,6 @@ export class AppBuilder<TreeNames> {
     let assets = this.gatherAssets(inputPaths);
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
-    let babelConfig = this.babelConfig(appFiles);
-    this.addBabelConfig(babelConfig);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
@@ -920,11 +908,10 @@ export class AppBuilder<TreeNames> {
       assets: assetPaths,
       babel: {
         filename: '_babel_config_.js',
-        isParallelSafe: babelConfig.isParallelSafe,
+        isParallelSafe: true, // TODO
         majorVersion: this.adapter.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
-      'resolvable-extensions': this.adapter.resolverConfig().resolvableExtensions,
       'root-url': this.adapter.rootURL(),
     };
 
@@ -934,6 +921,11 @@ export class AppBuilder<TreeNames> {
 
     let pkg = this.combinePackageJSON(meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+
+    let resolverConfig = this.adapter.resolverConfig(appFiles);
+    this.addResolverConfig(resolverConfig);
+    let babelConfig = this.babelConfig(resolverConfig);
+    this.addBabelConfig(babelConfig);
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -948,7 +940,7 @@ export class AppBuilder<TreeNames> {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private etcOptions(): EtcOptions {
+  private etcOptions(resolverConfig: ResolverConfig): EtcOptions {
     let transforms = this.adapter.htmlbarsPlugins();
 
     let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
@@ -957,7 +949,7 @@ export class AppBuilder<TreeNames> {
       transforms.push(macroPlugin as any);
     }
 
-    let transform = this.adapter.resolverTransform();
+    let transform = this.adapter.resolverTransform(resolverConfig);
     if (transform) {
       transforms.push(transform);
     }
@@ -1003,6 +995,10 @@ export class AppBuilder<TreeNames> {
       babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.root }),
       'utf8'
     );
+  }
+
+  private addResolverConfig(config: ResolverConfig) {
+    outputJSONSync(join(this.root, '.embroider', 'resolver.json'), config);
   }
 
   private shouldSplitRoute(routeName: string) {

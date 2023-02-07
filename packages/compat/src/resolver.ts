@@ -18,8 +18,6 @@ import { join, relative, sep, resolve as pathResolve } from 'path';
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import semver from 'semver';
-import { Options as ResolverTransformOptions } from './resolver-transform';
 
 export interface ResolvedDep {
   runtimeName: string;
@@ -120,12 +118,12 @@ const builtInModifiers = ['action', 'on'];
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<
+type UserConfig = Pick<
   Required<Options>,
   'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
 >;
 
-function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
+function extractOptions(options: Required<Options> | UserConfig): UserConfig {
   return {
     staticHelpers: options.staticHelpers,
     staticModifiers: options.staticModifiers,
@@ -134,26 +132,15 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
   };
 }
 
-interface RehydrationParamsBase {
-  root: string;
+export interface CompatResolverOptions extends CoreResolverOptions {
   modulePrefix: string;
   podModulePrefix?: string;
-  options: ResolverOptions;
   emberVersion: string;
   activePackageRules: ActivePackageRules[];
+  options: UserConfig;
 }
 
-interface RehydrationParamsWithFile extends RehydrationParamsBase {
-  adjustImportsOptionsPath: string;
-}
-
-interface RehydrationParamsWithOptions extends RehydrationParamsBase {
-  adjustImportsOptions: CoreResolverOptions;
-}
-
-type RehydrationParams = RehydrationParamsWithFile | RehydrationParamsWithOptions;
-
-export function rehydrate(params: RehydrationParams) {
+export function rehydrate(params: CompatResolverOptions) {
   return new CompatResolver(params);
 }
 
@@ -171,19 +158,19 @@ export default class CompatResolver {
   _parallelBabel: {
     requireFile: string;
     buildUsing: string;
-    params: RehydrationParams;
+    params: CompatResolverOptions;
   };
 
   private resolver: Resolver;
 
-  constructor(private params: RehydrationParams) {
+  constructor(private params: CompatResolverOptions) {
     this.params.options = extractOptions(this.params.options);
     this._parallelBabel = {
       requireFile: __filename,
       buildUsing: 'rehydrate',
       params,
     };
-    this.resolver = new Resolver(this.adjustImportsOptions);
+    this.resolver = new Resolver(this.params);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
@@ -202,7 +189,7 @@ export default class CompatResolver {
     // "inherit" the rules that are attached to their corresonding JS module.
     if (absPath.endsWith('.hbs')) {
       let stem = absPath.slice(0, -4);
-      for (let ext of this.adjustImportsOptions.resolvableExtensions) {
+      for (let ext of this.params.resolvableExtensions) {
         if (ext !== '.hbs') {
           let rules = this.rules.components.get(stem + ext);
           if (rules) {
@@ -216,15 +203,6 @@ export default class CompatResolver {
 
   private isIgnoredComponent(dasherizedName: string) {
     return this.rules.ignoredComponents.includes(dasherizedName);
-  }
-
-  @Memoize()
-  get adjustImportsOptions(): CoreResolverOptions {
-    const { params } = this;
-    return 'adjustImportsOptionsPath' in params
-      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require(params.adjustImportsOptionsPath)
-      : params.adjustImportsOptions;
   }
 
   @Memoize()
@@ -260,7 +238,7 @@ export default class CompatResolver {
           // those templates.
           if (componentRules.layout) {
             if (componentRules.layout.appPath) {
-              components.set(join(this.params.root, componentRules.layout.appPath), processedRules);
+              components.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules);
             } else if (componentRules.layout.addonPath) {
               for (let root of rule.roots) {
                 components.set(join(root, componentRules.layout.addonPath), processedRules);
@@ -280,7 +258,7 @@ export default class CompatResolver {
       if (rule.appTemplates) {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
-          components.set(join(this.params.root, path), processedRules);
+          components.set(join(this.params.appRoot, path), processedRules);
         }
       }
       if (rule.addonTemplates) {
@@ -316,25 +294,12 @@ export default class CompatResolver {
     return name;
   }
 
-  astTransformer(): undefined | string | [string, unknown] {
-    if (this.staticComponentsEnabled || this.staticHelpersEnabled || this.staticModifiersEnabled) {
-      let opts: ResolverTransformOptions = {
-        resolver: this,
-        // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
-        patchHelpersBug: semver.satisfies(this.params.emberVersion, '<4.2.0-beta.0', {
-          includePrerelease: true,
-        }),
-      };
-      return [require.resolve('./resolver-transform'), opts];
-    }
-  }
-
   private humanReadableFile(file: string) {
-    if (!this.params.root.endsWith('/')) {
-      this.params.root += '/';
+    if (!this.params.appRoot.endsWith('/')) {
+      this.params.appRoot += '/';
     }
-    if (file.startsWith(this.params.root)) {
-      return file.slice(this.params.root.length);
+    if (file.startsWith(this.params.appRoot)) {
+      return file.slice(this.params.appRoot.length);
     }
     return file;
   }
@@ -372,22 +337,22 @@ export default class CompatResolver {
 
   @Memoize()
   private get resolvableExtensionsPattern() {
-    return extensionsPattern(this.adjustImportsOptions.resolvableExtensions);
+    return extensionsPattern(this.params.resolvableExtensions);
   }
 
   private absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
-    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
+    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.appRoot).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
-      for (let [runtimeName, realName] of Object.entries(this.adjustImportsOptions.renamePackages)) {
+      for (let [runtimeName, realName] of Object.entries(this.params.renamePackages)) {
         if (realName === packageRuntimeName) {
           packageRuntimeName = runtimeName;
           break;
         }
       }
       return join(packageRuntimeName, relative(pkg.root, absPath)).split(sep).join('/');
-    } else if (absPath.startsWith(this.params.root)) {
-      return join(this.params.modulePrefix, relative(this.params.root, absPath)).split(sep).join('/');
+    } else if (absPath.startsWith(this.params.appRoot)) {
+      return join(this.params.modulePrefix, relative(this.params.appRoot, absPath)).split(sep).join('/');
     } else {
       throw new Error(`bug: can't figure out the runtime name for ${absPath}`);
     }
@@ -463,7 +428,7 @@ export default class CompatResolver {
 
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
-    return { root: this.params.root, name: this.params.modulePrefix };
+    return { root: this.params.appRoot, name: this.params.modulePrefix };
   }
 
   private *componentTemplateCandidates(target: { packageName: string; memberName: string }) {
@@ -493,7 +458,7 @@ export default class CompatResolver {
   }
 
   private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
-    let target = this.parsePath(path, from);
+    const target = this.parsePath(path, from);
 
     let hbsModule: ResolvedDep | null = null;
     let jsModule: ResolvedDep | null = null;

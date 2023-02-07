@@ -12,6 +12,7 @@ import {
   EmberENV,
   Package,
   AddonPackage,
+  Engine,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -19,9 +20,9 @@ import walkSync from 'walk-sync';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
-import { statSync, readdirSync, writeFileSync } from 'fs';
+import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import CompatResolver from './resolver';
+import CompatResolver, { CompatResolverOptions } from './resolver';
 import { activePackageRules, PackageRules, expandModuleRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
@@ -30,8 +31,8 @@ import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
-import { ResolverOptions } from '@embroider/core';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
+import type { Options as ResolverTransformOptions } from './resolver-transform';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -88,7 +89,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   return { inTrees, instantiate };
 }
 
-class CompatAppAdapter implements AppAdapter<TreeNames> {
+class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   constructor(
     private root: string,
     private appPackage: Package,
@@ -223,7 +224,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  private resolvableExtensions(): string[] {
+  resolvableExtensions(): string[] {
     // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
     // subset in that order is sensible, since many third-party libraries will
     // expect it to work that way.
@@ -321,70 +322,63 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
   }
 
   @Memoize()
-  resolverTransform(): Transform | undefined {
-    return new CompatResolver({
-      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
-      root: this.root,
-      modulePrefix: this.modulePrefix(),
-      podModulePrefix: this.podModulePrefix(),
-      options: this.options,
-      activePackageRules: this.activeRules(),
-      adjustImportsOptionsPath: this.adjustImportsOptionsPath(),
-    }).astTransformer();
+  resolverTransform(resolverConfig: CompatResolverOptions): Transform | undefined {
+    if (
+      this.options.staticComponents ||
+      this.options.staticHelpers ||
+      this.options.staticModifiers ||
+      (globalThis as any).embroider_audit
+    ) {
+      let opts: ResolverTransformOptions = {
+        appRoot: resolverConfig.appRoot,
+        emberVersion: resolverConfig.emberVersion,
+      };
+      return [require.resolve('./resolver-transform'), opts];
+    }
   }
 
-  @Memoize()
-  adjustImportsOptionsPath(): string {
-    let file = join(this.root, '_adjust_imports.json');
-    writeFileSync(file, JSON.stringify(this.resolverConfig()));
-    return file;
-  }
-
-  @Memoize()
-  resolverConfig(): ResolverOptions {
-    return this.makeAdjustImportOptions(true);
-  }
-
-  // this gets serialized out by babel plugin and ast plugin
-  private makeAdjustImportOptions(outer: boolean): ResolverOptions {
+  resolverConfig(engines: Engine[]): CompatResolverOptions {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
-    let activeAddons: ResolverOptions['activeAddons'] = {};
+    let activeAddons: CompatResolverOptions['activeAddons'] = {};
     for (let addon of this.allActiveAddons) {
       activeAddons[addon.name] = addon.root;
     }
 
-    return {
+    let relocatedFiles: CompatResolverOptions['relocatedFiles'] = {};
+    for (let { destPath, appFiles } of engines) {
+      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
+        relocatedFiles[join(destPath, relativePath)] = originalPath;
+      }
+    }
+
+    let config: CompatResolverOptions = {
+      // this part is the base ModuleResolverOptions as required by @embroider/core
       activeAddons,
       renameModules,
       renamePackages,
-      // "outer" here prevents uncontrolled recursion. We can't know our
-      // extraImports until after we have the internalTemplateResolver which in
-      // turn needs some adjustImportsOptions
-      extraImports: outer ? this.extraImports() : [],
-      relocatedFiles: {}, // this is the only part we can't completely fill out here. It needs to wait for the AppBuilder to finish smooshing together all appTrees
+      extraImports: [], // extraImports gets filled in below
+      relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
-    };
-  }
 
-  // unlike `templateResolver`, this one brings its own simple TemplateCompiler
-  // along so it's capable of parsing component snippets in people's module
-  // rules.
-  @Memoize()
-  private internalTemplateResolver(): CompatResolver {
-    return new CompatResolver({
+      // this is the additional stufff that @embroider/compat adds on top to do
+      // global template resolving
       emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
-      root: this.root,
       modulePrefix: this.modulePrefix(),
+      podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
-      adjustImportsOptions: this.makeAdjustImportOptions(false),
-    });
+    };
+
+    this.addExtraImports(config);
+    return config;
   }
 
-  private extraImports() {
+  private addExtraImports(config: CompatResolverOptions) {
+    let internalResolver = new CompatResolver(config);
+
     let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
 
     for (let rule of this.activeRules()) {
@@ -392,18 +386,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames> {
         for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
           for (let root of rule.roots) {
             let absPath = join(root, filename);
-            output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
+            output.push(expandModuleRules(absPath, moduleRules, internalResolver));
           }
         }
       }
       if (rule.appModules) {
         for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
           let absPath = join(this.root, filename);
-          output.push(expandModuleRules(absPath, moduleRules, this.internalTemplateResolver()));
+          output.push(expandModuleRules(absPath, moduleRules, internalResolver));
         }
       }
     }
-    return flatten(output);
+    config.extraImports = flatten(output);
   }
 
   htmlbarsPlugins(): Transform[] {

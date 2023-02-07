@@ -8,12 +8,7 @@ import { Options as ModuleResolveroptions } from './module-resolver';
 export type Options = Pick<ModuleResolveroptions, 'extraImports'>;
 
 interface State {
-  opts: Options | DeflatedOptions;
-}
-
-export interface DeflatedOptions {
-  adjustImportsOptionsPath: string;
-  relocatedFilesPath: string;
+  opts: Options;
 }
 
 type BabelTypes = typeof t;
@@ -24,9 +19,8 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          let opts = ensureOpts(state);
           let adder = new ImportUtil(t, path);
-          addExtraImports(adder, t, path, opts.extraImports);
+          addExtraImports(adder, t, path, state.opts.extraImports);
         },
       },
     },
@@ -62,13 +56,4 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
       t.functionExpression(null, [], t.blockStatement([t.returnStatement(value)])),
     ])
   );
-}
-
-function ensureOpts(state: State): Options {
-  let { opts } = state;
-  if ('adjustImportsOptionsPath' in opts) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return (state.opts = { ...require(opts.adjustImportsOptionsPath), ...require(opts.relocatedFilesPath) });
-  }
-  return opts;
 }

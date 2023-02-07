@@ -4,10 +4,12 @@ import { AppMeta, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
-import CompatResolver from '../src/resolver';
+import { CompatResolverOptions } from '../src/resolver';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
+import type { Transform } from 'babel-plugin-ember-template-compilation';
+import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -25,9 +27,9 @@ describe('audit', function () {
 
     const resolvableExtensions = ['.js', '.hbs'];
 
-    let resolver = new CompatResolver({
+    let resolverConfig: CompatResolverOptions = {
       emberVersion: emberTemplateCompiler().version,
-      root: app.baseDir,
+      appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {
         staticComponents: true,
@@ -36,26 +38,24 @@ describe('audit', function () {
         allowUnsafeDynamicComponents: false,
       },
       activePackageRules: [],
-      adjustImportsOptions: {
-        renamePackages: {},
-        renameModules: {},
-        extraImports: [],
-        activeAddons: {},
-        relocatedFiles: {},
-        resolvableExtensions,
-        appRoot: '.',
-      },
-    });
+      renamePackages: {},
+      renameModules: {},
+      extraImports: [],
+      activeAddons: {},
+      relocatedFiles: {},
+      resolvableExtensions,
+    };
 
     let babel: TransformOptions = {
       babelrc: false,
       plugins: [],
     };
 
-    let transform = resolver.astTransformer();
-    if (!transform) {
-      throw new Error('bug: expected astTransformer');
-    }
+    let transformOpts: ResolverTransformOptions = {
+      appRoot: resolverConfig.appRoot,
+      emberVersion: resolverConfig.emberVersion,
+    };
+    let transform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
 
     let etcOptions: InlinePrecompileOptions = {
       compilerPath: emberTemplateCompiler().path,
@@ -73,8 +73,9 @@ describe('audit', function () {
         null,
         2
       )}`,
-      '_adjust_imports.json': JSON.stringify(resolver.adjustImportsOptions),
-      '_relocated_files.json': JSON.stringify({}),
+      '.embroider': {
+        'resolver.json': JSON.stringify(resolverConfig),
+      },
     });
     let appMeta: AppMeta = {
       type: 'app',
@@ -86,11 +87,12 @@ describe('audit', function () {
         majorVersion: 7,
         fileFilter: 'babel_filter.js',
       },
-      'resolvable-extensions': resolvableExtensions,
       'root-url': '/',
+      'auto-upgraded': true,
     };
     merge(app.pkg, {
       'ember-addon': appMeta,
+      keywords: ['ember-addon'],
     });
   });
 

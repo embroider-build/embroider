@@ -25,6 +25,7 @@ export {
   ResolverFunction,
   SyncResolverFunction,
 } from './module-resolver';
+export type { Engine } from './app-files';
 
 // this is reexported because we already make users manage a peerDep from some
 // other packages (like embroider/webpack and @embroider/compat

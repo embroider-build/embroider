@@ -248,13 +248,8 @@ export class Audit {
     return config;
   }
 
-  @Memoize()
   private get resolverParams(): ResolverOptions {
-    let config = {
-      ...readJSONSync(join(this.appDir, '_adjust_imports.json')),
-      ...readJSONSync(join(this.appDir, '_relocated_files.json')),
-    };
-    return config;
+    return readJSONSync(join(this.appDir, '.embroider', 'resolver.json'));
   }
 
   private resolver = new Resolver(this.resolverParams);

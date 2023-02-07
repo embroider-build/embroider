@@ -19,6 +19,7 @@ import {
   getAppMeta,
   getPackagerCacheDir,
   getOrCreate,
+  ResolverOptions,
 } from '@embroider/core';
 import { tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
@@ -51,7 +52,7 @@ interface AppInfo {
   babel: AppMeta['babel'];
   rootURL: AppMeta['root-url'];
   publicAssetURL: string;
-  resolvableExtensions: AppMeta['resolvable-extensions'];
+  resolverConfig: ResolverOptions;
   packageName: string;
 }
 
@@ -167,7 +168,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     let meta = getAppMeta(this.pathToVanillaApp);
     let rootURL = meta['ember-addon']['root-url'];
     let babel = meta['ember-addon']['babel'];
-    let resolvableExtensions = meta['ember-addon']['resolvable-extensions'];
     let entrypoints = [];
     let otherAssets = [];
     let publicAssetURL = this.publicAssetURL || rootURL;
@@ -180,11 +180,13 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    return { entrypoints, otherAssets, babel, rootURL, resolvableExtensions, publicAssetURL, packageName: meta.name };
+    let resolverConfig: EmbroiderPluginOptions = readJSONSync(join(this.pathToVanillaApp, '.embroider/resolver.json'));
+
+    return { entrypoints, otherAssets, babel, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
   }
 
   private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
-    const { entrypoints, babel, resolvableExtensions, publicAssetURL, packageName } = appInfo;
+    const { entrypoints, babel, publicAssetURL, packageName, resolverConfig } = appInfo;
 
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
@@ -194,11 +196,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     }
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
-
-    let resolverConfig: EmbroiderPluginOptions = {
-      ...readJSONSync(join(this.pathToVanillaApp, '_adjust_imports.json')),
-      ...readJSONSync(join(this.pathToVanillaApp, '_relocated_files.json')),
-    };
 
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
@@ -275,7 +272,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         },
       },
       resolve: {
-        extensions: resolvableExtensions,
+        extensions: resolverConfig.resolvableExtensions,
       },
       resolveLoader: {
         alias: {

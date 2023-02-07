@@ -769,16 +769,6 @@ export default class CompatResolver {
       };
     }
   }
-  private resolvedDep(absPath: string, targetPackage: Package | AppPackagePlaceholder | undefined): ResolvedDep {
-    let self = this;
-    const a = absPath;
-    return {
-      absPath,
-      get runtimeName() {
-        return self.absPathToRuntimeName(a, targetPackage);
-      },
-    };
-  }
 }
 
 // we don't have a real Package for the app itself because the resolver has work

@@ -107,7 +107,9 @@ export default class AppDiffer {
             this.isFastbootOnly.set(relativePath, sourceIndices[0] >= this.firstFastbootTree);
             let source = this.sources[sourceIndices[0]];
             let sourceFile = source.locate(relativePath);
-            copySync(sourceFile, outputPath, { dereference: true });
+            if (!source.isRelocated) {
+              copySync(sourceFile, outputPath, { dereference: true });
+            }
             this.updateFiles(relativePath, source, sourceFile);
           } else {
             // we have both fastboot and non-fastboot files for this path.
@@ -122,12 +124,14 @@ export default class AppDiffer {
             let base = basename(relativePath);
             let browserDest = `_browser_${base}`;
             let fastbootDest = `_fastboot_${base}`;
-            copySync(browserSourceFile, join(this.outputPath, dir, browserDest), { dereference: true });
-            copySync(fastbootSourceFile, join(this.outputPath, dir, fastbootDest), { dereference: true });
-            writeFileSync(
-              outputPath,
-              switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
-            );
+            if (!browserSrc.isRelocated && !fastbootSrc.isRelocated) {
+              copySync(browserSourceFile, join(this.outputPath, dir, browserDest), { dereference: true });
+              copySync(fastbootSourceFile, join(this.outputPath, dir, fastbootDest), { dereference: true });
+              writeFileSync(
+                outputPath,
+                switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
+              );
+            }
             this.updateFiles(relativePath, browserSrc, browserSourceFile);
           }
           break;

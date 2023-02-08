@@ -9,23 +9,18 @@ import {
 import {
   Package,
   PackageCache,
-  explicitRelative,
   extensionsPattern,
   ResolverOptions as CoreResolverOptions,
+  Resolver,
 } from '@embroider/core';
-import { dirname, join, relative, sep } from 'path';
+import { join, relative, sep, resolve as pathResolve } from 'path';
 
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import { pathExistsSync } from 'fs-extra';
-import resolve from 'resolve';
-import semver from 'semver';
-import { Options as ResolverTransformOptions } from './resolver-transform';
 
 export interface ResolvedDep {
   runtimeName: string;
-  path: string;
   absPath: string;
 }
 
@@ -47,7 +42,7 @@ export interface HelperResolution {
 
 export interface ModifierResolution {
   type: 'modifier';
-  module: ResolvedDep;
+  module: { absPath: string };
   nameHint: string;
 }
 
@@ -123,12 +118,12 @@ const builtInModifiers = ['action', 'on'];
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type ResolverOptions = Pick<
+type UserConfig = Pick<
   Required<Options>,
   'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
 >;
 
-function extractOptions(options: Required<Options> | ResolverOptions): ResolverOptions {
+function extractOptions(options: Required<Options> | UserConfig): UserConfig {
   return {
     staticHelpers: options.staticHelpers,
     staticModifiers: options.staticModifiers,
@@ -137,27 +132,12 @@ function extractOptions(options: Required<Options> | ResolverOptions): ResolverO
   };
 }
 
-interface RehydrationParamsBase {
-  root: string;
+export interface CompatResolverOptions extends CoreResolverOptions {
   modulePrefix: string;
   podModulePrefix?: string;
-  options: ResolverOptions;
   emberVersion: string;
   activePackageRules: ActivePackageRules[];
-}
-
-interface RehydrationParamsWithFile extends RehydrationParamsBase {
-  adjustImportsOptionsPath: string;
-}
-
-interface RehydrationParamsWithOptions extends RehydrationParamsBase {
-  adjustImportsOptions: CoreResolverOptions;
-}
-
-type RehydrationParams = RehydrationParamsWithFile | RehydrationParamsWithOptions;
-
-export function rehydrate(params: RehydrationParams) {
-  return new CompatResolver(params);
+  options: UserConfig;
 }
 
 export interface AuditMessage {
@@ -171,19 +151,11 @@ export interface AuditMessage {
 export default class CompatResolver {
   private auditHandler: undefined | ((msg: AuditMessage) => void);
 
-  _parallelBabel: {
-    requireFile: string;
-    buildUsing: string;
-    params: RehydrationParams;
-  };
+  private resolver: Resolver;
 
-  constructor(private params: RehydrationParams) {
+  constructor(private params: CompatResolverOptions) {
     this.params.options = extractOptions(this.params.options);
-    this._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'rehydrate',
-      params,
-    };
+    this.resolver = new Resolver(this.params);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
@@ -211,7 +183,7 @@ export default class CompatResolver {
     // "inherit" the rules that are attached to their corresonding JS module.
     if (absPath.endsWith('.hbs')) {
       let stem = absPath.slice(0, -4);
-      for (let ext of this.adjustImportsOptions.resolvableExtensions) {
+      for (let ext of this.params.resolvableExtensions) {
         if (ext !== '.hbs') {
           let rules = this.rules.components.get(stem + ext);
           if (rules) {
@@ -228,17 +200,8 @@ export default class CompatResolver {
   }
 
   @Memoize()
-  get adjustImportsOptions(): CoreResolverOptions {
-    const { params } = this;
-    return 'adjustImportsOptionsPath' in params
-      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require(params.adjustImportsOptionsPath)
-      : params.adjustImportsOptions;
-  }
-
-  @Memoize()
   private get rules() {
-    // keyed by their first resolved dependency's runtimeName.
+    // keyed by their first resolved dependency's absPath.
     let components: Map<string, PreprocessedComponentRule> = new Map();
 
     // keyed by our own dasherized interpretation of the component's name.
@@ -269,7 +232,7 @@ export default class CompatResolver {
           // those templates.
           if (componentRules.layout) {
             if (componentRules.layout.appPath) {
-              components.set(join(this.params.root, componentRules.layout.appPath), processedRules);
+              components.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules);
             } else if (componentRules.layout.addonPath) {
               for (let root of rule.roots) {
                 components.set(join(root, componentRules.layout.addonPath), processedRules);
@@ -289,7 +252,7 @@ export default class CompatResolver {
       if (rule.appTemplates) {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
-          components.set(join(this.params.root, path), processedRules);
+          components.set(join(this.params.appRoot, path), processedRules);
         }
       }
       if (rule.addonTemplates) {
@@ -325,25 +288,12 @@ export default class CompatResolver {
     return name;
   }
 
-  astTransformer(): undefined | string | [string, unknown] {
-    if (this.staticComponentsEnabled || this.staticHelpersEnabled || this.staticModifiersEnabled) {
-      let opts: ResolverTransformOptions = {
-        resolver: this,
-        // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
-        patchHelpersBug: semver.satisfies(this.params.emberVersion, '<4.2.0-beta.0', {
-          includePrerelease: true,
-        }),
-      };
-      return [require.resolve('./resolver-transform'), opts];
-    }
-  }
-
   private humanReadableFile(file: string) {
-    if (!this.params.root.endsWith('/')) {
-      this.params.root += '/';
+    if (!this.params.appRoot.endsWith('/')) {
+      this.params.appRoot += '/';
     }
-    if (file.startsWith(this.params.root)) {
-      return file.slice(this.params.root.length);
+    if (file.startsWith(this.params.appRoot)) {
+      return file.slice(this.params.appRoot.length);
     }
     return file;
   }
@@ -370,47 +320,39 @@ export default class CompatResolver {
   }
 
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {
-    let absPath;
-    try {
-      absPath = resolve.sync(path, {
-        basedir: dirname(from),
-        extensions: this.adjustImportsOptions.resolvableExtensions,
-      });
-    } catch (err) {
-      return;
-    }
-    if (absPath) {
-      let runtimeName = this.absPathToRuntimeName(absPath);
+    let resolution = this.resolver.nodeResolve(path, from);
+    if (resolution.type === 'real') {
+      let runtimeName = this.absPathToRuntimeName(resolution.filename);
       if (runtimeName) {
-        return { runtimeName, absPath };
+        return { runtimeName, absPath: resolution.filename };
       }
     }
   }
 
   @Memoize()
   private get resolvableExtensionsPattern() {
-    return extensionsPattern(this.adjustImportsOptions.resolvableExtensions);
+    return extensionsPattern(this.params.resolvableExtensions);
   }
 
   private absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
-    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.root).ownerOfFile(absPath);
+    let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.appRoot).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
-      for (let [runtimeName, realName] of Object.entries(this.adjustImportsOptions.renamePackages)) {
+      for (let [runtimeName, realName] of Object.entries(this.params.renamePackages)) {
         if (realName === packageRuntimeName) {
           packageRuntimeName = runtimeName;
           break;
         }
       }
       return join(packageRuntimeName, relative(pkg.root, absPath)).split(sep).join('/');
-    } else if (absPath.startsWith(this.params.root)) {
-      return join(this.params.modulePrefix, relative(this.params.root, absPath)).split(sep).join('/');
+    } else if (absPath.startsWith(this.params.appRoot)) {
+      return join(this.params.modulePrefix, relative(this.params.appRoot, absPath)).split(sep).join('/');
     } else {
       throw new Error(`bug: can't figure out the runtime name for ${absPath}`);
     }
   }
 
-  absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
     return this.absPathToRuntimePath(absPath, owningPackage)
       .replace(this.resolvableExtensionsPattern, '')
       .replace(/\/index$/, '');
@@ -428,183 +370,111 @@ export default class CompatResolver {
     return this.params.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private tryHelper(path: string, from: string): HelperResolution | null {
+  private containingEngine(_filename: string): Package | AppPackagePlaceholder {
+    // FIXME: when using engines, template global resolution is scoped to the
+    // engine not always the app. We already have code in the app-tree-merging
+    // to deal with that, so as we unify that with the module-resolving system
+    // we should be able to generate a better answer here.
+    return this.appPackage;
+  }
+
+  private parsePath(path: string, fromFile: string) {
+    let engine = this.containingEngine(fromFile);
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryHelper(parts[1], from, targetPackage);
+      return { packageName: parts[0], memberName: parts[1], from: pathResolve(engine.root, './package.json') };
     } else {
-      return this._tryHelper(path, from, this.appPackage);
+      return { packageName: engine.name, memberName: path, from: pathResolve(engine.root, './package.json') };
     }
   }
 
-  private _tryHelper(
-    path: string,
-    from: string,
-    targetPackage: Package | AppPackagePlaceholder
-  ): HelperResolution | null {
-    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
-      let absPath = join(targetPackage.root, 'helpers', path) + extension;
-      if (pathExistsSync(absPath)) {
-        return {
-          type: 'helper',
-          module: {
-            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-            path: explicitRelative(dirname(from), absPath),
-            absPath,
-          },
-          nameHint: path,
-        };
-      }
+  private tryHelper(path: string, from: string): HelperResolution | null {
+    let target = this.parsePath(path, from);
+    let runtimeName = `${target.packageName}/helpers/${target.memberName}`;
+    let resolution = this.resolver.nodeResolve(runtimeName, target.from);
+    if (resolution.type === 'real') {
+      return {
+        type: 'helper',
+        module: {
+          absPath: resolution.filename,
+          runtimeName,
+        },
+        nameHint: target.memberName,
+      };
     }
     return null;
   }
 
   private tryModifier(path: string, from: string): ModifierResolution | null {
-    let parts = path.split('@');
-    if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
-      return this._tryModifier(parts[1], from, targetPackage);
-    } else {
-      return this._tryModifier(path, from, this.appPackage);
-    }
-  }
-
-  private _tryModifier(
-    path: string,
-    from: string,
-    targetPackage: Package | AppPackagePlaceholder
-  ): ModifierResolution | null {
-    for (let extension of this.adjustImportsOptions.resolvableExtensions) {
-      let absPath = join(targetPackage.root, 'modifiers', path) + extension;
-      if (pathExistsSync(absPath)) {
-        return {
-          type: 'modifier',
-          module: {
-            runtimeName: this.absPathToRuntimeName(absPath, targetPackage),
-            path: explicitRelative(dirname(from), absPath),
-            absPath,
-          },
-          nameHint: path,
-        };
-      }
+    let target = this.parsePath(path, from);
+    let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
+    if (resolution.type === 'real') {
+      return {
+        type: 'modifier',
+        module: {
+          absPath: resolution.filename,
+        },
+        nameHint: path,
+      };
     }
     return null;
   }
 
   @Memoize()
   private get appPackage(): AppPackagePlaceholder {
-    return { root: this.params.root, name: this.params.modulePrefix };
+    return { root: this.params.appRoot, name: this.params.modulePrefix };
+  }
+
+  private *componentTemplateCandidates(target: { packageName: string; memberName: string }) {
+    yield `${target.packageName}/templates/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/template`;
+
+    if (
+      typeof this.params.podModulePrefix !== 'undefined' &&
+      this.params.podModulePrefix !== '' &&
+      target.packageName === this.appPackage.name
+    ) {
+      yield `${this.params.podModulePrefix}/components/${target.memberName}/template`;
+    }
+  }
+
+  private *componentJSCandidates(target: { packageName: string; memberName: string }) {
+    yield `${target.packageName}/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/component`;
+
+    if (
+      typeof this.params.podModulePrefix !== 'undefined' &&
+      this.params.podModulePrefix !== '' &&
+      target.packageName === this.appPackage.name
+    ) {
+      yield `${this.params.podModulePrefix}/components/${target.memberName}/component`;
+    }
   }
 
   private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
-    let parts = path.split('@');
-    if (parts.length > 1 && parts[0].length > 0) {
-      let cache = PackageCache.shared('embroider-stage3', this.params.root);
-      let packageName = parts[0];
-      let renamed = this.adjustImportsOptions.renamePackages[packageName];
-      if (renamed) {
-        packageName = renamed;
-      }
-      let owner = cache.ownerOfFile(from)!;
-      let targetPackage = owner.name === packageName ? owner : cache.resolve(packageName, owner);
+    const target = this.parsePath(path, from);
 
-      return this._tryComponent(parts[1], from, withRuleLookup, targetPackage);
-    } else {
-      return this._tryComponent(path, from, withRuleLookup, this.appPackage);
-    }
-  }
+    let hbsModule: ResolvedDep | null = null;
+    let jsModule: ResolvedDep | null = null;
 
-  private _tryComponent(
-    path: string,
-    from: string,
-    withRuleLookup: boolean,
-    targetPackage: Package | AppPackagePlaceholder
-  ): ComponentResolution | null {
-    let extensions = ['.hbs', ...this.adjustImportsOptions.resolvableExtensions.filter((e: string) => e !== '.hbs')];
-
-    let hbsModule: string | undefined;
-    let jsModule: string | undefined;
-
-    // first, the various places our template might be
-    for (let extension of extensions) {
-      let absPath = join(targetPackage.root, 'templates', 'components', path) + extension;
-      if (pathExistsSync(absPath)) {
-        hbsModule = absPath;
+    // first, the various places our template might be.
+    for (let candidate of this.componentTemplateCandidates(target)) {
+      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      if (resolution.type === 'real') {
+        hbsModule = { absPath: resolution.filename, runtimeName: candidate };
         break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path, 'template') + extension;
-      if (pathExistsSync(absPath)) {
-        hbsModule = absPath;
-        break;
-      }
-
-      if (
-        typeof this.params.podModulePrefix !== 'undefined' &&
-        this.params.podModulePrefix !== '' &&
-        targetPackage === this.appPackage
-      ) {
-        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
-
-        absPath = join(targetPackage.root, podPrefix, 'components', path, 'template') + extension;
-        if (pathExistsSync(absPath)) {
-          hbsModule = absPath;
-          break;
-        }
       }
     }
 
-    // then the various places our javascript might be
-    for (let extension of extensions) {
-      if (extension === '.hbs') {
-        continue;
-      }
-
-      let absPath = join(targetPackage.root, 'components', path, 'index') + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
+    // then the various places our javascript might be.
+    for (let candidate of this.componentJSCandidates(target)) {
+      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      // .hbs is a resolvable extension for us, so we need to exclude it here.
+      // It matches as a priority lower than .js, so finding an .hbs means
+      // there's definitely not a .js.
+      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = { absPath: resolution.filename, runtimeName: candidate };
         break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path) + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
-        break;
-      }
-
-      absPath = join(targetPackage.root, 'components', path, 'component') + extension;
-      if (pathExistsSync(absPath)) {
-        jsModule = absPath;
-        break;
-      }
-
-      if (
-        typeof this.params.podModulePrefix !== 'undefined' &&
-        this.params.podModulePrefix !== '' &&
-        targetPackage === this.appPackage
-      ) {
-        let podPrefix = this.params.podModulePrefix.replace(this.params.modulePrefix, '');
-
-        absPath = join(targetPackage.root, podPrefix, 'components', path, 'component') + extension;
-        if (pathExistsSync(absPath)) {
-          jsModule = absPath;
-          break;
-        }
       }
     }
 
@@ -617,28 +487,16 @@ export default class CompatResolver {
       // the order here is important. We follow the convention that any rules
       // get attached to the hbsModule if it exists, and only get attached to
       // the jsModule otherwise
-      componentRules = this.findComponentRules((hbsModule ?? jsModule)!);
+      componentRules = this.findComponentRules((hbsModule ?? jsModule)!.absPath);
     }
     return {
       type: 'component',
-      jsModule: jsModule
-        ? {
-            path: explicitRelative(dirname(from), jsModule),
-            absPath: jsModule,
-            runtimeName: this.absPathToRuntimeName(jsModule, targetPackage),
-          }
-        : null,
-      hbsModule: hbsModule
-        ? {
-            path: explicitRelative(dirname(from), hbsModule),
-            absPath: hbsModule,
-            runtimeName: this.absPathToRuntimeName(hbsModule, targetPackage),
-          }
-        : null,
+      jsModule: jsModule,
+      hbsModule: hbsModule,
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: path,
+      nameHint: target.memberName,
     };
   }
 

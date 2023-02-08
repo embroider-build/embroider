@@ -4,6 +4,9 @@ import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/s
 import { compile } from './js-handlebars';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
+import resolveModule from 'resolve';
+
+const debug = makeDebug('embroider:resolver');
 
 export interface Options {
   renamePackages: {
@@ -17,7 +20,6 @@ export interface Options {
     target: string;
     runtimeName?: string;
   }[];
-  externalsDir: string;
   activeAddons: {
     [packageName: string]: string;
   };
@@ -28,53 +30,169 @@ export interface Options {
 
 const externalPrefix = '/@embroider/external/';
 
-export type Resolution =
-  | { result: 'continue' }
-  | { result: 'alias'; specifier: string; fromFile?: string }
-  | { result: 'rehome'; fromFile: string }
-  | { result: 'virtual'; filename: string };
+export interface ModuleRequest {
+  specifier: string;
+  fromFile: string;
+  isVirtual: boolean;
+  alias(newSpecifier: string, newFromFile?: string): this;
+  rehome(newFromFile: string): this;
+  virtualize(virtualFilename: string): this;
+}
+
+class NodeModuleRequest implements ModuleRequest {
+  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) {}
+  alias(specifier: string): this {
+    return new NodeModuleRequest(specifier, this.fromFile) as this;
+  }
+  rehome(fromFile: string): this {
+    return new NodeModuleRequest(this.specifier, fromFile) as this;
+  }
+  virtualize(filename: string) {
+    return new NodeModuleRequest(filename, this.fromFile, true) as this;
+  }
+}
+
+// This is generic because different build systems have different ways of
+// representing a found module, and we just pass those values through.
+export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
+
+export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
+  request: R
+) => Promise<Res>;
+
+export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
+  request: R
+) => Res;
 
 export class Resolver {
-  // Given a filename that was returned with result === 'virtual', this produces
-  // the corresponding contents. It's a static, stateless function because we
-  // recognize that that process that did resolution might not be the same one
-  // that loads the content.
-  static virtualContent(filename: string): string | undefined {
+  // Given a filename that was passed to your ModuleRequest's `virtualize()`,
+  // this produces the corresponding contents. It's a static, stateless function
+  // because we recognize that that process that did resolution might not be the
+  // same one that loads the content.
+  static virtualContent(filename: string): string {
     if (filename.startsWith(externalPrefix)) {
       return externalShim({ moduleName: filename.slice(externalPrefix.length) });
     }
-    return undefined;
+    throw new Error(`not an @embroider/core virtual file: ${filename}`);
   }
 
   constructor(private options: Options) {}
 
-  beforeResolve(specifier: string, fromFile: string): Resolution {
-    let resolution = this.internalBeforeResolve(specifier, fromFile);
-    debug('[%s] %s %s => %r', 'before', specifier, fromFile, resolution);
-    return resolution;
-  }
-
-  private internalBeforeResolve(specifier: string, fromFile: string): Resolution {
-    if (specifier === '@embroider/macros') {
+  beforeResolve<R extends ModuleRequest>(request: R): R {
+    if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
       // It might not get compiled away until *after* our plugin has run, which is
       // why we need to know about it.
-      return { result: 'continue' };
+      return request;
     }
 
-    let maybeRenamed = this.handleRenaming(specifier, fromFile);
-    let resolution = this.preHandleExternal(maybeRenamed, fromFile);
-    if (resolution.result === 'continue' && maybeRenamed !== specifier) {
-      return { result: 'alias', specifier: maybeRenamed };
-    }
-    return resolution;
+    return this.preHandleExternal(this.handleRenaming(request));
   }
 
-  fallbackResolve(specifier: string, fromFile: string): Resolution {
-    let resolution = this.postHandleExternal(specifier, fromFile);
-    debug('[%s] %s %s => %r', 'fallback', specifier, fromFile, resolution);
-    return resolution;
+  // This encapsulates the whole resolving process. Given a `defaultResolve`
+  // that calls your build system's normal module resolver, this does both pre-
+  // and post-resolution adjustments as needed to implement our compatibility
+  // rules.
+  //
+  // Depending on the plugin architecture you're working in, it may be easier to
+  // call beforeResolve and fallbackResolve directly, in which case matching the
+  // details of the recursion to what this method does are your responsibility.
+  async resolve<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: ResolverFunction<Req, Res>
+  ): Promise<Res> {
+    let gen = this.internalResolve<Req, Res, Promise<Res>>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(await out.value);
+    }
+    return out.value;
+  }
+
+  // synchronous alternative to resolve() above. Because our own internals are
+  // all synchronous, you can use this if your defaultResolve function is
+  // synchronous. At present, we need this for the case where we are compiling
+  // non-strict templates and doing component resolutions inside the template
+  // compiler inside babel, which is a synchronous context.
+  resolveSync<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: SyncResolverFunction<Req, Res>
+  ): Res {
+    let gen = this.internalResolve<Req, Res, Res>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(out.value);
+    }
+    return out.value;
+  }
+
+  // Our core implementation is a generator so it can power both resolve() and
+  // resolveSync()
+  private *internalResolve<Req extends ModuleRequest, Res extends Resolution, Yielded>(
+    request: Req,
+    defaultResolve: (req: Req) => Yielded
+  ): Generator<Yielded, Res, Res> {
+    request = this.beforeResolve(request);
+    let resolution = yield defaultResolve(request);
+
+    switch (resolution.type) {
+      case 'found':
+        return resolution;
+      case 'not_found':
+        break;
+      default:
+        throw assertNever(resolution);
+    }
+    let nextRequest = this.fallbackResolve(request);
+    if (nextRequest === request) {
+      // no additional fallback is available.
+      return resolution;
+    }
+    if (nextRequest.isVirtual) {
+      // virtual requests are terminal, there is no more beforeResolve or
+      // fallbackResolve around them. The defaultResolve is expected to know how
+      // to implement them.
+      return yield defaultResolve(nextRequest);
+    }
+    return yield* this.internalResolve(nextRequest, defaultResolve);
+  }
+
+  // Use standard NodeJS resolving, with our required compatibility rules on
+  // top. This is a convenience method for calling resolveSync with the
+  // defaultResolve already configured to be "do the normal node thing".
+  nodeResolve(
+    specifier: string,
+    fromFile: string
+  ): { type: 'virtual'; content: string } | { type: 'real'; filename: string } | { type: 'not_found'; err: Error } {
+    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile), request => {
+      if (request.isVirtual) {
+        return {
+          type: 'found',
+          result: { type: 'virtual' as 'virtual', content: Resolver.virtualContent(request.specifier) },
+        };
+      }
+      try {
+        let filename = resolveModule.sync(request.specifier, {
+          basedir: dirname(request.fromFile),
+          extensions: this.options.resolvableExtensions,
+        });
+        return { type: 'found', result: { type: 'real' as 'real', filename } };
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
+        return { type: 'not_found', err };
+      }
+    });
+    switch (resolution.type) {
+      case 'not_found':
+        return resolution;
+      case 'found':
+        return resolution.result;
+      default:
+        throw assertNever(resolution);
+    }
   }
 
   private owningPackage(fromFile: string): Package | undefined {
@@ -92,33 +210,34 @@ export class Resolver {
     }
   }
 
-  private handleRenaming(specifier: string, fromFile: string) {
-    let packageName = getPackageName(specifier);
+  private handleRenaming<R extends ModuleRequest>(request: R): R {
+    let packageName = getPackageName(request.specifier);
     if (!packageName) {
-      return specifier;
+      return request;
     }
 
     for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
-      if (candidate === specifier) {
-        return replacement;
+      if (candidate === request.specifier) {
+        debug(`[beforeResolve] aliased ${request.specifier} in ${request.fromFile} to ${replacement}`);
+        return request.alias(replacement);
       }
       for (let extension of this.options.resolvableExtensions) {
-        if (candidate === specifier + '/index' + extension) {
-          return replacement;
+        if (candidate === request.specifier + '/index' + extension) {
+          return request.alias(replacement);
         }
-        if (candidate === specifier + extension) {
-          return replacement;
+        if (candidate === request.specifier + extension) {
+          return request.alias(replacement);
         }
       }
     }
 
     if (this.options.renamePackages[packageName]) {
-      return specifier.replace(packageName, this.options.renamePackages[packageName]);
+      return request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]));
     }
 
-    let pkg = this.owningPackage(fromFile);
+    let pkg = this.owningPackage(request.fromFile);
     if (!pkg || !pkg.isV2Ember()) {
-      return specifier;
+      return request;
     }
 
     if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
@@ -126,17 +245,17 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return this.resolveWithinPackage(specifier, pkg);
+      return request.alias(this.resolveWithinPackage(request.specifier, pkg));
     }
 
-    let originalPkg = this.originalPackage(fromFile);
+    let originalPkg = this.originalPackage(request.fromFile);
     if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
       // A file that was relocated out of a package is importing that package's
       // name, it should find its own original copy.
-      return this.resolveWithinPackage(specifier, originalPkg);
+      return request.alias(this.resolveWithinPackage(request.specifier, originalPkg));
     }
 
-    return specifier;
+    return request;
   }
 
   private resolveWithinPackage(specifier: string, pkg: Package): string {
@@ -148,10 +267,11 @@ export class Resolver {
     return specifier.replace(pkg.name, pkg.root);
   }
 
-  private preHandleExternal(specifier: string, fromFile: string): Resolution {
+  private preHandleExternal<R extends ModuleRequest>(request: R): R {
+    let { specifier, fromFile } = request;
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
-      return { result: 'continue' };
+      return request;
     }
 
     let packageName = getPackageName(specifier);
@@ -165,16 +285,16 @@ export class Resolver {
       let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
-        return external(publicSpecifier);
+        return external('beforeResolve', request, publicSpecifier);
       } else {
-        return { result: 'continue' };
+        return request;
       }
     }
 
     // absolute package imports can also be explicitly external based on their
     // full specifier name
     if (isExplicitlyExternal(specifier, pkg)) {
-      return external(specifier);
+      return external('beforeResolve', request, specifier);
     }
 
     if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
@@ -193,10 +313,9 @@ export class Resolver {
       if (!this.options.activeAddons[packageName]) {
         throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }
-      return {
-        result: 'rehome',
-        fromFile: resolve(this.options.appRoot, 'package.json'),
-      };
+      let newHome = resolve(this.options.appRoot, 'package.json');
+      debug(`[beforeResolve] rehomed ${request.specifier} from ${request.fromFile} to ${newHome}`);
+      return request.rehome(newHome);
     }
 
     if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
@@ -205,7 +324,7 @@ export class Resolver {
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
-          return external(specifier);
+          return external('beforeResolve', request, specifier);
         }
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
@@ -235,29 +354,27 @@ export class Resolver {
         }
       }
     }
-    return { result: 'continue' };
+    return request;
   }
 
-  private postHandleExternal(specifier: string, fromFile: string): Resolution {
+  fallbackResolve<R extends ModuleRequest>(request: R): R {
+    let { specifier, fromFile } = request;
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
-      return { result: 'continue' };
+      return request;
     }
 
     let packageName = getPackageName(specifier);
     if (!packageName) {
       // this is a relative import, we have nothing more to for it.
-      return { result: 'continue' };
+      return request;
     }
 
     let originalPkg = this.originalPackage(fromFile);
     if (originalPkg) {
       // we didn't find it from the original package, so try from the relocated
       // package
-      return {
-        result: 'rehome',
-        fromFile: resolve(originalPkg.root, 'package.json'),
-      };
+      return request.rehome(resolve(originalPkg.root, 'package.json'));
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
@@ -265,13 +382,12 @@ export class Resolver {
     // v2 packages can fall back to the set of known active addons only to find
     // themselves (which is needed due to app tree merging)
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
-      return {
-        result: 'alias',
-        specifier: this.resolveWithinPackage(
+      return request.alias(
+        this.resolveWithinPackage(
           specifier,
           PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
-        ),
-      };
+        )
+      );
     }
 
     if (pkg.meta['auto-upgraded']) {
@@ -279,19 +395,19 @@ export class Resolver {
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
       // externals.
-      return external(specifier);
+      return external('fallbackResolve', request, specifier);
     } else {
       // native v2 packages don't automatically externalize *everything* the way
       // auto-upgraded packages do, but they still externalize known and approved
       // ember virtual packages (like @ember/component)
       if (emberVirtualPackages.has(packageName)) {
-        return external(specifier);
+        return external('fallbackResolve', request, specifier);
       }
     }
 
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return { result: 'continue' };
+    return request;
   }
 }
 
@@ -320,11 +436,10 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
   return false;
 }
 
-function external(specifier: string): Resolution {
-  return {
-    result: 'virtual',
-    filename: externalPrefix + specifier,
-  };
+function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
+  let filename = externalPrefix + specifier;
+  debug(`[${label}] virtualized ${request.specifier} as ${filename}`);
+  return request.virtualize(filename);
 }
 
 const externalShim = compile(`
@@ -349,23 +464,3 @@ if (m.default && !m.__esModule) {
 }
 module.exports = m;
 `) as (params: { moduleName: string }) => string;
-
-const debug = makeDebug('embroider:resolver');
-makeDebug.formatters.r = (r: Resolution) => {
-  switch (r.result) {
-    case 'alias':
-      if (r.fromFile) {
-        return `alias:${r.specifier} from ${r.fromFile}`;
-      } else {
-        return `alias:${r.specifier}`;
-      }
-    case 'rehome':
-      return `rehome:${r.fromFile}`;
-    case 'continue':
-      return 'continue';
-    case 'virtual':
-      return 'virtual';
-    default:
-      throw assertNever(r);
-  }
-};

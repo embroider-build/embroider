@@ -140,10 +140,6 @@ export interface CompatResolverOptions extends CoreResolverOptions {
   options: UserConfig;
 }
 
-export function rehydrate(params: CompatResolverOptions) {
-  return new CompatResolver(params);
-}
-
 export interface AuditMessage {
   message: string;
   detail: string;
@@ -155,21 +151,10 @@ export interface AuditMessage {
 export default class CompatResolver {
   private auditHandler: undefined | ((msg: AuditMessage) => void);
 
-  _parallelBabel: {
-    requireFile: string;
-    buildUsing: string;
-    params: CompatResolverOptions;
-  };
-
   private resolver: Resolver;
 
   constructor(private params: CompatResolverOptions) {
     this.params.options = extractOptions(this.params.options);
-    this._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'rehydrate',
-      params,
-    };
     this.resolver = new Resolver(this.params);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
@@ -441,28 +426,28 @@ export default class CompatResolver {
   }
 
   private *componentTemplateCandidates(target: { packageName: string; memberName: string }) {
-    yield join(target.packageName, 'templates', 'components', target.memberName);
-    yield join(target.packageName, 'components', target.memberName, 'template');
+    yield `${target.packageName}/templates/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/template`;
 
     if (
       typeof this.params.podModulePrefix !== 'undefined' &&
       this.params.podModulePrefix !== '' &&
       target.packageName === this.appPackage.name
     ) {
-      yield join(this.params.podModulePrefix, 'components', target.memberName, 'template');
+      yield `${this.params.podModulePrefix}/components/${target.memberName}/template`;
     }
   }
 
   private *componentJSCandidates(target: { packageName: string; memberName: string }) {
-    yield join(target.packageName, 'components', target.memberName);
-    yield join(target.packageName, 'components', target.memberName, 'component');
+    yield `${target.packageName}/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/component`;
 
     if (
       typeof this.params.podModulePrefix !== 'undefined' &&
       this.params.podModulePrefix !== '' &&
       target.packageName === this.appPackage.name
     ) {
-      yield join(this.params.podModulePrefix, 'components', target.memberName, 'component');
+      yield `${this.params.podModulePrefix}/components/${target.memberName}/component`;
     }
   }
 

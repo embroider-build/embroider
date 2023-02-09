@@ -35,12 +35,12 @@ export function importSync(specifier: string): unknown {
   throw new Oops(specifier);
 }
 
-export function getConfig<T>(packageName: string): T {
-  throw new Oops(packageName);
+export function getConfig<T>(packageName: string, ...keys: string[]): T {
+  throw new Oops(packageName, keys);
 }
 
-export function getOwnConfig<T>(): T {
-  throw new Oops();
+export function getOwnConfig<T>(...keys: string[]): T {
+  throw new Oops(keys);
 }
 
 export function getGlobalConfig<T>(): T {
@@ -57,6 +57,10 @@ export function isTesting(): boolean {
 
 export function failBuild(message: string): void {
   throw new Oops(message);
+}
+
+export function maybeAttrs<T>(predicate: boolean, ...bareAttrs: unknown[]): T {
+  throw new Oops(predicate, bareAttrs);
 }
 
 export function moduleExists(packageName: string): boolean {

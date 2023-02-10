@@ -29,7 +29,7 @@ export class macroGetOwnConfig extends Helper<{
 
 export class macroCondition extends Helper<{
   Args: { Positional: [predicate: unknown] };
-  Return: ReturnType<typeof _macroCondition>;
+  Return: boolean;
 }> {}
 
 export class macroDependencySatisfies extends Helper<{

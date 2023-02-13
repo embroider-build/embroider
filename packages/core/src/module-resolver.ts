@@ -34,7 +34,7 @@ export interface ModuleRequest {
   specifier: string;
   fromFile: string;
   isVirtual: boolean;
-  alias(newSpecifier: string, newFromFile?: string): this;
+  alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
 }
@@ -245,26 +245,29 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return request.alias(this.resolveWithinPackage(request.specifier, pkg));
+      return this.resolveWithinPackage(request, pkg);
     }
 
     let originalPkg = this.originalPackage(request.fromFile);
     if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
       // A file that was relocated out of a package is importing that package's
       // name, it should find its own original copy.
-      return request.alias(this.resolveWithinPackage(request.specifier, originalPkg));
+      return this.resolveWithinPackage(request, originalPkg);
     }
 
     return request;
   }
 
-  private resolveWithinPackage(specifier: string, pkg: Package): string {
+  private resolveWithinPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
     if ('exports' in pkg.packageJSON) {
       // this is the easy case -- a package that uses exports can safely resolve
-      // its own name
-      return require.resolve(specifier, { paths: [pkg.root] });
+      // its own name, so it's enough to let it resolve the (self-targeting)
+      // sepcifier from its own package root.
+      return request.rehome(resolve(pkg.root, 'package.json'));
+    } else {
+      // otherwise we need to just assume that internal naming is simple
+      return request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'));
     }
-    return specifier.replace(pkg.name, pkg.root);
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
@@ -382,11 +385,9 @@ export class Resolver {
     // v2 packages can fall back to the set of known active addons only to find
     // themselves (which is needed due to app tree merging)
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
-      return request.alias(
-        this.resolveWithinPackage(
-          specifier,
-          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
-        )
+      return this.resolveWithinPackage(
+        request,
+        PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
       );
     }
 

@@ -135,12 +135,8 @@ class WebpackModuleRequest implements ModuleRequest {
     this.fromFile = state.contextInfo.issuer;
   }
 
-  alias(newSpecifier: string, newFromFile?: string) {
+  alias(newSpecifier: string) {
     this.state.request = newSpecifier;
-    if (newFromFile) {
-      this.state.contextInfo.issuer = newFromFile;
-      this.state.context = dirname(newFromFile);
-    }
     return new WebpackModuleRequest(this.state) as this;
   }
   rehome(newFromFile: string) {

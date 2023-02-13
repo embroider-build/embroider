@@ -336,9 +336,10 @@ export class Resolver {
       return request.rehome(newHome);
     }
 
-    if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
+    let logicalPkg = this.logicalPackage(pkg, request.fromFile);
+    if (logicalPkg.meta['auto-upgraded'] && !logicalPkg.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPkg);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -507,6 +508,19 @@ export class Resolver {
         }
       }
     }
+  }
+
+  // For a file in an addon's app-js, this will be the owning engine (and
+  // remember: the app is an engine). For a normal file, it's the regular owning
+  // package.
+  private logicalPackage(owningPackage: V2Package, fromFile: string): V2Package {
+    let engineInfo = this.reverseSearchAppTree(owningPackage, fromFile);
+    if (engineInfo) {
+      return PackageCache.shared('embroider-stage3', this.options.appRoot).get(
+        engineInfo.owningEngine.root
+      ) as V2Package;
+    }
+    return owningPackage;
   }
 }
 

@@ -34,7 +34,7 @@ export interface ModuleRequest {
   specifier: string;
   fromFile: string;
   isVirtual: boolean;
-  alias(newSpecifier: string, newFromFile?: string): this;
+  alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
 }
@@ -266,7 +266,7 @@ export class Resolver {
       return request.rehome(resolve(pkg.root, 'package.json'));
     } else {
       // otherwise we need to just assume that internal naming is simple
-      return request.alias(request.specifier.replace(pkg.name, '.'), resolve(pkg.root, 'package.json'));
+      return request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'));
     }
   }
 

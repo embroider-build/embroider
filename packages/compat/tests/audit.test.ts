@@ -42,6 +42,13 @@ describe('audit', function () {
       renameModules: {},
       extraImports: [],
       activeAddons: {},
+      engines: [
+        {
+          packageName: 'audit-this-app',
+          activeAddons: [],
+          root: app.baseDir,
+        },
+      ],
       relocatedFiles: {},
       resolvableExtensions,
     };

@@ -362,6 +362,14 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
+      engines: engines.map(engine => ({
+        packageName: engine.package.name,
+        root: this.root,
+        activeAddons: [...engine.addons].map(a => ({
+          name: a.name,
+          root: a.root,
+        })),
+      })),
 
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving

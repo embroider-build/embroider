@@ -60,6 +60,13 @@ describe('compat-resolver', function () {
       renameModules: {},
       extraImports: [],
       activeAddons: {},
+      engines: [
+        {
+          packageName: 'the-app',
+          root: appDir,
+          activeAddons: [],
+        },
+      ],
       relocatedFiles: {},
       resolvableExtensions: ['.js', '.hbs'],
       ...otherOptions.adjustImportsImports,

@@ -60,14 +60,14 @@ class ExpectModule {
               result: this.module.resolutions[specifier] === filename,
               expected: filename,
               actual: this.module.resolutions[specifier],
-              message,
+              message: message ?? `unexpected resolution`,
             });
           } else {
             this.assert.pushResult({
               result: false,
               expected: specifier,
-              actual: Object.keys(this.module.resolutions),
-              message,
+              actual: `only resolutions present were: ${Object.keys(this.module.resolutions).join(', ')}`,
+              message: message ?? `missing resolution`,
             });
           }
         }

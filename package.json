@@ -26,6 +26,7 @@
     ]
   },
   "scripts": {
+    "release": "changeset publish",
     "clean": "git clean -x -f",
     "compile": "tsc",
     "lint": "concurrently 'yarn:lint:*'",

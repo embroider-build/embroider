@@ -18,6 +18,10 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
     expectAudit = new ExpectAuditResults(result, assert);
   });
 
+  hooks.after(assert => {
+    assert.deepEqual(expectAudit.findings, [], 'expected no problem findings in audit');
+  });
+
   return {
     module(name: string) {
       return expectAudit.module(name);

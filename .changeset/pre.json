@@ -1,0 +1,30 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@embroider/addon-dev": "3.0.0",
+    "@embroider/addon-shim": "1.8.4",
+    "@embroider/babel-loader-8": "2.0.0",
+    "@embroider/compat": "2.1.1",
+    "@embroider/core": "2.1.1",
+    "@embroider/hbs-loader": "2.0.0",
+    "@embroider/macros": "1.10.0",
+    "@embroider/router": "2.0.0",
+    "@embroider/shared-internals": "2.0.0",
+    "@embroider/test-setup": "2.1.1",
+    "@embroider/util": "1.10.0",
+    "@embroider/webpack": "2.1.1",
+    "@embroider/sample-transforms": "0.0.0",
+    "@embroider/test-support": "0.36.0",
+    "addon-template": "0.0.0",
+    "app-template": "0.0.0",
+    "@embroider/test-scenarios": "0.0.5",
+    "ts-app-template": "0.0.0",
+    "v2-addon-template": "0.0.1",
+    "@types/babel__traverse": "7.0.6",
+    "@types/broccoli-concat": "0.0.0",
+    "@types/broccoli-funnel": "0.0.0",
+    "@types/ember-cli-htmlbars": "0.0.0"
+  },
+  "changesets": []
+}

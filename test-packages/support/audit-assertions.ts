@@ -19,7 +19,11 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
   });
 
   hooks.after(assert => {
-    assert.deepEqual(expectAudit.findings, [], 'expected no problem findings in audit');
+    assert.deepEqual(
+      expectAudit.findings.map(f => ({ ...f, codeFrame: '<elided>' })),
+      [],
+      'expected no problem findings in audit'
+    );
   });
 
   return {

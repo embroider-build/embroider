@@ -27,16 +27,16 @@ stage2Scenarios
     depB.linkDependency('dep-c', { project: depC });
 
     addInRepoAddon(depC, 'in-repo-d', {
-      app: { service: { 'in-repo.js': 'in-repo-d' } },
+      app: { services: { 'in-repo.js': '/* in-repo-d */' } },
     });
     addInRepoAddon(depA, 'in-repo-a', {
-      app: { service: { 'in-repo.js': 'in-repo-a' } },
+      app: { services: { 'in-repo.js': '/* in-repo-a */' } },
     });
     addInRepoAddon(depB, 'in-repo-b', {
-      app: { service: { 'in-repo.js': 'in-repo-b' } },
+      app: { services: { 'in-repo.js': '/* in-repo-b */' } },
     });
     addInRepoAddon(depB, 'in-repo-c', {
-      app: { service: { 'in-repo.js': 'in-repo-c' } },
+      app: { services: { 'in-repo.js': '/* in-repo-c */' } },
     });
 
     // make an in-repo addon with a dependency on a secondary in-repo-addon
@@ -52,6 +52,13 @@ stage2Scenarios
         null,
         2
       ),
+      app: {
+        components: {
+          'primary.js': `
+            export { default } from 'secondary-in-repo-addon/components/secondary.js';
+          `,
+        },
+      },
     });
 
     // critically, this in-repo addon gets removed from the app's actual
@@ -59,12 +66,12 @@ stage2Scenarios
     addInRepoAddon(app, 'secondary-in-repo-addon', {
       app: {
         services: {
-          'secondary.js': '// secondary',
+          'secondary.js': 'export default class {}',
         },
       },
       addon: {
         components: {
-          'secondary.js': '// secondary component',
+          'secondary.js': 'export default class {}',
         },
       },
     });
@@ -84,6 +91,8 @@ stage2Scenarios
         let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
+
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
@@ -115,19 +124,23 @@ stage2Scenarios
           .equals(2);
 
         // check that the app trees with in repo addon are combined correctly
-        expectFile('./service/in-repo.js').matches(/in-repo-c/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/in-repo.js')
+          .to('./node_modules/dep-b/lib/in-repo-c/_app_/services/in-repo.js');
       });
 
-      test('incorporates in-repo-addons of in-repo-addons correctly', function (assert) {
+      test('incorporates in-repo-addons of in-repo-addons correctly', function () {
         // secondary in-repo-addon was correctly detected and activated
-        expectFile('./services/secondary.js').exists();
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/secondary.js')
+          .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
-        assert.ok(
-          resolve.sync('secondary-in-repo-addon/components/secondary', {
-            basedir: join(expectFile.basePath, 'node_modules', 'primary-in-repo-addon'),
-          }),
-          'secondary is resolvable from primary'
-        );
+        expectAudit
+          .module('./lib/primary-in-repo-addon/_app_/components/primary.js')
+          .resolves('secondary-in-repo-addon/components/secondary.js')
+          .to('./lib/secondary-in-repo-addon/components/secondary.js', 'secondary is resolvable from primary');
       });
     });
   });
@@ -141,14 +154,16 @@ stage2Scenarios
     let depA = addAddon(app, 'dep-a');
 
     merge(depB.files, {
-      app: { service: { 'addon.js': 'dep-b', 'dep-wins-over-dev.js': 'dep-b', 'in-repo-over-deps.js': 'dep-b' } },
+      app: {
+        services: { 'addon.js': 'dep-b', 'dep-wins-over-dev.js': 'dep-b', 'in-repo-over-deps.js': '/* dep-b */' },
+      },
     });
-    merge(depA.files, { app: { service: { 'addon.js': 'dep-a' } } });
+    merge(depA.files, { app: { service: { 'addon.js': '/* dep-a */' } } });
 
     addInRepoAddon(app, 'in-repo-a', {
-      app: { service: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
+      app: { services: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': '/* in-repo-a */' } },
     });
-    addInRepoAddon(app, 'in-repo-b', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
+    addInRepoAddon(app, 'in-repo-b', { app: { services: { 'in-repo.js': '/* in-repo-b */' } } });
 
     let devA = addDevAddon(app, 'dev-a');
     let devB = addDevAddon(app, 'dev-b');
@@ -160,19 +175,18 @@ stage2Scenarios
     (devB.pkg['ember-addon'] as any).after = 'dev-e';
     (devF.pkg['ember-addon'] as any).before = 'dev-d';
 
-    merge(devA.files, { app: { service: { 'dev-addon.js': 'dev-a', 'dep-wins-over-dev.js': 'dev-a' } } });
-    merge(devB.files, { app: { service: { 'test-after.js': 'dev-b' } } });
-    merge(devC.files, { app: { service: { 'dev-addon.js': 'dev-c' } } });
-    merge(devD.files, { app: { service: { 'test-before.js': 'dev-d' } } });
-    merge(devE.files, { app: { service: { 'test-after.js': 'dev-e' } } });
-    merge(devF.files, { app: { service: { 'test-before.js': 'dev-f' } } });
+    merge(devA.files, { app: { services: { 'dev-addon.js': 'dev-a', 'dep-wins-over-dev.js': '/* dev-a */' } } });
+    merge(devB.files, { app: { services: { 'test-after.js': '/* dev-b */' } } });
+    merge(devC.files, { app: { services: { 'dev-addon.js': '/* dev-c */' } } });
+    merge(devD.files, { app: { services: { 'test-before.js': '/* dev-d */' } } });
+    merge(devE.files, { app: { services: { 'test-after.js': '/* dev-e */' } } });
+    merge(devF.files, { app: { services: { 'test-before.js': '/* dev-f */' } } });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -180,30 +194,41 @@ stage2Scenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-      });
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
-        expectFile('./service/in-repo.js').matches(/in-repo-b/);
-        expectFile('./service/addon.js').matches(/dep-b/);
-        expectFile('./service/dev-addon.js').matches(/dev-c/);
+        let entryPoint = expectAudit.module('./assets/my-app.js');
+        entryPoint.resolves('../services/in-repo.js').to('./lib/in-repo-b/_app_/services/in-repo.js');
+        entryPoint.resolves('../services/addon.js').to('./node_modules/dep-b/_app_/services/addon.js');
+        entryPoint.resolves('../services/dev-addon.js').to('./node_modules/dev-c/_app_/services/dev-addon.js');
       });
 
       test('addons declared as dependencies should win over devDependencies', function () {
-        expectFile('./service/dep-wins-over-dev.js').matches(/dep-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/dep-wins-over-dev.js')
+          .to('./node_modules/dep-b/_app_/services/dep-wins-over-dev.js');
       });
 
       test('in repo addons declared win over dependencies', function () {
-        expectFile('./service/in-repo-over-deps.js').matches(/in-repo-a/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/in-repo-over-deps.js')
+          .to('./lib/in-repo-a/_app_/services/in-repo-over-deps.js');
       });
 
       test('ordering with before specified', function () {
-        expectFile('./service/test-before.js').matches(/dev-d/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/test-before.js')
+          .to('./node_modules/dev-d/_app_/services/test-before.js');
       });
 
       test('ordering with after specified', function () {
-        expectFile('./service/test-after.js').matches(/dev-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/test-after.js')
+          .to('./node_modules/dev-b/_app_/services/test-after.js');
       });
     });
   });

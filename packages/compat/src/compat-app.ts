@@ -365,10 +365,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       engines: engines.map(engine => ({
         packageName: engine.package.name,
         root: this.root,
-        activeAddons: [...engine.addons].map(a => ({
-          name: a.name,
-          root: a.root,
-        })),
+        activeAddons: [...engine.addons]
+          .map(a => ({
+            name: a.name,
+            root: a.root,
+          }))
+          // the traditional order is the order in which addons will run, such
+          // that the last one wins. Our resolver's order is the order to
+          // search, so first one wins.
+          .reverse(),
       })),
 
       // this is the additional stufff that @embroider/compat adds on top to do

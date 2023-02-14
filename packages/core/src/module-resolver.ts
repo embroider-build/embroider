@@ -5,6 +5,7 @@ import { compile } from './js-handlebars';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
+import { realpathSync } from 'fs';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -184,6 +185,7 @@ export class Resolver {
           basedir: dirname(request.fromFile),
           extensions: this.options.resolvableExtensions,
         });
+        filename = realpathSync(filename);
         return { type: 'found', result: { type: 'real' as 'real', filename } };
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {

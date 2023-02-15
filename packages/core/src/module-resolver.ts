@@ -1,12 +1,35 @@
 import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
-import { compile } from './js-handlebars';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
+import { virtualExternalModule, virtualAMDComponent, virtualContent } from './virtual-content';
 
 const debug = makeDebug('embroider:resolver');
+function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
+  if (after.isVirtual) {
+    debug(`virtualized %s in %s because %s`, before.specifier, before.fromFile, reason);
+  } else if (before.specifier !== after.specifier) {
+    if (before.fromFile !== after.fromFile) {
+      debug(
+        `aliased and rehomed: %s to %s, from %s to %s because %s`,
+        before.specifier,
+        after.specifier,
+        before.fromFile,
+        after.fromFile,
+        reason
+      );
+    } else {
+      debug(`aliased: %s to %s in %s because`, before.specifier, after.specifier, before.fromFile, reason);
+    }
+  } else if (before.fromFile !== after.fromFile) {
+    debug(`rehomed: %s from %s to %s because`, before.specifier, before.fromFile, after.fromFile, reason);
+  } else {
+    debug(`unchanged: %s in %s because %s`, before.specifier, before.fromFile, reason);
+  }
+  return after;
+}
 
 export interface Options {
   renamePackages: {
@@ -36,8 +59,6 @@ interface EngineConfig {
   root: string;
 }
 
-const externalPrefix = '/@embroider/external/';
-const amdComponentShimPrefix = '/@embroider/amd-component/shim/';
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<path>.*)/;
 
 export interface ModuleRequest {
@@ -75,23 +96,6 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  // Given a filename that was passed to your ModuleRequest's `virtualize()`,
-  // this produces the corresponding contents. It's a static, stateless function
-  // because we recognize that that process that did resolution might not be the
-  // same one that loads the content.
-  static virtualContent(filename: string): string {
-    if (filename.startsWith(externalPrefix)) {
-      return externalShim({ moduleName: filename.slice(externalPrefix.length) });
-    }
-    if (filename.startsWith(amdComponentShimPrefix)) {
-      let [hbsSpecifier, hbsAbsPath, jsSpecifier, jsAbsPath] = JSON.parse(
-        decodeURIComponent(filename.slice(amdComponentShimPrefix.length))
-      ) as [string, string, string | undefined, string | undefined];
-      return amdComponentShim({ hbsSpecifier, hbsAbsPath, jsSpecifier, jsAbsPath });
-    }
-    throw new Error(`not an @embroider/core virtual file: ${filename}`);
-  }
-
   constructor(private options: Options) {}
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
@@ -100,7 +104,7 @@ export class Resolver {
       // necessarily as a real resolvable package), so we should not mess with it.
       // It might not get compiled away until *after* our plugin has run, which is
       // why we need to know about it.
-      return request;
+      return logTransition('early exit', request);
     }
 
     request = this.handleGlobalsCompat(request);
@@ -187,7 +191,7 @@ export class Resolver {
       if (request.isVirtual) {
         return {
           type: 'found',
-          result: { type: 'virtual' as 'virtual', content: Resolver.virtualContent(request.specifier) },
+          result: { type: 'virtual' as 'virtual', content: virtualContent(request.specifier) },
         };
       }
       try {
@@ -261,14 +265,14 @@ export class Resolver {
   private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: { specifier: string; absPath: string } | null = null;
-    let jsModule: { specifier: string; absPath: string } | null = null;
+    let hbsModule: { specifier: string; runtime: string } | null = null;
+    let jsModule: { specifier: string; runtime: string } | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target, inEngine)) {
       let resolution = this.nodeResolve(candidate, target.from);
       if (resolution.type === 'real') {
-        hbsModule = { specifier: candidate, absPath: resolution.filename };
+        hbsModule = { specifier: candidate, runtime: candidate };
         break;
       }
     }
@@ -280,17 +284,25 @@ export class Resolver {
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = { specifier: candidate, absPath: resolution.filename };
+        jsModule = { specifier: candidate, runtime: candidate };
         break;
       }
     }
 
     if (hbsModule) {
-      return amdComponent(request, hbsModule, jsModule);
+      return logTransition(
+        `resolveComponent found legacy HBS`,
+        request,
+        request.virtualize(virtualAMDComponent(request.fromFile, hbsModule, jsModule))
+      );
     } else if (jsModule) {
-      return request.alias(jsModule.specifier).rehome(target.from);
+      return logTransition(
+        `resolveComponent found only JS`,
+        request,
+        request.alias(jsModule.specifier).rehome(target.from)
+      );
     } else {
-      return request;
+      return logTransition(`resolveComponent failed`, request);
     }
   }
 
@@ -352,21 +364,24 @@ export class Resolver {
 
     for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
       if (candidate === request.specifier) {
-        debug(`[beforeResolve] aliased ${request.specifier} in ${request.fromFile} to ${replacement}`);
-        return request.alias(replacement);
+        return logTransition(`renameModules`, request, request.alias(replacement));
       }
       for (let extension of this.options.resolvableExtensions) {
         if (candidate === request.specifier + '/index' + extension) {
-          return request.alias(replacement);
+          return logTransition(`renameModules`, request, request.alias(replacement));
         }
         if (candidate === request.specifier + extension) {
-          return request.alias(replacement);
+          return logTransition(`renameModules`, request, request.alias(replacement));
         }
       }
     }
 
     if (this.options.renamePackages[packageName]) {
-      return request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]));
+      return logTransition(
+        `renamePackages`,
+        request,
+        request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]))
+      );
     }
 
     let pkg = this.owningPackage(request.fromFile);
@@ -379,14 +394,14 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return this.resolveWithinPackage(request, pkg);
+      return logTransition(`v1 self-import`, request, this.resolveWithinPackage(request, pkg));
     }
 
     let originalPkg = this.originalPackage(request.fromFile);
     if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
       // A file that was relocated out of a package is importing that package's
       // name, it should find its own original copy.
-      return this.resolveWithinPackage(request, originalPkg);
+      return logTransition(`self-import in app-js`, request, this.resolveWithinPackage(request, originalPkg));
     }
 
     return request;
@@ -451,8 +466,7 @@ export class Resolver {
         throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }
       let newHome = resolve(this.options.appRoot, 'package.json');
-      debug(`[beforeResolve] rehomed ${request.specifier} from ${request.fromFile} to ${newHome}`);
-      return request.rehome(newHome);
+      return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 
     if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
@@ -461,7 +475,7 @@ export class Resolver {
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
-          return external('beforeResolve', request, specifier);
+          return external('v1 package without auto-import', request, specifier);
         }
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
@@ -511,7 +525,7 @@ export class Resolver {
     if (originalPkg) {
       // we didn't find it from the original package, so try from the relocated
       // package
-      return request.rehome(resolve(originalPkg.root, 'package.json'));
+      return logTransition(`relocation fallback`, request, request.rehome(resolve(originalPkg.root, 'package.json')));
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
@@ -519,9 +533,13 @@ export class Resolver {
     // v2 packages can fall back to the set of known active addons only to find
     // themselves (which is needed due to app tree merging)
     if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
-      return this.resolveWithinPackage(
+      return logTransition(
+        `activeAddons`,
         request,
-        PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+        this.resolveWithinPackage(
+          request,
+          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+        )
       );
     }
 
@@ -530,13 +548,13 @@ export class Resolver {
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
       // externals.
-      return external('fallbackResolve', request, specifier);
+      return external('v1 catch-all fallback', request, specifier);
     } else {
       // native v2 packages don't automatically externalize *everything* the way
       // auto-upgraded packages do, but they still externalize known and approved
       // ember virtual packages (like @ember/component)
       if (emberVirtualPackages.has(packageName)) {
-        return external('fallbackResolve', request, specifier);
+        return external('emberVirtualPackages', request, specifier);
       }
     }
 
@@ -572,58 +590,6 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 }
 
 function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
-  let filename = externalPrefix + specifier;
-  debug(`[${label}] virtualized ${request.specifier} as ${filename}`);
-  return request.virtualize(filename);
+  let filename = virtualExternalModule(specifier);
+  return logTransition(label, request, request.virtualize(filename));
 }
-
-function amdComponent<R extends ModuleRequest>(
-  request: R,
-  hbsModule: { specifier: string; absPath: string },
-  jsModule: { specifier: string; absPath: string } | null
-): R {
-  let payload = [hbsModule.specifier, hbsModule.absPath];
-  if (jsModule) {
-    payload.push(jsModule.specifier);
-    payload.push(jsModule.absPath);
-  }
-  return request.virtualize(amdComponentShimPrefix + encodeURIComponent(JSON.stringify(payload)));
-}
-
-const externalShim = compile(`
-{{#if (eq moduleName "require")}}
-const m = window.requirejs;
-{{else}}
-const m = window.require("{{{js-string-escape moduleName}}}");
-{{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
-
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
-
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
-}
-module.exports = m;
-`) as (params: { moduleName: string }) => string;
-
-const amdComponentShim = compile(`
-import template from "{{{js-string-escape hbsAbsPath}}}";
-window.define("{{{js-string-escape hbsSpecifier}}}", () => template);
-{{#if jsSpecifier}}
-import component from "{{{js-string-escape jsAbsPath}}}";
-window.define("{{{js-string-escape jsSpecifier}}}", () => template);
-{{/if}}
-export default todoLoadCurriedComponent();
-`) as (params: {
-  hbsSpecifier: string;
-  hbsAbsPath: string;
-  jsSpecifier: string | undefined;
-  jsAbsPath: string | undefined;
-}) => string;

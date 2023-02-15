@@ -24,7 +24,7 @@ export interface ResolvedDep {
   absPath: string;
 }
 
-export interface ComponentResolution {
+export interface EagerComponentResolution {
   type: 'component';
   jsModule: ResolvedDep | null;
   hbsModule: ResolvedDep | null;
@@ -34,11 +34,28 @@ export interface ComponentResolution {
   nameHint: string;
 }
 
-export interface HelperResolution {
-  type: 'helper';
-  module: ResolvedDep;
+export interface DeferedComponentResolution {
+  type: 'component';
+  specifier: string;
+  yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
+  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  argumentsAreComponents: string[];
   nameHint: string;
 }
+
+export type ComponentResolution = EagerComponentResolution | DeferedComponentResolution;
+
+export type HelperResolution =
+  | {
+      type: 'helper';
+      nameHint: string;
+      specifier: string;
+    }
+  | {
+      type: 'helper';
+      nameHint: string;
+      module: ResolvedDep;
+    };
 
 export interface ModifierResolution {
   type: 'modifier';
@@ -134,8 +151,6 @@ function extractOptions(options: Required<Options> | UserConfig): UserConfig {
 
 export interface CompatResolverOptions extends CoreResolverOptions {
   modulePrefix: string;
-  podModulePrefix?: string;
-  emberVersion: string;
   activePackageRules: ActivePackageRules[];
   options: UserConfig;
 }
@@ -162,7 +177,7 @@ export default class CompatResolver {
   }
   enter(moduleName: string) {
     let rules = this.findInteriorRules(moduleName);
-    let deps: ComponentResolution[];
+    let deps: EagerComponentResolution[];
     if (rules?.dependsOnComponents) {
       deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
     } else {
@@ -272,7 +287,7 @@ export default class CompatResolver {
     return { interiorRules, exteriorRules };
   }
 
-  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules, from: string): ComponentResolution {
+  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules, from: string): EagerComponentResolution {
     let name = this.standardDasherize(snippet, rule);
     let found = this.tryComponent(name, from, false);
     if (found && found.type === 'component') {
@@ -406,6 +421,19 @@ export default class CompatResolver {
     return null;
   }
 
+  private nameHint(path: string) {
+    let parts = path.split('@');
+    return parts[parts.length - 1];
+  }
+
+  private deferHelper(path: string): HelperResolution {
+    return {
+      type: 'helper',
+      specifier: `#embroider_compat/helpers/${path}`,
+      nameHint: this.nameHint(path),
+    };
+  }
+
   private tryModifier(path: string, from: string): ModifierResolution | null {
     let target = this.parsePath(path, from);
     let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
@@ -452,7 +480,7 @@ export default class CompatResolver {
     }
   }
 
-  private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
+  private tryComponent(path: string, from: string, withRuleLookup = true): EagerComponentResolution | null {
     const target = this.parsePath(path, from);
 
     let hbsModule: ResolvedDep | null = null;
@@ -498,23 +526,31 @@ export default class CompatResolver {
     };
   }
 
-  resolveSubExpression(path: string, from: string, loc: Loc): HelperResolution | ResolutionFail | null {
+  private deferComponent(path: string): ComponentResolution {
+    let componentRules = this.rules.exteriorRules.get(path);
+    return {
+      type: 'component',
+      specifier: `#embroider_compat/components/${path}`,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: this.nameHint(path),
+    };
+  }
+  resolveSubExpression(path: string): HelperResolution | ResolutionFail | null {
     if (!this.staticHelpersEnabled) {
       return null;
     }
-    let found = this.tryHelper(path, from);
-    if (found) {
-      return found;
-    }
+
+    // people are not allowed to override the built-in helpers with their own
+    // globally-named helpers. It throws an error. So it's fine for us to
+    // prioritize the builtIns here without bothering to resolve a user helper
+    // of the same name.
     if (builtInHelpers.includes(path)) {
       return null;
     }
-    return {
-      type: 'error',
-      message: `Missing helper`,
-      detail: path,
-      loc,
-    };
+
+    return this.deferHelper(path);
   }
 
   resolveMustache(
@@ -572,7 +608,7 @@ export default class CompatResolver {
     };
   }
 
-  resolveElement(tagName: string, from: string, loc: Loc): ComponentResolution | ResolutionFail | null {
+  resolveElement(tagName: string): ComponentResolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
@@ -588,23 +624,10 @@ export default class CompatResolver {
     if (builtInComponents.includes(dName)) {
       return null;
     }
-
-    let found = this.tryComponent(dName, from);
-    if (found) {
-      found.nameHint = tagName;
-      return found;
-    }
-
     if (this.isIgnoredComponent(dName)) {
       return null;
     }
-
-    return {
-      type: 'error',
-      message: `Missing component`,
-      detail: tagName,
-      loc,
-    };
+    return this.deferComponent(dName);
   }
 
   resolveComponentHelper(

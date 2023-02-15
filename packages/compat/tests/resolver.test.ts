@@ -24,11 +24,11 @@ describe('compat-resolver', function () {
 
   function addonPackageJSON(name: string) {
     let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true };
-    return JSON.stringify({
+    return {
       name,
       keywords: ['ember-addon'],
       'ember-addon': meta,
-    });
+    };
   }
 
   function configure(
@@ -47,7 +47,6 @@ describe('compat-resolver', function () {
       'ember-addon': { type: 'app', version: 2, 'auto-upgraded': true },
     });
     let resolverConfig: CompatResolverOptions = {
-      emberVersion: emberTemplateCompiler().version,
       appRoot: appDir,
       modulePrefix: 'the-app',
       podModulePrefix: otherOptions.podModulePrefix,
@@ -60,6 +59,18 @@ describe('compat-resolver', function () {
       renameModules: {},
       extraImports: [],
       activeAddons: {},
+      engines: [
+        {
+          packageName: 'the-app',
+          root: appDir,
+          activeAddons: [
+            {
+              name: 'my-addon',
+              root: join(appDir, 'node_modules', 'my-addon'),
+            },
+          ],
+        },
+      ],
       relocatedFiles: {},
       resolvableExtensions: ['.js', '.hbs'],
       ...otherOptions.adjustImportsImports,
@@ -69,7 +80,6 @@ describe('compat-resolver', function () {
 
     let transformOpts: ResolverTransformOptions = {
       appRoot: resolverConfig.appRoot,
-      emberVersion: resolverConfig.emberVersion,
     };
     let resolverTransform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
 
@@ -89,6 +99,7 @@ describe('compat-resolver', function () {
     };
 
     outputJSONSync(join(appDir, '.embroider', 'resolver.json'), resolverConfig);
+    outputJSONSync(join(appDir, 'node_modules/my-addon/package.json'), addonPackageJSON('my-addon'));
 
     return function (relativePath: string, contents: string) {
       let jsInput =
@@ -898,7 +909,6 @@ describe('compat-resolver', function () {
     let transform = configure({
       staticComponents: true,
     });
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/components/thing.js');
     expect(transform('templates/application.hbs', `{{component "my-addon@thing"}}`)).toEqualCode(`
       import thing from "../node_modules/my-addon/components/thing.js";
@@ -924,7 +934,6 @@ describe('compat-resolver', function () {
         },
       }
     );
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/components/thing.js');
     expect(transform('templates/application.hbs', `{{component "has-been-renamed@thing"}}`)).toEqualCode(`
       import thing from "../node_modules/my-addon/components/thing.js";
@@ -944,7 +953,6 @@ describe('compat-resolver', function () {
       },
       { plugins: [emberHolyFuturisticNamespacingBatmanTransform] }
     );
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/components/thing.js');
     expect(transform('templates/application.hbs', `<MyAddon$Thing />`)).toEqualCode(`
       import MyAddonThing from "../node_modules/my-addon/components/thing.js";
@@ -964,7 +972,6 @@ describe('compat-resolver', function () {
       },
       { plugins: [emberHolyFuturisticNamespacingBatmanTransform] }
     );
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/components/thing.js');
     expect(transform('node_modules/my-addon/components/foo.hbs', `<MyAddon$Thing />`)).toEqualCode(`
       import MyAddonThing from "./thing.js";
@@ -984,7 +991,6 @@ describe('compat-resolver', function () {
       },
       { plugins: [emberHolyFuturisticNamespacingBatmanTransform] }
     );
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/helpers/thing.js');
     expect(transform('templates/application.hbs', `{{my-addon$thing}}`)).toEqualCode(`
       import thing from "../node_modules/my-addon/helpers/thing.js";
@@ -1011,7 +1017,6 @@ describe('compat-resolver', function () {
         plugins: [emberHolyFuturisticNamespacingBatmanTransform],
       }
     );
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/helpers/thing.js');
     expect(transform('templates/application.hbs', `{{has-been-renamed$thing}}`)).toEqualCode(`
       import thing from "../node_modules/my-addon/helpers/thing.js";
@@ -2409,7 +2414,6 @@ describe('compat-resolver', function () {
       },
     ];
     let transform = configure({ staticComponents: true, packageRules });
-    givenFile('node_modules/my-addon/package.json', addonPackageJSON('my-addon'));
     givenFile('node_modules/my-addon/templates/index.hbs');
     givenFile('templates/components/alpha.hbs');
     givenFile('components/alpha.js');

@@ -28,7 +28,6 @@ describe('audit', function () {
     const resolvableExtensions = ['.js', '.hbs'];
 
     let resolverConfig: CompatResolverOptions = {
-      emberVersion: emberTemplateCompiler().version,
       appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {
@@ -42,6 +41,13 @@ describe('audit', function () {
       renameModules: {},
       extraImports: [],
       activeAddons: {},
+      engines: [
+        {
+          packageName: 'audit-this-app',
+          activeAddons: [],
+          root: app.baseDir,
+        },
+      ],
       relocatedFiles: {},
       resolvableExtensions,
     };
@@ -53,7 +59,6 @@ describe('audit', function () {
 
     let transformOpts: ResolverTransformOptions = {
       appRoot: resolverConfig.appRoot,
-      emberVersion: resolverConfig.emberVersion,
     };
     let transform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
 

@@ -18,7 +18,7 @@ export interface Options {
   extraImports: {
     absPath: string;
     target: string;
-    runtimeName?: string;
+    runtimeName: string;
   }[];
   activeAddons: {
     [packageName: string]: string;
@@ -26,9 +26,19 @@ export interface Options {
   relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
   appRoot: string;
+  engines: EngineConfig[];
+  podModulePrefix?: string;
+}
+
+interface EngineConfig {
+  packageName: string;
+  activeAddons: { name: string; root: string }[];
+  root: string;
 }
 
 const externalPrefix = '/@embroider/external/';
+const amdComponentShimPrefix = '/@embroider/amd-component/shim/';
+const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<path>.*)/;
 
 export interface ModuleRequest {
   specifier: string;
@@ -73,6 +83,12 @@ export class Resolver {
     if (filename.startsWith(externalPrefix)) {
       return externalShim({ moduleName: filename.slice(externalPrefix.length) });
     }
+    if (filename.startsWith(amdComponentShimPrefix)) {
+      let [hbsSpecifier, hbsAbsPath, jsSpecifier, jsAbsPath] = JSON.parse(
+        decodeURIComponent(filename.slice(amdComponentShimPrefix.length))
+      ) as [string, string, string | undefined, string | undefined];
+      return amdComponentShim({ hbsSpecifier, hbsAbsPath, jsSpecifier, jsAbsPath });
+    }
     throw new Error(`not an @embroider/core virtual file: ${filename}`);
   }
 
@@ -87,7 +103,9 @@ export class Resolver {
       return request;
     }
 
-    return this.preHandleExternal(this.handleRenaming(request));
+    request = this.handleGlobalsCompat(request);
+    request = this.handleRenaming(request);
+    return this.preHandleExternal(request);
   }
 
   // This encapsulates the whole resolving process. Given a `defaultResolve`
@@ -208,6 +226,122 @@ export class Resolver {
       }
       return owning;
     }
+  }
+
+  private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
+    let match = compatPattern.exec(request.specifier);
+    if (!match) {
+      return request;
+    }
+    let { type, path } = match.groups!;
+    let fromPkg = this.owningPackage(request.fromFile);
+    if (!fromPkg?.isV2Ember()) {
+      return request;
+    }
+
+    let engine = this.owningEngine(fromPkg);
+
+    switch (type) {
+      case 'helpers':
+        return this.resolveHelper(path, engine, request);
+      case 'components':
+        return this.resolveComponent(path, engine, request);
+      default:
+        return request;
+    }
+  }
+
+  private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+    let target = this.parseGlobalPath(path, inEngine);
+    return request
+      .alias(`${target.packageName}/helpers/${target.memberName}`)
+      .rehome(resolve(inEngine.root, 'package.json'));
+  }
+
+  private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+    let target = this.parseGlobalPath(path, inEngine);
+
+    let hbsModule: { specifier: string; absPath: string } | null = null;
+    let jsModule: { specifier: string; absPath: string } | null = null;
+
+    // first, the various places our template might be.
+    for (let candidate of this.componentTemplateCandidates(target, inEngine)) {
+      let resolution = this.nodeResolve(candidate, target.from);
+      if (resolution.type === 'real') {
+        hbsModule = { specifier: candidate, absPath: resolution.filename };
+        break;
+      }
+    }
+
+    // then the various places our javascript might be.
+    for (let candidate of this.componentJSCandidates(target, inEngine)) {
+      let resolution = this.nodeResolve(candidate, target.from);
+      // .hbs is a resolvable extension for us, so we need to exclude it here.
+      // It matches as a priority lower than .js, so finding an .hbs means
+      // there's definitely not a .js.
+      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = { specifier: candidate, absPath: resolution.filename };
+        break;
+      }
+    }
+
+    if (hbsModule) {
+      return amdComponent(request, hbsModule, jsModule);
+    } else if (jsModule) {
+      return request.alias(jsModule.specifier).rehome(target.from);
+    } else {
+      return request;
+    }
+  }
+
+  private *componentTemplateCandidates(target: { packageName: string; memberName: string }, inEngine: EngineConfig) {
+    yield `${target.packageName}/templates/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/template`;
+
+    if (
+      typeof this.options.podModulePrefix !== 'undefined' &&
+      this.options.podModulePrefix !== '' &&
+      target.packageName === inEngine.packageName
+    ) {
+      yield `${this.options.podModulePrefix}/components/${target.memberName}/template`;
+    }
+  }
+
+  private *componentJSCandidates(target: { packageName: string; memberName: string }, inEngine: EngineConfig) {
+    yield `${target.packageName}/components/${target.memberName}`;
+    yield `${target.packageName}/components/${target.memberName}/component`;
+
+    if (
+      typeof this.options.podModulePrefix !== 'undefined' &&
+      this.options.podModulePrefix !== '' &&
+      target.packageName === inEngine.packageName
+    ) {
+      yield `${this.options.podModulePrefix}/components/${target.memberName}/component`;
+    }
+  }
+
+  // for paths that come from non-strict templates
+  private parseGlobalPath(path: string, inEngine: EngineConfig) {
+    let parts = path.split('@');
+    if (parts.length > 1 && parts[0].length > 0) {
+      return { packageName: parts[0], memberName: parts[1], from: resolve(inEngine.root, 'pacakge.json') };
+    } else {
+      return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'pacakge.json') };
+    }
+  }
+
+  private owningEngine(pkg: Package) {
+    if (pkg.root === this.options.appRoot) {
+      // the app is always the first engine
+      return this.options.engines[0];
+    }
+    let owningEngine = this.options.engines.find(e => e.activeAddons.find(a => a.root === pkg.root));
+    if (!owningEngine) {
+      throw new Error(
+        `bug in @embroider/core/src/module-resolver: cannot figure out the owning engine for ${pkg.root}`
+      );
+    }
+    return owningEngine;
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
@@ -443,6 +577,19 @@ function external<R extends ModuleRequest>(label: string, request: R, specifier:
   return request.virtualize(filename);
 }
 
+function amdComponent<R extends ModuleRequest>(
+  request: R,
+  hbsModule: { specifier: string; absPath: string },
+  jsModule: { specifier: string; absPath: string } | null
+): R {
+  let payload = [hbsModule.specifier, hbsModule.absPath];
+  if (jsModule) {
+    payload.push(jsModule.specifier);
+    payload.push(jsModule.absPath);
+  }
+  return request.virtualize(amdComponentShimPrefix + encodeURIComponent(JSON.stringify(payload)));
+}
+
 const externalShim = compile(`
 {{#if (eq moduleName "require")}}
 const m = window.requirejs;
@@ -465,3 +612,18 @@ if (m.default && !m.__esModule) {
 }
 module.exports = m;
 `) as (params: { moduleName: string }) => string;
+
+const amdComponentShim = compile(`
+import template from "{{{js-string-escape hbsAbsPath}}}";
+window.define("{{{js-string-escape hbsSpecifier}}}", () => template);
+{{#if jsSpecifier}}
+import component from "{{{js-string-escape jsAbsPath}}}";
+window.define("{{{js-string-escape jsSpecifier}}}", () => template);
+{{/if}}
+export default todoLoadCurriedComponent();
+`) as (params: {
+  hbsSpecifier: string;
+  hbsAbsPath: string;
+  jsSpecifier: string | undefined;
+  jsAbsPath: string | undefined;
+}) => string;

@@ -331,7 +331,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     ) {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
-        emberVersion: resolverConfig.emberVersion,
       };
       return [require.resolve('./resolver-transform'), opts];
     }
@@ -362,10 +361,22 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
+      engines: engines.map(engine => ({
+        packageName: engine.package.name,
+        root: this.root,
+        activeAddons: [...engine.addons]
+          .map(a => ({
+            name: a.name,
+            root: a.root,
+          }))
+          // the traditional order is the order in which addons will run, such
+          // that the last one wins. Our resolver's order is the order to
+          // search, so first one wins.
+          .reverse(),
+      })),
 
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving
-      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
@@ -379,7 +390,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   private addExtraImports(config: CompatResolverOptions) {
     let internalResolver = new CompatResolver(config);
 
-    let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
+    let output: { absPath: string; target: string; runtimeName: string }[][] = [];
 
     for (let rule of this.activeRules()) {
       if (rule.addonModules) {

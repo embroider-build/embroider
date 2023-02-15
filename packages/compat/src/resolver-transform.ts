@@ -14,7 +14,6 @@ import assertNever from 'assert-never';
 import { explicitRelative } from '@embroider/core';
 import { dirname, join } from 'path';
 import { readJSONSync } from 'fs-extra';
-import semver from 'semver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -25,16 +24,10 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 
 export interface Options {
   appRoot: string;
-  emberVersion: string;
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ appRoot, emberVersion }: Options) {
-  // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
-  let patchHelpersBug = semver.satisfies(emberVersion, '<4.2.0-beta.0', {
-    includePrerelease: true,
-  });
-
+export default function makeResolverTransform({ appRoot }: Options) {
   let resolver = new CompatResolver(readJSONSync(join(appRoot, '.embroider', 'resolver.json')));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     let {
@@ -92,46 +85,59 @@ export default function makeResolverTransform({ appRoot, emberVersion }: Options
         case 'error':
           resolver.reportError(resolution, filename, contents);
           return;
-        case 'helper':
-          if (patchHelpersBug) {
-            // lexical invocation of helpers was not reliable before Ember 4.2 due to https://github.com/emberjs/ember.js/pull/19878
-            emitAMD(resolution.module);
-          } else {
-            let name = jsutils.bindImport(relativeToFile(resolution.module.absPath), 'default', parentPath, {
+        case 'helper': {
+          let name: string;
+          if ('specifier' in resolution) {
+            name = jsutils.bindImport(resolution.specifier, 'default', parentPath, {
               nameHint: resolution.nameHint,
             });
-            emittedLexicalBindings.set(name, resolution);
-            setter(parentPath.node, builders.path(name));
+          } else {
+            name = jsutils.bindImport(relativeToFile(resolution.module.absPath), 'default', parentPath, {
+              nameHint: resolution.nameHint,
+            });
           }
+          emittedLexicalBindings.set(name, resolution);
+          setter(parentPath.node, builders.path(name));
           return;
-        case 'modifier':
+        }
+        case 'modifier': {
           let name = jsutils.bindImport(relativeToFile(resolution.module.absPath), 'default', parentPath, {
             nameHint: resolution.nameHint,
           });
           emittedLexicalBindings.set(name, resolution);
           setter(parentPath.node, builders.path(name));
           return;
+        }
         case 'component':
-          // When people are using octane-style template co-location or
-          // polaris-style first-class templates, we see only JS files for their
-          // components, because the template association is handled before
-          // we're doing any resolving here. In that case, we can safely do
-          // component invocation via lexical scope.
-          //
-          // But when people are using the older non-co-located template style,
-          // we can't safely do that -- ember needs to discover both the
-          // component and the template in the AMD loader to associate them. In
-          // that case, we emit just-in-time AMD definitions for them.
-          if (resolution.jsModule && !resolution.hbsModule) {
-            let name = jsutils.bindImport(relativeToFile(resolution.jsModule.absPath), 'default', parentPath, {
+          if ('specifier' in resolution) {
+            let name = jsutils.bindImport(resolution.specifier, 'default', parentPath, {
               nameHint: resolution.nameHint,
             });
             emittedLexicalBindings.set(name, resolution);
             setter(parentPath.node, builders.path(name));
           } else {
-            emitAMD(resolution.hbsModule);
-            emitAMD(resolution.jsModule);
+            // When people are using octane-style template co-location or
+            // polaris-style first-class templates, we see only JS files for their
+            // components, because the template association is handled before
+            // we're doing any resolving here. In that case, we can safely do
+            // component invocation via lexical scope.
+            //
+            // But when people are using the older non-co-located template style,
+            // we can't safely do that -- ember needs to discover both the
+            // component and the template in the AMD loader to associate them. In
+            // that case, we emit just-in-time AMD definitions for them.
+            if (resolution.jsModule && !resolution.hbsModule) {
+              let name = jsutils.bindImport(relativeToFile(resolution.jsModule.absPath), 'default', parentPath, {
+                nameHint: resolution.nameHint,
+              });
+              emittedLexicalBindings.set(name, resolution);
+              setter(parentPath.node, builders.path(name));
+            } else {
+              emitAMD(resolution.hbsModule);
+              emitAMD(resolution.jsModule);
+            }
           }
+          return;
         case undefined:
           return;
         default:
@@ -276,7 +282,7 @@ export default function makeResolverTransform({ appRoot, emberVersion }: Options
             });
             return;
           }
-          let resolution = resolver.resolveSubExpression(node.path.original, filename, node.path.loc);
+          let resolution = resolver.resolveSubExpression(node.path.original);
           emit(path, resolution, (node, newId) => {
             node.path = newId;
           });
@@ -374,7 +380,7 @@ export default function makeResolverTransform({ appRoot, emberVersion }: Options
                 });
               }
             } else {
-              const resolution = resolver.resolveElement(node.tag, filename, node.loc);
+              const resolution = resolver.resolveElement(node.tag);
               emit(path, resolution, (node, newId) => {
                 node.tag = newId.original;
               });

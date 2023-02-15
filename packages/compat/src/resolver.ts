@@ -161,7 +161,7 @@ export default class CompatResolver {
     }
   }
   enter(moduleName: string) {
-    let rules = this.findComponentRules(moduleName);
+    let rules = this.findInteriorRules(moduleName);
     let deps: ComponentResolution[];
     if (rules?.dependsOnComponents) {
       deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
@@ -170,8 +170,8 @@ export default class CompatResolver {
     }
     return deps;
   }
-  private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
-    let rules = this.rules.components.get(absPath);
+  private findInteriorRules(absPath: string): PreprocessedComponentRule['interior'] | undefined {
+    let rules = this.rules.interiorRules.get(absPath);
     if (rules) {
       return rules;
     }
@@ -185,7 +185,7 @@ export default class CompatResolver {
       let stem = absPath.slice(0, -4);
       for (let ext of this.params.resolvableExtensions) {
         if (ext !== '.hbs') {
-          let rules = this.rules.components.get(stem + ext);
+          let rules = this.rules.interiorRules.get(stem + ext);
           if (rules) {
             return rules;
           }
@@ -196,16 +196,16 @@ export default class CompatResolver {
   }
 
   private isIgnoredComponent(dasherizedName: string) {
-    return this.rules.ignoredComponents.includes(dasherizedName);
+    return this.rules.exteriorRules.get(dasherizedName)?.safeToIgnore;
   }
 
   @Memoize()
   private get rules() {
     // keyed by their first resolved dependency's absPath.
-    let components: Map<string, PreprocessedComponentRule> = new Map();
+    let interiorRules: Map<string, PreprocessedComponentRule['interior']> = new Map();
 
-    // keyed by our own dasherized interpretation of the component's name.
-    let ignoredComponents: string[] = [];
+    // keyed by our dasherized interpretation of the component's name
+    let exteriorRules: Map<string, PreprocessedComponentRule['exterior']> = new Map();
 
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
@@ -213,29 +213,34 @@ export default class CompatResolver {
     for (let rule of this.params.activePackageRules) {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
-          if (componentRules.safeToIgnore) {
-            ignoredComponents.push(this.standardDasherize(snippet, rule));
+          let processedRules = preprocessComponentRule(componentRules);
+          let dasherizedName = this.standardDasherize(snippet, rule);
+          exteriorRules.set(dasherizedName, processedRules.exterior);
+          if (processedRules.exterior.safeToIgnore) {
             continue;
           }
-          let resolvedSnippet = this.resolveComponentSnippet(snippet, rule);
+
+          let resolvedSnippet = this.resolveComponentSnippet(
+            snippet,
+            rule,
+            pathResolve(this.params.appRoot, 'package.json')
+          );
 
           // cast is OK here because a component must have one or the other
           let resolvedDep = (resolvedSnippet.hbsModule ?? resolvedSnippet.jsModule)!;
 
-          let processedRules = preprocessComponentRule(componentRules);
-
           // we always register our rules on the component's own first resolved
           // module, which must be a module in the app's module namespace.
-          components.set(resolvedDep.absPath, processedRules);
+          interiorRules.set(resolvedDep.absPath, processedRules.interior);
 
           // if there's a custom layout, we also need to register our rules on
           // those templates.
           if (componentRules.layout) {
             if (componentRules.layout.appPath) {
-              components.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules);
+              interiorRules.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules.interior);
             } else if (componentRules.layout.addonPath) {
               for (let root of rule.roots) {
-                components.set(join(root, componentRules.layout.addonPath), processedRules);
+                interiorRules.set(join(root, componentRules.layout.addonPath), processedRules.interior);
               }
             } else {
               throw new Error(
@@ -252,26 +257,22 @@ export default class CompatResolver {
       if (rule.appTemplates) {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
-          components.set(join(this.params.appRoot, path), processedRules);
+          interiorRules.set(join(this.params.appRoot, path), processedRules.interior);
         }
       }
       if (rule.addonTemplates) {
         for (let [path, templateRules] of Object.entries(rule.addonTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
           for (let root of rule.roots) {
-            components.set(join(root, path), processedRules);
+            interiorRules.set(join(root, path), processedRules.interior);
           }
         }
       }
     }
-    return { components, ignoredComponents };
+    return { interiorRules, exteriorRules };
   }
 
-  resolveComponentSnippet(
-    snippet: string,
-    rule: PackageRules | ModuleRules,
-    from = 'rule-snippet.hbs'
-  ): ComponentResolution {
+  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules, from: string): ComponentResolution {
     let name = this.standardDasherize(snippet, rule);
     let found = this.tryComponent(name, from, false);
     if (found && found.type === 'component') {
@@ -484,10 +485,7 @@ export default class CompatResolver {
 
     let componentRules;
     if (withRuleLookup) {
-      // the order here is important. We follow the convention that any rules
-      // get attached to the hbsModule if it exists, and only get attached to
-      // the jsModule otherwise
-      componentRules = this.findComponentRules((hbsModule ?? jsModule)!.absPath);
+      componentRules = this.rules.exteriorRules.get(path);
     }
     return {
       type: 'component',
@@ -635,7 +633,7 @@ export default class CompatResolver {
       };
     }
     if (component.type === 'path') {
-      let ownComponentRules = this.findComponentRules(from);
+      let ownComponentRules = this.findInteriorRules(from);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }

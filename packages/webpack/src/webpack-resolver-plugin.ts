@@ -110,7 +110,8 @@ class WebpackModuleRequest implements ModuleRequest {
       typeof state.context === 'string' &&
       typeof state.contextInfo?.issuer === 'string' &&
       state.contextInfo.issuer !== '' &&
-      !state.request.startsWith(virtualLoaderName) // prevents recursion on requests we have already sent to our virtual loader
+      !state.request.startsWith(virtualLoaderName) && // prevents recursion on requests we have already sent to our virtual loader
+      !state.request.startsWith('!') // ignores internal webpack resolvers
     ) {
       return new WebpackModuleRequest(state);
     }

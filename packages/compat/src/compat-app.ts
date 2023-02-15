@@ -392,7 +392,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   private addExtraImports(config: CompatResolverOptions) {
     let internalResolver = new CompatResolver(config);
 
-    let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
+    let output: { absPath: string; target: string; runtimeName: string }[][] = [];
 
     for (let rule of this.activeRules()) {
       if (rule.addonModules) {

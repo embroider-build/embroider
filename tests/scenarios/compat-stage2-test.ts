@@ -473,7 +473,12 @@ stage2Scenarios
 
       test('index.hbs', function () {
         let assertFile = expectFile('templates/index.hbs').transform(build.transpile);
-        assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
+
+        assertFile.matches(
+          /import \w+ from ["']..\/node_modules\/my-addon\/_app_\/components\/hello-world\.js["']/,
+          'explicit dependency'
+        );
+
         assertFile.matches(
           /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
           'static component helper dependency'
@@ -487,7 +492,10 @@ stage2Scenarios
 
       test('curly.hbs', function () {
         let assertFile = expectFile('templates/curly.hbs').transform(build.transpile);
-        assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
+        assertFile.matches(
+          /import \w+ from ["']..\/node_modules\/my-addon\/_app_\/components\/hello-world\.js["']/,
+          'explicit dependency'
+        );
         assertFile.matches(
           /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
           'static component helper dependency'
@@ -517,14 +525,20 @@ stage2Scenarios
         );
       });
 
-      test('app/hello-world.js', function () {
-        let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
+      QUnit.only('app/hello-world.js', function () {
+        expectAudit
+          .module('./templates/index.hbs')
+          .resolves('the-app/components/hello-world.js')
+          .to('./node_modules/my-addon/_app_/components/hello-world.js');
+        let assertFile = expectFile('./node_modules/my-addon/_app_/components/hello-world.js').transform(
+          build.transpile
+        );
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
         );
 
         expectAudit
-          .module('./components/hello-world.js')
+          .module('./node_modules/my-addon/_app_/components/hello-world.js')
           .resolves('my-addon/components/hello-world')
           .to('./node_modules/my-addon/components/hello-world.js', 'remapped to precise copy of my-addon');
       });

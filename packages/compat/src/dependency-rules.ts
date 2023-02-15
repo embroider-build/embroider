@@ -152,11 +152,19 @@ export type ArgumentMapping =
 type ComponentSnippet = string;
 
 export interface PreprocessedComponentRule {
-  yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
-  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
-  dependsOnComponents: ComponentSnippet[];
-  argumentsAreComponents: string[];
-  safeInteriorPaths: string[];
+  exterior: {
+    // rules needed by the people that invoke our component
+    yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
+    yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+    argumentsAreComponents: string[];
+    safeToIgnore: boolean;
+  };
+
+  interior: {
+    // rules needed within our own template)
+    dependsOnComponents: ComponentSnippet[];
+    safeInteriorPaths: string[];
+  };
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -190,11 +198,16 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     }
   }
   return {
-    argumentsAreComponents,
-    safeInteriorPaths,
-    dependsOnComponents,
-    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-    yieldsArguments: componentRules.yieldsArguments || [],
+    interior: {
+      safeInteriorPaths,
+      dependsOnComponents,
+    },
+    exterior: {
+      safeToIgnore: Boolean(componentRules.safeToIgnore),
+      argumentsAreComponents,
+      yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+      yieldsArguments: componentRules.yieldsArguments || [],
+    },
   };
 }
 
@@ -235,7 +248,7 @@ export function expandModuleRules(absPath: string, moduleRules: ModuleRules, res
   }
   if (moduleRules.dependsOnComponents) {
     for (let snippet of moduleRules.dependsOnComponents) {
-      let found = resolver.resolveComponentSnippet(snippet, moduleRules);
+      let found = resolver.resolveComponentSnippet(snippet, moduleRules, absPath);
       if (found.jsModule) {
         let { absPath: target, runtimeName } = found.jsModule;
         output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });

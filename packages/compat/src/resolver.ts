@@ -7,13 +7,13 @@ import {
   preprocessComponentRule,
 } from './dependency-rules';
 import {
-  Package,
   PackageCache,
   extensionsPattern,
   ResolverOptions as CoreResolverOptions,
   Resolver,
+  Package,
 } from '@embroider/core';
-import { join, relative, sep, resolve as pathResolve } from 'path';
+import { join, relative, sep, resolve, posix } from 'path';
 
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
@@ -161,7 +161,7 @@ export default class CompatResolver {
     }
   }
   enter(moduleName: string) {
-    let rules = this.findComponentRules(moduleName);
+    let rules = this.findInteriorRules(moduleName);
     let deps: ComponentResolution[];
     if (rules?.dependsOnComponents) {
       deps = rules.dependsOnComponents.map(snippet => this.resolveComponentSnippet(snippet, rules!, moduleName));
@@ -170,8 +170,8 @@ export default class CompatResolver {
     }
     return deps;
   }
-  private findComponentRules(absPath: string): PreprocessedComponentRule | undefined {
-    let rules = this.rules.components.get(absPath);
+  private findInteriorRules(absPath: string): PreprocessedComponentRule['interior'] | undefined {
+    let rules = this.rules.interiorRules.get(absPath);
     if (rules) {
       return rules;
     }
@@ -185,7 +185,7 @@ export default class CompatResolver {
       let stem = absPath.slice(0, -4);
       for (let ext of this.params.resolvableExtensions) {
         if (ext !== '.hbs') {
-          let rules = this.rules.components.get(stem + ext);
+          let rules = this.rules.interiorRules.get(stem + ext);
           if (rules) {
             return rules;
           }
@@ -196,16 +196,16 @@ export default class CompatResolver {
   }
 
   private isIgnoredComponent(dasherizedName: string) {
-    return this.rules.ignoredComponents.includes(dasherizedName);
+    return this.rules.exteriorRules.get(dasherizedName)?.safeToIgnore;
   }
 
   @Memoize()
   private get rules() {
     // keyed by their first resolved dependency's absPath.
-    let components: Map<string, PreprocessedComponentRule> = new Map();
+    let interiorRules: Map<string, PreprocessedComponentRule['interior']> = new Map();
 
-    // keyed by our own dasherized interpretation of the component's name.
-    let ignoredComponents: string[] = [];
+    // keyed by our dasherized interpretation of the component's name
+    let exteriorRules: Map<string, PreprocessedComponentRule['exterior']> = new Map();
 
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
@@ -213,29 +213,34 @@ export default class CompatResolver {
     for (let rule of this.params.activePackageRules) {
       if (rule.components) {
         for (let [snippet, componentRules] of Object.entries(rule.components)) {
-          if (componentRules.safeToIgnore) {
-            ignoredComponents.push(this.standardDasherize(snippet, rule));
+          let processedRules = preprocessComponentRule(componentRules);
+          let dasherizedName = this.standardDasherize(snippet, rule);
+          exteriorRules.set(dasherizedName, processedRules.exterior);
+          if (processedRules.exterior.safeToIgnore) {
             continue;
           }
-          let resolvedSnippet = this.resolveComponentSnippet(snippet, rule);
+
+          let resolvedSnippet = this.resolveComponentSnippet(
+            snippet,
+            rule,
+            resolve(this.params.appRoot, 'package.json')
+          );
 
           // cast is OK here because a component must have one or the other
           let resolvedDep = (resolvedSnippet.hbsModule ?? resolvedSnippet.jsModule)!;
 
-          let processedRules = preprocessComponentRule(componentRules);
-
           // we always register our rules on the component's own first resolved
           // module, which must be a module in the app's module namespace.
-          components.set(resolvedDep.absPath, processedRules);
+          interiorRules.set(resolvedDep.absPath, processedRules.interior);
 
           // if there's a custom layout, we also need to register our rules on
           // those templates.
           if (componentRules.layout) {
             if (componentRules.layout.appPath) {
-              components.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules);
+              interiorRules.set(join(this.params.appRoot, componentRules.layout.appPath), processedRules.interior);
             } else if (componentRules.layout.addonPath) {
               for (let root of rule.roots) {
-                components.set(join(root, componentRules.layout.addonPath), processedRules);
+                interiorRules.set(join(root, componentRules.layout.addonPath), processedRules.interior);
               }
             } else {
               throw new Error(
@@ -252,26 +257,22 @@ export default class CompatResolver {
       if (rule.appTemplates) {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
-          components.set(join(this.params.appRoot, path), processedRules);
+          interiorRules.set(join(this.params.appRoot, path), processedRules.interior);
         }
       }
       if (rule.addonTemplates) {
         for (let [path, templateRules] of Object.entries(rule.addonTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
           for (let root of rule.roots) {
-            components.set(join(root, path), processedRules);
+            interiorRules.set(join(root, path), processedRules.interior);
           }
         }
       }
     }
-    return { components, ignoredComponents };
+    return { interiorRules, exteriorRules };
   }
 
-  resolveComponentSnippet(
-    snippet: string,
-    rule: PackageRules | ModuleRules,
-    from = 'rule-snippet.hbs'
-  ): ComponentResolution {
+  resolveComponentSnippet(snippet: string, rule: PackageRules | ModuleRules, from: string): ComponentResolution {
     let name = this.standardDasherize(snippet, rule);
     let found = this.tryComponent(name, from, false);
     if (found && found.type === 'component') {
@@ -334,17 +335,28 @@ export default class CompatResolver {
     return extensionsPattern(this.params.resolvableExtensions);
   }
 
-  private absPathToRuntimePath(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimePath(absPath: string, owningPackage?: Package) {
     let pkg = owningPackage || PackageCache.shared('embroider-stage3', this.params.appRoot).ownerOfFile(absPath);
     if (pkg) {
       let packageRuntimeName = pkg.name;
+
+      let location = this.resolver.reverseSearchAppTree(pkg, absPath);
+      if (location) {
+        packageRuntimeName = location.owningEngine.packageName;
+      }
+
       for (let [runtimeName, realName] of Object.entries(this.params.renamePackages)) {
         if (realName === packageRuntimeName) {
           packageRuntimeName = runtimeName;
           break;
         }
       }
-      return join(packageRuntimeName, relative(pkg.root, absPath)).split(sep).join('/');
+
+      if (location) {
+        return posix.join(packageRuntimeName, location.inAppName);
+      } else {
+        return join(packageRuntimeName, relative(pkg.root, absPath)).split(sep).join('/');
+      }
     } else if (absPath.startsWith(this.params.appRoot)) {
       return join(this.params.modulePrefix, relative(this.params.appRoot, absPath)).split(sep).join('/');
     } else {
@@ -352,7 +364,7 @@ export default class CompatResolver {
     }
   }
 
-  private absPathToRuntimeName(absPath: string, owningPackage?: { root: string; name: string }) {
+  private absPathToRuntimeName(absPath: string, owningPackage?: Package) {
     return this.absPathToRuntimePath(absPath, owningPackage)
       .replace(this.resolvableExtensionsPattern, '')
       .replace(/\/index$/, '');
@@ -370,34 +382,25 @@ export default class CompatResolver {
     return this.params.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private containingEngine(_filename: string): Package | AppPackagePlaceholder {
-    // FIXME: when using engines, template global resolution is scoped to the
-    // engine not always the app. We already have code in the app-tree-merging
-    // to deal with that, so as we unify that with the module-resolving system
-    // we should be able to generate a better answer here.
-    return this.appPackage;
-  }
-
-  private parsePath(path: string, fromFile: string) {
-    let engine = this.containingEngine(fromFile);
+  private parsePath(path: string) {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      return { packageName: parts[0], memberName: parts[1], from: pathResolve(engine.root, './package.json') };
+      return { packageName: parts[0], memberName: parts[1] };
     } else {
-      return { packageName: engine.name, memberName: path, from: pathResolve(engine.root, './package.json') };
+      return { packageName: '#engine', memberName: path };
     }
   }
 
   private tryHelper(path: string, from: string): HelperResolution | null {
-    let target = this.parsePath(path, from);
+    let target = this.parsePath(path);
     let runtimeName = `${target.packageName}/helpers/${target.memberName}`;
-    let resolution = this.resolver.nodeResolve(runtimeName, target.from);
+    let resolution = this.resolver.nodeResolve(runtimeName, from);
     if (resolution.type === 'real') {
       return {
         type: 'helper',
         module: {
           absPath: resolution.filename,
-          runtimeName,
+          runtimeName: this.absPathToRuntimeName(resolution.filename),
         },
         nameHint: target.memberName,
       };
@@ -406,8 +409,8 @@ export default class CompatResolver {
   }
 
   private tryModifier(path: string, from: string): ModifierResolution | null {
-    let target = this.parsePath(path, from);
-    let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
+    let target = this.parsePath(path);
+    let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, from);
     if (resolution.type === 'real') {
       return {
         type: 'modifier',
@@ -420,21 +423,24 @@ export default class CompatResolver {
     return null;
   }
 
-  @Memoize()
-  private get appPackage(): AppPackagePlaceholder {
-    return { root: this.params.appRoot, name: this.params.modulePrefix };
+  private podPrefix(targetPackageName: string) {
+    if (targetPackageName === '#engine' && this.params.podModulePrefix) {
+      if (!this.params.podModulePrefix.startsWith(this.params.modulePrefix)) {
+        throw new Error(
+          `Your podModulePrefix (${this.params.podModulePrefix}) does not start with your app module prefix (${this.params.modulePrefix}). Not gonna support that silliness.`
+        );
+      }
+      return `#engine${this.params.podModulePrefix.slice(this.params.modulePrefix.length)}`;
+    }
   }
 
   private *componentTemplateCandidates(target: { packageName: string; memberName: string }) {
     yield `${target.packageName}/templates/components/${target.memberName}`;
     yield `${target.packageName}/components/${target.memberName}/template`;
 
-    if (
-      typeof this.params.podModulePrefix !== 'undefined' &&
-      this.params.podModulePrefix !== '' &&
-      target.packageName === this.appPackage.name
-    ) {
-      yield `${this.params.podModulePrefix}/components/${target.memberName}/template`;
+    let podPrefix = this.podPrefix(target.packageName);
+    if (podPrefix) {
+      yield `${podPrefix}/components/${target.memberName}/template`;
     }
   }
 
@@ -442,38 +448,35 @@ export default class CompatResolver {
     yield `${target.packageName}/components/${target.memberName}`;
     yield `${target.packageName}/components/${target.memberName}/component`;
 
-    if (
-      typeof this.params.podModulePrefix !== 'undefined' &&
-      this.params.podModulePrefix !== '' &&
-      target.packageName === this.appPackage.name
-    ) {
-      yield `${this.params.podModulePrefix}/components/${target.memberName}/component`;
+    let podPrefix = this.podPrefix(target.packageName);
+    if (podPrefix) {
+      yield `${podPrefix}/components/${target.memberName}/component`;
     }
   }
 
   private tryComponent(path: string, from: string, withRuleLookup = true): ComponentResolution | null {
-    const target = this.parsePath(path, from);
+    const target = this.parsePath(path);
 
     let hbsModule: ResolvedDep | null = null;
     let jsModule: ResolvedDep | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target)) {
-      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      let resolution = this.resolver.nodeResolve(candidate, from);
       if (resolution.type === 'real') {
-        hbsModule = { absPath: resolution.filename, runtimeName: candidate };
+        hbsModule = { absPath: resolution.filename, runtimeName: this.absPathToRuntimeName(resolution.filename) };
         break;
       }
     }
 
     // then the various places our javascript might be.
     for (let candidate of this.componentJSCandidates(target)) {
-      let resolution = this.resolver.nodeResolve(candidate, target.from);
+      let resolution = this.resolver.nodeResolve(candidate, from);
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = { absPath: resolution.filename, runtimeName: candidate };
+        jsModule = { absPath: resolution.filename, runtimeName: this.absPathToRuntimeName(resolution.filename) };
         break;
       }
     }
@@ -484,10 +487,7 @@ export default class CompatResolver {
 
     let componentRules;
     if (withRuleLookup) {
-      // the order here is important. We follow the convention that any rules
-      // get attached to the hbsModule if it exists, and only get attached to
-      // the jsModule otherwise
-      componentRules = this.findComponentRules((hbsModule ?? jsModule)!.absPath);
+      componentRules = this.rules.exteriorRules.get(path);
     }
     return {
       type: 'component',
@@ -518,6 +518,32 @@ export default class CompatResolver {
       loc,
     };
   }
+
+  /*
+    logical imports sketch
+
+    resolveMustache: ambiguous, tries helper then component
+    resolveSubExpression: always helper resolveElementModifierStatement: always
+    modifier resolveElement: always component resolveComponentHelper: always
+    component resolveDynamicHelper: always helper resolveDynamicModifier: always
+    modifier
+
+    import patterns:
+
+    #engine/components/foo #engine/helpers/foo #engine/moodifiers/foo
+    #engine/ambiguous/foo
+
+    looser packageRules binding:
+
+    since rules are about engine-globally-resolved templates, it's enough to
+    scope them within an engine. Not to the exact package providing the
+    component. 
+
+    NEXT Actions: 
+     - make packageRules loose
+     - then eliminate all resolving in templates. This means AMD will need to be done in shims instead.
+
+  */
 
   resolveMustache(
     path: string,
@@ -635,7 +661,7 @@ export default class CompatResolver {
       };
     }
     if (component.type === 'path') {
-      let ownComponentRules = this.findComponentRules(from);
+      let ownComponentRules = this.findInteriorRules(from);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }
@@ -728,14 +754,6 @@ export default class CompatResolver {
       };
     }
   }
-}
-
-// we don't have a real Package for the app itself because the resolver has work
-// to do before we have even written out the app's own package.json and
-// therefore made it into a fully functional Package.
-interface AppPackagePlaceholder {
-  root: string;
-  name: string;
 }
 
 export type ComponentLocator =

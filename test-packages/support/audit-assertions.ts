@@ -74,7 +74,7 @@ class ExpectModule {
             this.assert.pushResult({
               result: false,
               expected: specifier,
-              actual: `only resolutions present were: ${Object.keys(this.module.resolutions).join(', ')}`,
+              actual: `${specifier} not in resolutions`,
               message: message ?? `missing resolution`,
             });
           }

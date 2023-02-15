@@ -19,7 +19,7 @@ export interface Options {
   extraImports: {
     absPath: string;
     target: string;
-    runtimeName?: string;
+    runtimeName: string;
   }[];
   activeAddons: {
     [packageName: string]: string;
@@ -95,7 +95,22 @@ export class Resolver {
       return request;
     }
 
-    return this.preHandleExternal(this.handleRenaming(request));
+    request = this.resolveInEngine(request);
+    request = this.handleRenaming(request);
+    return this.preHandleExternal(request);
+  }
+
+  private resolveInEngine<R extends ModuleRequest>(request: R): R {
+    const prefix = '#engine/';
+    let fromPkg = this.owningPackage(request.fromFile);
+
+    if (!request.specifier.startsWith(prefix) || !fromPkg?.isV2Ember()) {
+      return request;
+    }
+    let engine = this.owningEngine(fromPkg);
+    return request
+      .alias(`${engine.packageName}/${request.specifier.slice(prefix.length)}`)
+      .rehome(resolve(engine.root, './package.json'));
   }
 
   // This encapsulates the whole resolving process. Given a `defaultResolve`
@@ -220,6 +235,7 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
+    let fromPkg = this.owningPackage(request.fromFile);
     let packageName = getPackageName(request.specifier);
     if (!packageName) {
       return request;
@@ -244,21 +260,20 @@ export class Resolver {
       return request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]));
     }
 
-    let pkg = this.owningPackage(request.fromFile);
-    if (!pkg || !pkg.isV2Ember()) {
+    if (!fromPkg || !fromPkg.isV2Ember()) {
       return request;
     }
 
-    if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
+    if (fromPkg.meta['auto-upgraded'] && fromPkg.name === packageName) {
       // we found a self-import, resolve it for them. Only auto-upgraded
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return this.resolveWithinPackage(request, pkg);
+      return this.resolveWithinPackage(request, fromPkg);
     }
 
     let originalPkg = this.originalPackage(request.fromFile);
-    if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
+    if (originalPkg && fromPkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
       // A file that was relocated out of a package is importing that package's
       // name, it should find its own original copy.
       return this.resolveWithinPackage(request, originalPkg);
@@ -280,9 +295,9 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
+    let fromPkg = this.owningPackage(request.fromFile);
     let { specifier, fromFile } = request;
-    const pkg = this.owningPackage(fromFile);
-    if (!pkg || !pkg.isV2Ember()) {
+    if (!fromPkg || !fromPkg.isV2Ember()) {
       return request;
     }
 
@@ -294,16 +309,16 @@ export class Resolver {
       // a compat adapter). In the metadata, they would be listed in
       // package-relative form, so we need to convert this specifier to that.
       let absoluteSpecifier = resolve(dirname(fromFile), specifier);
-      let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
-      if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
-        let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
+      let packageRelativeSpecifier = explicitRelative(fromPkg.root, absoluteSpecifier);
+      if (isExplicitlyExternal(packageRelativeSpecifier, fromPkg)) {
+        let publicSpecifier = absoluteSpecifier.replace(fromPkg.root, fromPkg.name);
         return external('beforeResolve', request, publicSpecifier);
       }
 
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
       // engine
-      let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+      let logicalLocation = this.reverseSearchAppTree(fromPkg, request.fromFile);
       if (logicalLocation) {
         return request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName));
       }
@@ -313,11 +328,11 @@ export class Resolver {
 
     // absolute package imports can also be explicitly external based on their
     // full specifier name
-    if (isExplicitlyExternal(specifier, pkg)) {
+    if (isExplicitlyExternal(specifier, fromPkg)) {
       return external('beforeResolve', request, specifier);
     }
 
-    if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
+    if (!fromPkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
       // Native v2 addons are allowed to use the emberVirtualPeerDeps like
       // `@glimmer/component`. And like all v2 addons, it's important that they
       // see those dependencies after those dependencies have been converted to
@@ -331,14 +346,16 @@ export class Resolver {
       // So before we let normal resolving happen, we adjust these imports to
       // point at the app's copies instead.
       if (!this.options.activeAddons[packageName]) {
-        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
+        throw new Error(
+          `${fromPkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`
+        );
       }
       let newHome = resolve(this.options.appRoot, 'package.json');
       debug(`[beforeResolve] rehomed ${request.specifier} from ${request.fromFile} to ${newHome}`);
       return request.rehome(newHome);
     }
 
-    let logicalPkg = this.logicalPackage(pkg, request.fromFile);
+    let logicalPkg = this.logicalPackage(fromPkg, request.fromFile);
     if (logicalPkg.meta['auto-upgraded'] && !logicalPkg.hasDependency('ember-auto-import')) {
       try {
         let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPkg);
@@ -355,22 +372,22 @@ export class Resolver {
     }
 
     // assertions on what native v2 addons can import
-    if (!pkg.meta['auto-upgraded']) {
+    if (!fromPkg.meta['auto-upgraded']) {
       let originalPkg = this.originalPackage(fromFile);
       if (originalPkg) {
         // this file has been moved into another package (presumably the app).
-        if (packageName !== pkg.name) {
+        if (packageName !== fromPkg.name) {
           // the only thing that native v2 addons are allowed to import from
           // within the app tree is their own name.
           throw new Error(
-            `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
+            `${fromPkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${fromPkg.name} can't control which dependencies are resolvable from the app`
           );
         }
       } else {
         // this file has not been moved. The normal case.
-        if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
+        if (!fromPkg.meta['auto-upgraded'] && !reliablyResolvable(fromPkg, packageName)) {
           throw new Error(
-            `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+            `${fromPkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
           );
         }
       }
@@ -462,6 +479,20 @@ export class Resolver {
     return this.options.engines.find(e => e.packageName === packageName);
   }
 
+  private owningEngine(pkg: Package) {
+    if (pkg.root === this.options.appRoot) {
+      // the app is always the first engine
+      return this.options.engines[0];
+    }
+    let owningEngine = this.options.engines.find(e => e.activeAddons.find(a => a.root === pkg.root));
+    if (!owningEngine) {
+      throw new Error(
+        `bug in @embroider/core/src/module-resolver: cannot figure out the owning engine for ${pkg.root}`
+      );
+    }
+    return owningEngine;
+  }
+
   private searchAppTree<R extends ModuleRequest>(
     request: R,
     engine: EngineConfig,
@@ -490,7 +521,9 @@ export class Resolver {
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  private reverseSearchAppTree(owningPackage: Package, fromFile: string) {
+  //
+  // TODO make private again once I can refactor away the usage in CompatResolver
+  reverseSearchAppTree(owningPackage: Package, fromFile: string) {
     // if the requesting file is in an addon's app-js, the request should
     // really be understood as a request for a module in the containing engine
     if (owningPackage.isV2Addon()) {
@@ -499,13 +532,7 @@ export class Resolver {
         let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
         for (let [inAppName, inAddonName] of Object.entries(appJS)) {
           if (inAddonName === fromPackageRelativePath) {
-            let owningEngine = this.options.engines.find(e => e.activeAddons.find(a => a.root === owningPackage.root));
-            if (!owningEngine) {
-              throw new Error(
-                `bug in @embroider/core/src/module-resolver: cannot figure out the owning engine for ${owningPackage.root}`
-              );
-            }
-            return { owningEngine, inAppName };
+            return { owningEngine: this.owningEngine(owningPackage), inAppName };
           }
         }
       }

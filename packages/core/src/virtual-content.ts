@@ -1,12 +1,8 @@
+import { dirname } from 'path';
+import { explicitRelative } from '.';
 import { compile } from './js-handlebars';
 
 const externalPrefix = '/@embroider/external/';
-const amdComponentShimMarker = '?embroider-amd-component';
-
-// NEXT Action: can we get our general virtual file support to look like it's in
-// a place in the filesystem? Possibly our resolver can notice when requests are
-// coming from one of our virtual modules and rehome them.
-const amdComponentShimPattern = /(?<payload>[^\/]+)\?embroider-amd-component$/;
 
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
@@ -16,15 +12,9 @@ export function virtualContent(filename: string): string {
   if (filename.startsWith(externalPrefix)) {
     return externalShim({ moduleName: filename.slice(externalPrefix.length) });
   }
-  let match = amdComponentShimPattern.exec(filename);
+  let match = decodeVirtualPairComponent(filename);
   if (match) {
-    let [hbsSpecifier, hbsRuntime, jsSpecifier, jsRuntime] = JSON.parse(decodeURIComponent(match.groups!.payload)) as [
-      string,
-      string,
-      string | undefined,
-      string | undefined
-    ];
-    return amdComponentShim({ hbsSpecifier, hbsRuntime, jsSpecifier, jsRuntime });
+    return pairedComponentShim(match);
   }
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
@@ -52,34 +42,46 @@ if (m.default && !m.__esModule) {
 module.exports = m;
 `) as (params: { moduleName: string }) => string;
 
-const amdComponentShim = compile(`
-import template from "{{{js-string-escape hbsSpecifier}}}";
-window.define("{{{js-string-escape hbsRuntime}}}", () => template);
-{{#if jsSpecifier}}
-import component from "{{{js-string-escape jsSpecifier}}}";
-window.define("{{{js-string-escape jsRuntime}}}", () => template);
+const pairedComponentShim = compile(`
+import { setComponentTemplate } from "@ember/component";
+import template from "{{{js-string-escape relativeHBSModule}}}";
+{{#if relativeJSModule}}
+import component from "{{{js-string-escape relativeJSModule}}}";
+export default setComponentTemplate(template, component);
+{{else}}
+import templateOnlyComponent from "@ember/component/template-only";
+debugger;
+export default setComponentTemplate(template, templateOnlyComponent());
 {{/if}}
-export default todoLoadCurriedComponent();
-`) as (params: {
-  hbsSpecifier: string;
-  hbsRuntime: string;
-  jsSpecifier: string | undefined;
-  jsRuntime: string | undefined;
-}) => string;
+`) as (params: { relativeHBSModule: string; relativeJSModule: string | null }) => string;
 
 export function virtualExternalModule(specifier: string): string {
   return externalPrefix + specifier;
 }
 
-export function virtualAMDComponent(
-  fromFile: string,
-  hbsModule: { specifier: string; runtime: string },
-  jsModule: { specifier: string; runtime: string } | null
-): string {
-  let payload = [hbsModule.specifier, hbsModule.runtime];
+const pairComponentMarker = '/embroider-pair-component';
+const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)\/embroider-pair-component$/;
+
+export function virtualPairComponent(hbsModule: string, jsModule: string | null): string {
+  let relativeJSModule = '';
   if (jsModule) {
-    payload.push(jsModule.specifier);
-    payload.push(jsModule.runtime);
+    // The '/j/' here represents the relativeJSModule itself that we're about to
+    // use to create the complete filename. It's there to get the right number
+    // of `..` in our relative path.
+    relativeJSModule = explicitRelative(hbsModule + '/j/', jsModule);
   }
-  return `${fromFile}/${encodeURIComponent(JSON.stringify(payload))}${amdComponentShimMarker}`;
+  return `${hbsModule}/${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
+}
+
+function decodeVirtualPairComponent(
+  filename: string
+): { relativeHBSModule: string; relativeJSModule: string | null } | null {
+  let match = pairComponentPattern.exec(filename);
+  if (!match) {
+    return null;
+  }
+  let { hbsModule, jsModule } = match.groups! as { hbsModule: string; jsModule: string };
+  // target our real hbs module from our virtual module
+  let relativeHBSModule = explicitRelative(dirname(filename), hbsModule);
+  return { relativeHBSModule, relativeJSModule: decodeURIComponent(jsModule) || null };
 }

@@ -4,7 +4,7 @@ import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/s
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
-import { virtualExternalModule, virtualAMDComponent, virtualContent } from './virtual-content';
+import { virtualExternalModule, virtualPairComponent, virtualContent } from './virtual-content';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -265,14 +265,14 @@ export class Resolver {
   private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: { specifier: string; runtime: string } | null = null;
-    let jsModule: { specifier: string; runtime: string } | null = null;
+    let hbsModule: string | null = null;
+    let jsModule: string | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target, inEngine)) {
       let resolution = this.nodeResolve(candidate, target.from);
       if (resolution.type === 'real') {
-        hbsModule = { specifier: candidate, runtime: candidate };
+        hbsModule = resolution.filename;
         break;
       }
     }
@@ -284,7 +284,7 @@ export class Resolver {
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = { specifier: candidate, runtime: candidate };
+        jsModule = resolution.filename;
         break;
       }
     }
@@ -293,14 +293,10 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualAMDComponent(request.fromFile, hbsModule, jsModule))
+        request.virtualize(virtualPairComponent(hbsModule, jsModule))
       );
     } else if (jsModule) {
-      return logTransition(
-        `resolveComponent found only JS`,
-        request,
-        request.alias(jsModule.specifier).rehome(target.from)
-      );
+      return logTransition(`resolveComponent found only JS`, request, request.alias(jsModule).rehome(target.from));
     } else {
       return logTransition(`resolveComponent failed`, request);
     }

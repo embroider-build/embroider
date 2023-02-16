@@ -11,6 +11,7 @@ appScenarios
     project.addDevDependency(emberBootstrap());
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-composable-helpers', { baseDir: __dirname });
+    project.linkDevDependency('ember-modifier', { baseDir: __dirname });
 
     merge(project.files, {
       app: {
@@ -75,6 +76,14 @@ appScenarios
             export default class PostModel extends Model {
               @attr() title;
             }
+          `,
+        },
+        modifiers: {
+          'example-modifier.js': `
+            import { modifier } from 'ember-modifier';
+            export default modifier(function example(element/*, positional, named*/) {
+              element.setAttribute('data-it-worked', true);
+            });
           `,
         },
         routes: {
@@ -271,6 +280,24 @@ appScenarios
               });
             });
           `,
+        },
+        integration: {
+          components: {
+            'modifiers-example-test.js': `
+              import { module, test } from 'qunit';
+              import { setupRenderingTest } from 'app-template/tests/helpers';
+              import { render } from '@ember/test-helpers';
+              import { hbs } from 'ember-cli-htmlbars';
+
+              module('Integration | modifier | example-modifier', function (hooks) {
+                setupRenderingTest(hooks);
+
+                test('it renders', async function (assert) {
+                  await render(hbs('<div data-target {{example-modifier}} />'));
+                  assert.dom('[data-target]').hasAttribute('data-it-worked');
+                });
+              });`,
+          },
         },
         unit: {
           'missing-import-sync-renamed-test.js': `

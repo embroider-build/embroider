@@ -8,6 +8,10 @@ import CompatResolver, {
   HelperResolution,
   ModifierResolution,
   CompatResolverOptions,
+  AuditMessage,
+  builtInComponents,
+  builtInHelpers,
+  builtInModifiers,
 } from './resolver';
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -15,6 +19,7 @@ import assertNever from 'assert-never';
 import { explicitRelative } from '@embroider/core';
 import { dirname, join } from 'path';
 import { readJSONSync } from 'fs-extra';
+import { dasherize } from './dasherize-component-name';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -29,6 +34,8 @@ export interface Options {
 
 class TemplateResolver implements ASTPlugin {
   readonly name = 'embroider-build-time-resolver';
+
+  private auditHandler: undefined | ((msg: AuditMessage) => void);
 
   private emittedAMDDeps: Set<string> = new Set();
 
@@ -46,7 +53,10 @@ class TemplateResolver implements ASTPlugin {
 
   private scopeStack = new ScopeStack();
 
-  constructor(private env: Env, _config: CompatResolverOptions, private resolver: CompatResolver) {
+  constructor(private env: Env, private config: CompatResolverOptions, private resolver: CompatResolver) {
+    if ((globalThis as any).embroider_audit) {
+      this.auditHandler = (globalThis as any).embroider_audit;
+    }
     const invokeDependencies = resolver.enter(this.env.filename);
     for (let packageRuleInvokeDependency of invokeDependencies) {
       this.emitAMD(packageRuleInvokeDependency.hbsModule);
@@ -101,7 +111,7 @@ class TemplateResolver implements ASTPlugin {
       }
       case 'modifier': {
         let name = this.env.meta.jsutils.bindImport(
-          this.relativeToFile(resolution.module.absPath),
+          'specifier' in resolution ? resolution.specifier : this.relativeToFile(resolution.module.absPath),
           'default',
           parentPath,
           {
@@ -181,6 +191,89 @@ class TemplateResolver implements ASTPlugin {
         });
       }
     }
+  }
+
+  private get staticComponentsEnabled(): boolean {
+    return this.config.options.staticComponents || Boolean(this.auditHandler);
+  }
+
+  private get staticHelpersEnabled(): boolean {
+    return this.config.options.staticHelpers || Boolean(this.auditHandler);
+  }
+
+  private get staticModifiersEnabled(): boolean {
+    return this.config.options.staticModifiers || Boolean(this.auditHandler);
+  }
+
+  private resolveElement(tagName: string): ComponentResolution | null {
+    if (!this.staticComponentsEnabled) {
+      return null;
+    }
+
+    if (tagName[0] === tagName[0].toLowerCase()) {
+      // starts with lower case, so this can't be a component we need to
+      // globally resolve
+      return null;
+    }
+
+    let dName = dasherize(tagName);
+
+    if (builtInComponents.includes(dName)) {
+      return null;
+    }
+    if (this.resolver.isIgnoredComponent(dName)) {
+      return null;
+    }
+
+    let componentRules = this.resolver.rules.exteriorRules.get(dName);
+    return {
+      type: 'component',
+      specifier: `#embroider_compat/components/${dName}`,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: this.nameHint(dName),
+    };
+  }
+
+  private resolveSubExpression(path: string): HelperResolution | ResolutionFail | null {
+    if (!this.staticHelpersEnabled) {
+      return null;
+    }
+
+    // people are not allowed to override the built-in helpers with their own
+    // globally-named helpers. It throws an error. So it's fine for us to
+    // prioritize the builtIns here without bothering to resolve a user helper
+    // of the same name.
+    if (builtInHelpers.includes(path)) {
+      return null;
+    }
+
+    return {
+      type: 'helper',
+      specifier: `#embroider_compat/helpers/${path}`,
+      nameHint: this.nameHint(path),
+    };
+  }
+
+  private resolveElementModifierStatement(path: string): ModifierResolution | null {
+    if (!this.staticModifiersEnabled) {
+      return null;
+    }
+    if (builtInModifiers.includes(path)) {
+      return null;
+    }
+
+    return {
+      type: 'modifier',
+      specifier: `#embroider_compat/modifiers/${path}`,
+      nameHint: this.nameHint(path),
+    };
+  }
+
+  private nameHint(path: string) {
+    let parts = path.split('@');
+    return parts[parts.length - 1];
   }
 
   visitor: ASTPlugin['visitor'] = {
@@ -281,7 +374,7 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      let resolution = this.resolver.resolveSubExpression(node.path.original);
+      let resolution = this.resolveSubExpression(node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -363,11 +456,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
 
-      let resolution = this.resolver.resolveElementModifierStatement(
-        node.path.original,
-        this.env.filename,
-        node.path.loc
-      );
+      let resolution = this.resolveElementModifierStatement(node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -383,7 +472,7 @@ class TemplateResolver implements ASTPlugin {
             });
           }
         } else {
-          const resolution = this.resolver.resolveElement(node.tag);
+          const resolution = this.resolveElement(node.tag);
           this.emit(path, resolution, (node, newId) => {
             node.tag = newId.original;
           });

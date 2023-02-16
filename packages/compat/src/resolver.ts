@@ -17,7 +17,7 @@ import { join, relative, sep, resolve as pathResolve } from 'path';
 
 import { Memoize } from 'typescript-memoize';
 import Options from './options';
-import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
+import { snippetToDasherizedName } from './dasherize-component-name';
 
 export interface ResolvedDep {
   runtimeName: string;
@@ -57,11 +57,17 @@ export type HelperResolution =
       module: ResolvedDep;
     };
 
-export interface ModifierResolution {
-  type: 'modifier';
-  module: { absPath: string };
-  nameHint: string;
-}
+export type ModifierResolution =
+  | {
+      type: 'modifier';
+      module: { absPath: string };
+      nameHint: string;
+    }
+  | {
+      type: 'modifier';
+      specifier: string;
+      nameHint: string;
+    };
 
 export type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
 
@@ -87,7 +93,7 @@ export interface Loc {
 
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.
-const builtInHelpers = [
+export const builtInHelpers = [
   '-get-dynamic-var',
   '-in-element',
   'in-element',
@@ -129,8 +135,8 @@ const builtInHelpers = [
   'yield',
 ];
 
-const builtInComponents = ['input', 'link-to', 'textarea'];
-const builtInModifiers = ['action', 'on'];
+export const builtInComponents = ['input', 'link-to', 'textarea'];
+export const builtInModifiers = ['action', 'on'];
 
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
@@ -210,12 +216,12 @@ export default class CompatResolver {
     return undefined;
   }
 
-  private isIgnoredComponent(dasherizedName: string) {
+  isIgnoredComponent(dasherizedName: string) {
     return this.rules.exteriorRules.get(dasherizedName)?.safeToIgnore;
   }
 
   @Memoize()
-  private get rules() {
+  get rules() {
     // keyed by their first resolved dependency's absPath.
     let interiorRules: Map<string, PreprocessedComponentRule['interior']> = new Map();
 
@@ -421,19 +427,6 @@ export default class CompatResolver {
     return null;
   }
 
-  private nameHint(path: string) {
-    let parts = path.split('@');
-    return parts[parts.length - 1];
-  }
-
-  private deferHelper(path: string): HelperResolution {
-    return {
-      type: 'helper',
-      specifier: `#embroider_compat/helpers/${path}`,
-      nameHint: this.nameHint(path),
-    };
-  }
-
   private tryModifier(path: string, from: string): ModifierResolution | null {
     let target = this.parsePath(path, from);
     let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
@@ -526,33 +519,6 @@ export default class CompatResolver {
     };
   }
 
-  private deferComponent(path: string): ComponentResolution {
-    let componentRules = this.rules.exteriorRules.get(path);
-    return {
-      type: 'component',
-      specifier: `#embroider_compat/components/${path}`,
-      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
-      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(path),
-    };
-  }
-  resolveSubExpression(path: string): HelperResolution | ResolutionFail | null {
-    if (!this.staticHelpersEnabled) {
-      return null;
-    }
-
-    // people are not allowed to override the built-in helpers with their own
-    // globally-named helpers. It throws an error. So it's fine for us to
-    // prioritize the builtIns here without bothering to resolve a user helper
-    // of the same name.
-    if (builtInHelpers.includes(path)) {
-      return null;
-    }
-
-    return this.deferHelper(path);
-  }
-
   resolveMustache(
     path: string,
     hasArgs: boolean,
@@ -587,47 +553,6 @@ export default class CompatResolver {
     } else {
       return null;
     }
-  }
-
-  resolveElementModifierStatement(path: string, from: string, loc: Loc): ModifierResolution | ResolutionFail | null {
-    if (!this.staticModifiersEnabled) {
-      return null;
-    }
-    let found = this.tryModifier(path, from);
-    if (found) {
-      return found;
-    }
-    if (builtInModifiers.includes(path)) {
-      return null;
-    }
-    return {
-      type: 'error',
-      message: `Missing modifier`,
-      detail: path,
-      loc,
-    };
-  }
-
-  resolveElement(tagName: string): ComponentResolution | null {
-    if (!this.staticComponentsEnabled) {
-      return null;
-    }
-
-    if (tagName[0] === tagName[0].toLowerCase()) {
-      // starts with lower case, so this can't be a component we need to
-      // globally resolve
-      return null;
-    }
-
-    let dName = dasherize(tagName);
-
-    if (builtInComponents.includes(dName)) {
-      return null;
-    }
-    if (this.isIgnoredComponent(dName)) {
-      return null;
-    }
-    return this.deferComponent(dName);
   }
 
   resolveComponentHelper(

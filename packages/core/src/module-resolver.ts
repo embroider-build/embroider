@@ -250,6 +250,8 @@ export class Resolver {
         return this.resolveHelper(path, engine, request);
       case 'components':
         return this.resolveComponent(path, engine, request);
+      case 'modifiers':
+        return this.resolveModifier(path, engine, request);
       default:
         return request;
     }
@@ -300,6 +302,13 @@ export class Resolver {
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
+  }
+
+  private resolveModifier<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+    let target = this.parseGlobalPath(path, inEngine);
+    return request
+      .alias(`${target.packageName}/modifiers/${target.memberName}`)
+      .rehome(resolve(inEngine.root, 'package.json'));
   }
 
   private *componentTemplateCandidates(target: { packageName: string; memberName: string }, inEngine: EngineConfig) {

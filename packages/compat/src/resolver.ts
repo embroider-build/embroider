@@ -136,7 +136,6 @@ export const builtInHelpers = [
 ];
 
 export const builtInComponents = ['input', 'link-to', 'textarea'];
-export const builtInModifiers = ['action', 'on'];
 
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
@@ -388,10 +387,6 @@ export default class CompatResolver {
     return this.params.options.staticHelpers || Boolean(this.auditHandler);
   }
 
-  private get staticModifiersEnabled(): boolean {
-    return this.params.options.staticModifiers || Boolean(this.auditHandler);
-  }
-
   private containingEngine(_filename: string): Package | AppPackagePlaceholder {
     // FIXME: when using engines, template global resolution is scoped to the
     // engine not always the app. We already have code in the app-tree-merging
@@ -422,21 +417,6 @@ export default class CompatResolver {
           runtimeName,
         },
         nameHint: target.memberName,
-      };
-    }
-    return null;
-  }
-
-  private tryModifier(path: string, from: string): ModifierResolution | null {
-    let target = this.parsePath(path, from);
-    let resolution = this.resolver.nodeResolve(`${target.packageName}/modifiers/${target.memberName}`, target.from);
-    if (resolution.type === 'real') {
-      return {
-        type: 'modifier',
-        module: {
-          absPath: resolution.filename,
-        },
-        nameHint: path,
       };
     }
     return null;
@@ -634,41 +614,6 @@ export default class CompatResolver {
       return {
         type: 'error',
         message: 'Unsafe dynamic helper',
-        detail: `cannot statically analyze this expression`,
-        loc,
-      };
-    }
-  }
-
-  resolveDynamicModifier(
-    modifier: ComponentLocator,
-    from: string,
-    loc: Loc
-  ): ModifierResolution | ResolutionFail | null {
-    if (!this.staticModifiersEnabled) {
-      return null;
-    }
-
-    if (modifier.type === 'literal') {
-      let modifierName = modifier.path;
-      if (builtInModifiers.includes(modifierName)) {
-        return null;
-      }
-
-      let found = this.tryModifier(modifierName, from);
-      if (found) {
-        return found;
-      }
-      return {
-        type: 'error',
-        message: `Missing modifier`,
-        detail: modifierName,
-        loc,
-      };
-    } else {
-      return {
-        type: 'error',
-        message: 'Unsafe dynamic modifier',
         detail: `cannot statically analyze this expression`,
         loc,
       };

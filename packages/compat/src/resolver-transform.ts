@@ -11,7 +11,7 @@ import CompatResolver, {
   AuditMessage,
   builtInComponents,
   builtInHelpers,
-  builtInModifiers,
+  Loc,
 } from './resolver';
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -31,6 +31,8 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 export interface Options {
   appRoot: string;
 }
+
+export const builtInModifiers = ['action', 'on'];
 
 class TemplateResolver implements ASTPlugin {
   readonly name = 'embroider-build-time-resolver';
@@ -271,9 +273,36 @@ class TemplateResolver implements ASTPlugin {
     };
   }
 
+  resolveDynamicModifier(modifier: ComponentLocator, loc: Loc): ModifierResolution | ResolutionFail | null {
+    if (!this.staticModifiersEnabled) {
+      return null;
+    }
+
+    if (modifier.type === 'literal') {
+      return this.resolveElementModifierStatement(modifier.path);
+    } else {
+      return {
+        type: 'error',
+        message: 'Unsafe dynamic modifier',
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
+    }
+  }
+
   private nameHint(path: string) {
     let parts = path.split('@');
     return parts[parts.length - 1];
+  }
+
+  private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
+    if (param.type === 'StringLiteral') {
+      return this.resolveDynamicModifier({ type: 'literal', path: param.value }, param.loc);
+    }
+    // we don't have to manage any errors in this case because ember itself
+    // considers it an error to pass anything but a string literal to the
+    // modifier helper.
+    return null;
   }
 
   visitor: ASTPlugin['visitor'] = {
@@ -368,7 +397,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
       if (node.path.original === 'modifier' && node.params.length > 0) {
-        let resolution = handleDynamicModifier(node.params[0], this.resolver, this.env.filename);
+        let resolution = this.handleDynamicModifier(node.params[0]);
         this.emit(path, resolution, (node, newId) => {
           node.params[0] = newId;
         });
@@ -673,17 +702,6 @@ function handleDynamicHelper(
   // helper keyword invocation, or a helper reference that was imported somewhere.
   if (param.type === 'StringLiteral') {
     return resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
-  }
-  return null;
-}
-
-function handleDynamicModifier(
-  param: ASTv1.Expression,
-  resolver: Resolver,
-  moduleName: string
-): ModifierResolution | ResolutionFail | null {
-  if (param.type === 'StringLiteral') {
-    return resolver.resolveDynamicModifier({ type: 'literal', path: param.value }, moduleName, param.loc);
   }
   return null;
 }

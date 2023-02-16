@@ -163,6 +163,8 @@ class WebpackModuleRequest implements ModuleRequest {
     return new WebpackModuleRequest(this.state) as this;
   }
   virtualize(filename: string) {
-    return this.alias(`${virtualLoaderName}?${filename}!`);
+    let next = this.alias(`${virtualLoaderName}?${filename}!`);
+    next.isVirtual = true;
+    return next;
   }
 }

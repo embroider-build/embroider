@@ -190,7 +190,7 @@ export default class CompatResolver {
     }
     return deps;
   }
-  private findInteriorRules(absPath: string): PreprocessedComponentRule['interior'] | undefined {
+  findInteriorRules(absPath: string): PreprocessedComponentRule['interior'] | undefined {
     let rules = this.rules.interiorRules.get(absPath);
     if (rules) {
       return rules;
@@ -533,60 +533,6 @@ export default class CompatResolver {
     } else {
       return null;
     }
-  }
-
-  resolveComponentHelper(
-    component: ComponentLocator,
-    from: string,
-    loc: Loc,
-    impliedBecause?: { componentName: string; argumentName: string }
-  ): ComponentResolution | ResolutionFail | null {
-    if (!this.staticComponentsEnabled) {
-      return null;
-    }
-
-    let message;
-    if (impliedBecause) {
-      message = `argument "${impliedBecause.argumentName}" to component "${impliedBecause.componentName}" is treated as a component, but the value you're passing is dynamic`;
-    } else {
-      message = `Unsafe dynamic component`;
-    }
-
-    if (component.type === 'other') {
-      return {
-        type: 'error',
-        message,
-        detail: `cannot statically analyze this expression`,
-        loc,
-      };
-    }
-    if (component.type === 'path') {
-      let ownComponentRules = this.findInteriorRules(from);
-      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
-        return null;
-      }
-      return {
-        type: 'error',
-        message,
-        detail: component.path,
-        loc,
-      };
-    }
-
-    if (builtInComponents.includes(component.path)) {
-      return null;
-    }
-
-    let found = this.tryComponent(component.path, from);
-    if (found) {
-      return found;
-    }
-    return {
-      type: 'error',
-      message: `Missing component`,
-      detail: component.path,
-      loc,
-    };
   }
 
   resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): HelperResolution | ResolutionFail | null {

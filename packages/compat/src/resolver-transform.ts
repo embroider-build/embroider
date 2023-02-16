@@ -166,6 +166,53 @@ class TemplateResolver implements ASTPlugin {
     }
   }
 
+  private handleComponentHelper(
+    param: ASTv1.Node,
+    impliedBecause?: { componentName: string; argumentName: string }
+  ): ComponentResolution | ResolutionFail | null {
+    let locator: ComponentLocator;
+    switch (param.type) {
+      case 'StringLiteral':
+        locator = { type: 'literal', path: param.value };
+        break;
+      case 'PathExpression':
+        locator = { type: 'path', path: param.original };
+        break;
+      case 'MustacheStatement':
+        if (param.hash.pairs.length === 0 && param.params.length === 0) {
+          return this.handleComponentHelper(param.path, impliedBecause);
+        } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+          // safe because we will handle this inner `{{component ...}}` mustache on its own
+          return null;
+        } else {
+          locator = { type: 'other' };
+        }
+        break;
+      case 'TextNode':
+        locator = { type: 'literal', path: param.chars };
+        break;
+      case 'SubExpression':
+        if (param.path.type === 'PathExpression' && param.path.original === 'component') {
+          // safe because we will handle this inner `(component ...)` subexpression on its own
+          return null;
+        }
+        if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
+          // safe because we trust ensure-safe-component
+          return null;
+        }
+        locator = { type: 'other' };
+        break;
+      default:
+        locator = { type: 'other' };
+    }
+
+    if (locator.type === 'path' && this.scopeStack.safeComponentInScope(locator.path)) {
+      return null;
+    }
+
+    return this.resolveComponentHelper(locator, param.loc, impliedBecause);
+  }
+
   private handleDynamicComponentArguments(
     componentName: string,
     argumentsAreComponents: string[],
@@ -180,7 +227,7 @@ class TemplateResolver implements ASTPlugin {
         }
       });
       if (attr) {
-        let resolution = handleComponentHelper(attr.node.value, this.resolver, this.env.filename, this.scopeStack, {
+        let resolution = this.handleComponentHelper(attr.node.value, {
           componentName,
           argumentName: name,
         });
@@ -207,7 +254,7 @@ class TemplateResolver implements ASTPlugin {
     return this.config.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private resolveElement(tagName: string): ComponentResolution | null {
+  private resolveComponent(tagName: string): ComponentResolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
@@ -236,6 +283,46 @@ class TemplateResolver implements ASTPlugin {
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
       nameHint: this.nameHint(dName),
     };
+  }
+
+  private resolveComponentHelper(
+    component: ComponentLocator,
+    loc: Loc,
+    impliedBecause?: { componentName: string; argumentName: string }
+  ): ComponentResolution | ResolutionFail | null {
+    if (!this.staticComponentsEnabled) {
+      return null;
+    }
+
+    let message;
+    if (impliedBecause) {
+      message = `argument "${impliedBecause.argumentName}" to component "${impliedBecause.componentName}" is treated as a component, but the value you're passing is dynamic`;
+    } else {
+      message = `Unsafe dynamic component`;
+    }
+
+    if (component.type === 'other') {
+      return {
+        type: 'error',
+        message,
+        detail: `cannot statically analyze this expression`,
+        loc,
+      };
+    }
+    if (component.type === 'path') {
+      let ownComponentRules = this.resolver.findInteriorRules(this.env.filename);
+      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
+        return null;
+      }
+      return {
+        type: 'error',
+        message,
+        detail: component.path,
+        loc,
+      };
+    }
+
+    return this.resolveComponent(component.path);
   }
 
   private resolveSubExpression(path: string): HelperResolution | ResolutionFail | null {
@@ -349,7 +436,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
       if (node.path.original === 'component' && node.params.length > 0) {
-        let resolution = handleComponentHelper(node.params[0], this.resolver, this.env.filename, this.scopeStack);
+        let resolution = this.handleComponentHelper(node.params[0]);
         this.emit(path, resolution, (node, newIdentifier) => {
           node.params[0] = newIdentifier;
         });
@@ -383,7 +470,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
       if (node.path.original === 'component' && node.params.length > 0) {
-        let resolution = handleComponentHelper(node.params[0], this.resolver, this.env.filename, this.scopeStack);
+        let resolution = this.handleComponentHelper(node.params[0]);
         this.emit(path, resolution, (node, newId) => {
           node.params[0] = newId;
         });
@@ -436,7 +523,7 @@ class TemplateResolver implements ASTPlugin {
           return;
         }
         if (node.path.original === 'component' && node.params.length > 0) {
-          let resolution = handleComponentHelper(node.params[0], this.resolver, this.env.filename, this.scopeStack);
+          let resolution = this.handleComponentHelper(node.params[0]);
           this.emit(path, resolution, (node, newId) => {
             node.params[0] = newId;
           });
@@ -501,7 +588,7 @@ class TemplateResolver implements ASTPlugin {
             });
           }
         } else {
-          const resolution = this.resolveElement(node.tag);
+          const resolution = this.resolveComponent(node.tag);
           this.emit(path, resolution, (node, newId) => {
             node.tag = newId.original;
           });
@@ -639,56 +726,6 @@ class ScopeStack {
     }
     return false;
   }
-}
-
-function handleComponentHelper(
-  param: ASTv1.Node,
-  resolver: Resolver,
-  moduleName: string,
-  scopeStack: ScopeStack,
-  impliedBecause?: { componentName: string; argumentName: string }
-): ComponentResolution | ResolutionFail | null {
-  let locator: ComponentLocator;
-  switch (param.type) {
-    case 'StringLiteral':
-      locator = { type: 'literal', path: param.value };
-      break;
-    case 'PathExpression':
-      locator = { type: 'path', path: param.original };
-      break;
-    case 'MustacheStatement':
-      if (param.hash.pairs.length === 0 && param.params.length === 0) {
-        return handleComponentHelper(param.path, resolver, moduleName, scopeStack, impliedBecause);
-      } else if (param.path.type === 'PathExpression' && param.path.original === 'component') {
-        // safe because we will handle this inner `{{component ...}}` mustache on its own
-        return null;
-      } else {
-        locator = { type: 'other' };
-      }
-      break;
-    case 'TextNode':
-      locator = { type: 'literal', path: param.chars };
-      break;
-    case 'SubExpression':
-      if (param.path.type === 'PathExpression' && param.path.original === 'component') {
-        // safe because we will handle this inner `(component ...)` subexpression on its own
-        return null;
-      }
-      if (param.path.type === 'PathExpression' && param.path.original === 'ensure-safe-component') {
-        // safe because we trust ensure-safe-component
-        return null;
-      }
-      locator = { type: 'other' };
-      break;
-    default:
-      locator = { type: 'other' };
-  }
-
-  if (locator.type === 'path' && scopeStack.safeComponentInScope(locator.path)) {
-    return null;
-  }
-
-  return resolver.resolveComponentHelper(locator, moduleName, param.loc, impliedBecause);
 }
 
 function handleDynamicHelper(

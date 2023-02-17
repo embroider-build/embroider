@@ -1,6 +1,6 @@
 {
   "mode": "pre",
-  "tag": "beta",
+  "tag": "unstable",
   "initialVersions": {
     "@embroider/addon-dev": "3.0.0",
     "@embroider/addon-shim": "1.8.4",

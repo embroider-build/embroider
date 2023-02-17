@@ -1,0 +1,14 @@
+{
+  "name": "@embroider/unstable-release",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fs-extra": "^9.1.0",
+    "globby": "^11.0.3",
+    "execa": "^7.0.0"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

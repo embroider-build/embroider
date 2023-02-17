@@ -1,4 +1,4 @@
-import { dirname } from 'path';
+import { dirname, basename } from 'path';
 import { explicitRelative } from '.';
 import { compile } from './js-handlebars';
 
@@ -50,10 +50,9 @@ import component from "{{{js-string-escape relativeJSModule}}}";
 export default setComponentTemplate(template, component);
 {{else}}
 import templateOnlyComponent from "@ember/component/template-only";
-debugger;
-export default setComponentTemplate(template, templateOnlyComponent());
+export default setComponentTemplate(template, templateOnlyComponent(undefined, "{{{js-string-escape debugName}}}"));
 {{/if}}
-`) as (params: { relativeHBSModule: string; relativeJSModule: string | null }) => string;
+`) as (params: { relativeHBSModule: string; relativeJSModule: string | null; debugName: string }) => string;
 
 export function virtualExternalModule(specifier: string): string {
   return externalPrefix + specifier;
@@ -75,7 +74,7 @@ export function virtualPairComponent(hbsModule: string, jsModule: string | null)
 
 function decodeVirtualPairComponent(
   filename: string
-): { relativeHBSModule: string; relativeJSModule: string | null } | null {
+): { relativeHBSModule: string; relativeJSModule: string | null; debugName: string } | null {
   let match = pairComponentPattern.exec(filename);
   if (!match) {
     return null;
@@ -83,5 +82,9 @@ function decodeVirtualPairComponent(
   let { hbsModule, jsModule } = match.groups! as { hbsModule: string; jsModule: string };
   // target our real hbs module from our virtual module
   let relativeHBSModule = explicitRelative(dirname(filename), hbsModule);
-  return { relativeHBSModule, relativeJSModule: decodeURIComponent(jsModule) || null };
+  return {
+    relativeHBSModule,
+    relativeJSModule: decodeURIComponent(jsModule) || null,
+    debugName: basename(relativeHBSModule).replace(/\.(js|hbs)$/, ''),
+  };
 }

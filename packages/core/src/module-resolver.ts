@@ -362,6 +362,9 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
+    if (request.isVirtual) {
+      return request;
+    }
     let packageName = getPackageName(request.specifier);
     if (!packageName) {
       return request;
@@ -425,6 +428,9 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
+    if (request.isVirtual) {
+      return request;
+    }
     let { specifier, fromFile } = request;
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {

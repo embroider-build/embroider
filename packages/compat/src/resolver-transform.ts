@@ -254,34 +254,26 @@ class TemplateResolver implements ASTPlugin {
     return this.config.options.staticModifiers || Boolean(this.auditHandler);
   }
 
-  private resolveComponent(tagName: string): ComponentResolution | null {
+  private resolveComponent(name: string): ComponentResolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
 
-    if (tagName[0] === tagName[0].toLowerCase()) {
-      // starts with lower case, so this can't be a component we need to
-      // globally resolve
+    if (builtInComponents.includes(name)) {
+      return null;
+    }
+    if (this.resolver.isIgnoredComponent(name)) {
       return null;
     }
 
-    let dName = dasherize(tagName);
-
-    if (builtInComponents.includes(dName)) {
-      return null;
-    }
-    if (this.resolver.isIgnoredComponent(dName)) {
-      return null;
-    }
-
-    let componentRules = this.resolver.rules.exteriorRules.get(dName);
+    let componentRules = this.resolver.rules.exteriorRules.get(name);
     return {
       type: 'component',
-      specifier: `#embroider_compat/components/${dName}`,
+      specifier: `#embroider_compat/components/${name}`,
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(dName),
+      nameHint: this.nameHint(name),
     };
   }
 
@@ -325,7 +317,7 @@ class TemplateResolver implements ASTPlugin {
     return this.resolveComponent(component.path);
   }
 
-  private resolveSubExpression(path: string): HelperResolution | ResolutionFail | null {
+  private resolveHelper(path: string): HelperResolution | null {
     if (!this.staticHelpersEnabled) {
       return null;
     }
@@ -377,6 +369,21 @@ class TemplateResolver implements ASTPlugin {
     }
   }
 
+  private resolveDynamicHelper(helper: ComponentLocator): HelperResolution | null {
+    if (!this.staticHelpersEnabled) {
+      return null;
+    }
+
+    if (helper.type === 'literal') {
+      return this.resolveHelper(helper.path);
+    }
+
+    // we don't have to manage any errors in this case because ember itself
+    // considers it an error to pass anything but a string literal to the
+    // `helper` helper.
+    return null;
+  }
+
   private nameHint(path: string) {
     let parts = path.split('@');
     return parts[parts.length - 1];
@@ -389,6 +396,17 @@ class TemplateResolver implements ASTPlugin {
     // we don't have to manage any errors in this case because ember itself
     // considers it an error to pass anything but a string literal to the
     // modifier helper.
+    return null;
+  }
+
+  private handleDynamicHelper(param: ASTv1.Expression): HelperResolution | ResolutionFail | null {
+    // We only need to handle StringLiterals since Ember already throws an error if unsupported values
+    // are passed to the helper keyword.
+    // If a helper reference is passed in we don't need to do anything since it's either the result of a previous
+    // helper keyword invocation, or a helper reference that was imported somewhere.
+    if (param.type === 'StringLiteral') {
+      return this.resolveDynamicHelper({ type: 'literal', path: param.value });
+    }
     return null;
   }
 
@@ -477,7 +495,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
       if (node.path.original === 'helper' && node.params.length > 0) {
-        let resolution = handleDynamicHelper(node.params[0], this.resolver, this.env.filename);
+        let resolution = this.handleDynamicHelper(node.params[0]);
         this.emit(path, resolution, (node, newId) => {
           node.params[0] = newId;
         });
@@ -490,7 +508,7 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      let resolution = this.resolveSubExpression(node.path.original);
+      let resolution = this.resolveHelper(node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -530,7 +548,7 @@ class TemplateResolver implements ASTPlugin {
           return;
         }
         if (node.path.original === 'helper' && node.params.length > 0) {
-          let resolution = handleDynamicHelper(node.params[0], this.resolver, this.env.filename);
+          let resolution = this.handleDynamicHelper(node.params[0]);
           this.emit(path, resolution, (node, newIdentifier) => {
             node.params[0] = newIdentifier;
           });
@@ -588,7 +606,14 @@ class TemplateResolver implements ASTPlugin {
             });
           }
         } else {
-          const resolution = this.resolveComponent(node.tag);
+          let resolution: ComponentResolution | null = null;
+
+          // if it starts with lower case, it can't be a component we need to
+          // globally resolve
+          if (node.tag[0] !== node.tag[0].toLowerCase()) {
+            resolution = this.resolveComponent(dasherize(node.tag));
+          }
+
           this.emit(path, resolution, (node, newId) => {
             node.tag = newId.original;
           });
@@ -726,21 +751,6 @@ class ScopeStack {
     }
     return false;
   }
-}
-
-function handleDynamicHelper(
-  param: ASTv1.Expression,
-  resolver: Resolver,
-  moduleName: string
-): HelperResolution | ResolutionFail | null {
-  // We only need to handle StringLiterals since Ember already throws an error if unsupported values
-  // are passed to the helper keyword.
-  // If a helper reference is passed in we don't need to do anything since it's either the result of a previous
-  // helper keyword invocation, or a helper reference that was imported somewhere.
-  if (param.type === 'StringLiteral') {
-    return resolver.resolveDynamicHelper({ type: 'literal', path: param.value }, moduleName, param.loc);
-  }
-  return null;
 }
 
 function extendPath<N extends ASTv1.Node, K extends keyof N>(

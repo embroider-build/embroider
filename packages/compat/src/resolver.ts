@@ -534,37 +534,6 @@ export default class CompatResolver {
       return null;
     }
   }
-
-  resolveDynamicHelper(helper: ComponentLocator, from: string, loc: Loc): HelperResolution | ResolutionFail | null {
-    if (!this.staticHelpersEnabled) {
-      return null;
-    }
-
-    if (helper.type === 'literal') {
-      let helperName = helper.path;
-      if (builtInHelpers.includes(helperName)) {
-        return null;
-      }
-
-      let found = this.tryHelper(helperName, from);
-      if (found) {
-        return found;
-      }
-      return {
-        type: 'error',
-        message: `Missing helper`,
-        detail: helperName,
-        loc,
-      };
-    } else {
-      return {
-        type: 'error',
-        message: 'Unsafe dynamic helper',
-        detail: `cannot statically analyze this expression`,
-        loc,
-      };
-    }
-  }
 }
 
 // we don't have a real Package for the app itself because the resolver has work

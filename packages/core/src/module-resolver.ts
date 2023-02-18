@@ -59,7 +59,7 @@ interface EngineConfig {
   root: string;
 }
 
-const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<path>.*)/;
+const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
 export interface ModuleRequest {
   specifier: string;
@@ -237,23 +237,34 @@ export class Resolver {
     if (!match) {
       return request;
     }
-    let { type, path } = match.groups!;
+    let { type, rest } = match.groups!;
     let fromPkg = this.owningPackage(request.fromFile);
     if (!fromPkg?.isV2Ember()) {
       return request;
     }
-
     let engine = this.owningEngine(fromPkg);
 
     switch (type) {
       case 'helpers':
-        return this.resolveHelper(path, engine, request);
+        return this.resolveHelper(rest, engine, request);
       case 'components':
-        return this.resolveComponent(path, engine, request);
+        return this.resolveComponent(rest, engine, request);
       case 'modifiers':
-        return this.resolveModifier(path, engine, request);
+        return this.resolveModifier(rest, engine, request);
+      case 'ambiguous':
+        let innerGroups = /(?<flags>[^/]+)\/(?<path>.*)/.exec(rest)?.groups;
+        if (!innerGroups) {
+          throw new Error(`bug: unexpected #embroider_compat/ambiguous specifier: ${request.specifier}`);
+        }
+        let flags = parseInt(innerGroups.flags, 10);
+        let params = {
+          hasArgs: Boolean(flags & 1),
+          staticHelpersEnabled: Boolean(flags & 2),
+          staticComponentsEnabled: Boolean(flags & 4),
+        };
+        return this.resolveHelperOrComponent(innerGroups.rest, params, engine, request);
       default:
-        return request;
+        throw new Error(`bug: unexepected #embroider_compat specifier: ${request.specifier}`);
     }
   }
 
@@ -302,6 +313,43 @@ export class Resolver {
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
+  }
+
+  private resolveHelperOrComponent<R extends ModuleRequest>(
+    path: string,
+    params: { hasArgs: boolean; staticHelpersEnabled: boolean; staticComponentsEnabled: boolean },
+    inEngine: EngineConfig,
+    request: R
+  ): R {
+    if (params.staticHelpersEnabled) {
+      // resolveHelper just rewrites our request to one that should target the
+      // component, so here to resolve the ambiguity we need to actually resolve
+      // that candidate to see if it works.
+      let helperCandidate = this.resolveHelper(path, inEngine, request);
+      let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
+      if (helperMatch.type === 'real') {
+        return helperCandidate;
+      }
+    }
+    if (params.staticComponentsEnabled) {
+      // unlike resolveHelper, resolveComponent already does pre-resolution in
+      // order to deal with its own internal ambiguity around JS vs HBS vs
+      // colocation.≥
+      let componentMatch = this.resolveComponent(path, inEngine, request);
+      if (componentMatch !== request) {
+        return componentMatch;
+      }
+    }
+
+    if (params.hasArgs && params.staticComponentsEnabled && params.staticHelpersEnabled) {
+      // this is the hard failure case -- we were supposed to find something and
+      // didn't. Let the normal resolution process progress so the user gets a
+      // normal build error.
+      return request;
+    }
+
+    // NEXT: this is the remaining problematic case. We probably need to apply
+    // some stricter policy in the resolver-transform so that we don't end up with cases here that actually want to "fall through" to the
   }
 
   private resolveModifier<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {

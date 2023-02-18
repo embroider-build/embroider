@@ -379,14 +379,6 @@ export default class CompatResolver {
       .replace(/\/index$/, '');
   }
 
-  private get staticComponentsEnabled(): boolean {
-    return this.params.options.staticComponents || Boolean(this.auditHandler);
-  }
-
-  private get staticHelpersEnabled(): boolean {
-    return this.params.options.staticHelpers || Boolean(this.auditHandler);
-  }
-
   private containingEngine(_filename: string): Package | AppPackagePlaceholder {
     // FIXME: when using engines, template global resolution is scoped to the
     // engine not always the app. We already have code in the app-tree-merging
@@ -403,23 +395,6 @@ export default class CompatResolver {
     } else {
       return { packageName: engine.name, memberName: path, from: pathResolve(engine.root, './package.json') };
     }
-  }
-
-  private tryHelper(path: string, from: string): HelperResolution | null {
-    let target = this.parsePath(path, from);
-    let runtimeName = `${target.packageName}/helpers/${target.memberName}`;
-    let resolution = this.resolver.nodeResolve(runtimeName, target.from);
-    if (resolution.type === 'real') {
-      return {
-        type: 'helper',
-        module: {
-          absPath: resolution.filename,
-          runtimeName,
-        },
-        nameHint: target.memberName,
-      };
-    }
-    return null;
   }
 
   @Memoize()
@@ -497,42 +472,6 @@ export default class CompatResolver {
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
       nameHint: target.memberName,
     };
-  }
-
-  resolveMustache(
-    path: string,
-    hasArgs: boolean,
-    from: string,
-    loc: Loc
-  ): HelperResolution | ComponentResolution | ResolutionFail | null {
-    if (this.staticHelpersEnabled) {
-      let found = this.tryHelper(path, from);
-      if (found) {
-        return found;
-      }
-    }
-    if (this.staticComponentsEnabled) {
-      let found = this.tryComponent(path, from);
-      if (found) {
-        return found;
-      }
-    }
-    if (
-      hasArgs &&
-      this.staticComponentsEnabled &&
-      this.staticHelpersEnabled &&
-      !builtInHelpers.includes(path) &&
-      !this.isIgnoredComponent(path)
-    ) {
-      return {
-        type: 'error',
-        message: `Missing component or helper`,
-        detail: path,
-        loc,
-      };
-    } else {
-      return null;
-    }
   }
 }
 

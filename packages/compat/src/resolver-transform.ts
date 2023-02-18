@@ -337,6 +337,27 @@ class TemplateResolver implements ASTPlugin {
     };
   }
 
+  private resolveHelperOrComponent(path: string, hasArgs: boolean): ComponentResolution | null {
+    if (
+      (!this.staticHelpersEnabled && !this.staticComponentsEnabled) ||
+      builtInHelpers.includes(path) ||
+      builtInComponents.includes(path) ||
+      this.resolver.isIgnoredComponent(path)
+    ) {
+      return null;
+    }
+    let componentRules = this.resolver.rules.exteriorRules.get(path);
+    let flags = (hasArgs ? 1 : 0) | (this.staticHelpersEnabled ? 2 : 0) | (this.staticComponentsEnabled ? 4 : 0);
+    return {
+      type: 'component',
+      specifier: `#embroider_compat/ambiguous/${flags}/${path}`,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: this.nameHint(path),
+    };
+  }
+
   private resolveElementModifierStatement(path: string): ModifierResolution | null {
     if (!this.staticModifiersEnabled) {
       return null;
@@ -386,7 +407,7 @@ class TemplateResolver implements ASTPlugin {
 
   private nameHint(path: string) {
     let parts = path.split('@');
-    return parts[parts.length - 1];
+    return '$' + parts[parts.length - 1];
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
@@ -460,10 +481,7 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      // a block counts as args from our perpsective (it's enough to prove
-      // this thing must be a component, not content)
-      let hasArgs = true;
-      let resolution = this.resolver.resolveMustache(node.path.original, hasArgs, this.env.filename, node.path.loc);
+      let resolution = this.resolveComponent(node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -540,6 +558,13 @@ class TemplateResolver implements ASTPlugin {
           // location.
           return;
         }
+        if (node.path.original.startsWith('@')) {
+          // similarly, global resolution of helpers and components never
+          // happens with argument paths (it could still be an invocation, but
+          // it would be a lexically-scoped invocation, not one we need to
+          // adjust)
+          return;
+        }
         if (node.path.original === 'component' && node.params.length > 0) {
           let resolution = this.handleComponentHelper(node.params[0]);
           this.emit(path, resolution, (node, newId) => {
@@ -555,7 +580,7 @@ class TemplateResolver implements ASTPlugin {
           return;
         }
         let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-        let resolution = this.resolver.resolveMustache(node.path.original, hasArgs, this.env.filename, node.path.loc);
+        let resolution = this.resolveHelperOrComponent(node.path.original, hasArgs);
         this.emit(path, resolution, (node, newIdentifier) => {
           node.path = newIdentifier;
         });

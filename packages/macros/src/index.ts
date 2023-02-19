@@ -35,12 +35,12 @@ export function importSync(specifier: string): unknown {
   throw new Oops(specifier);
 }
 
-export function getConfig<T>(packageName: string, ...keys: string[]): T {
-  throw new Oops(packageName, keys);
+export function getConfig<T>(packageName: string): T {
+  throw new Oops(packageName);
 }
 
-export function getOwnConfig<T>(...keys: string[]): T {
-  throw new Oops(keys);
+export function getOwnConfig<T>(): T {
+  throw new Oops();
 }
 
 export function getGlobalConfig<T>(): T {

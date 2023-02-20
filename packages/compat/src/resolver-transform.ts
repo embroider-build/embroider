@@ -528,7 +528,7 @@ class TemplateResolver implements ASTPlugin {
       this.reportError({
         type: 'error',
         message: 'unsupported ambiguity between helper and component',
-        detail: `this use of "${path}" could be a helper or a component, and your settings for staticHelpersEnabled and staticComponentsEnable do not agree`,
+        detail: `this use of "${path}" could be a helper or a component, and your settings for staticHelpersEnabled and staticComponentsEnabled do not agree`,
         loc,
       });
       return null;

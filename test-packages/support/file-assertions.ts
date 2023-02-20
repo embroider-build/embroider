@@ -9,7 +9,7 @@ type JSONResult = { result: true; data: any } | { result: false; actual: any; ex
 export class BoundExpectFile {
   private consumed = false;
 
-  constructor(readonly basePath: string, readonly path: string, private adapter: AssertionAdapter) {
+  constructor(readonly basePath: string, readonly path: string, readonly adapter: AssertionAdapter) {
     Promise.resolve().then(() => {
       if (!this.consumed) {
         this.adapter.fail(
@@ -161,6 +161,23 @@ export class TransformedFileExpect extends BoundExpectFile {
         expected: 'transformer to run',
         message: err.stack,
       };
+    }
+  }
+  failsToTransform(message: string) {
+    if (this.contents.result) {
+      this.adapter.assert({
+        result: false,
+        actual: this.contents.data,
+        expected: `a transform error`,
+        message: `expected to catch a transform error but none was thrown`,
+      });
+    } else {
+      this.adapter.assert({
+        result: this.contents.actual.message.includes(message),
+        actual: this.contents.actual.message,
+        expected: message,
+        message: `contents of transform exception`,
+      });
     }
   }
 }

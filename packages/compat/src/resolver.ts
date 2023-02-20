@@ -78,12 +78,6 @@ export interface ResolutionFail {
   loc: Loc;
 }
 
-interface ResolverDependencyError extends Error {
-  isTemplateResolverError?: boolean;
-  loc?: Loc;
-  moduleName?: string;
-}
-
 export type Resolution = ResolutionResult | ResolutionFail;
 
 export interface Loc {
@@ -169,16 +163,11 @@ export interface AuditMessage {
 }
 
 export default class CompatResolver {
-  private auditHandler: undefined | ((msg: AuditMessage) => void);
-
   private resolver: Resolver;
 
   constructor(private params: CompatResolverOptions) {
     this.params.options = extractOptions(this.params.options);
     this.resolver = new Resolver(this.params);
-    if ((globalThis as any).embroider_audit) {
-      this.auditHandler = (globalThis as any).embroider_audit;
-    }
   }
   enter(moduleName: string) {
     let rules = this.findInteriorRules(moduleName);
@@ -307,37 +296,6 @@ export default class CompatResolver {
       throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);
     }
     return name;
-  }
-
-  private humanReadableFile(file: string) {
-    if (!this.params.appRoot.endsWith('/')) {
-      this.params.appRoot += '/';
-    }
-    if (file.startsWith(this.params.appRoot)) {
-      return file.slice(this.params.appRoot.length);
-    }
-    return file;
-  }
-
-  reportError(dep: ResolutionFail, filename: string, source: string) {
-    if (!this.auditHandler && !this.params.options.allowUnsafeDynamicComponents) {
-      let e: ResolverDependencyError = new Error(
-        `${dep.message}: ${dep.detail} in ${this.humanReadableFile(filename)}`
-      );
-      e.isTemplateResolverError = true;
-      e.loc = dep.loc;
-      e.moduleName = filename;
-      throw e;
-    }
-    if (this.auditHandler) {
-      this.auditHandler({
-        message: dep.message,
-        filename,
-        detail: dep.detail,
-        loc: dep.loc,
-        source,
-      });
-    }
   }
 
   resolveImport(path: string, from: string): { runtimeName: string; absPath: string } | undefined {

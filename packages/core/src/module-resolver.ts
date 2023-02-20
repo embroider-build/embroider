@@ -350,6 +350,7 @@ export class Resolver {
 
     // NEXT: this is the remaining problematic case. We probably need to apply
     // some stricter policy in the resolver-transform so that we don't end up with cases here that actually want to "fall through" to the
+    return request;
   }
 
   private resolveModifier<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {

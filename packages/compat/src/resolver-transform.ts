@@ -89,7 +89,7 @@ class TemplateResolver implements ASTPlugin {
   ) {
     switch (resolution?.type) {
       case 'error':
-        this.resolver.reportError(resolution, this.env.filename, this.env.contents);
+        this.reportError(resolution);
         return;
       case 'helper': {
         let name: string;
@@ -164,6 +164,36 @@ class TemplateResolver implements ASTPlugin {
       default:
         assertNever(resolution);
     }
+  }
+
+  private reportError(dep: ResolutionFail) {
+    if (!this.auditHandler && !this.config.options.allowUnsafeDynamicComponents) {
+      let e: any = new Error(`${dep.message}: ${dep.detail} in ${this.humanReadableFile(this.env.filename)}`);
+      e.isTemplateResolverError = true;
+      e.loc = dep.loc;
+      e.moduleName = this.env.filename;
+      throw e;
+    }
+    if (this.auditHandler) {
+      this.auditHandler({
+        message: dep.message,
+        filename: this.env.filename,
+        detail: dep.detail,
+        loc: dep.loc,
+        source: this.env.contents,
+      });
+    }
+  }
+
+  private humanReadableFile(file: string) {
+    let { appRoot } = this.config;
+    if (!appRoot.endsWith('/')) {
+      appRoot += '/';
+    }
+    if (file.startsWith(appRoot)) {
+      return file.slice(appRoot.length);
+    }
+    return file;
   }
 
   private handleComponentHelper(

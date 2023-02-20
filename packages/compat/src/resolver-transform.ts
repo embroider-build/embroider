@@ -9,8 +9,7 @@ import CompatResolver, {
   ModifierResolution,
   CompatResolverOptions,
   AuditMessage,
-  builtInComponents,
-  builtInHelpers,
+  builtInKeywords,
   Loc,
 } from './resolver';
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
@@ -289,7 +288,7 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    if (builtInComponents.includes(name)) {
+    if (builtInKeywords.includes(name)) {
       return null;
     }
     if (this.resolver.isIgnoredComponent(name)) {
@@ -356,7 +355,7 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    if (builtInHelpers.includes(path)) {
+    if (builtInKeywords.includes(path)) {
       return null;
     }
 
@@ -367,20 +366,100 @@ class TemplateResolver implements ASTPlugin {
     };
   }
 
-  private resolveHelperOrComponent(path: string, hasArgs: boolean): ComponentResolution | null {
+  private resolveHelperOrComponent(path: string, loc: Loc, hasArgs: boolean): ComponentResolution | null {
+    /*
+
+    In earlier embroider versions we would do a bunch of module resolution right
+    here inside the ast transform to try to resolve the ambiguity of this case
+    and if we didn't find anything, leave the template unchanged. But that leads
+    to both a lot of extra build-time expense (since we are attempting
+    resolution for lots of things that may in fact be just some data and not a
+    component invocation at all, and also since we are pre-resolving modules
+    that will get resolved a second time by the final stage packager).
+
+    Now, we're going to be less forgiving, because it streamlines the build for
+    everyone who's not still using these *extremely* old patterns.
+
+    The problematic case is:
+
+      1. In a non-strict template (because this whole resolver-transform.ts is a
+         no-op on strict handlebars).
+
+      2. Have a mustache statement like: `{{something}}`, where `something` is:
+
+        a. Not a variable in scope (for example, there's no preceeding line 
+           like `<Parent as |something|>`)
+        b. Does not start with `@` because that must be an argument from outside this template.
+        c. Does not contain a dot, like `some.thing` (because that case is classically 
+           never a global component resolution that we would need to handle)
+        d. Does not start with `this` (this rule is mostly redundant with the previous rule, 
+           but even a standalone `this` is never a component invocation).
+        e. Does not have any arguments. If there are argument like `{{something a=b}}`, 
+           there is still ambiguity between helper vs component, but there is no longer 
+           the possibility that this was just rendering some data.
+        f. Does not take a block, like `{{#something}}{{/something}}` (because that is 
+           always a component, no ambiguity.)
+
+    We can't tell if this problematic case is really:
+
+      1. A helper invocation with no arguments that is being directly rendered.
+         Out-of-the-box, ember already generates [a lint
+         error](https://github.com/ember-template-lint/ember-template-lint/blob/master/docs/rule/no-curly-component-invocation.md)
+         for this, although it tells you to whitelist your helper when IMO it
+         should tell you to use an unambiguous syntax like `{{ (something) }}`
+         instead.
+
+      2. A component invocation, which you could have written `<Something />`
+         instead. Angle-bracket invocation has been available and easy-to-adopt
+         for a very long time. 
+
+      3. Property-this-fallback for `{{this.something}}`. Property-this-fallback
+         is eliminated at Ember 4.0, so people have been heavily pushed to get
+         it out of their addons.
+    */
+
+    // first, bail out on all the stuff we can obviously ignore
     if (
       (!this.staticHelpersEnabled && !this.staticComponentsEnabled) ||
-      builtInHelpers.includes(path) ||
-      builtInComponents.includes(path) ||
+      builtInKeywords.includes(path) ||
       this.resolver.isIgnoredComponent(path)
     ) {
       return null;
     }
+
+    if (!hasArgs && !path.includes('/') && !path.includes('@')) {
+      // this is the case that could also be property-this-fallback. We're going
+      // to force people to disambiguate, because letting a potential component
+      // or helper invocation lurk inside every bit of data you render is not
+      // ok.
+      this.reportError({
+        type: 'error',
+        message: 'unsupported ambiguous syntax',
+        detail: `"{{${path}}}" is ambiguous and could mean "{{this.${path}}}" or component "<${capitalize(
+          path
+        )} />" or helper "{{ (${path}) }}".`,
+        loc,
+      });
+      return null;
+    }
+
+    // Above we already bailed out if both of these were disabled, so we know at
+    // least one is turned on. If both aren't turned on, we're stuck, because we
+    // can't even tell if this *is* a component vs a helper.
+    if (!this.staticHelpersEnabled || !this.staticComponentsEnabled) {
+      this.reportError({
+        type: 'error',
+        message: 'unsupported ambiguity between helper and component',
+        detail: `this use of "${path}" could be a helper or a component, and your settings for staticHelpersEnabled and staticComponentsEnable do not agree`,
+        loc,
+      });
+      return null;
+    }
+
     let componentRules = this.resolver.rules.exteriorRules.get(path);
-    let flags = (hasArgs ? 1 : 0) | (this.staticHelpersEnabled ? 2 : 0) | (this.staticComponentsEnabled ? 4 : 0);
     return {
       type: 'component',
-      specifier: `#embroider_compat/ambiguous/${flags}/${path}`,
+      specifier: `#embroider_compat/ambiguous/${path}`,
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
@@ -610,7 +689,7 @@ class TemplateResolver implements ASTPlugin {
           return;
         }
         let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
-        let resolution = this.resolveHelperOrComponent(node.path.original, hasArgs);
+        let resolution = this.resolveHelperOrComponent(node.path.original, node.path.loc, hasArgs);
         this.emit(path, resolution, (node, newIdentifier) => {
           node.path = newIdentifier;
         });
@@ -825,4 +904,8 @@ function extendPath<N extends ASTv1.Node, K extends keyof N>(
   } else {
     return new _WalkerPath(child as any, path, key as string) as any;
   }
+}
+
+function capitalize(word: string): string {
+  return word[0].toUpperCase() + word.slice(1);
 }

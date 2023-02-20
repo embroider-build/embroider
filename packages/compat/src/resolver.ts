@@ -87,27 +87,27 @@ export interface Loc {
 
 // TODO: this depends on the ember version. And it's probably missing some
 // private-but-used values.
-export const builtInHelpers = [
+export const builtInKeywords = [
   '-get-dynamic-var',
   '-in-element',
-  'in-element',
   '-with-dynamic-vars',
   'action',
   'array',
   'component',
   'concat',
   'debugger',
-  'each',
   'each-in',
+  'each',
   'fn',
   'get',
-  'has-block',
   'has-block-params',
+  'has-block',
   'hasBlock',
   'hasBlockParams',
   'hash',
   'helper',
   'if',
+  'in-element',
   'input',
   'let',
   'link-to',
@@ -128,8 +128,6 @@ export const builtInHelpers = [
   'with',
   'yield',
 ];
-
-export const builtInComponents = ['input', 'link-to', 'textarea'];
 
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the

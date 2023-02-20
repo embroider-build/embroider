@@ -94,6 +94,13 @@ export class BoundExpectFile {
   doesNotMatch(pattern: string | RegExp, message?: string): void {
     this.doMatch(pattern, message, true);
   }
+  equalsCode(expectedSource: string): void {
+    if (!this.contents.result) {
+      this.adapter.assert(this.contents);
+    } else {
+      this.adapter.codeEqual(this.contents.data, expectedSource);
+    }
+  }
   json(propertyPath?: string): JSONExpect {
     return new JSONExpect(
       this.adapter,
@@ -269,6 +276,7 @@ interface AssertionAdapter {
 
   deepEquals(a: any, b: any): void;
   equals(a: any, b: any): void;
+  codeEqual(actualCode: string, expectedCode: string): void;
 }
 
 class JestAdapter implements AssertionAdapter {
@@ -294,7 +302,13 @@ class JestAdapter implements AssertionAdapter {
   equals(a: any, b: any) {
     expect(a).toBe(b);
   }
+
+  codeEqual(expectedCode: string, actualCode: string) {
+    expect(expectedCode).toEqualCode(actualCode);
+  }
 }
+
+import 'code-equality-assertions/qunit';
 
 class QUnitAdapter implements AssertionAdapter {
   constructor(private qassert: Assert) {}
@@ -313,6 +327,10 @@ class QUnitAdapter implements AssertionAdapter {
 
   equals(a: any, b: any) {
     this.qassert.equal(a, b);
+  }
+
+  codeEqual(a: string, b: string) {
+    this.qassert.codeEqual(a, b);
   }
 }
 

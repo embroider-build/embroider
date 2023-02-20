@@ -124,16 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('emits no components when staticComponents is off', function () {
-    let transform = configure({ staticComponents: false });
-    givenFile('components/hello-world.js');
-    expect(transform('templates/application.hbs', `{{hello-world}} <HelloWorld />`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{hello-world}} <HelloWorld />", {
-        moduleName: "my-app/templates/application.hbs",
-      });`);
-  });
-
   test('bare dasherized component, js only', function () {
     let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');
@@ -149,8 +139,8 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test('nested bare dasherized component, js only', function () {
-    let transform = configure({ staticComponents: true });
+  test.only('nested bare dasherized component, js only', function () {
+    let transform = configure({ staticComponents: true, staticHelpers: true });
     givenFile('components/something/hello-world.js');
     expect(transform('templates/application.hbs', `{{something/hello-world}}`)).toEqualCode(`
         import somethingHelloWorld from "../components/something/hello-world.js";

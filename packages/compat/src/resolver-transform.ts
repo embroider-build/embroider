@@ -133,19 +133,6 @@ class TemplateResolver implements ASTPlugin {
   readonly name = 'embroider-build-time-resolver';
 
   private auditHandler: undefined | ((msg: AuditMessage) => void);
-
-  // The first time we insert a component as a lexical binding
-  //   - if there's no JS-scope collision with the name, we're going to bind the existing name
-  //     - in this case, any subsequent invocations of the same component just got automatically fixed too
-  //     - but that means we need to remember that we did this, in order to
-  //       give those other invocation sites support for features like argumentsAreComponents. That is what
-  //       emittedLexicalBindings is for.
-  //   - else there is a JS-scope collision, we're going to bind a mangled name and rewrite the callsite
-  //     - in this case, subequent callsites will get their own independent
-  //       resolution and they will get correctly aggregated by the
-  //       jsutils.bindImport logic.
-  private emittedLexicalBindings: Map<string, Resolution> = new Map();
-
   private scopeStack = new ScopeStack();
 
   constructor(private env: Env, private config: CompatResolverOptions) {
@@ -169,7 +156,6 @@ class TemplateResolver implements ASTPlugin {
         let name = this.env.meta.jsutils.bindImport(resolution.specifier, 'default', parentPath, {
           nameHint: resolution.nameHint,
         });
-        this.emittedLexicalBindings.set(name, resolution);
         setter(parentPath.node, this.env.syntax.builders.path(name));
         return;
       }
@@ -608,7 +594,10 @@ class TemplateResolver implements ASTPlugin {
 
   private nameHint(path: string) {
     let parts = path.split('@');
-    return '$' + parts[parts.length - 1];
+
+    // the extra underscore here guarantees that we will never collide with an
+    // HTML element.
+    return parts[parts.length - 1] + '_';
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
@@ -653,16 +642,6 @@ class TemplateResolver implements ASTPlugin {
       }
       let rootName = node.path.parts[0];
       if (this.scopeStack.inScope(rootName)) {
-        let resolution = this.emittedLexicalBindings.get(rootName);
-        if (resolution?.type === 'component') {
-          this.scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-            this.handleDynamicComponentArguments(
-              rootName,
-              argumentsAreComponents,
-              extendPath(extendPath(path, 'hash'), 'pairs')
-            );
-          });
-        }
         return;
       }
       if (node.path.this === true) {
@@ -739,14 +718,6 @@ class TemplateResolver implements ASTPlugin {
         }
         let rootName = node.path.parts[0];
         if (this.scopeStack.inScope(rootName)) {
-          let resolution = this.emittedLexicalBindings.get(rootName);
-          if (resolution && resolution.type === 'component') {
-            this.handleDynamicComponentArguments(
-              rootName,
-              resolution.argumentsAreComponents,
-              extendPath(extendPath(path, 'hash'), 'pairs')
-            );
-          }
           return;
         }
         if (node.path.this === true) {
@@ -824,14 +795,7 @@ class TemplateResolver implements ASTPlugin {
     ElementNode: {
       enter: (node, path) => {
         let rootName = node.tag.split('.')[0];
-        if (this.scopeStack.inScope(rootName)) {
-          const resolution = this.emittedLexicalBindings.get(rootName);
-          if (resolution?.type === 'component') {
-            this.scopeStack.enteringComponentBlock(resolution, ({ argumentsAreComponents }) => {
-              this.handleDynamicComponentArguments(node.tag, argumentsAreComponents, extendPath(path, 'attributes'));
-            });
-          }
-        } else {
+        if (!this.scopeStack.inScope(rootName)) {
           let resolution: ComponentResolution | null = null;
 
           // if it starts with lower case, it can't be a component we need to

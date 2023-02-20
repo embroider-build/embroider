@@ -423,7 +423,7 @@ export class AppBuilder<TreeNames> {
       colocationOptions,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(resolverConfig));
+    babel.plugins.push(this.adjustImportsPlugin());
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -436,9 +436,9 @@ export class AppBuilder<TreeNames> {
     return portable;
   }
 
-  private adjustImportsPlugin(resolverConfig: ResolverConfig): PluginItem {
+  private adjustImportsPlugin(): PluginItem {
     let pluginConfig: AdjustImportsOptions = {
-      extraImports: resolverConfig.extraImports,
+      appRoot: this.root,
     };
     return [require.resolve('./babel-plugin-adjust-imports'), pluginConfig];
   }

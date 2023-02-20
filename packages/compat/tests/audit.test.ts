@@ -39,7 +39,7 @@ describe('audit', function () {
       activePackageRules: [],
       renamePackages: {},
       renameModules: {},
-      extraImports: [],
+      extraImports: {},
       activeAddons: {},
       engines: [
         {

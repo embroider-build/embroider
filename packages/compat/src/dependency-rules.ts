@@ -1,7 +1,5 @@
-import { Package, explicitRelative, getOrCreate } from '@embroider/core';
+import { Package, getOrCreate } from '@embroider/core';
 import { satisfies } from 'semver';
-import CompatResolver from './resolver';
-import { dirname } from 'path';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -227,37 +225,6 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
   let output = [];
   for (let [rule, roots] of rootsPerRule) {
     output.push(Object.assign({ roots }, rule));
-  }
-  return output;
-}
-
-export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
-  let output: { absPath: string; target: string; runtimeName: string }[] = [];
-  if (moduleRules.dependsOnModules) {
-    for (let path of moduleRules.dependsOnModules) {
-      let found = resolver.resolveImport(path, absPath);
-      if (!found) {
-        throw new Error(`can't locate ${path} referred to in module rules:${JSON.stringify(moduleRules, null, 2)}`);
-      }
-      output.push({
-        absPath,
-        target: explicitRelative(dirname(absPath), found.absPath),
-        runtimeName: found.runtimeName,
-      });
-    }
-  }
-  if (moduleRules.dependsOnComponents) {
-    for (let snippet of moduleRules.dependsOnComponents) {
-      let found = resolver.resolveComponentSnippet(snippet, moduleRules, absPath);
-      if (found.jsModule) {
-        let { absPath: target, runtimeName } = found.jsModule;
-        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
-      }
-      if (found.hbsModule) {
-        let { absPath: target, runtimeName } = found.hbsModule;
-        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
-      }
-    }
   }
   return output;
 }

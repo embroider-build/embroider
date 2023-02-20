@@ -22,17 +22,17 @@ import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import CompatResolver, { CompatResolverOptions } from './resolver';
-import { activePackageRules, PackageRules, expandModuleRules } from './dependency-rules';
+import { CompatResolverOptions } from './resolver';
+import { activePackageRules, ModuleRules, PackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
-import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
+import { snippetToDasherizedName } from './dasherize-component-name';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -357,7 +357,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons,
       renameModules,
       renamePackages,
-      extraImports: [], // extraImports gets filled in below
+      extraImports: {}, // extraImports gets filled in below
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
@@ -388,27 +388,20 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   }
 
   private addExtraImports(config: CompatResolverOptions) {
-    let internalResolver = new CompatResolver(config);
-
-    let output: { absPath: string; target: string; runtimeName: string }[][] = [];
-
     for (let rule of this.activeRules()) {
       if (rule.addonModules) {
         for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
           for (let root of rule.roots) {
-            let absPath = join(root, filename);
-            output.push(expandModuleRules(absPath, moduleRules, internalResolver));
+            insertExtraImports(root, filename, moduleRules, config.extraImports);
           }
         }
       }
       if (rule.appModules) {
         for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
-          let absPath = join(this.root, filename);
-          output.push(expandModuleRules(absPath, moduleRules, internalResolver));
+          insertExtraImports(this.root, filename, moduleRules, config.extraImports);
         }
       }
     }
-    config.extraImports = flatten(output);
   }
 
   htmlbarsPlugins(): Transform[] {
@@ -453,4 +446,28 @@ function defaultAddonPackageRules(): PackageRules[] {
     })
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
+}
+
+function insertExtraImports(
+  root: string,
+  filename: string,
+  rules: ModuleRules,
+  extraImports: CompatResolverOptions['extraImports']
+) {
+  if (rules.dependsOnModules || rules.dependsOnComponents) {
+    let entry: CompatResolverOptions['extraImports'][string] = {};
+    if (rules.dependsOnModules) {
+      entry.dependsOnModules = rules.dependsOnModules;
+    }
+    if (rules.dependsOnComponents) {
+      entry.dependsOnComponents = rules.dependsOnComponents.map(c => {
+        let d = snippetToDasherizedName(c);
+        if (!d) {
+          throw new Error(`unable to parse component snippet "${c}" from rule ${JSON.stringify(rules, null, 2)}`);
+        }
+        return d;
+      });
+    }
+    extraImports[join(root, filename)] = entry;
+  }
 }

@@ -39,10 +39,11 @@ export interface Options {
     [fromName: string]: string;
   };
   extraImports: {
-    absPath: string;
-    target: string;
-    runtimeName: string;
-  }[];
+    [absPath: string]: {
+      dependsOnComponents?: string[]; // these are already standardized in dasherized form
+      dependsOnModules?: string[];
+    };
+  };
   activeAddons: {
     [packageName: string]: string;
   };
@@ -217,7 +218,7 @@ export class Resolver {
     }
   }
 
-  private owningPackage(fromFile: string): Package | undefined {
+  owningPackage(fromFile: string): Package | undefined {
     return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
   }
 
@@ -372,7 +373,7 @@ export class Resolver {
     }
   }
 
-  private owningEngine(pkg: Package) {
+  owningEngine(pkg: Package) {
     if (pkg.root === this.options.appRoot) {
       // the app is always the first engine
       return this.options.engines[0];

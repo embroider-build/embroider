@@ -57,7 +57,7 @@ describe('compat-resolver', function () {
       }),
       renamePackages: {},
       renameModules: {},
-      extraImports: [],
+      extraImports: {},
       activeAddons: {},
       engines: [
         {

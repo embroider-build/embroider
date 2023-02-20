@@ -22,7 +22,7 @@ import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import { CompatResolverOptions } from './resolver';
+import { CompatResolverOptions } from './resolver-transform';
 import { activePackageRules, ModuleRules, PackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';

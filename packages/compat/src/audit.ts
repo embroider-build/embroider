@@ -16,9 +16,21 @@ import {
 } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
-import { AuditMessage } from './resolver';
 
 const { JSDOM } = jsdom;
+
+export interface AuditMessage {
+  message: string;
+  detail: string;
+  loc: Loc;
+  source: string;
+  filename: string;
+}
+
+export interface Loc {
+  start: { line: number; column: number };
+  end: { line: number; column: number };
+}
 
 export { AuditOptions, AuditBuildOptions, BuildError, isBuildError };
 

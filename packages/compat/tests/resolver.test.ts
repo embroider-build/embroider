@@ -11,7 +11,7 @@ import { join, dirname } from 'path';
 import Options, { optionsWithDefaults } from '../src/options';
 import { hbsToJS, tmpdir, throwOnWarnings, ResolverOptions, AddonMeta } from '@embroider/core';
 import { emberTemplateCompiler } from '@embroider/test-support';
-import { CompatResolverOptions } from '../src/resolver';
+import { CompatResolverOptions } from '../src/resolver-transform';
 import { PackageRules } from '../src';
 import type { AST, ASTPluginEnvironment } from '@glimmer/syntax';
 import 'code-equality-assertions/jest';

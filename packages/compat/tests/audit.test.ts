@@ -4,7 +4,7 @@ import { AppMeta, throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit, Finding } from '../src/audit';
-import { CompatResolverOptions } from '../src/resolver';
+import { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 import { makePortable } from '@embroider/core/src/portable-babel-config';

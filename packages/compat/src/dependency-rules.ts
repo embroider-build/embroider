@@ -150,19 +150,11 @@ export type ArgumentMapping =
 type ComponentSnippet = string;
 
 export interface PreprocessedComponentRule {
-  exterior: {
-    // rules needed by the people that invoke our component
-    yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
-    yieldsArguments: Required<ComponentRules>['yieldsArguments'];
-    argumentsAreComponents: string[];
-    safeToIgnore: boolean;
-  };
-
-  interior: {
-    // rules needed within our own template)
-    dependsOnComponents: ComponentSnippet[];
-    safeInteriorPaths: string[];
-  };
+  yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
+  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  argumentsAreComponents: string[];
+  safeToIgnore: boolean;
+  safeInteriorPaths: string[];
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -170,7 +162,6 @@ export interface PreprocessedComponentRule {
 export function preprocessComponentRule(componentRules: ComponentRules): PreprocessedComponentRule {
   let argumentsAreComponents = [];
   let safeInteriorPaths = [];
-  let dependsOnComponents = [];
   if (componentRules.acceptsComponentArguments) {
     for (let entry of componentRules.acceptsComponentArguments) {
       let name, interior;
@@ -188,24 +179,16 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     }
   }
   if (componentRules.invokes) {
-    for (let [path, snippets] of Object.entries(componentRules.invokes)) {
+    for (let [path] of Object.entries(componentRules.invokes)) {
       safeInteriorPaths.push(path);
-      for (let snippet of snippets) {
-        dependsOnComponents.push(snippet);
-      }
     }
   }
   return {
-    interior: {
-      safeInteriorPaths,
-      dependsOnComponents,
-    },
-    exterior: {
-      safeToIgnore: Boolean(componentRules.safeToIgnore),
-      argumentsAreComponents,
-      yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-      yieldsArguments: componentRules.yieldsArguments || [],
-    },
+    safeInteriorPaths,
+    safeToIgnore: Boolean(componentRules.safeToIgnore),
+    argumentsAreComponents,
+    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+    yieldsArguments: componentRules.yieldsArguments || [],
   };
 }
 

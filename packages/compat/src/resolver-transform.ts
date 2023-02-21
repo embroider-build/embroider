@@ -16,6 +16,7 @@ import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { ResolverOptions as CoreResolverOptions } from '@embroider/core';
 import CompatOptions from './options';
 import { AuditMessage, Loc } from './audit';
+import { camelCase } from 'lodash';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -328,7 +329,7 @@ class TemplateResolver implements ASTPlugin {
     return { files, components };
   }
 
-  private findInteriorRules(absPath: string): PreprocessedComponentRule | undefined {
+  private findRules(absPath: string): PreprocessedComponentRule | undefined {
     let rules = this.rules.files.get(absPath);
     if (rules) {
       return rules;
@@ -409,7 +410,7 @@ class TemplateResolver implements ASTPlugin {
       };
     }
     if (component.type === 'path') {
-      let ownComponentRules = this.findInteriorRules(this.env.filename);
+      let ownComponentRules = this.findRules(this.env.filename);
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }
@@ -444,7 +445,11 @@ class TemplateResolver implements ASTPlugin {
     };
   }
 
-  private targetHelperOrComponent(path: string, loc: Loc, hasArgs: boolean): ComponentResolution | null {
+  private targetHelperOrComponent(
+    path: string,
+    loc: Loc,
+    hasArgs: boolean
+  ): ComponentResolution | HelperResolution | null {
     /*
 
     In earlier embroider versions we would do a bunch of module resolution right
@@ -505,6 +510,18 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
+    let ownComponentRules = this.findRules(this.env.filename);
+    if (ownComponentRules?.disambiguate[path]) {
+      switch (ownComponentRules.disambiguate[path]) {
+        case 'component':
+          return this.targetComponent(path);
+        case 'helper':
+          return this.targetHelper(path);
+        case 'data':
+          return null;
+      }
+    }
+
     if (!hasArgs && !path.includes('/') && !path.includes('@')) {
       // this is the case that could also be property-this-fallback. We're going
       // to force people to disambiguate, because letting a potential component
@@ -514,8 +531,8 @@ class TemplateResolver implements ASTPlugin {
         type: 'error',
         message: 'unsupported ambiguous syntax',
         detail: `"{{${path}}}" is ambiguous and could mean "{{this.${path}}}" or component "<${capitalize(
-          path
-        )} />" or helper "{{ (${path}) }}".`,
+          camelCase(path)
+        )} />" or helper "{{ (${path}) }}". Change it to one of those unambigous forms, or use a "disambiguate" packageRule to work around the problem if its in third-party code you cannot easily fix.`,
         loc,
       });
       return null;
@@ -528,7 +545,9 @@ class TemplateResolver implements ASTPlugin {
       this.reportError({
         type: 'error',
         message: 'unsupported ambiguity between helper and component',
-        detail: `this use of "${path}" could be a helper or a component, and your settings for staticHelpersEnabled and staticComponentsEnabled do not agree`,
+        detail: `this use of "{{${path}}}" could be helper "{{ (${path}) }}" or component "<${capitalize(
+          camelCase(path)
+        )} />", and your settings for staticHelpers and staticComponents do not agree. Either switch to one of the unambiguous forms, or make staticHelpers and staticComponents agree, or use a "disambiguate" packageRule to work around the problem if its in third-party code you cannot easily fix.`,
         loc,
       });
       return null;

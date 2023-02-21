@@ -7,6 +7,7 @@ import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilat
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import { PackageRules } from '@embroider/compat';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -36,7 +37,10 @@ Scenarios.fromProject(() => new Project())
       let expectFile: ExpectFile;
       let build: Transpiler;
       let givenFiles: (files: Record<string, string>) => void;
-      let configure: (opts?: Partial<CompatResolverOptions['options']>) => void;
+      let configure: (
+        opts?: Partial<CompatResolverOptions['options']>,
+        extraOpts?: { appPackageRules?: Partial<PackageRules> }
+      ) => void;
 
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
@@ -47,7 +51,10 @@ Scenarios.fromProject(() => new Project())
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
           }
         };
-        configure = function (opts?: Partial<CompatResolverOptions['options']>) {
+        configure = function (
+          opts?: Partial<CompatResolverOptions['options']>,
+          extraOpts?: { appPackageRules?: Partial<PackageRules> }
+        ) {
           let etcOptions: EtcOptions = {
             compilerPath: require.resolve('ember-source/dist/ember-template-compiler'),
             targetFormat: 'hbs',
@@ -78,7 +85,13 @@ Scenarios.fromProject(() => new Project())
               allowUnsafeDynamicComponents: false,
               ...opts,
             },
-            activePackageRules: [],
+            activePackageRules: [
+              {
+                package: 'my-app',
+                roots: [app.dir],
+                ...extraOpts?.appPackageRules,
+              },
+            ],
           };
 
           givenFiles({
@@ -135,11 +148,43 @@ Scenarios.fromProject(() => new Project())
         expectFile('templates/application.hbs')
           .transform(build.transpile)
           .failsToTransform(
-            `this use of "hello-world" could be a helper or a component, and your settings for staticHelpersEnabled and staticComponentsEnabled do not agree`
+            `this use of "{{hello-world}}" could be helper "{{ (hello-world) }}" or component "<HelloWorld />", and your settings for staticHelpers and staticComponents do not agree`
           );
       });
 
-      test('bare dasherized component, js only', function () {
+      test('bare dasherized component, js only, manually disambiguated to component', function () {
+        configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              appTemplates: {
+                'templates/application.hbs': {
+                  disambiguate: {
+                    'hello-world': 'component',
+                  },
+                },
+              },
+            },
+          }
+        );
+        givenFiles({
+          'components/hello-world.js': '',
+          'templates/application.hbs': `{{hello-world}}`,
+        });
+
+        expectFile('templates/application.hbs').transform(build.transpile).equalsCode(`
+            import helloWorld_ from "#embroider_compat/components/hello-world";
+            import { precompileTemplate } from "@ember/template-compilation";
+            export default precompileTemplate("{{helloWorld_}}", {
+              moduleName: "my-app/templates/application.hbs",
+              scope: () => ({
+                helloWorld_
+              }),
+            });
+        `);
+      });
+
+      test('bare dasherized component, js only, with arg', function () {
         configure({ staticComponents: true, staticHelpers: true });
         givenFiles({
           'components/hello-world.js': '',

@@ -51,6 +51,15 @@ export interface TemplateRules {
   invokes?: {
     [path: string]: ComponentSnippet[];
   };
+
+  // Embroider will complain if you try to use staticHelper and/or
+  // staticComponents and you have ambiguous forms that might be a component or
+  // a helper or just some data that is being rendered. For example, if a
+  // template says `{{something}}`, we can't tell if that is `<Something />` or
+  // `{{ (something) }}` or `{{this.something}}`.
+  disambiguate?: {
+    [dasherizedName: string]: 'component' | 'helper' | 'data';
+  };
 }
 
 export interface ComponentRules extends TemplateRules {
@@ -155,6 +164,7 @@ export interface PreprocessedComponentRule {
   argumentsAreComponents: string[];
   safeToIgnore: boolean;
   safeInteriorPaths: string[];
+  disambiguate: Record<string, 'component' | 'helper' | 'data'>;
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -189,6 +199,7 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     argumentsAreComponents,
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
+    disambiguate: componentRules?.disambiguate ?? {},
   };
 }
 

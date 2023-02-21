@@ -1,4 +1,4 @@
-import { Audit, AuditResults } from '@embroider/compat/src/audit';
+import { Audit, AuditBuildOptions, AuditResults } from '@embroider/compat/src/audit';
 
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
@@ -28,8 +28,18 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
   };
 }
 
+async function audit(this: Assert, opts: AuditBuildOptions): Promise<ExpectAuditResults> {
+  return new ExpectAuditResults(await Audit.run(opts), this);
+}
+QUnit.assert.audit = audit;
+declare global {
+  interface Assert {
+    audit: typeof audit;
+  }
+}
+
 class ExpectAuditResults {
-  constructor(private result: AuditResults, private assert: Assert) {}
+  constructor(readonly result: AuditResults, private assert: Assert) {}
 
   module(name: string) {
     let m = this.result.modules[name];

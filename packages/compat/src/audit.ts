@@ -205,10 +205,16 @@ export class Audit {
   private frames = new CodeFrameStorage();
 
   static async run(options: AuditBuildOptions): Promise<AuditResults> {
-    if (!options['reuse-build']) {
-      await buildApp(options);
+    let dir: string;
+
+    if (options.outputDir) {
+      dir = options.outputDir;
+    } else {
+      if (!options['reuse-build']) {
+        await buildApp(options);
+      }
+      dir = await this.findStage2Output(options);
     }
-    let dir = await this.findStage2Output(options);
 
     let audit = new this(dir, options);
     if (options['reuse-build']) {
@@ -225,6 +231,9 @@ export class Audit {
 
   private static async findStage2Output(options: AuditBuildOptions): Promise<string> {
     try {
+      if (!options.app) {
+        throw new Error(`AuditBuildOptions needs "app" directory`);
+      }
       return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
     } catch (err) {
       if (err.code === 'ENOENT') {

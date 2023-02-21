@@ -8,6 +8,8 @@ import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { PackageRules } from '@embroider/compat';
+import '@embroider/test-support/audit-assertions';
+import { AuditBuildOptions } from '@embroider/compat/src/audit';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -17,7 +19,7 @@ Scenarios.fromProject(() => new Project())
       type: 'app',
       version: 2,
       'auto-upgraded': true,
-      assets: [],
+      assets: ['index.html'],
       'root-url': '/',
       babel: {
         majorVersion: 7,
@@ -31,6 +33,9 @@ Scenarios.fromProject(() => new Project())
       keywords: ['ember-addon'],
       'ember-addon': appMeta,
     };
+    app.mergeFiles({
+      'index.html': '<script src="./templates/application.hbs" type="module"></script>',
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -41,6 +46,8 @@ Scenarios.fromProject(() => new Project())
         opts?: Partial<CompatResolverOptions['options']>,
         extraOpts?: { appPackageRules?: Partial<PackageRules> }
       ) => void;
+
+      let auditParams: AuditBuildOptions;
 
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
@@ -59,6 +66,10 @@ Scenarios.fromProject(() => new Project())
             compilerPath: require.resolve('ember-source/dist/ember-template-compiler'),
             targetFormat: 'hbs',
             transforms: [[require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir }]],
+          };
+
+          auditParams = {
+            outputDir: app.dir,
           };
 
           let resolverOptions: CompatResolverOptions = {
@@ -152,7 +163,7 @@ Scenarios.fromProject(() => new Project())
           );
       });
 
-      test('bare dasherized component, js only, manually disambiguated to component', function () {
+      test('bare dasherized component, js only, manually disambiguated to component', async function (assert) {
         configure(
           { staticComponents: true, staticHelpers: true },
           {
@@ -182,9 +193,14 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
+
+        (await assert.audit(auditParams))
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/components/hello-world')
+          .to('./components/hello-world.js');
       });
 
-      test('bare dasherized component, js only, with arg', function () {
+      test('bare dasherized component, js only, with arg', async function (assert) {
         configure({ staticComponents: true, staticHelpers: true });
         givenFiles({
           'components/hello-world.js': '',
@@ -201,6 +217,11 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
+
+        (await assert.audit(auditParams))
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/ambiguous/hello-world')
+          .to('./components/hello-world.js');
       });
     });
   });

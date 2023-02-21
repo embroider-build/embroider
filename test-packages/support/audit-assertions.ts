@@ -58,7 +58,7 @@ class ExpectAuditResults {
   }
 }
 
-class ExpectModule {
+export class ExpectModule {
   constructor(private assert: Assert, private module: AuditResults['modules'][string] | undefined) {}
 
   resolves(specifier: string) {

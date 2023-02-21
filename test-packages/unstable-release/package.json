@@ -3,12 +3,21 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "lint:js": "eslint . --cache --config ./.eslintrc.cjs"
+  },
   "dependencies": {
+    "execa": "^7.0.0",
     "fs-extra": "^9.1.0",
-    "globby": "^11.0.3",
-    "execa": "^7.0.0"
+    "globby": "^11.0.3"
   },
   "volta": {
     "extends": "../../package.json"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-node": "^11.1.0",
+    "prettier": "^2.5.1"
   }
 }

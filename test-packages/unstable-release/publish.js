@@ -1,4 +1,5 @@
 import { execaCommand } from 'execa';
+import { listPublicWorkspaces } from './workspaces.js';
 
 async function publish() {
   let publicWorkspaces = await listPublicWorkspaces();

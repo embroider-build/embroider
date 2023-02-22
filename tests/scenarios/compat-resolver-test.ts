@@ -8,8 +8,10 @@ import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { PackageRules } from '@embroider/compat';
+import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
+
+// installs our assert.audit QUnit helper
 import '@embroider/test-support/audit-assertions';
-import { ExpectModule } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -39,20 +41,20 @@ Scenarios.fromProject(() => new Project())
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
-      let expectFile: ExpectFile;
-      let build: Transpiler;
+      let expectTranspiled: (file: string) => ReturnType<ReturnType<ExpectFile>['transform']>;
+      let expectAudit: ExpectAuditResults;
       let givenFiles: (files: Record<string, string>) => void;
       let configure: (
         opts?: Partial<CompatResolverOptions['options']>,
         extraOpts?: { appPackageRules?: Partial<PackageRules> }
       ) => Promise<void>;
 
-      let applicationHBS: ExpectModule;
-
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
-        expectFile = expectFilesAt(app.dir, { qunit: assert });
-        build = new Transpiler(app.dir);
+        let build = new Transpiler(app.dir);
+        let expectFile = expectFilesAt(app.dir, { qunit: assert });
+        expectTranspiled = (filename: string) => expectFile(filename).transform(build.transpile);
+
         givenFiles = function (files: Record<string, string>) {
           for (let [filename, contents] of Object.entries(files)) {
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
@@ -118,8 +120,7 @@ Scenarios.fromProject(() => new Project())
             '.embroider/resolver.json': JSON.stringify(resolverOptions),
           });
 
-          let expectAudit = await assert.audit({ outputDir: app.dir });
-          applicationHBS = expectAudit.module('./templates/application.hbs');
+          expectAudit = await assert.audit({ outputDir: app.dir });
         };
       });
 
@@ -129,7 +130,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world}} <HelloWorld />`,
         });
         await configure();
-        expectFile('templates/application.hbs').transform(build.transpile).equalsCode(`
+        expectTranspiled('./templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         export default precompileTemplate("{{hello-world}} <HelloWorld />", {
           moduleName: "my-app/templates/application.hbs",
@@ -144,9 +145,7 @@ Scenarios.fromProject(() => new Project())
 
         await configure({ staticComponents: true });
 
-        expectFile('templates/application.hbs')
-          .transform(build.transpile)
-          .failsToTransform(`"{{hello-world}}" is ambiguous`);
+        expectTranspiled('./templates/application.hbs').failsToTransform(`"{{hello-world}}" is ambiguous`);
       });
 
       test('bare dasherized component in ambiguous position requires staticHelpers to agree ', async function () {
@@ -157,11 +156,9 @@ Scenarios.fromProject(() => new Project())
 
         await configure({ staticComponents: true });
 
-        expectFile('templates/application.hbs')
-          .transform(build.transpile)
-          .failsToTransform(
-            `this use of "{{hello-world}}" could be helper "{{ (hello-world) }}" or component "<HelloWorld />", and your settings for staticHelpers and staticComponents do not agree`
-          );
+        expectTranspiled('templates/application.hbs').failsToTransform(
+          `this use of "{{hello-world}}" could be helper "{{ (hello-world) }}" or component "<HelloWorld />", and your settings for staticHelpers and staticComponents do not agree`
+        );
       });
 
       test('bare dasherized component, js only, manually disambiguated to component', async function () {
@@ -185,7 +182,7 @@ Scenarios.fromProject(() => new Project())
           }
         );
 
-        expectFile('templates/application.hbs').transform(build.transpile).equalsCode(`
+        expectTranspiled('./templates/application.hbs').equalsCode(`
             import helloWorld_ from "#embroider_compat/components/hello-world";
             import { precompileTemplate } from "@ember/template-compilation";
             export default precompileTemplate("{{helloWorld_}}", {
@@ -196,7 +193,10 @@ Scenarios.fromProject(() => new Project())
             });
         `);
 
-        applicationHBS.resolves('#embroider_compat/components/hello-world').to('./components/hello-world.js');
+        expectAudit
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/components/hello-world')
+          .to('./components/hello-world.js');
       });
 
       test('bare dasherized component, js only, with arg', async function () {
@@ -207,7 +207,7 @@ Scenarios.fromProject(() => new Project())
 
         await configure({ staticComponents: true, staticHelpers: true });
 
-        expectFile('templates/application.hbs').transform(build.transpile).equalsCode(`
+        expectTranspiled('templates/application.hbs').equalsCode(`
             import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
             import { precompileTemplate } from "@ember/template-compilation";
             export default precompileTemplate("{{helloWorld_ arg=1}}", {
@@ -218,7 +218,57 @@ Scenarios.fromProject(() => new Project())
             });
         `);
 
-        applicationHBS.resolves('#embroider_compat/ambiguous/hello-world').to('./components/hello-world.js');
+        expectAudit
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/ambiguous/hello-world')
+          .to('./components/hello-world.js');
+      });
+
+      test('bare dasherized helper with arg', async function () {
+        givenFiles({
+          'helpers/hello-world.js': '',
+          'templates/application.hbs': `{{hello-world arg=1}}`,
+        });
+
+        await configure({ staticComponents: true, staticHelpers: true });
+
+        expectTranspiled('templates/application.hbs').equalsCode(`
+            import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
+            import { precompileTemplate } from "@ember/template-compilation";
+            export default precompileTemplate("{{helloWorld_ arg=1}}", {
+              moduleName: "my-app/templates/application.hbs",
+              scope: () => ({
+                helloWorld_
+              }),
+            });
+        `);
+
+        expectAudit
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/ambiguous/hello-world')
+          .to('./helpers/hello-world.js');
+      });
+
+      test('nested bare dasherized component, js only', async function () {
+        givenFiles({
+          'components/something/hello-world.js': '',
+          'templates/application.hbs': `{{something/hello-world}}`,
+        });
+        await configure({ staticComponents: true, staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+            import somethingHelloWorld_ from "#embroider_compat/ambiguous/something/hello-world";
+            import { precompileTemplate } from "@ember/template-compilation";
+            export default precompileTemplate("{{somethingHelloWorld_}}", {
+              moduleName: "my-app/templates/application.hbs",
+              scope: () => ({
+                somethingHelloWorld_,
+              }),
+            });
+        `);
+        expectAudit
+          .module('./templates/application.hbs')
+          .resolves('#embroider_compat/ambiguous/something/hello-world')
+          .to('./components/something/hello-world.js');
       });
     });
   });

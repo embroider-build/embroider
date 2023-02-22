@@ -124,36 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('bare dasherized component, js only', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
-        import helloWorld from "../components/hello-world.js";
-        import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{helloWorld}}", {
-          moduleName: "my-app/templates/application.hbs",
-          scope: () => ({
-            helloWorld
-          }),
-        });
-    `);
-  });
-
-  test.only('nested bare dasherized component, js only', function () {
-    let transform = configure({ staticComponents: true, staticHelpers: true });
-    givenFile('components/something/hello-world.js');
-    expect(transform('templates/application.hbs', `{{something/hello-world}}`)).toEqualCode(`
-        import somethingHelloWorld from "../components/something/hello-world.js";
-        import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{somethingHelloWorld}}", {
-          moduleName: "my-app/templates/application.hbs",
-          scope: () => ({
-            somethingHelloWorld,
-          }),
-        });
-    `);
-  });
-
   describe('bare namespaced', function () {
     test('dasherized component, js only', function () {
       let transform = configure({ staticComponents: true });

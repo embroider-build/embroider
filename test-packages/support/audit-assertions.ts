@@ -38,7 +38,7 @@ declare global {
   }
 }
 
-class ExpectAuditResults {
+export class ExpectAuditResults {
   constructor(readonly result: AuditResults, private assert: Assert) {}
 
   module(name: string) {

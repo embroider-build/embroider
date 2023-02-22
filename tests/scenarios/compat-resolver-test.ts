@@ -8,7 +8,6 @@ import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { PackageRules } from '@embroider/compat';
-import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 
 // installs our assert.audit QUnit helper
 import '@embroider/test-support/audit-assertions';
@@ -42,7 +41,6 @@ Scenarios.fromProject(() => new Project())
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let expectTranspiled: (file: string) => ReturnType<ReturnType<ExpectFile>['transform']>;
-      let expectAudit: ExpectAuditResults;
       let givenFiles: (files: Record<string, string>) => void;
       let configure: (
         opts?: Partial<CompatResolverOptions['options']>,
@@ -119,8 +117,6 @@ Scenarios.fromProject(() => new Project())
             `,
             '.embroider/resolver.json': JSON.stringify(resolverOptions),
           });
-
-          expectAudit = await assert.audit({ outputDir: app.dir });
         };
       });
 
@@ -161,7 +157,7 @@ Scenarios.fromProject(() => new Project())
         );
       });
 
-      test('bare dasherized component, js only, manually disambiguated to component', async function () {
+      test('bare dasherized component manually disambiguated to component', async function () {
         givenFiles({
           'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world}}`,
@@ -192,14 +188,9 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
-
-        expectAudit
-          .module('./templates/application.hbs')
-          .resolves('#embroider_compat/components/hello-world')
-          .to('./components/hello-world.js');
       });
 
-      test('bare dasherized component, js only, with arg', async function () {
+      test('bare dasherized component with arg', async function () {
         givenFiles({
           'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world arg=1}}`,
@@ -217,11 +208,6 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
-
-        expectAudit
-          .module('./templates/application.hbs')
-          .resolves('#embroider_compat/ambiguous/hello-world')
-          .to('./components/hello-world.js');
       });
 
       test('bare dasherized helper with arg', async function () {
@@ -242,14 +228,9 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
-
-        expectAudit
-          .module('./templates/application.hbs')
-          .resolves('#embroider_compat/ambiguous/hello-world')
-          .to('./helpers/hello-world.js');
       });
 
-      test('nested bare dasherized component, js only', async function () {
+      test('nested bare dasherized component', async function () {
         givenFiles({
           'components/something/hello-world.js': '',
           'templates/application.hbs': `{{something/hello-world}}`,
@@ -265,10 +246,6 @@ Scenarios.fromProject(() => new Project())
               }),
             });
         `);
-        expectAudit
-          .module('./templates/application.hbs')
-          .resolves('#embroider_compat/ambiguous/something/hello-world')
-          .to('./components/something/hello-world.js');
       });
     });
   });

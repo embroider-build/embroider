@@ -259,5 +259,43 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('tolerates non path mustaches', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Thing @foo={{1}} />`,
+        });
+        await configure({
+          staticComponents: true,
+          staticHelpers: true,
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import thing_ from "#embroider_compat/components/thing";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<thing_ @foo={{1}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              thing_
+            })
+          });
+        `);
+      });
+
+      test('block form curly component', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#hello-world}} {{/hello-world}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#helloWorld_}} {{/helloWorld_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
     });
   });

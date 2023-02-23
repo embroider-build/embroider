@@ -124,27 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('tolerates non path mustaches', function () {
-    let transform = configure({ staticComponents: false, staticHelpers: true }, { startingFrom: 'js' });
-    let src = hbsToJS('<Thing @foo={{1}} />');
-    expect(transform('templates/application.js', src)).toEqualCode(src);
-  });
-
-  test('block form curly component', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    expect(transform('templates/application.hbs', `{{#hello-world}} {{/hello-world}}`)).toEqualCode(`
-      import helloWorld from "../components/hello-world.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{#helloWorld}} {{/helloWorld}}", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          helloWorld,
-        }),
-      });
-    `);
-  });
-
   test('block form angle component', function () {
     let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');

@@ -297,5 +297,58 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('block form angle component', async function () {
+        givenFiles({
+          'templates/application.hbs': `<HelloWorld></HelloWorld>`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<helloWorld_></helloWorld_>", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('curly contextual component is left alone', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+            import { precompileTemplate } from '@ember/template-compilation';
+            precompileTemplate('{{#helloWorld as |h|}} {{h.title flavor="chocolate"}} {{/helloWorld}}', {
+              scope: () => ({ helloWorld })
+            });
+          `,
+        });
+        await configure({ staticComponents: true, staticHelpers: true });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate('{{#helloWorld as |h|}} {{h.title flavor="chocolate"}} {{/helloWorld}}', {
+            scope: () => ({ helloWorld })
+          });
+        `);
+      });
+
+      test('angle contextual component is left alone', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+            import { precompileTemplate } from '@ember/template-compilation';
+            precompileTemplate('<helloWorld as |H|> <H.title @flavor="chocolate" /> </helloWorld>', {
+              scope: () => ({ helloWorld })
+            });
+          `,
+        });
+        await configure({ staticComponents: true, staticHelpers: true });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate('<helloWorld as |H|> <H.title @flavor="chocolate" /> </helloWorld>', {
+            scope: () => ({ helloWorld })
+          });
+        `);
+      });
     });
   });

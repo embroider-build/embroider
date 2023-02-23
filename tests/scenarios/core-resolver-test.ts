@@ -302,6 +302,34 @@ Scenarios.fromProject(() => new Project())
             .resolves('#embroider_compat/helpers/hello-world')
             .to('./helpers/hello-world.js');
         });
+
+        test('nested ambiguous component', async function () {
+          givenFiles({
+            'components/something/hello-world.js': '',
+            'app.js': `import "#embroider_compat/ambiguous/something/hello-world"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/ambiguous/something/hello-world')
+            .to('./components/something/hello-world.js');
+        });
+
+        test('nested ambiguous helper', async function () {
+          givenFiles({
+            'helpers/something/hello-world.js': '',
+            'app.js': `import "#embroider_compat/ambiguous/something/hello-world"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/ambiguous/something/hello-world')
+            .to('./helpers/something/hello-world.js');
+        });
       });
     });
   });

@@ -124,51 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('block form angle component', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    expect(transform('templates/application.hbs', `<HelloWorld></HelloWorld>`)).toEqualCode(`
-      import HelloWorld from "../components/hello-world.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<HelloWorld></HelloWorld>", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          HelloWorld,
-        }),
-      });
-    `);
-  });
-
-  test('curly contextual component', function () {
-    let transform = configure({ staticComponents: true, staticHelpers: true }, { startingFrom: 'js' });
-    let src = `
-      import { precompileTemplate } from '@ember/template-compilation';
-      precompileTemplate('{{#helloWorld as |h|}} {{h.title flavor="chocolate"}} {{/helloWorld}}', {
-        scope: () => ({ helloWorld })
-      });
-    `;
-    expect(transform('templates/application.js', src)).toEqualCode(src);
-  });
-
-  test('angle contextual component, upper', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    expect(transform('templates/application.hbs', `<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>`))
-      .toEqualCode(`
-        import HelloWorld from "../components/hello-world.js";
-        import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate(
-          '<HelloWorld as |H|> <H.title @flavor="chocolate" /> </HelloWorld>',
-          {
-            moduleName: "my-app/templates/application.hbs",
-            scope: () => ({
-              HelloWorld,
-            }),
-          }
-        );
-      `);
-  });
-
   test('acceptsComponentArguments works on all copies of a lexically-inserted component, element syntax', function () {
     let packageRules = [
       {

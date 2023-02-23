@@ -660,5 +660,39 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('string literal passed to component helper in content position', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{helper 'hello-world'}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/helpers/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{helper helloWorld_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('string literal passed to modifier keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div {{(modifier 'hello-world')}} />`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/modifiers/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div {{(modifier helloWorld_)}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
     });
   });

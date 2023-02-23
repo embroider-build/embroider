@@ -124,43 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('string literal passed to "helper" keyword in content position', function () {
-    let transform = configure({
-      staticHelpers: true,
-    });
-    givenFile('helpers/hello-world.js');
-    expect(transform('templates/application.hbs', `{{helper "hello-world"}}`)).toEqualCode(`
-      import helloWorld from "../helpers/hello-world.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{helper helloWorld}}", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          helloWorld,
-        }),
-      });
-    `);
-  });
-  test('string literal passed to "modifier" keyword in content position', function () {
-    let transform = configure({
-      staticModifiers: true,
-    });
-    givenFile('modifiers/add-listener.js');
-    expect(
-      transform(
-        'templates/application.hbs',
-        `<button {{(modifier "add-listener" "click" this.handleClick)}}>Test</button>`
-      )
-    ).toEqualCode(`
-      import addListener from "../modifiers/add-listener.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<button {{(modifier addListener \\"click\\" this.handleClick)}}>Test</button>", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          addListener
-        })
-      });
-    `);
-  });
   test('modifier in bare mustache, no args', function () {
     let transform = configure({
       staticModifiers: false,

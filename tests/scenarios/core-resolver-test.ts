@@ -116,6 +116,31 @@ Scenarios.fromProject(() => new Project())
             .to('./components/hello-world.js');
         });
 
+        test('js-and-hbs component', async function () {
+          givenFiles({
+            'components/hello-world.js': '',
+            'templates/components/hello-world.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure();
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../../hello-world.hbs";
+            import component from "../../../../components/hello-world.js";
+            export default setComponentTemplate(template, component);
+          `);
+
+          pairModule.resolves('../../hello-world.hbs').to('./templates/components/hello-world.hbs');
+          pairModule.resolves('../../../../components/hello-world.js').to('./components/hello-world.js');
+        });
+
         test('helper', async function () {
           givenFiles({
             'helpers/hello-world.js': '',

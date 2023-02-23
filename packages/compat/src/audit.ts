@@ -46,6 +46,7 @@ export interface Module {
   imports: Import[];
   exports: string[];
   resolutions: { [source: string]: string | null };
+  content: string;
 }
 
 interface ResolutionFailure {
@@ -68,6 +69,8 @@ interface InternalModule {
   };
 
   resolved?: Map<string, string | ResolutionFailure>;
+
+  content?: string | Buffer;
 
   linked?: {
     exports: Set<string>;
@@ -135,6 +138,7 @@ export class AuditResults {
             }))
           : [],
         exports: module.linked?.exports ? [...module.linked.exports] : [],
+        content: module.content ? module.content.toString() : '',
       };
       results.modules[explicitRelative(baseDir, filename)] = publicModule;
     }
@@ -199,6 +203,7 @@ export class AuditResults {
 
 export class Audit {
   private modules: Map<string, InternalModule> = new Map();
+  private virtualModules: Map<string, string> = new Map();
   private moduleQueue = new Set<string>();
   private findings = [] as Finding[];
 
@@ -305,7 +310,12 @@ export class Audit {
       this.moduleQueue.delete(filename);
       this.debug('visit', filename);
       let visitor = this.visitorFor(filename);
-      let content = readFileSync(filename);
+      let content: string | Buffer;
+      if (this.virtualModules.has(filename)) {
+        content = this.virtualModules.get(filename)!;
+      } else {
+        content = readFileSync(filename);
+      }
       // cast is safe because the only way to get into the queue is to go
       // through scheduleVisit, and scheduleVisit creates the entry in
       // this.modules.
@@ -319,17 +329,8 @@ export class Audit {
         }
       } else {
         module.parsed = visitResult;
-        let resolved = new Map() as NonNullable<InternalModule['resolved']>;
-        for (let dep of visitResult.dependencies) {
-          let depFilename = await this.resolve(dep, filename);
-          if (depFilename) {
-            resolved.set(dep, depFilename);
-            if (!isResolutionFailure(depFilename)) {
-              this.scheduleVisit(depFilename, filename);
-            }
-          }
-        }
-        module.resolved = resolved;
+        module.resolved = await this.resolveDeps(visitResult.dependencies, filename);
+        module.content = content;
       }
     }
   }
@@ -546,21 +547,31 @@ export class Audit {
     return this.visitJS(filename, js);
   }
 
-  private async resolve(specifier: string, fromFile: string) {
-    let resolution = await this.resolver.nodeResolve(specifier, fromFile);
-    if (resolution.type === 'virtual') {
-      // nothing to audit
-      return undefined;
-    }
-    if (resolution.type === 'not_found') {
-      if (['@embroider/macros', '@ember/template-factory'].includes(specifier)) {
-        // the audit process deliberately removes the @embroider/macros babel
-        // plugins, so the imports are still present and should be left alone.
-        return;
+  private async resolveDeps(deps: string[], fromFile: string): Promise<InternalModule['resolved']> {
+    let resolved = new Map() as NonNullable<InternalModule['resolved']>;
+    for (let dep of deps) {
+      let resolution = await this.resolver.nodeResolve(dep, fromFile);
+      switch (resolution.type) {
+        case 'virtual':
+          this.virtualModules.set(resolution.filename, resolution.content);
+          resolved.set(dep, resolution.filename);
+          this.scheduleVisit(resolution.filename, fromFile);
+          break;
+        case 'not_found':
+          if (['@embroider/macros', '@ember/template-factory'].includes(dep)) {
+            // the audit process deliberately removes the @embroider/macros babel
+            // plugins, so the imports are still present and should be left alone.
+            continue;
+          }
+          resolved.set(dep, { isResolutionFailure: true as true });
+          break;
+        case 'real':
+          resolved.set(dep, resolution.filename);
+          this.scheduleVisit(resolution.filename, fromFile);
+          break;
       }
-      return { isResolutionFailure: true as true };
     }
-    return resolution.filename;
+    return resolved;
   }
 
   private pushFinding(finding: Finding) {

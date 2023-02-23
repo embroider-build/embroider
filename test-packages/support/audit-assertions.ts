@@ -1,4 +1,4 @@
-import { Audit, AuditBuildOptions, AuditResults } from '@embroider/compat/src/audit';
+import { Audit, AuditBuildOptions, AuditResults, Module } from '@embroider/compat/src/audit';
 
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
@@ -50,7 +50,7 @@ export class ExpectAuditResults {
         expected: `${name} in audit results`,
       });
     }
-    return new ExpectModule(this.assert, m);
+    return new ExpectModule(this.assert, this.result, m);
   }
 
   get findings() {
@@ -59,7 +59,13 @@ export class ExpectAuditResults {
 }
 
 export class ExpectModule {
-  constructor(private assert: Assert, private module: AuditResults['modules'][string] | undefined) {}
+  constructor(private assert: Assert, private result: AuditResults, private module: Module | undefined) {}
+
+  codeEquals(expectedSource: string) {
+    if (this.module) {
+      this.assert.codeEqual(this.module.content, expectedSource);
+    }
+  }
 
   resolves(specifier: string) {
     return {
@@ -81,6 +87,29 @@ export class ExpectModule {
             });
           }
         }
+      },
+      toModule: (message?: string): ExpectModule => {
+        let foundName = this.module?.resolutions[specifier];
+        let foundModule: Module | undefined;
+        if (foundName) {
+          foundModule = this.result.modules[foundName];
+          if (!foundModule) {
+            this.assert.pushResult({
+              result: false,
+              expected: `${foundName} in audit results`,
+              actual: `${foundName} not in audit results`,
+              message,
+            });
+          }
+        } else {
+          this.assert.pushResult({
+            result: false,
+            expected: `specifier ${specifier} to resolve to something`,
+            actual: `specifier ${specifier} did not resolve to anything`,
+            message,
+          });
+        }
+        return new ExpectModule(this.assert, this.result, foundModule);
       },
     };
   }

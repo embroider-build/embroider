@@ -124,43 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  describe('bare namespaced', function () {
-    test('dasherized component, js only', function () {
-      let transform = configure({ staticComponents: true });
-      givenFile('components/hello-world/index.js');
-      expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
-          import helloWorld from "../components/hello-world/index.js";
-          import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("{{helloWorld}}", {
-            moduleName: "my-app/templates/application.hbs",
-            scope: () => ({
-              helloWorld
-            }),
-          });`);
-    });
-
-    test('dasherized component, js and hbs', function () {
-      let transform = configure({ staticComponents: true });
-      givenFile('components/hello-world/index.js');
-      givenFile('components/hello-world/index.hbs');
-      // the resolver only needs to handle the JS. Template-colocation causes
-      // the JS to already import the HBS. That is also why we don't have a test
-      // here for the hbs-only case -- from the resolver's perspective that case
-      // doesn't exist, because we will have always synthesized the JS before
-      // getting to the resolver.
-      expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
-          import helloWorld from "../components/hello-world/index.js";
-          import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("{{helloWorld}}", {
-            moduleName: "my-app/templates/application.hbs",
-            scope: () => ({
-              helloWorld
-            }),
-          });
-      `);
-    });
-  });
-
   test('podded, dasherized component, with blank podModulePrefix, js only', function () {
     let transform = configure({ staticComponents: true });
     givenFile('components/hello-world/component.js');

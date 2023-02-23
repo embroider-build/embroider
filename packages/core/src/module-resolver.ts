@@ -187,12 +187,19 @@ export class Resolver {
   nodeResolve(
     specifier: string,
     fromFile: string
-  ): { type: 'virtual'; content: string } | { type: 'real'; filename: string } | { type: 'not_found'; err: Error } {
+  ):
+    | { type: 'virtual'; filename: string; content: string }
+    | { type: 'real'; filename: string }
+    | { type: 'not_found'; err: Error } {
     let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile), request => {
       if (request.isVirtual) {
         return {
           type: 'found',
-          result: { type: 'virtual' as 'virtual', content: virtualContent(request.specifier) },
+          result: {
+            type: 'virtual' as 'virtual',
+            content: virtualContent(request.specifier),
+            filename: request.specifier,
+          },
         };
       }
       try {
@@ -547,6 +554,24 @@ export class Resolver {
 
   fallbackResolve<R extends ModuleRequest>(request: R): R {
     let { specifier, fromFile } = request;
+
+    if (compatPattern.test(specifier)) {
+      // Some kinds of compat requests get rewritten into other things
+      // deterministically. For example, "#embroider_compat/helpers/whatever"
+      // means only "the-current-engine/helpers/whatever", and if that doesn't
+      // actually exist it's that path that will show up as a missing import.
+      //
+      // But others have an ambiguous meaning. For example,
+      // #embroider_compat/components/whatever can mean several different
+      // things. If we're unable to find any of them, the actual
+      // "#embroider_compat" request will fall through all the way to here.
+      //
+      // In that case, we don't want to externalize that failure. We know it's
+      // not a classic runtime thing. It's better to let it be a build error
+      // here.
+      return request;
+    }
+
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return request;

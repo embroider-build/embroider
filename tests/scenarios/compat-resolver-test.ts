@@ -694,5 +694,73 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('modifier without arguments', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div {{scroll-top}}/>`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div {{scrollTop_}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              scrollTop_
+            })
+          });
+        `);
+      });
+
+      test('modifier with arguments', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div {{scroll-top @scrollTopPos}}/>`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div {{scrollTop_ @scrollTopPos}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              scrollTop_
+            })
+          });
+        `);
+      });
+
+      test('modifier currying', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#let (modifier "add-listener") as |addListener|}}
+          {{#let (modifier addListener "click") as |addClickListener|}}
+            <button {{addClickListener this.handleClick}}>Test</button>
+          {{/let}}
+        {{/let}}`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import addListener_ from "#embroider_compat/modifiers/add-listener";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#let (modifier addListener_) as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              addListener_
+            })
+          });
+        `);
+      });
+
+      test('built-in components are ignored when used with the component helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component "input"}}{{component "link-to"}}{{component "textarea"}}`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{component \\"input\\"}}{{component \\"link-to\\"}}{{component \\"textarea\\"}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
     });
   });

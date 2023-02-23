@@ -303,6 +303,20 @@ Scenarios.fromProject(() => new Project())
             .to('./helpers/hello-world.js');
         });
 
+        test('modifier', async function () {
+          givenFiles({
+            'modifiers/hello-world.js': '',
+            'app.js': `import "#embroider_compat/modifiers/hello-world"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/modifiers/hello-world')
+            .to('./modifiers/hello-world.js');
+        });
+
         test('nested ambiguous component', async function () {
           givenFiles({
             'components/something/hello-world.js': '',

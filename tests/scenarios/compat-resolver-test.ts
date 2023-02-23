@@ -136,7 +136,6 @@ Scenarios.fromProject(() => new Project())
 
       test('bare dasherized component with no args is ambiguous', async function () {
         givenFiles({
-          'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world}}`,
         });
 
@@ -147,7 +146,6 @@ Scenarios.fromProject(() => new Project())
 
       test('bare dasherized component in ambiguous position requires staticHelpers to agree ', async function () {
         givenFiles({
-          'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world arg=1}}`,
         });
 
@@ -160,7 +158,6 @@ Scenarios.fromProject(() => new Project())
 
       test('bare dasherized component manually disambiguated to component', async function () {
         givenFiles({
-          'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world}}`,
         });
 
@@ -193,7 +190,6 @@ Scenarios.fromProject(() => new Project())
 
       test('bare dasherized component with arg', async function () {
         givenFiles({
-          'components/hello-world.js': '',
           'templates/application.hbs': `{{hello-world arg=1}}`,
         });
 
@@ -213,7 +209,6 @@ Scenarios.fromProject(() => new Project())
 
       test('bare dasherized helper with arg', async function () {
         givenFiles({
-          'helpers/hello-world.js': '',
           'templates/application.hbs': `{{hello-world arg=1}}`,
         });
 
@@ -233,7 +228,6 @@ Scenarios.fromProject(() => new Project())
 
       test('nested bare dasherized component', async function () {
         givenFiles({
-          'components/something/hello-world.js': '',
           'templates/application.hbs': `{{something/hello-world}}`,
         });
         await configure({ staticComponents: true, staticHelpers: true });

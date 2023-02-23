@@ -124,35 +124,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('bare dasherized component, hbs only', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('templates/components/hello-world.hbs');
-    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
-      import helloWorld from "./components/hello-world.hbs";
-      import { precompileTemplate } from "@ember/template-compilation";
-      window.define("the-app/templates/components/hello-world", () => helloWorld);
-      export default precompileTemplate("{{hello-world}}", {
-        moduleName: "my-app/templates/application.hbs",
-      });
-    `);
-  });
-
-  test('bare dasherized component, js and hbs', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    givenFile('templates/components/hello-world.hbs');
-    expect(transform('templates/application.hbs', `{{hello-world}}`)).toEqualCode(`
-      import helloWorld0 from "../components/hello-world.js";
-      import helloWorld from "./components/hello-world.hbs";
-      import { precompileTemplate } from "@ember/template-compilation";
-      window.define("the-app/templates/components/hello-world", () => helloWorld);
-      window.define("the-app/components/hello-world", () => helloWorld0);
-      export default precompileTemplate("{{hello-world}}", {
-        moduleName: "my-app/templates/application.hbs",
-      });
-    `);
-  });
-
   test('coalesces repeated components', function () {
     let transform = configure({ staticComponents: true });
     givenFile('components/hello-world.js');

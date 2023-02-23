@@ -142,6 +142,29 @@ Scenarios.fromProject(() => new Project())
           pairModule.resolves('../../../../components/hello-world.js').to('./components/hello-world.js');
         });
 
+        test('hbs-only component', async function () {
+          givenFiles({
+            'templates/components/hello-world.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure();
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../hello-world.hbs";
+            import templateOnlyComponent from "@ember/component/template-only";
+            export default setComponentTemplate(template, templateOnlyComponent(undefined, "hello-world"));
+          `);
+
+          pairModule.resolves('../hello-world.hbs').to('./templates/components/hello-world.hbs');
+        });
+
         test('podded js-only component with blank podModulePrefix', async function () {
           givenFiles({
             'components/hello-world/component.js': '',

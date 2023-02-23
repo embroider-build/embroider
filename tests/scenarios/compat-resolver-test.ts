@@ -43,10 +43,12 @@ Scenarios.fromProject(() => new Project())
     Qmodule(scenario.name, function (hooks) {
       let expectTranspiled: (file: string) => ReturnType<ReturnType<ExpectFile>['transform']>;
       let givenFiles: (files: Record<string, string>) => void;
-      let configure: (
-        opts?: Partial<CompatResolverOptions['options']>,
-        extraOpts?: { appPackageRules?: Partial<PackageRules> }
-      ) => Promise<void>;
+      let configure: (opts?: Partial<CompatResolverOptions['options']>, extraOpts?: ConfigureOpts) => Promise<void>;
+
+      interface ConfigureOpts {
+        appPackageRules?: Partial<PackageRules>;
+        astPlugins?: string[];
+      }
 
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
@@ -59,14 +61,14 @@ Scenarios.fromProject(() => new Project())
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
           }
         };
-        configure = async function (
-          opts?: Partial<CompatResolverOptions['options']>,
-          extraOpts?: { appPackageRules?: Partial<PackageRules> }
-        ) {
+        configure = async function (opts?: Partial<CompatResolverOptions['options']>, extraOpts?: ConfigureOpts) {
           let etcOptions: EtcOptions = {
             compilerPath: require.resolve('ember-source/dist/ember-template-compiler'),
             targetFormat: 'hbs',
-            transforms: [[require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir }]],
+            transforms: [
+              ...(extraOpts?.astPlugins ?? []),
+              [require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir }],
+            ],
           };
 
           let resolverOptions: CompatResolverOptions = {
@@ -678,6 +680,80 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('string literal passed to component helper with block', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#component "hello-world"}}{{/component}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/components/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#component helloWorld_}}{{/component}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('string literal passed to component helper in helper position', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(component "hello-world")}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/components/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{(component helloWorld_)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('string literal passed to helper keyword in helper position', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(helper "hello-world")}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/helpers/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{(helper helloWorld_)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('helper currying', async function () {
+        givenFiles({
+          'templates/application.hbs': `
+            {{#let (helper "hello-world" name="World") as |hello|}}
+              {{#let (helper hello name="Tomster") as |helloTomster|}}
+                {{helloTomster name="Zoey"}}
+              {{/let}}
+            {{/let}}
+          `,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/helpers/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("\\n            {{#let (helper helloWorld_ name=\\"World\\") as |hello|}}\\n              {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n                {{helloTomster name=\\"Zoey\\"}}\\n              {{/let}}\\n            {{/let}}\\n          ", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_,
+            }),
+          });
+        `);
+      });
+
       test('string literal passed to modifier keyword', async function () {
         givenFiles({
           'templates/application.hbs': `<div {{(modifier 'hello-world')}} />`,
@@ -754,12 +830,103 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component "input"}}{{component "link-to"}}{{component "textarea"}}`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         export default precompileTemplate("{{component \\"input\\"}}{{component \\"link-to\\"}}{{component \\"textarea\\"}}", {
           moduleName: "my-app/templates/application.hbs"
         });
+      `);
+      });
+
+      test('built-in helpers are ignored when used with the helper keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{helper "fn"}}{{helper "array"}}{{helper "concat"}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{helper \\"fn\\"}}{{helper \\"array\\"}}{{helper \\"concat\\"}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
+
+      test('built-in modifiers are ignored when used with the modifier keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{modifier "on"}}{{modifier "action"}}`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{modifier \\"on\\"}}{{modifier \\"action\\"}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
+
+      test('component helper with direct addon package reference', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component "my-addon@thing"}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import thing_ from "#embroider_compat/components/my-addon@thing";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{component thing_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            thing_
+          })
+        });
+      `);
+      });
+
+      test('angle bracket invocation of component with @ syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `<MyAddon$Thing />`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+          },
+          {
+            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import thing_ from "#embroider_compat/components/my-addon@thing";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<thing_ />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              thing_
+            })
+          });
+      `);
+      });
+
+      test('helper with @ syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{ (my-addon$thing) }}`,
+        });
+        await configure(
+          {
+            staticHelpers: true,
+          },
+          {
+            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import thing_ from "#embroider_compat/helpers/my-addon@thing";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{(thing_)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              thing_
+            })
+          });
       `);
       });
     });

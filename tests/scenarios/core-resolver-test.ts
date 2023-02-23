@@ -1,4 +1,4 @@
-import { AppMeta } from '@embroider/shared-internals';
+import { AddonMeta, AppMeta } from '@embroider/shared-internals';
 import { outputFileSync } from 'fs-extra';
 import { resolve } from 'path';
 import QUnit from 'qunit';
@@ -33,6 +33,22 @@ Scenarios.fromProject(() => new Project())
     };
     app.mergeFiles({
       'index.html': '<script src="./app.js" type="module"></script>',
+      node_modules: {
+        'my-addon': {
+          'package.json': JSON.stringify(
+            (() => {
+              let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true };
+              return {
+                name: 'my-addon',
+                keywords: ['ember-addon'],
+                'ember-addon': meta,
+              };
+            })(),
+            null,
+            2
+          ),
+        },
+      },
     });
   })
   .forEachScenario(scenario => {
@@ -42,6 +58,7 @@ Scenarios.fromProject(() => new Project())
 
       interface ConfigureOpts {
         podModulePrefix?: string;
+        renamePackages?: Record<string, string>;
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
@@ -58,7 +75,7 @@ Scenarios.fromProject(() => new Project())
           let resolverOptions: CompatResolverOptions = {
             activeAddons: {},
             renameModules: {},
-            renamePackages: {},
+            renamePackages: opts?.renamePackages ?? {},
             extraImports: {},
             relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
@@ -67,7 +84,12 @@ Scenarios.fromProject(() => new Project())
               {
                 packageName: 'my-app',
                 root: app.dir,
-                activeAddons: [],
+                activeAddons: [
+                  {
+                    name: 'my-addon',
+                    root: resolve(app.dir, 'node_modules', 'my-addon'),
+                  },
+                ],
               },
             ],
             modulePrefix: 'my-app',
@@ -163,6 +185,53 @@ Scenarios.fromProject(() => new Project())
           `);
 
           pairModule.resolves('../hello-world.hbs').to('./templates/components/hello-world.hbs');
+        });
+
+        test('explicitly namedspaced component', async function () {
+          givenFiles({
+            'node_modules/my-addon/components/thing.js': '',
+            'app.js': `import "#embroider_compat/components/my-addon@thing"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/my-addon@thing')
+            .to('./node_modules/my-addon/components/thing.js');
+        });
+
+        test('explicitly namedspaced component in renamed package', async function () {
+          givenFiles({
+            'node_modules/my-addon/components/thing.js': '',
+            'app.js': `import "#embroider_compat/components/has-been-renamed@thing"`,
+          });
+
+          await configure({
+            renamePackages: {
+              'has-been-renamed': 'my-addon',
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/has-been-renamed@thing')
+            .to('./node_modules/my-addon/components/thing.js');
+        });
+
+        test('explicitly namedspaced component references its own package', async function () {
+          givenFiles({
+            'app.js': `import "my-addon/components/thing"`,
+            'node_modules/my-addon/components/thing.js': `import "#embroider_compat/components/my-addon@inner"`,
+            'node_modules/my-addon/components/inner.js': '',
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./node_modules/my-addon/components/thing.js')
+            .resolves('#embroider_compat/components/my-addon@inner')
+            .to('./node_modules/my-addon/components/inner.js');
         });
 
         test('podded js-only component with blank podModulePrefix', async function () {
@@ -289,7 +358,7 @@ Scenarios.fromProject(() => new Project())
           pairModule.resolves('../../component.js').to('./pods/components/hello-world/component.js');
         });
 
-        test('helper', async function () {
+        test('plain helper', async function () {
           givenFiles({
             'helpers/hello-world.js': '',
             'app.js': `import "#embroider_compat/helpers/hello-world"`,
@@ -301,6 +370,20 @@ Scenarios.fromProject(() => new Project())
             .module('./app.js')
             .resolves('#embroider_compat/helpers/hello-world')
             .to('./helpers/hello-world.js');
+        });
+
+        test('namespaced helper', async function () {
+          givenFiles({
+            'node_modules/my-addon/helpers/hello-world.js': '',
+            'app.js': `import "#embroider_compat/helpers/my-addon@hello-world"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/helpers/my-addon@hello-world')
+            .to('./node_modules/my-addon/helpers/hello-world.js');
         });
 
         test('modifier', async function () {

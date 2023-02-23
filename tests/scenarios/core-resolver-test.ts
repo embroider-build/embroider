@@ -4,7 +4,6 @@ import { resolve } from 'path';
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
-import { PackageRules } from '@embroider/compat';
 import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 
 // installs our assert.audit QUnit helper
@@ -40,10 +39,12 @@ Scenarios.fromProject(() => new Project())
     Qmodule(scenario.name, function (hooks) {
       let expectAudit: ExpectAuditResults;
       let givenFiles: (files: Record<string, string>) => void;
-      let configure: (
-        opts?: Partial<CompatResolverOptions['options']>,
-        extraOpts?: { appPackageRules?: Partial<PackageRules> }
-      ) => Promise<void>;
+
+      interface ConfigureOpts {
+        podModulePrefix?: string;
+      }
+
+      let configure: (opts?: ConfigureOpts) => Promise<void>;
 
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
@@ -53,7 +54,7 @@ Scenarios.fromProject(() => new Project())
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
           }
         };
-        configure = async function () {
+        configure = async function (opts?: ConfigureOpts) {
           let resolverOptions: CompatResolverOptions = {
             activeAddons: {},
             renameModules: {},
@@ -70,7 +71,7 @@ Scenarios.fromProject(() => new Project())
               },
             ],
             modulePrefix: 'my-app',
-            podModulePrefix: undefined,
+            podModulePrefix: opts?.podModulePrefix,
             options: {
               staticComponents: false,
               staticHelpers: false,
@@ -139,6 +140,130 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.resolves('../../hello-world.hbs').to('./templates/components/hello-world.hbs');
           pairModule.resolves('../../../../components/hello-world.js').to('./components/hello-world.js');
+        });
+
+        test('podded js-only component with blank podModulePrefix', async function () {
+          givenFiles({
+            'components/hello-world/component.js': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .to('./components/hello-world/component.js');
+        });
+
+        test('podded js-only component with non-blank podModulePrefix', async function () {
+          givenFiles({
+            'pods/components/hello-world/component.js': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure({ podModulePrefix: 'my-app/pods' });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .to('./pods/components/hello-world/component.js');
+        });
+
+        test('podded hbs-only component with blank podModulePrefix', async function () {
+          givenFiles({
+            'components/hello-world/template.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure();
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../template.hbs";
+            import templateOnlyComponent from "@ember/component/template-only";
+            export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
+          `);
+
+          pairModule.resolves('../template.hbs').to('./components/hello-world/template.hbs');
+        });
+
+        test('podded hbs-only component with non-blank podModulePrefix', async function () {
+          givenFiles({
+            'pods/components/hello-world/template.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure({ podModulePrefix: 'my-app/pods' });
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../template.hbs";
+            import templateOnlyComponent from "@ember/component/template-only";
+            export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
+          `);
+
+          pairModule.resolves('../template.hbs').to('./pods/components/hello-world/template.hbs');
+        });
+
+        test('podded js-and-hbs component with blank podModulePrefix', async function () {
+          givenFiles({
+            'components/hello-world/component.js': '',
+            'components/hello-world/template.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure();
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../../template.hbs";
+            import component from "../../component.js";
+            export default setComponentTemplate(template, component);
+          `);
+
+          pairModule.resolves('../../template.hbs').to('./components/hello-world/template.hbs');
+          pairModule.resolves('../../component.js').to('./components/hello-world/component.js');
+        });
+
+        test('podded js-and-hbs component with non-blank podModulePrefix', async function () {
+          givenFiles({
+            'pods/components/hello-world/component.js': '',
+            'pods/components/hello-world/template.hbs': '',
+            'app.js': `import "#embroider_compat/components/hello-world"`,
+          });
+
+          await configure({ podModulePrefix: 'my-app/pods' });
+
+          let pairModule = expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/hello-world')
+            .toModule();
+
+          pairModule.codeEquals(`
+            import { setComponentTemplate } from "@ember/component";
+            import template from "../../template.hbs";
+            import component from "../../component.js";
+            export default setComponentTemplate(template, component);
+          `);
+
+          pairModule.resolves('../../template.hbs').to('./pods/components/hello-world/template.hbs');
+          pairModule.resolves('../../component.js').to('./pods/components/hello-world/component.js');
         });
 
         test('helper', async function () {

@@ -333,7 +333,7 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
-      test('angle contextual component is left alone', async function () {
+      test('uppercase angle contextual component is left alone', async function () {
         givenFiles({
           'templates/application.hbs.js': `
             import { precompileTemplate } from '@ember/template-compilation';
@@ -347,6 +347,134 @@ Scenarios.fromProject(() => new Project())
           import { precompileTemplate } from '@ember/template-compilation';
           precompileTemplate('<helloWorld as |H|> <H.title @flavor="chocolate" /> </helloWorld>', {
             scope: () => ({ helloWorld })
+          });
+        `);
+      });
+
+      test('lowercase angle contextual component is left alone', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+            import { precompileTemplate } from '@ember/template-compilation';
+            precompileTemplate('<helloWorld as |h|> <h.title @flavor="chocolate" /> </helloWorld>', {
+              scope: () => ({ helloWorld })
+            });
+          `,
+        });
+        await configure({ staticComponents: true, staticHelpers: true });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          precompileTemplate('<helloWorld as |h|> <h.title @flavor="chocolate" /> </helloWorld>', {
+            scope: () => ({ helloWorld })
+          });
+        `);
+      });
+
+      test('optional component missing in mustache', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{this-one x=true}}`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '{{this-one}}': { safeToIgnore: true },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{this-one x=true}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('optional component missing in mustache block', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#this-one}} {{/this-one}}`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '{{this-one}}': { safeToIgnore: true },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#this-one}} {{/this-one}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('optional component missing in element syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `<ThisOne />`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '{{this-one}}': { safeToIgnore: true },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<ThisOne />", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('component rules can be expressed via component helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{this-one x=true}}`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '{{component "this-one"}}': { safeToIgnore: true },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{this-one x=true}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('component rules can be expressed via angle syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{this-one x=true}}`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '<ThisOne />': { safeToIgnore: true },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{this-one x=true}}", {
+            moduleName: "my-app/templates/application.hbs"
           });
         `);
       });

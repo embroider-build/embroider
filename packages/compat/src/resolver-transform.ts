@@ -770,6 +770,15 @@ class TemplateResolver implements ASTPlugin {
           });
           return;
         }
+        if (path.parent?.node.type === 'AttrNode') {
+          // this mustache is the value of an attribute. Components aren't
+          // allowed here, so we're not ambiguous, so resolve a helper.
+          let resolution = this.targetHelper(node.path.original);
+          this.emit(path, resolution, (node, newIdentifier) => {
+            node.path = newIdentifier;
+          });
+          return;
+        }
         let hasArgs = node.params.length > 0 || node.hash.pairs.length > 0;
         let resolution = this.targetHelperOrComponent(node.path.original, node.path.loc, hasArgs);
         this.emit(path, resolution, (node, newIdentifier) => {

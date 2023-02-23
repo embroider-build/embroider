@@ -300,6 +300,40 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('non-block form angle component', async function () {
+        givenFiles({
+          'templates/application.hbs': `<HelloWorld />`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<helloWorld_ />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
+      test('nested angle component', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Hello::World />`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import helloWorld_ from "#embroider_compat/components/hello/world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<helloWorld_ />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
+
       test('block form angle component', async function () {
         givenFiles({
           'templates/application.hbs': `<HelloWorld></HelloWorld>`,
@@ -620,6 +654,40 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('helper in component argument', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Stuff @value={{myHelper 1}}/>`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<Stuff @value={{myHelper_ 1}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+               myHelper_,
+            }),
+          });
+        `);
+      });
+
+      test('helper in html attribute', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div class={{myHelper 1}}/>`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div class={{myHelper_ 1}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+               myHelper_,
+            }),
+          });
+        `);
+      });
+
       test('component in mustache block on this, no arg', async function () {
         givenFiles({
           'templates/application.hbs': `{{#this.myComponent}}hello{{/this.myComponent}}`,
@@ -928,6 +996,16 @@ Scenarios.fromProject(() => new Project())
             })
           });
       `);
+      });
+
+      test('unsafe dynamic component in content position', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component this.which}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').failsToTransform(
+          'Unsafe dynamic component: this.which in templates/application.hbs'
+        );
       });
     });
   });

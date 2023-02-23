@@ -13,7 +13,6 @@ import { hbsToJS, tmpdir, throwOnWarnings, ResolverOptions, AddonMeta } from '@e
 import { emberTemplateCompiler } from '@embroider/test-support';
 import { CompatResolverOptions } from '../src/resolver-transform';
 import { PackageRules } from '../src';
-import type { AST, ASTPluginEnvironment } from '@glimmer/syntax';
 import 'code-equality-assertions/jest';
 import type { Transform, Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { TransformOptions, transformSync } from '@babel/core';
@@ -124,103 +123,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('dynamic component helper error in content position', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    expect(() => {
-      transform('templates/application.hbs', `{{component this.which}}`);
-    }).toThrow(/Unsafe dynamic component: this\.which in templates\/application\.hbs/);
-  });
-
-  test('angle component, js and hbs', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/hello-world.js');
-    givenFile('templates/components/hello-world.hbs');
-    expect(transform('templates/application.hbs', `<HelloWorld />`)).toEqualCode(`
-      import helloWorld0 from "../components/hello-world.js";
-      import helloWorld from "./components/hello-world.hbs";
-      import { precompileTemplate } from "@ember/template-compilation";
-      window.define("the-app/templates/components/hello-world", () => helloWorld);
-      window.define("the-app/components/hello-world", () => helloWorld0);
-      export default precompileTemplate("<HelloWorld />", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('nested angle component, js and hbs', function () {
-    let transform = configure({ staticComponents: true });
-    givenFile('components/something/hello-world.js');
-    givenFile('templates/components/something/hello-world.hbs');
-    expect(transform('templates/application.hbs', `<Something::HelloWorld />`)).toEqualCode(`
-      import helloWorld0 from "../components/something/hello-world.js";
-      import helloWorld from "./components/something/hello-world.hbs";
-      import { precompileTemplate } from "@ember/template-compilation";
-      window.define("the-app/templates/components/something/hello-world", () => helloWorld);
-      window.define("the-app/components/something/hello-world", () => helloWorld0);
-      export default precompileTemplate("<Something::HelloWorld />", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('angle component missing', function () {
-    let transform = configure({ staticComponents: true });
-    expect(() => {
-      transform('templates/application.hbs', `<HelloWorld />`);
-    }).toThrow(new RegExp(`Missing component: HelloWorld in templates/application.hbs`));
-  });
-  test('helper in subexpression', function () {
-    let transform = configure({ staticHelpers: true });
-    givenFile('helpers/array.js');
-    expect(transform('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqualCode(`
-      import array from "../helpers/array.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate(
-        "{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}",
-        {
-          moduleName: "my-app/templates/application.hbs",
-          scope: () => ({
-            array,
-          }),
-        }
-      );
-    `);
-  });
-  test('missing subexpression with args', function () {
-    let transform = configure({ staticHelpers: true });
-    expect(() => {
-      transform('templates/application.hbs', `{{#each (things 1 2 3) as |num|}} {{num}} {{/each}}`);
-    }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
-  });
-  test('missing subexpression no args', function () {
-    let transform = configure({ staticHelpers: true });
-    expect(() => {
-      transform('templates/application.hbs', `{{#each (things) as |num|}} {{num}} {{/each}}`);
-    }).toThrow(new RegExp(`Missing helper: things in templates/application.hbs`));
-  });
-  test('emits no helpers when staticHelpers is off', function () {
-    let transform = configure({ staticHelpers: false });
-    givenFile('helpers/array.js');
-    expect(transform('templates/application.hbs', `{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{#each (array 1 2 3) as |num|}} {{num}} {{/each}}", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('helper as component argument', function () {
-    let transform = configure({ staticHelpers: true });
-    givenFile('helpers/array.js');
-    expect(transform('templates/application.hbs', `{{my-component value=(array 1 2 3) }}`)).toEqualCode(`
-      import array from "../helpers/array.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{my-component value=(array 1 2 3)}}", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          array
-        })
-      });
-    `);
-  });
   test('helper as html attribute', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
@@ -1399,62 +1301,3 @@ describe('compat-resolver', function () {
     `);
   });
 });
-
-function emberHolyFuturisticNamespacingBatmanTransform(env: ASTPluginEnvironment) {
-  let sigil = '$';
-  let b = env.syntax.builders;
-
-  function rewriteOrWrapComponentParam(node: AST.MustacheStatement | AST.SubExpression | AST.BlockStatement) {
-    if (!node.params.length) {
-      return;
-    }
-
-    let firstParam = node.params[0];
-    if (firstParam.type !== 'StringLiteral') {
-      // note: does not support dynamic / runtime strings
-      return;
-    }
-
-    node.params[0] = b.string(firstParam.original.replace(sigil, '@'));
-  }
-
-  return {
-    name: 'ember-holy-futuristic-template-namespacing-batman:namespacing-transform',
-
-    visitor: {
-      PathExpression(node: AST.PathExpression) {
-        if (node.parts.length > 1 || !node.original.includes(sigil)) {
-          return;
-        }
-
-        return b.path(node.original.replace(sigil, '@'), node.loc);
-      },
-      ElementNode(node: AST.ElementNode) {
-        if (node.tag.indexOf(sigil) > -1) {
-          node.tag = node.tag.replace(sigil, '@');
-        }
-      },
-      MustacheStatement(node: AST.MustacheStatement) {
-        if (node.path.type === 'PathExpression' && node.path.original === 'component') {
-          // we don't care about non-component expressions
-          return;
-        }
-        rewriteOrWrapComponentParam(node);
-      },
-      SubExpression(node: AST.SubExpression) {
-        if (node.path.type === 'PathExpression' && node.path.original !== 'component') {
-          // we don't care about non-component expressions
-          return;
-        }
-        rewriteOrWrapComponentParam(node);
-      },
-      BlockStatement(node: AST.BlockStatement) {
-        if (node.path.type === 'PathExpression' && node.path.original !== 'component') {
-          // we don't care about blocks not using component
-          return;
-        }
-        rewriteOrWrapComponentParam(node);
-      },
-    },
-  };
-}

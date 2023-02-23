@@ -478,5 +478,105 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('acceptsComponentArguments works on all copies of a lexically-inserted component, element syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `<HelloWorld @iAmAComponent='first-target' /><HelloWorld @iAmAComponent='second-target' />`,
+        });
+
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<HelloWorld />': {
+                  acceptsComponentArguments: ['iAmAComponent'],
+                },
+              },
+            },
+          }
+        );
+
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import secondTarget_ from "#embroider_compat/components/second-target";
+          import firstTarget_ from "#embroider_compat/components/first-target";
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<helloWorld_ @iAmAComponent={{firstTarget_}} /><helloWorld_ @iAmAComponent={{secondTarget_}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_,
+              firstTarget_,
+              secondTarget_,
+            }),
+          });
+        `);
+      });
+
+      test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache block syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#hello-world iAmAComponent='first-target' }}{{/hello-world}}{{#hello-world iAmAComponent='second-target' }}{{/hello-world}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<HelloWorld />': {
+                  acceptsComponentArguments: ['iAmAComponent'],
+                },
+              },
+            },
+          }
+        );
+
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import secondTarget_ from "#embroider_compat/components/second-target";
+          import firstTarget_ from "#embroider_compat/components/first-target";
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#helloWorld_ iAmAComponent=firstTarget_}}{{/helloWorld_}}{{#helloWorld_ iAmAComponent=secondTarget_}}{{/helloWorld_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_,
+              firstTarget_,
+              secondTarget_,
+            }),
+          });
+        `);
+      });
+
+      test('acceptsComponentArguments works on all copies of a lexically-inserted component, mustache syntax', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{hello-world iAmAComponent='first-target' }}{{hello-world iAmAComponent='second-target' }}`,
+        });
+        await configure(
+          { staticComponents: true, staticHelpers: true },
+          {
+            appPackageRules: {
+              components: {
+                '<HelloWorld />': {
+                  acceptsComponentArguments: ['iAmAComponent'],
+                },
+              },
+            },
+          }
+        );
+
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import secondTarget_ from "#embroider_compat/components/second-target";
+          import firstTarget_ from "#embroider_compat/components/first-target";
+          import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{helloWorld_ iAmAComponent=firstTarget_}}{{helloWorld_ iAmAComponent=secondTarget_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_,
+              firstTarget_,
+              secondTarget_,
+            }),
+          });
+        `);
+      });
     });
   });

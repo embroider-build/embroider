@@ -286,7 +286,7 @@ declare global {
   }
 }
 
-interface AssertionAdapter {
+export interface AssertionAdapter {
   assert(state: { result: boolean; actual: any; expected: any; message: string }): void;
 
   fail(message: string): void;
@@ -296,87 +296,7 @@ interface AssertionAdapter {
   codeEqual(actualCode: string, expectedCode: string): void;
 }
 
-class JestAdapter implements AssertionAdapter {
-  constructor(private stack: Error, private path: string) {}
-  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
-    try {
-      expect(this.path)._fileAssertionsMatcher(state);
-    } catch (upstreamErr) {
-      (this.stack as any).matcherResult = upstreamErr.matcherResult;
-      this.stack.message = upstreamErr.message;
-      throw this.stack;
-    }
-  }
-  fail(message: string) {
-    this.stack.message = message;
-    throw this.stack;
-  }
-
-  deepEquals(a: any, b: any) {
-    expect(a).toEqual(b);
-  }
-
-  equals(a: any, b: any) {
-    expect(a).toBe(b);
-  }
-
-  codeEqual(expectedCode: string, actualCode: string) {
-    expect(expectedCode).toEqualCode(actualCode);
-  }
-}
-
-import 'code-equality-assertions/qunit';
-
-class QUnitAdapter implements AssertionAdapter {
-  constructor(private qassert: Assert) {}
-
-  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
-    this.qassert.pushResult(state);
-  }
-
-  fail(message: string) {
-    this.qassert.ok(false, message);
-  }
-
-  deepEquals(a: any, b: any) {
-    this.qassert.deepEqual(a, b);
-  }
-
-  equals(a: any, b: any) {
-    this.qassert.equal(a, b);
-  }
-
-  codeEqual(a: string, b: string) {
-    this.qassert.codeEqual(a, b);
-  }
-}
-
-export function expectFilesAt(
-  basePath: string,
-  params: { jest: true } | { qunit: Assert } = { jest: true }
-): ExpectFile {
-  let func: any = (relativePath: string) => {
-    if ('jest' in params) {
-      return jestExpectFile(func, basePath, relativePath);
-    } else {
-      return new BoundExpectFile(basePath, relativePath, new QUnitAdapter(params.qunit));
-    }
-  };
-  Object.defineProperty(func, 'basePath', {
-    get() {
-      return basePath;
-    },
-  });
-  return func;
-}
-
 export interface ExpectFile {
   (relativePath: string): BoundExpectFile;
   readonly basePath: string;
-}
-
-function jestExpectFile(callsite: any, basePath: string, relativePath: string): BoundExpectFile {
-  let err = new Error();
-  Error.captureStackTrace(err, callsite);
-  return new BoundExpectFile(basePath, relativePath, new JestAdapter(err, relativePath));
 }

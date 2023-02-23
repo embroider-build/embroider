@@ -1,5 +1,6 @@
 import { AppMeta } from '@embroider/shared-internals';
-import { ExpectFile, expectFilesAt, Transpiler } from '@embroider/test-support';
+import { Transpiler } from '@embroider/test-support';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { outputFileSync } from 'fs-extra';
 import { resolve } from 'path';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';

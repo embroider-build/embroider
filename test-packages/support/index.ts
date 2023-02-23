@@ -110,6 +110,6 @@ export function definesPattern(runtimeName: string, buildTimeName: string): RegE
   );
 }
 
-export { expectFilesAt, ExpectFile } from './file-assertions';
+export { ExpectFile } from './file-assertions';
 export { Rebuilder } from './rebuilder';
 export { Transpiler } from './transpiler';

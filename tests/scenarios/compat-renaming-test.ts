@@ -5,7 +5,8 @@ import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
-import { definesPattern, ExpectFile, expectFilesAt, Transpiler } from '@embroider/test-support';
+import { definesPattern, Transpiler } from '@embroider/test-support';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';

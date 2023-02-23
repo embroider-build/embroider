@@ -6,7 +6,7 @@ import { loadFromFixtureData } from './helpers';
 import { dummyAppScenarios, baseAddon, appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { expectFilesAt, ExpectFile } from '@embroider/test-support';
+import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 
 const { module: Qmodule, test } = QUnit;
 

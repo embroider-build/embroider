@@ -578,5 +578,87 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test('helper in content position on this, no args', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(this.myHelper)}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{(this.myHelper)}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('helper in content position on this, with arguments', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(this.myHelper 42)}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{(this.myHelper 42)}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('helper in subexpression position on this', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#if (this.myHelper)}}{{/if}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#if (this.myHelper)}}{{/if}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('component in mustache block on this, no arg', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#this.myComponent}}hello{{/this.myComponent}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#this.myComponent}}hello{{/this.myComponent}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('component in mustache block on this, with arg', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#this.myComponent 42}}hello{{/this.myComponent}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#this.myComponent 42}}hello{{/this.myComponent}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('string literal passed to component helepr in content position', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component 'hello-world'}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import helloWorld_ from "#embroider_compat/components/hello-world";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{component helloWorld_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
     });
   });

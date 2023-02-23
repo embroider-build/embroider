@@ -242,5 +242,22 @@ Scenarios.fromProject(() => new Project())
             });
         `);
       });
+
+      test('coalesces repeated components', async function () {
+        givenFiles({
+          'templates/application.hbs': `<HelloWorld /><HelloWorld />`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<helloWorld_ /><helloWorld_ />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              helloWorld_
+            })
+          });
+        `);
+      });
     });
   });

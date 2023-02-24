@@ -63,7 +63,7 @@ Scenarios.fromProject(() => new Project())
         };
         configure = async function (opts?: Partial<CompatResolverOptions['options']>, extraOpts?: ConfigureOpts) {
           let etcOptions: EtcOptions = {
-            compilerPath: require.resolve('ember-source/dist/ember-template-compiler'),
+            compilerPath: require.resolve('ember-source-latest/dist/ember-template-compiler'),
             targetFormat: 'hbs',
             transforms: [
               ...(extraOpts?.astPlugins ?? []),
@@ -688,6 +688,36 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('helper in content position, manually disambiguated', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{myHelper}}`,
+        });
+        await configure(
+          { staticHelpers: true },
+          {
+            appPackageRules: {
+              appTemplates: {
+                'templates/application.hbs': {
+                  disambiguate: {
+                    myHelper: 'helper',
+                  },
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{myHelper_}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+               myHelper_,
+            }),
+          });
+        `);
+      });
+
       test('component in mustache block on this, no arg', async function () {
         givenFiles({
           'templates/application.hbs': `{{#this.myComponent}}hello{{/this.myComponent}}`,
@@ -1006,6 +1036,28 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs').failsToTransform(
           'Unsafe dynamic component: this.which in templates/application.hbs'
         );
+      });
+
+      test('leaves strict mode templates alone', async function () {
+        // strict mode templates don't need our resolver transform at all, because
+        // they don't do any global resolution.
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("<Thing />", {
+            strict: true,
+          });
+        `,
+        });
+        await configure({
+          staticComponents: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("<Thing />", {
+            strict: true,
+          });
+      `);
       });
     });
   });

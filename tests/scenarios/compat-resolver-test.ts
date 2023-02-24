@@ -1442,5 +1442,141 @@ Scenarios.fromProject(() => new Project())
         });
       `);
       });
+
+      test('acceptsComponentArguments on mustache with valid literal', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{form-builder title="fancy-title"}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  acceptsComponentArguments: ['title'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{formBuilder_ title=fancyTitle_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyTitle_
+          })
+        });
+      `);
+      });
+
+      test('acceptsComponentArguments on mustache block with valid literal', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#form-builder title="fancy-title"}}{{/form-builder}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  acceptsComponentArguments: ['title'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#formBuilder_ title=fancyTitle_}}{{/formBuilder_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyTitle_
+          })
+        });
+      `);
+      });
+
+      test('acceptsComponentArguments argument name may include optional @', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{form-builder title="fancy-title"}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  acceptsComponentArguments: ['@title'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{formBuilder_ title=fancyTitle_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyTitle_
+          })
+        });
+      `);
+      });
+
+      test('acceptsComponentArguments on mustache with component subexpression', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{form-builder title=(component "fancy-title")}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  acceptsComponentArguments: ['@title'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{formBuilder_ title=(component fancyTitle_)}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyTitle_
+          })
+        });
+      `);
+      });
     });
   });

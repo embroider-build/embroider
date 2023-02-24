@@ -869,6 +869,19 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('emits no modifiers when staticModifiers is off', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div {{scroll-top}}/>`,
+        });
+        await configure({ staticModifiers: false });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div {{scroll-top}} />", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
       test('modifier without arguments', async function () {
         givenFiles({
           'templates/application.hbs': `<div {{scroll-top}}/>`,
@@ -1058,6 +1071,46 @@ Scenarios.fromProject(() => new Project())
             strict: true,
           });
       `);
+      });
+
+      test('respects lexically scoped component', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("<Thing />", {
+            scope: () => ({ Thing }),
+          });
+        `,
+        });
+        await configure({
+          staticComponents: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("<Thing />", {
+            scope: () => ({ Thing }),
+          });
+        `);
+      });
+
+      test('respects lexically scoped helper', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{(thing)}}", {
+            scope: () => ({ thing }),
+          });
+        `,
+        });
+        await configure({
+          staticHelpers: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{(thing)}}", {
+            scope: () => ({ thing }),
+          });
+        `);
       });
     });
   });

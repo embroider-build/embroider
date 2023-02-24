@@ -123,67 +123,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('respects lexically scoped component', function () {
-    let transform = configure({ staticComponents: true }, { startingFrom: 'js' });
-    expect(
-      transform(
-        'components/example.js',
-        `
-          import { precompileTemplate } from '@ember/template-compilation';
-          import Thing from 'whatever';
-          precompileTemplate("<Thing />", {
-            scope: () => ({ Thing }),
-          });
-        `
-      )
-    ).toEqualCode(`
-      import { precompileTemplate } from '@ember/template-compilation';
-      import Thing from 'whatever';
-      precompileTemplate("<Thing />", {
-        scope: () => ({ Thing }),
-      });
-    `);
-  });
-
-  test('respects lexically scoped helper', function () {
-    let transform = configure({ staticComponents: true, staticHelpers: true }, { startingFrom: 'js' });
-    expect(
-      transform(
-        'components/example.js',
-        `
-          import { precompileTemplate } from '@ember/template-compilation';
-          import thing from 'whatever';
-          precompileTemplate("<div class={{thing flavor=1}}></div>", {
-            scope: () => ({ thing }),
-          });
-        `
-      )
-    ).toEqualCode(`
-      import { precompileTemplate } from '@ember/template-compilation';
-      import thing from 'whatever';
-      precompileTemplate("<div class={{thing flavor=1}}></div>", {
-        scope: () => ({ thing }),
-      });
-    `);
-  });
-
-  test('missing modifier', function () {
-    let transform = configure({ staticModifiers: true });
-    expect(() => {
-      transform('templates/application.hbs', `<canvas {{fancy-drawing}}></canvas>`);
-    }).toThrow(new RegExp(`Missing modifier: fancy-drawing in templates/application.hbs`));
-  });
-  test('emits no modifiers when staticModifiers is off', function () {
-    let transform = configure({ staticModifiers: false });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('templates/application.hbs', `<input {{auto-focus}} />`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<input {{auto-focus}} />", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-
   test('modifier on html element', function () {
     let transform = configure({ staticModifiers: true });
     givenFile('modifiers/auto-focus.js');

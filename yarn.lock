@@ -1882,10 +1882,15 @@
   dependencies:
     babel-plugin-debug-macros "^0.3.4"
 
-"@glint/template@^1.0.0-beta.1":
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@glint/template/-/template-1.0.0-beta.2.tgz#ed13ca4f0e6c616579d9eb9c6b11eac49899c742"
-  integrity sha512-gaWiWAjvmgOTmHUqXt+fACINMSnOxKcPYEwb6A6DNYpCaKWxhxqIjIrQLdrumULLK9+MbxMrIa3Od05FcIDQFQ==
+"@glint/environment-ember-loose@^1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.npmjs.org/@glint/environment-ember-loose/-/environment-ember-loose-1.0.0-beta.3.tgz#aade64eca87a3802b1068f1d7dd6be429117fb6e"
+  integrity sha512-Aby8penf3PB2VJrp9Ni33ZAcmFz8OpZ3wA2rz9DirOQhGrdDoTxcvNli6wu0R/NBqjjgKhM2WGzbxJ8NRdfdxA==
+
+"@glint/template@^1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.npmjs.org/@glint/template/-/template-1.0.0-beta.3.tgz#5866c0ffc1d8273f2e9b2fd186b65f5d4e6dbc15"
+  integrity sha512-jxn4yGzNZ1A4NGzvjYht0NlVziHyzjj/rm4rGsP1mVUO2Dd/LHhhxR6NUlSw9MFDZ0fCinULVwQtAKQLEpIpPw==
 
 "@handlebars/parser@^1.1.0":
   version "1.1.0"

@@ -123,44 +123,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('angle components can establish local bindings', function () {
-    let transform = configure({ staticHelpers: true });
-    givenFile('helpers/capitalize.js');
-    expect(transform('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<Outer as |capitalize|> {{capitalize}} </Outer>", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-
-  test('ignores dot-rule curly component invocation, inline', function () {
-    let transform = configure({ staticHelpers: true, staticComponents: true });
-    expect(transform('templates/application.hbs', `{{thing.body x=1}}`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{thing.body x=1}}", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('ignores dot-rule curly component invocation, block', function () {
-    let transform = configure({ staticHelpers: true, staticComponents: true });
-    expect(
-      transform(
-        'templates/application.hbs',
-        `
-        {{#thing.body}}
-        {{/thing.body}}
-        `
-      )
-    ).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#thing.body}}\\n        {{/thing.body}}\\n        ", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-
   test('respects yieldsSafeComponents rule, position 0', function () {
     let packageRules = [
       {

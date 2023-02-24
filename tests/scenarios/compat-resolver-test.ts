@@ -1297,5 +1297,22 @@ Scenarios.fromProject(() => new Project())
         });
       `);
       });
+
+      test('ignores dot-rule curl component invocation', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{thing.body x=1}}{{#thing.body}}{{/thing.body}}`,
+        });
+        await configure({
+          staticComponents: true,
+          staticHelpers: true,
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{thing.body x=1}}{{#thing.body}}{{/thing.body}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
     });
   });

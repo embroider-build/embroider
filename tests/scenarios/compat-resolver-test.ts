@@ -1314,5 +1314,133 @@ Scenarios.fromProject(() => new Project())
         });
       `);
       });
+
+      test('respects yieldsSafeComponents rule, position 0', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#form-builder as |field|}}{{component field}}{{/form-builder}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsSafeComponents: [true],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#formBuilder_ as |field|}}{{component field}}{{/formBuilder_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_
+          })
+        });
+      `);
+      });
+
+      test('respects yieldsSafeComponents rule, position 1', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#form-builder as |other field|}}{{component field}}{{/form-builder}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsSafeComponents: [false, true],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#formBuilder_ as |other field|}}{{component field}}{{/formBuilder_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_
+          })
+        });
+      `);
+      });
+
+      test('respects yieldsSafeComponents rule, position 0.field', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#form-builder as |f|}}{{component f.field}}{{/form-builder}}`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsSafeComponents: [{ field: true }],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#formBuilder_ as |f|}}{{component f.field}}{{/formBuilder_}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_
+          })
+        });
+      `);
+      });
+
+      test('respects yieldsSafeComponents rule on element', async function () {
+        givenFiles({
+          'templates/application.hbs': `<FormBuilder as |field|>{{component field}}</FormBuilder>`,
+        });
+        await configure(
+          {
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+          },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsSafeComponents: [true],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("<formBuilder_ as |field|>{{component field}}</formBuilder_>", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            formBuilder_
+          })
+        });
+      `);
+      });
     });
   });

@@ -882,7 +882,7 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
-      test('modifier without arguments', async function () {
+      test('modifier on html element', async function () {
         givenFiles({
           'templates/application.hbs': `<div {{scroll-top}}/>`,
         });
@@ -912,6 +912,66 @@ Scenarios.fromProject(() => new Project())
             scope: () => ({
               scrollTop_
             })
+          });
+        `);
+      });
+
+      test('modifier on component', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Thing {{scroll-top @scrollTopPos}}/>`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<Thing {{scrollTop_ @scrollTopPos}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              scrollTop_
+            })
+          });
+        `);
+      });
+
+      test('modifier on contextual component', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Thing as |f|><f.Input {{scroll-top @scrollTopPos}}/></Thing>`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";        
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<Thing as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing>", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              scrollTop_
+            })
+          });
+        `);
+      });
+
+      test('modifier provided as an argument', async function () {
+        givenFiles({
+          'templates/application.hbs': `<input {{@auto-focus}} />`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<input {{@auto-focus}} />", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('contextual modifier', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Form as |f|> <input {{f.auto-focus}} /></Form>`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`  
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
+            moduleName: "my-app/templates/application.hbs"
           });
         `);
       });

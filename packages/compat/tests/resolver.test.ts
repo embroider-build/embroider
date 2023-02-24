@@ -123,69 +123,6 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('modifier on html element', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('templates/application.hbs', `<input {{auto-focus}} />`)).toEqualCode(`
-      import autoFocus from "../modifiers/auto-focus.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<input {{autoFocus}} />", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          autoFocus,
-        }),
-      });
-    `);
-  });
-
-  test('modifier on component', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('templates/application.hbs', `<StyledInput {{auto-focus}} />`)).toEqualCode(`
-      import autoFocus from "../modifiers/auto-focus.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<StyledInput {{autoFocus}} />", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          autoFocus
-        })
-      });
-    `);
-  });
-  test('modifier on contextual component', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('templates/application.hbs', `<Form as |f|> <f.Input {{auto-focus}} /></Form>`)).toEqualCode(`
-      import autoFocus from "../modifiers/auto-focus.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<Form as |f|> <f.Input {{autoFocus}} /></Form>", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          autoFocus
-        })
-      });
-    `);
-  });
-  test('modifier provided as an argument', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('components/test.hbs', `<input {{@auto-focus}} />`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<input {{@auto-focus}} />", {
-        moduleName: "my-app/components/test.hbs"
-      });
-    `);
-  });
-  test('contextual modifier', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/auto-focus.js');
-    expect(transform('templates/application.hbs', `<Form as |f|> <input {{f.auto-focus}} /></Form>`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
   test('local binding takes precedence over helper in bare mustache', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');

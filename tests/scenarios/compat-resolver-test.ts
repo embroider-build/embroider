@@ -1036,6 +1036,26 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
+      test('ignores built-in keywords', async function () {
+        givenFiles({
+          'templates/application.hbs': `
+        {{outlet}}
+        {{yield bar}}
+        {{#with (hash submit=(action doit)) as |thing| }}
+        {{/with}}
+        <LinkTo @route="index"/>
+        <form {{on "submit" doit}}></form>
+      `,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
+
       test('component helper with direct addon package reference', async function () {
         givenFiles({
           'templates/application.hbs': `{{component "my-addon@thing"}}`,
@@ -1171,6 +1191,111 @@ Scenarios.fromProject(() => new Project())
             scope: () => ({ thing }),
           });
         `);
+      });
+
+      test('local binding takes precedence over helper', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} {{(capitalize)}} {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `,
+        });
+        await configure({
+          staticHelpers: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} {{(capitalize)}} {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `);
+      });
+
+      test('local binding takes precedence over component', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} <capitalize /> {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `,
+        });
+        await configure({
+          staticComponents: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} <capitalize /> {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `);
+      });
+
+      test('local binding takes precedence over modifier', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} <div {{capitalize}} /> {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `,
+        });
+        await configure({
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} <div {{capitalize}} /> {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `);
+      });
+
+      test('local binding takes precedence over ambiguous form', async function () {
+        givenFiles({
+          'templates/application.hbs.js': `
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize 1}} {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `,
+        });
+        await configure({
+          staticComponents: true,
+        });
+        expectTranspiled('templates/application.hbs.js').equalsCode(`
+          import { precompileTemplate } from '@ember/template-compilation';
+          export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize 1}} {{/each}}", {
+            scope: () => ({ thing }),
+          });
+        `);
+      });
+
+      test('local binding only applies within block', async function () {
+        givenFiles({
+          'templates/application.hbs': `
+          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize)}}
+          <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
+          `,
+        });
+        await configure({
+          staticHelpers: true,
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import validate_ from "#embroider_compat/modifiers/validate";
+        import capitalize_ from "#embroider_compat/helpers/capitalize";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form as |validate|><input {{validate}} /></Form> <input {{validate_}} />\\n          ", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            capitalize_,
+            validate_
+          })
+        });
+      `);
       });
     });
   });

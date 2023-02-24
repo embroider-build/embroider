@@ -123,95 +123,12 @@ describe('compat-resolver', function () {
     return target;
   }
 
-  test('local binding takes precedence over helper in bare mustache', function () {
-    let transform = configure({ staticHelpers: true });
-    givenFile('helpers/capitalize.js');
-    expect(transform('templates/application.hbs', `{{#each things as |capitalize|}} {{capitalize}} {{/each}}`))
-      .toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize}} {{/each}}", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('local binding takes precedence over component in element position', function () {
-    let transform = configure({ staticHelpers: true });
-    givenFile('components/the-thing.js');
-    expect(transform('templates/application.hbs', `{{#each things as |TheThing|}} <TheThing /> {{/each}}`))
-      .toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{#each things as |TheThing|}} <TheThing /> {{/each}}", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('local binding takes precedence over modifier', function () {
-    let transform = configure({ staticModifiers: true });
-    givenFile('modifiers/some-modifier.js');
-    expect(
-      transform(
-        'templates/application.hbs',
-        `{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}`
-      )
-    ).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{#each modifiers as |some-modifier|}} <div {{some-modifier}}></div> {{/each}}", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
   test('angle components can establish local bindings', function () {
     let transform = configure({ staticHelpers: true });
     givenFile('helpers/capitalize.js');
     expect(transform('templates/application.hbs', `<Outer as |capitalize|> {{capitalize}} </Outer>`)).toEqualCode(`
       import { precompileTemplate } from "@ember/template-compilation";
       export default precompileTemplate("<Outer as |capitalize|> {{capitalize}} </Outer>", {
-        moduleName: "my-app/templates/application.hbs"
-      });
-    `);
-  });
-  test('local binding only applies within block', function () {
-    let transform = configure({ staticHelpers: true, staticModifiers: true });
-    givenFile('helpers/capitalize.js');
-    givenFile('modifiers/validate.js');
-    expect(
-      transform(
-        'templates/application.hbs',
-        `
-        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}
-        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />
-        `
-      )
-    ).toEqualCode(`
-      import validate from "../modifiers/validate.js";
-      import capitalize from "../helpers/capitalize.js";
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{#each things as |capitalize|}} {{capitalize}} {{/each}} {{capitalize}}\\n        <Form as |validate|><input {{validate}} /></Form> <input {{validate}} />\\n        ", {
-        moduleName: "my-app/templates/application.hbs",
-        scope: () => ({
-          capitalize,
-          validate
-        })
-      });
-    `);
-  });
-  test('ignores builtins', function () {
-    let transform = configure({ staticHelpers: true, staticComponents: true, staticModifiers: true });
-    expect(
-      transform(
-        'templates/application.hbs',
-        `
-        {{outlet}}
-        {{yield bar}}
-        {{#with (hash submit=(action doit)) as |thing| }}
-        {{/with}}
-        <LinkTo @route="index"/>
-        <form {{on "submit" doit}}></form>
-      `
-      )
-    ).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
         moduleName: "my-app/templates/application.hbs"
       });
     `);

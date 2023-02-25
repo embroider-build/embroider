@@ -7,13 +7,10 @@ export default function publicAssets(opts: { exclude: string[] }): Plugin {
     name: 'public-assets-bundler',
     generateBundle() {
       let pkg = readJsonSync('package.json');
-      let filenames;
-
-      filenames = walkSync('public', {
+      const filenames = walkSync('public', {
         directories: false,
-        ignore: opts.exclude || [],
+        ignore: opts?.exclude || [],
       });
-
       const publicAssets: Record<string, string> = filenames.reduce(
         (acc: Record<string, string>, v): Record<string, string> => {
           acc['./public/' + v] = ['/', pkg.name, '/', v].join('');

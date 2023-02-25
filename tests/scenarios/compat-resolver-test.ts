@@ -13,7 +13,7 @@ import { PackageRules } from '@embroider/compat';
 // installs our assert.audit QUnit helper
 import '@embroider/test-support/audit-assertions';
 
-const { module: Qmodule, test } = QUnit;
+const { module: Qmodule, test, skip } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('compat-resolver-test', app => {
@@ -1577,6 +1577,37 @@ Scenarios.fromProject(() => new Project())
           })
         });
       `);
+      });
+
+      // Skipped because this will depend on adding reverse component lookupt to
+      // module-resolver, which is easier to do once we land the app-tree
+      // merging logic there.
+      skip(`acceptsComponentArguments applies inside app's co-located hbs`, async function () {
+        givenFiles({
+          'components/form-builder.hbs': `{{component @title}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  acceptsComponentArguments: ['title'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').equalsCode(`
+          import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{component @title}}", {
+            moduleName: "my-app/components/form-builder.hbs",
+            scope: () => ({
+              formBuilder_,
+            })
+          });
+        `);
       });
     });
   });

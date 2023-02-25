@@ -306,9 +306,6 @@ class TemplateResolver implements ASTPlugin {
           let processedRules = preprocessComponentRule(rules);
           let dasherizedName = this.standardDasherize(snippet, rule);
           components.set(dasherizedName, processedRules);
-          if (processedRules.safeToIgnore) {
-            continue;
-          }
         }
       }
       if (rule.appTemplates) {
@@ -335,22 +332,6 @@ class TemplateResolver implements ASTPlugin {
       return rules;
     }
 
-    // co-located templates aren't visible to the resolver, because they never
-    // get resolved from a template (they are always handled directly by the
-    // corresponding JS module, which the resolver *does* see). This means their
-    // paths won't ever be in `this.rules.components`. But we do want them to
-    // "inherit" the rules that are attached to their corresonding JS module.
-    if (absPath.endsWith('.hbs')) {
-      let stem = absPath.slice(0, -4);
-      for (let ext of this.config.resolvableExtensions) {
-        if (ext !== '.hbs') {
-          let rules = this.rules.files.get(stem + ext);
-          if (rules) {
-            return rules;
-          }
-        }
-      }
-    }
     return undefined;
   }
 

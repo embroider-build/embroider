@@ -154,27 +154,6 @@ describe('compat-resolver', function () {
     `);
   });
 
-  test('acceptsComponentArguments matches co-located template', function () {
-    let packageRules = [
-      {
-        package: 'the-app',
-        components: {
-          '<FormBuilder />': {
-            acceptsComponentArguments: ['title'],
-          },
-        },
-      },
-    ];
-    let transform = configure({ staticComponents: true, packageRules });
-    givenFile('components/form-builder.js');
-    expect(transform('components/form-builder.hbs', `{{component title}}`)).toEqualCode(`
-      import { precompileTemplate } from "@ember/template-compilation";
-      export default precompileTemplate("{{component title}}", {
-        moduleName: "my-app/components/form-builder.hbs"
-      });
-    `);
-  });
-
   test(`element block params are not in scope for element's own attributes`, function () {
     let packageRules = [
       {

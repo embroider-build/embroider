@@ -1609,5 +1609,39 @@ Scenarios.fromProject(() => new Project())
           });
         `);
       });
+
+      test(`respects element block params scope boundary`, async function () {
+        givenFiles({
+          'templates/application.hbs': `<Example @arg={{(title)}} as |title|>{{(title)}}</Example>`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import title_ from "#embroider_compat/helpers/title";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<Example @arg={{(title_)}} as |title|>{{(title)}}</Example>", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              title_
+            })
+          });
+        `);
+      });
+
+      test(`respects mustache block params scope boundary`, async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#example arg=(title) as |title|}}{{(title)}}{{/example}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import title_ from "#embroider_compat/helpers/title";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{#example arg=(title_) as |title|}}{{(title)}}{{/example}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              title_
+            })
+          });
+        `);
+      });
     });
   });

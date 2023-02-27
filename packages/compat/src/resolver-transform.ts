@@ -622,18 +622,24 @@ class TemplateResolver implements ASTPlugin {
   }
 
   visitor: ASTPlugin['visitor'] = {
-    Program: {
-      enter: node => {
-        this.scopeStack.push(node.blockParams);
+    Template: {
+      enter: () => {
         if (this.env.locals) {
-          this.scopeStack.push(this.env.locals);
+          this.scopeStack.pushMustacheBlock(this.env.locals);
         }
       },
       exit: () => {
-        this.scopeStack.pop();
         if (this.env.locals) {
           this.scopeStack.pop();
         }
+      },
+    },
+    Block: {
+      enter: node => {
+        this.scopeStack.pushMustacheBlock(node.blockParams);
+      },
+      exit: () => {
+        this.scopeStack.pop();
       },
     },
     BlockStatement: (node, path) => {
@@ -641,7 +647,7 @@ class TemplateResolver implements ASTPlugin {
         return;
       }
       let rootName = node.path.parts[0];
-      if (this.scopeStack.inScope(rootName)) {
+      if (this.scopeStack.inScope(rootName, path)) {
         return;
       }
       if (node.path.this === true) {
@@ -682,7 +688,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.this === true) {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0])) {
+      if (this.scopeStack.inScope(node.path.parts[0], path)) {
         return;
       }
       if (node.path.original === 'component' && node.params.length > 0) {
@@ -717,7 +723,7 @@ class TemplateResolver implements ASTPlugin {
           return;
         }
         let rootName = node.path.parts[0];
-        if (this.scopeStack.inScope(rootName)) {
+        if (this.scopeStack.inScope(rootName, path)) {
           return;
         }
         if (node.path.this === true) {
@@ -778,7 +784,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0])) {
+      if (this.scopeStack.inScope(node.path.parts[0], path)) {
         return;
       }
       if (node.path.this === true) {
@@ -804,7 +810,7 @@ class TemplateResolver implements ASTPlugin {
     ElementNode: {
       enter: (node, path) => {
         let rootName = node.tag.split('.')[0];
-        if (!this.scopeStack.inScope(rootName)) {
+        if (!this.scopeStack.inScope(rootName, path)) {
           let resolution: ComponentResolution | null = null;
 
           // if it starts with lower case, it can't be a component we need to
@@ -822,7 +828,7 @@ class TemplateResolver implements ASTPlugin {
             });
           }
         }
-        this.scopeStack.push(node.blockParams);
+        this.scopeStack.pushElementBlock(node.blockParams, node);
       },
       exit: () => {
         this.scopeStack.pop();
@@ -858,15 +864,34 @@ interface ComponentBlockMarker {
   exit: (marker: ComponentBlockMarker) => void;
 }
 
-type ScopeEntry = { type: 'blockParams'; blockParams: string[] } | ComponentBlockMarker;
+type ScopeEntry =
+  | { type: 'mustache'; blockParams: string[] }
+  | { type: 'element'; blockParams: string[]; childrenOf: ASTv1.ElementNode }
+  | ComponentBlockMarker;
 
 class ScopeStack {
   private stack: ScopeEntry[] = [];
 
-  // as we enter a block, we push the block params onto here to mark them as
-  // being in scope
-  push(blockParams: string[]) {
-    this.stack.unshift({ type: 'blockParams', blockParams });
+  // mustache blocks like:
+  //
+  //   {{#stuff as |some block vars|}}
+  //
+  // are relatively simple for us because there's a dedicated `Block` AST node
+  // that exactly covers the range in which the variables are in scope.
+  pushMustacheBlock(blockParams: string[]) {
+    this.stack.unshift({ type: 'mustache', blockParams });
+  }
+
+  // element blocks like:
+  //
+  //  <Stuff as |some block vars|>
+  //
+  // are *not* so simple for us because there's no single AST node that exactly
+  // covers the range in which the variables are in scope. For example, the
+  // *attributes* of the element do not see the variables, but the children of
+  // the element do.
+  pushElementBlock(blockParams: string[], childrenOf: ASTv1.ElementNode) {
+    this.stack.unshift({ type: 'element', blockParams, childrenOf });
   }
 
   // and when we leave the block they go out of scope. If this block was tagged
@@ -892,9 +917,16 @@ class ScopeStack {
     });
   }
 
-  inScope(name: string) {
+  inScope(name: string, fromPath: WalkerPath<ASTv1.Node>) {
     for (let scope of this.stack) {
-      if (scope.type === 'blockParams' && scope.blockParams.includes(name)) {
+      if (scope.type === 'mustache' && scope.blockParams.includes(name)) {
+        return true;
+      }
+      if (
+        scope.type === 'element' &&
+        scope.blockParams.includes(name) &&
+        withinElementBlock(fromPath, scope.childrenOf)
+      ) {
         return true;
       }
     }
@@ -912,7 +944,7 @@ class ScopeStack {
     for (let i = 0; i < this.stack.length - 1; i++) {
       let here = this.stack[i];
       let next = this.stack[i + 1];
-      if (here.type === 'blockParams' && next.type === 'componentBlockMarker') {
+      if ((here.type === 'mustache' || here.type === 'element') && next.type === 'componentBlockMarker') {
         let positionalIndex = here.blockParams.indexOf(parts[0]);
         if (positionalIndex === -1) {
           continue;
@@ -972,4 +1004,18 @@ function extendPath<N extends ASTv1.Node, K extends keyof N>(
 
 function capitalize(word: string): string {
   return word[0].toUpperCase() + word.slice(1);
+}
+
+// ElementNodes have both children and attributes and both of those are
+// "children" in the abstract syntax tree sense, but here we want to distinguish
+// between them.
+function withinElementBlock(childPath: WalkerPath<ASTv1.Node>, ancestorNode: ASTv1.ElementNode): Boolean {
+  let cursor: WalkerPath<ASTv1.Node> | null = childPath;
+  while (cursor && cursor.node !== ancestorNode) {
+    if (ancestorNode.children.includes(cursor.node as ASTv1.Statement)) {
+      return true;
+    }
+    cursor = cursor.parent;
+  }
+  return false;
 }

@@ -405,9 +405,9 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
-      test('optional component missing in mustache', async function () {
+      test('optional component missing', async function () {
         givenFiles({
-          'templates/application.hbs': `{{this-one x=true}}`,
+          'templates/application.hbs': `{{this-one x=true}}<ThisOne />`,
         });
         await configure(
           { staticComponents: true, staticHelpers: true },
@@ -421,7 +421,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("{{this-one x=true}}", {
+          export default precompileTemplate("{{this-one x=true}}<ThisOne />", {
             moduleName: "my-app/templates/application.hbs"
           });
         `);
@@ -1676,6 +1676,72 @@ Scenarios.fromProject(() => new Project())
             })
           });
         `);
+      });
+
+      test('respects yieldsArguments rule for positional block param, angle', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+        <FormBuilder @navbar={{component "fancy-navbar"}} as |bar|>
+          {{component bar}}
+        </FormBuilder>`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: ['navbar'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').equalsCode(`
+        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("\\n        <formBuilder_ @navbar={{component fancyNavbar_}} as |bar|>\\n          {{component bar}}\\n        </formBuilder_>", {
+          moduleName: "my-app/components/form-builder.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyNavbar_
+          })
+        });
+      `);
+      });
+
+      test('respects yieldsArguments rule for positional block param, curly', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+        {{#form-builder navbar=(component "fancy-navbar") as |bar|}}
+          {{component bar}}
+        {{/form-builder}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: ['navbar'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').equalsCode(`
+        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("\\n        {{#formBuilder_ navbar=(component fancyNavbar_) as |bar|}}\\n          {{component bar}}\\n        {{/formBuilder_}}", {
+          moduleName: "my-app/components/form-builder.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyNavbar_
+          })
+        });
+      `);
       });
 
       test(`respects element block params scope boundary`, async function () {

@@ -1744,6 +1744,114 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
+      test('respects yieldsArguments rule for hash block param', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+        {{#form-builder navbar=(component "fancy-navbar") as |f|}}
+          {{component f.bar}}
+        {{/form-builder}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: [{ bar: 'navbar' }],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').equalsCode(`
+        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("\\n        {{#formBuilder_ navbar=(component fancyNavbar_) as |f|}}\\n          {{component f.bar}}\\n        {{/formBuilder_}}", {
+          moduleName: "my-app/components/form-builder.hbs",
+          scope: () => ({
+            formBuilder_,
+            fancyNavbar_
+          })
+        });
+      `);
+      });
+
+      test('yieldsArguments causes warning to propagate up lexically, angle', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+        <FormBuilder @navbar={{this.unknown}} as |bar|>
+          {{component bar}}
+        </FormBuilder>`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: ['navbar'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').failsToTransform(
+          `argument "navbar" to component "formBuilder_" is treated as a component, but the value you're passing is dynamic: this.unknown`
+        );
+      });
+
+      test('yieldsArguments causes warning to propagate up lexically, curl', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+        {{#form-builder navbar=this.unknown as |bar|}}
+          {{component bar}}
+        {{/form-builder}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: ['navbar'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').failsToTransform(
+          `argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this.unknown`
+        );
+      });
+
+      test('yieldsArguments causes warning to propagate up lexically, multiple levels', async function () {
+        givenFiles({
+          'components/form-builder.hbs': `
+          {{#form-builder navbar=this.unknown as |bar1|}}
+            {{#form-builder navbar=bar1 as |bar2|}}
+              {{component bar2}}
+            {{/form-builder}}
+          {{/form-builder}}
+          `,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<FormBuilder />': {
+                  yieldsArguments: ['navbar'],
+                },
+              },
+            },
+          }
+        );
+        expectTranspiled('components/form-builder.hbs').failsToTransform(
+          `argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this.unknown`
+        );
+      });
+
       test(`respects element block params scope boundary`, async function () {
         givenFiles({
           'templates/application.hbs': `<Example @arg={{(title)}} as |title|>{{(title)}}</Example>`,

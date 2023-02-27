@@ -2,18 +2,25 @@ import { readJsonSync, writeJsonSync } from 'fs-extra';
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 
-export default function publicAssets(opts: { exclude: string[] }): Plugin {
+export default function publicAssets(
+  path: string,
+  opts: { include: string[]; exclude: string[] }
+): Plugin {
+  const includeGlobPatterns = opts?.include;
+  const excludedGlobPatterns = opts?.exclude || [];
+
   return {
     name: 'public-assets-bundler',
     generateBundle() {
       let pkg = readJsonSync('package.json');
-      const filenames = walkSync('public', {
+      const filenames = walkSync(path, {
         directories: false,
-        ignore: opts?.exclude || [],
+        globs: includeGlobPatterns,
+        ignore: excludedGlobPatterns,
       });
       const publicAssets: Record<string, string> = filenames.reduce(
         (acc: Record<string, string>, v): Record<string, string> => {
-          acc['./public/' + v] = ['/', pkg.name, '/', v].join('');
+          acc[`./${path}/${v}`] = ['/', pkg.name, '/', path, '/', v].join('');
           return acc;
         },
         {}

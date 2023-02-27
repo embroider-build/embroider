@@ -4,7 +4,7 @@ import { default as appReexports } from './rollup-app-reexports';
 import { default as clean } from 'rollup-plugin-delete';
 import { default as keepAssets } from './rollup-keep-assets';
 import { default as dependencies } from './rollup-addon-dependencies';
-import { default as publicReexports } from './rollup-public-reexports';
+import { default as publicAssets } from './rollup-public-assets';
 import type { Plugin } from 'rollup';
 
 export class Addon {
@@ -85,7 +85,7 @@ export class Addon {
     return dependencies();
   }
 
-  publicAssets(opts: { exclude: string[] }) {
-    return publicReexports(opts);
+  publicAssets(path: string, opts: { include: string[], exclude: string[] }) {
+    return publicAssets(path, opts);
   }
 }

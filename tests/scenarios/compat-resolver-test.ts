@@ -1131,6 +1131,55 @@ Scenarios.fromProject(() => new Project())
         );
       });
 
+      test('rejects arbitrary expression in component helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component (some-helper this.which)}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').failsToTransform(
+          'Unsafe dynamic component: cannot statically analyze this expression'
+        );
+      });
+
+      test('trusts inline ensure-safe-component helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{component (ensure-safe-component this.which)}}`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{component (ensure-safe-component this.which)}}", {
+            moduleName: "my-app/templates/application.hbs"
+          }); 
+        `);
+      });
+
+      test('ignores any non-string-literal expression in "helper" keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{helper this.which}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{helper this.which}}", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
+      test('ignores any non-string-literal expression in "modifier" keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div {{(modifier this.which)}} />`,
+        });
+        await configure({ staticModifiers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div {{(modifier this.which)}} />", {
+            moduleName: "my-app/templates/application.hbs"
+          });
+        `);
+      });
+
       test('leaves strict mode templates alone', async function () {
         // strict mode templates don't need our resolver transform at all, because
         // they don't do any global resolution.
@@ -1850,6 +1899,48 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('components/form-builder.hbs').failsToTransform(
           `argument "navbar" to component "form-builder" is treated as a component, but the value you're passing is dynamic: this.unknown`
         );
+      });
+
+      // This is a draft of how I think we could make `invokes` work under our
+      // new global-resolution-free implementation, it's skipped because I don't
+      // want to implement this until I test out whether it really works well in
+      // an app.
+      skip('respects invokes rule on a component');
+      skip('respects invokes rule on a non-component addon template');
+      skip('respects invokes rule on a non-component app template', async function () {
+        givenFiles({
+          'templates/index.hbs': `{{component this.which}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              appTemplates: {
+                'templates/index.hbs': {
+                  invokes: { 'this.which': ['<Alpha/>'] },
+                },
+              },
+            },
+          }
+        );
+
+        expectTranspiled('templates/index.hbs').equalsCode(`
+          import { invokesFallback } from '#embroider_compat/runtime';
+          import alpha_ from "#embroider_compat/components/alpha";
+          import { precompileTemplate } from "@ember/template-compilation";
+
+          const thisWhichFallbacks = invokesFallback({
+            'alpha': alpha_
+          })
+
+          export default precompileTemplate("{{component (thisWhichFallbacks this.which) }}", {
+            moduleName: "my-app/templates/index.hbs",
+            scope: () => ({
+              alpha_,
+              thisWhichFallbacks
+            })
+          });
+        `);
       });
 
       test(`respects element block params scope boundary`, async function () {

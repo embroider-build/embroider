@@ -85,7 +85,7 @@ export class Addon {
     return dependencies();
   }
 
-  publicAssets(path: string, opts: { include: string[], exclude: string[] }) {
+  publicAssets(path: string, opts: { include: string[]; exclude: string[] }) {
     return publicAssets(path, opts);
   }
 }

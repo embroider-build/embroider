@@ -31,7 +31,9 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
 async function audit(this: Assert, opts: AuditBuildOptions): Promise<ExpectAuditResults> {
   return new ExpectAuditResults(await Audit.run(opts), this);
 }
-QUnit.assert.audit = audit;
+if (typeof QUnit !== 'undefined') {
+  QUnit.assert.audit = audit;
+}
 declare global {
   interface Assert {
     audit: typeof audit;

@@ -1,8 +1,10 @@
-import 'code-equality-assertions/qunit';
+import { install } from 'code-equality-assertions/qunit';
 import { AssertionAdapter, BoundExpectFile, ExpectFile } from '../file-assertions';
 
 class QUnitAdapter implements AssertionAdapter {
-  constructor(private qassert: Assert) {}
+  constructor(private qassert: Assert) {
+    install(qassert);
+  }
 
   assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
     this.qassert.pushResult(state);

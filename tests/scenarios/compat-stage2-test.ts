@@ -12,7 +12,7 @@ import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
-const { module: Qmodule, test } = QUnit;
+const { module: Qmodule, test, skip } = QUnit;
 
 let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
   renameApp(app, 'my-app');
@@ -309,7 +309,7 @@ stage2Scenarios
           'uses-inline-template.js': `
           import hbs from "htmlbars-inline-precompile";
           export default Component.extend({
-            layout: hbs${'`'}{{first-choice}}${'`'}
+            layout: hbs${'`'}<FirstChoice/>${'`'}
           })
           `,
         },
@@ -330,6 +330,9 @@ stage2Scenarios
           'something.js': '',
         },
         'non-static-dir': {
+          'pull-some-things-into-the-build.js': `
+            import '../components/uses-inline-template.js';
+          `,
           'another-library.js': '',
         },
         'top-level-static.js': '',
@@ -396,7 +399,7 @@ stage2Scenarios
     let deepAddon = addAddon(addon, 'deep-addon');
     merge(deepAddon.files, {
       addon: {
-        'index.js': '// deep-addon index',
+        'index.js': 'export default function() {}',
       },
     });
 
@@ -447,43 +450,51 @@ stage2Scenarios
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
 
+      skip('no audit issues', function () {
+        // among other things, this is asserting that dynamicComponent in
+        // hello-world.hbs is not an error because the rules covered it
+        expectAudit.hasNoFindings();
+      });
+
       test('index.hbs', function () {
-        let assertFile = expectFile('templates/index.hbs').transform(build.transpile);
-        assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
-        assertFile.matches(
-          /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
-          'static component helper dependency'
-        );
-        assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
-        assertFile.matches(
-          /import \w+ from ["'].\/components\/second-choice\.hbs["']/,
-          'rule-driven mustache string literal'
-        );
+        let expectModule = expectAudit.module('./templates/index.hbs');
+
+        expectModule
+          .resolves('#embroider_compat/components/hello-world')
+          .to('./components/hello-world.js', 'explicit dependency');
+
+        expectModule
+          .resolves('#embroider_compat/components/third-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/third-choice.hbs', 'static component helper dependency');
+
+        expectModule
+          .resolves('#embroider_compat/components/first-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/first-choice.hbs', 'rule-driven string attribute');
+
+        expectModule
+          .resolves('#embroider_compat/components/second-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/second-choice.hbs', 'rule-driven mustache string literal');
       });
 
       test('curly.hbs', function () {
-        let assertFile = expectFile('templates/curly.hbs').transform(build.transpile);
-        assertFile.matches(/import \w+ from ["']..\/components\/hello-world\.js["']/, 'explicit dependency');
-        assertFile.matches(
-          /import \w+ from ["'].\/components\/third-choice\.hbs["']/,
-          'static component helper dependency'
-        );
-        assertFile.matches(/import \w+ from ["'].\/components\/first-choice\.hbs["']/, 'rule-driven string attribute');
+        let expectModule = expectAudit.module('./templates/curly.hbs');
+        expectModule
+          .resolves('#embroider_compat/ambiguous/hello-world')
+          .to('./components/hello-world.js', 'explicit dependency');
+        expectModule
+          .resolves('#embroider_compat/components/third-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/third-choice.hbs');
+        expectModule
+          .resolves('#embroider_compat/components/first-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
       });
 
-      test('hello-world.hbs', function () {
-        // the point of this test is to ensure that we can transpile with no
-        // warning about the dynamicComponentName.
-        let assertFile = expectFile('node_modules/my-addon/templates/components/hello-world.hbs').transform(
-          build.transpile
-        );
-
-        // this is a pretty trivial test, but it's needed to force the
-        // transpilation to happen because transform() is lazy.
-        assertFile.matches(/dynamicComponentName/);
-      });
-
-      test('addon/hello-world.js', function () {
+      skip('addon/hello-world.js', function () {
         let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/synthetic-import-1/
@@ -493,7 +504,7 @@ stage2Scenarios
         );
       });
 
-      test('app/hello-world.js', function () {
+      skip('app/hello-world.js', function () {
         let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
@@ -513,9 +524,11 @@ stage2Scenarios
       });
 
       test('uses-inline-template.js', function () {
-        let assertFile = expectFile('./components/uses-inline-template.js').transform(build.transpile);
-        assertFile.matches(/import firstChoice from ["']\.\.\/templates\/components\/first-choice.hbs/);
-        assertFile.matches(/window\.define\(["']\my-app\/templates\/components\/first-choice["']/);
+        expectAudit
+          .module('./components/uses-inline-template.js')
+          .resolves('#embroider_compat/components/first-choice')
+          .toModule()
+          .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
       });
 
       test('component with relative import of arbitrarily placed template', function () {

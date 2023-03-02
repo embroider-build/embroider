@@ -177,8 +177,8 @@ appScenarios
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
 
-      test('audit issues', function (assert) {
-        assert.deepEqual(expectAudit.findings, [], 'expected no problem findings in audit');
+      test('audit issues', function () {
+        expectAudit.hasNoFindings();
       });
 
       test('whole package renaming works for top-level module', function () {

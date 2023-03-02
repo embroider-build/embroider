@@ -42,6 +42,7 @@ export interface Finding {
 }
 
 export interface Module {
+  appRelativePath: string;
   consumedFrom: (string | RootMarker)[];
   imports: Import[];
   exports: string[];
@@ -113,6 +114,7 @@ export class AuditResults {
     let results = new this();
     for (let [filename, module] of modules) {
       let publicModule: Module = {
+        appRelativePath: explicitRelative(baseDir, filename),
         consumedFrom: module.consumedFrom.map(entry => {
           if (isRootMarker(entry)) {
             return entry;

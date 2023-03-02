@@ -5,9 +5,7 @@ import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
-
-// installs our assert.audit QUnit helper
-import '@embroider/test-support/audit-assertions';
+import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -64,6 +62,7 @@ Scenarios.fromProject(() => new Project())
       let configure: (opts?: ConfigureOpts) => Promise<void>;
 
       hooks.beforeEach(async assert => {
+        installAuditAssertions(assert);
         let app = await scenario.prepare();
 
         givenFiles = function (files: Record<string, string>) {

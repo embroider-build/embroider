@@ -1,4 +1,5 @@
 import { Audit, AuditBuildOptions, AuditResults, Module } from '@embroider/compat/src/audit';
+import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
 
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
@@ -15,6 +16,7 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
   });
 
   hooks.beforeEach(assert => {
+    installAuditAssertions(assert);
     expectAudit = new ExpectAuditResults(result, assert);
   });
 
@@ -31,9 +33,12 @@ export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
 async function audit(this: Assert, opts: AuditBuildOptions): Promise<ExpectAuditResults> {
   return new ExpectAuditResults(await Audit.run(opts), this);
 }
-if (typeof QUnit !== 'undefined') {
-  QUnit.assert.audit = audit;
+
+export function installAuditAssertions(assert: Assert) {
+  installCodeEqualityAssertions(assert);
+  assert.audit = audit;
 }
+
 declare global {
   interface Assert {
     audit: typeof audit;

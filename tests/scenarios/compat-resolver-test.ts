@@ -10,9 +10,6 @@ import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { PackageRules } from '@embroider/compat';
 
-// installs our assert.audit QUnit helper
-import '@embroider/test-support/audit-assertions';
-
 const { module: Qmodule, test, skip } = QUnit;
 
 Scenarios.fromProject(() => new Project())

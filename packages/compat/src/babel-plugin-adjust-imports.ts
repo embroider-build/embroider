@@ -4,7 +4,8 @@ import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
 import { readJSONSync } from 'fs-extra';
-import { Resolver, Options as ModuleResolverOptions } from './module-resolver';
+import { CompatResolverOptions as ModuleResolverOptions } from './resolver-transform';
+import { Resolver } from '@embroider/core';
 
 export type Options = { appRoot: string };
 
@@ -83,7 +84,7 @@ function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: Inter
 }
 
 function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
-  let value = adder.import(path, target, 'default');
+  let value = t.callExpression(adder.import(path, '@embroider/macros', 'importSync'), [t.stringLiteral(target)]);
   return t.expressionStatement(
     t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
       t.stringLiteral(runtimeName),

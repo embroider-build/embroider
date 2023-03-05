@@ -43,13 +43,6 @@ export interface Options {
   renameModules: {
     [fromName: string]: string;
   };
-  // TODO: extraImports should really be in @embroider/compat only, not core
-  extraImports: {
-    [absPath: string]: {
-      dependsOnComponents?: string[]; // these are already standardized in dasherized form
-      dependsOnModules?: string[];
-    };
-  };
   activeAddons: {
     [packageName: string]: string;
   };

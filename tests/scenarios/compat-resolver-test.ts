@@ -114,7 +114,7 @@ Scenarios.fromProject(() => new Project())
                   ${JSON.stringify(etcOptions)}
                 ],
                 [
-                  "${require.resolve('@embroider/core/src/babel-plugin-adjust-imports')}",
+                  "${require.resolve('@embroider/compat/src/babel-plugin-adjust-imports')}",
                   ${JSON.stringify({
                     appRoot: app.dir,
                   })}
@@ -1949,9 +1949,9 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/index.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return _ref0;
+            return importSync("#embroider_compat/components/alpha");
           });
-          import _ref0 from "#embroider_compat/components/alpha";
+          import { importSync } from "@embroider/macros";
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{component this.which}}", {
             moduleName: "my-app/templates/index.hbs"

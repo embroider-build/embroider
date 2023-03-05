@@ -33,6 +33,8 @@ import { pathExistsSync } from 'fs-extra';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import { snippetToDasherizedName } from './dasherize-component-name';
+import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
+import type { PluginItem } from '@babel/core';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -321,8 +323,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     ]);
   }
 
-  @Memoize()
-  resolverTransform(resolverConfig: CompatResolverOptions): Transform | undefined {
+  hbsTransforms(resolverConfig: CompatResolverOptions): Transform[] {
     if (
       this.options.staticComponents ||
       this.options.staticHelpers ||
@@ -332,8 +333,17 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
       };
-      return [require.resolve('./resolver-transform'), opts];
+      return [[require.resolve('./resolver-transform'), opts]];
+    } else {
+      return [];
     }
+  }
+
+  jsPlugins(resolverConfig: CompatResolverOptions): PluginItem[] {
+    let pluginConfig: AdjustImportsOptions = {
+      appRoot: resolverConfig.appRoot,
+    };
+    return [[require.resolve('./babel-plugin-adjust-imports'), pluginConfig]];
   }
 
   resolverConfig(engines: Engine[]): CompatResolverOptions {

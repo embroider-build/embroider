@@ -13,10 +13,10 @@ import assertNever from 'assert-never';
 import { join } from 'path';
 import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import { ResolverOptions as CoreResolverOptions } from '@embroider/core';
+import { ResolverOptions as CoreResolverOptions, Resolver } from '@embroider/core';
 import CompatOptions from './options';
 import { AuditMessage, Loc } from './audit';
-import { camelCase } from 'lodash';
+import { camelCase, mergeWith } from 'lodash';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -34,7 +34,6 @@ type UserConfig = Pick<
 >;
 
 export interface CompatResolverOptions extends CoreResolverOptions {
-  modulePrefix: string;
   activePackageRules: ActivePackageRules[];
   options: UserConfig;
 }
@@ -136,7 +135,10 @@ class TemplateResolver implements ASTPlugin {
   private auditHandler: undefined | ((msg: AuditMessage) => void);
   private scopeStack = new ScopeStack();
 
+  private moduleResolver: Resolver;
+
   constructor(private env: Env, private config: CompatResolverOptions) {
+    this.moduleResolver = new Resolver(config);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
     }
@@ -327,12 +329,19 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private findRules(absPath: string): PreprocessedComponentRule | undefined {
-    let rules = this.rules.files.get(absPath);
-    if (rules) {
-      return rules;
+    let fileRules = this.rules.files.get(absPath);
+    let componentRules: PreprocessedComponentRule | undefined;
+
+    let componentName = this.moduleResolver.reverseComponentLookup(absPath);
+    if (componentName) {
+      componentRules = this.rules.components.get(componentName);
     }
 
-    return undefined;
+    if (fileRules && componentRules) {
+      return mergeWith(fileRules, componentRules, appendArrays);
+    }
+
+    return fileRules ?? componentRules;
   }
 
   private standardDasherize(snippet: string, rule: PackageRules | ModuleRules): string {
@@ -1018,4 +1027,9 @@ function withinElementBlock(childPath: WalkerPath<ASTv1.Node>, ancestorNode: AST
     cursor = cursor.parent;
   }
   return false;
+}
+function appendArrays(objValue: any, srcValue: any) {
+  if (Array.isArray(objValue)) {
+    return objValue.concat(srcValue);
+  }
 }

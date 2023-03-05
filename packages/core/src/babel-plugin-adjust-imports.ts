@@ -78,10 +78,12 @@ function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: Inter
       }
     }
   }
+
+  //let componentName = config.resolver.reverseComponentLookup(filename);
 }
 
 function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
-  let value = t.callExpression(adder.import(path, '@embroider/macros', 'importSync'), [t.stringLiteral(target)]);
+  let value = adder.import(path, target, 'default');
   return t.expressionStatement(
     t.callExpression(t.memberExpression(t.identifier('window'), t.identifier('define')), [
       t.stringLiteral(runtimeName),

@@ -253,9 +253,23 @@ stage2Scenarios
               dependsOnComponents: ['{{second-choice}}'],
             },
           },
+          addonTemplates: {
+            'templates/addon-example.hbs': {
+              invokes: {
+                'this.stuff': ['<SyntheticImport2 />'],
+              },
+            },
+          },
           appModules: {
             'components/hello-world.js': {
               dependsOnModules: ['my-addon/synthetic-import-1'],
+            },
+          },
+          appTemplates: {
+            'templates/app-example.hbs': {
+              invokes: {
+                'this.stuff': ['<SyntheticImport2 />'],
+              },
             },
           },
         },
@@ -374,6 +388,7 @@ stage2Scenarios
         },
         'synthetic-import-1.js': '',
         templates: {
+          'addon-example.hbs': '{{component this.stuff}}',
           components: {
             'hello-world.hbs': `
               {{component dynamicComponentName}}
@@ -384,8 +399,10 @@ stage2Scenarios
       app: {
         components: {
           'hello-world.js': `export { default } from 'my-addon/components/hello-world'`,
+          'synthetic-import2.js': `export default function() {}`,
         },
         templates: {
+          'app-example.hbs': `{{component this.stuff}}`,
           components: {
             'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
           },
@@ -641,6 +658,20 @@ stage2Scenarios
 
       test('staticAppPaths do not match partial path segments', function () {
         expectFile('assets/my-app.js').matches(/i\("..\/static-dir-not-really\/something\.js"\)/);
+      });
+
+      test('invokes rule on appTemplates produces synthetic import', function () {
+        expectAudit
+          .module('./templates/app-example.hbs')
+          .resolves('#embroider_compat/components/synthetic-import2')
+          .to('./components/synthetic-import2.js');
+      });
+
+      test('invokes rule on addonTemplates produces synthetic import', function () {
+        expectAudit
+          .module('./node_modules/my-addon/templates/addon-example.hbs')
+          .resolves('#embroider_compat/components/synthetic-import2')
+          .to('./components/synthetic-import2.js');
       });
     });
   });

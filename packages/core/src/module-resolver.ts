@@ -1,4 +1,9 @@
-import { emberVirtualPackages, emberVirtualPeerDeps, packageName as getPackageName } from '@embroider/shared-internals';
+import {
+  emberVirtualPackages,
+  emberVirtualPeerDeps,
+  extensionsPattern,
+  packageName as getPackageName,
+} from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -38,6 +43,7 @@ export interface Options {
   renameModules: {
     [fromName: string]: string;
   };
+  // TODO: extraImports should really be in @embroider/compat only, not core
   extraImports: {
     [absPath: string]: {
       dependsOnComponents?: string[]; // these are already standardized in dasherized form
@@ -51,6 +57,7 @@ export interface Options {
   resolvableExtensions: string[];
   appRoot: string;
   engines: EngineConfig[];
+  modulePrefix: string;
   podModulePrefix?: string;
 }
 
@@ -280,8 +287,11 @@ export class Resolver {
     let jsModule: string | null = null;
 
     // first, the various places our template might be.
-    for (let candidate of this.componentTemplateCandidates(target, inEngine)) {
-      let resolution = this.nodeResolve(candidate, target.from);
+    for (let candidate of this.componentTemplateCandidates(target.packageName)) {
+      let resolution = this.nodeResolve(
+        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+        target.from
+      );
       if (resolution.type === 'real') {
         hbsModule = resolution.filename;
         break;
@@ -289,8 +299,11 @@ export class Resolver {
     }
 
     // then the various places our javascript might be.
-    for (let candidate of this.componentJSCandidates(target, inEngine)) {
-      let resolution = this.nodeResolve(candidate, target.from);
+    for (let candidate of this.componentJSCandidates(target.packageName)) {
+      let resolution = this.nodeResolve(
+        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+        target.from
+      );
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
@@ -344,29 +357,34 @@ export class Resolver {
       .rehome(resolve(inEngine.root, 'package.json'));
   }
 
-  private *componentTemplateCandidates(target: { packageName: string; memberName: string }, inEngine: EngineConfig) {
-    yield `${target.packageName}/templates/components/${target.memberName}`;
-    yield `${target.packageName}/components/${target.memberName}/template`;
+  private *componentTemplateCandidates(inPackageName: string) {
+    yield { prefix: '/templates/components/', suffix: '' };
+    yield { prefix: '/components/', suffix: '/template' };
 
-    if (
-      typeof this.options.podModulePrefix !== 'undefined' &&
-      this.options.podModulePrefix !== '' &&
-      target.packageName === inEngine.packageName
-    ) {
-      yield `${this.options.podModulePrefix}/components/${target.memberName}/template`;
+    let pods = this.podPrefix(inPackageName);
+    if (pods) {
+      yield { prefix: `${pods}/components/`, suffix: '/template' };
     }
   }
 
-  private *componentJSCandidates(target: { packageName: string; memberName: string }, inEngine: EngineConfig) {
-    yield `${target.packageName}/components/${target.memberName}`;
-    yield `${target.packageName}/components/${target.memberName}/component`;
+  private *componentJSCandidates(inPackageName: string) {
+    yield { prefix: '/components/', suffix: '' };
+    yield { prefix: '/components/', suffix: '/component' };
 
-    if (
-      typeof this.options.podModulePrefix !== 'undefined' &&
-      this.options.podModulePrefix !== '' &&
-      target.packageName === inEngine.packageName
-    ) {
-      yield `${this.options.podModulePrefix}/components/${target.memberName}/component`;
+    let pods = this.podPrefix(inPackageName);
+    if (pods) {
+      yield { prefix: `${pods}/components/`, suffix: '/component' };
+    }
+  }
+
+  private podPrefix(targetPackageName: string) {
+    if (targetPackageName === this.options.modulePrefix && this.options.podModulePrefix) {
+      if (!this.options.podModulePrefix.startsWith(this.options.modulePrefix)) {
+        throw new Error(
+          `Your podModulePrefix (${this.options.podModulePrefix}) does not start with your app module prefix (${this.options.modulePrefix}). Not gonna support that silliness.`
+        );
+      }
+      return this.options.podModulePrefix.slice(this.options.modulePrefix.length);
     }
   }
 
@@ -452,7 +470,7 @@ export class Resolver {
     if ('exports' in pkg.packageJSON) {
       // this is the easy case -- a package that uses exports can safely resolve
       // its own name, so it's enough to let it resolve the (self-targeting)
-      // sepcifier from its own package root.
+      // specifier from its own package root.
       return request.rehome(resolve(pkg.root, 'package.json'));
     } else {
       // otherwise we need to just assume that internal naming is simple
@@ -623,6 +641,67 @@ export class Resolver {
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
     return request;
+  }
+
+  // check whether the given file with the given owningPackage is an addon's
+  // appTree, and if so return the notional location within the app (or owning
+  // engine) that it "logically" lives at.
+  private reverseSearchAppTree(owningPackage: Package, fromFile: string) {
+    // if the requesting file is in an addon's app-js, the request should
+    // really be understood as a request for a module in the containing engine
+    if (owningPackage.isV2Addon()) {
+      let appJS = owningPackage.meta['app-js'];
+      if (appJS) {
+        let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
+        for (let [inAppName, inAddonName] of Object.entries(appJS)) {
+          if (inAddonName === fromPackageRelativePath) {
+            return { owningEngine: this.owningEngine(owningPackage), inAppName };
+          }
+        }
+      }
+    }
+  }
+
+  // check if this file is resolvable as a global component, and if so return
+  // its dasherized name
+  reverseComponentLookup(filename: string): string | undefined {
+    const owningPackage = this.owningPackage(filename);
+    if (!owningPackage?.isV2Ember()) {
+      return;
+    }
+    let engineConfig = this.options.engines.find(e => e.root === owningPackage.root);
+    if (engineConfig) {
+      // we're directly inside an engine, so we're potentially resolvable as a
+      // global component
+
+      // this kind of mapping is not true in general for all packages, but it
+      // *is* true for all classical engines (which includes apps) since they
+      // don't support package.json `exports`. As for a future v2 engine or app:
+      // this whole method is only relevant for implementing packageRules, which
+      // should only be for classic stuff. v2 packages should do the right
+      // things from the beginning and not need packageRules about themselves.
+      let inAppName = explicitRelative(engineConfig.root, filename);
+
+      return this.tryReverseComponent(engineConfig.packageName, inAppName);
+    }
+
+    let engineInfo = this.reverseSearchAppTree(owningPackage, filename);
+    if (engineInfo) {
+      // we're in some addon's app tree, so we're potentially resolvable as a
+      // global component
+      return this.tryReverseComponent(engineInfo.owningEngine.packageName, engineInfo.inAppName);
+    }
+  }
+
+  private tryReverseComponent(inEngineName: string, relativePath: string): string | undefined {
+    let extensionless = relativePath.replace(extensionsPattern(this.options.resolvableExtensions), '');
+    let candidates = [...this.componentJSCandidates(inEngineName), ...this.componentTemplateCandidates(inEngineName)];
+    for (let candidate of candidates) {
+      if (extensionless.startsWith(`.${candidate.prefix}`) && extensionless.endsWith(candidate.suffix)) {
+        return extensionless.slice(candidate.prefix.length + 1, extensionless.length - candidate.suffix.length);
+      }
+    }
+    return undefined;
   }
 }
 

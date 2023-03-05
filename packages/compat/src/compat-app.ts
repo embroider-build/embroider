@@ -23,7 +23,7 @@ import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import { CompatResolverOptions } from './resolver-transform';
-import { activePackageRules, ModuleRules, PackageRules } from './dependency-rules';
+import { activePackageRules, ModuleRules, PackageRules, TemplateRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
 import { sync as resolveSync } from 'resolve';
@@ -357,7 +357,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons,
       renameModules,
       renamePackages,
-      extraImports: {}, // extraImports gets filled in below
+      extraImports: {},
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
@@ -399,6 +399,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       if (rule.appModules) {
         for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
           insertExtraImports(this.root, filename, moduleRules, config.extraImports);
+        }
+      }
+      if (rule.addonTemplates) {
+        for (let [filename, moduleRules] of Object.entries(rule.addonTemplates)) {
+          for (let root of rule.roots) {
+            insertInvokesImports(root, filename, moduleRules, config.extraImports);
+          }
+        }
+      }
+      if (rule.appTemplates) {
+        for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
+          insertInvokesImports(this.root, filename, moduleRules, config.extraImports);
         }
       }
     }
@@ -469,5 +481,28 @@ function insertExtraImports(
       });
     }
     extraImports[join(root, filename)] = entry;
+  }
+}
+
+function insertInvokesImports(
+  root: string,
+  filename: string,
+  rules: TemplateRules,
+  extraImports: CompatResolverOptions['extraImports']
+) {
+  if (rules.invokes) {
+    let dependsOnComponents: string[] = [];
+    for (let componentList of Object.values(rules.invokes)) {
+      for (let component of componentList) {
+        let d = snippetToDasherizedName(component);
+        if (!d) {
+          throw new Error(
+            `unable to parse component snippet "${component}" from rule ${JSON.stringify(rules, null, 2)}`
+          );
+        }
+        dependsOnComponents.push(d);
+      }
+    }
+    extraImports[join(root, filename)] = { dependsOnComponents };
   }
 }

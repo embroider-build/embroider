@@ -186,6 +186,8 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
       }
       argumentsAreComponents.push(name);
       safeInteriorPaths.push(interior);
+      safeInteriorPaths.push('this.' + interior);
+      safeInteriorPaths.push('@' + name);
     }
   }
   if (componentRules.invokes) {

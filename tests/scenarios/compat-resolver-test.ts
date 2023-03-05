@@ -72,7 +72,11 @@ Scenarios.fromProject(() => new Project())
             activeAddons: {},
             renameModules: {},
             renamePackages: {},
-            extraImports: {},
+            extraImports: {
+              [resolve(app.dir, './templates/index.hbs')]: {
+                dependsOnComponents: ['alpha'],
+              },
+            },
             relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,
@@ -109,6 +113,12 @@ Scenarios.fromProject(() => new Project())
                   "${require.resolve('babel-plugin-ember-template-compilation')}",
                   ${JSON.stringify(etcOptions)}
                 ],
+                [
+                  "${require.resolve('@embroider/core/src/babel-plugin-adjust-imports')}",
+                  ${JSON.stringify({
+                    appRoot: app.dir,
+                  })}
+                ]
               ]
             }
             `,
@@ -1693,10 +1703,7 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
-      // Skipped because this will depend on adding reverse component lookupt to
-      // module-resolver, which is easier to do once we land the app-tree
-      // merging logic there.
-      skip(`acceptsComponentArguments interior usage generates no warning`, async function () {
+      test(`acceptsComponentArguments interior usage generates no warning`, async function () {
         givenFiles({
           'components/form-builder.hbs': `{{component @title}}{{component title}}{{component this.title}}`,
         });
@@ -1713,13 +1720,9 @@ Scenarios.fromProject(() => new Project())
           }
         );
         expectTranspiled('components/form-builder.hbs').equalsCode(`
-          import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{component @title}}{{component title}}{{component this.title}}", {
-            moduleName: "my-app/components/form-builder.hbs",
-            scope: () => ({
-              formBuilder_,
-            })
+            moduleName: "my-app/components/form-builder.hbs"
           });
         `);
       });
@@ -1898,13 +1901,36 @@ Scenarios.fromProject(() => new Project())
         );
       });
 
-      // This is a draft of how I think we could make `invokes` work under our
-      // new global-resolution-free implementation, it's skipped because I don't
-      // want to implement this until I test out whether it really works well in
-      // an app.
-      skip('respects invokes rule on a component');
-      skip('respects invokes rule on a non-component addon template');
-      skip('respects invokes rule on a non-component app template', async function () {
+      skip('respects invokes rule on a component', async function () {
+        givenFiles({
+          'components/my-thing.hbs': `{{component this.which}}`,
+        });
+        await configure(
+          { staticComponents: true },
+          {
+            appPackageRules: {
+              components: {
+                '<MyThing/>': {
+                  invokes: { 'this.which': ['<Alpha/>'] },
+                },
+              },
+            },
+          }
+        );
+
+        expectTranspiled('components/my-thing.hbs').equalsCode(`
+          window.define("my-app/components/alpha", function () {
+            return _ref0;
+          });
+          import _ref0 from "#embroider_compat/components/alpha";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("{{component this.which}}", {
+            moduleName: "my-app/components/my-thing.hbs"
+          });
+        `);
+      });
+
+      test('respects invokes rule on a non-component app template', async function () {
         givenFiles({
           'templates/index.hbs': `{{component this.which}}`,
         });
@@ -1922,20 +1948,13 @@ Scenarios.fromProject(() => new Project())
         );
 
         expectTranspiled('templates/index.hbs').equalsCode(`
-          import { invokesFallback } from '#embroider_compat/runtime';
-          import alpha_ from "#embroider_compat/components/alpha";
+          window.define("my-app/components/alpha", function () {
+            return _ref0;
+          });
+          import _ref0 from "#embroider_compat/components/alpha";
           import { precompileTemplate } from "@ember/template-compilation";
-
-          const thisWhichFallbacks = invokesFallback({
-            'alpha': alpha_
-          })
-
-          export default precompileTemplate("{{component (thisWhichFallbacks this.which) }}", {
-            moduleName: "my-app/templates/index.hbs",
-            scope: () => ({
-              alpha_,
-              thisWhichFallbacks
-            })
+          export default precompileTemplate("{{component this.which}}", {
+            moduleName: "my-app/templates/index.hbs"
           });
         `);
       });

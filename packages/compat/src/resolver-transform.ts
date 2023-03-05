@@ -36,12 +36,6 @@ type UserConfig = Pick<
 export interface CompatResolverOptions extends CoreResolverOptions {
   activePackageRules: ActivePackageRules[];
   options: UserConfig;
-  extraImports: {
-    [absPath: string]: {
-      dependsOnComponents?: string[]; // these are already standardized in dasherized form
-      dependsOnModules?: string[];
-    };
-  };
 }
 
 export interface Options {

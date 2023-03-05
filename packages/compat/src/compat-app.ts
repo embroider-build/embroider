@@ -23,7 +23,7 @@ import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
 import { CompatResolverOptions } from './resolver-transform';
-import { activePackageRules, ModuleRules, PackageRules, TemplateRules } from './dependency-rules';
+import { activePackageRules, PackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
 import { sync as resolveSync } from 'resolve';
@@ -32,7 +32,6 @@ import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
-import { snippetToDasherizedName } from './dasherize-component-name';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import type { PluginItem } from '@babel/core';
 
@@ -367,7 +366,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons,
       renameModules,
       renamePackages,
-      extraImports: {},
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
@@ -393,37 +391,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activePackageRules: this.activeRules(),
     };
 
-    this.addExtraImports(config);
     return config;
-  }
-
-  private addExtraImports(config: CompatResolverOptions) {
-    for (let rule of this.activeRules()) {
-      if (rule.addonModules) {
-        for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
-          for (let root of rule.roots) {
-            insertExtraImports(root, filename, moduleRules, config.extraImports);
-          }
-        }
-      }
-      if (rule.appModules) {
-        for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
-          insertExtraImports(this.root, filename, moduleRules, config.extraImports);
-        }
-      }
-      if (rule.addonTemplates) {
-        for (let [filename, moduleRules] of Object.entries(rule.addonTemplates)) {
-          for (let root of rule.roots) {
-            insertInvokesImports(root, filename, moduleRules, config.extraImports);
-          }
-        }
-      }
-      if (rule.appTemplates) {
-        for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
-          insertInvokesImports(this.root, filename, moduleRules, config.extraImports);
-        }
-      }
-    }
   }
 
   htmlbarsPlugins(): Transform[] {
@@ -468,51 +436,4 @@ function defaultAddonPackageRules(): PackageRules[] {
     })
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
-}
-
-function insertExtraImports(
-  root: string,
-  filename: string,
-  rules: ModuleRules,
-  extraImports: CompatResolverOptions['extraImports']
-) {
-  if (rules.dependsOnModules || rules.dependsOnComponents) {
-    let entry: CompatResolverOptions['extraImports'][string] = {};
-    if (rules.dependsOnModules) {
-      entry.dependsOnModules = rules.dependsOnModules;
-    }
-    if (rules.dependsOnComponents) {
-      entry.dependsOnComponents = rules.dependsOnComponents.map(c => {
-        let d = snippetToDasherizedName(c);
-        if (!d) {
-          throw new Error(`unable to parse component snippet "${c}" from rule ${JSON.stringify(rules, null, 2)}`);
-        }
-        return d;
-      });
-    }
-    extraImports[join(root, filename)] = entry;
-  }
-}
-
-function insertInvokesImports(
-  root: string,
-  filename: string,
-  rules: TemplateRules,
-  extraImports: CompatResolverOptions['extraImports']
-) {
-  if (rules.invokes) {
-    let dependsOnComponents: string[] = [];
-    for (let componentList of Object.values(rules.invokes)) {
-      for (let component of componentList) {
-        let d = snippetToDasherizedName(component);
-        if (!d) {
-          throw new Error(
-            `unable to parse component snippet "${component}" from rule ${JSON.stringify(rules, null, 2)}`
-          );
-        }
-        dependsOnComponents.push(d);
-      }
-    }
-    extraImports[join(root, filename)] = { dependsOnComponents };
-  }
 }

@@ -72,11 +72,6 @@ Scenarios.fromProject(() => new Project())
             activeAddons: {},
             renameModules: {},
             renamePackages: {},
-            extraImports: {
-              [resolve(app.dir, './templates/index.hbs')]: {
-                dependsOnComponents: ['alpha'],
-              },
-            },
             relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,

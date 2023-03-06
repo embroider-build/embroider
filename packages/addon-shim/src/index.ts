@@ -40,42 +40,22 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     return tree;
   }
 
-  let autoImportInstance: EAI2Instance | undefined;
-
   return {
     name: pkg.name,
-    included(this: AddonInstance, ...args: unknown[]) {
+    included(
+      this: AddonInstance & {
+        registerV2Addon(name: string, dir: string): void;
+      },
+      ...args: unknown[]
+    ) {
       let parentOptions;
-      let parentName: string;
       if (isDeepAddonInstance(this)) {
         parentOptions = this.parent.options;
-        parentName = this.parent.name;
       } else {
         parentOptions = this.app.options;
-        parentName = this.parent.name();
       }
 
-      // if we're being used by a v1 package, that package needs ember-auto-import 2
-      if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
-        let autoImport = locateAutoImport(this.parent.addons);
-        if (!autoImport.present) {
-          throw new Error(
-            `${parentName} needs to depend on ember-auto-import in order to use ${this.name}`
-          );
-        }
-
-        if (!autoImport.satisfiesV2) {
-          throw new Error(
-            `${parentName} has ember-auto-import ${autoImport.version} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
-          );
-        }
-        autoImportInstance = autoImport.instance;
-        autoImportInstance.registerV2Addon(this.name, directory);
-      } else {
-        // if we're being used by a v2 addon, it also has this shim and will
-        // forward our registration onward to ember-auto-import
-        (this.parent as EAI2Instance).registerV2Addon(this.name, directory);
-      }
+      this.registerV2Addon(this.name, directory);
 
       if (options.disabled) {
         disabled = options.disabled(parentOptions);
@@ -159,9 +139,31 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     },
 
     registerV2Addon(this: AddonInstance, name: string, root: string): void {
-      if (autoImportInstance) {
-        autoImportInstance.registerV2Addon(name, root);
+      let parentName: string;
+      if (isDeepAddonInstance(this)) {
+        parentName = this.parent.name;
       } else {
+        parentName = this.parent.name();
+      }
+
+      // if we're being used by a v1 package, that package needs ember-auto-import 2
+      if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
+        let autoImport = locateAutoImport(this.parent.addons);
+        if (!autoImport.present) {
+          throw new Error(
+            `${parentName} needs to depend on ember-auto-import in order to use ${this.name}`
+          );
+        }
+
+        if (!autoImport.satisfiesV2) {
+          throw new Error(
+            `${parentName} has ember-auto-import ${autoImport.version} which is not new enough to use ${this.name}. It needs to upgrade to >=2.0`
+          );
+        }
+        autoImport.instance.registerV2Addon(name, root);
+      } else {
+        // if we're being used by a v2 addon, it also has this shim and will
+        // forward our registration onward to ember-auto-import
         (this.parent as EAI2Instance).registerV2Addon(name, root);
       }
     },

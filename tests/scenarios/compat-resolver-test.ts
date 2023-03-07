@@ -103,20 +103,11 @@ Scenarios.fromProject(() => new Project())
           givenFiles({
             '_babel_config.js': `
             module.exports = {
-              plugins: [
-                [
-                  "${require.resolve('babel-plugin-ember-template-compilation')}",
-                  ${JSON.stringify(etcOptions)}
-                ],
-                [
-                  "${require.resolve('@embroider/compat/src/babel-plugin-adjust-imports')}",
-                  ${JSON.stringify({
-                    appRoot: app.dir,
-                  })}
-                ]
-              ]
-            }
-            `,
+              plugins: ${JSON.stringify([
+                [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
+                [require.resolve('@embroider/compat/src/babel-plugin-adjust-imports'), { appRoot: app.dir }],
+              ])}
+            }`,
             '_babel_filter.js': `
               module.exports = function(filename) { return true }
             `,

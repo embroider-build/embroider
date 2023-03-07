@@ -31,22 +31,6 @@ Scenarios.fromProject(() => new Project())
     };
     app.mergeFiles({
       'index.html': '<script src="./app.js" type="module"></script>',
-      node_modules: {
-        'my-addon': {
-          'package.json': JSON.stringify(
-            (() => {
-              let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true };
-              return {
-                name: 'my-addon',
-                keywords: ['ember-addon'],
-                'ember-addon': meta,
-              };
-            })(),
-            null,
-            2
-          ),
-        },
-      },
     });
   })
   .forEachScenario(scenario => {
@@ -57,6 +41,7 @@ Scenarios.fromProject(() => new Project())
       interface ConfigureOpts {
         podModulePrefix?: string;
         renamePackages?: Record<string, string>;
+        addonMeta?: Partial<AddonMeta>;
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
@@ -116,6 +101,18 @@ Scenarios.fromProject(() => new Project())
               module.exports = function(filename) { return true }
             `,
             '.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'node_modules/my-addon/package.json': JSON.stringify(
+              (() => {
+                let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(opts?.addonMeta ?? {}) };
+                return {
+                  name: 'my-addon',
+                  keywords: ['ember-addon'],
+                  'ember-addon': meta,
+                };
+              })(),
+              null,
+              2
+            ),
           });
 
           expectAudit = await assert.audit({ outputDir: app.dir });
@@ -424,6 +421,80 @@ Scenarios.fromProject(() => new Project())
             .module('./app.js')
             .resolves('#embroider_compat/ambiguous/something/hello-world')
             .to('./helpers/something/hello-world.js');
+        });
+      });
+
+      Qmodule('engine-relative resolving', function () {
+        test('module in app takes precedence', async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': '',
+            './hello-world.js': '',
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit.module('./app.js').resolves('my-app/hello-world').to('./hello-world.js');
+        });
+
+        test('module in addon is found', async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': '',
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-app/hello-world')
+            .to('./node_modules/my-addon/_app_/hello-world.js');
+        });
+
+        test(`relative import in addon's app tree resolves to app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('./secondary')
+            .to('./secondary.js');
+        });
+
+        test(`absolute import in addon's app tree resolves to app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "my-app/secondary"`,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('my-app/secondary')
+            .to('./secondary.js');
         });
       });
     });

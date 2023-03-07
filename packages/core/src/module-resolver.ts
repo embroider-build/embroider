@@ -4,7 +4,7 @@ import {
   extensionsPattern,
   packageName as getPackageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, posix } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
@@ -268,9 +268,11 @@ export class Resolver {
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
-    return request
-      .alias(`${target.packageName}/helpers/${target.memberName}`)
-      .rehome(resolve(inEngine.root, 'package.json'));
+    return logTransition(
+      'resolveHelper',
+      request,
+      request.alias(`${target.packageName}/helpers/${target.memberName}`).rehome(resolve(inEngine.root, 'package.json'))
+    );
   }
 
   private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
@@ -326,7 +328,7 @@ export class Resolver {
     let helperCandidate = this.resolveHelper(path, inEngine, request);
     let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
     if (helperMatch.type === 'real') {
-      return helperCandidate;
+      return logTransition('ambiguous case matched a helper', request, helperCandidate);
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
@@ -334,20 +336,24 @@ export class Resolver {
     // colocation.≥
     let componentMatch = this.resolveComponent(path, inEngine, request);
     if (componentMatch !== request) {
-      return componentMatch;
+      return logTransition('ambiguous case matched a cmoponent', request, componentMatch);
     }
 
     // this is the hard failure case -- we were supposed to find something and
     // didn't. Let the normal resolution process progress so the user gets a
     // normal build error.
-    return request;
+    return logTransition('ambiguous case failing', request);
   }
 
   private resolveModifier<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
-    return request
-      .alias(`${target.packageName}/modifiers/${target.memberName}`)
-      .rehome(resolve(inEngine.root, 'package.json'));
+    return logTransition(
+      'resolveModifier',
+      request,
+      request
+        .alias(`${target.packageName}/modifiers/${target.memberName}`)
+        .rehome(resolve(inEngine.root, 'package.json'))
+    );
   }
 
   private *componentTemplateCandidates(inPackageName: string) {
@@ -389,6 +395,10 @@ export class Resolver {
     } else {
       return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'pacakge.json') };
     }
+  }
+
+  private engineConfig(packageName: string): EngineConfig | undefined {
+    return this.options.engines.find(e => e.packageName === packageName);
   }
 
   owningEngine(pkg: Package) {
@@ -493,9 +503,21 @@ export class Resolver {
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
         return external('beforeResolve', request, publicSpecifier);
-      } else {
-        return request;
       }
+
+      // if the requesting file is in an addon's app-js, the relative request
+      // should really be understood as a request for a module in the containing
+      // engine
+      let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+      if (logicalLocation) {
+        return logTransition(
+          'beforeResolve: relative import in app-js',
+          request,
+          request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
+        );
+      }
+
+      return request;
     }
 
     // absolute package imports can also be explicitly external based on their
@@ -585,13 +607,27 @@ export class Resolver {
 
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
-      return request;
+      return logTransition('fallbackResolve: not in an ember package', request);
     }
 
     let packageName = getPackageName(specifier);
     if (!packageName) {
-      // this is a relative import, we have nothing more to for it.
-      return request;
+      // this is a relative import
+
+      let withinEngine = this.engineConfig(pkg.name);
+      if (withinEngine) {
+        // it's a relative import inside an engine (which also means app), which
+        // means we may need to satisfy the request via app tree merging.
+        let appJSMatch = this.searchAppTree(request, withinEngine, unrelativize(pkg, request));
+        if (appJSMatch) {
+          return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
+        } else {
+          return logTransition('fallbackResolve: relative appJs search failure', request);
+        }
+      } else {
+        // nothing else to do for relative imports
+        return logTransition('fallbackResolve: relative failure', request);
+      }
     }
 
     let originalPkg = this.originalPackage(fromFile);
@@ -616,6 +652,27 @@ export class Resolver {
       );
     }
 
+    let targetingEngine = this.engineConfig(packageName);
+    if (targetingEngine) {
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier);
+      if (appJSMatch) {
+        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
+      }
+    }
+
+    let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+    if (logicalLocation) {
+      // the requesting file is in an addon's appTree. We didn't succeed in
+      // resolving this (non-relative) request from inside the actual addon, so
+      // next try to resolve it from the corresponding logical location in the
+      // app.
+      return logTransition(
+        'fallbackResolve: retry from original home of relocated file',
+        request,
+        request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
+      );
+    }
+
     if (pkg.meta['auto-upgraded']) {
       // auto-upgraded packages can fall back to attempting to find dependencies at
       // runtime. Native v2 packages can only get this behavior in the
@@ -633,7 +690,32 @@ export class Resolver {
 
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return request;
+    return logTransition('fallbackResolve final exit', request);
+  }
+
+  private searchAppTree<R extends ModuleRequest>(
+    request: R,
+    engine: EngineConfig,
+    inEngineSpecifier: string
+  ): R | undefined {
+    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let targetModule = withoutJSExt(inEngineSpecifier);
+
+    for (let addonConfig of engine.activeAddons) {
+      let addon = packageCache.get(addonConfig.root);
+      if (!addon.isV2Addon()) {
+        continue;
+      }
+      let appJS = addon.meta['app-js'];
+      if (!appJS) {
+        continue;
+      }
+      for (let [inAppName, inAddonName] of Object.entries(appJS)) {
+        if (targetModule === withoutJSExt(posix.join(engine.packageName, inAppName))) {
+          return request.alias(inAddonName).rehome(posix.join(addon.root, 'package.json'));
+        }
+      }
+    }
   }
 
   // check whether the given file with the given owningPackage is an addon's
@@ -726,4 +808,19 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
   let filename = virtualExternalModule(specifier);
   return logTransition(label, request, request.virtualize(filename));
+}
+
+// this is specifically for app-js handling, where only .js and .hbs are legal
+// extensiosn, and only .js is allowed to be an *implied* extension (.hbs must
+// be explicit). So when normalizing such paths, it's only a .js suffix that we
+// must remove.
+function withoutJSExt(filename: string): string {
+  return filename.replace(/\.js$/, '');
+}
+
+function unrelativize(pkg: Package, request: ModuleRequest) {
+  if (pkg.packageJSON.exports) {
+    throw new Error(`unsupported: engines cannot use package.json exports`);
+  }
+  return resolve(dirname(request.fromFile), request.specifier).replace(pkg.root, pkg.name);
 }

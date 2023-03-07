@@ -215,11 +215,7 @@ appScenarios
                 );
 
                 let helpers = [...document.querySelectorAll("[data-helper-name]")].map(elt => elt.dataset.helperName);
-                if (dependencySatisfies('ember-source', '>=4.2.0-beta.0')) {
-                  assert.ok(!helpers.includes('reverse'), 'expected not to find reverse, because it is provided directly via scope');
-                } else {
-                  assert.ok(helpers.includes('reverse'), 'expected to find reverse due to patchHelpersBug');
-                }
+                assert.ok(!helpers.includes('reverse'), 'expected not to find reverse, because it is provided directly via scope');
 
                 if (getOwnConfig().isClassic) {
                   assert.ok(helpers.includes('intersect'), 'expected to find intersect');

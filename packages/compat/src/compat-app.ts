@@ -22,17 +22,18 @@ import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
 import Options, { optionsWithDefaults } from './options';
-import CompatResolver, { CompatResolverOptions } from './resolver';
-import { activePackageRules, PackageRules, expandModuleRules } from './dependency-rules';
+import { CompatResolverOptions } from './resolver-transform';
+import { activePackageRules, PackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import { Memoize } from 'typescript-memoize';
-import flatten from 'lodash/flatten';
 import { sync as resolveSync } from 'resolve';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
 import { pathExistsSync } from 'fs-extra';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
+import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
+import type { PluginItem } from '@babel/core';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -321,8 +322,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     ]);
   }
 
-  @Memoize()
-  resolverTransform(resolverConfig: CompatResolverOptions): Transform | undefined {
+  hbsTransforms(resolverConfig: CompatResolverOptions): Transform[] {
     if (
       this.options.staticComponents ||
       this.options.staticHelpers ||
@@ -331,10 +331,18 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     ) {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
-        emberVersion: resolverConfig.emberVersion,
       };
-      return [require.resolve('./resolver-transform'), opts];
+      return [[require.resolve('./resolver-transform'), opts]];
+    } else {
+      return [];
     }
+  }
+
+  jsPlugins(resolverConfig: CompatResolverOptions): PluginItem[] {
+    let pluginConfig: AdjustImportsOptions = {
+      appRoot: resolverConfig.appRoot,
+    };
+    return [[require.resolve('./babel-plugin-adjust-imports'), pluginConfig]];
   }
 
   resolverConfig(engines: Engine[]): CompatResolverOptions {
@@ -358,46 +366,32 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons,
       renameModules,
       renamePackages,
-      extraImports: [], // extraImports gets filled in below
       relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
+      engines: engines.map(engine => ({
+        packageName: engine.package.name,
+        root: this.root,
+        activeAddons: [...engine.addons]
+          .map(a => ({
+            name: a.name,
+            root: a.root,
+          }))
+          // the traditional order is the order in which addons will run, such
+          // that the last one wins. Our resolver's order is the order to
+          // search, so first one wins.
+          .reverse(),
+      })),
 
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving
-      emberVersion: this.activeAddonChildren().find(a => a.name === 'ember-source')!.packageJSON.version,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
       options: this.options,
       activePackageRules: this.activeRules(),
     };
 
-    this.addExtraImports(config);
     return config;
-  }
-
-  private addExtraImports(config: CompatResolverOptions) {
-    let internalResolver = new CompatResolver(config);
-
-    let output: { absPath: string; target: string; runtimeName?: string }[][] = [];
-
-    for (let rule of this.activeRules()) {
-      if (rule.addonModules) {
-        for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
-          for (let root of rule.roots) {
-            let absPath = join(root, filename);
-            output.push(expandModuleRules(absPath, moduleRules, internalResolver));
-          }
-        }
-      }
-      if (rule.appModules) {
-        for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
-          let absPath = join(this.root, filename);
-          output.push(expandModuleRules(absPath, moduleRules, internalResolver));
-        }
-      }
-    }
-    config.extraImports = flatten(output);
   }
 
   htmlbarsPlugins(): Transform[] {

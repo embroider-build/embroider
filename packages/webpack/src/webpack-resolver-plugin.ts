@@ -8,10 +8,13 @@ import {
 } from '@embroider/core';
 import type { Compiler, Module } from 'webpack';
 import assertNever from 'assert-never';
+import escapeRegExp from 'escape-string-regexp';
 
 export { EmbroiderResolverOptions as Options };
 
 const virtualLoaderName = '@embroider/webpack/src/virtual-loader';
+const virtualLoaderPath = resolve(__dirname, './virtual-loader.js');
+const virtualRequestPattern = new RegExp(`^${escapeRegExp(virtualLoaderPath)}\\?(?<filename>.+)!`);
 
 export class EmbroiderPlugin {
   #resolver: EmbroiderResolver;
@@ -34,7 +37,7 @@ export class EmbroiderPlugin {
   }
 
   apply(compiler: Compiler) {
-    this.#addLoaderAlias(compiler, virtualLoaderName, resolve(__dirname, './virtual-loader'));
+    this.#addLoaderAlias(compiler, virtualLoaderName, virtualLoaderPath);
 
     compiler.hooks.normalModuleFactory.tap('@embroider/webpack', nmf => {
       let defaultResolve = getDefaultResolveHook(nmf.hooks.resolve.taps);
@@ -105,6 +108,20 @@ class WebpackModuleRequest implements ModuleRequest {
   fromFile: string;
 
   static from(state: any): WebpackModuleRequest | undefined {
+    // when the files emitted from our virtual-loader try to import things,
+    // those requests show in webpack as having no issuer. But we can see here
+    // which requests they are and adjust the issuer so they resolve things from
+    // the correct logical place.
+    if (!state.contextInfo?.issuer && Array.isArray(state.dependencies)) {
+      for (let dep of state.dependencies) {
+        let match = virtualRequestPattern.exec(dep._parentModule?.userRequest);
+        if (match) {
+          state.contextInfo.issuer = match.groups!.filename;
+          state.context = dirname(state.contextInfo.issuer);
+        }
+      }
+    }
+
     if (
       typeof state.request === 'string' &&
       typeof state.context === 'string' &&
@@ -146,7 +163,8 @@ class WebpackModuleRequest implements ModuleRequest {
     return new WebpackModuleRequest(this.state) as this;
   }
   virtualize(filename: string) {
-    this.state.request = `${virtualLoaderName}?${filename}!`;
-    return new WebpackModuleRequest(this.state, true) as this;
+    let next = this.alias(`${virtualLoaderName}?${filename}!`);
+    next.isVirtual = true;
+    return next;
   }
 }

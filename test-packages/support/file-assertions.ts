@@ -9,7 +9,7 @@ type JSONResult = { result: true; data: any } | { result: false; actual: any; ex
 export class BoundExpectFile {
   private consumed = false;
 
-  constructor(readonly basePath: string, readonly path: string, private adapter: AssertionAdapter) {
+  constructor(readonly basePath: string, readonly path: string, readonly adapter: AssertionAdapter) {
     Promise.resolve().then(() => {
       if (!this.consumed) {
         this.adapter.fail(
@@ -94,6 +94,13 @@ export class BoundExpectFile {
   doesNotMatch(pattern: string | RegExp, message?: string): void {
     this.doMatch(pattern, message, true);
   }
+  equalsCode(expectedSource: string): void {
+    if (!this.contents.result) {
+      this.adapter.assert(this.contents);
+    } else {
+      this.adapter.codeEqual(this.contents.data, expectedSource);
+    }
+  }
   json(propertyPath?: string): JSONExpect {
     return new JSONExpect(
       this.adapter,
@@ -154,6 +161,23 @@ export class TransformedFileExpect extends BoundExpectFile {
         expected: 'transformer to run',
         message: err.stack,
       };
+    }
+  }
+  failsToTransform(message: string) {
+    if (this.contents.result) {
+      this.adapter.assert({
+        result: false,
+        actual: this.contents.data,
+        expected: `a transform error`,
+        message: `expected to catch a transform error but none was thrown`,
+      });
+    } else {
+      this.adapter.assert({
+        result: this.contents.actual.message.includes(message),
+        actual: this.contents.actual.message,
+        expected: message,
+        message: `contents of transform exception`,
+      });
     }
   }
 }
@@ -262,86 +286,17 @@ declare global {
   }
 }
 
-interface AssertionAdapter {
+export interface AssertionAdapter {
   assert(state: { result: boolean; actual: any; expected: any; message: string }): void;
 
   fail(message: string): void;
 
   deepEquals(a: any, b: any): void;
   equals(a: any, b: any): void;
-}
-
-class JestAdapter implements AssertionAdapter {
-  constructor(private stack: Error, private path: string) {}
-  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
-    try {
-      expect(this.path)._fileAssertionsMatcher(state);
-    } catch (upstreamErr) {
-      (this.stack as any).matcherResult = upstreamErr.matcherResult;
-      this.stack.message = upstreamErr.message;
-      throw this.stack;
-    }
-  }
-  fail(message: string) {
-    this.stack.message = message;
-    throw this.stack;
-  }
-
-  deepEquals(a: any, b: any) {
-    expect(a).toEqual(b);
-  }
-
-  equals(a: any, b: any) {
-    expect(a).toBe(b);
-  }
-}
-
-class QUnitAdapter implements AssertionAdapter {
-  constructor(private qassert: Assert) {}
-
-  assert(state: { result: boolean; actual: any; expected: any; message: string }): void {
-    this.qassert.pushResult(state);
-  }
-
-  fail(message: string) {
-    this.qassert.ok(false, message);
-  }
-
-  deepEquals(a: any, b: any) {
-    this.qassert.deepEqual(a, b);
-  }
-
-  equals(a: any, b: any) {
-    this.qassert.equal(a, b);
-  }
-}
-
-export function expectFilesAt(
-  basePath: string,
-  params: { jest: true } | { qunit: Assert } = { jest: true }
-): ExpectFile {
-  let func: any = (relativePath: string) => {
-    if ('jest' in params) {
-      return jestExpectFile(func, basePath, relativePath);
-    } else {
-      return new BoundExpectFile(basePath, relativePath, new QUnitAdapter(params.qunit));
-    }
-  };
-  Object.defineProperty(func, 'basePath', {
-    get() {
-      return basePath;
-    },
-  });
-  return func;
+  codeEqual(actualCode: string, expectedCode: string): void;
 }
 
 export interface ExpectFile {
   (relativePath: string): BoundExpectFile;
   readonly basePath: string;
-}
-
-function jestExpectFile(callsite: any, basePath: string, relativePath: string): BoundExpectFile {
-  let err = new Error();
-  Error.captureStackTrace(err, callsite);
-  return new BoundExpectFile(basePath, relativePath, new JestAdapter(err, relativePath));
 }

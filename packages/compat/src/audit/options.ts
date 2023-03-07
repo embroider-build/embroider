@@ -3,6 +3,7 @@ export interface AuditOptions {
 }
 
 export interface AuditBuildOptions extends AuditOptions {
-  'reuse-build': boolean;
-  app: string;
+  'reuse-build'?: boolean;
+  app?: string;
+  outputDir?: string;
 }

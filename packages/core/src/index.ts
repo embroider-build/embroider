@@ -25,6 +25,7 @@ export {
   ResolverFunction,
   SyncResolverFunction,
 } from './module-resolver';
+export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';
 
 // this is reexported because we already make users manage a peerDep from some

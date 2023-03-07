@@ -3,6 +3,7 @@ import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
 import { Node } from 'broccoli-node-api';
 import { sync as resolveSync } from 'resolve';
+import semver from 'semver';
 
 export class EmberDataBase extends V1Addon {
   // May of the ember-data packages use rollup to try to hide their internal
@@ -13,6 +14,10 @@ export class EmberDataBase extends V1Addon {
   // behavior is correct.
   customizes(...names: string[]) {
     return super.customizes(...names.filter(n => n !== 'treeForAddon'));
+  }
+
+  static shouldApplyAdapter(addonInstance: any) {
+    return semver.lt(addonInstance.pkg.version, '4.11.1');
   }
 }
 

@@ -1882,10 +1882,15 @@
   dependencies:
     babel-plugin-debug-macros "^0.3.4"
 
-"@glint/template@^1.0.0-beta.1":
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@glint/template/-/template-1.0.0-beta.2.tgz#ed13ca4f0e6c616579d9eb9c6b11eac49899c742"
-  integrity sha512-gaWiWAjvmgOTmHUqXt+fACINMSnOxKcPYEwb6A6DNYpCaKWxhxqIjIrQLdrumULLK9+MbxMrIa3Od05FcIDQFQ==
+"@glint/environment-ember-loose@^1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.npmjs.org/@glint/environment-ember-loose/-/environment-ember-loose-1.0.0-beta.3.tgz#aade64eca87a3802b1068f1d7dd6be429117fb6e"
+  integrity sha512-Aby8penf3PB2VJrp9Ni33ZAcmFz8OpZ3wA2rz9DirOQhGrdDoTxcvNli6wu0R/NBqjjgKhM2WGzbxJ8NRdfdxA==
+
+"@glint/template@^1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "https://registry.npmjs.org/@glint/template/-/template-1.0.0-beta.3.tgz#5866c0ffc1d8273f2e9b2fd186b65f5d4e6dbc15"
+  integrity sha512-jxn4yGzNZ1A4NGzvjYht0NlVziHyzjj/rm4rGsP1mVUO2Dd/LHhhxR6NUlSw9MFDZ0fCinULVwQtAKQLEpIpPw==
 
 "@handlebars/parser@^1.1.0":
   version "1.1.0"
@@ -5404,15 +5409,34 @@ browserslist-generator@^1.0.66:
     semver "^7.3.7"
     ua-parser-js "^1.0.2"
 
-browserslist@4.20.2, browserslist@^3.2.6, browserslist@^4.0.0, browserslist@^4.14.0, browserslist@^4.14.5, browserslist@^4.20.4, browserslist@^4.21.3, browserslist@^4.21.4:
-  version "4.21.4"
-  resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.21.4.tgz#e7496bbc67b9e39dd0f98565feccdcb0d4ff6987"
-  integrity sha512-CBHJJdDmgjl3daYjN5Cp5kbTf1mUhZoS+beLklHIvkOWscs83YAhLlF3Wsh/lciQYAcbBJgTOD44VtG31ZM4Hw==
+browserslist@4.20.2:
+  version "4.20.2"
+  resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.20.2.tgz#567b41508757ecd904dab4d1c646c612cd3d4f88"
+  integrity sha512-CQOBCqp/9pDvDbx3xfMi+86pr4KXIf2FDkTTdeuYw8OxS9t898LA1Khq57gtufFILXpfgsSx5woNgsBgvGjpsA==
   dependencies:
-    caniuse-lite "^1.0.30001400"
-    electron-to-chromium "^1.4.251"
-    node-releases "^2.0.6"
-    update-browserslist-db "^1.0.9"
+    caniuse-lite "^1.0.30001317"
+    electron-to-chromium "^1.4.84"
+    escalade "^3.1.1"
+    node-releases "^2.0.2"
+    picocolors "^1.0.0"
+
+browserslist@^3.2.6:
+  version "3.2.8"
+  resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-3.2.8.tgz#b0005361d6471f0f5952797a76fc985f1f978fc6"
+  integrity sha512-WHVocJYavUwVgVViC0ORikPHQquXwVh939TaelZ4WDqpWgTX/FsGhl/+P4qBUAGcRvtOgDgC+xftNWWp2RUTAQ==
+  dependencies:
+    caniuse-lite "^1.0.30000844"
+    electron-to-chromium "^1.3.47"
+
+browserslist@^4.0.0, browserslist@^4.14.5, browserslist@^4.20.4, browserslist@^4.21.3, browserslist@^4.21.4:
+  version "4.21.5"
+  resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.21.5.tgz#75c5dae60063ee641f977e00edd3cfb2fb7af6a7"
+  integrity sha512-tUkiguQGW7S3IhB7N+c2MV/HZPSCPAAiYBZXLsBhFB/PCy6ZKKsZrmBayHV9fdGV/ARIfJ14NkxKzRDjvp7L6w==
+  dependencies:
+    caniuse-lite "^1.0.30001449"
+    electron-to-chromium "^1.4.284"
+    node-releases "^2.0.8"
+    update-browserslist-db "^1.0.10"
 
 bser@2.1.1:
   version "2.1.1"
@@ -5558,10 +5582,20 @@ caniuse-api@^3.0.0:
     lodash.memoize "^4.1.2"
     lodash.uniq "^4.5.0"
 
-caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001328, caniuse-lite@^1.0.30001400:
+caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001328:
   version "1.0.30001439"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001439.tgz#ab7371faeb4adff4b74dad1718a6fd122e45d9cb"
   integrity sha512-1MgUzEkoMO6gKfXflStpYgZDlFM7M/ck/bgfVCACO5vnAf0fXoNVHdWtqGU+MYca+4bL9Z5bpOVmR33cWW9G2A==
+
+caniuse-lite@^1.0.30000844, caniuse-lite@^1.0.30001317:
+  version "1.0.30001458"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001458.tgz#871e35866b4654a7d25eccca86864f411825540c"
+  integrity sha512-lQ1VlUUq5q9ro9X+5gOEyH7i3vm+AYVT1WDCVB69XOZ17KZRhnZ9J0Sqz7wTHQaLBJccNCHq8/Ww5LlOIZbB0w==
+
+caniuse-lite@^1.0.30001449:
+  version "1.0.30001457"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001457.tgz#6af34bb5d720074e2099432aa522c21555a18301"
+  integrity sha512-SDIV6bgE1aVbK6XyxdURbUE89zY7+k1BBBaOwYwkNCglXlel/E7mELiHC64HQ+W0xSKlqWhV9Wh7iHxUjMs4fA==
 
 capture-exit@^2.0.0:
   version "2.0.0"
@@ -5812,10 +5846,10 @@ coa@~2.0.1:
     chalk "^2.4.1"
     q "^1.1.2"
 
-code-equality-assertions@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/code-equality-assertions/-/code-equality-assertions-0.7.0.tgz#38830cc9d1678dd48d8810e0372a00c4919920f8"
-  integrity sha512-lYBPyAArP5bQmaHa7vn03ikw43BJDkcwYrnTsQTBjgeSnprbo9fw/hx+8uroKbwHn3LPQ+KW4JwKOssnmJSACw==
+code-equality-assertions@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/code-equality-assertions/-/code-equality-assertions-0.9.0.tgz#ffec528a32def0b134a6ae569dc705ed4018eaf8"
+  integrity sha512-8t2+ZiCU9TIr/78TyVSEFii9khSic293zVCfndsG7bOymAsdDFmN1GSwjRdyQxz7+tHE+biUvt08Qlx4Xvfuxw==
   dependencies:
     "@babel/core" "^7.19.6"
     diff "^5.1.0"
@@ -6659,10 +6693,15 @@ ee-first@1.1.1:
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==
 
-electron-to-chromium@^1.4.251:
-  version "1.4.284"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.284.tgz#61046d1e4cab3a25238f6bf7413795270f125592"
-  integrity sha512-M8WEXFuKXMYMVr45fo8mq0wUrrJHheiKZf6BArTKk9ZBYCKJEOU5H8cdWgDT+qCVZf7Na4lVUaZsA+h6uA9+PA==
+electron-to-chromium@^1.3.47, electron-to-chromium@^1.4.84:
+  version "1.4.315"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.315.tgz#b60a6676b3a1db332cfc8919118344aa06b9ac99"
+  integrity sha512-ndBQYz3Eyy3rASjjQ9poMJGoAlsZ/aZnq6GBsGL4w/4sWIAwiUHVSsMuADbxa8WJw7pZ0oxLpGbtoDt4vRTdCg==
+
+electron-to-chromium@^1.4.284:
+  version "1.4.302"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.302.tgz#5770646ffe7051677b489226144aad9386d420f2"
+  integrity sha512-Uk7C+7aPBryUR1Fwvk9VmipBcN9fVsqBO57jV2ZjTm+IZ6BMNqu7EDVEg2HxCNufk6QcWlFsBkhQyQroB2VWKw==
 
 ember-asset-loader@^0.6.1:
   version "0.6.1"
@@ -7865,6 +7904,15 @@ ember-modifier@^3.1.0, ember-modifier@^3.2.7:
     ember-cli-string-utils "^1.1.0"
     ember-cli-typescript "^5.0.0"
     ember-compatibility-helpers "^1.2.5"
+
+ember-modifier@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/ember-modifier/-/ember-modifier-4.0.0.tgz#0bb3fae11435fcbe0d3dfa852ce224d81d75ddb2"
+  integrity sha512-OdconmrqKP2haK4kBwNmtnA2NiC2MFmIJC3LgJ1WhwZ49GaktM+bRIuFxF/S5W0oaegzKs1qH2ZDlqMeO2L3nw==
+  dependencies:
+    "@embroider/addon-shim" "^1.8.4"
+    ember-cli-normalize-entity-name "^1.0.0"
+    ember-cli-string-utils "^1.1.0"
 
 ember-named-blocks-polyfill@^0.2.4:
   version "0.2.5"
@@ -9199,6 +9247,11 @@ fastboot@3.3.2, fastboot@^3.1.0:
     simple-dom "^1.4.0"
     source-map-support "^0.5.21"
 
+fastest-levenshtein@^1.0.16:
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/fastest-levenshtein/-/fastest-levenshtein-1.0.16.tgz#210e61b6ff181de91ea9b3d1b84fdedd47e034e5"
+  integrity sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==
+
 fastq@^1.6.0:
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/fastq/-/fastq-1.14.0.tgz#107f69d7295b11e0fccc264e1fc6389f623731ce"
@@ -10068,7 +10121,7 @@ got@^9.6.0:
     to-readable-stream "^1.0.0"
     url-parse-lax "^3.0.0"
 
-graceful-fs@^4.0.0, graceful-fs@^4.1.2, graceful-fs@^4.1.3, graceful-fs@^4.1.5, graceful-fs@^4.1.6, graceful-fs@^4.1.9, graceful-fs@^4.2.0, graceful-fs@^4.2.2, graceful-fs@^4.2.4, graceful-fs@^4.2.9:
+graceful-fs@^4.1.2, graceful-fs@^4.1.3, graceful-fs@^4.1.5, graceful-fs@^4.1.6, graceful-fs@^4.1.9, graceful-fs@^4.2.0, graceful-fs@^4.2.2, graceful-fs@^4.2.4, graceful-fs@^4.2.9:
   version "4.2.10"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
   integrity sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==
@@ -12755,10 +12808,10 @@ node-notifier@^10.0.0:
     uuid "^8.3.2"
     which "^2.0.2"
 
-node-releases@^2.0.6:
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-2.0.8.tgz#0f349cdc8fcfa39a92ac0be9bc48b7706292b9ae"
-  integrity sha512-dFSmB8fFHEH/s81Xi+Y/15DQY6VHW81nXRj86EMSL3lmuTmK1e+aT4wrFCkTbm+gSwkw4KpX+rT/pMM2c1mF+A==
+node-releases@^2.0.2, node-releases@^2.0.8:
+  version "2.0.10"
+  resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-2.0.10.tgz#c311ebae3b6a148c89b1813fd7c4d3c024ef537f"
+  integrity sha512-5GFldHPXVG/YZmFzJvKK2zDSzPKhEp0+ZR5SVaoSag9fsL5YgHbUHDfnG5494ISANDcK4KwPXAx2xqVEydmd7w==
 
 node-watch@0.7.3:
   version "0.7.3"
@@ -13751,10 +13804,10 @@ qunit-dom@^2.0.0:
     ember-cli-babel "^7.23.0"
     ember-cli-version-checker "^5.1.1"
 
-qunit@^2.14.1, qunit@^2.16.0, qunit@^2.19.1:
-  version "2.19.3"
-  resolved "https://registry.yarnpkg.com/qunit/-/qunit-2.19.3.tgz#bcf81a2e8d176dc19fe8dd358c4cbd08619af03a"
-  integrity sha512-vEnspSZ37u2oR01OA/IZ1Td5V7BvQYFECdKPv86JaBplDNa5IHg0v7jFSPoP5L5o78Dbi8sl7/ATtpRDAKlSdw==
+qunit@^2.16.0, qunit@^2.19.1:
+  version "2.19.4"
+  resolved "https://registry.yarnpkg.com/qunit/-/qunit-2.19.4.tgz#2d689bb1165edd4b812e3ed2ee06ff907e9f2ece"
+  integrity sha512-aqUzzUeCqlleWYKlpgfdHHw9C6KxkB9H3wNfiBg5yHqQMzy0xw/pbCRHYFkjl8MsP/t8qkTQE+JTYL71azgiew==
   dependencies:
     commander "7.2.0"
     node-watch "0.7.3"
@@ -15908,7 +15961,7 @@ upath@^2.0.1:
   resolved "https://registry.yarnpkg.com/upath/-/upath-2.0.1.tgz#50c73dea68d6f6b990f51d279ce6081665d61a8b"
   integrity sha512-1uEe95xksV1O0CYKXo8vQvN1JEbtJp7lb7C5U9HMsIp6IVwntkH/oNUzyVNQSd4S1sYk2FpSSW44FqMc8qee5w==
 
-update-browserslist-db@^1.0.9:
+update-browserslist-db@^1.0.10:
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/update-browserslist-db/-/update-browserslist-db-1.0.10.tgz#0f54b876545726f17d00cd9a2561e6dade943ff3"
   integrity sha512-OztqDenkfFkbSG+tRxBeAnCVPckDBcvibKd35yDONx6OU8N7sqgwc7rCbkJ/WcYtVRZ4ba68d6byhC21GFh7sQ==

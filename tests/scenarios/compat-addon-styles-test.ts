@@ -1,4 +1,4 @@
-import { expectFilesAt, ExpectFile } from '@embroider/test-support';
+import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import { appScenarios, baseAddon } from './scenarios';

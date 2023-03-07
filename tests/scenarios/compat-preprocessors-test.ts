@@ -2,7 +2,7 @@ import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { expectFilesAt, ExpectFile } from '@embroider/test-support';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';

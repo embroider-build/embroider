@@ -35,7 +35,6 @@ import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
-import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 
 export type EmberENV = unknown;
 
@@ -101,9 +100,13 @@ export interface AppAdapter<TreeNames, SpecificResolverConfig extends ResolverCo
   // The path to ember's template compiler source
   templateCompilerPath(): string;
 
-  // Path to a build-time Resolver module to be used during template
-  // compilation.
-  resolverTransform(resolverConfig: SpecificResolverConfig): Transform | undefined;
+  // extra handlebars transforms needed by the compat layer
+  hbsTransforms(resolverConfig: SpecificResolverConfig): Transform[];
+
+  // extra babel plugins needed by the compat layer. Distinct from
+  // `babelConfg()` because that's supposed to be the underlying app's original
+  // babel config.
+  jsPlugins(resolverConfig: SpecificResolverConfig): PluginItem[];
 
   // describes the special module naming rules that we need to achieve
   // compatibility
@@ -423,7 +426,9 @@ export class AppBuilder<TreeNames> {
       colocationOptions,
     ]);
 
-    babel.plugins.push(this.adjustImportsPlugin(resolverConfig));
+    for (let p of this.adapter.jsPlugins(resolverConfig)) {
+      babel.plugins.push(p);
+    }
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -434,13 +439,6 @@ export class AppBuilder<TreeNames> {
     const portable = makePortable(babel, { basedir: this.root }, this.portableHints);
     addCachablePlugin(portable.config);
     return portable;
-  }
-
-  private adjustImportsPlugin(resolverConfig: ResolverConfig): PluginItem {
-    let pluginConfig: AdjustImportsOptions = {
-      extraImports: resolverConfig.extraImports,
-    };
-    return [require.resolve('./babel-plugin-adjust-imports'), pluginConfig];
   }
 
   private insertEmberApp(
@@ -949,9 +947,8 @@ export class AppBuilder<TreeNames> {
       transforms.push(macroPlugin as any);
     }
 
-    let transform = this.adapter.resolverTransform(resolverConfig);
-    if (transform) {
-      transforms.push(transform);
+    for (let t of this.adapter.hbsTransforms(resolverConfig)) {
+      transforms.push(t);
     }
 
     return {

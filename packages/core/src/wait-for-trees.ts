@@ -71,7 +71,7 @@ function isTree(x: any): x is Node {
 }
 
 function* findTrees<NamedTrees>(trees: NamedTrees): IterableIterator<{ name: string; single?: Node; multi?: Node[] }> {
-  for (let [name, value] of Object.entries(trees)) {
+  for (let [name, value] of Object.entries(trees as Record<string, unknown>)) {
     if (Array.isArray(value)) {
       let stringTrees = value.filter(t => typeof t === 'string');
       if (stringTrees.length > 0) {

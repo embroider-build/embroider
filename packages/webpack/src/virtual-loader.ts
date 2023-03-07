@@ -1,10 +1,9 @@
-import { Resolver } from '@embroider/core';
+import { virtualContent } from '@embroider/core';
 import { LoaderContext } from 'webpack';
 
 export default function virtualLoader(this: LoaderContext<unknown>) {
-  let filename = this.loaders[this.loaderIndex].options;
-  if (typeof filename === 'string') {
-    return Resolver.virtualContent(filename);
+  if (typeof this.query === 'string' && this.query[0] === '?') {
+    return virtualContent(this.query.slice(1));
   }
-  throw new Error(`@embroider/webpack/src/virtual-loader received unexpected request: ${filename}`);
+  throw new Error(`@embroider/webpack/src/virtual-loader received unexpected request: ${this.query}`);
 }

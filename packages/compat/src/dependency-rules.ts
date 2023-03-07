@@ -1,7 +1,5 @@
-import { Package, explicitRelative, getOrCreate } from '@embroider/core';
+import { Package, getOrCreate } from '@embroider/core';
 import { satisfies } from 'semver';
-import CompatResolver from './resolver';
-import { dirname } from 'path';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -52,6 +50,15 @@ export interface TemplateRules {
   // say: `invokes: { "this.panel": ["<LightPanel/>", "<DarkPanel/>"] }`
   invokes?: {
     [path: string]: ComponentSnippet[];
+  };
+
+  // Embroider will complain if you try to use staticHelper and/or
+  // staticComponents and you have ambiguous forms that might be a component or
+  // a helper or just some data that is being rendered. For example, if a
+  // template says `{{something}}`, we can't tell if that is `<Something />` or
+  // `{{ (something) }}` or `{{this.something}}`.
+  disambiguate?: {
+    [dasherizedName: string]: 'component' | 'helper' | 'data';
   };
 }
 
@@ -152,19 +159,12 @@ export type ArgumentMapping =
 type ComponentSnippet = string;
 
 export interface PreprocessedComponentRule {
-  exterior: {
-    // rules needed by the people that invoke our component
-    yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
-    yieldsArguments: Required<ComponentRules>['yieldsArguments'];
-    argumentsAreComponents: string[];
-    safeToIgnore: boolean;
-  };
-
-  interior: {
-    // rules needed within our own template)
-    dependsOnComponents: ComponentSnippet[];
-    safeInteriorPaths: string[];
-  };
+  yieldsSafeComponents: Required<ComponentRules>['yieldsSafeComponents'];
+  yieldsArguments: Required<ComponentRules>['yieldsArguments'];
+  argumentsAreComponents: string[];
+  safeToIgnore: boolean;
+  safeInteriorPaths: string[];
+  disambiguate: Record<string, 'component' | 'helper' | 'data'>;
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -172,7 +172,6 @@ export interface PreprocessedComponentRule {
 export function preprocessComponentRule(componentRules: ComponentRules): PreprocessedComponentRule {
   let argumentsAreComponents = [];
   let safeInteriorPaths = [];
-  let dependsOnComponents = [];
   if (componentRules.acceptsComponentArguments) {
     for (let entry of componentRules.acceptsComponentArguments) {
       let name, interior;
@@ -187,27 +186,22 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
       }
       argumentsAreComponents.push(name);
       safeInteriorPaths.push(interior);
+      safeInteriorPaths.push('this.' + interior);
+      safeInteriorPaths.push('@' + name);
     }
   }
   if (componentRules.invokes) {
-    for (let [path, snippets] of Object.entries(componentRules.invokes)) {
+    for (let [path] of Object.entries(componentRules.invokes)) {
       safeInteriorPaths.push(path);
-      for (let snippet of snippets) {
-        dependsOnComponents.push(snippet);
-      }
     }
   }
   return {
-    interior: {
-      safeInteriorPaths,
-      dependsOnComponents,
-    },
-    exterior: {
-      safeToIgnore: Boolean(componentRules.safeToIgnore),
-      argumentsAreComponents,
-      yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
-      yieldsArguments: componentRules.yieldsArguments || [],
-    },
+    safeInteriorPaths,
+    safeToIgnore: Boolean(componentRules.safeToIgnore),
+    argumentsAreComponents,
+    yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
+    yieldsArguments: componentRules.yieldsArguments || [],
+    disambiguate: componentRules?.disambiguate ?? {},
   };
 }
 
@@ -227,37 +221,6 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
   let output = [];
   for (let [rule, roots] of rootsPerRule) {
     output.push(Object.assign({ roots }, rule));
-  }
-  return output;
-}
-
-export function expandModuleRules(absPath: string, moduleRules: ModuleRules, resolver: CompatResolver) {
-  let output: { absPath: string; target: string; runtimeName: string }[] = [];
-  if (moduleRules.dependsOnModules) {
-    for (let path of moduleRules.dependsOnModules) {
-      let found = resolver.resolveImport(path, absPath);
-      if (!found) {
-        throw new Error(`can't locate ${path} referred to in module rules:${JSON.stringify(moduleRules, null, 2)}`);
-      }
-      output.push({
-        absPath,
-        target: explicitRelative(dirname(absPath), found.absPath),
-        runtimeName: found.runtimeName,
-      });
-    }
-  }
-  if (moduleRules.dependsOnComponents) {
-    for (let snippet of moduleRules.dependsOnComponents) {
-      let found = resolver.resolveComponentSnippet(snippet, moduleRules, absPath);
-      if (found.jsModule) {
-        let { absPath: target, runtimeName } = found.jsModule;
-        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
-      }
-      if (found.hbsModule) {
-        let { absPath: target, runtimeName } = found.hbsModule;
-        output.push({ absPath, target: explicitRelative(dirname(absPath), target), runtimeName });
-      }
-    }
   }
   return output;
 }

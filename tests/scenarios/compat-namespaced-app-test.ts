@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
-import { expectFilesAt, ExpectFile } from '@embroider/test-support';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 
 appScenarios

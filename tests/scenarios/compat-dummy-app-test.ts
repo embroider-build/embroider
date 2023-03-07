@@ -1,4 +1,5 @@
-import { ExpectFile, expectFilesAt, Rebuilder } from '@embroider/test-support';
+import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { Rebuilder } from '@embroider/test-support';
 import { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';

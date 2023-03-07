@@ -7,7 +7,7 @@ import { readJSONSync } from 'fs-extra';
 import { CompatResolverOptions } from './resolver-transform';
 import { Resolver } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
-import { ModuleRules, TemplateRules } from './dependency-rules';
+import { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 
 export type Options = { appRoot: string };
 
@@ -16,15 +16,23 @@ interface State {
 }
 
 type BabelTypes = typeof t;
+
+interface ExtraImports {
+  [key: string]: {
+    dependsOnComponents?: string[]; // these are already standardized in dasherized form
+    dependsOnModules?: string[];
+  };
+}
+
 type InternalConfig = {
   resolverOptions: CompatResolverOptions;
   resolver: Resolver;
-  extraImports: {
-    [absPath: string]: {
-      dependsOnComponents?: string[]; // these are already standardized in dasherized form
-      dependsOnModules?: string[];
-    };
-  };
+
+  // rule-based extra dependencies, indexed by filename
+  extraImports: ExtraImports;
+
+  // rule-based extra dependencies, indexed by classical component name
+  componentExtraImports: ExtraImports;
 };
 
 export default function main(babel: typeof Babel) {
@@ -39,6 +47,7 @@ export default function main(babel: typeof Babel) {
       resolverOptions,
       resolver: new Resolver(resolverOptions),
       extraImports: preprocessExtraImports(resolverOptions),
+      componentExtraImports: preprocessComponentExtraImports(resolverOptions),
     };
     return cached;
   }
@@ -61,35 +70,52 @@ export default function main(babel: typeof Babel) {
 function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
   let filename: string = path.hub.file.opts.filename;
   let entry = config.extraImports[filename];
+  let adder = new ImportUtil(t, path);
   if (entry) {
-    let adder = new ImportUtil(t, path);
-    if (entry.dependsOnModules) {
-      for (let target of entry.dependsOnModules) {
-        path.node.body.unshift(amdDefine(t, adder, path, target, target));
-      }
+    applyRules(t, path, entry, adder, config, filename);
+  }
+
+  let componentName = config.resolver.reverseComponentLookup(filename);
+  if (componentName) {
+    let rules = config.componentExtraImports[componentName];
+    if (rules) {
+      applyRules(t, path, rules, adder, config, filename);
     }
-    if (entry.dependsOnComponents) {
-      for (let dasherizedName of entry.dependsOnComponents) {
-        let pkg = config.resolver.owningPackage(filename);
-        if (pkg) {
-          let owningEngine = config.resolver.owningEngine(pkg);
-          if (owningEngine) {
-            path.node.body.unshift(
-              amdDefine(
-                t,
-                adder,
-                path,
-                `#embroider_compat/components/${dasherizedName}`,
-                `${owningEngine.packageName}/components/${dasherizedName}`
-              )
-            );
-          }
+  }
+}
+
+function applyRules(
+  t: BabelTypes,
+  path: NodePath<t.Program>,
+  rules: ExtraImports[string],
+  adder: ImportUtil,
+  config: InternalConfig,
+  filename: string
+) {
+  if (rules.dependsOnModules) {
+    for (let target of rules.dependsOnModules) {
+      path.node.body.unshift(amdDefine(t, adder, path, target, target));
+    }
+  }
+  if (rules.dependsOnComponents) {
+    for (let dasherizedName of rules.dependsOnComponents) {
+      let pkg = config.resolver.owningPackage(filename);
+      if (pkg) {
+        let owningEngine = config.resolver.owningEngine(pkg);
+        if (owningEngine) {
+          path.node.body.unshift(
+            amdDefine(
+              t,
+              adder,
+              path,
+              `#embroider_compat/components/${dasherizedName}`,
+              `${owningEngine.packageName}/components/${dasherizedName}`
+            )
+          );
         }
       }
     }
   }
-
-  //let componentName = config.resolver.reverseComponentLookup(filename);
 }
 
 function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, target: string, runtimeName: string) {
@@ -102,8 +128,8 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
   );
 }
 
-function preprocessExtraImports(config: CompatResolverOptions): InternalConfig['extraImports'] {
-  let extraImports: InternalConfig['extraImports'] = {};
+function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
+  let extraImports: ExtraImports = {};
   for (let rule of config.activePackageRules) {
     if (rule.addonModules) {
       for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
@@ -133,6 +159,37 @@ function preprocessExtraImports(config: CompatResolverOptions): InternalConfig['
   return extraImports;
 }
 
+function preprocessComponentExtraImports(config: CompatResolverOptions): ExtraImports {
+  let extraImports: ExtraImports = {};
+  for (let rule of config.activePackageRules) {
+    if (rule.components) {
+      for (let [componentName, rules] of Object.entries(rule.components)) {
+        if (rules.invokes) {
+          extraImports[dasherizeComponent(componentName, rule)] = {
+            dependsOnComponents: Object.values(rules.invokes)
+              .flat()
+              .map(c => dasherizeComponent(c, rules)),
+          };
+        }
+      }
+    }
+  }
+  return extraImports;
+}
+
+function dasherizeComponent(
+  componentSnippet: string,
+  rules: ModuleRules | ComponentRules | ActivePackageRules
+): string {
+  let d = snippetToDasherizedName(componentSnippet);
+  if (!d) {
+    throw new Error(
+      `unable to parse component snippet "${componentSnippet}" from rule ${JSON.stringify(rules, null, 2)}`
+    );
+  }
+  return d;
+}
+
 function expandDependsOnRules(
   root: string,
   filename: string,
@@ -145,13 +202,7 @@ function expandDependsOnRules(
       entry.dependsOnModules = rules.dependsOnModules;
     }
     if (rules.dependsOnComponents) {
-      entry.dependsOnComponents = rules.dependsOnComponents.map(c => {
-        let d = snippetToDasherizedName(c);
-        if (!d) {
-          throw new Error(`unable to parse component snippet "${c}" from rule ${JSON.stringify(rules, null, 2)}`);
-        }
-        return d;
-      });
+      entry.dependsOnComponents = rules.dependsOnComponents.map(c => dasherizeComponent(c, rules));
     }
     extraImports[join(root, filename)] = entry;
   }

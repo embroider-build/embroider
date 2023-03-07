@@ -12,7 +12,7 @@ import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
-const { module: Qmodule, test, skip } = QUnit;
+const { module: Qmodule, test } = QUnit;
 
 let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
   renameApp(app, 'my-app');
@@ -467,7 +467,7 @@ stage2Scenarios
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
 
-      skip('no audit issues', function () {
+      test('no audit issues', function () {
         // among other things, this is asserting that dynamicComponent in
         // hello-world.hbs is not an error because the rules covered it
         expectAudit.hasNoFindings();
@@ -511,7 +511,7 @@ stage2Scenarios
           .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
       });
 
-      skip('addon/hello-world.js', function () {
+      test('addon/hello-world.js', function () {
         let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/synthetic-import-1/
@@ -521,7 +521,7 @@ stage2Scenarios
         );
       });
 
-      skip('app/hello-world.js', function () {
+      test('app/hello-world.js', function () {
         let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
         assertFile.matches(
           /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/

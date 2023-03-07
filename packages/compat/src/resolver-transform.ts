@@ -10,7 +10,7 @@ import {
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
-import { join } from 'path';
+import { join, sep } from 'path';
 import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import { ResolverOptions as CoreResolverOptions, Resolver } from '@embroider/core';
@@ -190,8 +190,8 @@ class TemplateResolver implements ASTPlugin {
 
   private humanReadableFile(file: string) {
     let { appRoot } = this.config;
-    if (!appRoot.endsWith('/')) {
-      appRoot += '/';
+    if (!appRoot.endsWith(sep)) {
+      appRoot += sep;
     }
     if (file.startsWith(appRoot)) {
       return file.slice(appRoot.length);

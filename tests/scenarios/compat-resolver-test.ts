@@ -2,7 +2,7 @@ import { AppMeta } from '@embroider/shared-internals';
 import { Transpiler } from '@embroider/test-support';
 import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { outputFileSync } from 'fs-extra';
-import { resolve } from 'path';
+import { resolve, sep } from 'path';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 
 import QUnit from 'qunit';
@@ -1120,7 +1120,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').failsToTransform(
-          'Unsafe dynamic component: this.which in templates/application.hbs'
+          `Unsafe dynamic component: this.which in templates${sep}application.hbs`
         );
       });
 

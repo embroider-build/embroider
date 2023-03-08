@@ -4,7 +4,7 @@ import {
   extensionsPattern,
   packageName as getPackageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, sep } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
@@ -72,7 +72,7 @@ export interface ModuleRequest {
 }
 
 class NodeModuleRequest implements ModuleRequest {
-  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) {}
+  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) { }
   alias(specifier: string): this {
     return new NodeModuleRequest(specifier, this.fromFile) as this;
   }
@@ -97,7 +97,7 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  constructor(private options: Options) {}
+  constructor(private options: Options) { }
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
@@ -822,5 +822,9 @@ function unrelativize(pkg: Package, request: ModuleRequest) {
   if (pkg.packageJSON.exports) {
     throw new Error(`unsupported: engines cannot use package.json exports`);
   }
-  return resolve(dirname(request.fromFile), request.specifier).replace(pkg.root, pkg.name);
+  let result = resolve(dirname(request.fromFile), request.specifier).replace(pkg.root, pkg.name);
+  if (sep !== '/') {
+    result = result.split(sep).join('/');
+  }
+  return result;
 }

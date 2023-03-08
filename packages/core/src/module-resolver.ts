@@ -4,13 +4,12 @@ import {
   extensionsPattern,
   packageName as getPackageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
 import { virtualExternalModule, virtualPairComponent, virtualContent } from './virtual-content';
-import { unrelativize } from '@embroider/shared-internals';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -622,7 +621,7 @@ export class Resolver {
         let appJSMatch = this.searchAppTree(
           request,
           withinEngine,
-          unrelativize(pkg, request.specifier, request.fromFile)
+          explicitRelative(pkg.root, resolve(dirname(fromFile), specifier))
         );
         if (appJSMatch) {
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
@@ -659,7 +658,7 @@ export class Resolver {
 
     let targetingEngine = this.engineConfig(packageName);
     if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier);
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
       }
@@ -716,8 +715,8 @@ export class Resolver {
         continue;
       }
       for (let [inAppName, inAddonName] of Object.entries(appJS)) {
-        if (targetModule === withoutJSExt(posix.join(engine.packageName, inAppName))) {
-          return request.alias(inAddonName).rehome(posix.join(addon.root, 'package.json'));
+        if (targetModule === withoutJSExt(inAppName)) {
+          return request.alias(inAddonName).rehome(resolve(addon.root, 'package.json'));
         }
       }
     }

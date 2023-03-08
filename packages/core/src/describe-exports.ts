@@ -3,16 +3,12 @@ import traverse, { NodePath } from '@babel/traverse';
 import { types as t } from '@babel/core';
 import assertNever from 'assert-never';
 
-export function describeExports(
-  code: string,
-  babelParserConfig: TransformOptions
-): { names: Set<string>; hasDefaultExport: boolean } {
+export function describeExports(code: string, babelParserConfig: TransformOptions): { names: Set<string> } {
   let ast = parse(code, babelParserConfig);
   if (!ast || ast.type !== 'File') {
     throw new Error(`bug in embroider/core describe-exports`);
   }
   let names: Set<string> = new Set();
-  let hasDefaultExport = false;
 
   traverse(ast, {
     ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>) {
@@ -22,11 +18,7 @@ export function describeExports(
           case 'ExportNamespaceSpecifier':
             const name = spec.exported.type === 'Identifier' ? spec.exported.name : spec.exported.value;
 
-            if (name === 'default') {
-              hasDefaultExport = true;
-            } else {
-              names.add(name);
-            }
+            names.add(name);
             break;
           case 'ExportDefaultSpecifier':
             // this is in the types but was never standardized
@@ -42,10 +34,15 @@ export function describeExports(
           }
         }
       }
+      if (t.isFunctionDeclaration(path.node.declaration) || t.isClassDeclaration(path.node.declaration)) {
+        if (t.isIdentifier(path.node.declaration.id)) {
+          names.add(path.node.declaration.id.name);
+        }
+      }
     },
     ExportDefaultDeclaration(_path: NodePath<t.ExportDefaultDeclaration>) {
-      hasDefaultExport = true;
+      names.add('default');
     },
   });
-  return { names, hasDefaultExport };
+  return { names };
 }

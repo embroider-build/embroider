@@ -198,8 +198,13 @@ function switcher(
   babelParserConfig: TransformOptions,
   browserSource: string
 ): string {
-  let { names, hasDefaultExport } = describeExports(browserSource, babelParserConfig);
-  return switcherTemplate({ fastbootDest, browserDest, names: [...names], hasDefaultExport });
+  let { names } = describeExports(browserSource, babelParserConfig);
+  return switcherTemplate({
+    fastbootDest,
+    browserDest,
+    names: [...names].filter(name => name !== 'default'),
+    hasDefaultExport: names.has('default'),
+  });
 }
 
 interface Source extends InputTree {

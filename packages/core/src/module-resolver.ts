@@ -9,7 +9,16 @@ import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/s
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
-import { virtualExternalModule, virtualPairComponent, virtualContent } from './virtual-content';
+import {
+  virtualExternalModule,
+  virtualPairComponent,
+  virtualContent,
+  fastbootSwitch,
+  decodeFastbootSwitch,
+} from './virtual-content';
+import { Memoize } from 'typescript-memoize';
+import { describeExports } from './describe-exports';
+import { readFileSync } from 'fs';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -60,6 +69,39 @@ interface EngineConfig {
   root: string;
 }
 
+type MergeEntry =
+  | {
+      type: 'app-only';
+      'app-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    }
+  | {
+      type: 'fastboot-only';
+      'fastboot-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    }
+  | {
+      type: 'both';
+      'app-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+      'fastboot-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    };
+
+type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
+
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
 export interface ModuleRequest {
@@ -108,6 +150,7 @@ export class Resolver {
       return logTransition('early exit', request);
     }
 
+    request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleRenaming(request);
     return this.preHandleExternal(request);
@@ -238,6 +281,35 @@ export class Resolver {
       }
       return owning;
     }
+  }
+
+  private handleFastbootCompat<R extends ModuleRequest>(request: R): R {
+    let match = decodeFastbootSwitch(request.fromFile);
+    if (!match) {
+      return request;
+    }
+
+    let section: 'app-js' | 'fastboot-js' | undefined;
+    if (request.specifier === './browser') {
+      section = 'app-js';
+    } else if (request.specifier === './fastboot') {
+      section = 'fastboot-js';
+    }
+
+    if (!section) {
+      return request;
+    }
+
+    let pkg = this.owningPackage(match.filename);
+    if (pkg) {
+      let rel = withoutJSExt(explicitRelative(pkg.root, match.filename));
+      let entry = this.mergeMap.get(pkg.root)?.get(rel);
+      if (entry?.type === 'both') {
+        return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+      }
+    }
+
+    return request;
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
@@ -399,6 +471,95 @@ export class Resolver {
 
   private engineConfig(packageName: string): EngineConfig | undefined {
     return this.options.engines.find(e => e.packageName === packageName);
+  }
+
+  // This is where we figure out how all the classic treeForApp merging bottoms
+  // out.
+  @Memoize()
+  private get mergeMap(): MergeMap {
+    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let result: MergeMap = new Map();
+    for (let engine of this.options.engines) {
+      let engineModules: Map<string, MergeEntry> = new Map();
+      for (let addonConfig of engine.activeAddons) {
+        let addon = packageCache.get(addonConfig.root);
+        if (!addon.isV2Addon()) {
+          continue;
+        }
+
+        let appJS = addon.meta['app-js'];
+        if (appJS) {
+          for (let [inEngineName, inAddonName] of Object.entries(appJS)) {
+            inEngineName = withoutJSExt(inEngineName);
+            let prevEntry = engineModules.get(inEngineName);
+            switch (prevEntry?.type) {
+              case undefined:
+                engineModules.set(inEngineName, {
+                  type: 'app-only',
+                  'app-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                });
+                break;
+              case 'app-only':
+              case 'both':
+                // first match wins, so this one is shadowed
+                break;
+              case 'fastboot-only':
+                engineModules.set(inEngineName, {
+                  type: 'both',
+                  'app-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                  'fastboot-js': prevEntry['fastboot-js'],
+                });
+                break;
+            }
+          }
+        }
+
+        let fastbootJS = addon.meta['fastboot-js'];
+        if (fastbootJS) {
+          for (let [inEngineName, inAddonName] of Object.entries(fastbootJS)) {
+            inEngineName = withoutJSExt(inEngineName);
+            let prevEntry = engineModules.get(inEngineName);
+            switch (prevEntry?.type) {
+              case undefined:
+                engineModules.set(inEngineName, {
+                  type: 'fastboot-only',
+                  'fastboot-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                });
+                break;
+              case 'fastboot-only':
+              case 'both':
+                // first match wins, so this one is shadowed
+                break;
+              case 'app-only':
+                engineModules.set(inEngineName, {
+                  type: 'both',
+                  'fastboot-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                  'app-js': prevEntry['app-js'],
+                });
+                break;
+            }
+          }
+        }
+      }
+      result.set(engine.root, engineModules);
+    }
+    return result;
   }
 
   owningEngine(pkg: Package) {
@@ -702,23 +863,29 @@ export class Resolver {
     engine: EngineConfig,
     inEngineSpecifier: string
   ): R | undefined {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
-    let targetModule = withoutJSExt(inEngineSpecifier);
-
-    for (let addonConfig of engine.activeAddons) {
-      let addon = packageCache.get(addonConfig.root);
-      if (!addon.isV2Addon()) {
-        continue;
-      }
-      let appJS = addon.meta['app-js'];
-      if (!appJS) {
-        continue;
-      }
-      for (let [inAppName, inAddonName] of Object.entries(appJS)) {
-        if (targetModule === withoutJSExt(inAppName)) {
-          return request.alias(inAddonName).rehome(resolve(addon.root, 'package.json'));
+    inEngineSpecifier = withoutJSExt(inEngineSpecifier);
+    let entry = this.mergeMap.get(engine.root)?.get(inEngineSpecifier);
+    switch (entry?.type) {
+      case undefined:
+        return undefined;
+      case 'app-only':
+        return request.alias(entry['app-js'].localPath).rehome(resolve(entry['app-js'].packageRoot, 'package.json'));
+      case 'fastboot-only':
+        return request
+          .alias(entry['fastboot-js'].localPath)
+          .rehome(resolve(entry['fastboot-js'].packageRoot, 'package.json'));
+      case 'both':
+        let foundAppJS = this.nodeResolve(
+          entry['app-js'].localPath,
+          resolve(entry['app-js'].packageRoot, 'package.json')
+        );
+        if (foundAppJS.type !== 'real') {
+          throw new Error(
+            `${entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
+          );
         }
-      }
+        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
+        return request.virtualize(fastbootSwitch(request.specifier, request.fromFile, names));
     }
   }
 

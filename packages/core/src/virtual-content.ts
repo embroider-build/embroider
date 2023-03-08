@@ -1,4 +1,4 @@
-import { dirname, basename } from 'path';
+import { dirname, basename, resolve } from 'path';
 import { explicitRelative } from '.';
 import { compile } from './js-handlebars';
 
@@ -16,6 +16,12 @@ export function virtualContent(filename: string): string {
   if (match) {
     return pairedComponentShim(match);
   }
+
+  let fb = decodeFastbootSwitch(filename);
+  if (fb) {
+    return fastbootSwitchTemplate(fb);
+  }
+
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
@@ -88,3 +94,42 @@ function decodeVirtualPairComponent(
     debugName: basename(relativeHBSModule).replace(/\.(js|hbs)$/, ''),
   };
 }
+
+const fastbootSwitchSuffix = '/embroider_fastboot_switch';
+const fastbootSwitchPattern = /(?<original>.+)\/embroider_fastboot_switch(?:\?names=(?<names>.+))?$/;
+export function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>): string {
+  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
+  if (names.size > 0) {
+    return `${filename}?names=${[...names].join(',')}`;
+  } else {
+    return filename;
+  }
+}
+
+export function decodeFastbootSwitch(filename: string) {
+  let match = fastbootSwitchPattern.exec(filename);
+  if (match) {
+    let names = match.groups?.names?.split(',') ?? [];
+    return {
+      names: names.filter(name => name !== 'default'),
+      hasDefaultExport: names.includes('default'),
+      filename: match.groups!.original,
+    };
+  }
+}
+
+const fastbootSwitchTemplate = compile(`
+import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+let mod;
+if (macroCondition(getGlobalConfig().fastboot?.isRunning)){
+  mod = importSync('./fastboot');
+} else {
+  mod = importSync('./browser');
+}
+{{#if hasDefaultExport}}
+export default mod.default;
+{{/if}}
+{{#each names as |name|}}
+export const {{name}} = mod.{{name}};
+{{/each}}
+`) as (params: { names: string[]; hasDefaultExport: boolean }) => string;

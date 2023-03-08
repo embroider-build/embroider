@@ -13,5 +13,8 @@
     "version": 2,
     "app-js": {},
     "main": "addon-main.js"
+  },
+  "exports": {
+    "./*": "./*"
   }
 }

@@ -72,7 +72,7 @@ export interface ModuleRequest {
 }
 
 class NodeModuleRequest implements ModuleRequest {
-  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) { }
+  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) {}
   alias(specifier: string): this {
     return new NodeModuleRequest(specifier, this.fromFile) as this;
   }
@@ -97,7 +97,7 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  constructor(private options: Options) { }
+  constructor(private options: Options) {}
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {

@@ -1,4 +1,4 @@
-import { relative, isAbsolute, dirname, join, basename, resolve } from 'path';
+import { relative, isAbsolute, dirname, join, basename, resolve, sep } from 'path';
 import type Package from './package';
 
 // by "explicit", I mean that we want "./local/thing" instead of "local/thing"
@@ -33,7 +33,11 @@ export function extensionsPattern(extensions: string[]): RegExp {
 
 export function unrelativize(pkg: Package, specifier: string, fromFile: string) {
   if (pkg.packageJSON.exports) {
-    throw new Error(`unsupported: classic ember packages cannot use package.json exports`);
+    throw new Error(`unsupported: engines cannot use package.json exports`);
   }
-  return resolve(dirname(fromFile), specifier).replace(pkg.root, pkg.name);
+  let result = resolve(dirname(fromFile), specifier).replace(pkg.root, pkg.name);
+  if (sep !== '/') {
+    result = result.split(sep).join('/');
+  }
+  return result;
 }

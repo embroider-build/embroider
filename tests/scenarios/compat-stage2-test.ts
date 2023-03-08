@@ -12,7 +12,7 @@ import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
-const { module: Qmodule, test, skip } = QUnit;
+const { module: Qmodule, test } = QUnit;
 
 let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
   renameApp(app, 'my-app');
@@ -467,7 +467,7 @@ stage2Scenarios
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
 
-      skip('no audit issues', function () {
+      test('no audit issues', function () {
         // among other things, this is asserting that dynamicComponent in
         // hello-world.hbs is not an error because the rules covered it
         expectAudit.hasNoFindings();
@@ -511,21 +511,36 @@ stage2Scenarios
           .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
       });
 
-      skip('addon/hello-world.js', function () {
-        let assertFile = expectFile('node_modules/my-addon/components/hello-world.js').transform(build.transpile);
-        assertFile.matches(
-          /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/synthetic-import-1/
-        );
-        assertFile.matches(
-          /window\.define\(["']my-app\/templates\/components\/second-choice["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/\.\.\/\.\.\/templates\/components\/second-choice\.hbs["']/
-        );
+      test('addon/hello-world.js', function () {
+        expectAudit.module('./node_modules/my-addon/components/hello-world.js').codeEquals(`
+        window.define("my-app/components/second-choice", function () {
+          return importSync("#embroider_compat/components/second-choice");
+        });
+        window.define("my-addon/synthetic-import-1", function () {
+          return importSync("../synthetic-import-1");
+        });
+        import { importSync } from "@embroider/macros";
+        import Component from '@ember/component';
+        import layout from '../templates/components/hello-world';
+        import computed from '@ember/object/computed';
+        import somethingExternal from 'not-a-resolvable-package';
+        export default Component.extend({
+          dynamicComponentName: computed('useDynamic', function () {
+            return this.useDynamic || 'default-dynamic';
+          }),
+          layout
+        });
+        `);
       });
 
-      skip('app/hello-world.js', function () {
-        let assertFile = expectFile('./components/hello-world.js').transform(build.transpile);
-        assertFile.matches(
-          /window\.define\(["']\my-addon\/synthetic-import-1["'],\s*function\s\(\)\s*\{\s*return\s+esc\(require\(["']\.\.\/node_modules\/my-addon\/synthetic-import-1/
-        );
+      test('app/hello-world.js', function () {
+        expectAudit.module('./components/hello-world.js').codeEquals(`
+          window.define("my-addon/synthetic-import-1", function () {
+            return importSync("my-addon/synthetic-import-1");
+          });
+          import { importSync } from '@embroider/macros';
+          export { default } from 'my-addon/components/hello-world';
+        `);
 
         expectAudit
           .module('./components/hello-world.js')

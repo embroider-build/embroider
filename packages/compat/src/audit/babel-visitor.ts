@@ -41,10 +41,10 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
   let sawDefine: boolean = false;
   /* eslint-enable @typescript-eslint/no-inferrable-types */
 
-  let ast = transformSync(rawSource, Object.assign({ filename: filename }, babelConfig))!.ast!;
+  let { ast, code } = transformSync(rawSource, Object.assign({ filename: filename }, babelConfig))!;
   let saveCodeFrame = frames.forSource(rawSource);
 
-  traverse(ast, {
+  traverse(ast!, {
     Identifier(path: NodePath<t.Identifier>) {
       if (path.node.name === 'module' && isFreeVariable(path)) {
         sawModule = true;
@@ -154,7 +154,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
 
   let isCJS = imports.length === 0 && exports.size === 0 && (sawModule || sawExports);
   let isAMD = imports.length === 0 && exports.size === 0 && sawDefine;
-  return { imports, exports, isCJS, isAMD, problems };
+  return { imports, exports, isCJS, isAMD, problems, transpiledContent: code! };
 }
 
 export class CodeFrameStorage {

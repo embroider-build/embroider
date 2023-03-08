@@ -308,6 +308,16 @@ class TemplateResolver implements ASTPlugin {
           let processedRules = preprocessComponentRule(rules);
           let dasherizedName = this.standardDasherize(snippet, rule);
           components.set(dasherizedName, processedRules);
+          if (rules.layout) {
+            for (let root of rule.roots) {
+              if (rules.layout.addonPath) {
+                files.set(join(root, rules.layout.addonPath), processedRules);
+              }
+              if (rules.layout.appPath) {
+                files.set(join(root, rules.layout.appPath), processedRules);
+              }
+            }
+          }
         }
       }
       if (rule.appTemplates) {

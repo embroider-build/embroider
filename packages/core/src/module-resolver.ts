@@ -4,12 +4,13 @@ import {
   extensionsPattern,
   packageName as getPackageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix, sep } from 'path';
+import { dirname, resolve, posix } from 'path';
 import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
 import { virtualExternalModule, virtualPairComponent, virtualContent } from './virtual-content';
+import { unrelativize } from '@embroider/shared-internals';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -618,7 +619,11 @@ export class Resolver {
       if (withinEngine) {
         // it's a relative import inside an engine (which also means app), which
         // means we may need to satisfy the request via app tree merging.
-        let appJSMatch = this.searchAppTree(request, withinEngine, unrelativize(pkg, request));
+        let appJSMatch = this.searchAppTree(
+          request,
+          withinEngine,
+          unrelativize(pkg, request.specifier, request.fromFile)
+        );
         if (appJSMatch) {
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
         } else {
@@ -816,15 +821,4 @@ function external<R extends ModuleRequest>(label: string, request: R, specifier:
 // must remove.
 function withoutJSExt(filename: string): string {
   return filename.replace(/\.js$/, '');
-}
-
-function unrelativize(pkg: Package, request: ModuleRequest) {
-  if (pkg.packageJSON.exports) {
-    throw new Error(`unsupported: engines cannot use package.json exports`);
-  }
-  let result = resolve(dirname(request.fromFile), request.specifier).replace(pkg.root, pkg.name);
-  if (sep !== '/') {
-    result = result.split(sep).join('/');
-  }
-  return result;
 }

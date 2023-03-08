@@ -10,7 +10,7 @@ import { Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { PackageRules } from '@embroider/compat';
 
-const { module: Qmodule, test, skip } = QUnit;
+const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('compat-resolver-test', app => {
@@ -1887,7 +1887,7 @@ Scenarios.fromProject(() => new Project())
         );
       });
 
-      skip('respects invokes rule on a component', async function () {
+      test('respects invokes rule on a component', async function () {
         givenFiles({
           'components/my-thing.hbs': `{{component this.which}}`,
         });
@@ -1906,9 +1906,9 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('components/my-thing.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return _ref0;
+            return importSync("#embroider_compat/components/alpha");
           });
-          import _ref0 from "#embroider_compat/components/alpha";
+          import { importSync } from "@embroider/macros";
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{component this.which}}", {
             moduleName: "my-app/components/my-thing.hbs"

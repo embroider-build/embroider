@@ -5,7 +5,7 @@ import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
 import { readJSONSync } from 'fs-extra';
 import { CompatResolverOptions } from './resolver-transform';
-import { Resolver } from '@embroider/core';
+import { Package, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
 import { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 
@@ -92,27 +92,32 @@ function applyRules(
   config: InternalConfig,
   filename: string
 ) {
+  let lookup = lazyPackageLookup(config, filename);
   if (rules.dependsOnModules) {
     for (let target of rules.dependsOnModules) {
-      path.node.body.unshift(amdDefine(t, adder, path, target, target));
+      if (lookup.owningPackage) {
+        let runtimeName: string;
+        if (packageName(target)) {
+          runtimeName = target;
+        } else {
+          runtimeName = unrelativize(lookup.owningPackage, target, filename);
+        }
+        path.node.body.unshift(amdDefine(t, adder, path, target, runtimeName));
+      }
     }
   }
   if (rules.dependsOnComponents) {
     for (let dasherizedName of rules.dependsOnComponents) {
-      let pkg = config.resolver.owningPackage(filename);
-      if (pkg) {
-        let owningEngine = config.resolver.owningEngine(pkg);
-        if (owningEngine) {
-          path.node.body.unshift(
-            amdDefine(
-              t,
-              adder,
-              path,
-              `#embroider_compat/components/${dasherizedName}`,
-              `${owningEngine.packageName}/components/${dasherizedName}`
-            )
-          );
-        }
+      if (lookup.owningEngine) {
+        path.node.body.unshift(
+          amdDefine(
+            t,
+            adder,
+            path,
+            `#embroider_compat/components/${dasherizedName}`,
+            `${lookup.owningEngine.packageName}/components/${dasherizedName}`
+          )
+        );
       }
     }
   }
@@ -157,6 +162,29 @@ function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
     }
   }
   return extraImports;
+}
+
+function lazyPackageLookup(config: InternalConfig, filename: string) {
+  let owningPackage: { result: Package | undefined } | undefined;
+  let owningEngine: { result: ReturnType<Resolver['owningEngine']> | undefined } | undefined;
+  return {
+    get owningPackage() {
+      if (!owningPackage) {
+        owningPackage = { result: config.resolver.owningPackage(filename) };
+      }
+      return owningPackage.result;
+    },
+    get owningEngine() {
+      if (!owningEngine) {
+        owningEngine = { result: undefined };
+        let p = this.owningPackage;
+        if (p) {
+          owningEngine.result = config.resolver.owningEngine(p);
+        }
+      }
+      return owningEngine.result;
+    },
+  };
 }
 
 function preprocessComponentExtraImports(config: CompatResolverOptions): ExtraImports {

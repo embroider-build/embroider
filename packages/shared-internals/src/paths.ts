@@ -1,4 +1,5 @@
-import { relative, isAbsolute, dirname, join, basename } from 'path';
+import { relative, isAbsolute, dirname, join, basename, resolve } from 'path';
+import type Package from './package';
 
 // by "explicit", I mean that we want "./local/thing" instead of "local/thing"
 // because
@@ -28,4 +29,11 @@ export function explicitRelative(fromDir: string, toFile: string) {
 // in those extensions.
 export function extensionsPattern(extensions: string[]): RegExp {
   return new RegExp(`(${extensions.map(e => `${e.replace('.', '\\.')}`).join('|')})$`, 'i');
+}
+
+export function unrelativize(pkg: Package, specifier: string, fromFile: string) {
+  if (pkg.packageJSON.exports) {
+    throw new Error(`unsupported: classic ember packages cannot use package.json exports`);
+  }
+  return resolve(dirname(fromFile), specifier).replace(pkg.root, pkg.name);
 }

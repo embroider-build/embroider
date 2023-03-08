@@ -67,11 +67,10 @@ interface InternalModule {
     isCJS: boolean;
     isAMD: boolean;
     dependencies: string[];
+    transpiledContent: string | Buffer;
   };
 
   resolved?: Map<string, string | ResolutionFailure>;
-
-  content?: string | Buffer;
 
   linked?: {
     exports: Set<string>;
@@ -140,7 +139,7 @@ export class AuditResults {
             }))
           : [],
         exports: module.linked?.exports ? [...module.linked.exports] : [],
-        content: module.content ? module.content.toString() : '',
+        content: module.parsed?.transpiledContent ? module.parsed?.transpiledContent.toString() : '',
       };
       results.modules[explicitRelative(baseDir, filename)] = publicModule;
     }
@@ -332,7 +331,6 @@ export class Audit {
       } else {
         module.parsed = visitResult;
         module.resolved = await this.resolveDeps(visitResult.dependencies, filename);
-        module.content = content;
       }
     }
   }
@@ -479,6 +477,7 @@ export class Audit {
       isCJS: false,
       isAMD: false,
       dependencies,
+      transpiledContent: content,
     };
   }
 
@@ -504,6 +503,7 @@ export class Audit {
         isCJS: result.isCJS,
         isAMD: result.isAMD,
         dependencies: result.imports.map(i => i.source),
+        transpiledContent: result.transpiledContent,
       };
     } catch (err) {
       if (['BABEL_PARSE_ERROR', 'BABEL_TRANSFORM_ERROR'].includes(err.code)) {

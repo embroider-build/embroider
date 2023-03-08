@@ -316,23 +316,21 @@ describe('audit', function () {
     expect(Object.keys(result.modules).length).toBe(3);
   });
 
-  test.skip('finds missing component in standalone hbs', async function () {
+  test('finds missing component in standalone hbs', async function () {
     merge(app.files, {
       'hello.hbs': `<NoSuchThing />`,
     });
     let result = await audit();
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
-        message: 'Missing component',
-        detail: 'NoSuchThing',
+        message: 'unable to resolve dependency',
+        detail: '#embroider_compat/components/no-such-thing',
         filename: './hello.hbs',
       },
     ]);
-    expect(result.findings[0].codeFrame).toBeDefined();
-    expect(Object.keys(result.modules).length).toBe(3);
   });
 
-  test.skip('finds missing component in inline hbs', async function () {
+  test('finds missing component in inline hbs', async function () {
     merge(app.files, {
       'app.js': `
         import { hbs } from 'ember-cli-htmlbars';
@@ -342,16 +340,14 @@ describe('audit', function () {
     let result = await audit();
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
-        message: 'Missing component',
-        detail: 'NoSuchThing',
+        message: 'unable to resolve dependency',
+        detail: '#embroider_compat/components/no-such-thing',
         filename: './app.js',
       },
     ]);
-    expect(result.findings[0].codeFrame).toBeDefined();
-    expect(Object.keys(result.modules).length).toBe(2);
   });
 
-  test.skip('traverse through template even when it has some errors', async function () {
+  test('traverse through template even when it has some errors', async function () {
     merge(app.files, {
       'hello.hbs': `<NoSuchThing /><Second />`,
       components: {
@@ -363,12 +359,12 @@ describe('audit', function () {
     let result = await audit();
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
-        message: 'Missing component',
-        detail: 'NoSuchThing',
+        message: 'unable to resolve dependency',
+        detail: '#embroider_compat/components/no-such-thing',
         filename: './hello.hbs',
       },
     ]);
-    expect(Object.keys(result.modules).length).toBe(4);
+    expect(Object.keys(result.modules)).toContain('./components/second.js');
   });
 
   test('failure to parse JS is reported and does not cause cascading errors', async function () {

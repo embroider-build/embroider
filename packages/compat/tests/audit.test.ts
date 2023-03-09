@@ -47,7 +47,6 @@ describe('audit', function () {
           root: app.baseDir,
         },
       ],
-      relocatedFiles: {},
       resolvableExtensions,
     };
 

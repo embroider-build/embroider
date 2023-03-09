@@ -72,7 +72,6 @@ Scenarios.fromProject(() => new Project())
             activeAddons: {},
             renameModules: {},
             renamePackages: {},
-            relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,
             engines: [

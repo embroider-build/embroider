@@ -16,13 +16,8 @@ export default class AppDiffer {
   private sources: Source[];
   private firstFastbootTree = Infinity;
 
-  // maps from each filename in the app to the original directory from whence it
-  // came, if it came from an addon. The mapping allows us to preserve
-  // resolution semantics so that each of the app files can still resolve
-  // relative to where it was authored.
-  //
-  // files authored within the app map to null
-  readonly files: Map<string, string | null> = new Map();
+  // set of filenames logically located in the app
+  readonly files: Set<string> = new Set();
 
   // true for files that are fastboot-only.
   isFastbootOnly: Map<string, boolean> = new Map();
@@ -110,7 +105,7 @@ export default class AppDiffer {
             if (!source.isRelocated) {
               copySync(sourceFile, outputPath, { dereference: true });
             }
-            this.updateFiles(relativePath, source, sourceFile);
+            this.updateFiles(relativePath);
           } else {
             // we have both fastboot and non-fastboot files for this path.
             // Because of the way fastbootMerge is written, the first one is the
@@ -132,7 +127,7 @@ export default class AppDiffer {
                 switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
               );
             }
-            this.updateFiles(relativePath, browserSrc, browserSourceFile);
+            this.updateFiles(relativePath);
           }
           break;
         default:
@@ -141,12 +136,8 @@ export default class AppDiffer {
     }
   }
 
-  private updateFiles(relativePath: string, source: Source, sourceFile: string) {
-    if (source.isRelocated) {
-      this.files.set(relativePath, sourceFile);
-    } else {
-      this.files.set(relativePath, null);
-    }
+  private updateFiles(relativePath: string) {
+    this.files.add(relativePath);
   }
 }
 

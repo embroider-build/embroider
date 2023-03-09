@@ -267,31 +267,33 @@ appScenarios
           /single file package/
         );
       });
-      test('files copied into app from addons resolve their own original packages', function () {
+      test('files logically copied into app from addons resolve their own original packages', function () {
         expectAudit
-          .module('./first.js')
+          .module('./node_modules/has-app-tree-import/_app_/first.js')
           .resolves('has-app-tree-import')
           .to('./node_modules/has-app-tree-import/index.js');
         expectAudit
-          .module('./second.js')
+          .module('./node_modules/intermediate/node_modules/has-app-tree-import/_app_/second.js')
           .resolves('has-app-tree-import')
           .to('./node_modules/intermediate/node_modules/has-app-tree-import/index.js');
       });
-      test(`files copied into app from addons resolve the addon's deps`, function () {
+      test(`files logically copied into app from addons resolve the addon's deps`, function () {
         expectAudit
-          .module('./imports-dep.js')
+          .module('./node_modules/has-app-tree-import/_app_/imports-dep.js')
           .resolves('inner-dep')
           .to('./node_modules/has-app-tree-import/node_modules/inner-dep/index.js');
       });
-      test(`app-tree files from addons that import from the app get rewritten to relative imports`, function () {
+      test(`app-tree files from addons can import from the app`, function () {
         expectAudit
-          .module('./mirage/config.js')
+          .module('./node_modules/mirage-like/_app_/mirage/config.js')
           .resolves('app-template/components/import-lodash')
           .to('./components/import-lodash.js');
       });
-      test(`files copied into app from addons can resolve the app's deps`, function () {
-        let assertFile = expectFile('mirage/config.js').transform(build.transpile);
-        assertFile.matches(/import ['"]a-library['"]/);
+      test(`files logically copied into app from addons can resolve the app's deps`, function () {
+        expectAudit
+          .module('./node_modules/mirage-like/_app_/mirage/config.js')
+          .resolves('a-library')
+          .to('./node_modules/a-library/index.js');
       });
     });
   });

@@ -32,6 +32,16 @@ Scenarios.fromProject(() => new Project())
     app.mergeFiles({
       'index.html': '<script src="./app.js" type="module"></script>',
     });
+    app.addDependency('the-apps-dep', {
+      files: {
+        'index.js': '',
+      },
+    });
+
+    // this is just an empty fixture package, it's the presence of a dependency
+    // named ember-auto-import that tells us that the app was allowed to import
+    // deps from npm.
+    app.addDependency('ember-auto-import', { version: '2.0.0' });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -60,7 +70,6 @@ Scenarios.fromProject(() => new Project())
             activeAddons: {},
             renameModules: {},
             renamePackages: opts?.renamePackages ?? {},
-            relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,
             engines: [
@@ -480,6 +489,24 @@ Scenarios.fromProject(() => new Project())
             .module('./node_modules/my-addon/_app_/hello-world.js')
             .resolves('./secondary')
             .to('./secondary.js');
+        });
+
+        test(`classic addon's app tree can resolve app's dependencies`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "the-apps-dep"`,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('the-apps-dep')
+            .to('./node_modules/the-apps-dep/index.js');
         });
 
         test(`absolute import in addon's app tree resolves to app`, async function () {

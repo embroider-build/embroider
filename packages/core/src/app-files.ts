@@ -16,7 +16,6 @@ export class AppFiles {
   readonly modifiers: ReadonlyArray<string>;
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
-  readonly relocatedFiles: Map<string, string>;
   readonly isFastbootOnly: Map<string, boolean>;
 
   constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp, podModulePrefix?: string) {
@@ -83,14 +82,6 @@ export class AppFiles {
     this.helpers = helpers;
     this.modifiers = modifiers;
     this.otherAppFiles = otherAppFiles;
-
-    let relocatedFiles: Map<string, string> = new Map();
-    for (let [relativePath, owningPath] of appDiffer.files) {
-      if (owningPath) {
-        relocatedFiles.set(relativePath, owningPath);
-      }
-    }
-    this.relocatedFiles = relocatedFiles;
     this.isFastbootOnly = appDiffer.isFastbootOnly;
   }
 

@@ -55,7 +55,6 @@ export interface Options {
   activeAddons: {
     [packageName: string]: string;
   };
-  relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
   appRoot: string;
   engines: EngineConfig[];
@@ -272,15 +271,16 @@ export class Resolver {
     return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
   }
 
-  private originalPackage(fromFile: string): V2Package | undefined {
-    let originalFile = this.options.relocatedFiles[fromFile];
-    if (originalFile) {
-      let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(originalFile);
-      if (owning && !owning.isV2Ember()) {
-        throw new Error(`bug: it should only be possible for a v2 ember package to own relocated files`);
+  private logicalPackage(owningPackage: V2Package, file: string): V2Package {
+    let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
+    if (logicalLocation) {
+      let pkg = PackageCache.shared('embroider-stage3', this.options.appRoot).get(logicalLocation.owningEngine.root);
+      if (!pkg.isV2Ember()) {
+        throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
-      return owning;
+      return pkg;
     }
+    return owningPackage;
   }
 
   private handleFastbootCompat<R extends ModuleRequest>(request: R): R {
@@ -620,13 +620,6 @@ export class Resolver {
       return logTransition(`v1 self-import`, request, this.resolveWithinPackage(request, pkg));
     }
 
-    let originalPkg = this.originalPackage(request.fromFile);
-    if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
-      // A file that was relocated out of a package is importing that package's
-      // name, it should find its own original copy.
-      return logTransition(`self-import in app-js`, request, this.resolveWithinPackage(request, originalPkg));
-    }
-
     return request;
   }
 
@@ -707,9 +700,14 @@ export class Resolver {
       return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 
-    if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
+    // if this file is part of an addon's app-js, it's really the logical
+    // package to which it belongs (normally the app) that affects some policy
+    // choices about what it can import
+    let logicalPackage = this.logicalPackage(pkg, fromFile);
+
+    if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPackage);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -724,23 +722,10 @@ export class Resolver {
 
     // assertions on what native v2 addons can import
     if (!pkg.meta['auto-upgraded']) {
-      let originalPkg = this.originalPackage(fromFile);
-      if (originalPkg) {
-        // this file has been moved into another package (presumably the app).
-        if (packageName !== pkg.name) {
-          // the only thing that native v2 addons are allowed to import from
-          // within the app tree is their own name.
-          throw new Error(
-            `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
-          );
-        }
-      } else {
-        // this file has not been moved. The normal case.
-        if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
-          throw new Error(
-            `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-          );
-        }
+      if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        );
       }
     }
     return request;
@@ -795,13 +780,6 @@ export class Resolver {
       }
     }
 
-    let originalPkg = this.originalPackage(fromFile);
-    if (originalPkg) {
-      // we didn't find it from the original package, so try from the relocated
-      // package
-      return logTransition(`relocation fallback`, request, request.rehome(resolve(originalPkg.root, 'package.json')));
-    }
-
     // auto-upgraded packages can fall back to the set of known active addons
     //
     // v2 packages can fall back to the set of known active addons only to find
@@ -832,7 +810,7 @@ export class Resolver {
       // next try to resolve it from the corresponding logical location in the
       // app.
       return logTransition(
-        'fallbackResolve: retry from original home of relocated file',
+        'fallbackResolve: retry from logical home of app-js file',
         request,
         request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
       );
@@ -892,16 +870,21 @@ export class Resolver {
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  private reverseSearchAppTree(owningPackage: Package, fromFile: string) {
+  private reverseSearchAppTree(
+    owningPackage: Package,
+    fromFile: string
+  ): { owningEngine: EngineConfig; inAppName: string } | undefined {
     // if the requesting file is in an addon's app-js, the request should
     // really be understood as a request for a module in the containing engine
     if (owningPackage.isV2Addon()) {
-      let appJS = owningPackage.meta['app-js'];
-      if (appJS) {
-        let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
-        for (let [inAppName, inAddonName] of Object.entries(appJS)) {
-          if (inAddonName === fromPackageRelativePath) {
-            return { owningEngine: this.owningEngine(owningPackage), inAppName };
+      let sections = [owningPackage.meta['app-js'], owningPackage.meta['fastboot-js']];
+      for (let section of sections) {
+        if (section) {
+          let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
+          for (let [inAppName, inAddonName] of Object.entries(section)) {
+            if (inAddonName === fromPackageRelativePath) {
+              return { owningEngine: this.owningEngine(owningPackage), inAppName };
+            }
           }
         }
       }

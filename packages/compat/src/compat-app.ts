@@ -354,19 +354,11 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons[addon.name] = addon.root;
     }
 
-    let relocatedFiles: CompatResolverOptions['relocatedFiles'] = {};
-    for (let { destPath, appFiles } of engines) {
-      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[join(destPath, relativePath)] = originalPath;
-      }
-    }
-
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       activeAddons,
       renameModules,
       renamePackages,
-      relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
       engines: engines.map(engine => ({

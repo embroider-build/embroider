@@ -119,6 +119,10 @@ Scenarios.fromProject(() => new Project())
         };
       });
 
+      hooks.afterEach(() => {
+        expectAudit.hasNoProblems();
+      });
+
       Qmodule('#embroider_compat', function () {
         test('js-only component', async function () {
           givenFiles({
@@ -132,10 +136,6 @@ Scenarios.fromProject(() => new Project())
             .module('./app.js')
             .resolves('#embroider_compat/components/hello-world')
             .to('./components/hello-world.js');
-        });
-
-        hooks.afterEach(() => {
-          expectAudit.hasNoProblems();
         });
 
         test('js-and-hbs component', async function () {

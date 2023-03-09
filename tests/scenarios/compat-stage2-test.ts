@@ -53,6 +53,11 @@ stage2Scenarios
         null,
         2
       ),
+      app: {
+        services: {
+          'primary.js': `import "secondary-in-repo-addon/components/secondary"`,
+        },
+      },
     });
 
     // critically, this in-repo addon gets removed from the app's actual
@@ -90,6 +95,8 @@ stage2Scenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
+
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
         expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
@@ -116,19 +123,24 @@ stage2Scenarios
           .equals(2);
 
         // check that the app trees with in repo addon are combined correctly
-        expectFile('./service/in-repo.js').matches(/in-repo-c/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../service/in-repo.js')
+          .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
       });
 
-      test('incorporates in-repo-addons of in-repo-addons correctly', function (assert) {
+      test('incorporates in-repo-addons of in-repo-addons correctly', function () {
         // secondary in-repo-addon was correctly detected and activated
-        expectFile('./services/secondary.js').exists();
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../services/secondary.js')
+          .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
-        assert.ok(
-          resolve.sync('secondary-in-repo-addon/components/secondary', {
-            basedir: join(expectFile.basePath, 'node_modules', 'primary-in-repo-addon'),
-          }),
-          'secondary is resolvable from primary'
-        );
+        // secondary is resolvable from primary
+        expectAudit
+          .module('./lib/primary-in-repo-addon/_app_/services/primary.js')
+          .resolves('secondary-in-repo-addon/components/secondary')
+          .to('./lib/secondary-in-repo-addon/components/secondary.js');
       });
     });
   });

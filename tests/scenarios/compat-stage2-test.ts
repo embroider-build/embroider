@@ -185,7 +185,6 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -193,30 +192,41 @@ stage2Scenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-      });
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
-        expectFile('./service/in-repo.js').matches(/in-repo-b/);
-        expectFile('./service/addon.js').matches(/dep-b/);
-        expectFile('./service/dev-addon.js').matches(/dev-c/);
+        let expectModule = expectAudit.module('./assets/my-app.js');
+        expectModule.resolves('../service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
+        expectModule.resolves('../service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
+        expectModule.resolves('../service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
       });
 
       test('addons declared as dependencies should win over devDependencies', function () {
-        expectFile('./service/dep-wins-over-dev.js').matches(/dep-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../service/dep-wins-over-dev.js')
+          .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
       });
 
       test('in repo addons declared win over dependencies', function () {
-        expectFile('./service/in-repo-over-deps.js').matches(/in-repo-a/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../service/in-repo-over-deps.js')
+          .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
       });
 
       test('ordering with before specified', function () {
-        expectFile('./service/test-before.js').matches(/dev-d/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../service/test-before.js')
+          .to('./node_modules/dev-d/_app_/service/test-before.js');
       });
 
       test('ordering with after specified', function () {
-        expectFile('./service/test-after.js').matches(/dev-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('../service/test-after.js')
+          .to('./node_modules/dev-b/_app_/service/test-after.js');
       });
     });
   });

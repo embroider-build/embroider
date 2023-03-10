@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
@@ -145,7 +145,14 @@ function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
     }
     if (rule.appModules) {
       for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
-        expandDependsOnRules(config.appRoot, filename, moduleRules, extraImports);
+        for (let root of rule.roots) {
+          // in general v2 addons can keep their app tree stuff in other places
+          // than "_app_" and we would need to check their package.json to see.
+          // But this code is only for applying packageRules to auto-upgraded v1
+          // addons, and those we always organize with their treeForApp output
+          // in _app_.
+          expandDependsOnRules(resolve(root, '_app_'), filename, moduleRules, extraImports);
+        }
       }
     }
     if (rule.addonTemplates) {
@@ -157,7 +164,9 @@ function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
     }
     if (rule.appTemplates) {
       for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
-        expandInvokesRules(config.appRoot, filename, moduleRules, extraImports);
+        for (let root of rule.roots) {
+          expandInvokesRules(resolve(root, '_app_'), filename, moduleRules, extraImports);
+        }
       }
     }
   }

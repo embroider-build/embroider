@@ -18,7 +18,7 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { readFileSync, realpathSync } from 'fs';
+import { readFileSync } from 'fs';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -249,7 +249,6 @@ export class Resolver {
           basedir: dirname(request.fromFile),
           extensions: this.options.resolvableExtensions,
         });
-        filename = realpathSync(filename);
         return { type: 'found', result: { type: 'real' as 'real', filename } };
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {

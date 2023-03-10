@@ -140,7 +140,7 @@ stage2Scenarios
         expectAudit
           .module('./lib/primary-in-repo-addon/_app_/services/primary.js')
           .resolves('secondary-in-repo-addon/components/secondary')
-          .to('./lib/secondary-in-repo-addon/components/secondary.js');
+          .to('./lib/primary-in-repo-addon/node_modules/secondary-in-repo-addon/components/secondary.js');
       });
     });
   });

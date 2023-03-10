@@ -490,6 +490,16 @@ export class Resolver {
         let appJS = addon.meta['app-js'];
         if (appJS) {
           for (let [inEngineName, inAddonName] of Object.entries(appJS)) {
+            if (!inEngineName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares app-js in its package.json with the illegal name "${inEngineName}". It must start with "./" to make it clear that it's relative to the app`
+              );
+            }
+            if (!inAddonName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
+              );
+            }
             inEngineName = withoutJSExt(inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
@@ -525,6 +535,16 @@ export class Resolver {
         let fastbootJS = addon.meta['fastboot-js'];
         if (fastbootJS) {
           for (let [inEngineName, inAddonName] of Object.entries(fastbootJS)) {
+            if (!inEngineName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inEngineName}". It must start with "./" to make it clear that it's relative to the app`
+              );
+            }
+            if (!inAddonName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
+              );
+            }
             inEngineName = withoutJSExt(inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
@@ -722,7 +742,11 @@ export class Resolver {
 
     // assertions on what native v2 addons can import
     if (!pkg.meta['auto-upgraded']) {
-      if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
+      if (
+        !pkg.meta['auto-upgraded'] &&
+        !appImportInAppTree(pkg, logicalPackage, packageName) &&
+        !reliablyResolvable(pkg, packageName)
+      ) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );
@@ -957,6 +981,11 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
   }
 
   return false;
+}
+
+//
+function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
+  return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
 }
 
 function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {

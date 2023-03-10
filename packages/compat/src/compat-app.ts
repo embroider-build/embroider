@@ -317,7 +317,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      this.appPackage,
+      { name: this.appPackage.name, version: this.appPackage.version, root: this.root },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }

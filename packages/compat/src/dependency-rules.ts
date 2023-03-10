@@ -1,4 +1,4 @@
-import { Package, getOrCreate, Resolver } from '@embroider/core';
+import { getOrCreate, Resolver } from '@embroider/core';
 import { resolve } from 'path';
 import { satisfies } from 'semver';
 
@@ -206,7 +206,10 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
   };
 }
 
-export function activePackageRules(packageRules: PackageRules[], activePackages: Package[]): ActivePackageRules[] {
+export function activePackageRules(
+  packageRules: PackageRules[],
+  activePackages: { name: string; root: string; version: string }[]
+): ActivePackageRules[] {
   // rule order implies precedence. The first rule that matches a given package
   // applies to that package, and no other rule does.
   let rootsPerRule = new Map();

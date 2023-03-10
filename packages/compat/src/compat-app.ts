@@ -361,9 +361,9 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
-      engines: engines.map(engine => ({
+      engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
-        root: this.root,
+        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
         activeAddons: [...engine.addons]
           .map(a => ({
             name: a.name,

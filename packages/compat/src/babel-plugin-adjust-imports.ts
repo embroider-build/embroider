@@ -1,4 +1,4 @@
-import { join, resolve } from 'path';
+import { join } from 'path';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
@@ -7,7 +7,7 @@ import { readJSONSync } from 'fs-extra';
 import { CompatResolverOptions } from './resolver-transform';
 import { Package, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
-import { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
+import { ActivePackageRules, appTreeRulesDir, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 
 export type Options = { appRoot: string };
 
@@ -152,7 +152,7 @@ function preprocessExtraImports(config: CompatResolverOptions, resolver: Resolve
           // But this code is only for applying packageRules to auto-upgraded v1
           // addons, and those we always organize with their treeForApp output
           // in _app_.
-          expandDependsOnRules(appTreeDir(root, resolver), filename, moduleRules, extraImports);
+          expandDependsOnRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
         }
       }
     }
@@ -166,26 +166,12 @@ function preprocessExtraImports(config: CompatResolverOptions, resolver: Resolve
     if (rule.appTemplates) {
       for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
         for (let root of rule.roots) {
-          expandInvokesRules(appTreeDir(root, resolver), filename, moduleRules, extraImports);
+          expandInvokesRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
         }
       }
     }
   }
   return extraImports;
-}
-
-function appTreeDir(root: string, resolver: Resolver) {
-  let pkg = resolver.owningPackage(root);
-  if (pkg?.isV2Addon()) {
-    // in general v2 addons can keep their app tree stuff in other places than
-    // "_app_" and we would need to check their package.json to see. But this code
-    // is only for applying packageRules to auto-upgraded v1 addons and apps, and
-    // those we always organize predictably.
-    return resolve(root, '_app_');
-  } else {
-    // auto-upgraded apps don't get an exist _app_ dir.
-    return root;
-  }
 }
 
 function lazyPackageLookup(config: InternalConfig, filename: string) {

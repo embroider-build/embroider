@@ -500,7 +500,7 @@ stage2Scenarios
 
         expectModule
           .resolves('#embroider_compat/components/hello-world')
-          .to('./components/hello-world.js', 'explicit dependency');
+          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
 
         expectModule
           .resolves('#embroider_compat/components/third-choice')
@@ -522,7 +522,7 @@ stage2Scenarios
         let expectModule = expectAudit.module('./templates/curly.hbs');
         expectModule
           .resolves('#embroider_compat/ambiguous/hello-world')
-          .to('./components/hello-world.js', 'explicit dependency');
+          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
         expectModule
           .resolves('#embroider_compat/components/third-choice')
           .toModule()
@@ -556,7 +556,7 @@ stage2Scenarios
       });
 
       test('app/hello-world.js', function () {
-        expectAudit.module('./components/hello-world.js').codeEquals(`
+        expectAudit.module('./node_modules/my-addon/_app_/components/hello-world.js').codeEquals(`
           window.define("my-addon/synthetic-import-1", function () {
             return importSync("my-addon/synthetic-import-1");
           });
@@ -565,14 +565,14 @@ stage2Scenarios
         `);
 
         expectAudit
-          .module('./components/hello-world.js')
+          .module('./node_modules/my-addon/_app_/components/hello-world.js')
           .resolves('my-addon/components/hello-world')
           .to('./node_modules/my-addon/components/hello-world.js', 'remapped to precise copy of my-addon');
       });
 
       test('app/templates/components/direct-template-reexport.js', function () {
         expectAudit
-          .module('./templates/components/direct-template-reexport.js')
+          .module('./node_modules/my-addon/_app_/templates/components/direct-template-reexport.js')
           .resolves('my-addon/templates/components/hello-world')
           .to('./node_modules/my-addon/templates/components/hello-world.hbs', 'rewrites reexports of templates');
       });
@@ -699,16 +699,16 @@ stage2Scenarios
 
       test('invokes rule on appTemplates produces synthetic import', function () {
         expectAudit
-          .module('./templates/app-example.hbs')
+          .module('./node_modules/my-addon/_app_/templates/app-example.hbs')
           .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./components/synthetic-import2.js');
+          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
       });
 
       test('invokes rule on addonTemplates produces synthetic import', function () {
         expectAudit
           .module('./node_modules/my-addon/templates/addon-example.hbs')
           .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./components/synthetic-import2.js');
+          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
       });
     });
   });

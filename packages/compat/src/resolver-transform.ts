@@ -6,6 +6,7 @@ import {
   ComponentRules,
   PackageRules,
   ModuleRules,
+  appTreeRulesDir,
 } from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -323,7 +324,9 @@ class TemplateResolver implements ASTPlugin {
       if (rule.appTemplates) {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
-          files.set(join(this.config.appRoot, path), processedRules);
+          for (let root of rule.roots) {
+            files.set(join(appTreeRulesDir(root, this.moduleResolver), path), processedRules);
+          }
         }
       }
       if (rule.addonTemplates) {

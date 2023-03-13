@@ -139,7 +139,7 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('import("./_route_/people.js")');
+        expectFile('./assets/my-app.js').matches('import("my-app/assets/_route_/people.js")');
       });
 
       test('has split controllers in route entrypoint', function () {
@@ -321,7 +321,7 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('import("./_route_/people.js")');
+        expectFile('./assets/my-app.js').matches('import("my-app/assets/_route_/people.js")');
       });
 
       test('has split controllers in route entrypoint', function () {

@@ -682,19 +682,19 @@ stage2Scenarios
       });
 
       test('non-static other paths are included in the entrypoint', function () {
-        expectFile('assets/my-app.js').matches(/i\("..\/non-static-dir\/another-library\.js"\)/);
+        expectFile('assets/my-app.js').matches(/i\("my-app\/non-static-dir\/another-library\.js"\)/);
       });
 
       test('static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("..\/static-dir\/my-library\.js"\)/);
+        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/static-dir\/my-library\.js"\)/);
       });
 
       test('top-level static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("..\/top-level-static\.js"\)/);
+        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/top-level-static\.js"\)/);
       });
 
       test('staticAppPaths do not match partial path segments', function () {
-        expectFile('assets/my-app.js').matches(/i\("..\/static-dir-not-really\/something\.js"\)/);
+        expectFile('assets/my-app.js').matches(/i\("my-app\/static-dir-not-really\/something\.js"\)/);
       });
 
       test('invokes rule on appTemplates produces synthetic import', function () {

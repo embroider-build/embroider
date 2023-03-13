@@ -243,7 +243,7 @@ appScenarios
         assertFile.matches(
           definesPattern(
             'somebody-elses-package/environment',
-            '../node_modules/emits-multiple-packages/somebody-elses-package/environment'
+            'emits-multiple-packages/somebody-elses-package/environment'
           )
         );
       });

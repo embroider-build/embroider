@@ -294,13 +294,13 @@ appScenarios
       test(`app's pod components and templates are implicitly included correctly`, function () {
         let assertFile = expectFile('assets/my-app.js');
         assertFile.matches(
-          /d\(["']my-app\/components\/pod-component\/component["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/pod-component\/component\.js['"]\);\}\)/
+          /d\(["']my-app\/components\/pod-component\/component["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/pod-component\/component\.js['"]\);\}\)/
         );
         assertFile.matches(
-          /d\(["']my-app\/components\/pod-component\/template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/pod-component\/template\.hbs['"]\);\}\)/
+          /d\(["']my-app\/components\/pod-component\/template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/pod-component\/template\.hbs['"]\);\}\)/
         );
         assertFile.matches(
-          /d\(["']my-app\/components\/template-only\/template["'], function\(\)\s*\{\s*return i\(["']\.\.\/components\/template-only\/template\.hbs['"]\);\s*\}/
+          /d\(["']my-app\/components\/template-only\/template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/template-only\/template\.hbs['"]\);\s*\}/
         );
       });
     });

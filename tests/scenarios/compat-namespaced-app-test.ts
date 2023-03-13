@@ -45,11 +45,11 @@ appScenarios
       test(`imports within app js`, function () {
         let assertFile = expectFile('assets/@ef4/namespaced-app.js');
         assertFile.matches(
-          /d\(["'"]my-addon\/my-implicit-module["'], function\(\)\{ return i\(["']\.\.\/\.\.\/node_modules\/my-addon\/my-implicit-module\.js["']\);/,
+          /d\(["'"]my-addon\/my-implicit-module["'], function\(\)\{ return i\(["']my-addon\/my-implicit-module\.js["']\);/,
           'implicit-modules have correct paths'
         );
         assertFile.matches(
-          /d\(["']@ef4\/namespaced-app\/app['"], function\(\)\{ return i\(['"]\.\.\/\.\.\/app\.js"\);\}\);/,
+          /d\(["']@ef4\/namespaced-app\/app['"], function\(\)\{ return i\(['"]@ef4\/namespaced-app\/app\.js"\);\}\);/,
           `app's own modules are correct`
         );
       });

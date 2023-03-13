@@ -79,32 +79,6 @@ export default interface Options {
   // useMethod optionally lets you pick which property within the module to use.
   // If not provided, we use the module.exports itself.
   pluginHints?: { resolve: string[]; useMethod?: string }[];
-
-  // Our addons' implicit-modules and implicit-test-modules are not necessarily
-  // resolvable directly from the app, but the meaning of those
-  // backward-compatibility features is "the app should import this module". So
-  // we need some strategy for making them importable by the app. We can either
-  // turn those imports into complete relative paths, or leave them as package
-  // names:
-  //
-  // relativePaths:
-  //
-  //   import('./node_modules/intermediate/node_modules/some-addon/thing.js')
-  //
-  // packageNames:
-  //
-  //   import('some-addon/thing.js')
-  //
-  // When building under a tool like webpack, the relativePaths are safe and
-  // always work, although they can be uglier to look at when debugging in
-  // development.
-  //
-  // When building under a tool like snowpack, the package names can be easier
-  // to work with because you already have web-bundles per package, and can't
-  // necessarily address arbitrary places on the filesystem.
-  //
-  // Defaults to "relativePaths".
-  implicitModulesStrategy?: 'packageNames' | 'relativePaths';
 }
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

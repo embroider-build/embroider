@@ -1321,10 +1321,7 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime:
-              this.options.implicitModulesStrategy === 'packageNames'
-                ? join(packageName, name)
-                : explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
+            buildtime: posix.join(packageName, name),
           });
         }
       }

@@ -1197,7 +1197,7 @@ export class AppBuilder<TreeNames> {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
+    this.gatherImplicitModules('implicit-modules', engine, amdModules);
 
     let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
@@ -1267,7 +1267,7 @@ export class AppBuilder<TreeNames> {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', myName, engine, amdModules);
+    this.gatherImplicitModules('implicit-test-modules', engine, amdModules);
 
     let { appFiles } = engine;
     for (let relativePath of appFiles.tests) {
@@ -1291,7 +1291,6 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
-    relativeTo: string,
     engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {

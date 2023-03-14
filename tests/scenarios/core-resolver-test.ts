@@ -31,23 +31,17 @@ Scenarios.fromProject(() => new Project())
     };
     app.mergeFiles({
       'index.html': '<script src="./app.js" type="module"></script>',
-      node_modules: {
-        'my-addon': {
-          'package.json': JSON.stringify(
-            (() => {
-              let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true };
-              return {
-                name: 'my-addon',
-                keywords: ['ember-addon'],
-                'ember-addon': meta,
-              };
-            })(),
-            null,
-            2
-          ),
-        },
+    });
+    app.addDependency('the-apps-dep', {
+      files: {
+        'index.js': '',
       },
     });
+
+    // this is just an empty fixture package, it's the presence of a dependency
+    // named ember-auto-import that tells us that the app was allowed to import
+    // deps from npm.
+    app.addDependency('ember-auto-import', { version: '2.0.0' });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -57,6 +51,7 @@ Scenarios.fromProject(() => new Project())
       interface ConfigureOpts {
         podModulePrefix?: string;
         renamePackages?: Record<string, string>;
+        addonMeta?: Partial<AddonMeta>;
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
@@ -75,7 +70,6 @@ Scenarios.fromProject(() => new Project())
             activeAddons: {},
             renameModules: {},
             renamePackages: opts?.renamePackages ?? {},
-            relocatedFiles: {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,
             engines: [
@@ -116,10 +110,26 @@ Scenarios.fromProject(() => new Project())
               module.exports = function(filename) { return true }
             `,
             '.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'node_modules/my-addon/package.json': JSON.stringify(
+              (() => {
+                let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(opts?.addonMeta ?? {}) };
+                return {
+                  name: 'my-addon',
+                  keywords: ['ember-addon'],
+                  'ember-addon': meta,
+                };
+              })(),
+              null,
+              2
+            ),
           });
 
           expectAudit = await assert.audit({ outputDir: app.dir });
         };
+      });
+
+      hooks.afterEach(() => {
+        expectAudit.hasNoProblems();
       });
 
       Qmodule('#embroider_compat', function () {
@@ -139,7 +149,7 @@ Scenarios.fromProject(() => new Project())
 
         test('js-and-hbs component', async function () {
           givenFiles({
-            'components/hello-world.js': '',
+            'components/hello-world.js': 'export default function() {}',
             'templates/components/hello-world.hbs': '',
             'app.js': `import "#embroider_compat/components/hello-world"`,
           });
@@ -308,7 +318,7 @@ Scenarios.fromProject(() => new Project())
 
         test('podded js-and-hbs component with blank podModulePrefix', async function () {
           givenFiles({
-            'components/hello-world/component.js': '',
+            'components/hello-world/component.js': 'export default function() {}',
             'components/hello-world/template.hbs': '',
             'app.js': `import "#embroider_compat/components/hello-world"`,
           });
@@ -333,7 +343,7 @@ Scenarios.fromProject(() => new Project())
 
         test('podded js-and-hbs component with non-blank podModulePrefix', async function () {
           givenFiles({
-            'pods/components/hello-world/component.js': '',
+            'pods/components/hello-world/component.js': 'export default function() {}',
             'pods/components/hello-world/template.hbs': '',
             'app.js': `import "#embroider_compat/components/hello-world"`,
           });
@@ -424,6 +434,164 @@ Scenarios.fromProject(() => new Project())
             .module('./app.js')
             .resolves('#embroider_compat/ambiguous/something/hello-world')
             .to('./helpers/something/hello-world.js');
+        });
+      });
+
+      Qmodule('engine-relative resolving', function () {
+        test('module in app takes precedence', async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': '',
+            './hello-world.js': '',
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit.module('./app.js').resolves('my-app/hello-world').to('./hello-world.js');
+        });
+
+        test('module in addon is found', async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': '',
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-app/hello-world')
+            .to('./node_modules/my-addon/_app_/hello-world.js');
+        });
+
+        test(`relative import in addon's app tree resolves to app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('./secondary')
+            .to('./secondary.js');
+        });
+
+        test(`classic addon's app tree can resolve app's dependencies`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "the-apps-dep"`,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('the-apps-dep')
+            .to('./node_modules/the-apps-dep/index.js');
+        });
+
+        test(`absolute import in addon's app tree resolves to app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "my-app/secondary"`,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('my-app/secondary')
+            .to('./secondary.js');
+        });
+
+        test(`resolves addon fastboot-js`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_fastboot_/hello-world.js': ``,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'fastboot-js': { './hello-world.js': './_fastboot_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-app/hello-world')
+            .to('./node_modules/my-addon/_fastboot_/hello-world.js');
+        });
+
+        test(`file exists in both app-js and fastboot-js`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_fastboot_/hello-world.js': `
+              export function hello() { return 'fastboot'; }
+              export class Bonjour {}
+              export default function() {}
+              const value = 1;
+              export { value };
+              export const x = 2;
+            `,
+            'node_modules/my-addon/_app_/hello-world.js': `
+              export function hello() { return 'browser'; }
+              export class Bonjour {}
+              export default function() {}
+              const value = 1;
+              export { value };
+              export const x = 2;
+          `,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'fastboot-js': { './hello-world.js': './_fastboot_/hello-world.js' },
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
+          switcherModule.codeEquals(`
+            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            let mod;
+            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+              mod = importSync("./fastboot");
+            } else {
+              mod = importSync("./browser");
+            }
+            export default mod.default;
+            export const hello = mod.hello;
+            export const Bonjour = mod.Bonjour;
+            export const value = mod.value;
+            export const x = mod.x;
+          `);
+
+          switcherModule.resolves('./fastboot').to('./node_modules/my-addon/_fastboot_/hello-world.js');
+          switcherModule.resolves('./browser').to('./node_modules/my-addon/_app_/hello-world.js');
         });
       });
     });

@@ -139,7 +139,9 @@ export class AuditResults {
             }))
           : [],
         exports: module.linked?.exports ? [...module.linked.exports] : [],
-        content: module.parsed?.transpiledContent ? module.parsed?.transpiledContent.toString() : '',
+        content: module.parsed?.transpiledContent
+          ? module.parsed?.transpiledContent.toString()
+          : 'module failed to transpile',
       };
       results.modules[explicitRelative(baseDir, filename)] = publicModule;
     }

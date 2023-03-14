@@ -12,7 +12,7 @@ import { compile } from './js-handlebars';
 import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { copySync, ensureDirSync, outputJSONSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
-import { dirname, join, resolve as resolvePath, sep } from 'path';
+import { dirname, join, resolve as resolvePath, sep, posix } from 'path';
 import { debug, warn } from './messages';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -1183,7 +1183,7 @@ export class AppBuilder<TreeNames> {
           }
           lazyRoutes.push({
             names: routeNames,
-            path: this.importPaths(engine, routeEntrypoint, relativePath).buildtime,
+            path: this.importPaths(engine, routeEntrypoint).buildtime,
           });
         }
       );
@@ -1192,12 +1192,12 @@ export class AppBuilder<TreeNames> {
     let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
       appFiles.isFastbootOnly.get(file)
     );
-    let amdModules = nonFastboot.map(file => this.importPaths(engine, file, relativePath));
-    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(engine, file, relativePath));
+    let amdModules = nonFastboot.map(file => this.importPaths(engine, file));
+    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(engine, file));
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', relativePath, engine, amdModules);
+    this.gatherImplicitModules('implicit-modules', engine, amdModules);
 
     let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
@@ -1220,12 +1220,11 @@ export class AppBuilder<TreeNames> {
     return this.adapter.modulePrefix();
   }
 
-  private importPaths(engine: Engine, engineRelativePath: string, fromFile: string) {
-    let appRelativePath = join(engine.appRelativePath, engineRelativePath);
+  private importPaths(engine: Engine, engineRelativePath: string) {
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
-      buildtime: explicitRelative(dirname(fromFile), appRelativePath),
+      buildtime: posix.join(engine.package.name, engineRelativePath),
     };
   }
 
@@ -1235,8 +1234,8 @@ export class AppBuilder<TreeNames> {
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: nonFastboot.map(f => this.importPaths(engine, f, relativePath)),
-        fastbootOnlyFiles: fastboot.map(f => this.importPaths(engine, f, relativePath)),
+        files: nonFastboot.map(f => this.importPaths(engine, f)),
+        fastbootOnlyFiles: fastboot.map(f => this.importPaths(engine, f)),
       }),
       relativePath,
     };
@@ -1268,11 +1267,11 @@ export class AppBuilder<TreeNames> {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', myName, engine, amdModules);
+    this.gatherImplicitModules('implicit-test-modules', engine, amdModules);
 
     let { appFiles } = engine;
     for (let relativePath of appFiles.tests) {
-      amdModules.push(this.importPaths(engine, relativePath, myName));
+      amdModules.push(this.importPaths(engine, relativePath));
     }
 
     let source = entryTemplate({
@@ -1292,7 +1291,6 @@ export class AppBuilder<TreeNames> {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
-    relativeTo: string,
     engine: Engine,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
@@ -1322,10 +1320,7 @@ export class AppBuilder<TreeNames> {
           runtime = runtime.split(sep).join('/');
           lazyModules.push({
             runtime,
-            buildtime:
-              this.options.implicitModulesStrategy === 'packageNames'
-                ? join(packageName, name)
-                : explicitRelative(dirname(join(this.root, relativeTo)), join(addon.root, name)),
+            buildtime: posix.join(packageName, name),
           });
         }
       }

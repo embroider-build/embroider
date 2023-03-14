@@ -10,7 +10,7 @@ appScenarios
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
-      'app/components/example-component.js';
+      './app/components/example-component.js';
     merge(addon.files, {
       app: {
         components: {
@@ -72,7 +72,7 @@ appScenarios
     // the inner v2 addon, which gets consumed by `intermediate`
     let inner = baseV2Addon();
     inner.pkg.name = 'inner';
-    (inner.pkg as any)['ember-addon']['app-js']['./components/inner.js'] = 'app/components/inner.js';
+    (inner.pkg as any)['ember-addon']['app-js']['./components/inner.js'] = './app/components/inner.js';
     merge(inner.files, {
       app: {
         components: {

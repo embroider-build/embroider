@@ -317,7 +317,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      this.appPackage,
+      { name: this.appPackage.name, version: this.appPackage.version, root: this.root },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }
@@ -354,24 +354,16 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons[addon.name] = addon.root;
     }
 
-    let relocatedFiles: CompatResolverOptions['relocatedFiles'] = {};
-    for (let { destPath, appFiles } of engines) {
-      for (let [relativePath, originalPath] of appFiles.relocatedFiles) {
-        relocatedFiles[join(destPath, relativePath)] = originalPath;
-      }
-    }
-
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       activeAddons,
       renameModules,
       renamePackages,
-      relocatedFiles,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.root,
-      engines: engines.map(engine => ({
+      engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
-        root: this.root,
+        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
         activeAddons: [...engine.addons]
           .map(a => ({
             name: a.name,

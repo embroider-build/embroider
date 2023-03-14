@@ -53,6 +53,11 @@ stage2Scenarios
         null,
         2
       ),
+      app: {
+        services: {
+          'primary.js': `import "secondary-in-repo-addon/components/secondary"`,
+        },
+      },
     });
 
     // critically, this in-repo addon gets removed from the app's actual
@@ -90,6 +95,8 @@ stage2Scenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
+
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
         expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
@@ -116,19 +123,24 @@ stage2Scenarios
           .equals(2);
 
         // check that the app trees with in repo addon are combined correctly
-        expectFile('./service/in-repo.js').matches(/in-repo-c/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/service/in-repo.js')
+          .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
       });
 
-      test('incorporates in-repo-addons of in-repo-addons correctly', function (assert) {
+      test('incorporates in-repo-addons of in-repo-addons correctly', function () {
         // secondary in-repo-addon was correctly detected and activated
-        expectFile('./services/secondary.js').exists();
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/services/secondary.js')
+          .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
-        assert.ok(
-          resolve.sync('secondary-in-repo-addon/components/secondary', {
-            basedir: join(expectFile.basePath, 'node_modules', 'primary-in-repo-addon'),
-          }),
-          'secondary is resolvable from primary'
-        );
+        // secondary is resolvable from primary
+        expectAudit
+          .module('./lib/primary-in-repo-addon/_app_/services/primary.js')
+          .resolves('secondary-in-repo-addon/components/secondary')
+          .to('./lib/primary-in-repo-addon/node_modules/secondary-in-repo-addon/components/secondary.js');
       });
     });
   });
@@ -173,7 +185,6 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -181,30 +192,41 @@ stage2Scenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-      });
+      let expectAudit = setupAuditTest(hooks, () => app.dir);
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
-        expectFile('./service/in-repo.js').matches(/in-repo-b/);
-        expectFile('./service/addon.js').matches(/dep-b/);
-        expectFile('./service/dev-addon.js').matches(/dev-c/);
+        let expectModule = expectAudit.module('./assets/my-app.js');
+        expectModule.resolves('my-app/service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
+        expectModule.resolves('my-app/service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
+        expectModule.resolves('my-app/service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
       });
 
       test('addons declared as dependencies should win over devDependencies', function () {
-        expectFile('./service/dep-wins-over-dev.js').matches(/dep-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/service/dep-wins-over-dev.js')
+          .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
       });
 
       test('in repo addons declared win over dependencies', function () {
-        expectFile('./service/in-repo-over-deps.js').matches(/in-repo-a/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/service/in-repo-over-deps.js')
+          .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
       });
 
       test('ordering with before specified', function () {
-        expectFile('./service/test-before.js').matches(/dev-d/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/service/test-before.js')
+          .to('./node_modules/dev-d/_app_/service/test-before.js');
       });
 
       test('ordering with after specified', function () {
-        expectFile('./service/test-after.js').matches(/dev-b/);
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('my-app/service/test-after.js')
+          .to('./node_modules/dev-b/_app_/service/test-after.js');
       });
     });
   });
@@ -478,7 +500,7 @@ stage2Scenarios
 
         expectModule
           .resolves('#embroider_compat/components/hello-world')
-          .to('./components/hello-world.js', 'explicit dependency');
+          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
 
         expectModule
           .resolves('#embroider_compat/components/third-choice')
@@ -500,7 +522,7 @@ stage2Scenarios
         let expectModule = expectAudit.module('./templates/curly.hbs');
         expectModule
           .resolves('#embroider_compat/ambiguous/hello-world')
-          .to('./components/hello-world.js', 'explicit dependency');
+          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
         expectModule
           .resolves('#embroider_compat/components/third-choice')
           .toModule()
@@ -534,7 +556,7 @@ stage2Scenarios
       });
 
       test('app/hello-world.js', function () {
-        expectAudit.module('./components/hello-world.js').codeEquals(`
+        expectAudit.module('./node_modules/my-addon/_app_/components/hello-world.js').codeEquals(`
           window.define("my-addon/synthetic-import-1", function () {
             return importSync("my-addon/synthetic-import-1");
           });
@@ -543,14 +565,14 @@ stage2Scenarios
         `);
 
         expectAudit
-          .module('./components/hello-world.js')
+          .module('./node_modules/my-addon/_app_/components/hello-world.js')
           .resolves('my-addon/components/hello-world')
           .to('./node_modules/my-addon/components/hello-world.js', 'remapped to precise copy of my-addon');
       });
 
       test('app/templates/components/direct-template-reexport.js', function () {
         expectAudit
-          .module('./templates/components/direct-template-reexport.js')
+          .module('./node_modules/my-addon/_app_/templates/components/direct-template-reexport.js')
           .resolves('my-addon/templates/components/hello-world')
           .to('./node_modules/my-addon/templates/components/hello-world.hbs', 'rewrites reexports of templates');
       });
@@ -660,33 +682,33 @@ stage2Scenarios
       });
 
       test('non-static other paths are included in the entrypoint', function () {
-        expectFile('assets/my-app.js').matches(/i\("..\/non-static-dir\/another-library\.js"\)/);
+        expectFile('assets/my-app.js').matches(/i\("my-app\/non-static-dir\/another-library\.js"\)/);
       });
 
       test('static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("..\/static-dir\/my-library\.js"\)/);
+        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/static-dir\/my-library\.js"\)/);
       });
 
       test('top-level static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("..\/top-level-static\.js"\)/);
+        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/top-level-static\.js"\)/);
       });
 
       test('staticAppPaths do not match partial path segments', function () {
-        expectFile('assets/my-app.js').matches(/i\("..\/static-dir-not-really\/something\.js"\)/);
+        expectFile('assets/my-app.js').matches(/i\("my-app\/static-dir-not-really\/something\.js"\)/);
       });
 
       test('invokes rule on appTemplates produces synthetic import', function () {
         expectAudit
-          .module('./templates/app-example.hbs')
+          .module('./node_modules/my-addon/_app_/templates/app-example.hbs')
           .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./components/synthetic-import2.js');
+          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
       });
 
       test('invokes rule on addonTemplates produces synthetic import', function () {
         expectAudit
           .module('./node_modules/my-addon/templates/addon-example.hbs')
           .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./components/synthetic-import2.js');
+          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
       });
     });
   });

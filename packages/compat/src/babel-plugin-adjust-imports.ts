@@ -7,7 +7,7 @@ import { readJSONSync } from 'fs-extra';
 import { CompatResolverOptions } from './resolver-transform';
 import { Package, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
-import { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
+import { ActivePackageRules, appTreeRulesDir, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 
 export type Options = { appRoot: string };
 
@@ -43,10 +43,11 @@ export default function main(babel: typeof Babel) {
       return cached;
     }
     let resolverOptions: CompatResolverOptions = readJSONSync(join(appRoot, '.embroider', 'resolver.json'));
+    let resolver = new Resolver(resolverOptions);
     cached = {
       resolverOptions,
-      resolver: new Resolver(resolverOptions),
-      extraImports: preprocessExtraImports(resolverOptions),
+      resolver,
+      extraImports: preprocessExtraImports(resolverOptions, resolver),
       componentExtraImports: preprocessComponentExtraImports(resolverOptions),
     };
     return cached;
@@ -133,7 +134,7 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
   );
 }
 
-function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
+function preprocessExtraImports(config: CompatResolverOptions, resolver: Resolver): ExtraImports {
   let extraImports: ExtraImports = {};
   for (let rule of config.activePackageRules) {
     if (rule.addonModules) {
@@ -145,7 +146,14 @@ function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
     }
     if (rule.appModules) {
       for (let [filename, moduleRules] of Object.entries(rule.appModules)) {
-        expandDependsOnRules(config.appRoot, filename, moduleRules, extraImports);
+        for (let root of rule.roots) {
+          // in general v2 addons can keep their app tree stuff in other places
+          // than "_app_" and we would need to check their package.json to see.
+          // But this code is only for applying packageRules to auto-upgraded v1
+          // addons, and those we always organize with their treeForApp output
+          // in _app_.
+          expandDependsOnRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
+        }
       }
     }
     if (rule.addonTemplates) {
@@ -157,7 +165,9 @@ function preprocessExtraImports(config: CompatResolverOptions): ExtraImports {
     }
     if (rule.appTemplates) {
       for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
-        expandInvokesRules(config.appRoot, filename, moduleRules, extraImports);
+        for (let root of rule.roots) {
+          expandInvokesRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
+        }
       }
     }
   }

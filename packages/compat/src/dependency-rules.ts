@@ -1,4 +1,5 @@
-import { Package, getOrCreate } from '@embroider/core';
+import { getOrCreate, Resolver } from '@embroider/core';
+import { resolve } from 'path';
 import { satisfies } from 'semver';
 
 export interface PackageRules {
@@ -205,7 +206,10 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
   };
 }
 
-export function activePackageRules(packageRules: PackageRules[], activePackages: Package[]): ActivePackageRules[] {
+export function activePackageRules(
+  packageRules: PackageRules[],
+  activePackages: { name: string; root: string; version: string }[]
+): ActivePackageRules[] {
   // rule order implies precedence. The first rule that matches a given package
   // applies to that package, and no other rule does.
   let rootsPerRule = new Map();
@@ -223,4 +227,18 @@ export function activePackageRules(packageRules: PackageRules[], activePackages:
     output.push(Object.assign({ roots }, rule));
   }
   return output;
+}
+
+export function appTreeRulesDir(root: string, resolver: Resolver) {
+  let pkg = resolver.owningPackage(root);
+  if (pkg?.isV2Addon()) {
+    // in general v2 addons can keep their app tree stuff in other places than
+    // "_app_" and we would need to check their package.json to see. But this code
+    // is only for applying packageRules to auto-upgraded v1 addons and apps, and
+    // those we always organize predictably.
+    return resolve(root, '_app_');
+  } else {
+    // auto-upgraded apps don't get an exist _app_ dir.
+    return root;
+  }
 }

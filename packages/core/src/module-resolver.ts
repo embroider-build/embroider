@@ -9,7 +9,16 @@ import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/s
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
-import { virtualExternalModule, virtualPairComponent, virtualContent } from './virtual-content';
+import {
+  virtualExternalModule,
+  virtualPairComponent,
+  virtualContent,
+  fastbootSwitch,
+  decodeFastbootSwitch,
+} from './virtual-content';
+import { Memoize } from 'typescript-memoize';
+import { describeExports } from './describe-exports';
+import { readFileSync } from 'fs';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -46,7 +55,6 @@ export interface Options {
   activeAddons: {
     [packageName: string]: string;
   };
-  relocatedFiles: { [relativePath: string]: string };
   resolvableExtensions: string[];
   appRoot: string;
   engines: EngineConfig[];
@@ -59,6 +67,39 @@ interface EngineConfig {
   activeAddons: { name: string; root: string }[];
   root: string;
 }
+
+type MergeEntry =
+  | {
+      type: 'app-only';
+      'app-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    }
+  | {
+      type: 'fastboot-only';
+      'fastboot-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    }
+  | {
+      type: 'both';
+      'app-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+      'fastboot-js': {
+        localPath: string;
+        packageRoot: string;
+        fromPackageName: string;
+      };
+    };
+
+type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
@@ -108,6 +149,7 @@ export class Resolver {
       return logTransition('early exit', request);
     }
 
+    request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleRenaming(request);
     return this.preHandleExternal(request);
@@ -229,15 +271,45 @@ export class Resolver {
     return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
   }
 
-  private originalPackage(fromFile: string): V2Package | undefined {
-    let originalFile = this.options.relocatedFiles[fromFile];
-    if (originalFile) {
-      let owning = PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(originalFile);
-      if (owning && !owning.isV2Ember()) {
-        throw new Error(`bug: it should only be possible for a v2 ember package to own relocated files`);
+  private logicalPackage(owningPackage: V2Package, file: string): V2Package {
+    let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
+    if (logicalLocation) {
+      let pkg = PackageCache.shared('embroider-stage3', this.options.appRoot).get(logicalLocation.owningEngine.root);
+      if (!pkg.isV2Ember()) {
+        throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
-      return owning;
+      return pkg;
     }
+    return owningPackage;
+  }
+
+  private handleFastbootCompat<R extends ModuleRequest>(request: R): R {
+    let match = decodeFastbootSwitch(request.fromFile);
+    if (!match) {
+      return request;
+    }
+
+    let section: 'app-js' | 'fastboot-js' | undefined;
+    if (request.specifier === './browser') {
+      section = 'app-js';
+    } else if (request.specifier === './fastboot') {
+      section = 'fastboot-js';
+    }
+
+    if (!section) {
+      return request;
+    }
+
+    let pkg = this.owningPackage(match.filename);
+    if (pkg) {
+      let rel = withoutJSExt(explicitRelative(pkg.root, match.filename));
+      let entry = this.mergeMap.get(pkg.root)?.get(rel);
+      if (entry?.type === 'both') {
+        return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+      }
+    }
+
+    return request;
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
@@ -268,9 +340,11 @@ export class Resolver {
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
-    return request
-      .alias(`${target.packageName}/helpers/${target.memberName}`)
-      .rehome(resolve(inEngine.root, 'package.json'));
+    return logTransition(
+      'resolveHelper',
+      request,
+      request.alias(`${target.packageName}/helpers/${target.memberName}`).rehome(resolve(inEngine.root, 'package.json'))
+    );
   }
 
   private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
@@ -326,7 +400,7 @@ export class Resolver {
     let helperCandidate = this.resolveHelper(path, inEngine, request);
     let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
     if (helperMatch.type === 'real') {
-      return helperCandidate;
+      return logTransition('ambiguous case matched a helper', request, helperCandidate);
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
@@ -334,20 +408,24 @@ export class Resolver {
     // colocation.≥
     let componentMatch = this.resolveComponent(path, inEngine, request);
     if (componentMatch !== request) {
-      return componentMatch;
+      return logTransition('ambiguous case matched a cmoponent', request, componentMatch);
     }
 
     // this is the hard failure case -- we were supposed to find something and
     // didn't. Let the normal resolution process progress so the user gets a
     // normal build error.
-    return request;
+    return logTransition('ambiguous case failing', request);
   }
 
   private resolveModifier<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
-    return request
-      .alias(`${target.packageName}/modifiers/${target.memberName}`)
-      .rehome(resolve(inEngine.root, 'package.json'));
+    return logTransition(
+      'resolveModifier',
+      request,
+      request
+        .alias(`${target.packageName}/modifiers/${target.memberName}`)
+        .rehome(resolve(inEngine.root, 'package.json'))
+    );
   }
 
   private *componentTemplateCandidates(inPackageName: string) {
@@ -389,6 +467,119 @@ export class Resolver {
     } else {
       return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'pacakge.json') };
     }
+  }
+
+  private engineConfig(packageName: string): EngineConfig | undefined {
+    return this.options.engines.find(e => e.packageName === packageName);
+  }
+
+  // This is where we figure out how all the classic treeForApp merging bottoms
+  // out.
+  @Memoize()
+  private get mergeMap(): MergeMap {
+    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let result: MergeMap = new Map();
+    for (let engine of this.options.engines) {
+      let engineModules: Map<string, MergeEntry> = new Map();
+      for (let addonConfig of engine.activeAddons) {
+        let addon = packageCache.get(addonConfig.root);
+        if (!addon.isV2Addon()) {
+          continue;
+        }
+
+        let appJS = addon.meta['app-js'];
+        if (appJS) {
+          for (let [inEngineName, inAddonName] of Object.entries(appJS)) {
+            if (!inEngineName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares app-js in its package.json with the illegal name "${inEngineName}". It must start with "./" to make it clear that it's relative to the app`
+              );
+            }
+            if (!inAddonName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
+              );
+            }
+            inEngineName = withoutJSExt(inEngineName);
+            let prevEntry = engineModules.get(inEngineName);
+            switch (prevEntry?.type) {
+              case undefined:
+                engineModules.set(inEngineName, {
+                  type: 'app-only',
+                  'app-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                });
+                break;
+              case 'app-only':
+              case 'both':
+                // first match wins, so this one is shadowed
+                break;
+              case 'fastboot-only':
+                engineModules.set(inEngineName, {
+                  type: 'both',
+                  'app-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                  'fastboot-js': prevEntry['fastboot-js'],
+                });
+                break;
+            }
+          }
+        }
+
+        let fastbootJS = addon.meta['fastboot-js'];
+        if (fastbootJS) {
+          for (let [inEngineName, inAddonName] of Object.entries(fastbootJS)) {
+            if (!inEngineName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inEngineName}". It must start with "./" to make it clear that it's relative to the app`
+              );
+            }
+            if (!inAddonName.startsWith('./')) {
+              throw new Error(
+                `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
+              );
+            }
+            inEngineName = withoutJSExt(inEngineName);
+            let prevEntry = engineModules.get(inEngineName);
+            switch (prevEntry?.type) {
+              case undefined:
+                engineModules.set(inEngineName, {
+                  type: 'fastboot-only',
+                  'fastboot-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                });
+                break;
+              case 'fastboot-only':
+              case 'both':
+                // first match wins, so this one is shadowed
+                break;
+              case 'app-only':
+                engineModules.set(inEngineName, {
+                  type: 'both',
+                  'fastboot-js': {
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
+                    fromPackageName: addon.name,
+                  },
+                  'app-js': prevEntry['app-js'],
+                });
+                break;
+            }
+          }
+        }
+      }
+      result.set(engine.root, engineModules);
+    }
+    return result;
   }
 
   owningEngine(pkg: Package) {
@@ -449,13 +640,6 @@ export class Resolver {
       return logTransition(`v1 self-import`, request, this.resolveWithinPackage(request, pkg));
     }
 
-    let originalPkg = this.originalPackage(request.fromFile);
-    if (originalPkg && pkg.meta['auto-upgraded'] && originalPkg.name === packageName) {
-      // A file that was relocated out of a package is importing that package's
-      // name, it should find its own original copy.
-      return logTransition(`self-import in app-js`, request, this.resolveWithinPackage(request, originalPkg));
-    }
-
     return request;
   }
 
@@ -493,9 +677,21 @@ export class Resolver {
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
         return external('beforeResolve', request, publicSpecifier);
-      } else {
-        return request;
       }
+
+      // if the requesting file is in an addon's app-js, the relative request
+      // should really be understood as a request for a module in the containing
+      // engine
+      let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+      if (logicalLocation) {
+        return logTransition(
+          'beforeResolve: relative import in app-js',
+          request,
+          request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
+        );
+      }
+
+      return request;
     }
 
     // absolute package imports can also be explicitly external based on their
@@ -524,9 +720,14 @@ export class Resolver {
       return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 
-    if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
+    // if this file is part of an addon's app-js, it's really the logical
+    // package to which it belongs (normally the app) that affects some policy
+    // choices about what it can import
+    let logicalPackage = this.logicalPackage(pkg, fromFile);
+
+    if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPackage);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -541,23 +742,14 @@ export class Resolver {
 
     // assertions on what native v2 addons can import
     if (!pkg.meta['auto-upgraded']) {
-      let originalPkg = this.originalPackage(fromFile);
-      if (originalPkg) {
-        // this file has been moved into another package (presumably the app).
-        if (packageName !== pkg.name) {
-          // the only thing that native v2 addons are allowed to import from
-          // within the app tree is their own name.
-          throw new Error(
-            `${pkg.name} is trying to import ${packageName} from within its app tree. This is unsafe, because ${pkg.name} can't control which dependencies are resolvable from the app`
-          );
-        }
-      } else {
-        // this file has not been moved. The normal case.
-        if (!pkg.meta['auto-upgraded'] && !reliablyResolvable(pkg, packageName)) {
-          throw new Error(
-            `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-          );
-        }
+      if (
+        !pkg.meta['auto-upgraded'] &&
+        !appImportInAppTree(pkg, logicalPackage, packageName) &&
+        !reliablyResolvable(pkg, packageName)
+      ) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        );
       }
     }
     return request;
@@ -585,20 +777,31 @@ export class Resolver {
 
     let pkg = this.owningPackage(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
-      return request;
+      return logTransition('fallbackResolve: not in an ember package', request);
     }
 
     let packageName = getPackageName(specifier);
     if (!packageName) {
-      // this is a relative import, we have nothing more to for it.
-      return request;
-    }
+      // this is a relative import
 
-    let originalPkg = this.originalPackage(fromFile);
-    if (originalPkg) {
-      // we didn't find it from the original package, so try from the relocated
-      // package
-      return logTransition(`relocation fallback`, request, request.rehome(resolve(originalPkg.root, 'package.json')));
+      let withinEngine = this.engineConfig(pkg.name);
+      if (withinEngine) {
+        // it's a relative import inside an engine (which also means app), which
+        // means we may need to satisfy the request via app tree merging.
+        let appJSMatch = this.searchAppTree(
+          request,
+          withinEngine,
+          explicitRelative(pkg.root, resolve(dirname(fromFile), specifier))
+        );
+        if (appJSMatch) {
+          return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
+        } else {
+          return logTransition('fallbackResolve: relative appJs search failure', request);
+        }
+      } else {
+        // nothing else to do for relative imports
+        return logTransition('fallbackResolve: relative failure', request);
+      }
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
@@ -613,6 +816,27 @@ export class Resolver {
           request,
           PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
         )
+      );
+    }
+
+    let targetingEngine = this.engineConfig(packageName);
+    if (targetingEngine) {
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
+      if (appJSMatch) {
+        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
+      }
+    }
+
+    let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+    if (logicalLocation) {
+      // the requesting file is in an addon's appTree. We didn't succeed in
+      // resolving this (non-relative) request from inside the actual addon, so
+      // next try to resolve it from the corresponding logical location in the
+      // app.
+      return logTransition(
+        'fallbackResolve: retry from logical home of app-js file',
+        request,
+        request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
       );
     }
 
@@ -633,22 +857,58 @@ export class Resolver {
 
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return request;
+    return logTransition('fallbackResolve final exit', request);
+  }
+
+  private searchAppTree<R extends ModuleRequest>(
+    request: R,
+    engine: EngineConfig,
+    inEngineSpecifier: string
+  ): R | undefined {
+    inEngineSpecifier = withoutJSExt(inEngineSpecifier);
+    let entry = this.mergeMap.get(engine.root)?.get(inEngineSpecifier);
+    switch (entry?.type) {
+      case undefined:
+        return undefined;
+      case 'app-only':
+        return request.alias(entry['app-js'].localPath).rehome(resolve(entry['app-js'].packageRoot, 'package.json'));
+      case 'fastboot-only':
+        return request
+          .alias(entry['fastboot-js'].localPath)
+          .rehome(resolve(entry['fastboot-js'].packageRoot, 'package.json'));
+      case 'both':
+        let foundAppJS = this.nodeResolve(
+          entry['app-js'].localPath,
+          resolve(entry['app-js'].packageRoot, 'package.json')
+        );
+        if (foundAppJS.type !== 'real') {
+          throw new Error(
+            `${entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
+          );
+        }
+        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
+        return request.virtualize(fastbootSwitch(request.specifier, request.fromFile, names));
+    }
   }
 
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  private reverseSearchAppTree(owningPackage: Package, fromFile: string) {
+  private reverseSearchAppTree(
+    owningPackage: Package,
+    fromFile: string
+  ): { owningEngine: EngineConfig; inAppName: string } | undefined {
     // if the requesting file is in an addon's app-js, the request should
     // really be understood as a request for a module in the containing engine
     if (owningPackage.isV2Addon()) {
-      let appJS = owningPackage.meta['app-js'];
-      if (appJS) {
-        let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
-        for (let [inAppName, inAddonName] of Object.entries(appJS)) {
-          if (inAddonName === fromPackageRelativePath) {
-            return { owningEngine: this.owningEngine(owningPackage), inAppName };
+      let sections = [owningPackage.meta['app-js'], owningPackage.meta['fastboot-js']];
+      for (let section of sections) {
+        if (section) {
+          let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
+          for (let [inAppName, inAddonName] of Object.entries(section)) {
+            if (inAddonName === fromPackageRelativePath) {
+              return { owningEngine: this.owningEngine(owningPackage), inAppName };
+            }
           }
         }
       }
@@ -723,7 +983,20 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
   return false;
 }
 
+//
+function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
+  return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
+}
+
 function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
   let filename = virtualExternalModule(specifier);
   return logTransition(label, request, request.virtualize(filename));
+}
+
+// this is specifically for app-js handling, where only .js and .hbs are legal
+// extensiosn, and only .js is allowed to be an *implied* extension (.hbs must
+// be explicit). So when normalizing such paths, it's only a .js suffix that we
+// must remove.
+function withoutJSExt(filename: string): string {
+  return filename.replace(/\.js$/, '');
 }

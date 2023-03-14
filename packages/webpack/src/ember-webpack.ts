@@ -197,6 +197,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
+    let babelLoaderOptions = makeBabelLoaderOptions(
+      babel.majorVersion,
+      variant,
+      join(this.pathToVanillaApp, babel.filename),
+      this.extraBabelLoaderOptions
+    );
+
+    let babelLoaderPrefix = `babel-loader-8?${JSON.stringify(babelLoaderOptions.options)}!`;
+
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
       context: this.pathToVanillaApp,
@@ -206,7 +215,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
       plugins: [
         ...stylePlugins,
-        new EmbroiderPlugin(resolverConfig),
+        new EmbroiderPlugin(resolverConfig, babelLoaderPrefix),
         compiler => {
           compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
             this.summarizeStats(stats, variant, variantIndex);
@@ -221,12 +230,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             test: /\.hbs$/,
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
-              babelLoaderOptions(
-                babel.majorVersion,
-                variant,
-                join(this.pathToVanillaApp, babel.filename),
-                this.extraBabelLoaderOptions
-              ),
+              babelLoaderOptions,
               {
                 loader: require.resolve('@embroider/hbs-loader'),
                 options: (() => {
@@ -246,7 +250,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
               maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
-              babelLoaderOptions(
+              makeBabelLoaderOptions(
                 babel.majorVersion,
                 variant,
                 join(this.pathToVanillaApp, babel.filename),
@@ -697,7 +701,7 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
   return array.filter(Boolean) as NonNullable<T>[];
 }
 
-function babelLoaderOptions(
+function makeBabelLoaderOptions(
   _majorVersion: 7,
   variant: Variant,
   appBabelConfigPath: string,

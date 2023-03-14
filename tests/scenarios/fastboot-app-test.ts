@@ -31,7 +31,7 @@ appScenarios
     let v2Example = baseV2Addon();
     v2Example.pkg.name = 'v2-example';
     (v2Example.pkg as any)['ember-addon']['app-js']['./components/v2-example-component.js'] =
-      'app/components/v2-example-component.js';
+      './app/components/v2-example-component.js';
     merge(v2Example.files, {
       app: {
         components: {

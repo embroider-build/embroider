@@ -27,10 +27,10 @@ export default class BuildStage<NamedTrees> implements Stage {
   get tree(): Node {
     return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
       if (!this.active) {
-        let { outputPath, packageCache } = await this.prevStage.ready();
+        let { outputPath } = await this.prevStage.ready();
         this.outputPath = outputPath;
-        this.packageCache = packageCache;
-        this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
+        this.packageCache = PackageCache.shared('embroider-stage3', this.prevStage.inputPath);
+        this.active = await this.instantiate(outputPath, this.prevStage.inputPath, this.packageCache);
       }
       delete (treePaths as any).__prevStageTree;
       await this.active.build(this.deAugment(treePaths));

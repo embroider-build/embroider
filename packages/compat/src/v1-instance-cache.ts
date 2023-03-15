@@ -1,6 +1,6 @@
 // All access to class ember-cli-provided Addon and EmberApp instances of v1
 // packages is supposed to go through here. This lets us control the boundary
-// between the new and old words.
+// between the new and old worlds.
 
 import V1App from './v1-app';
 import V1Addon, { V1AddonConstructor } from './v1-addon';

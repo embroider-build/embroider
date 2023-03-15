@@ -74,8 +74,12 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
       options,
       oldPackage,
       configTree,
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
+      packageCache.get(
+        join(oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-vendor')
+      ),
+      packageCache.get(
+        join(oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-styles')
+      )
     );
 
     return new AppBuilder<TreeNames>(

@@ -2,7 +2,7 @@ import { AddonMeta, AppMeta } from '@embroider/shared-internals';
 import { outputFileSync } from 'fs-extra';
 import { resolve } from 'path';
 import QUnit from 'qunit';
-import { Project, Scenarios } from 'scenario-tester';
+import { PreparedApp, Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
@@ -55,10 +55,26 @@ Scenarios.fromProject(() => new Project())
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
+      let app: PreparedApp;
+
+      function addonPackageJSON(addonMeta?: Partial<AddonMeta>) {
+        return JSON.stringify(
+          (() => {
+            let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(addonMeta ?? {}) };
+            return {
+              name: 'my-addon',
+              keywords: ['ember-addon'],
+              'ember-addon': meta,
+            };
+          })(),
+          null,
+          2
+        );
+      }
 
       hooks.beforeEach(async assert => {
         installAuditAssertions(assert);
-        let app = await scenario.prepare();
+        app = await scenario.prepare();
 
         givenFiles = function (files: Record<string, string>) {
           for (let [filename, contents] of Object.entries(files)) {
@@ -110,18 +126,7 @@ Scenarios.fromProject(() => new Project())
               module.exports = function(filename) { return true }
             `,
             '.embroider/resolver.json': JSON.stringify(resolverOptions),
-            'node_modules/my-addon/package.json': JSON.stringify(
-              (() => {
-                let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(opts?.addonMeta ?? {}) };
-                return {
-                  name: 'my-addon',
-                  keywords: ['ember-addon'],
-                  'ember-addon': meta,
-                };
-              })(),
-              null,
-              2
-            ),
+            'node_modules/my-addon/package.json': addonPackageJSON(opts?.addonMeta),
           });
 
           expectAudit = await assert.audit({ outputDir: app.dir });
@@ -592,6 +597,49 @@ Scenarios.fromProject(() => new Project())
 
           switcherModule.resolves('./fastboot').to('./node_modules/my-addon/_fastboot_/hello-world.js');
           switcherModule.resolves('./browser').to('./node_modules/my-addon/_app_/hello-world.js');
+        });
+      });
+
+      Qmodule('legacy-addons', function () {
+        test('app can resolve file in rewritten addon', async function () {
+          givenFiles({
+            'node_modules/.embroider/addons/v1-addon-index.json': JSON.stringify({
+              v1Addons: {
+                [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+              },
+            }),
+            'node_modules/.embroider/addons/my-addon.1234/hello-world.js': ``,
+            'node_modules/.embroider/addons/my-addon.1234/package.json': addonPackageJSON(),
+            'app.js': `import "my-addon/hello-world"`,
+          });
+
+          await configure({});
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-addon/hello-world')
+            .to('./node_modules/.embroider/addons/my-addon.1234/hello-world.js');
+        });
+
+        test('moved addon resolves dependencies from its original location', async function () {
+          givenFiles({
+            'node_modules/my-addon/node_modules/inner-dep/index.js': '',
+            'node_modules/.embroider/addons/v1-addon-index.json': JSON.stringify({
+              v1Addons: {
+                [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+              },
+            }),
+            'node_modules/.embroider/addons/my-addon.1234/hello-world.js': `import "inner-dep"`,
+            'node_modules/.embroider/addons/my-addon.1234/package.json': addonPackageJSON(),
+            'app.js': `import "my-addon/hello-world"`,
+          });
+
+          await configure({});
+
+          expectAudit
+            .module('./node_modules/.embroider/addons/my-addon.1234/hello-world.js')
+            .resolves('inner-dep')
+            .to('./node_modules/my-addon/node_modules/inner-dep/index.js');
         });
       });
     });

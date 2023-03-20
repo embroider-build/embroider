@@ -18,7 +18,8 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { readJSONSync } from 'fs-extra';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -151,6 +152,7 @@ export class Resolver {
 
     request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
+    request = this.handleLegacyAddons(request);
     request = this.handleRenaming(request);
     return this.preHandleExternal(request);
   }
@@ -177,9 +179,7 @@ export class Resolver {
 
   // synchronous alternative to resolve() above. Because our own internals are
   // all synchronous, you can use this if your defaultResolve function is
-  // synchronous. At present, we need this for the case where we are compiling
-  // non-strict templates and doing component resolutions inside the template
-  // compiler inside babel, which is a synchronous context.
+  // synchronous.
   resolveSync<Req extends ModuleRequest, Res extends Resolution>(
     request: Req,
     defaultResolve: SyncResolverFunction<Req, Res>
@@ -594,6 +594,68 @@ export class Resolver {
       );
     }
     return owningEngine;
+  }
+
+  private handleLegacyAddons<R extends ModuleRequest>(request: R): R {
+    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+
+    // first we handle output requests from moved packages
+    let pkg = this.owningPackage(request.fromFile);
+    if (!pkg) {
+      return request;
+    }
+    let originalRoot = this.legacyAddonsIndex.v2toV1.get(pkg.root);
+    if (originalRoot) {
+      request = logTransition(
+        'outbound from moved v1 addon',
+        request,
+        request.rehome(resolve(originalRoot, 'package.json'))
+      );
+      pkg = packageCache.get(originalRoot)!;
+    }
+
+    // then we handle inbound requests to moved packages
+    let packageName = getPackageName(request.specifier);
+    if (packageName && packageName !== pkg.name) {
+      // non-relative, non-self request, so check if it aims at a rewritten addon
+      try {
+        let target = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        if (target) {
+          let movedRoot = this.legacyAddonsIndex.v1ToV2.get(target.root);
+          if (movedRoot) {
+            request = logTransition(
+              'inbound to moved v1 addon',
+              request,
+              this.resolveWithinPackage(request, packageCache.get(movedRoot))
+            );
+          }
+        }
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
+      }
+    }
+
+    return request;
+  }
+
+  @Memoize()
+  private get legacyAddonsIndex(): { v1ToV2: Map<string, string>; v2toV1: Map<string, string> } {
+    let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'addons');
+    let indexFile = resolve(addonsDir, 'v1-addon-index.json');
+    if (existsSync(indexFile)) {
+      let { v1Addons } = readJSONSync(indexFile) as { v1Addons: Record<string, string> };
+      return {
+        v1ToV2: new Map(
+          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
+        ),
+        v2toV1: new Map(
+          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
+        ),
+      };
+    }
+    return { v1ToV2: new Map(), v2toV1: new Map() };
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {

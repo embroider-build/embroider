@@ -166,7 +166,7 @@ export default class MacrosConfig {
   }
 
   private get packageCache() {
-    return PackageCache.shared('embroider-macros', this.origAppRoot);
+    return PackageCache.shared('embroider-unified', this.origAppRoot);
   }
 
   private get appRoot(): string {

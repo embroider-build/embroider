@@ -66,7 +66,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     appBootTree,
   };
 
-  let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
+  let instantiate = async (root: string, appSrcDir: string) => {
+    let packageCache = PackageCache.shared('embroider-unified', appSrcDir);
     let appPackage = packageCache.get(appSrcDir);
     let adapter = new CompatAppAdapter(
       root,

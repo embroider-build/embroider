@@ -72,11 +72,6 @@ export default class PackageCache {
     }
   }
 
-  // register to be shared as the per-process package cache with the given name
-  shareAs(identifier: string) {
-    shared.set(identifier, this);
-  }
-
   static shared(identifier: string, appRoot: string) {
     let pk = getOrCreate(shared, identifier + appRoot, () => new PackageCache(appRoot));
     if (pk.appRoot !== appRoot) {

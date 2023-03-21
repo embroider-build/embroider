@@ -11,7 +11,7 @@ import type { Node } from 'broccoli-node-api';
 export function convertLegacyAddons(emberApp: EmberAppInstance, maybeOptions?: Options) {
   let options = optionsWithDefaults(maybeOptions);
   let instanceCache = V1InstanceCache.forApp(emberApp, options);
-  let packageCache = PackageCache.shared('embroider-stage1', instanceCache.app.root);
+  let packageCache = PackageCache.shared('embroider-unified', instanceCache.app.root);
   let v1Addons = findV1Addons(packageCache.get(instanceCache.app.root));
 
   let addonIndex = Object.create(null);

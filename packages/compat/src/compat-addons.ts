@@ -47,7 +47,7 @@ export default class CompatAddons implements Stage {
     await this.deferReady.promise;
     return {
       outputPath: this.destDir,
-      packageCache: PackageCache.shared('embroider-stage1', this.inputPath),
+      packageCache: PackageCache.shared('embroider-unified', this.inputPath),
     };
   }
 

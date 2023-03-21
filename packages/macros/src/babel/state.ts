@@ -55,7 +55,7 @@ export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Prog
   state.jobs = [];
   state.removed = new Set();
   state.calledIdentifiers = new Set();
-  state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
+  state.packageCache = PackageCache.shared('embroider-unified', state.opts.appPackageRoot);
   state.sourceFile = state.opts.owningPackageRoot || path.hub.file.opts.filename;
   state.pathToOurAddon = pathToAddon;
   state.owningPackage = owningPackage;

@@ -268,13 +268,13 @@ export class Resolver {
   }
 
   owningPackage(fromFile: string): Package | undefined {
-    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
+    return PackageCache.shared('embroider-unified', this.options.appRoot).ownerOfFile(fromFile);
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
     let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
     if (logicalLocation) {
-      let pkg = PackageCache.shared('embroider-stage3', this.options.appRoot).get(logicalLocation.owningEngine.root);
+      let pkg = PackageCache.shared('embroider-unified', this.options.appRoot).get(logicalLocation.owningEngine.root);
       if (!pkg.isV2Ember()) {
         throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
@@ -477,7 +477,7 @@ export class Resolver {
   // out.
   @Memoize()
   private get mergeMap(): MergeMap {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let packageCache = PackageCache.shared('embroider-unified', this.options.appRoot);
     let result: MergeMap = new Map();
     for (let engine of this.options.engines) {
       let engineModules: Map<string, MergeEntry> = new Map();
@@ -597,9 +597,9 @@ export class Resolver {
   }
 
   private handleLegacyAddons<R extends ModuleRequest>(request: R): R {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let packageCache = PackageCache.shared('embroider-unified', this.options.appRoot);
 
-    // first we handle output requests from moved packages
+    // first we handle outbound requests from moved packages
     let pkg = this.owningPackage(request.fromFile);
     if (!pkg) {
       return request;
@@ -619,7 +619,7 @@ export class Resolver {
     if (packageName && packageName !== pkg.name) {
       // non-relative, non-self request, so check if it aims at a rewritten addon
       try {
-        let target = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
+        let target = PackageCache.shared('embroider-unified', this.options.appRoot).resolve(packageName, pkg);
         if (target) {
           let movedRoot = this.legacyAddonsIndex.v1ToV2.get(target.root);
           if (movedRoot) {
@@ -789,7 +789,7 @@ export class Resolver {
 
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPackage);
+        let dep = PackageCache.shared('embroider-unified', this.options.appRoot).resolve(packageName, logicalPackage);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -876,7 +876,7 @@ export class Resolver {
         request,
         this.resolveWithinPackage(
           request,
-          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+          PackageCache.shared('embroider-unified', this.options.appRoot).get(this.options.activeAddons[packageName])
         )
       );
     }

@@ -15,12 +15,13 @@ import {
   OutputFileToInputFileMap,
   PackageInfo,
   AddonInstance,
+  PackageCache,
 } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage, { OwningAddon } from './dummy-package';
 import { TransformOptions } from '@babel/core';
-import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
+import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
@@ -30,7 +31,6 @@ import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
-import { MovablePackageCache } from './moved-package-cache';
 
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 
@@ -64,10 +64,10 @@ export default class V1App {
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
-  packageCache: MovablePackageCache;
+  packageCache: PackageCache;
 
   protected constructor(protected app: EmberAppInstance) {
-    this.packageCache = new MovablePackageCache(MacrosConfig.for(app, this.root), this.root);
+    this.packageCache = PackageCache.shared('embroider-unified', this.root);
   }
 
   // always the name from package.json. Not the one that apps may have weirdly

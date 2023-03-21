@@ -18,8 +18,8 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { existsSync, readFileSync } from 'fs';
-import { readJSONSync } from 'fs-extra';
+import { readFileSync } from 'fs';
+import { RewrittenPackages } from './rewritten-packages';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -139,7 +139,11 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  constructor(private options: Options) {}
+  private rewrittenPackages: RewrittenPackages;
+
+  constructor(private options: Options) {
+    this.rewrittenPackages = new RewrittenPackages(this.options.appRoot);
+  }
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
@@ -604,7 +608,7 @@ export class Resolver {
     if (!pkg) {
       return request;
     }
-    let originalRoot = this.legacyAddonsIndex.v2toV1.get(pkg.root);
+    let originalRoot = this.rewrittenPackages.rewrittenFrom(pkg.root);
     if (originalRoot) {
       request = logTransition(
         'outbound from moved v1 addon',
@@ -621,7 +625,7 @@ export class Resolver {
       try {
         let target = PackageCache.shared('embroider-unified', this.options.appRoot).resolve(packageName, pkg);
         if (target) {
-          let movedRoot = this.legacyAddonsIndex.v1ToV2.get(target.root);
+          let movedRoot = this.rewrittenPackages.rewrittenTo(target.root);
           if (movedRoot) {
             request = logTransition(
               'inbound to moved v1 addon',
@@ -638,24 +642,6 @@ export class Resolver {
     }
 
     return request;
-  }
-
-  @Memoize()
-  private get legacyAddonsIndex(): { v1ToV2: Map<string, string>; v2toV1: Map<string, string> } {
-    let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'addons');
-    let indexFile = resolve(addonsDir, 'v1-addon-index.json');
-    if (existsSync(indexFile)) {
-      let { v1Addons } = readJSONSync(indexFile) as { v1Addons: Record<string, string> };
-      return {
-        v1ToV2: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
-        ),
-        v2toV1: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
-        ),
-      };
-    }
-    return { v1ToV2: new Map(), v2toV1: new Map() };
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {

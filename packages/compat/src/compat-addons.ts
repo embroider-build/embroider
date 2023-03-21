@@ -1,6 +1,5 @@
 import { Node } from 'broccoli-node-api';
-import { emptyDirSync, ensureDirSync, realpathSync } from 'fs-extra';
-import { Stage, PackageCache, WaitForTrees, EmberAppInstance } from '@embroider/core';
+import { WaitForTrees, EmberAppInstance } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import Options, { optionsWithDefaults } from './options';
 import TreeSync from 'tree-sync';
@@ -19,9 +18,8 @@ if (typeof process.env.BROCCOLI_ENABLED_MEMOIZE === 'undefined') {
   process.env.BROCCOLI_ENABLED_MEMOIZE = 'true';
 }
 
-export default class CompatAddons implements Stage {
+export default class CompatAddons {
   private didBuild = false;
-  private destDir: string;
   private treeSync: TreeSync | undefined;
   readonly inputPath: string;
 
@@ -30,25 +28,12 @@ export default class CompatAddons implements Stage {
   constructor(legacyEmberAppInstance: EmberAppInstance, maybeOptions?: Options) {
     let options = optionsWithDefaults(maybeOptions);
 
-    // we want this to be stable across builds, because it becomes part of the
-    // path to all of the files that the stage3 packager sees, and we want to
-    // benefit from on-disk caching in stage3 packagers.
-    ensureDirSync(options.workspaceDir!);
-    this.destDir = realpathSync(options.workspaceDir!);
     this.addons = convertLegacyAddons(legacyEmberAppInstance, maybeOptions);
     this.inputPath = V1InstanceCache.forApp(legacyEmberAppInstance, options).app.root;
   }
 
   get tree(): Node {
     return new WaitForTrees({ addons: this.addons }, '@embroider/compat/addons', this.build.bind(this));
-  }
-
-  async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
-    await this.deferReady.promise;
-    return {
-      outputPath: this.destDir,
-      packageCache: PackageCache.shared('embroider-unified', this.inputPath),
-    };
   }
 
   private async build(
@@ -59,11 +44,6 @@ export default class CompatAddons implements Stage {
     },
     changedMap: Map<string, boolean>
   ) {
-    // empty the directory only on the first pass
-    if (!this.didBuild) {
-      emptyDirSync(this.destDir);
-    }
-
     if (!this.treeSync) {
       this.treeSync = new TreeSync(addons, resolve(this.inputPath, 'node_modules/.embroider/addons'), {
         ignore: ['**/node_modules'],

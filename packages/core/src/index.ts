@@ -7,7 +7,6 @@ export {
   getPackagerCacheDir,
 } from './packager';
 export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
-export { default as Stage } from './stage';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';

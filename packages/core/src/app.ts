@@ -228,7 +228,6 @@ export class AppBuilder<TreeNames> {
   private assets: Map<string, InternalAsset> = new Map();
 
   constructor(
-    private root: string,
     private app: Package,
     private adapter: AppAdapter<TreeNames>,
     private options: Required<Options>,
@@ -243,6 +242,10 @@ export class AppBuilder<TreeNames> {
       // macros in a classic build.
       active: true,
     });
+  }
+
+  private get root() {
+    return resolvePath(this.app.root, 'node_modules', '.embroider', 'addons', this.app.name);
   }
 
   private scriptPriority(pkg: Package) {

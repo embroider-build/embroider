@@ -1,7 +1,6 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import {
-  Stage,
   PackageCache,
   OutputPaths,
   BuildStage,
@@ -67,17 +66,16 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     appBootTree,
   };
 
-  let instantiate = async (root: string, appSrcDir: string) => {
-    let packageCache = PackageCache.shared('embroider-unified', appSrcDir);
-    let appPackage = packageCache.get(appSrcDir);
-    let adapter = new CompatAppAdapter(root, appPackage, options, oldPackage, configTree, packageCache);
+  let instantiate = async () => {
+    let packageCache = PackageCache.shared('embroider-unified', oldPackage.root);
+    let appPackage = packageCache.get(oldPackage.root);
+    let adapter = new CompatAppAdapter(appPackage, options, oldPackage, configTree, packageCache);
 
     return new AppBuilder<TreeNames>(
-      root,
       appPackage,
       adapter,
       options,
-      MacrosConfig.for(legacyEmberAppInstance, appSrcDir)
+      MacrosConfig.for(legacyEmberAppInstance, appPackage.root)
     );
   };
 
@@ -88,7 +86,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   private rewrittenPackages: RewrittenPackages;
 
   constructor(
-    private root: string,
     private appPackage: Package,
     private options: Required<Options>,
     private oldPackage: V1App,
@@ -96,6 +93,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     private packageCache: PackageCache
   ) {
     this.rewrittenPackages = new RewrittenPackages(oldPackage.root);
+  }
+
+  private get root() {
+    return this.oldPackage.root;
   }
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
@@ -429,7 +430,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
 }
 
 export default class CompatApp extends BuildStage<TreeNames> {
-  constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
+  constructor(legacyEmberAppInstance: object, addons: BroccoliNode, options?: Options) {
     let { inTrees, instantiate } = setup(legacyEmberAppInstance, optionsWithDefaults(options));
     super(addons, inTrees, '@embroider/compat/app', instantiate);
   }

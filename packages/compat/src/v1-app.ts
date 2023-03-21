@@ -60,6 +60,12 @@ export default class V1App {
     }
   }
 
+  // the true NPM package root for the app, regardless of shenanigans within
+  // classic ember-cli
+  static root(app: EmberAppInstance): string {
+    return dirname(pkgUpSync({ cwd: app.project.root })!);
+  }
+
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
@@ -82,7 +88,7 @@ export default class V1App {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync({ cwd: this.app.project.root })!);
+    return V1App.root(this.app);
   }
 
   @Memoize()

@@ -9,7 +9,6 @@ import {
 } from '@embroider/shared-internals';
 import { OutputPaths } from './wait-for-trees';
 import { compile } from './js-handlebars';
-import resolve from 'resolve';
 import { Memoize } from 'typescript-memoize';
 import { copySync, ensureDirSync, outputJSONSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath, sep, posix } from 'path';
@@ -35,6 +34,7 @@ import { PortableHint, maybeNodeModuleVersion } from './portable';
 import escapeRegExp from 'escape-string-regexp';
 import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ColocationOptions } from '@embroider/shared-internals/src/template-colocation-plugin';
+import { Resolver } from './module-resolver';
 
 export type EmberENV = unknown;
 
@@ -339,10 +339,10 @@ export class AppBuilder<TreeNames> {
           if (type === 'implicit-styles') {
             // exclude engines because they will handle their own css importation
             if (!addon.isLazyEngine()) {
-              styles.push(resolve.sync(mod, options));
+              styles.push(this.resolve(mod, options));
             }
           } else {
-            result.push(resolve.sync(mod, options));
+            result.push(this.resolve(mod, options));
           }
         }
         if (styles.length) {
@@ -879,6 +879,8 @@ export class AppBuilder<TreeNames> {
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);
+    let resolverConfig = this.adapter.resolverConfig(appFiles);
+    this.readyResolver = new Resolver(resolverConfig);
     let emberENV = this.adapter.emberENV();
     let assets = this.gatherAssets(inputPaths);
 
@@ -920,10 +922,28 @@ export class AppBuilder<TreeNames> {
     let pkg = this.combinePackageJSON(meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
-    let resolverConfig = this.adapter.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
+  }
+
+  private readyResolver: Resolver | undefined;
+
+  resolve(specifier: string, params: { basedir: string }): string {
+    if (!this.readyResolver) {
+      throw new Error('bug: resolver not ready yet');
+    }
+    let resolution = this.readyResolver.nodeResolve(specifier, join(params.basedir, 'package.json'));
+    switch (resolution.type) {
+      case 'real':
+        return resolution.filename;
+      case 'not_found':
+        throw resolution.err;
+      case 'virtual':
+        let err: any = new Error(`module not found: ${specifier} in ${params.basedir}`);
+        err.code = 'MODULE_NOT_FOUND';
+        throw err;
+    }
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -953,7 +973,7 @@ export class AppBuilder<TreeNames> {
 
     return {
       transforms,
-      compilerPath: resolve.sync(this.adapter.templateCompilerPath(), { basedir: this.root }),
+      compilerPath: this.resolve(this.adapter.templateCompilerPath(), { basedir: this.root }),
       enableLegacyModules: ['ember-cli-htmlbars', 'ember-cli-htmlbars-inline-precompile', 'htmlbars-inline-precompile'],
     };
   }
@@ -967,7 +987,7 @@ export class AppBuilder<TreeNames> {
         if (i < hint.resolve.length - 1) {
           target = join(target, 'package.json');
         }
-        cursor = resolve.sync(target, { basedir: dirname(cursor) });
+        cursor = this.resolve(target, { basedir: dirname(cursor) });
       }
 
       return {

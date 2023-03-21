@@ -34,6 +34,7 @@ import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import type { PluginItem } from '@babel/core';
+import { RewrittenPackages } from '@embroider/core/src/rewritten-packages';
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -69,19 +70,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
   let instantiate = async (root: string, appSrcDir: string) => {
     let packageCache = PackageCache.shared('embroider-unified', appSrcDir);
     let appPackage = packageCache.get(appSrcDir);
-    let adapter = new CompatAppAdapter(
-      root,
-      appPackage,
-      options,
-      oldPackage,
-      configTree,
-      packageCache.get(
-        join(oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-vendor')
-      ),
-      packageCache.get(
-        join(oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-styles')
-      )
-    );
+    let adapter = new CompatAppAdapter(root, appPackage, options, oldPackage, configTree, packageCache);
 
     return new AppBuilder<TreeNames>(
       root,
@@ -96,15 +85,18 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
 }
 
 class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
+  private rewrittenPackages: RewrittenPackages;
+
   constructor(
     private root: string,
     private appPackage: Package,
     private options: Required<Options>,
     private oldPackage: V1App,
     private configTree: V1Config,
-    private synthVendor: Package,
-    private synthStyles: Package
-  ) {}
+    private packageCache: PackageCache
+  ) {
+    this.rewrittenPackages = new RewrittenPackages(oldPackage.root);
+  }
 
   appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
     return treePaths.appJS;
@@ -185,7 +177,8 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
 
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
-    let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
+    pkg = this.newToOld(pkg);
+    let result = (pkg.dependencies.map(p => this.oldToNew(p)).filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
       // a given package, to align with how ember-cli resolves addons. So here
       // we only include dependencies that definitely appear in one of the other
@@ -199,9 +192,41 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     return result.sort(this.orderAddons);
   }
 
+  get synthVendor() {
+    return this.packageCache.get(
+      join(this.oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-vendor')
+    );
+  }
+
+  get synthStyles() {
+    return this.packageCache.get(
+      join(this.oldPackage.root, 'node_modules', '.embroider', 'addons', '@embroider', 'synthesized-styles')
+    );
+  }
+
+  private oldToNew<P extends Package>(pkg: P): P {
+    let toRoot = this.rewrittenPackages.rewrittenTo(pkg.root);
+    if (toRoot) {
+      return this.packageCache.get(toRoot) as P;
+    } else {
+      return pkg;
+    }
+  }
+
+  private newToOld<P extends Package>(pkg: P): P {
+    let toRoot = this.rewrittenPackages.rewrittenFrom(pkg.root);
+    if (toRoot) {
+      return this.packageCache.get(toRoot) as P;
+    } else {
+      return pkg;
+    }
+  }
+
   @Memoize()
   get allActiveAddons(): AddonPackage[] {
-    let result = this.appPackage.findDescendants(this.isActiveAddon) as AddonPackage[];
+    let result = (this.newToOld(this.appPackage).findDescendants(this.isActiveAddon) as AddonPackage[])
+      .map(p => this.oldToNew(p))
+      .filter(this.isActiveAddon); // need to filter again because in the oldToNew rewriting some things may end up not active
     let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
@@ -210,7 +235,6 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
 
   @bind
   private isActiveAddon(pkg: Package): boolean {
-    // todo: filter by addon-provided hook
     return pkg.isEmberPackage();
   }
 

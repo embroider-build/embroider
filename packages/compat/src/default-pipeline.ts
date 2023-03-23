@@ -2,6 +2,7 @@ import { App, Addons as CompatAddons, Options } from '.';
 import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
 import V1App from './v1-app';
+import { join } from 'path';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
@@ -28,7 +29,12 @@ export default function defaultPipeline<PackagerOptions>(
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(embroiderApp.tree, V1App.root(emberApp), variants, options && options.packagerOptions);
+  return new BroccoliPackager(
+    embroiderApp.tree,
+    join(V1App.root(emberApp), 'node_modules', '.embroider', 'app'),
+    variants,
+    options && options.packagerOptions
+  );
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

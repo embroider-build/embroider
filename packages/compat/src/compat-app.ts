@@ -16,7 +16,7 @@ import {
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { JSDOM } from 'jsdom';
 import { V1Config } from './v1-config';
 import { statSync, readdirSync } from 'fs';
@@ -95,7 +95,11 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     this.rewrittenPackages = new RewrittenPackages(oldPackage.root);
   }
 
-  private get root() {
+  private get rewrittenRoot() {
+    return resolve(this.oldPackage.root, 'node_modules', '.embroider', 'app');
+  }
+
+  private get originalRoot() {
     return this.oldPackage.root;
   }
 
@@ -155,7 +159,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   findTestemAsset(): Asset | undefined {
     let sourcePath;
     try {
-      sourcePath = resolveSync('ember-cli/lib/broccoli/testem.js', { basedir: this.root });
+      sourcePath = resolveSync('ember-cli/lib/broccoli/testem.js', { basedir: this.originalRoot });
     } catch (err) {}
     if (sourcePath) {
       let stat = statSync(sourcePath);
@@ -347,7 +351,7 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      { name: this.appPackage.name, version: this.appPackage.version, root: this.root },
+      { name: this.appPackage.name, version: this.appPackage.version, root: this.rewrittenRoot },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }
@@ -390,10 +394,10 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       renameModules,
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
-      appRoot: this.root,
+      appRoot: this.originalRoot,
       engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
-        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
+        root: index === 0 ? this.originalRoot : engine.package.root, // first engine is the app
         activeAddons: [...engine.addons]
           .map(a => ({
             name: a.name,

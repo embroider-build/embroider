@@ -244,8 +244,12 @@ export class AppBuilder<TreeNames> {
     });
   }
 
-  private get root() {
-    return resolvePath(this.app.root, 'node_modules', '.embroider', 'addons', this.app.name);
+  private get originalRoot() {
+    return this.app.root;
+  }
+
+  private get rewrittenRoot() {
+    return resolvePath(this.app.root, 'node_modules', '.embroider', 'app');
   }
 
   private scriptPriority(pkg: Package) {
@@ -274,7 +278,7 @@ export class AppBuilder<TreeNames> {
         let stats = statSync(sourcePath);
         return {
           kind: 'on-disk',
-          relativePath: explicitRelative(this.root, sourcePath),
+          relativePath: explicitRelative(this.rewrittenRoot, sourcePath),
           sourcePath,
           mtime: stats.mtimeMs,
           size: stats.size,
@@ -393,7 +397,7 @@ export class AppBuilder<TreeNames> {
     babel.plugins.push(...this.macrosConfig.babelPluginConfig());
 
     let colocationOptions: ColocationOptions = {
-      appRoot: this.root,
+      appRoot: this.rewrittenRoot,
 
       // This extra weirdness is a compromise in favor of build performance.
       //
@@ -439,7 +443,7 @@ export class AppBuilder<TreeNames> {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    const portable = makePortable(babel, { basedir: this.root }, this.portableHints);
+    const portable = makePortable(babel, { basedir: this.rewrittenRoot }, this.portableHints);
     addCachablePlugin(portable.config);
     return portable;
   }
@@ -609,7 +613,7 @@ export class AppBuilder<TreeNames> {
         addons: new Set(),
         parent: undefined,
         sourcePath: appJSPath,
-        destPath: this.root,
+        destPath: this.rewrittenRoot,
         modulePrefix: this.modulePrefix,
         appRelativePath: '.',
       },
@@ -632,7 +636,7 @@ export class AppBuilder<TreeNames> {
             sourcePath: mangledEngineRoot(addon),
             destPath: addon.root,
             modulePrefix: addon.name,
-            appRelativePath: explicitRelative(this.root, addon.root),
+            appRelativePath: explicitRelative(this.rewrittenRoot, addon.root),
           });
         }
       }
@@ -751,37 +755,37 @@ export class AppBuilder<TreeNames> {
   }
 
   private updateOnDiskAsset(asset: OnDiskAsset) {
-    let destination = join(this.root, asset.relativePath);
+    let destination = join(this.rewrittenRoot, asset.relativePath);
     ensureDirSync(dirname(destination));
     copySync(asset.sourcePath, destination, { dereference: true });
   }
 
   private updateInMemoryAsset(asset: InMemoryAsset) {
-    let destination = join(this.root, asset.relativePath);
+    let destination = join(this.rewrittenRoot, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, 'utf8');
   }
 
   private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
-    let destination = join(this.root, asset.relativePath);
+    let destination = join(this.rewrittenRoot, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, 'utf8');
   }
 
   private async updateConcatenatedAsset(asset: ConcatenatedAsset) {
     let concat = new SourceMapConcat({
-      outputFile: join(this.root, asset.relativePath),
+      outputFile: join(this.rewrittenRoot, asset.relativePath),
       mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
-      baseDir: this.root,
+      baseDir: this.rewrittenRoot,
     });
     if (process.env.EMBROIDER_CONCAT_STATS) {
       let MeasureConcat = (await import('./measure-concat')).default;
-      concat = new MeasureConcat(asset.relativePath, concat, this.root);
+      concat = new MeasureConcat(asset.relativePath, concat, this.rewrittenRoot);
     }
     for (let source of asset.sources) {
       switch (source.kind) {
         case 'on-disk':
-          concat.addFile(explicitRelative(this.root, source.sourcePath));
+          concat.addFile(explicitRelative(this.rewrittenRoot, source.sourcePath));
           break;
         case 'in-memory':
           if (typeof source.source !== 'string') {
@@ -822,7 +826,7 @@ export class AppBuilder<TreeNames> {
     }
     for (let oldAsset of this.assets.values()) {
       if (!assets.has(oldAsset.relativePath)) {
-        unlinkSync(join(this.root, oldAsset.relativePath));
+        unlinkSync(join(this.rewrittenRoot, oldAsset.relativePath));
       }
     }
     this.assets = assets;
@@ -870,7 +874,7 @@ export class AppBuilder<TreeNames> {
 
   async build(inputPaths: OutputPaths<TreeNames>) {
     if (this.adapter.env !== 'production') {
-      this.macrosConfig.enablePackageDevelopment(this.root);
+      this.macrosConfig.enablePackageDevelopment(this.rewrittenRoot);
       this.macrosConfig.enableRuntimeMode();
     }
     for (let pkgRoot of this.adapter.developingAddons()) {
@@ -923,7 +927,7 @@ export class AppBuilder<TreeNames> {
     }
 
     let pkg = this.combinePackageJSON(meta);
-    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+    writeFileSync(join(this.rewrittenRoot, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
     this.addResolverConfig(resolverConfig);
     let babelConfig = this.babelConfig(resolverConfig);
@@ -976,7 +980,7 @@ export class AppBuilder<TreeNames> {
 
     return {
       transforms,
-      compilerPath: this.resolve(this.adapter.templateCompilerPath(), { basedir: this.root }),
+      compilerPath: this.resolve(this.adapter.templateCompilerPath(), { basedir: this.originalRoot }),
       enableLegacyModules: ['ember-cli-htmlbars', 'ember-cli-htmlbars-inline-precompile', 'htmlbars-inline-precompile'],
     };
   }
@@ -1006,19 +1010,19 @@ export class AppBuilder<TreeNames> {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
     writeFileSync(
-      join(this.root, '_babel_config_.js'),
+      join(this.rewrittenRoot, '_babel_config_.js'),
       `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
       'utf8'
     );
     writeFileSync(
-      join(this.root, '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.root }),
+      join(this.rewrittenRoot, '_babel_filter_.js'),
+      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.originalRoot }),
       'utf8'
     );
   }
 
   private addResolverConfig(config: ResolverConfig) {
-    outputJSONSync(join(this.root, '.embroider', 'resolver.json'), config);
+    outputJSONSync(join(this.rewrittenRoot, '.embroider', 'resolver.json'), config);
   }
 
   private shouldSplitRoute(routeName: string) {

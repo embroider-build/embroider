@@ -680,6 +680,42 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('helper name collision with html element', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#let (div this.a this.b) as |c|}}
+          <div>{{c}}</div>
+        {{/let}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import div_ from "#embroider_compat/helpers/div";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate('{{#let (div_ this.a this.b) as |c|}}\\n          <div>{{c}}</div>\\n        {{/let}}', {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              div_
+            })
+          });
+        `);
+      });
+
+      test('helper name collision with js reserved keyword', async function () {
+        givenFiles({
+          'templates/application.hbs': `<div class={{await 1}}/>`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`          
+          import await_ from "#embroider_compat/helpers/await";
+          import { precompileTemplate } from "@ember/template-compilation";
+          export default precompileTemplate("<div class={{await_ 1}} />", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+               await_,
+            }),
+          });
+        `);
+      });
+
       test('helper in content position, manually disambiguated', async function () {
         givenFiles({
           'templates/application.hbs': `{{myHelper}}`,

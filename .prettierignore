@@ -1,5 +1,5 @@
 # No need to run prettier here
-*.md 
+*.md
 *.yml
 *.html
 *.json

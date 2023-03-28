@@ -20,19 +20,19 @@ appScenarios
 
       module.exports = {
         name: require('./package').name,
-      
+
         setupPreprocessorRegistry(type, registry) {
           if (type !== 'parent') {
             return;
           }
-      
+
           registry.add('js', {
             name: 'special-path-processor',
             toTree(tree, inputPath) {
               if (inputPath !== '/') {
                 return tree;
               }
-      
+
               let augmented = map(
                 tree,
                 '**/*.{js,css}',

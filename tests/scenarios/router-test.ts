@@ -19,7 +19,7 @@ tsAppScenarios
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { maybeEmbroider } = require('@embroider/test-setup');
-        
+
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
             'ember-cli-babel': {
@@ -31,7 +31,7 @@ tsAppScenarios
               }
             }
           });
-        
+
           return maybeEmbroider(app, {
             staticAddonTestSupportTrees: true,
             staticAddonTrees: true,
@@ -220,7 +220,7 @@ tsAppScenarios
               );
             });
           });
-                  
+
           `,
         },
       },

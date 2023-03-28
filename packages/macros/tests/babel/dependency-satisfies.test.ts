@@ -141,7 +141,7 @@ describe(`dependencySatisfies`, function () {
         import { dependencySatisfies } from '@embroider/macros';
 
         export default function() {
-          return { 
+          return {
             // specified in dependencies
             util: dependencySatisfies('@embroider/util', '*'),
 

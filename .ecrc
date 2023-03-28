@@ -13,5 +13,8 @@
         "\\.DS_Store",
         "\\.ember-try",
         "LICENSE$"
-    ]
+    ],
+    "Disable": {
+      "Indentation": true
+    }
 }

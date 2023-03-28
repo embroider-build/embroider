@@ -188,7 +188,7 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
                 <Thing />
              {{/let}}`,
             {
-              strict: true,
+              strictMode: true,
               scope: () => ({
                 ensureSafeComponent,
               }),

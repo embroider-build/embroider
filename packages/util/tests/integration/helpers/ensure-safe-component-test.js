@@ -10,6 +10,7 @@ import { ensureSafeComponent } from '@embroider/util';
 import * as SomeComponentModule from 'dummy/components/some-component';
 import ColocatedExample from 'dummy/components/colocated-example';
 import { setOwner } from '@ember/application';
+import { precompileTemplate } from '@ember/template-compilation';
 
 const SomeComponent = SomeComponentModule.default;
 
@@ -174,5 +175,35 @@ module('Integration | Helper | ensure-safe-component', function (hooks) {
     await settled();
     assert.strictEqual(this.element.textContent.trim(), 'second:goodbye');
     assert.deepEqual(log, ['target instantiated', 'new target instantiated']);
+  });
+
+  module('with strict: true', function () {
+    test('reference to class property-as-component is allowed', async function (assert) {
+      const Thing = setComponentTemplate(hbs`thing`, templateOnlyComponent());
+
+      this.inner = ensureSafeComponent(
+        setComponentTemplate(
+          precompileTemplate(
+            `{{#let (component (ensureSafeComponent this.thing)) as |Thing|}}
+                <Thing />
+             {{/let}}`,
+            {
+              strict: true,
+              scope: () => ({
+                ensureSafeComponent,
+              }),
+            }
+          ),
+          class extends Component {
+            thing = Thing;
+          }
+        ),
+        this
+      );
+      await render(hbs`
+        <this.inner @name={{component "some-component"}} />
+      `);
+      assert.strictEqual(this.element.textContent.trim(), 'thing');
+    });
   });
 });

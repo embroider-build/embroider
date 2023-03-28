@@ -31,6 +31,7 @@
     "compile": "tsc",
     "lint": "concurrently 'yarn:lint:*'",
     "lint:eslint": "eslint . --cache",
+    "lint:prettier": "prettier . -c",
     "lint:router-types": "cd packages/router && yarn lint:types",
     "prepare": "tsc && yarn build-v2-addons",
     "build-v2-addons": "concurrently 'yarn:build-v2-addons:*'",

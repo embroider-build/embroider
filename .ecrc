@@ -1,0 +1,17 @@
+{
+    "Exclude": [
+        "\\.md$",
+        "\\.js$",
+        "\\.d\\.ts$",
+        "/vendor/",
+        "dist/",
+        "tmp/",
+        "bower_components/",
+        "node_modules/",
+        "coverage/",
+        "vendor/",
+        "\\.DS_Store",
+        "\\.ember-try",
+        "LICENSE$"
+    ]
+}

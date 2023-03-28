@@ -6664,6 +6664,11 @@ editions@^2.2.0:
     errlop "^2.0.0"
     semver "^6.3.0"
 
+editorconfig-checker@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/editorconfig-checker/-/editorconfig-checker-5.0.1.tgz#cb4bf7a9b80f1b63b141b8897d7cc326fce0d3ae"
+  integrity sha512-6hXq9VVDkyCxVYKdGtIj+yhVR1fi/6W6Ykz/+kItLPARulJvr2/VXgWZ5OGWx1UYm2RD6XOzWyx1JF6DLgQ/8Q==
+
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"

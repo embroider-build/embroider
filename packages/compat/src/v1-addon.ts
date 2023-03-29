@@ -279,6 +279,7 @@ export default class V1Addon {
     // is just misleading to stage3 packagers that might look (rollup does).
     delete pkg.main;
     delete pkg.module;
+    delete pkg.exports;
 
     return pkg;
   }

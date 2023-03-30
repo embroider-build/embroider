@@ -29,7 +29,7 @@
     "release": "changeset publish",
     "clean": "git clean -x -f",
     "compile": "tsc",
-    "lint": "concurrently 'yarn:lint:*'",
+    "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache",
     "lint:eslint:fix": "eslint . --fix",

@@ -33,7 +33,12 @@ const NEW_VERSIONS = {};
 
 async function setVersion(sha, filePath) {
   let json = await fse.readJSON(filePath);
-  json.version = `${json.version}-unstable.${sha}`;
+
+  // we need to at the very least bump the patch version of the unstable packages so
+  // that ^ dependenies won't pick up the stable versions
+  const [major, minor, patch] = json.version.split('.');
+
+  json.version = `${major}.${minor}.${parseInt(patch) + 1}-unstable.${sha}`;
 
   NEW_VERSIONS[json.name] = json.version;
 

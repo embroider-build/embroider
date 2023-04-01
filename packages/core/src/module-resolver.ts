@@ -710,7 +710,12 @@ export class Resolver {
       // this is the easy case -- a package that uses exports can safely resolve
       // its own name, so it's enough to let it resolve the (self-targeting)
       // specifier from its own package root.
-      return request.rehome(resolve(pkg.root, 'package.json'));
+      const resolvedPkgJson = resolve(pkg.root, 'package.json');
+      if (request.fromFile === resolvedPkgJson) {
+        return request;
+      } else {
+        return request.rehome(resolvedPkgJson);
+      }
     } else {
       // otherwise we need to just assume that internal naming is simple
       return request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'));

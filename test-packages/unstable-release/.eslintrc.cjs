@@ -12,7 +12,8 @@ module.exports = {
   },
   extends: ['eslint:recommended', 'plugin:prettier/recommended'],
   env: {
-    browser: true,
+    browser: false,
+    node: true,
   },
   overrides: [
     // node files

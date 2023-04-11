@@ -1215,7 +1215,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs.js': `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("<Thing />", {
-            strict: true,
+            strictMode: true,
           });
         `,
         });
@@ -1225,7 +1225,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("<Thing />", {
-            strict: true,
+            strictMode: true,
           });
       `);
       });

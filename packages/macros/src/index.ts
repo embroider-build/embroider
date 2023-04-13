@@ -59,10 +59,6 @@ export function failBuild(message: string): void {
   throw new Oops(message);
 }
 
-export function maybeAttrs<T>(predicate: boolean, ...bareAttrs: unknown[]): T {
-  throw new Oops(predicate, bareAttrs);
-}
-
 export function moduleExists(packageName: string): boolean {
   throw new Oops(packageName);
 }

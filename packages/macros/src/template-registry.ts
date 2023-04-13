@@ -23,7 +23,7 @@ export class MacroDependencySatisfiesHelper extends Helper<{
 }> {}
 
 export class MacroMaybeAttrsHelper extends Helper<{
-  Args: { Positional: Parameters<typeof maybeAttrs> };
+  Args: { Positional: [predicate: boolean, ...bareAttrs: unknown[]] };
   Return: ReturnType<typeof maybeAttrs>;
 }> {}
 

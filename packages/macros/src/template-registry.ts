@@ -1,5 +1,5 @@
 import Helper from '@ember/component/helper';
-import { dependencySatisfies, failBuild, getConfig, getOwnConfig, maybeAttrs } from './index';
+import { dependencySatisfies, failBuild, getConfig, getOwnConfig } from './index';
 import { EnsureSafeComponentHelper } from '@embroider/util';
 
 export class MacroGetConfigHelper extends Helper<{
@@ -24,7 +24,7 @@ export class MacroDependencySatisfiesHelper extends Helper<{
 
 export class MacroMaybeAttrsHelper extends Helper<{
   Args: { Positional: [predicate: boolean, ...bareAttrs: unknown[]] };
-  Return: ReturnType<typeof maybeAttrs>;
+  Return: void;
 }> {}
 
 export class MacroFailBuildHelper extends Helper<{

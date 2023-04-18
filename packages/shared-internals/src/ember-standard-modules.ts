@@ -28,10 +28,14 @@ emberVirtualPeerDeps.add('@ember/string');
 
 // these can also appear in ember code and should get compiled away by babel,
 // but we may need to tell a build tool that is inspecting pre-transpiled code
-// (like snowpack) not to worrya bout these packages.
+// (like snowpack) not to worry about these packages.
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
 emberVirtualPackages.add('@embroider/macros');
+
+// rfc176-data only covers things up to the point where Ember stopped needing
+// the modules-api-polyfill. Newer APIs need to be added here.
+emberVirtualPackages.add('@ember/owner');
 
 // These are the known names that people use to import template precomiplation
 // macros from.

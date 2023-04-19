@@ -1,8 +1,15 @@
 'use strict';
 
 module.exports = {
-  singleQuote: true,
-  trailingComma: 'es5',
   printWidth: 120,
-  arrowParens: 'avoid',
+  overrides: [
+    {
+      files: '*{js,ts}',
+      options: {
+        trailingComma: 'es5',
+        arrowParens: 'avoid',
+        singleQuote: true,
+      },
+    },
+  ],
 };

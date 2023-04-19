@@ -40,7 +40,7 @@ type GlobalSharedState = WeakMap<
 let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
 // Used to memoize the work to generate a cache key from a given (root, package) tuple
-let projectToRootCacheKey: WeakMap<any, Map<string, string>> = new WeakMap();
+let projectToRootCacheKey: Map<any, Map<string, string>> = new Map();
 
 function gatherAddonCacheKeyWorker(item: any, memo: Set<string>) {
   item.addons.forEach((addon: any) => {

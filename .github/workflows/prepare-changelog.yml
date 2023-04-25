@@ -1,0 +1,47 @@
+name: 'Prepare Changelog'
+on:
+  push:
+    branches:
+      - main
+env:
+  branch: "sync-changelog"
+  title: "[Release Prep]: Update proposed changelog"
+  commit: "pre-release :: add changesets"
+  body: |
+    Automated and continuously updated PR for adding changeset entries for merged PRs.
+
+    TODO
+    - [ ] Determine patch/minor/major impact for each package for each changeset
+    - [ ] if applicable, mark/remove certain changes as omitted from the changelog
+    - [ ] if applicable, bundle changes together in to a single "change set"
+
+    Remember
+    - This PR is updated on every merge to `main`
+    - This PR is force-pushed, so changes should happen on a separate branch
+
+
+jobs:
+  determine-changes:
+    name: Determine Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        # specify the owner so that forks with their origin poiting at the fork still query the upstream PR list
+      - run: yarn prepare:changelog --non-interactive
+        env:
+          # avoiding API read throttling
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: ${{ env.commit }}
+          draft: true
+          branch: ${{ env.branch }}
+          base: 'main'
+          title: ${{ env.title }}
+          body: ${{ env.body }}

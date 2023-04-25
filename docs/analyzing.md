@@ -20,7 +20,7 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
-Note this step modifies the snippet as described in step 2 in the [README.md](README.md).
+Note this step modifies the snippet as described in step 2 in the [README.md](../README.md).
 
 ## Analyzer server
 

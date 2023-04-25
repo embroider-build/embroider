@@ -27,7 +27,7 @@ This repo implements a new three-stage build system for Ember apps:
    and 3 improves our ability to innovate and experiment with taking the best
    parts of wider JS ecosystem tooling.
 
-You can read more about the motivation and key ideas in the [intro to the SPEC](SPEC.md).
+You can read more about the motivation and key ideas in the [intro to the SPEC](docs/spec.md).
 
 ## Status / Should I Use It?
 
@@ -41,7 +41,7 @@ Alternatively, it is totally safe to stick with the traditional build pipeline a
 
 ## For Addon Authors
 
-The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](ADDON-AUTHOR-GUIDE.md) for advice on how to get their addons ready for Embroider.
+The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](docs/addon-author-guide.md) for advice on how to get their addons ready for Embroider.
 
 ## How to try it
 
@@ -131,7 +131,7 @@ See [@embroider/router README](./packages/router/README.md) for more details.
 
 ## Analyzing Bundles
 
-see [`ANALYZING.md`](ANALYZING.md)
+see [`ANALYZING.md`](docs/analyzing.md)
 
 ## Contributing
 

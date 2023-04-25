@@ -212,6 +212,23 @@ if (macroCondition(isDevelopingApp()) {
 
 Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
 
+## Glint usage
+If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
+
+```ts
+import type { EmbroiderMacrosRegistry } from "@embroider/macros/src/template-registry";
+```
+to your app's e.g. `types/glint.d.ts` file, and making sure your registry extends from EmbroiderMacrosRegistry:
+
+```ts
+declare module '@glint/environment-ember-loose/registry' {
+  export default interface Registry
+    extends EmbroiderMacrosRegistry {
+      // ...
+    }
+}
+```
+
 ## Real world examples
 
 Below are a list of addons that have started using `@embroider/macros` so that you can get a feel for common use cases that can be solved via the macro system.

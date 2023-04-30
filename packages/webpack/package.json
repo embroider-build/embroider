@@ -22,7 +22,6 @@
     "@embroider/babel-loader-8": "2.0.0",
     "@embroider/hbs-loader": "2.0.0",
     "@embroider/shared-internals": "2.0.0",
-    "@types/source-map": "^0.5.7",
     "@types/supports-color": "^8.1.0",
     "assert-never": "^1.2.1",
     "babel-loader": "^8.2.2",

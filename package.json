@@ -59,20 +59,21 @@
     "**/graceful-fs": "^4.0.0"
   },
   "devDependencies": {
+    "@changesets/changelog-git": "^0.1.14",
     "@changesets/changelog-github": "^0.4.7",
     "@changesets/cli": "^2.25.0",
     "@types/jest": "^29.2.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
+    "changeset-recover": "0.1.0-beta.10",
     "concurrently": "^7.2.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "changeset-recover": "0.1.0-beta.10",
-    "patch-package": "^6.5.1",
     "jest": "^29.2.1",
+    "patch-package": "^6.5.1",
     "prettier": "^2.3.1",
     "typescript": "4.4.2"
   },

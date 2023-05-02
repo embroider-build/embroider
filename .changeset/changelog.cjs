@@ -15,7 +15,7 @@
  * See docs here: https://github.com/changesets/changesets/blob/main/docs/modifying-changelog-format.md
  */
 async function getReleaseLine(changeset, _type) {
-  const [firstLine, ...futureLines] = changeset.summary.split('\n').map(l => l.trimRight());
+  let [firstLine, ...futureLines] = changeset.summary.split('\n').map(l => l.trimRight());
 
   let returnVal = firstLine;
 
@@ -29,11 +29,8 @@ async function getReleaseLine(changeset, _type) {
 async function getDependencyReleaseLine(changesets, dependenciesUpdated) {
   if (dependenciesUpdated.length === 0) return '';
 
-  console.log(changesets);
-
-  const changesetLinks = [`- Updated dependencies`];
-
-  const updatedDependenciesList = dependenciesUpdated.map(
+  let changesetLinks = [`- Updated dependencies`];
+  let updatedDependenciesList = dependenciesUpdated.map(
     dependency => `  - ${dependency.name}@${dependency.newVersion}`
   );
 

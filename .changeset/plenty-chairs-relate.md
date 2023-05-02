@@ -1,5 +1,5 @@
 ---
-'@embroider/util': patch
+'@embroider/util': minor
 ---
 
 Improve types of `ensure-safe-component` helper

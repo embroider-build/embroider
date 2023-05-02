@@ -1,12 +1,18 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@2.2.0/schema.json",
-  "changelog": false,
+  "changelog": "@changesets/changelog-git",
   "commit": false,
   "fixed": [["@embroider/compat", "@embroider/core", "@embroider/test-setup", "@embroider/webpack"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [],
+  "ignore": [
+    "@embroider/test-scenarios",
+    "v2-addon-template",
+    "ts-app-template",
+    "app-template",
+    "addon-template"
+  ],
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true
   }

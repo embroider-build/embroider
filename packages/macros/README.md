@@ -6,7 +6,7 @@ A standardized solution for modifying your package's Javascript and Glimmer temp
 
 Traditionally, Ember addons have a lot of power to run arbitrary code during the build process. This lets them do whatever they need to do, but it also makes them hard to statically analyze and makes them play badly with some tooling (like IDEs).
 
-The [Embroider package spec](../../SPEC.md) proposes fixing this by making Ember addons much more static. But they will still need the ability to change themselves in certain ways at app compilation time. Hence this package.
+The [Embroider package spec](../../docs/spec.md) proposes fixing this by making Ember addons much more static. But they will still need the ability to change themselves in certain ways at app compilation time. Hence this package.
 
 This package works in both Embroider and Classical builds, so that addon authors can switch to this newer pattern without disruption.
 

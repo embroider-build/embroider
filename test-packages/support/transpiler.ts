@@ -2,7 +2,7 @@ import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { TransformOptions, transform } from '@babel/core';
 import { BoundExpectFile } from './file-assertions';
-import { AppMeta, hbsToJS } from '@embroider/core';
+import { AppMeta, hbsToJS } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
 
 export class Transpiler {

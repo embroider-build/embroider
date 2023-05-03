@@ -2,24 +2,25 @@
 
 ## Preparing for local development
 
+0. `export VOLTA_FEATURE_PNPM=1` in your shell, because [Volta's PNPM support](https://github.com/volta-cli/volta/issues/737) is behind a feature flag for the present.
 1. Clone this repo.
-2. Run `yarn install`. This will also trigger a typescript compile.
-3. If you edit the typescript, you will need to compile again via `yarn compile` or `yarn compile --watch`.
+2. Run `pnpm install`. This will also trigger a typescript compile.
+3. If you edit the typescript, you will need to compile again via `pnpm compile` or `pnpm compile --watch`.
 
 ## Running lints
 
-`yarn lint` at the top of the monorepo will lint everything.
+`pnpm lint` at the top of the monorepo will lint everything.
 
 ## Running tests
 
 Tests can be run per-package, or combined all together.
 
-Per-package test suites are defined as the `yarn test` command within each `packages/*` or `test-packages/*`.
+Per-package test suites are defined as the `pnpm test` command within each `packages/*` or `test-packages/*`.
 
-The combined suite can be run via the top-level `yarn test` command. It's defined by combining
+The combined suite can be run via the top-level `pnpm test` command. It's defined by combining
 
-- all the `yarn test:*` commands within each `packages/*` or `test-packages/*`. These are typically complete Ember apps that need to get built and tested in the browser.
-  - we have special handling for `ember try:each`. When you use the top-level `yarn test` locally we _don't_ run these by default, because they can't be parallelized easily. If you want to run them, just go into the specific package you care about and run `ember try:each` there.
+- all the `pnpm test:*` commands within each `packages/*` or `test-packages/*`. These are typically complete Ember apps that need to get built and tested in the browser.
+  - we have special handling for `ember try:each`. When you use the top-level `pnpm test` locally we _don't_ run these by default, because they can't be parallelized easily. If you want to run them, just go into the specific package you care about and run `ember try:each` there.
 - all Jest tests that are configured in the entire monorepo. These are typically Node unit & integration tests of the build tooling.
 
 When you run the combined test suite locally, we emit Jest stubs for each of the various suites so that everything runs together under Jest.
@@ -29,9 +30,9 @@ When we run the combined suite in GitHub, we emit separate jobs for each separat
 ## Working with tests scenarios
 
 1. `cd tests/scenarios`
-2. `yarn test:list` to figure out the full name of the scenario you want. eg: `release-engines-without-fastboot`.
-3. `yarn test:output --scenario release-engines-without-fastboot --outdir /path/to/wherever`. This will create the scenario as a standalone project in `/path/to/wherever`.
-4. `cd /path/to/wherever` && `yarn start` to boot and debug the ember app.
+2. `pnpm test:list` to figure out the full name of the scenario you want. eg: `release-engines-without-fastboot`.
+3. `pnpm test:output --scenario release-engines-without-fastboot --outdir /path/to/wherever`. This will create the scenario as a standalone project in `/path/to/wherever`.
+4. `cd /path/to/wherever` && `pnpm start` to boot and debug the ember app.
 
 ## Test Maintenance
 
@@ -40,6 +41,6 @@ In the tests directory we derive our tests off of base app and addon templates (
 ## Use a local version of embroider to compile your projects
 
 1. Clone this repo.
-2. Run `yarn compile` (or `yarn compile --watch`).
-3. In each of the `./packages/*` directories, run `yarn link`.
-4. In your app, `yarn link @embroider/core` and any other embroider packages that appear in your package.json.
+2. Run `pnpm compile` (or `pnpm compile --watch`).
+3. In each of the `./packages/*` directories, run `pnpm link`.
+4. In your app, `pnpm link @embroider/core` and any other embroider packages that appear in your package.json.

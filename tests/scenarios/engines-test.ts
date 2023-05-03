@@ -87,7 +87,7 @@ engineScenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('yarn run build', { env: { STAGE2_ONLY: 'true' } });
+        let result = await app.execute('pnpm run build', { env: { STAGE2_ONLY: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -95,8 +95,8 @@ engineScenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
-      test(`yarn test`, async function (assert) {
-        let result = await app.execute('yarn test');
+      test(`pnpm test`, async function (assert) {
+        let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -128,8 +128,8 @@ engineScenarios
         app = await scenario.prepare();
       });
 
-      test(`yarn test`, async function (assert) {
-        let result = await app.execute('yarn test');
+      test(`pnpm test`, async function (assert) {
+        let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
       });
 

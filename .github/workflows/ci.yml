@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  VOLTA_FEATURE_PNPM: 1
+
 on:
   schedule:
     - cron: '0 7 * * *' # daily, 7am
@@ -28,7 +31,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
       - name: lint
-        run: yarn lint
+        run: pnpm lint
       - id: set-matrix
         working-directory: test-packages/support
         run: echo "matrix=$(node ./suite-setup-util.js --matrix)" >> $GITHUB_OUTPUT
@@ -72,7 +75,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn release
+          publish: pnpm release
           title: 'Release Preview'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

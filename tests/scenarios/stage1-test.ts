@@ -1,4 +1,3 @@
-import resolve from 'resolve';
 import { join } from 'path';
 import merge from 'lodash/merge';
 import fs from 'fs-extra';
@@ -110,7 +109,7 @@ appScenarios
       });
 
       test('in-repo-addon is available', function (assert) {
-        assert.ok(resolve.sync('in-repo-addon/helpers/helper-from-in-repo-addon', { basedir: workspaceDir }));
+        assert.ok(require.resolve('in-repo-addon/helpers/helper-from-in-repo-addon', { paths: [workspaceDir] }));
       });
 
       test('dynamic import is preserved', function (assert) {
@@ -500,7 +499,7 @@ dummyAppScenarios
       });
 
       test('dummy app can resolve own addon', function (assert) {
-        assert.ok(resolve.sync('my-addon/components/hello-world.js', { basedir: workspaceDir }));
+        assert.ok(require.resolve('my-addon/components/hello-world.js', { paths: [workspaceDir] }));
       });
     });
   });

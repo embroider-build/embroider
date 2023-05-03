@@ -204,7 +204,7 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await inDependency(app, 'v2-addon').execute('yarn build');
+        let result = await inDependency(app, 'v2-addon').execute('pnpm build');
         if (result.exitCode !== 0) {
           throw new Error(result.output);
         }
@@ -251,8 +251,8 @@ appScenarios
       });
 
       Qmodule('Consuming app', function () {
-        test(`yarn test`, async function (assert) {
-          let result = await app.execute('yarn test');
+        test(`pnpm test`, async function (assert) {
+          let result = await app.execute('pnpm test');
           assert.equal(result.exitCode, 0, result.output);
         });
       });

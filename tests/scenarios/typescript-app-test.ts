@@ -71,13 +71,13 @@ tsAppScenarios
         app = await scenario.prepare();
       });
 
-      test(`yarn ember test`, async function (assert) {
+      test(`pnpm ember test`, async function (assert) {
         let result = await app.execute(`ember test`);
         assert.equal(result.exitCode, 0, result.output);
       });
 
       test(`check types`, async function (assert) {
-        let result = await app.execute(`yarn tsc`);
+        let result = await app.execute(`pnpm tsc`);
         assert.equal(result.exitCode, 0, result.output);
       });
     });

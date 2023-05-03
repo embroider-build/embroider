@@ -4,27 +4,6 @@
     "type": "git",
     "url": "git@github.com:embroider-build/embroider.git"
   },
-  "workspaces": {
-    "packages": [
-      "packages/*",
-      "test-packages/*",
-      "test-packages/@embroider/*",
-      "types/babel-core",
-      "types/@babel__traverse",
-      "types/broccoli-funnel",
-      "types/broccoli-concat",
-      "types/ember-cli-htmlbars",
-      "tests/scenarios",
-      "tests/app-template",
-      "tests/ts-app-template",
-      "tests/addon-template",
-      "tests/v2-addon-template"
-    ],
-    "nohoist": [
-      "**/@types/broccoli-plugin",
-      "**/babel-plugin-ember-template-compilation"
-    ]
-  },
   "scripts": {
     "postinstall": "patch-package",
     "release": "changeset publish",
@@ -37,11 +16,11 @@
     "lint:eslint:fix": "eslint . --fix",
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
-    "lint:router-types": "cd packages/router && yarn lint:types",
-    "prepare": "tsc && yarn build-v2-addons",
-    "build-v2-addons": "concurrently 'yarn:build-v2-addons:*'",
-    "build-v2-addons:router": "cd packages/router && yarn build",
-    "test": "cd tests/scenarios && yarn test"
+    "lint:router-types": "cd packages/router && pnpm lint:types",
+    "prepare": "tsc && pnpm build-v2-addons",
+    "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
+    "build-v2-addons:router": "cd packages/router && pnpm build",
+    "test": "cd tests/scenarios && pnpm test"
   },
   "jest": {
     "projects": [
@@ -53,10 +32,14 @@
       "**/*.test.js"
     ]
   },
-  "resolutions": {
-    "**/browserslist": "^4.14.0",
-    "**/qunit": "^2.14.1",
-    "**/graceful-fs": "^4.0.0"
+  "pnpm": {
+    "overrides": {
+      "browserslist": "^4.14.0",
+      "qunit": "^2.14.1",
+      "graceful-fs": "^4.0.0",
+      "@babel/types": "^7.21.5",
+      "@types/babel__traverse": "^7.18.5"
+    }
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.4.7",
@@ -81,7 +64,7 @@
   },
   "volta": {
     "node": "16.20.0",
-    "yarn": "1.22.19"
+    "pnpm": "8.4.0"
   },
   "version": "1.8.3"
 }

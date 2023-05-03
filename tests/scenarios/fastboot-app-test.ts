@@ -86,8 +86,8 @@ appScenarios
       });
 
       ['production', 'development'].forEach(env => {
-        test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute(`yarn test`, {
+        test(`pnpm test: ${env}`, async function (assert) {
+          let result = await app.execute(`pnpm test`, {
             env: {
               EMBER_ENV: env,
               EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',

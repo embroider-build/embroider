@@ -27,7 +27,7 @@ appScenarios
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function () {
-      test(`yarn test`, async function (assert) {
+      test(`pnpm test`, async function (assert) {
         let app: PreparedApp = await scenario.prepare();
         await app.execute('node ./node_modules/ember-cli/bin/ember b');
 

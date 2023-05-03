@@ -1,5 +1,13 @@
+/*
+  the ts-ignores are here because while in the middle of pnpm conversion I
+  discovered these are done wrong. Coming back in a followup to fix them.
+*/
+
+// @ts-ignore
 import Helper from '@ember/component/helper';
 import { dependencySatisfies, failBuild, getConfig, getOwnConfig } from './index';
+
+// @ts-ignore
 import { EnsureSafeComponentHelper } from '@embroider/util';
 
 export class MacroGetConfigHelper extends Helper<{

@@ -16,7 +16,7 @@ If your addon is a mix of both build-time and run-time features, consider replac
 
 Traditionally, an Ember addon is a single NPM package that combines both the actual addon code _and_ a "dummy" app for hosting tests and docs. This was [problematic for several reasons](https://github.com/ember-cli/rfcs/issues/119). V2 addons instead require clean separation between addon and app, so you're going to be working with more than one distinct NPM package: one for the addon, one for the test-app, and optionally one for the documentation site.
 
-Our recommended way to manage these multiple packages is using a monorepo, via Yarn Workspaces or NPM Workspaces. The example in this guide assumes a Yarn Workspaces monorepo.
+Our recommended way to manage these multiple packages is using a monorepo, via Yarn, NPM, or PNPM Workspaces. The example in this guide assumes a Yarn Workspaces monorepo.
 
 ## Part 1: Separate Addon from Dummy App
 

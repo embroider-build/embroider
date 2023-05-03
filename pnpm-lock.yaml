@@ -1476,6 +1476,8 @@ importers:
         specifier: ^5.74.0
         version: 5.74.0
 
+  tests/fixtures: {}
+
   tests/scenarios:
     dependencies:
       '@embroider/compat':
@@ -1502,6 +1504,9 @@ importers:
       globby:
         specifier: ^11.0.3
         version: 11.0.3
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
       jsdom:
         specifier: ^16.2.2
         version: 16.6.0(supports-color@8.1.0)
@@ -1628,7 +1633,7 @@ importers:
         version: 3.28.0(@babel/core@7.19.6)
       ember-data-4.4:
         specifier: npm:ember-data@~4.4.0
-        version: /ember-data@4.4.1(@babel/core@7.19.6)(webpack@5.74.0)
+        version: /ember-data@4.4.0(@babel/core@7.19.6)(webpack@5.74.0)
       ember-data-latest:
         specifier: npm:ember-data@4.4.1
         version: /ember-data@4.4.1(@babel/core@7.19.6)(webpack@5.74.0)
@@ -1656,9 +1661,6 @@ importers:
       ember-truth-helpers:
         specifier: ^3.0.0
         version: 3.0.0
-      js-yaml:
-        specifier: ^4.1.0
-        version: 4.1.0
       rollup:
         specifier: ^2.69.1
         version: 2.69.1
@@ -1855,11 +1857,15 @@ importers:
         specifier: 1.8.4
         version: link:../../packages/addon-shim
 
+  types/broccoli: {}
+
   types/broccoli-concat:
     dependencies:
       broccoli-plugin:
         specifier: ^4.0.1
         version: 4.0.7
+
+  types/broccoli-file-creator: {}
 
   types/broccoli-funnel:
     dependencies:
@@ -1867,11 +1873,23 @@ importers:
         specifier: ^4.0.1
         version: 4.0.7
 
+  types/broccoli-merge-trees: {}
+
+  types/console-ui: {}
+
+  types/ember-cli: {}
+
   types/ember-cli-htmlbars:
     dependencies:
       broccoli-plugin:
         specifier: ^4.0.1
         version: 4.0.7
+
+  types/fast-sourcemap-concat: {}
+
+  types/source-map-url: {}
+
+  types/thread-loader: {}
 
 packages:
 
@@ -16970,7 +16988,6 @@ packages:
     hasBin: true
     dependencies:
       argparse: 2.0.1
-    dev: true
 
   /jscodeshift@0.14.0(@babel/preset-env@7.21.5):
     resolution: {integrity: sha512-7eCC1knD7bLUPuSCwXsMZUH51O8jIcoVyKtI6P0XM0IVzlGjckPy3FIwQlorzbN0Sg79oK+RlohN32Mqf/lrYA==}

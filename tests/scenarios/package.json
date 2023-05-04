@@ -4,6 +4,7 @@
   "dependencies": {
     "@embroider/compat": "2.1.1",
     "@embroider/core": "2.1.1",
+    "@embroider/sample-transforms": "workspace:*",
     "@embroider/shared-internals": "2.0.0",
     "@embroider/test-support": "0.36.0",
     "@embroider/webpack": "workspace:*",

@@ -1486,6 +1486,9 @@ importers:
       '@embroider/core':
         specifier: 2.1.1
         version: link:../../packages/core
+      '@embroider/sample-transforms':
+        specifier: workspace:*
+        version: link:../../test-packages/sample-transforms
       '@embroider/shared-internals':
         specifier: 2.0.0
         version: link:../../packages/shared-internals

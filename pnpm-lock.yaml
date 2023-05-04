@@ -1492,6 +1492,9 @@ importers:
       '@embroider/test-support':
         specifier: 0.36.0
         version: link:../../test-packages/support
+      '@embroider/webpack':
+        specifier: workspace:*
+        version: link:../../packages/webpack
       '@types/qunit':
         specifier: ^2.11.1
         version: 2.19.2

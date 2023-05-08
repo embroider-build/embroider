@@ -150,8 +150,10 @@ export default class V1App {
   }
 
   @Memoize()
-  get testConfig(): V1Config {
-    return new V1Config(this.configTree, 'test');
+  get testConfig(): V1Config | undefined {
+    if (this.shouldBuildTests) {
+      return new V1Config(this.configTree, 'test');
+    }
   }
 
   get autoRun(): boolean {

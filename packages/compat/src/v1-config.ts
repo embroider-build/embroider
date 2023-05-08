@@ -30,8 +30,8 @@ export class V1Config extends Plugin {
 
 export class WriteV1Config extends Plugin {
   private lastContents: string | undefined;
-  constructor(private inputTree: V1Config, private storeConfigInMeta: boolean) {
-    super([inputTree], {
+  constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private testInputTree?: V1Config) {
+    super([inputTree, testInputTree as V1Config], {
       persistentOutput: true,
       needsCache: false,
     });
@@ -42,7 +42,16 @@ export class WriteV1Config extends Plugin {
     if (this.storeConfigInMeta) {
       contents = metaLoader();
     } else {
-      contents = `export default ${JSON.stringify(this.inputTree.readConfig())};`;
+      contents = `
+      import { isTesting } from '@embroider/macros';
+      let env;
+      if (isTesting()) {
+        env = ${JSON.stringify(this.testInputTree?.readConfig())};
+      } else {
+        env = ${JSON.stringify(this.inputTree.readConfig())};
+      }
+      export default env;
+      `;
     }
     if (!this.lastContents || this.lastContents !== contents) {
       outputFileSync(filename, contents);

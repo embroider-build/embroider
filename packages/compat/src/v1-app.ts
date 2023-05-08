@@ -149,6 +149,11 @@ export default class V1App {
     return new V1Config(this.configTree, this.app.env);
   }
 
+  @Memoize()
+  get testConfig(): V1Config {
+    return new V1Config(this.configTree, 'test');
+  }
+
   get autoRun(): boolean {
     return this.app.options.autoRun;
   }
@@ -659,7 +664,7 @@ export default class V1App {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let config = new WriteV1Config(this.config, this.storeConfigInMeta);
+    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.testConfig);
     let patterns = this.configReplacePatterns;
     let configReplaced = new this.configReplace(config, this.configTree, {
       configPath: join('environments', `${this.app.env}.json`),

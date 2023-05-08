@@ -31,7 +31,7 @@ export class V1Config extends Plugin {
 export class WriteV1Config extends Plugin {
   private lastContents: string | undefined;
   constructor(private inputTree: V1Config, private storeConfigInMeta: boolean, private testInputTree?: V1Config) {
-    super([inputTree, testInputTree as V1Config], {
+    super([inputTree, testInputTree as V1Config].filter(Boolean), {
       persistentOutput: true,
       needsCache: false,
     });

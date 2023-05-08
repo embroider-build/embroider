@@ -1,7 +1,7 @@
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname, relative } from 'path';
 import minimatch from 'minimatch';
 
 export default function keepAssets({
@@ -11,6 +11,8 @@ export default function keepAssets({
   from: string;
   include: string[];
 }): Plugin {
+  let sourceDir = join(process.cwd(), from);
+
   return {
     name: 'copy-assets',
 
@@ -23,6 +25,16 @@ export default function keepAssets({
       //
       // Without doing so can multiply the build time by 3x.
       let isMatch = include.some((pattern) => minimatch(source, pattern));
+
+      // It's possible that `source` is a relative import instead of absolute,
+      // so we need to generate that absolute path (or at least relative to the importer)
+      // and then see if that matches our globs
+      if (importer && !isMatch) {
+        let absolute = join(dirname(importer), source);
+        let rootRelative = relative(sourceDir, absolute);
+
+        isMatch = include.some((pattern) => minimatch(rootRelative, pattern));
+      }
 
       // Let some other plugin handle this source
       if (!isMatch) return null;

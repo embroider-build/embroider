@@ -77,6 +77,7 @@ appScenarios
 
             addon.hbs(),
             addon.dependencies(),
+            addon.keepAssets(['**/*.css']),
 
             babel({ babelHelpers: 'bundled' }),
 
@@ -114,10 +115,14 @@ appScenarios
             'namespace-me.hbs': `
               namespaced component
             `,
+            'styles.css': `
+              button { text-transform: uppercase; }
+            `,
             'index.js': `
                 import Component from '@glimmer/component';
                 import { tracked } from '@glimmer/tracking';
 
+                import './styles.css';
                 import FlipButton from './button';
                 import Out from './out';
 
@@ -239,6 +244,8 @@ appScenarios
           expectFile('dist/_app_/components/demo/namespace/namespace-me.js').matches(
             'export { default } from "v2-addon/components/demo/namespace-me"'
           );
+
+          expectFile('dist/components/demo/styles.css').matches('button { text-transform: uppercase; }');
         });
 
         test('template transform was run', async function () {

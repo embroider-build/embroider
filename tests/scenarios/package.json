@@ -68,7 +68,7 @@
     "ember-engines": "^0.8.23",
     "ember-inline-svg": "^0.2.1",
     "ember-modifier": "^4.0.0",
-    "ember-source": "~3.28.0",
+    "ember-source": "~3.28.11",
     "ember-source-4.4": "npm:ember-source@~4.4.0",
     "ember-source-beta": "npm:ember-source@beta",
     "ember-source-latest": "npm:ember-source@latest",

@@ -49,6 +49,14 @@
     "scenario-tester": "^2.0.1",
     "typescript": "*"
   },
+  "peerDependencies": {
+    "@glint/template": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@glint/template": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": "12.* || 14.* || >= 16"
   },

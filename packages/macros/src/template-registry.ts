@@ -1,6 +1,5 @@
 import Helper from '@ember/component/helper';
 import { dependencySatisfies, failBuild, getConfig, getOwnConfig } from './index';
-import { EnsureSafeComponentHelper } from '@embroider/util';
 
 export class MacroGetConfigHelper extends Helper<{
   Args: { Positional: [packageName: string, ...keys: string[]] };
@@ -33,7 +32,6 @@ export class MacroFailBuildHelper extends Helper<{
 }> {}
 
 export interface EmbroiderMacrosRegistry {
-  'ensure-safe-component': typeof EnsureSafeComponentHelper;
   macroGetOwnConfig: typeof MacroGetOwnConfigHelper;
   macroGetConfig: typeof MacroGetConfigHelper;
   macroCondition: typeof MacroConditionHelper;

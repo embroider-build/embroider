@@ -38,6 +38,7 @@
     "@babel/traverse": "^7.14.5",
     "@embroider/core": "2.1.1",
     "@embroider/test-support": "0.36.0",
+    "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",
     "@types/babel__template": "^7.4.0",

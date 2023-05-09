@@ -59,6 +59,23 @@ The first argument is allowed to be:
 
 In the Javascript version, you must pass a second argument that is any object with an owner (a `Component` instance works great).
 
+## Glint usage
+If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
+
+```ts
+import type { EmbroiderUtilRegistry } from "@embroider/util";
+```
+to your app's e.g. `types/glint.d.ts` file, and making sure your registry extends from EmbroiderMacrosRegistry:
+
+```ts
+declare module '@glint/environment-ember-loose/registry' {
+  export default interface Registry
+    extends EmbroiderUtilRegistry, /* other registries here */ {
+      // ...
+    }
+}
+```
+
 ## Contributing
 
 See the [Contributing](CONTRIBUTING.md) guide for details.

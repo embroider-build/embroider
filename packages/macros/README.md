@@ -216,7 +216,7 @@ Note that these can be used in combination - e.g. if you run tests in the produc
 If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
 
 ```ts
-import type { EmbroiderMacrosRegistry } from "@embroider/macros/src/template-registry";
+import type { EmbroiderMacrosRegistry } from "@embroider/macros";
 ```
 to your app's e.g. `types/glint.d.ts` file, and making sure your registry extends from EmbroiderMacrosRegistry:
 

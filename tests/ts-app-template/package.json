@@ -35,6 +35,7 @@
     "@glimmer/tracking": "^1.1.2",
     "@glimmer/interfaces": "^0.84.2",
     "@glimmer/reference": "^0.84.2",
+    "@glint/template": "^1.0.0",
     "@tsconfig/ember": "^1.0.0",
     "@types/ember": "^4.0.2",
     "@types/ember__application": "^4.0.0",

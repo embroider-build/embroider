@@ -65,6 +65,7 @@
     "@embroider/sample-transforms": "0.0.0",
     "@embroider/test-support": "0.36.0",
     "@glimmer/syntax": "^0.84.2",
+    "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",
     "@types/babel__template": "^7.4.0",

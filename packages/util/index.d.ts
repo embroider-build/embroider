@@ -23,3 +23,7 @@ export class EnsureSafeComponentHelper<
     ? ComponentLike<unknown>
     : C;
 }> {}
+
+export interface EmbroiderUtilRegistry {
+  'ensure-safe-component': EnsureSafeComponentHelper;
+}

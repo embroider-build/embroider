@@ -1883,10 +1883,10 @@
   resolved "https://registry.yarnpkg.com/@glint/environment-ember-loose/-/environment-ember-loose-1.0.0-beta.4.tgz#f94d1854551c06fd0db8c9a00c903dbaccbcbbd6"
   integrity sha512-xLWdnrU9XpRr26YIZZ1eMMZwPoy3GMbVDb9VDcQgjqMrIAFL39p6n34reXxajjJrvJYNkTxGpcMZJXNgdBk1fg==
 
-"@glint/template@^1.0.0-beta.3":
-  version "1.0.0-beta.4"
-  resolved "https://registry.yarnpkg.com/@glint/template/-/template-1.0.0-beta.4.tgz#965d2b021fd744eb96ea4600533227b4ecc0334d"
-  integrity sha512-tYIzvdmhNunNdmCMyE2XDSsVWrsNL7r1LscVTW9YgEGHv7hf62AwVaK3Kv540jGcwRB8dtpwEp437NV36+PVYw==
+"@glint/template@^1.0.0":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@glint/template/-/template-1.0.2.tgz#dcb96f048df52e7d0e78cf194fa07b3c42f15278"
+  integrity sha512-kFWfJrS7XM0NjC5YSN0CWA9FiN0mhUvWVlQ2O7YRz/uhrO8+TVYNLst0WKELRbfCXbdI7wyYQkazNgz6FoL9CA==
 
 "@handlebars/parser@^1.1.0":
   version "1.1.0"

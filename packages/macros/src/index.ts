@@ -72,3 +72,32 @@ class Oops extends Error {
     this.params = params;
   }
 }
+
+import type { HelperLike } from '@glint/template';
+
+export interface EmbroiderMacrosRegistry {
+  macroGetOwnConfig: HelperLike<{
+    Args: { Positional: [...keys: string[]] };
+    Return: ReturnType<typeof getOwnConfig>;
+  }>;
+  macroGetConfig: HelperLike<{
+    Args: { Positional: [packageName: string, ...keys: string[]] };
+    Return: ReturnType<typeof getConfig>;
+  }>;
+  macroCondition: HelperLike<{
+    Args: { Positional: [predicate: boolean] };
+    Return: boolean;
+  }>;
+  macroDependencySatisfies: HelperLike<{
+    Args: { Positional: Parameters<typeof dependencySatisfies> };
+    Return: ReturnType<typeof dependencySatisfies>;
+  }>;
+  macroMaybeAttrs: HelperLike<{
+    Args: { Positional: [predicate: boolean, ...bareAttrs: unknown[]] };
+    Return: void;
+  }>;
+  macroFailBuild: HelperLike<{
+    Args: { Positional: Parameters<typeof failBuild> };
+    Return: ReturnType<typeof failBuild>;
+  }>;
+}

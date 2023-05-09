@@ -9,6 +9,7 @@
     "@embroider/test-support": "0.36.0",
     "@embroider/webpack": "workspace:*",
     "@embroider/addon-dev": "workspace:*",
+    "ember-auto-import": "^2.6.3",
     "@types/qunit": "^2.11.1",
     "fastboot": "^3.1.0",
     "fs-extra": "^10.0.0",

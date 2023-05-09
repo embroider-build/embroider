@@ -33,8 +33,8 @@
   },
   "peerDependencies": {
     "ember-source": "*",
-    "@glint/template": "^1.0.0-beta.3",
-    "@glint/environment-ember-loose": "^1.0.0-beta.3"
+    "@glint/template": "^1.0.0",
+    "@glint/environment-ember-loose": "^1.0.0"
   },
   "peerDependenciesMeta": {
     "@glint/template": {
@@ -56,7 +56,7 @@
     "@embroider/webpack": "2.1.1",
     "@glimmer/component": "^1.1.2",
     "@glimmer/tracking": "^1.1.2",
-    "@glint/template": "^1.0.0-beta.3",
+    "@glint/template": "^1.0.0",
     "@glint/environment-ember-loose": "^1.0.0-beta.3",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",

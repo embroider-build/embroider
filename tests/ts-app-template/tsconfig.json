@@ -6,7 +6,7 @@
     // work with TypeScript.
     "baseUrl": ".",
     "paths": {
-      "ts-app-tepmlate/tests/*": ["tests/*"],
+      "ts-app-template/tests/*": ["tests/*"],
       "ts-app-template/*": ["app/*"],
       "*": ["types/*"]
     }

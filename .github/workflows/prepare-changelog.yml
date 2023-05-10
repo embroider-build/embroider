@@ -1,8 +1,20 @@
 name: 'Prepare Changelog'
 on:
+  # Use labels on PRs to update the changelog
+  # - patch
+  # - minor
+  # - major
+  pull_request:
+    types:
+      - labeled
   push:
     branches:
       - main
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 env:
   VOLTA_FEATURE_PNPM: 1
   branch: "sync-changelog"

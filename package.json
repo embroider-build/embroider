@@ -54,7 +54,7 @@
     "@types/jest": "^29.2.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
-    "changeset-recover": "0.1.0-beta.10",
+    "changeset-recover": "0.1.0-beta.11",
     "concurrently": "^7.2.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.14.0",

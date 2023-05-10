@@ -50,7 +50,7 @@
     "ember-load-initializers": "^2.1.2",
     "ember-page-title": "^7.0.0",
     "ember-qunit": "^6.1.1",
-    "ember-resolver": "^8.1.0",
+    "ember-resolver": "^10.1.0",
     "ember-source": "~4.6.0",
     "ember-template-lint": "^4.10.1",
     "eslint": "^7.32.0",
@@ -74,6 +74,6 @@
   },
   "volta": {
     "node": "16.20.0",
-    "yarn": "1.22.19"
+    "pnpm": "8.4.0"
   }
 }

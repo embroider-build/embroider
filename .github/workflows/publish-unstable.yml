@@ -9,6 +9,9 @@ on:
     branches:
       - main
 
+env:
+  VOLTA_FEATURE_PNPM: 1      
+
 concurrency:
   group: publish-unstable-${{ github.head_ref || github.ref }}
   cancel-in-progress: true

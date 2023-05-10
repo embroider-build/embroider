@@ -38,16 +38,27 @@
     "@babel/traverse": "^7.14.5",
     "@embroider/core": "2.1.1",
     "@embroider/test-support": "0.36.0",
+    "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",
     "@types/babel__template": "^7.4.0",
+    "@types/babel__traverse": "^7.18.5",
+    "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
     "babel-plugin-ember-template-compilation": "^2.0.0",
     "code-equality-assertions": "^0.9.0",
-    "scenario-tester": "^2.0.1",
+    "scenario-tester": "^2.1.2",
     "typescript": "*"
+  },
+  "peerDependencies": {
+    "@glint/template": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@glint/template": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

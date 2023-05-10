@@ -222,16 +222,16 @@ function _inExportDeclarationContext(path: NodePath): boolean {
     case 'ObjectPattern':
     case 'ArrayPattern':
     case 'RestElement':
-      return inExportDeclarationContext(path.parentPath);
+      return inExportDeclarationContext(path.parentPath!);
     case 'VariableDeclarator':
-      return parent.id === path.node && inExportDeclarationContext(path.parentPath);
+      return parent.id === path.node && inExportDeclarationContext(path.parentPath!);
     case 'ObjectProperty':
-      return parent.value === path.node && inExportDeclarationContext(path.parentPath);
+      return parent.value === path.node && inExportDeclarationContext(path.parentPath!);
     case 'AssignmentPattern':
-      return parent.left === path.node && inExportDeclarationContext(path.parentPath);
+      return parent.left === path.node && inExportDeclarationContext(path.parentPath!);
     case 'FunctionDeclaration':
     case 'ClassDeclaration':
-      return parent.id === path.node && inExportDeclarationContext(path.parentPath);
+      return parent.id === path.node && inExportDeclarationContext(path.parentPath!);
     default:
       return false;
   }

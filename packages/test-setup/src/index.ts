@@ -22,12 +22,11 @@ export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptio
   //  - we don't want to load any of these things until they're actually needed;
   //  - we can't use `await import()` because this function needs to be synchronous to go inside ember-cli-build.js
   /* eslint-disable @typescript-eslint/no-require-imports */
-  let resolve = require('resolve') as typeof import('resolve');
-  let { Webpack } = require(resolve.sync('@embroider/webpack', {
-    basedir: app.project.root,
+  let { Webpack } = require(require.resolve('@embroider/webpack', {
+    paths: [app.project.root],
   })) as typeof import('@embroider/webpack');
-  let Compat = require(resolve.sync('@embroider/compat', {
-    basedir: app.project.root,
+  let Compat = require(require.resolve('@embroider/compat', {
+    paths: [app.project.root],
   })) as typeof import('@embroider/compat');
   let mergeWith = require('lodash/mergeWith') as typeof import('lodash/mergeWith');
   /* eslint-enable @typescript-eslint/no-require-imports */

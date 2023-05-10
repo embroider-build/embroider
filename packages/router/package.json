@@ -40,6 +40,7 @@
     "@babel/plugin-proposal-decorators": "^7.17.0",
     "@babel/plugin-syntax-decorators": "^7.17.0",
     "@embroider/addon-dev": "^3.0.0",
+    "@embroider/macros": "workspace:*",
     "@tsconfig/ember": "^1.0.0",
     "@types/ember": "^4.0.0",
     "@types/ember__object": "^4.0.0",

@@ -14,13 +14,13 @@ supportMatrix(Scenarios.fromDir(dirname(require.resolve('@embroider/util/package
         app = await scenario.prepare();
       });
 
-      test(`yarn test:ember`, async function (assert) {
-        let result = await app.execute('yarn test:ember');
+      test(`pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember');
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`yarn test:classic`, async function (assert) {
-        let result = await app.execute('yarn test:classic');
+      test(`pnpm test:classic`, async function (assert) {
+        let result = await app.execute('pnpm test:classic');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

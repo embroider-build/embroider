@@ -43,10 +43,12 @@
   },
   "devDependencies": {
     "@types/csso": "^3.5.1",
-    "@types/fs-extra": "^9.0.11",
+    "@types/debug": "^4.1.5",
+    "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
     "@types/mini-css-extract-plugin": "^1.4.3",
     "@types/node": "^15.12.2",
+    "@types/semver": "^7.3.6",
     "typescript": "*",
     "webpack": "^5.38.1"
   },

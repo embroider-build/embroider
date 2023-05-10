@@ -1,5 +1,5 @@
-import { Audit, AuditBuildOptions, AuditResults, Module } from '@embroider/compat/src/audit';
-import { explicitRelative } from '@embroider/shared-internals';
+import { Audit, AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
+import { explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
 import { posix } from 'path';
 import { distance } from 'fastest-levenshtein';

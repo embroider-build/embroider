@@ -1,5 +1,5 @@
-name: Setup node and yarn
-description: Setup node and install dependencies using yarn
+name: Setup node and pnpm
+description: Setup node and install dependencies using pnpm
 inputs:
   use_lockfile:
     description: 'Whether to use the lockfile vs latest floating dependencies'
@@ -10,17 +10,17 @@ runs:
   steps:
     - uses: volta-cli/action@v4
       env:
-        ACTIONS_STEP_DEBUG: true
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+        ACTIONS_STEP_DEBUG: truex 
+    - name: Get pnpm cache directory path
+      id: pnpm-cache-dir-path
+      run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
       shell: bash
     - uses: actions/cache@v3
-      id: yarn-cache
+      id: pnpm-cache
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-v1
+        path: ${{ steps.pnpm-cache-dir-path.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-yarn-
-    - run: yarn install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
+          ${{ runner.os }}-pnpm-
+    - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
       shell: bash

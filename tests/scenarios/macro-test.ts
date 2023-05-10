@@ -52,19 +52,19 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test(`yarn test`, async function (assert) {
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 yarn test`);
+      test(`pnpm test`, async function (assert) {
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 pnpm test`);
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`yarn build production`, async function (assert) {
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 yarn build:production`);
+      test(`pnpm build production`, async function (assert) {
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 pnpm build:production`);
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`CLASSIC=true yarn test`, async function (assert) {
+      test(`CLASSIC=true pnpm test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 CLASSIC=true yarn test`);
+        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 CLASSIC=true pnpm test`);
         assert.equal(result.exitCode, 0, result.output);
       });
     });
@@ -84,26 +84,26 @@ appScenarios
       });
 
       test(`@embroider/macros babel caching plugin works`, async function (assert) {
-        let fourRun = await app.execute(`yarn test`);
+        let fourRun = await app.execute(`pnpm test`);
         assert.equal(fourRun.exitCode, 0, fourRun.output);
 
         // simulate a different version being installed
         updateVersionChanger(app, '3.0.0');
 
-        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three yarn test`);
+        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three pnpm test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
 
       test(`CLASSIC=true @embroider/macros babel caching plugin works`, async function (assert) {
         updateVersionChanger(app, '4.0.1');
 
-        let lodashFourRun = await app.execute(`cross-env CLASSIC=true yarn test`);
+        let lodashFourRun = await app.execute(`cross-env CLASSIC=true pnpm test`);
         assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
 
         // simulate a different version being installed
         updateVersionChanger(app, '3.0.0');
 
-        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three CLASSIC=true yarn test`);
+        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three CLASSIC=true pnpm test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
     });
@@ -171,13 +171,13 @@ dummyAppScenarios
         addon = await scenario.prepare();
       });
 
-      test(`yarn test`, async function (assert) {
-        let result = await addon.execute('yarn test');
+      test(`pnpm test`, async function (assert) {
+        let result = await addon.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`yarn test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
-        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic yarn test');
+      test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
+        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm test');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

@@ -1,6 +1,7 @@
 # No need to run prettier here
 *.md 
 *.yml
+*.yaml
 *.html
 *.json
 

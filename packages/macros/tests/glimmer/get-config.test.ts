@@ -12,7 +12,7 @@ describe(`macroGetConfig`, function () {
       },
     });
 
-    config.setConfig(__filename, 'ember-source', {
+    config.setConfig(__filename, 'scenario-tester', {
       color: 'orange',
     });
 
@@ -24,7 +24,7 @@ describe(`macroGetConfig`, function () {
     });
 
     test('macroGetConfig in content position', function () {
-      let code = transform(`{{macroGetConfig "ember-source" "color"}}`);
+      let code = transform(`{{macroGetConfig "scenario-tester" "color"}}`);
       expect(code).toMatch(/\{\{["']orange["']\}\}/);
     });
 
@@ -34,7 +34,7 @@ describe(`macroGetConfig`, function () {
     });
 
     test('macroGetConfig in subexpression position', function () {
-      let code = transform(`{{#with (macroGetConfig "ember-source" "color") as |m|}}{{m}}{{/with}}`);
+      let code = transform(`{{#with (macroGetConfig "scenario-tester" "color") as |m|}}{{m}}{{/with}}`);
       expect(code).toMatch(/\{\{#with ["']orange["'] as |m|\}\}/);
     });
 
@@ -71,7 +71,7 @@ describe(`macroGetConfig`, function () {
     });
 
     test('macroGetConfig emits undefined for missing config', function () {
-      let code = transform(`{{my-assertion (macroGetConfig "ember-cli") }}`);
+      let code = transform(`{{my-assertion (macroGetConfig "code-equality-assertions") }}`);
       expect(code).toMatch(/\{\{my-assertion undefined\}\}/);
     });
   });

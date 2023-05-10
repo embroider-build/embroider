@@ -4,6 +4,7 @@ on:
     branches:
       - main
 env:
+  VOLTA_FEATURE_PNPM: 1
   branch: "sync-changelog"
   title: "[Release Prep]: Update proposed changelog"
   commit: "pre-release :: add changesets"
@@ -32,7 +33,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
         # specify the owner so that forks with their origin poiting at the fork still query the upstream PR list
-      - run: yarn prepare:changelog --non-interactive
+      - run: pnpm prepare:changelog --non-interactive
         env:
           # avoiding API read throttling
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

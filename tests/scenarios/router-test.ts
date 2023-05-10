@@ -234,20 +234,20 @@ tsAppScenarios
       });
 
       test(`type checks`, async function (assert) {
-        let result = await app.execute('yarn tsc');
+        let result = await app.execute('pnpm tsc');
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`CLASSIC yarn test:ember`, async function (assert) {
-        let result = await app.execute('yarn test:ember', {
+      test(`CLASSIC pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
           env: {
             EMBROIDER_TEST_SETUP_FORCE: 'classic',
           },
         });
         assert.equal(result.exitCode, 0, result.output);
       });
-      test(`EMBROIDER yarn test:ember`, async function (assert) {
-        let result = await app.execute('yarn test:ember', {
+      test(`EMBROIDER pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
           env: {
             EMBROIDER_TEST_SETUP_FORCE: 'embroider',
             EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',

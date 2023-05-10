@@ -16,7 +16,10 @@
     "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "@embroider/compat": "2.1.1"
+    "@embroider/compat": "workspace:*",
+    "@embroider/core": "workspace:*",
+    "@embroider/webpack": "workspace:*",
+    "@types/lodash": "^4.14.170"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

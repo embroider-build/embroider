@@ -50,7 +50,7 @@ export default function main(babel: typeof Babel) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           state.adder = new ImportUtil(t, path);
-          let filename = path.hub.file.opts.filename;
+          let filename = (path.hub as any).file.opts.filename;
 
           if (state.opts.packageGuard) {
             let owningPackage = PackageCache.shared('embroider-stage3', state.opts.appRoot).ownerOfFile(filename);

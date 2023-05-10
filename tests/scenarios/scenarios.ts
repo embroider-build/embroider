@@ -51,7 +51,7 @@ export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 // we're standardizing on Ember's native types, which become available starting
 // at 4.8. So we're not going to run type tests on older releases that don't
 // support them.
-export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp)).skip('lts_3_28').skip('lts_4_4');
+export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp));
 
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
 

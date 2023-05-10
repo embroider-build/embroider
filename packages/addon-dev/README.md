@@ -2,7 +2,7 @@
 
 Utilities for working on v2 addons.
 
-For a guide on porting a V1 addon to V2, see https://github.com/embroider-build/embroider/blob/main/PORTING-ADDONS-TO-V2.md
+For a guide on porting a V1 addon to V2, see https://github.com/embroider-build/embroider/blob/main/docs/porting-addons-to-v2.md
 
 ## Rollup Utilities
 

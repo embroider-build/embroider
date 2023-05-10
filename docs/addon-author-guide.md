@@ -74,4 +74,4 @@ We support some tools to make V2 addon development more convenient:
 
 ## Replacing the {{component}} helper
 
-This section grew into its <a href="./REPLACING-COMPONENT-HELPER.md">own separate document</a>.
+This section grew into its [own separate document](./replacing-component-helper.md).

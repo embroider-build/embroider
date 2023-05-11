@@ -83,7 +83,7 @@
     "code-equality-assertions": "^0.9.0",
     "ember-engines": "^0.8.19",
     "scenario-tester": "^2.1.2",
-    "typescript": "*"
+    "typescript": "^4.9.0"
   },
   "peerDependencies": {
     "@embroider/core": "^2.0.0"

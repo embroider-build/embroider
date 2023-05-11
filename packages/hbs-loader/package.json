@@ -20,7 +20,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^15.12.2",
-    "typescript": "*"
+    "typescript": "^4.9.0"
   },
   "peerDependencies": {
     "@embroider/core": "^2.0.0",

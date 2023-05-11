@@ -65,7 +65,7 @@
     "pnpm": "8.4.0"
   },
   "changelog": {
-    "wildcardLabel": "unlabeled",
+    "__comment__": "Our release infrastructure relies on these exact labels. Be careful changing them.",
     "labels": {
       "breaking": ":boom: Breaking Change",
       "enhancement": ":rocket: Enhancement",
@@ -73,6 +73,7 @@
       "documentation": ":memo: Documentation",
       "internal": ":house: Internal",
       "unlabeled": ":question: Unlabeled"
-    }
+    },
+    "wildcardLabel": "unlabeled"
   }
 }

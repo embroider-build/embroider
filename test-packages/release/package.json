@@ -1,0 +1,15 @@
+{
+  "name": "@embroider/release",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "node ./src/prepare.js"
+  },
+  "dependencies": {
+    "@ef4/lerna-changelog": "^1.0.2",
+    "execa": "^7.0.0"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

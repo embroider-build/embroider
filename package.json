@@ -64,5 +64,15 @@
     "node": "16.20.0",
     "pnpm": "8.4.0"
   },
-  "version": "1.8.3"
+  "changelog": {
+    "wildcardLabel": "unlabeled",
+    "labels": {
+      "breaking": ":boom: Breaking Change",
+      "enhancement": ":rocket: Enhancement",
+      "bug": ":bug: Bug Fix",
+      "documentation": ":memo: Documentation",
+      "internal": ":house: Internal",
+      "unlabeled": ":question: Unlabeled"
+    }
+  }
 }

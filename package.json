@@ -39,14 +39,7 @@
       "graceful-fs": "^4.0.0",
       "@babel/types": "^7.21.5",
       "@types/babel__traverse": "^7.18.5",
-      "@types/eslint": "^8.37.0",
-      "@types/ember__object": "^4.0.3",
-      "@types/ember__routing": "^4.0.12",
-      "@types/ember__application": "^4.0.5",
-      "@types/ember__owner": "^4.0.3",
-      "@types/ember__engine": "^4.0.4",
-      "@types/ember": "^4.0.3"
-
+      "@types/eslint": "^8.37.0"
     }
   },
   "devDependencies": {

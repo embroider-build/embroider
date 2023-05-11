@@ -42,26 +42,10 @@
     "@embroider/addon-dev": "^3.0.0",
     "@embroider/macros": "workspace:*",
     "@tsconfig/ember": "^1.0.0",
-    "@types/ember": "^4.0.0",
-    "@types/ember__object": "^4.0.0",
-    "@types/ember__service": "^4.0.0",
-    "@types/ember__controller": "^4.0.0",
-    "@types/ember__string": "^3.16.0",
-    "@types/ember__template": "^4.0.0",
-    "@types/ember__polyfills": "^4.0.0",
-    "@types/ember__utils": "^4.0.0",
-    "@types/ember__runloop": "^4.0.0",
-    "@types/ember__debug": "^4.0.0",
-    "@types/ember__engine": "^4.0.0",
-    "@types/ember__application": "^4.0.0",
-    "@types/ember__test": "^4.0.0",
-    "@types/ember__array": "^4.0.0",
-    "@types/ember__error": "^4.0.0",
-    "@types/ember__component": "^4.0.0",
-    "@types/ember__routing": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "concurrently": "^7.2.1",
+    "ember-source": "^4.12.0",
     "ember-template-lint": "^4.0.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
@@ -75,14 +59,10 @@
     "typescript": "^4.7.4"
   },
   "peerDependencies": {
-    "@embroider/core": "^2.0.0",
-    "@types/ember__routing": "*"
+    "@embroider/core": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "@embroider/core": {
-      "optional": true
-    },
-    "@types/ember__routing": {
       "optional": true
     }
   },

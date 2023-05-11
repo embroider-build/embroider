@@ -77,7 +77,7 @@
     "ember-truth-helpers": "^3.0.0",
     "rollup": "^2.69.1",
     "rollup-plugin-ts": "~3.0.0",
-    "typescript": "~4.4.2"
+    "typescript": "^4.9.0"
   },
   "volta": {
     "extends": "../../package.json"

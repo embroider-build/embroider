@@ -56,7 +56,7 @@
     "rollup": "^2.67.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-ts": "~3.0.2",
-    "typescript": "^4.7.4"
+    "typescript": "^4.9.0"
   },
   "peerDependencies": {
     "@embroider/core": "^2.0.0"

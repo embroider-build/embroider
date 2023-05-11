@@ -49,7 +49,7 @@
     "@types/mini-css-extract-plugin": "^1.4.3",
     "@types/node": "^15.12.2",
     "@types/semver": "^7.3.6",
-    "typescript": "*",
+    "typescript": "^4.9.0",
     "webpack": "^5.38.1"
   },
   "peerDependencies": {

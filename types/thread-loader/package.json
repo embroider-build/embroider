@@ -1,3 +1,4 @@
 {
-  "name": "@types/thread-loader"
+  "name": "@types/thread-loader",
+  "private": true
 }

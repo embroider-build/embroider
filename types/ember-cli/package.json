@@ -1,3 +1,4 @@
 {
-  "name": "@types/ember-cli"
+  "name": "@types/ember-cli",
+  "private": true
 }

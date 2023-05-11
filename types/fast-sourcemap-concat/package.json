@@ -1,3 +1,4 @@
 {
-  "name": "@types/fast-sourcemap-concat"
+  "name": "@types/fast-sourcemap-concat",
+  "private": true
 }

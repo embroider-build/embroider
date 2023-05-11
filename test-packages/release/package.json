@@ -7,7 +7,12 @@
   },
   "dependencies": {
     "@ef4/lerna-changelog": "^1.0.4",
-    "execa": "^4.0.3"
+    "@types/fs-extra": "^9.0.12",
+    "@types/js-yaml": "^4.0.5",
+    "execa": "^4.0.3",
+    "fs-extra": "^10.0.0",
+    "globby": "^11.0.3",
+    "js-yaml": "^4.1.0"
   },
   "volta": {
     "extends": "../../package.json"

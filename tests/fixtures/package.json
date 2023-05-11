@@ -1,3 +1,4 @@
 {
-  "name": "@embroider/test-fixtures"
+  "name": "@embroider/test-fixtures",
+  "private": true
 }

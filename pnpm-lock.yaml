@@ -61,7 +61,7 @@ importers:
   packages/addon-dev:
     dependencies:
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
       '@rollup/pluginutils':
         specifier: ^4.1.1
@@ -89,7 +89,7 @@ importers:
         version: 17.0.1
     devDependencies:
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@glimmer/syntax':
         specifier: ^0.84.2
@@ -116,7 +116,7 @@ importers:
   packages/addon-shim:
     dependencies:
       '@embroider/shared-internals':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../shared-internals
       broccoli-funnel:
         specifier: ^3.0.8
@@ -144,7 +144,7 @@ importers:
         specifier: ^7.14.5
         version: 7.19.6(supports-color@8.1.0)
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
       babel-loader:
         specifier: '8'
@@ -168,10 +168,10 @@ importers:
         specifier: ^7.14.5
         version: 7.14.5
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
       '@embroider/macros':
-        specifier: 1.10.0
+        specifier: workspace:*
         version: link:../macros
       '@types/babel__code-frame':
         specifier: ^7.0.2
@@ -268,10 +268,10 @@ importers:
         version: 17.0.1
     devDependencies:
       '@embroider/sample-transforms':
-        specifier: 0.0.0
+        specifier: workspace:*
         version: link:../../test-packages/sample-transforms
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@glimmer/syntax':
         specifier: ^0.84.2
@@ -355,10 +355,10 @@ importers:
         specifier: ^7.14.5
         version: 7.14.5
       '@embroider/macros':
-        specifier: 1.10.0
+        specifier: workspace:*
         version: link:../macros
       '@embroider/shared-internals':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../shared-internals
       assert-never:
         specifier: ^1.2.1
@@ -422,10 +422,10 @@ importers:
         version: 3.0.0
     devDependencies:
       '@embroider/sample-transforms':
-        specifier: 0.0.0
+        specifier: workspace:*
         version: link:../../test-packages/sample-transforms
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@glimmer/syntax':
         specifier: ^0.84.2
@@ -476,7 +476,7 @@ importers:
   packages/hbs-loader:
     dependencies:
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
       webpack:
         specifier: ^5
@@ -492,7 +492,7 @@ importers:
   packages/macros:
     dependencies:
       '@embroider/shared-internals':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../shared-internals
       assert-never:
         specifier: ^1.2.1
@@ -526,10 +526,10 @@ importers:
         specifier: ^7.14.5
         version: 7.14.5
       '@embroider/core':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../core
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@glint/template':
         specifier: ^1.0.0
@@ -577,10 +577,10 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       '@embroider/addon-shim':
-        specifier: ^1.8.4
+        specifier: workspace:^
         version: link:../addon-shim
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@babel/core':
@@ -599,7 +599,7 @@ importers:
         specifier: ^7.18.6
         version: 7.18.6(@babel/core@7.19.6)
       '@embroider/addon-dev':
-        specifier: ^3.0.0
+        specifier: workspace:^
         version: link:../addon-dev
       '@embroider/macros':
         specifier: workspace:*
@@ -681,7 +681,7 @@ importers:
         version: 1.0.1
     devDependencies:
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@types/babel__core':
         specifier: ^7.1.14
@@ -742,7 +742,7 @@ importers:
   packages/util:
     dependencies:
       '@embroider/macros':
-        specifier: ^1.10.0
+        specifier: workspace:^
         version: link:../macros
       broccoli-funnel:
         specifier: ^3.0.5
@@ -764,19 +764,19 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.6.0)
       '@embroider/compat':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../compat
       '@embroider/core':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../core
       '@embroider/test-setup':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../test-setup
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@embroider/webpack':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../webpack
       '@glimmer/component':
         specifier: ^1.1.2
@@ -896,16 +896,16 @@ importers:
         specifier: ^7.14.5
         version: 7.19.6(supports-color@8.1.0)
       '@embroider/babel-loader-8':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../babel-loader-8
       '@embroider/core':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../core
       '@embroider/hbs-loader':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../hbs-loader
       '@embroider/shared-internals':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../shared-internals
       '@types/supports-color':
         specifier: ^8.1.0
@@ -1003,7 +1003,7 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.6.0)
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../support
       broccoli-asset-rev:
         specifier: ^3.0.0
@@ -1213,7 +1213,7 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.6.0)
       '@embroider/test-setup':
-        specifier: ^2.0.0
+        specifier: workspace:^
         version: link:../../packages/test-setup
       '@glimmer/component':
         specifier: ^1.1.2
@@ -1321,19 +1321,19 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.6.0)
       '@embroider/compat':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/compat
       '@embroider/core':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/core
       '@embroider/router':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../../packages/router
       '@embroider/test-setup':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/test-setup
       '@embroider/webpack':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/webpack
       '@glimmer/component':
         specifier: ^1.1.2
@@ -1443,19 +1443,19 @@ importers:
         specifier: workspace:*
         version: link:../../packages/addon-dev
       '@embroider/compat':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/compat
       '@embroider/core':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/core
       '@embroider/sample-transforms':
         specifier: workspace:*
         version: link:../../test-packages/sample-transforms
       '@embroider/shared-internals':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../../packages/shared-internals
       '@embroider/test-support':
-        specifier: 0.36.0
+        specifier: workspace:*
         version: link:../../test-packages/support
       '@embroider/webpack':
         specifier: workspace:*
@@ -1531,16 +1531,16 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       '@embroider/addon-shim':
-        specifier: 1.8.4
+        specifier: workspace:*
         version: link:../../packages/addon-shim
       '@embroider/macros':
-        specifier: 1.10.0
+        specifier: workspace:*
         version: link:../../packages/macros
       '@embroider/router':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../../packages/router
       '@embroider/util':
-        specifier: 1.10.0
+        specifier: workspace:*
         version: link:../../packages/util
       '@rollup/plugin-babel':
         specifier: ^5.3.1
@@ -1663,19 +1663,19 @@ importers:
         specifier: ^2.9.3
         version: 2.9.3(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.12.0)
       '@embroider/compat':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/compat
       '@embroider/core':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/core
       '@embroider/router':
-        specifier: 2.0.0
+        specifier: workspace:*
         version: link:../../packages/router
       '@embroider/test-setup':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/test-setup
       '@embroider/webpack':
-        specifier: 2.1.1
+        specifier: workspace:*
         version: link:../../packages/webpack
       '@glimmer/component':
         specifier: ^1.1.2
@@ -1795,7 +1795,7 @@ importers:
   tests/v2-addon-template:
     dependencies:
       '@embroider/addon-shim':
-        specifier: 1.8.4
+        specifier: workspace:*
         version: link:../../packages/addon-shim
 
   types/broccoli: {}

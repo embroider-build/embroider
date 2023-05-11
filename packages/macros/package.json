@@ -23,7 +23,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@embroider/shared-internals": "2.0.0",
+    "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
     "babel-import-util": "^1.1.0",
     "ember-cli-babel": "^7.26.6",
@@ -36,8 +36,8 @@
     "@babel/core": "^7.14.5",
     "@babel/plugin-transform-modules-amd": "^7.19.6",
     "@babel/traverse": "^7.14.5",
-    "@embroider/core": "2.1.1",
-    "@embroider/test-support": "0.36.0",
+    "@embroider/core": "workspace:*",
+    "@embroider/test-support": "workspace:*",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",

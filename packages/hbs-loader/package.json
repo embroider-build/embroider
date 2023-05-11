@@ -23,7 +23,7 @@
     "typescript": "*"
   },
   "peerDependencies": {
-    "@embroider/core": "^2.0.0",
+    "@embroider/core": "workspace:^",
     "webpack": "^5"
   },
   "engines": {

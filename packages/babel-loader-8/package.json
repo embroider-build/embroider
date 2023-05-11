@@ -13,7 +13,7 @@
     "babel-loader": "8"
   },
   "peerDependencies": {
-    "@embroider/core": "^2.0.0"
+    "@embroider/core": "workspace:^"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

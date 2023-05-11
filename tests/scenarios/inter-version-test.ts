@@ -2,7 +2,6 @@ import QUnit from 'qunit';
 import glob from 'globby';
 import { resolve } from 'path';
 import { readFileSync, readJSONSync } from 'fs-extra';
-import { satisfies } from 'semver';
 import yaml from 'js-yaml';
 
 const { module: Qmodule, test } = QUnit;
@@ -22,8 +21,8 @@ Qmodule('package inter-version consistency', () => {
             let other = packages.get(name);
             if (other) {
               assert.ok(
-                satisfies(other.version, range as string),
-                `${name} in ${section} ${other.version} does not satisfy ${range}`
+                (range as string).startsWith('workspace:'),
+                `${section} refers to ${name} as ${range} instead of workspace:`
               );
             }
           }

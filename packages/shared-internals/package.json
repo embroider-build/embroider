@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "broccoli-node-api": "^1.7.0",
-    "@embroider/test-support": "0.36.0",
+    "@embroider/test-support": "workspace:*",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
     "@types/fs-extra": "^9.0.12",

@@ -28,7 +28,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/preset-env": "^7.14.5",
     "@babel/traverse": "^7.14.5",
-    "@embroider/macros": "1.10.0",
+    "@embroider/macros": "workspace:*",
     "@types/babel__code-frame": "^7.0.2",
     "@types/yargs": "^17.0.3",
     "assert-never": "^1.1.0",
@@ -62,8 +62,8 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
-    "@embroider/sample-transforms": "0.0.0",
-    "@embroider/test-support": "0.36.0",
+    "@embroider/sample-transforms": "workspace:*",
+    "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
@@ -86,7 +86,7 @@
     "typescript": "^4.9.0"
   },
   "peerDependencies": {
-    "@embroider/core": "^2.0.0"
+    "@embroider/core": "workspace:^"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

@@ -17,7 +17,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "@embroider/shared-internals": "^2.0.0",
+    "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",
     "semver": "^7.3.8"
   },

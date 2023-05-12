@@ -1,4 +1,6 @@
 import yargs from 'yargs/yargs';
+import type { Argv } from 'yargs';
+
 import { readFileSync } from 'fs';
 import { parseChangeLogOrExit } from './change-parser';
 
@@ -10,21 +12,10 @@ yargs(process.argv.slice(2))
   .command(
     'prepare',
     `Edits the package.json and changelog files to prepare for release.`,
-    yargs =>
-      yargs.option('fromStdin', {
-        type: 'boolean',
-        description: 'Read the summary of changes from stdin instead of building them from scratch.',
-      }),
+    yargs => fromStdin(yargs),
     async function (opts) {
-      let newChangelogContent: string;
-      if (opts.fromStdin) {
-        newChangelogContent = readFileSync(process.stdin.fd, 'utf8');
-      } else {
-        let { gatherChanges } = await import('./gather-changes');
-        newChangelogContent = await gatherChanges();
-      }
       let { prepare } = await import('./prepare');
-      await prepare(newChangelogContent);
+      await prepare(await newChangelogContent(opts));
     }
   )
   .command(
@@ -38,11 +29,11 @@ yargs(process.argv.slice(2))
   )
   .command(
     'parse-changes',
-    `Takes the output of gather-changes and parses it into a structured format`,
-    yargs => yargs,
-    async function (/* opts */) {
+    `Parse the summary of changes into a structured format`,
+    yargs => fromStdin(yargs),
+    async function (opts) {
       let { parseChangeLogOrExit } = await import('./change-parser');
-      console.log(JSON.stringify(parseChangeLogOrExit(readFileSync(process.stdin.fd, 'utf8')), null, 2));
+      console.log(JSON.stringify(parseChangeLogOrExit(await newChangelogContent(opts)), null, 2));
     }
   )
   .command(
@@ -57,14 +48,30 @@ yargs(process.argv.slice(2))
   .command(
     'plan-version-bumps',
     `Takes the output of gather-changes and explains which packages need to be released at what versions and why.`,
-    yargs => yargs,
-    async function (/* opts */) {
+    yargs => fromStdin(yargs),
+    async function (opts) {
       let { planVersionBumps } = await import('./plan');
-      let newChangelogContent = readFileSync(process.stdin.fd, 'utf8');
-      console.log(planVersionBumps(parseChangeLogOrExit(newChangelogContent)));
+      console.log(planVersionBumps(parseChangeLogOrExit(await newChangelogContent(opts))).explain());
     }
   )
-
   .demandCommand()
   .strictCommands()
   .help().argv;
+
+function fromStdin(yargs: Argv) {
+  return yargs.option('fromStdin', {
+    type: 'boolean',
+    description: 'Read the summary of changes from stdin instead of building them from scratch.',
+  });
+}
+
+async function newChangelogContent(opts: { fromStdin: boolean | undefined }) {
+  let content: string;
+  if (opts.fromStdin) {
+    content = readFileSync(process.stdin.fd, 'utf8');
+  } else {
+    let { gatherChanges } = await import('./gather-changes');
+    content = await gatherChanges();
+  }
+  return content;
+}

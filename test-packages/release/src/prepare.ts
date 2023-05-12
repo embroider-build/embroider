@@ -1,8 +1,7 @@
 import { parseChangeLogOrExit, ParsedChangelog, UnlabeledSection } from './change-parser';
-import highlight from 'cli-highlight';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { publishedInterPackageDeps } from './interdep';
+import { highlightMarkdown } from './highlight';
 
 const changelogPreamble = `# Embroider Changelog
 `;
@@ -11,13 +10,9 @@ function ensureAllLabeled(changes: ParsedChangelog) {
   let unlabeled = changes.sections.find(section => 'unlabeled' in section) as UnlabeledSection;
   if (unlabeled) {
     process.stderr.write('Cannot release because these PRs are unlabeled:\n');
-    process.stderr.write(highlight(unlabeled.summaryText));
+    process.stderr.write(highlightMarkdown(unlabeled.summaryText));
     process.exit(-1);
   }
-}
-
-function planVersionBumps(changes: ParsedChangelog) {
-  let deps = publishedInterPackageDeps();
 }
 
 function updateChangelog(newChangelogContent: string) {

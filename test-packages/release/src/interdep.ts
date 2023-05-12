@@ -7,8 +7,8 @@ export type Range = 'exact' | 'caret';
 export interface PkgEntry {
   version: string;
   pkgJSONPath: string;
-  dependencies: Map<string, Range>;
-  peerDependencies: Map<string, Range>;
+  isDependencyOf: Map<string, Range>;
+  isPeerDependencyOf: Map<string, Range>;
 }
 
 function workspaceRangeType(range: string): Range | undefined {
@@ -29,6 +29,9 @@ function workspaceRangeType(range: string): Range | undefined {
 export function publishedInterPackageDeps(): Map<string, PkgEntry> {
   let rootDir = resolve(__dirname, '..', '..', '..');
   let packages: Map<string, PkgEntry> = new Map();
+
+  let pkgJSONS: Map<string, any> = new Map();
+
   for (let pattern of (yaml.load(readFileSync(resolve(__dirname, '../../../pnpm-workspace.yaml'), 'utf8')) as any)
     .packages) {
     for (let dir of glob.sync(pattern, { cwd: rootDir, expandDirectories: false, onlyDirectories: true })) {
@@ -37,20 +40,33 @@ export function publishedInterPackageDeps(): Map<string, PkgEntry> {
       if (pkg.private) {
         continue;
       }
-      let entry: PkgEntry = { version: pkg.version, pkgJSONPath, dependencies: new Map(), peerDependencies: new Map() };
-      // no devDeps because changes to devDeps shouldn't ever force us to
-      // release
-      for (let section of ['dependencies', 'peerDependencies'] as const) {
-        if (pkg[section]) {
-          for (let [depName, depRange] of Object.entries(pkg[section] as Record<string, string>)) {
-            let rangeType = workspaceRangeType(depRange);
-            if (rangeType) {
-              entry[section].set(depName, rangeType);
+      pkgJSONS.set(pkg.name, pkg);
+      packages.set(pkg.name, {
+        version: pkg.version,
+        pkgJSONPath,
+        isDependencyOf: new Map(),
+        isPeerDependencyOf: new Map(),
+      });
+    }
+  }
+
+  for (let [consumerName, consumerPkgJSON] of pkgJSONS) {
+    // no devDeps because changes to devDeps shouldn't ever force us to
+    // release
+    for (let section of ['dependencies', 'peerDependencies'] as const) {
+      if (consumerPkgJSON[section]) {
+        for (let [depName, depRange] of Object.entries(consumerPkgJSON[section] as Record<string, string>)) {
+          let rangeType = workspaceRangeType(depRange);
+          if (rangeType) {
+            let dependency = packages.get(depName);
+            if (!dependency) {
+              throw new Error(`broken "workspace:" reference to ${depName} in ${consumerName}`);
             }
+            let field = section === 'dependencies' ? ('isDependencyOf' as const) : ('isPeerDependencyOf' as const);
+            dependency[field].set(consumerName, rangeType);
           }
         }
       }
-      packages.set(pkg.name, entry);
     }
   }
   return packages;

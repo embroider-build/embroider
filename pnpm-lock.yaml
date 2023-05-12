@@ -999,9 +999,18 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.5
         version: 4.0.5
+      '@types/semver':
+        specifier: ^7.3.6
+        version: 7.3.6
       '@types/yargs':
         specifier: ^17.0.3
         version: 17.0.3
+      assert-never:
+        specifier: ^1.2.1
+        version: 1.2.1
+      chalk:
+        specifier: ^4.1.1
+        version: 4.1.2
       cli-highlight:
         specifier: ^2.1.11
         version: 2.1.11
@@ -1017,6 +1026,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      semver:
+        specifier: ^7.3.5
+        version: 7.3.8
       yargs:
         specifier: ^17.0.1
         version: 17.0.1
@@ -4934,7 +4946,7 @@ packages:
     resolution: {integrity: sha512-4gkvuGRYfpAh1nwAz306cmMeC1mG7wxZnbsBZ09mMaMX/W7IyKOKc/38JwrDPUFUalmNEM7q7JEPcmew2M3Dog==}
     engines: {node: 10.* || 12.* || >= 14}
     dependencies:
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-cli-version-checker: 5.1.2
       glob: 7.2.3
       inquirer: 7.3.3
@@ -6500,7 +6512,6 @@ packages:
 
   /@types/semver@7.3.6:
     resolution: {integrity: sha512-0caWDWmpCp0uifxFh+FaqK3CuZ2SkRR/ZRxAV5+zNdC3QVUi6wyOJnefhPvtNt8NQWXB5OA93BUvZsXpWat2Xw==}
-    dev: true
 
   /@types/semver@7.5.0:
     resolution: {integrity: sha512-G8hZ6XJiHnuhQKR7ZmysCeJWE08o8T0AXtk5darsCaTVsYZhhgUrq53jizaR2FvsoeCwJhlmwTjkXBY5Pn/ZHw==}
@@ -9410,6 +9421,7 @@ packages:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
+    dev: false
 
   /chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
@@ -9837,7 +9849,7 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.0 || >=16.0.0}
     hasBin: true
     dependencies:
-      chalk: 4.1.1
+      chalk: 4.1.2
       date-fns: 2.30.0
       lodash: 4.17.21
       rxjs: 6.6.7
@@ -10873,7 +10885,7 @@ packages:
       broccoli-debug: 0.6.5
       broccoli-funnel: 3.0.8
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cli-babel: 7.26.11
       ember-cli-build-config-editor: 0.5.1
@@ -11439,7 +11451,7 @@ packages:
       broccoli-stew: 3.0.0
       calculate-cache-key-for-tree: 2.0.0
       capture-exit: 2.0.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ci-info: 2.0.0
       clean-base-url: 1.0.0
       compression: 1.7.4
@@ -12817,7 +12829,7 @@ packages:
       broccoli-debug: 0.6.5
       broccoli-funnel: 2.0.2
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-cli-babel: 7.26.11
       ember-cli-get-component-path-option: 1.0.0
       ember-cli-is-package-missing: 1.0.0
@@ -12851,7 +12863,7 @@ packages:
       broccoli-debug: 0.6.5
       broccoli-funnel: 2.0.2
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-cli-babel: 7.26.11
       ember-cli-get-component-path-option: 1.0.0
       ember-cli-is-package-missing: 1.0.0
@@ -12885,7 +12897,7 @@ packages:
       broccoli-file-creator: 2.1.1
       broccoli-funnel: 2.0.2
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-cli-babel: 7.26.11
       ember-cli-get-component-path-option: 1.0.0
       ember-cli-is-package-missing: 1.0.0
@@ -12922,7 +12934,7 @@ packages:
       broccoli-file-creator: 2.1.1
       broccoli-funnel: 3.0.8
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cli-babel: 7.26.11
       ember-cli-get-component-path-option: 1.0.0
@@ -12994,7 +13006,7 @@ packages:
       broccoli-file-creator: 2.1.1
       broccoli-funnel: 3.0.8
       broccoli-merge-trees: 4.2.0
-      chalk: 4.1.1
+      chalk: 4.1.2
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cli-babel: 7.26.11
       ember-cli-get-component-path-option: 1.0.0
@@ -13837,7 +13849,7 @@ packages:
       '@eslint/eslintrc': 0.4.3
       '@humanwhocodes/config-array': 0.5.0
       ajv: 6.12.6
-      chalk: 4.1.1
+      chalk: 4.1.2
       cross-spawn: 7.0.3
       debug: 4.3.2(supports-color@8.1.0)
       doctrine: 3.0.0
@@ -16837,7 +16849,7 @@ packages:
     dependencies:
       '@types/node': 15.12.2
       merge-stream: 2.0.0
-      supports-color: 8.1.0
+      supports-color: 8.1.1
 
   /jest-worker@29.5.0:
     resolution: {integrity: sha512-NcrQnevGoSp4b5kg+akIpthoAFHxPBcb5P6mYPY0fUNT+sSvmtu6jlkEle3anczUKIKEbMxFimk9oTP/tpIPgA==}
@@ -21334,7 +21346,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       has-flag: 4.0.0
-    dev: true
 
   /supports-hyperlinks@3.0.0:
     resolution: {integrity: sha512-QBDPHyPQDRTy9ku4URNGY5Lah8PAaXs6tAAwp55sL5WCsSW7GIfdf6W5ixfziW+t7wh3GVvHyHHyQ1ESsoRvaA==}

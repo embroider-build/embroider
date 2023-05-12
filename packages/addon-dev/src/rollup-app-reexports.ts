@@ -35,7 +35,7 @@ export default function appReexports(opts: {
       }
 
       // Don't cause a file i/o event unless something actually changed
-      if (hasChanges(pkg?.['ember-addon']?.['app-js'], appJS)) {
+      if (hasChanges(pkg['ember-addon']?.['app-js'], appJS)) {
         pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
           'app-js': appJS,
         });

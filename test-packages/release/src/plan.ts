@@ -7,7 +7,13 @@ import { highlightMarkdown } from './highlight';
 export type Solution = Map<
   string,
   | { impact: undefined; oldVersion: string }
-  | { impact: Impact; oldVersion: string; newVersion: string; constraints: { impact: Impact; reason: string }[] }
+  | {
+      impact: Impact;
+      oldVersion: string;
+      newVersion: string;
+      constraints: { impact: Impact; reason: string }[];
+      pkgJSONPath: string;
+    }
 >;
 
 class Plan {
@@ -47,27 +53,16 @@ class Plan {
         solution.set(pkgName, { impact: undefined, oldVersion: entry.version });
       } else {
         let newVersion = inc(entry.version, impact)!;
-        solution.set(pkgName, { impact, oldVersion: entry.version, newVersion, constraints });
+        solution.set(pkgName, {
+          impact,
+          oldVersion: entry.version,
+          newVersion,
+          constraints,
+          pkgJSONPath: entry.pkgJSONPath,
+        });
       }
     }
     return solution;
-  }
-
-  explain() {
-    let output: string[] = [];
-    for (let [pkgName, entry] of this.solve()) {
-      if (!entry.impact) {
-        output.push(`## ${pkgName} ${entry.oldVersion} does not need to be released.`);
-      } else {
-        output.push(`## ${pkgName} needs a ${entry.impact} release from ${entry.oldVersion} to ${entry.newVersion}`);
-        for (let constraint of entry.constraints) {
-          if (constraint.impact === entry.impact) {
-            output.push(`   - ${constraint.reason}`);
-          }
-        }
-      }
-    }
-    return highlightMarkdown(output.join('\n'));
   }
 
   #propagate(packageName: string, impact: Impact) {
@@ -131,13 +126,30 @@ class Plan {
   }
 }
 
-export function planVersionBumps(changed: ParsedChangelog) {
+export function explain(solution: Solution) {
+  let output: string[] = [];
+  for (let [pkgName, entry] of solution) {
+    if (!entry.impact) {
+      output.push(`## ${pkgName} ${entry.oldVersion} does not need to be released.`);
+    } else {
+      output.push(`## ${pkgName} needs a ${entry.impact} release from ${entry.oldVersion} to ${entry.newVersion}`);
+      for (let constraint of entry.constraints) {
+        if (constraint.impact === entry.impact) {
+          output.push(`   - ${constraint.reason}`);
+        }
+      }
+    }
+  }
+  return highlightMarkdown(output.join('\n'));
+}
+
+export function planVersionBumps(changed: ParsedChangelog): Solution {
   let plan = new Plan();
   for (let section of changed.sections) {
     if ('unlabeled' in section) {
       process.stderr.write(
         highlightMarkdown(
-          `# Unlabeled Changes\n\n${section.summaryText}\n\n*Cannot plan version bumps until the above changes are labeled*.\n`
+          `# Unlabeled Changes\n\n${section.summaryText}\n\n*Cannot plan release until the above changes are labeled*.\n`
         )
       );
       process.exit(-1);
@@ -148,5 +160,5 @@ export function planVersionBumps(changed: ParsedChangelog) {
     }
   }
 
-  return plan;
+  return plan.solve();
 }

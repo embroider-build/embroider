@@ -15,7 +15,10 @@ yargs(process.argv.slice(2))
     yargs => fromStdin(yargs),
     async function (opts) {
       let { prepare } = await import('./prepare');
-      await prepare(await newChangelogContent(opts));
+      let solution = await prepare(await newChangelogContent(opts));
+      let { explain } = await import('./plan');
+      process.stdout.write(explain(solution));
+      process.stdout.write(`\nSuccessfully prepared released\n`);
     }
   )
   .command(
@@ -46,12 +49,13 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    'plan-version-bumps',
-    `Takes the output of gather-changes and explains which packages need to be released at what versions and why.`,
+    'explain-plan',
+    `Explains which packages need to be released at what versions and why.`,
     yargs => fromStdin(yargs),
     async function (opts) {
-      let { planVersionBumps } = await import('./plan');
-      console.log(planVersionBumps(parseChangeLogOrExit(await newChangelogContent(opts))).explain());
+      let { planVersionBumps, explain } = await import('./plan');
+      let solution = planVersionBumps(parseChangeLogOrExit(await newChangelogContent(opts)));
+      console.log(explain(solution));
     }
   )
   .demandCommand()

@@ -1,21 +1,13 @@
-import { parseChangeLogOrExit, ParsedChangelog, UnlabeledSection } from './change-parser';
+import { parseChangeLogOrExit } from './change-parser';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { highlightMarkdown } from './highlight';
+import { planVersionBumps, Solution } from './plan';
+import { readJSONSync, writeJSONSync } from 'fs-extra';
 
 const changelogPreamble = `# Embroider Changelog
 `;
 
-function ensureAllLabeled(changes: ParsedChangelog) {
-  let unlabeled = changes.sections.find(section => 'unlabeled' in section) as UnlabeledSection;
-  if (unlabeled) {
-    process.stderr.write('Cannot release because these PRs are unlabeled:\n');
-    process.stderr.write(highlightMarkdown(unlabeled.summaryText));
-    process.exit(-1);
-  }
-}
-
-function updateChangelog(newChangelogContent: string) {
+function updateChangelog(newChangelogContent: string, solution: Solution) {
   let targetChangelogFile = resolve(__dirname, '..', '..', '..', 'CHANGELOG.md');
   let oldChangelogContent = readFileSync(targetChangelogFile, 'utf8');
   if (!oldChangelogContent.startsWith(changelogPreamble)) {
@@ -23,11 +15,46 @@ function updateChangelog(newChangelogContent: string) {
     process.exit(-1);
   }
   oldChangelogContent = oldChangelogContent.slice(changelogPreamble.length);
-  writeFileSync(targetChangelogFile, changelogPreamble + newChangelogContent + '\n' + oldChangelogContent);
+
+  let [firstNewLine, ...restNewLines] = newChangelogContent.trim().split('\n');
+
+  writeFileSync(
+    targetChangelogFile,
+    changelogPreamble +
+      firstNewLine +
+      '\n\n' +
+      versionSummary(solution) +
+      '\n' +
+      restNewLines.join('\n') +
+      '\n' +
+      oldChangelogContent
+  );
+}
+
+function versionSummary(solution: Solution): string {
+  let result: string[] = [];
+  for (let [pkgName, entry] of solution) {
+    if (entry.impact) {
+      result.push(`${pkgName} ${entry.newVersion} (${entry.impact})`);
+    }
+  }
+  return result.join('\n');
+}
+
+function updateVersions(solution: Solution) {
+  for (let entry of solution.values()) {
+    if (entry.impact) {
+      let pkg = readJSONSync(entry.pkgJSONPath);
+      pkg.version = entry.newVersion;
+      writeJSONSync(entry.pkgJSONPath, pkg, { spaces: 2 });
+    }
+  }
 }
 
 export async function prepare(newChangelogContent: string) {
   let changes = parseChangeLogOrExit(newChangelogContent);
-  ensureAllLabeled(changes);
-  updateChangelog(newChangelogContent);
+  let solution = planVersionBumps(changes);
+  updateVersions(solution);
+  updateChangelog(newChangelogContent, solution);
+  return solution;
 }

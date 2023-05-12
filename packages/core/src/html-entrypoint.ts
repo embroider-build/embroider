@@ -20,7 +20,9 @@ export class HTMLEntrypoint {
     private publicAssetURL: string,
     public filename: string
   ) {
-    this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename), 'utf8'));
+    // https://github.com/jsdom/jsdom/issues/1898
+    // Omit hte encoding and let JSDOM handle it so that we can handle when a BOM is present
+    this.dom = new JSDOM(readFileSync(join(this.pathToVanillaApp, this.filename)));
 
     for (let tag of this.handledStyles()) {
       let styleTag = tag as HTMLLinkElement;

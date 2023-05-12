@@ -1,33 +1,33 @@
-// import execa from 'execa';
-import fs from 'fs';
-import { parseChangeLog } from './change-parser';
-import { publishedInterPackageDeps } from './interdep';
+import { parseChangeLogOrExit, ParsedChangelog, UnlabeledSection } from './change-parser';
+import highlight from 'cli-highlight';
+import { readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
 
-// async function buildChangelog(): Promise<string> {
-//   let result = await execa('pnpm', ['lerna-changelog', '--next-version', 'Embroider Monorepo Release']);
-//   return result.stdout;
-// }
+const changelogPreamble = `# Embroider Changelog
+`;
 
-async function main() {
-  let changelog = fs.readFileSync('/tmp/changelog', 'utf8');
-  let parsed;
-  try {
-    parsed = parseChangeLog(changelog);
-  } catch (err) {
-    console.error(err);
-    console.error(`the full changelog that failed to parse was:\n${changelog}`);
+function ensureAllLabeled(changes: ParsedChangelog) {
+  let unlabeled = changes.sections.find(section => 'unlabeled' in section) as UnlabeledSection;
+  if (unlabeled) {
+    process.stderr.write('Cannot release because these PRs are unlabeled:\n');
+    process.stderr.write(highlight(unlabeled.summaryText));
     process.exit(-1);
   }
-  console.log(JSON.stringify(parsed, null, 2));
-  console.log(publishedInterPackageDeps());
 }
 
-main().then(
-  () => {
-    process.exit(0);
-  },
-  err => {
-    console.error(err);
+function updateChangelog(newChangelogContent: string) {
+  let targetChangelogFile = resolve(__dirname, '..', '..', '..', 'CHANGELOG.md');
+  let oldChangelogContent = readFileSync(targetChangelogFile, 'utf8');
+  if (!oldChangelogContent.startsWith(changelogPreamble)) {
+    process.stderr.write(`Cannot parse existing changelog. Expected it to start with:\n${changelogPreamble}`);
     process.exit(-1);
   }
-);
+  oldChangelogContent = oldChangelogContent.slice(changelogPreamble.length);
+  writeFileSync(targetChangelogFile, changelogPreamble + newChangelogContent + '\n' + oldChangelogContent);
+}
+
+export async function prepare(newChangelogContent: string) {
+  let changes = parseChangeLogOrExit(newChangelogContent);
+  ensureAllLabeled(changes);
+  updateChangelog(newChangelogContent);
+}

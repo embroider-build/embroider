@@ -1,4 +1,10 @@
 export type Impact = 'major' | 'minor' | 'patch';
+export type UnlabeledSection = { unlabeled: true; summaryText: string };
+export type LabeledSection = { packages: string[]; impact: Impact };
+export type Section = LabeledSection | UnlabeledSection;
+export interface ParsedChangelog {
+  sections: Section[];
+}
 
 const knownSections: Record<string, { impact: Impact } | { unlabeled: true }> = {
   ':boom: Breaking Change': {
@@ -40,8 +46,6 @@ function consumeSection(lines: string[]) {
   }
   return matchedLines;
 }
-
-export type Section = { packages: string[]; impact: Impact } | { unlabeled: true; summaryText: string };
 
 function parseSection(lines: string[]): Section | undefined {
   let line = lines.shift();
@@ -95,7 +99,7 @@ function parsePackageList(lines: string[]): string[] | undefined {
   }
 }
 
-export function parseChangeLog(src: string): { sections: Section[] } {
+export function parseChangeLog(src: string): ParsedChangelog {
   let lines = src.split('\n');
   let sections = [];
   while (lines.length > 0) {
@@ -105,4 +109,14 @@ export function parseChangeLog(src: string): { sections: Section[] } {
     }
   }
   return { sections };
+}
+
+export function parseChangeLogOrExit(src: string): ParsedChangelog {
+  try {
+    return parseChangeLog(src);
+  } catch (err) {
+    console.error(err);
+    console.error(`the full changelog that failed to parse was:\n${src}`);
+    process.exit(-1);
+  }
 }

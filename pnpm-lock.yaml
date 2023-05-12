@@ -999,6 +999,12 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.5
         version: 4.0.5
+      '@types/yargs':
+        specifier: ^17.0.3
+        version: 17.0.3
+      cli-highlight:
+        specifier: ^2.1.11
+        version: 2.1.11
       execa:
         specifier: ^4.0.3
         version: 4.0.3
@@ -1011,6 +1017,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      yargs:
+        specifier: ^17.0.1
+        version: 17.0.1
 
   test-packages/sample-transforms:
     dependencies:

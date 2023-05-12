@@ -56,7 +56,7 @@ export default function appReexports(opts: {
  * - relies on the fact that we can treat arrays and objects the same due to
  *   how JavaScript works
  */
-function hasChanges(a: undefined | unknown, b: undefined | unknown) {
+function hasChanges(a: undefined | unknown, b: undefined | unknown): boolean {
   if (a === b) return false;
   if (typeof a !== typeof b) return true;
 
@@ -84,7 +84,7 @@ function hasChanges(a: undefined | unknown, b: undefined | unknown) {
 }
 
 // Type `object` differs from `typeof` object
-function doesObjectHaveChanges(a: object | null, b: object | null) {
+function doesObjectHaveChanges(a: object | null, b: object | null): boolean {
   // Need to ensure the values are turthy so that we can use Object.entries
   // This is because 'null' is an object
   if (!a || !b) return true;
@@ -109,4 +109,6 @@ function doesObjectHaveChanges(a: object | null, b: object | null) {
     // The value
     if (hasChanges(aEntry[1], bEntry[1])) return true;
   }
+
+  return false;
 }

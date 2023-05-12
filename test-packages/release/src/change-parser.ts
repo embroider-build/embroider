@@ -1,6 +1,6 @@
 export type Impact = 'major' | 'minor' | 'patch';
 export type UnlabeledSection = { unlabeled: true; summaryText: string };
-export type LabeledSection = { packages: string[]; impact: Impact };
+export type LabeledSection = { packages: string[]; impact: Impact; heading: string };
 export type Section = LabeledSection | UnlabeledSection;
 export interface ParsedChangelog {
   sections: Section[];
@@ -79,6 +79,7 @@ function parseSection(lines: string[]): Section | undefined {
   return {
     packages: [...packages],
     impact: sectionConfig.impact,
+    heading,
   };
 }
 

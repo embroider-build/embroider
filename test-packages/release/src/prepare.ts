@@ -2,6 +2,7 @@ import { parseChangeLogOrExit, ParsedChangelog, UnlabeledSection } from './chang
 import highlight from 'cli-highlight';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { publishedInterPackageDeps } from './interdep';
 
 const changelogPreamble = `# Embroider Changelog
 `;
@@ -13,6 +14,10 @@ function ensureAllLabeled(changes: ParsedChangelog) {
     process.stderr.write(highlight(unlabeled.summaryText));
     process.exit(-1);
   }
+}
+
+function planVersionBumps(changes: ParsedChangelog) {
+  let deps = publishedInterPackageDeps();
 }
 
 function updateChangelog(newChangelogContent: string) {

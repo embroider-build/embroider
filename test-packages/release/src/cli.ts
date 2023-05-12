@@ -1,5 +1,6 @@
 import yargs from 'yargs/yargs';
 import { readFileSync } from 'fs';
+import { parseChangeLogOrExit } from './change-parser';
 
 yargs(process.argv.slice(2))
   .usage(
@@ -51,6 +52,16 @@ yargs(process.argv.slice(2))
     async function (/* opts */) {
       let { publishedInterPackageDeps } = await import('./interdep');
       console.log(publishedInterPackageDeps());
+    }
+  )
+  .command(
+    'plan-version-bumps',
+    `Takes the output of gather-changes and explains which packages need to be released at what versions and why.`,
+    yargs => yargs,
+    async function (/* opts */) {
+      let { planVersionBumps } = await import('./plan');
+      let newChangelogContent = readFileSync(process.stdin.fd, 'utf8');
+      console.log(planVersionBumps(parseChangeLogOrExit(newChangelogContent)));
     }
   )
 

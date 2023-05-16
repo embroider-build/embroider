@@ -3,27 +3,13 @@ import { resolve } from 'path';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import yaml from 'js-yaml';
 
-export type Range = 'exact' | 'caret';
+export type Range = `workspace:${string}`;
+
 export interface PkgEntry {
   version: string;
   pkgJSONPath: string;
   isDependencyOf: Map<string, Range>;
   isPeerDependencyOf: Map<string, Range>;
-}
-
-function workspaceRangeType(range: string): Range | undefined {
-  if (!range.startsWith('workspace:')) {
-    return;
-  }
-  switch (range.slice(10)) {
-    case '*':
-      // this is how pnpm interprets workspace:*
-      return 'exact';
-    case '^':
-      return 'caret';
-    default:
-      throw new Error(`unsupported workspace dependency type ${range}`);
-  }
 }
 
 export function publishedInterPackageDeps(): Map<string, PkgEntry> {
@@ -56,14 +42,13 @@ export function publishedInterPackageDeps(): Map<string, PkgEntry> {
     for (let section of ['dependencies', 'peerDependencies'] as const) {
       if (consumerPkgJSON[section]) {
         for (let [depName, depRange] of Object.entries(consumerPkgJSON[section] as Record<string, string>)) {
-          let rangeType = workspaceRangeType(depRange);
-          if (rangeType) {
+          if (depRange.startsWith('workspace:')) {
             let dependency = packages.get(depName);
             if (!dependency) {
               throw new Error(`broken "workspace:" reference to ${depName} in ${consumerName}`);
             }
             let field = section === 'dependencies' ? ('isDependencyOf' as const) : ('isPeerDependencyOf' as const);
-            dependency[field].set(consumerName, rangeType);
+            dependency[field].set(consumerName, depRange as Range);
           }
         }
       }

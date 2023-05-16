@@ -1,8 +1,9 @@
 import { Impact, ParsedChangelog } from './change-parser';
 import { publishedInterPackageDeps } from './interdep';
 import assertNever from 'assert-never';
-import { inc } from 'semver';
+import { inc, satisfies } from 'semver';
 import { highlightMarkdown } from './highlight';
+import chalk from 'chalk';
 
 export type Solution = Map<
   string,
@@ -65,50 +66,56 @@ class Plan {
     return solution;
   }
 
+  #expandWorkspaceRange(range: `workspace:${string}`, availableVersion: string): string {
+    // this implements PNPM's rules for how workspace: protocol dependencies get
+    // expanded into proper semver ranges.
+    switch (range) {
+      case 'workspace:*':
+        return availableVersion;
+      case 'workspace:~':
+        return `~${availableVersion}`;
+      case 'workspace:^':
+        return `^${availableVersion}`;
+      default:
+        return range.slice(10);
+    }
+  }
+
   #propagate(packageName: string, impact: Impact) {
     let entry = this.#pkgs.get(packageName)!;
-    for (let [consumerName, rangeType] of entry.isDependencyOf) {
-      switch (rangeType) {
-        case 'exact':
-          this.addConstraint(
-            consumerName,
-            'patch',
-            `Has an exact dependency on ${packageName}, which is being released`
-          );
-          break;
-        case 'caret':
-          if (impact === 'major') {
-            this.addConstraint(
-              consumerName,
-              'patch',
-              `Has a caret dependency on ${packageName}, which needs a major release`
-            );
-          }
-          break;
-        default:
-          throw assertNever(rangeType);
-      }
+    let minNewVersion = inc(entry.version, impact)!;
+    for (let [consumerName, workspaceRange] of entry.isDependencyOf) {
+      this.#propagateDep(packageName, minNewVersion, 'dependencies', consumerName, workspaceRange);
     }
-    for (let [consumerName, rangeType] of entry.isPeerDependencyOf) {
-      switch (rangeType) {
-        case 'exact':
+    for (let [consumerName, workspaceRange] of entry.isPeerDependencyOf) {
+      this.#propagateDep(packageName, minNewVersion, 'peerDependencies', consumerName, workspaceRange);
+    }
+  }
+
+  #propagateDep(
+    packageName: string,
+    minNewVersion: string,
+    section: 'dependencies' | 'peerDependencies',
+    consumerName: string,
+    workspaceRange: `workspace:${string}`
+  ) {
+    let entry = this.#pkgs.get(packageName)!;
+
+    let oldRange = this.#expandWorkspaceRange(workspaceRange, entry.version);
+    if (!satisfies(minNewVersion, oldRange)) {
+      switch (section) {
+        case 'dependencies':
+          this.addConstraint(consumerName, 'patch', `Has dependency ${'`'}${workspaceRange}${'`'} on ${packageName}`);
+          break;
+        case 'peerDependencies':
           this.addConstraint(
             consumerName,
             'major',
-            `Has an exact peer dependency on ${packageName}, which is being released`
+            `Has peer dependency ${'`'}${workspaceRange}${'`'} on ${packageName}`
           );
           break;
-        case 'caret':
-          if (impact === 'major') {
-            this.addConstraint(
-              consumerName,
-              'major',
-              `Has a caret peer dependency on ${packageName}, which needs a major release`
-            );
-          }
-          break;
         default:
-          throw assertNever(rangeType);
+          throw assertNever(section);
       }
     }
   }
@@ -126,21 +133,58 @@ class Plan {
   }
 }
 
+function impactLabel(impact: Impact | undefined, text?: string) {
+  switch (impact) {
+    case undefined:
+      return chalk.gray(text);
+    case 'patch':
+      return chalk.blueBright(text);
+    case 'minor':
+      return chalk.greenBright(text);
+    case 'major':
+      return chalk.redBright(text);
+  }
+}
+
+function capitalize(s: string): string {
+  return s[0].toUpperCase() + s.slice(1);
+}
+
 export function explain(solution: Solution) {
   let output: string[] = [];
-  for (let [pkgName, entry] of solution) {
-    if (!entry.impact) {
-      output.push(`## ${pkgName} ${entry.oldVersion} does not need to be released.`);
-    } else {
-      output.push(`## ${pkgName} needs a ${entry.impact} release from ${entry.oldVersion} to ${entry.newVersion}`);
-      for (let constraint of entry.constraints) {
-        if (constraint.impact === entry.impact) {
-          output.push(`   - ${constraint.reason}`);
+
+  for (let priority of ['major', 'minor', 'patch'] as const) {
+    if ([...solution].some(entry => entry[1].impact === priority)) {
+      output.push(impactLabel(priority, capitalize(priority)));
+      output.push('');
+
+      for (let [pkgName, entry] of solution) {
+        if (entry.impact === priority) {
+          output.push(`  ${impactLabel(entry.impact, pkgName)} from ${entry.oldVersion} to ${entry.newVersion}`);
+          for (let constraint of entry.constraints) {
+            if (constraint.impact === entry.impact) {
+              output.push(`   - ${constraint.reason}`);
+            }
+          }
         }
       }
+      output.push('');
     }
   }
-  return highlightMarkdown(output.join('\n'));
+
+  if ([...solution].some(entry => entry[1].impact === undefined)) {
+    output.push(impactLabel(undefined, 'Unreleased'));
+    output.push('');
+    for (let [pkgName, entry] of solution) {
+      if (entry.impact === undefined) {
+        output.push(`## ${pkgName}`);
+        output.push(`  ${impactLabel(entry.impact, pkgName)} unchanged`);
+      }
+    }
+    output.push('');
+  }
+
+  return output.join('\n');
 }
 
 export function planVersionBumps(changed: ParsedChangelog): Solution {

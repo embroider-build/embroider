@@ -2,16 +2,17 @@
   "name": "@embroider/release",
   "version": "0.0.0",
   "private": true,
-  "scripts": {
-    "prepare-release": "node ./src/prepare.js"
+  "bin": {
+    "embroider-release": "./src/cli.js"
   },
   "dependencies": {
     "@ef4/lerna-changelog": "^1.0.4",
     "@types/fs-extra": "^9.0.12",
     "@types/js-yaml": "^4.0.5",
-    "@types/yargs": "^17.0.3",
     "@types/semver": "^7.3.6",
+    "@types/yargs": "^17.0.3",
     "assert-never": "^1.2.1",
+    "chalk": "^4.1.1",
     "cli-highlight": "^2.1.11",
     "execa": "^4.0.3",
     "fs-extra": "^10.0.0",

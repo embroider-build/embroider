@@ -32,10 +32,9 @@ export default function appReexports(opts: {
           });
         }
       }
-      let originalPublicAssets = pkg['ember-addon']?.['app-js'];
+      let originalAppJS = pkg['ember-addon']?.['app-js'];
 
-      let hasChanges =
-        JSON.stringify(originalPublicAssets) !== JSON.stringify(appJS);
+      let hasChanges = JSON.stringify(originalAppJS) !== JSON.stringify(appJS);
 
       // Don't cause a file i/o event unless something actually changed
       if (hasChanges) {

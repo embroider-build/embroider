@@ -48,6 +48,7 @@
     "@babel/core": "^7.19.6",
     "@ember/jquery": "^2.0.0",
     "@ember/optional-features": "^2.0.0",
+    "@ember/string": "^3.1.1",
     "@ember/test-helpers": "^2.9.1",
     "@embroider/compat": "workspace:*",
     "@embroider/core": "workspace:*",

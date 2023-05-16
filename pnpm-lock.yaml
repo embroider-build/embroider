@@ -758,6 +758,9 @@ importers:
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.0.0
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@ember/test-helpers':
         specifier: ^2.9.1
         version: 2.9.3(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.6.0)
@@ -838,7 +841,7 @@ importers:
         version: 6.2.0(@ember/test-helpers@2.9.3)(ember-source@4.6.0)(qunit@2.14.1)(webpack@5.78.0)
       ember-resolver:
         specifier: ^10.1.0
-        version: 10.1.0(@ember/string@3.0.1)(ember-source@4.6.0)
+        version: 10.1.0(@ember/string@3.1.1)(ember-source@4.6.0)
       ember-source:
         specifier: ~4.6.0
         version: 4.6.0(@babel/core@7.19.6)(webpack@5.78.0)
@@ -997,6 +1000,9 @@ importers:
       '@ember/optional-features':
         specifier: ^0.7.0
         version: 0.7.0
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@ember/test-helpers':
         specifier: ^2.9.1
         version: 2.9.3(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.12.0)
@@ -1047,7 +1053,7 @@ importers:
         version: 6.2.0(@ember/test-helpers@2.9.3)(ember-source@3.26.0)(qunit@2.14.1)(webpack@5.78.0)
       ember-resolver:
         specifier: ^10.1.0
-        version: 10.1.0(@ember/string@3.0.1)(ember-source@3.26.0)
+        version: 10.1.0(@ember/string@3.1.1)(ember-source@3.26.0)
       ember-source:
         specifier: ~3.26
         version: 3.26.0(@babel/core@7.21.8)
@@ -1090,6 +1096,9 @@ importers:
       '@babel/preset-env':
         specifier: ^7.9.0
         version: 7.16.11(@babel/core@7.19.6)
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@glimmer/component':
         specifier: ^1.0.0
         version: 1.1.2(@babel/core@7.19.6)
@@ -1119,7 +1128,7 @@ importers:
         version: 6.2.0
       ember-resolver:
         specifier: ^10.1.0
-        version: 10.1.0(@ember/string@3.0.1)(ember-source@3.26.0)
+        version: 10.1.0(@ember/string@3.1.1)(ember-source@3.26.0)
       ember-source:
         specifier: ~3.26
         version: 3.26.0(@babel/core@7.19.6)
@@ -1207,6 +1216,9 @@ importers:
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.0.0
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@ember/test-helpers':
         specifier: ^2.9.1
         version: 2.9.3(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.12.0)
@@ -1257,7 +1269,7 @@ importers:
         version: 6.2.0(@ember/test-helpers@2.9.3)(ember-source@4.6.0)(qunit@2.14.1)(webpack@5.78.0)
       ember-resolver:
         specifier: ^10.1.0
-        version: 10.1.0(@ember/string@3.0.1)(ember-source@4.6.0)
+        version: 10.1.0(@ember/string@3.1.1)(ember-source@4.6.0)
       ember-source:
         specifier: ~4.6.0
         version: 4.6.0(@babel/core@7.19.6)(webpack@5.78.0)
@@ -1315,6 +1327,9 @@ importers:
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.0.0
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@ember/test-helpers':
         specifier: ^2.9.1
         version: 2.9.3(@babel/core@7.19.6)(@glint/template@1.0.0)(ember-source@4.12.0)
@@ -1389,7 +1404,7 @@ importers:
         version: 6.2.0(@ember/test-helpers@2.9.3)(ember-source@4.6.0)(qunit@2.14.1)(webpack@5.78.0)
       ember-resolver:
         specifier: ^10.1.0
-        version: 10.1.0(@ember/string@3.0.1)(ember-source@4.6.0)
+        version: 10.1.0(@ember/string@3.1.1)(ember-source@4.6.0)
       ember-source:
         specifier: ~4.6.0
         version: 4.6.0(@babel/core@7.19.6)(webpack@5.78.0)
@@ -4425,7 +4440,7 @@ packages:
       '@ember-data/private-build-infra': 4.4.0(@babel/core@7.19.6)
       '@ember-data/store': 4.4.0(@babel/core@7.19.6)(webpack@5.78.0)
       '@ember/edition-utils': 1.2.0
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cli-babel: 7.26.11
       ember-cli-test-info: 1.0.0
@@ -4494,7 +4509,7 @@ packages:
     dependencies:
       '@ember-data/private-build-infra': 4.4.0(@babel/core@7.19.6)
       '@ember/edition-utils': 1.2.0
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cli-babel: 7.26.11
       ember-cli-test-info: 1.0.0
@@ -4629,7 +4644,7 @@ packages:
       '@ember-data/private-build-infra': 4.4.0(@babel/core@7.19.6)
       '@ember-data/store': 4.4.0(@babel/core@7.19.6)(webpack@5.78.0)
       '@ember/edition-utils': 1.2.0
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cached-decorator-polyfill: 0.1.4(@babel/core@7.19.6)
       ember-cli-babel: 7.26.11
@@ -4905,7 +4920,7 @@ packages:
     dependencies:
       '@ember-data/canary-features': 4.4.0
       '@ember-data/private-build-infra': 4.4.0(@babel/core@7.19.6)
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
       '@glimmer/tracking': 1.1.2
       ember-auto-import: 2.6.3(webpack@5.78.0)
       ember-cached-decorator-polyfill: 0.1.4(@babel/core@7.19.6)
@@ -5068,6 +5083,15 @@ packages:
 
   /@ember/string@3.0.1:
     resolution: {integrity: sha512-ntnmXS+upOWVXE+rVw2l03DjdMnaGdWbYVUxUBuPJqnIGZu2XFRsoXc7E6mOw62s8i1Xh1RgTuFHN41QGIolEQ==}
+    engines: {node: 12.* || 14.* || >= 16}
+    dependencies:
+      ember-cli-babel: 7.26.11
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /@ember/string@3.1.1:
+    resolution: {integrity: sha512-UbXJ+k3QOrYN4SRPHgXCqYIJ+yWWUg1+vr0H4DhdQPTy8LJfyqwZ2tc5uqpSSnEXE+/1KopHBE5J8GDagAg5cg==}
     engines: {node: 12.* || 14.* || >= 16}
     dependencies:
       ember-cli-babel: 7.26.11
@@ -11328,7 +11352,7 @@ packages:
     dependencies:
       '@babel/plugin-transform-typescript': 7.5.5(@babel/core@7.19.6)
       ansi-to-html: 0.6.15
-      debug: 4.3.2(supports-color@8.1.0)
+      debug: 4.3.4(supports-color@8.1.0)
       ember-cli-babel-plugin-helpers: 1.1.1
       execa: 2.1.0
       fs-extra: 8.1.0
@@ -12309,7 +12333,7 @@ packages:
       '@ember-data/serializer': 4.4.0(@babel/core@7.19.6)(webpack@5.78.0)
       '@ember-data/store': 4.4.0(@babel/core@7.19.6)(webpack@5.78.0)
       '@ember/edition-utils': 1.2.0
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
       '@glimmer/env': 0.1.7
       broccoli-merge-trees: 4.2.0
       ember-auto-import: 2.6.3(webpack@5.78.0)
@@ -12742,22 +12766,6 @@ packages:
       - supports-color
     dev: true
 
-  /ember-resolver@10.1.0(@ember/string@3.0.1)(ember-source@3.26.0):
-    resolution: {integrity: sha512-Ju/ORUUbGnR83AgC3qV6fIVuM5tyi/nPRf9ggTM2+kdeGPLNTSkNZ0zSbjWEm0kerDezMjj/RoGuLvZl/L758w==}
-    engines: {node: 14.* || 16.* || >= 18}
-    peerDependencies:
-      '@ember/string': ^3.0.1
-      ember-source: ^4.8.3
-    peerDependenciesMeta:
-      ember-source:
-        optional: true
-    dependencies:
-      '@ember/string': 3.0.1
-      ember-cli-babel: 7.26.11
-      ember-source: 3.26.0(@babel/core@7.21.8)
-    transitivePeerDependencies:
-      - supports-color
-
   /ember-resolver@10.1.0(@ember/string@3.0.1)(ember-source@4.12.0):
     resolution: {integrity: sha512-Ju/ORUUbGnR83AgC3qV6fIVuM5tyi/nPRf9ggTM2+kdeGPLNTSkNZ0zSbjWEm0kerDezMjj/RoGuLvZl/L758w==}
     engines: {node: 14.* || 16.* || >= 18}
@@ -12775,7 +12783,7 @@ packages:
       - supports-color
     dev: true
 
-  /ember-resolver@10.1.0(@ember/string@3.0.1)(ember-source@4.6.0):
+  /ember-resolver@10.1.0(@ember/string@3.1.1)(ember-source@3.26.0):
     resolution: {integrity: sha512-Ju/ORUUbGnR83AgC3qV6fIVuM5tyi/nPRf9ggTM2+kdeGPLNTSkNZ0zSbjWEm0kerDezMjj/RoGuLvZl/L758w==}
     engines: {node: 14.* || 16.* || >= 18}
     peerDependencies:
@@ -12785,7 +12793,23 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@ember/string': 3.0.1
+      '@ember/string': 3.1.1
+      ember-cli-babel: 7.26.11
+      ember-source: 3.26.0(@babel/core@7.21.8)
+    transitivePeerDependencies:
+      - supports-color
+
+  /ember-resolver@10.1.0(@ember/string@3.1.1)(ember-source@4.6.0):
+    resolution: {integrity: sha512-Ju/ORUUbGnR83AgC3qV6fIVuM5tyi/nPRf9ggTM2+kdeGPLNTSkNZ0zSbjWEm0kerDezMjj/RoGuLvZl/L758w==}
+    engines: {node: 14.* || 16.* || >= 18}
+    peerDependencies:
+      '@ember/string': ^3.0.1
+      ember-source: ^4.8.3
+    peerDependenciesMeta:
+      ember-source:
+        optional: true
+    dependencies:
+      '@ember/string': 3.1.1
       ember-cli-babel: 7.26.11
       ember-source: 4.6.0(@babel/core@7.19.6)(webpack@5.78.0)
     transitivePeerDependencies:

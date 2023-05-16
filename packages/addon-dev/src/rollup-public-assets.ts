@@ -1,7 +1,6 @@
 import { readJsonSync, writeJsonSync } from 'fs-extra';
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
-import { hasChanges } from './utils';
 
 export default function publicAssets(
   path: string,
@@ -27,7 +26,12 @@ export default function publicAssets(
         {}
       );
 
-      if (hasChanges(pkg['ember-addon']?.['public-assets'], publicAssets)) {
+      let originalPublicAssets = pkg['ember-addon']?.['public-assets'];
+
+      let hasChanges =
+        JSON.stringify(originalPublicAssets) !== JSON.stringify(publicAssets);
+
+      if (hasChanges) {
         pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
           'public-assets': publicAssets,
         });

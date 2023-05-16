@@ -1,7 +1,6 @@
 import { readJsonSync, writeJsonSync } from 'fs-extra';
 import { extname } from 'path';
 import minimatch from 'minimatch';
-import { hasChanges } from './utils';
 import type { Plugin } from 'rollup';
 
 export default function appReexports(opts: {
@@ -33,9 +32,13 @@ export default function appReexports(opts: {
           });
         }
       }
+      let originalPublicAssets = pkg['ember-addon']?.['app-js'];
+
+      let hasChanges =
+        JSON.stringify(originalPublicAssets) !== JSON.stringify(appJS);
 
       // Don't cause a file i/o event unless something actually changed
-      if (hasChanges(pkg['ember-addon']?.['app-js'], appJS)) {
+      if (hasChanges) {
         pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
           'app-js': appJS,
         });

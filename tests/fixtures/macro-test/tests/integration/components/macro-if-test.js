@@ -3,7 +3,6 @@ import { setupRenderingTest } from 'ember-qunit';
 import { render, click } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import { helper } from '@ember/component/helper';
-import { macroCondition, dependencySatisfies } from '@embroider/macros';
 
 module('Integration | Macro | macroCondition', function (hooks) {
   setupRenderingTest(hooks);
@@ -104,7 +103,7 @@ module('Integration | Macro | macroCondition', function (hooks) {
       })
     );
     await render(
-      hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x || 4.x')) 'red' 'blue') }}`
+      hbs`{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '*')) 'red' 'blue') }}`
     );
   });
 
@@ -132,44 +131,44 @@ module('Integration | Macro | macroCondition', function (hooks) {
     await render(hbs`{{my-assertion (if (macroCondition true) (if (macroCondition false) 'green' 'red') 'blue') }}`);
   });
 
-  if (macroCondition(dependencySatisfies('ember-source', '>=3.25'))) {
-    test('macroCondition in modifier position when true', async function (assert) {
-      assert.expect(1);
-      this.doThing = function () {
-        assert.ok(true, 'it ran');
-      };
-      await render(
-        hbs('<button {{(if (macroCondition true) on) "click" this.doThing}}>Submit</button>', {
-          insertRuntimeErrors: true,
-        })
-      );
-      await click('button');
-    });
 
-    test('macroCondition in modifier position when false', async function (assert) {
-      assert.expect(1);
-      this.doThing = function () {
-        assert.ok(true, 'it ran');
-      };
-      await render(
-        hbs('<button {{(if (macroCondition false) off on) "click" this.doThing}}>Submit</button>', {
-          insertRuntimeErrors: true,
-        })
-      );
-      await click('button');
-    });
+  test('macroCondition in modifier position when true', async function (assert) {
+    assert.expect(1);
+    this.doThing = function () {
+      assert.ok(true, 'it ran');
+    };
+    await render(
+      hbs('<button {{(if (macroCondition true) on) "click" this.doThing}}>Submit</button>', {
+        insertRuntimeErrors: true,
+      })
+    );
+    await click('button');
+  });
 
-    test('macroCondition in modifier position when false with no alternate', async function (assert) {
-      assert.expect(0);
-      this.doThing = function () {
-        assert.ok(true, 'it ran');
-      };
-      await render(
-        hbs('<button {{(if (macroCondition false) on) "click" this.doThing}}>Submit</button>', {
-          insertRuntimeErrors: true,
-        })
-      );
-      await click('button');
-    });
-  }
+  test('macroCondition in modifier position when false', async function (assert) {
+    assert.expect(1);
+    this.doThing = function () {
+      assert.ok(true, 'it ran');
+    };
+    await render(
+      hbs('<button {{(if (macroCondition false) off on) "click" this.doThing}}>Submit</button>', {
+        insertRuntimeErrors: true,
+      })
+    );
+    await click('button');
+  });
+
+  test('macroCondition in modifier position when false with no alternate', async function (assert) {
+    assert.expect(0);
+    this.doThing = function () {
+      assert.ok(true, 'it ran');
+    };
+    await render(
+      hbs('<button {{(if (macroCondition false) on) "click" this.doThing}}>Submit</button>', {
+        insertRuntimeErrors: true,
+      })
+    );
+    await click('button');
+  });
+
 });

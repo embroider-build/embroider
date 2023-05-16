@@ -615,7 +615,7 @@ export default class V1Addon {
   // But there is a very common use case that we *can* handle opportunisticaly,
   // which is a treeFor() that's used purely to guard whether `_super` will be
   // called or not.
-  private suppressesTree(name: string): boolean {
+  protected suppressesTree(name: string): boolean {
     if (!this.customizes('treeFor')) {
       return false;
     }

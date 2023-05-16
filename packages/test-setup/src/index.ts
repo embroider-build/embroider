@@ -5,7 +5,15 @@ import type { Webpack } from '@embroider/webpack';
 type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const currentEmbroiderVersion = `^${require('../package.json').version}`;
+const ourPeerDeps = require('../package.json').peerDependencies;
+
+const embroiderDevDeps = {
+  '@embroider/core': `^${ourPeerDeps['@embroider/core']}`,
+  '@embroider/webpack': `^${ourPeerDeps['@embroider/webpack']}`,
+  '@embroider/compat': `^${ourPeerDeps['@embroider/compat']}`,
+  // Webpack is a peer dependency of `@embroider/webpack`
+  webpack: '^5.0.0',
+};
 
 /*
   Use this instead of `app.toTree()` in your ember-cli-build.js:
@@ -49,14 +57,7 @@ export function embroiderSafe(extension?: object) {
     {
       name: 'embroider-safe',
       npm: {
-        devDependencies: {
-          '@embroider/core': currentEmbroiderVersion,
-          '@embroider/webpack': currentEmbroiderVersion,
-          '@embroider/compat': currentEmbroiderVersion,
-
-          // Webpack is a peer dependency of `@embroider/webpack`
-          webpack: '^5.0.0',
-        },
+        devDependencies: embroiderDevDeps,
       },
       env: {
         EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
@@ -71,14 +72,7 @@ export function embroiderOptimized(extension?: object) {
     {
       name: 'embroider-optimized',
       npm: {
-        devDependencies: {
-          '@embroider/core': currentEmbroiderVersion,
-          '@embroider/webpack': currentEmbroiderVersion,
-          '@embroider/compat': currentEmbroiderVersion,
-
-          // Webpack is a peer dependency of `@embroider/webpack`
-          webpack: '^5.0.0',
-        },
+        devDependencies: embroiderDevDeps,
       },
       env: {
         EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',

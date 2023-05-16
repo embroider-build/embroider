@@ -16,10 +16,26 @@
     "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "@embroider/compat": "workspace:*",
-    "@embroider/core": "workspace:*",
-    "@embroider/webpack": "workspace:*",
+    "@embroider/compat": "workspace:^",
+    "@embroider/core": "workspace:^",
+    "@embroider/webpack": "workspace:^",
     "@types/lodash": "^4.14.170"
+  },
+  "peerDependencies": {
+    "@embroider/compat": "workspace:^",
+    "@embroider/core": "workspace:^",
+    "@embroider/webpack": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@embroider/compat": {
+      "optional": true
+    },
+    "@embroider/core": {
+      "optional": true
+    },
+    "@embroider/webpack": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

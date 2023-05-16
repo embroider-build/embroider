@@ -120,6 +120,7 @@ engineScenarios
   .map('with-fastboot', app => {
     app.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     app.linkDependency('fastboot', { baseDir: __dirname });
+    app.pkg.fastbootDependencies = ['crypto', 'node-fetch'];
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

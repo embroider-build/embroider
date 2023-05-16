@@ -1,25 +1,22 @@
 # Release Process
 
-Release process is currently switching from release-it to https://github.com/changesets/changesets
+1. You need a github token as `GITHUB_AUTH` environment variable.
 
-## Notes
+2. Run `pnpm embroider-release explain-plan`. If there are unlabeled PRs that need to be released it will complain and show you a list of them. Each PR needs to be labeled with one of: 
+    - breaking
+    - enhancement
+    - bug
+    - documentation
+    - internal
 
-Used `changesets` to do release-2022-10-6.0. Didn't go smoothly.
+3. Once all the PRs are labeled, it will instead show you the release plain, explaining which packages are getting released, at which versions, and why.
 
-1.  Generated a changeset file describing everything since last release.
+4. If you disagree with the plan, you can modify the list of changes before using it to `explain-plan` or `prepare` a release:
 
-    Scan for which packages were touched so nothing gets missed:
+    - `pnpm embroider-release gather-changes > /tmp/changelog`
+    - edit `/tmp/changelog`
+    - `pnpm embroider-release explain-plan --from-stdin < /tmp/changelog`
 
-        git diff --stat v1.8.3..HEAD
+    For example, this can be necessary if a PR that's labeled `breaking` touches multiple packages and only one of those packages is actually a breaking change. In that case you can take the other package names out of the description of the PR.
 
-    Find all PRs since previous release to summarize them
-
-        git log v1.8.3..HEAD
-
-        And search for "Merge pull"
-
-2.  Used `changeset version`, manually moved all readme content from changeset into our top-level readme (because the defaults in `changesets` want to create per-package ones).
-
-3.  Tried using `changeset publish` but that started publishing lots of unintended packages. Followed up by manually releasing the others.
-
-4.  Noticed that `changeset version` bumped a dependency version in `@embroider/util` but didn't bump `@embroider/util`'s version. Had to update and release it manually.
+    

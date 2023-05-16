@@ -55,28 +55,3 @@ jobs:
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}
-
-  # https://github.com/changesets/action
-  release:
-    name: Release
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs:
-      - test
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm release
-          title: 'Release Preview'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

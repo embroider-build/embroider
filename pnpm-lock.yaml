@@ -581,7 +581,7 @@ importers:
         specifier: workspace:^
         version: link:../addon-shim
       '@embroider/core':
-        specifier: workspace:2.x||3.x
+        specifier: workspace:^2.0.0||^3.0.0
         version: link:../core
     devDependencies:
       '@babel/core':

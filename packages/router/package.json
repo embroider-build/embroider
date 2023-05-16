@@ -59,7 +59,7 @@
     "typescript": "^4.9.0"
   },
   "peerDependencies": {
-    "@embroider/core": "workspace:^"
+    "@embroider/core": "workspace:^2.0.0||^3.0.0"
   },
   "peerDependenciesMeta": {
     "@embroider/core": {

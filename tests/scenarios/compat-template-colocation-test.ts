@@ -239,7 +239,7 @@ appScenarios
             podModulePrefix: '',
             environment,
             rootURL: '/',
-            locationType: 'auto',
+            locationType: 'history',
             EmberENV: {
               FEATURES: {
               },

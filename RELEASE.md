@@ -19,4 +19,8 @@
 
     For example, this can be necessary if a PR that's labeled `breaking` touches multiple packages and only one of those packages is actually a breaking change. In that case you can take the other package names out of the description of the PR.
 
+5. Once you're happy with the plan, run `pnpm embroider-release prepare`. This will edit CHANGELOG.md, bump the version numbers in package.json files, and create a file named `.release-plan.json`. Make a PR with these changes.
+
+6. Once the PR is merged, in a clean local repo at the merge commit, run `pnpm embroider-release publish`.
+
     

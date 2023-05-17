@@ -4,6 +4,8 @@ import assertNever from 'assert-never';
 import { inc, satisfies } from 'semver';
 import { highlightMarkdown } from './highlight';
 import chalk from 'chalk';
+import { resolve } from 'path';
+import { existsSync, readJSONSync, writeJSONSync } from 'fs-extra';
 
 export type Solution = Map<
   string,
@@ -207,10 +209,33 @@ export function planVersionBumps(changed: ParsedChangelog): Solution {
   return plan.solve();
 }
 
-export function serializeSolution(solution: Solution): string {
-  return JSON.stringify(Object.fromEntries(solution), null, 2);
+function solutionFile(): string {
+  return resolve(__dirname, '..', '..', '..', '.release-plan.json');
 }
 
-export function loadSolution(serialized: string): Solution {
-  return new Map(Object.entries(JSON.parse(serialized)));
+export function saveSolution(solution: Solution, description: string): void {
+  writeJSONSync(solutionFile(), { solution: Object.fromEntries(solution), description }, { spaces: 2 });
+}
+
+export function loadSolution(): { solution: Solution; description: string } {
+  try {
+    if (!existsSync(solutionFile())) {
+      let err = new Error(`No such file ${solutionFile()}`);
+      (err as any).code = 'ENOENT';
+      throw err;
+    }
+    let json = readJSONSync(solutionFile());
+    return {
+      solution: new Map(Object.entries(json.solution)),
+      description: json.description,
+    };
+  } catch (err) {
+    process.stderr.write(
+      `Unable to load release plan file. You must run "embroider-release prepare" first to create the file.\n`
+    );
+    if (err.code !== 'ENOENT') {
+      console.error(err);
+    }
+    process.exit(-1);
+  }
 }

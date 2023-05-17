@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@ef4/lerna-changelog": "^1.0.4",
+    "@octokit/rest": "^19.0.8",
     "@types/fs-extra": "^9.0.12",
     "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.3.6",

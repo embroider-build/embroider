@@ -25,10 +25,14 @@ yargs(process.argv.slice(2))
   .command(
     'publish',
     `Publishes an already-prepared released by tagging, pushing tags, creating GitHub release, and publishing to NPM.`,
-    yargs => yargs,
-    async function () {
-      await publish();
-      process.stdout.write(`\nSuccessfully published released\n`);
+    yargs =>
+      yargs.option('skipRepoSafetyCheck', {
+        type: 'boolean',
+        description:
+          'Allows you to run "publish" even if there are uncommited changes in your repo. Useful only for developing "publish" itself.',
+      }),
+    async function (opts) {
+      await publish(opts);
     }
   )
   .command(

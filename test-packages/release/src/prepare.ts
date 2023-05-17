@@ -1,13 +1,13 @@
 import { parseChangeLogOrExit } from './change-parser';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { planVersionBumps, serializeSolution, Solution } from './plan';
+import { planVersionBumps, saveSolution, Solution } from './plan';
 import { readJSONSync, writeJSONSync } from 'fs-extra';
 
 const changelogPreamble = `# Embroider Changelog
 `;
 
-function updateChangelog(newChangelogContent: string, solution: Solution) {
+function updateChangelog(newChangelogContent: string, solution: Solution): string {
   let targetChangelogFile = resolve(__dirname, '..', '..', '..', 'CHANGELOG.md');
   let oldChangelogContent = readFileSync(targetChangelogFile, 'utf8');
   if (!oldChangelogContent.startsWith(changelogPreamble)) {
@@ -18,17 +18,9 @@ function updateChangelog(newChangelogContent: string, solution: Solution) {
 
   let [firstNewLine, ...restNewLines] = newChangelogContent.trim().split('\n');
 
-  writeFileSync(
-    targetChangelogFile,
-    changelogPreamble +
-      firstNewLine +
-      '\n\n' +
-      versionSummary(solution) +
-      '\n' +
-      restNewLines.join('\n') +
-      '\n' +
-      oldChangelogContent
-  );
+  let newOutput = firstNewLine + '\n\n' + versionSummary(solution) + '\n' + restNewLines.join('\n') + '\n';
+  writeFileSync(targetChangelogFile, changelogPreamble + newOutput + oldChangelogContent);
+  return newOutput;
 }
 
 function versionSummary(solution: Solution): string {
@@ -53,9 +45,9 @@ function updateVersions(solution: Solution) {
 
 export async function prepare(newChangelogContent: string) {
   let changes = parseChangeLogOrExit(newChangelogContent);
-  let solution = planVersionBumps(changes);
+  let solution = planVersionBumps(changes, newChangelogContent);
   updateVersions(solution);
-  updateChangelog(newChangelogContent, solution);
-  writeFileSync(resolve(__dirname, '..', '..', '..', '.release-plan.json'), serializeSolution(solution));
+  let description = updateChangelog(newChangelogContent, solution);
+  saveSolution(solution, description);
   return solution;
 }

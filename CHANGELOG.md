@@ -1,5 +1,128 @@
 # Embroider Changelog
 
+## Release (2023-05-17)
+
+@embroider/addon-dev 3.1.0 (minor)
+@embroider/addon-shim 1.8.5 (patch)
+@embroider/babel-loader-8 3.0.0 (major)
+@embroider/compat 3.0.0 (major)
+@embroider/core 3.0.0 (major)
+@embroider/hbs-loader 3.0.0 (major)
+@embroider/macros 1.11.0 (minor)
+@embroider/router 2.1.0 (minor)
+@embroider/shared-internals 2.1.0 (minor)
+@embroider/test-setup 3.0.0 (major)
+@embroider/util 1.11.0 (minor)
+@embroider/webpack 3.0.0 (major)
+
+#### :boom: Breaking Change
+* `compat`, `core`, `webpack`
+  * [#1363](https://github.com/embroider-build/embroider/pull/1363) Simplified template resolution ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `addon-dev`, `router`
+  * [#1419](https://github.com/embroider-build/embroider/pull/1419) Test against ember preview types ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1354](https://github.com/embroider-build/embroider/pull/1354) Add glint helper types for more macros ([@vlascik](https://github.com/vlascik))
+* `shared-internals`
+  * [#1396](https://github.com/embroider-build/embroider/pull/1396) Add @ember/owner to emberVirtualPackages ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `core`
+  * [#1376](https://github.com/embroider-build/embroider/pull/1376) legacy addon resolving ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `webpack`
+  * [#1373](https://github.com/embroider-build/embroider/pull/1373) app tree resolving ([@ef4](https://github.com/ef4))
+  * [#1331](https://github.com/embroider-build/embroider/pull/1331) Move resolving into dedicated plugins ([@ef4](https://github.com/ef4))
+* `compat`, `shared-internals`
+  * [#1372](https://github.com/embroider-build/embroider/pull/1372) restore component invokes rules support ([@ef4](https://github.com/ef4))
+* `util`
+  * [#1367](https://github.com/embroider-build/embroider/pull/1367) Improve types of `ensure-safe-component` helper ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#1369](https://github.com/embroider-build/embroider/pull/1369) Add semverRange <=4.11.0 for ember-data ([@mkszepp](https://github.com/mkszepp))
+  * [#1362](https://github.com/embroider-build/embroider/pull/1362) clarify which package rules apply inside vs outside a component ([@ef4](https://github.com/ef4))
+  * [#1352](https://github.com/embroider-build/embroider/pull/1352) reinstate logic around parsing of invokes packageRules ([@void-mAlex](https://github.com/void-mAlex))
+  * [#1343](https://github.com/embroider-build/embroider/pull/1343) Fix `@babel/core` version check to support `ember-cli-babel` v8 ([@bertdeblock](https://github.com/bertdeblock))
+* `addon-dev`
+  * [#1368](https://github.com/embroider-build/embroider/pull/1368) Add support for keeping public assets and ember-addon.public-assets meta in sync ([@phndiaye](https://github.com/phndiaye))
+* `core`, `webpack`
+  * [#1355](https://github.com/embroider-build/embroider/pull/1355) Refactor self-resolution ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `shared-internals`, `webpack`
+  * [#1339](https://github.com/embroider-build/embroider/pull/1339) Layer template resolver on top of module resolver ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `test-setup`
+  * [#1427](https://github.com/embroider-build/embroider/pull/1427) Use optional peer deps in @embroider/test-setup ([@ef4](https://github.com/ef4))
+* `util`
+  * [#1429](https://github.com/embroider-build/embroider/pull/1429) Ember 5 compat ([@ef4](https://github.com/ef4))
+* `compat`, `router`
+  * [#1428](https://github.com/embroider-build/embroider/pull/1428) Add compat adapter for @ember/test-waiters ([@ef4](https://github.com/ef4))
+* Other
+  * [#1424](https://github.com/embroider-build/embroider/pull/1424) Fix CI by upgrading ts-node ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1381](https://github.com/embroider-build/embroider/pull/1381) add tests for helper name collisions with html elements or js keywords ([@void-mAlex](https://github.com/void-mAlex))
+* `core`, `webpack`
+  * [#1391](https://github.com/embroider-build/embroider/pull/1391) only rehome a request if it would resolve in a different package ([@void-mAlex](https://github.com/void-mAlex))
+  * [#1346](https://github.com/embroider-build/embroider/pull/1346) Bugfix: inconsistent handling of webpack virtual modules ([@ef4](https://github.com/ef4))
+* `webpack`
+  * [#1403](https://github.com/embroider-build/embroider/pull/1403) Remove deprecated dependency @types/source-map ([@francois2metz](https://github.com/francois2metz))
+  * [#1359](https://github.com/embroider-build/embroider/pull/1359) Ignore resolve requests that start with ! ([@mansona](https://github.com/mansona))
+* `compat`
+  * [#1383](https://github.com/embroider-build/embroider/pull/1383) Rename strict flag to strictMode ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1386](https://github.com/embroider-build/embroider/pull/1386) Fix `Maximum call stack size exceeded` error ([@simonihmig](https://github.com/simonihmig))
+  * [#1347](https://github.com/embroider-build/embroider/pull/1347) fix resolver bugs around package rules ([@void-mAlex](https://github.com/void-mAlex))
+  * [#1342](https://github.com/embroider-build/embroider/pull/1342) restore original ts extension priority ([@ef4](https://github.com/ef4))
+  * [#1340](https://github.com/embroider-build/embroider/pull/1340) Static helpers and static modifiers transform fixes ([@void-mAlex](https://github.com/void-mAlex))
+* `shared-internals`
+  * [#1379](https://github.com/embroider-build/embroider/pull/1379) don't confuse webpack requests with packageNames ([@ef4](https://github.com/ef4))
+* `addon-shim`
+  * [#1327](https://github.com/embroider-build/embroider/pull/1327) Fix Nested V2 Addons ([@gossi](https://github.com/gossi))
+
+#### :memo: Documentation
+* `addon-dev`, `util`
+  * [#1415](https://github.com/embroider-build/embroider/pull/1415) fix casing in docs links ([@mansona](https://github.com/mansona))
+* `macros`
+  * [#1348](https://github.com/embroider-build/embroider/pull/1348) Move docs into a docs folder ([@mansona](https://github.com/mansona))
+* Other
+  * [#1406](https://github.com/embroider-build/embroider/pull/1406) Release prep ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `router`
+  * [#1431](https://github.com/embroider-build/embroider/pull/1431) Release infra ([@ef4](https://github.com/ef4))
+* Other
+  * [#1430](https://github.com/embroider-build/embroider/pull/1430) Remove changeset, as @ef4 has some custom release tooling coming ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1409](https://github.com/embroider-build/embroider/pull/1409) Use a custom changelog line generator function to avoid adding meaningless changelog entries  ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1407](https://github.com/embroider-build/embroider/pull/1407) Enable changelog generation ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1406](https://github.com/embroider-build/embroider/pull/1406) Release prep ([@ef4](https://github.com/ef4))
+  * [#1405](https://github.com/embroider-build/embroider/pull/1405) Upgrade changeset-recover ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1398](https://github.com/embroider-build/embroider/pull/1398) Add prepare changelog workflow to automatically propose what should be in sync for us ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1401](https://github.com/embroider-build/embroider/pull/1401) Add relevant changesets for the upcoming release and evaluate their impact ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1392](https://github.com/embroider-build/embroider/pull/1392) Allow running publish-unstable on workflow_dispatch ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1393](https://github.com/embroider-build/embroider/pull/1393) continue deploying unstable packages even with an error ([@mansona](https://github.com/mansona))
+  * [#1395](https://github.com/embroider-build/embroider/pull/1395) Revving yarn.lock ([@ef4](https://github.com/ef4))
+  * [#1389](https://github.com/embroider-build/embroider/pull/1389) bump unstable versions by at least a patch ([@mansona](https://github.com/mansona))
+  * [#1390](https://github.com/embroider-build/embroider/pull/1390) Change namespace for publish-unstable cancel-in-progress ([@backspace](https://github.com/backspace))
+  * [#1364](https://github.com/embroider-build/embroider/pull/1364) Unstable release sync with main ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1345](https://github.com/embroider-build/embroider/pull/1345) Update release workflow ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `addon-dev`, `addon-shim`, `babel-loader-8`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `util`, `webpack`
+  * [#1422](https://github.com/embroider-build/embroider/pull/1422) Use pnpm workspace protocol everywhere ([@ef4](https://github.com/ef4))
+* `addon-dev`, `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `util`, `webpack`
+  * [#1421](https://github.com/embroider-build/embroider/pull/1421) upgrade typescript ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `macros`, `router`, `shared-internals`, `test-setup`, `util`, `webpack`
+  * [#1411](https://github.com/embroider-build/embroider/pull/1411) Switch to pnpm ([@ef4](https://github.com/ef4))
+* `util`
+  * [#1388](https://github.com/embroider-build/embroider/pull/1388) Enable prettier in ci ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 12
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Buck Doyle ([@backspace](https://github.com/backspace))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- François de Metz ([@francois2metz](https://github.com/francois2metz))
+- Philippe Ndiaye ([@phndiaye](https://github.com/phndiaye))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- Thomas Gossmann ([@gossi](https://github.com/gossi))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+- [@mkszepp](https://github.com/mkszepp)
+- [@vlascik](https://github.com/vlascik)
+
 # Release 2023-01-25.0
 
 ## `@embroider/compat`, `@embroider/core`, `@embroider/test-setup`, `@embroider/webpack` 2.1.0 -> 2.1.1

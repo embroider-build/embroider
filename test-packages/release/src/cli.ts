@@ -3,6 +3,7 @@ import type { Argv } from 'yargs';
 
 import { readFileSync } from 'fs';
 import { parseChangeLogOrExit } from './change-parser';
+import { publish } from './publish';
 
 yargs(process.argv.slice(2))
   .usage(
@@ -19,6 +20,15 @@ yargs(process.argv.slice(2))
       let { explain } = await import('./plan');
       process.stdout.write(explain(solution));
       process.stdout.write(`\nSuccessfully prepared released\n`);
+    }
+  )
+  .command(
+    'publish',
+    `Publishes an already-prepared released by tagging, pushing tags, creating GitHub release, and publishing to NPM.`,
+    yargs => yargs,
+    async function () {
+      await publish();
+      process.stdout.write(`\nSuccessfully published released\n`);
     }
   )
   .command(

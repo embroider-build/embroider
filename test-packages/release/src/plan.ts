@@ -206,3 +206,11 @@ export function planVersionBumps(changed: ParsedChangelog): Solution {
 
   return plan.solve();
 }
+
+export function serializeSolution(solution: Solution): string {
+  return JSON.stringify(Object.fromEntries(solution), null, 2);
+}
+
+export function loadSolution(serialized: string): Solution {
+  return new Map(Object.entries(JSON.parse(serialized)));
+}

@@ -1,7 +1,7 @@
 import { parseChangeLogOrExit } from './change-parser';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { planVersionBumps, Solution } from './plan';
+import { planVersionBumps, serializeSolution, Solution } from './plan';
 import { readJSONSync, writeJSONSync } from 'fs-extra';
 
 const changelogPreamble = `# Embroider Changelog
@@ -56,5 +56,6 @@ export async function prepare(newChangelogContent: string) {
   let solution = planVersionBumps(changes);
   updateVersions(solution);
   updateChangelog(newChangelogContent, solution);
+  writeFileSync(resolve(__dirname, '..', '..', '..', '.release-plan.json'), serializeSolution(solution));
   return solution;
 }

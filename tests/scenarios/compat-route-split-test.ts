@@ -246,7 +246,7 @@ splitScenarios
               podModulePrefix: 'my-app/pods',
               environment,
               rootURL: '/',
-              locationType: 'auto',
+              locationType: 'history',
               EmberENV: {
                 FEATURES: {
                 },

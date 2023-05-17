@@ -19,7 +19,7 @@ function updateChangelog(newChangelogContent: string, solution: Solution): strin
   let [firstNewLine, ...restNewLines] = newChangelogContent.trim().split('\n');
 
   let newOutput = firstNewLine + '\n\n' + versionSummary(solution) + '\n' + restNewLines.join('\n') + '\n';
-  writeFileSync(targetChangelogFile, changelogPreamble + newOutput + oldChangelogContent);
+  writeFileSync(targetChangelogFile, changelogPreamble + '\n' + newOutput + oldChangelogContent);
   return newOutput;
 }
 
@@ -45,7 +45,7 @@ function updateVersions(solution: Solution) {
 
 export async function prepare(newChangelogContent: string) {
   let changes = parseChangeLogOrExit(newChangelogContent);
-  let solution = planVersionBumps(changes, newChangelogContent);
+  let solution = planVersionBumps(changes);
   updateVersions(solution);
   let description = updateChangelog(newChangelogContent, solution);
   saveSolution(solution, description);

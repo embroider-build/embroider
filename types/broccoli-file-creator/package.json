@@ -1,3 +1,4 @@
 {
-  "name": "@types/broccoli-file-creator"
+  "name": "@types/broccoli-file-creator",
+  "private": true
 }

@@ -1,3 +1,4 @@
 {
-  "name": "@types/broccoli"
+  "name": "@types/broccoli",
+  "private": true
 }

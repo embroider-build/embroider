@@ -1,3 +1,4 @@
 {
-  "name": "@types/source-map-url"
+  "name": "@types/source-map-url",
+  "private": true
 }

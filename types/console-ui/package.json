@@ -1,3 +1,4 @@
 {
-  "name": "@types/console-ui"
+  "name": "@types/console-ui",
+  "private": true
 }

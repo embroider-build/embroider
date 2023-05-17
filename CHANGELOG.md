@@ -2,6 +2,7 @@
 
 ## Release (2023-05-17)
 
+```
 @embroider/addon-dev 3.1.0 (minor)
 @embroider/addon-shim 1.8.5 (patch)
 @embroider/babel-loader-8 3.0.0 (major)
@@ -14,9 +15,11 @@
 @embroider/test-setup 3.0.0 (major)
 @embroider/util 1.11.0 (minor)
 @embroider/webpack 3.0.0 (major)
+```
 
 #### :boom: Breaking Change
 * `compat`, `core`, `webpack`
+  * See Upgrade Guide https://github.com/embroider-build/embroider/blob/main/docs/upgrade-guides.md#embroidercore-2x---3x
   * [#1363](https://github.com/embroider-build/embroider/pull/1363) Simplified template resolution ([@ef4](https://github.com/ef4))
 
 #### :rocket: Enhancement

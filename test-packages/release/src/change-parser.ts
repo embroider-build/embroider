@@ -91,10 +91,10 @@ function parsePackageList(lines: string[]): string[] | undefined {
   if (line === '* Other') {
     return;
   }
-  if (line.startsWith('* ')) {
+  if (line.startsWith('* `')) {
     let parts = line.slice(2).split(/,\s*/);
     if (!parts.every(p => p.startsWith('`') && p.endsWith('`'))) {
-      throw new Error(`don't understanding this line: ${line}.`);
+      throw new Error(`don't understand this line: ${line}.`);
     }
     return parts.map(p => p.slice(1, -1));
   }

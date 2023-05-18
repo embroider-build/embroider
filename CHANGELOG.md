@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2023-05-18)
+
+@embroider/test-setup 3.0.1 (patch)
+
+#### :bug: Bug Fix
+* `test-setup`
+  * [#1436](https://github.com/embroider-build/embroider/pull/1436) prevent double ^ when using embroider test-setup ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1433](https://github.com/embroider-build/embroider/pull/1433) Make preflight error when suite-setup-util fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-05-17)
 
 ```

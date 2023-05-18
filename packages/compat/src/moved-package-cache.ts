@@ -94,9 +94,14 @@ export class MovedPackageCache extends PackageCache {
     let indexFile = resolve(this.origApp.root, 'node_modules', '.embroider', 'rewritten-packages', 'index.json');
     let content: RewrittenPackageIndex = {
       packages: {},
+      extraResolutions: {},
     };
     for (let [oldPkg, newPkg] of this.moved) {
       content.packages[oldPkg.root] = newPkg.root;
+      let nonResolvableDeps = oldPkg.nonResolvableDeps;
+      if (nonResolvableDeps) {
+        content.extraResolutions[newPkg.root] = [...nonResolvableDeps.values()].map(v => v.root);
+      }
     }
     outputJSONSync(indexFile, content, { spaces: 2 });
   }

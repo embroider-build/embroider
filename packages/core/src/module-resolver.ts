@@ -21,16 +21,6 @@ import { describeExports } from './describe-exports';
 import { /* existsSync, */ readFileSync } from 'fs';
 // import { readJSONSync } from 'fs-extra';
 
-export interface RewrittenPackageIndex {
-  // keys are paths to original package root directories.
-  //
-  // values are paths to rewritten directories.
-  //
-  // all paths are interpreted relative to the rewritten package index file
-  // itself.
-  packages: Record<string, string>;
-}
-
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.isVirtual) {

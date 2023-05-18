@@ -24,10 +24,11 @@ export {
   Resolution,
   ResolverFunction,
   SyncResolverFunction,
-  RewrittenPackageIndex,
 } from './module-resolver';
 export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';
+export type { RewrittenPackageIndex } from './rewritten-package-cache';
+export { RewrittenPackageCache } from './rewritten-package-cache';
 
 // this is reexported because we already make users manage a peerDep from some
 // other packages (like embroider/webpack and @embroider/compat

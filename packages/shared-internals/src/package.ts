@@ -158,10 +158,13 @@ export default class Package {
     }
   }
 
+  get dependencyNames(): string[] {
+    return flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
+  }
+
   @Memoize()
   get dependencies(): Package[] {
-    let names = flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
-    return names
+    return this.dependencyNames
       .map(name => {
         if (this.nonResolvableDeps) {
           let dep = this.nonResolvableDeps.get(name);

@@ -21,6 +21,16 @@ import { describeExports } from './describe-exports';
 import { /* existsSync, */ readFileSync } from 'fs';
 // import { readJSONSync } from 'fs-extra';
 
+export interface RewrittenPackageIndex {
+  // keys are paths to original package root directories.
+  //
+  // values are paths to rewritten directories.
+  //
+  // all paths are interpreted relative to the rewritten package index file
+  // itself.
+  packages: Record<string, string>;
+}
+
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.isVirtual) {
@@ -652,10 +662,10 @@ export class Resolver {
     //   let { packages } = readJSONSync(indexFile) as { packages: Record<string, string> };
     //   return {
     //     v1ToV2: new Map(
-    //       Object.entries(packages).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
+    //       Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, oldRoot), resolve(addonsDir, newRoot)])
     //     ),
     //     v2toV1: new Map(
-    //       Object.entries(packages).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
+    //       Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, newRoot), resolve(addonsDir, oldRoot)])
     //     ),
     //   };
     // }

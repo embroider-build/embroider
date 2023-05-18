@@ -1,7 +1,7 @@
-import { join, sep, isAbsolute } from 'path';
-import { ensureSymlinkSync, readdirSync, realpathSync, lstatSync } from 'fs-extra';
+import { join, sep, isAbsolute, resolve } from 'path';
+import { ensureSymlinkSync, readdirSync, realpathSync, lstatSync, outputJSONSync } from 'fs-extra';
 import { Memoize } from 'typescript-memoize';
-import { PackageCache, Package, getOrCreate } from '@embroider/core';
+import { PackageCache, Package, getOrCreate, RewrittenPackageIndex } from '@embroider/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import os from 'os';
 
@@ -87,6 +87,18 @@ export class MovedPackageCache extends PackageCache {
     this.rootCache = rootCache;
     this.resolutionCache = resolutionCache;
     this.unmovedAddons = movedSet.unmovedAddons;
+    this.writeAddonIndex();
+  }
+
+  private writeAddonIndex() {
+    let indexFile = resolve(this.origApp.root, 'node_modules', '.embroider', 'rewritten-packages', 'index.json');
+    let content: RewrittenPackageIndex = {
+      packages: {},
+    };
+    for (let [oldPkg, newPkg] of this.moved) {
+      content.packages[oldPkg.root] = newPkg.root;
+    }
+    outputJSONSync(indexFile, content, { spaces: 2 });
   }
 
   private movedPackage(originalPkg: Package): Package {

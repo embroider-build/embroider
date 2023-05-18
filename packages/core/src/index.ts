@@ -24,6 +24,7 @@ export {
   Resolution,
   ResolverFunction,
   SyncResolverFunction,
+  RewrittenPackageIndex,
 } from './module-resolver';
 export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';

@@ -180,21 +180,21 @@ Scenarios.fromProject(() => baseV2Addon())
             },
           });
         });
+      });
 
-        test('the package.json *is* updated, since public assets changed', async function (assert) {
-          let someFile = path.join(addon.dir, 'custom-public/demo.css');
-          let manifestPath = path.join(addon.dir, 'package.json');
+      test('the package.json *is* updated on a rebuild, since public assets changed', async function (assert) {
+        let someFile = path.join(addon.dir, 'custom-public/demo.css');
+        let manifestPath = path.join(addon.dir, 'package.json');
 
-          await becomesModified({
-            filePath: manifestPath,
-            assert,
-            // Delete a publicAsset
-            fn: async () => {
-              await fs.rm(someFile);
-              // publicAssets are not watched, as they are not part of The Module Graph™
-              await addon.execute('pnpm build');
-            },
-          });
+        await becomesModified({
+          filePath: manifestPath,
+          assert,
+          // Delete a publicAsset
+          fn: async () => {
+            await fs.rm(someFile);
+            // publicAssets are not watched, as they are not part of The Module Graph™
+            await addon.execute('pnpm build');
+          },
         });
       });
     });

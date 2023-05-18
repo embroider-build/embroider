@@ -18,8 +18,8 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { existsSync, readFileSync } from 'fs';
-import { readJSONSync } from 'fs-extra';
+import { /* existsSync, */ readFileSync } from 'fs';
+// import { readJSONSync } from 'fs-extra';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -646,19 +646,19 @@ export class Resolver {
 
   @Memoize()
   private get legacyAddonsIndex(): { v1ToV2: Map<string, string>; v2toV1: Map<string, string> } {
-    let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'addons');
-    let indexFile = resolve(addonsDir, 'v1-addon-index.json');
-    if (existsSync(indexFile)) {
-      let { v1Addons } = readJSONSync(indexFile) as { v1Addons: Record<string, string> };
-      return {
-        v1ToV2: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
-        ),
-        v2toV1: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
-        ),
-      };
-    }
+    // let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
+    // let indexFile = resolve(addonsDir, 'index.json');
+    // if (existsSync(indexFile)) {
+    //   let { packages } = readJSONSync(indexFile) as { packages: Record<string, string> };
+    //   return {
+    //     v1ToV2: new Map(
+    //       Object.entries(packages).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
+    //     ),
+    //     v2toV1: new Map(
+    //       Object.entries(packages).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
+    //     ),
+    //   };
+    // }
     return { v1ToV2: new Map(), v2toV1: new Map() };
   }
 

@@ -119,7 +119,11 @@ class NodeModuleRequest implements ModuleRequest {
     return new NodeModuleRequest(specifier, this.fromFile) as this;
   }
   rehome(fromFile: string): this {
-    return new NodeModuleRequest(this.specifier, fromFile) as this;
+    if (this.fromFile === fromFile) {
+      return this;
+    } else {
+      return new NodeModuleRequest(this.specifier, fromFile) as this;
+    }
   }
   virtualize(filename: string) {
     return new NodeModuleRequest(filename, this.fromFile, true) as this;

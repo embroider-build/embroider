@@ -1,6 +1,5 @@
 import { Options } from '@embroider/compat';
 import { writeFileSync, unlinkSync } from 'fs';
-import resolve from 'resolve';
 import { PreparedApp, Project } from 'scenario-tester';
 import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
@@ -767,8 +766,8 @@ dummyAppScenarios
 
       test('addon within dummy app sees that its being developed', function () {
         let assertFile = expectFile(
-          resolve.sync('my-addon/components/hello-world', {
-            basedir: expectFile.basePath,
+          require.resolve('my-addon/components/hello-world', {
+            paths: [expectFile.basePath],
           })
         ).transform(build.transpile);
         assertFile.matches(/console\.log\(true\)/);

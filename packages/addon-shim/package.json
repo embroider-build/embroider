@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-shim",
-  "version": "1.8.4",
+  "version": "1.8.5",
   "description": "Make v2 addons work in non-Embroider apps.",
   "keywords": [],
   "main": "./src/index.js",
@@ -17,14 +17,14 @@
   },
   "scripts": {},
   "dependencies": {
-    "@embroider/shared-internals": "^2.0.0",
+    "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",
     "semver": "^7.3.8"
   },
   "devDependencies": {
     "@types/semver": "^7.3.6",
     "broccoli-node-api": "^1.7.0",
-    "typescript": "*",
+    "typescript": "^4.9.0",
     "webpack": "^5"
   },
   "engines": {

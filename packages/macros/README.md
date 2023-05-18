@@ -6,7 +6,7 @@ A standardized solution for modifying your package's Javascript and Glimmer temp
 
 Traditionally, Ember addons have a lot of power to run arbitrary code during the build process. This lets them do whatever they need to do, but it also makes them hard to statically analyze and makes them play badly with some tooling (like IDEs).
 
-The [Embroider package spec](../../SPEC.md) proposes fixing this by making Ember addons much more static. But they will still need the ability to change themselves in certain ways at app compilation time. Hence this package.
+The [Embroider package spec](../../docs/spec.md) proposes fixing this by making Ember addons much more static. But they will still need the ability to change themselves in certain ways at app compilation time. Hence this package.
 
 This package works in both Embroider and Classical builds, so that addon authors can switch to this newer pattern without disruption.
 
@@ -211,6 +211,23 @@ if (macroCondition(isDevelopingApp()) {
 ```
 
 Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
+
+## Glint usage
+If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
+
+```ts
+import type { EmbroiderMacrosRegistry } from "@embroider/macros";
+```
+to your app's e.g. `types/glint.d.ts` file, and making sure your registry extends from EmbroiderMacrosRegistry:
+
+```ts
+declare module '@glint/environment-ember-loose/registry' {
+  export default interface Registry
+    extends EmbroiderMacrosRegistry {
+      // ...
+    }
+}
+```
 
 ## Real world examples
 

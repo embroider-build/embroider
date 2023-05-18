@@ -69,7 +69,7 @@ export default function main(babel: typeof Babel) {
 };
 
 function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
-  let filename: string = path.hub.file.opts.filename;
+  let filename: string = (path.hub as any).file.opts.filename;
   let entry = config.extraImports[filename];
   let adder = new ImportUtil(t, path);
   if (entry) {

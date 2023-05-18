@@ -3,6 +3,7 @@
     "./packages/*/src/**/*.ts",
     "./packages/*/tests/**/*.ts",
     "./test-packages/support/**/*.ts",
+    "./test-packages/release/src/**/*.ts",
     "./tests/scenarios/**/*.ts"
   ],
   "compilerOptions": {

@@ -1,15 +1,16 @@
 import QUnit from 'qunit';
 import glob from 'globby';
 import { resolve } from 'path';
-import { readJSONSync } from 'fs-extra';
-import { satisfies } from 'semver';
+import { readFileSync, readJSONSync } from 'fs-extra';
+import yaml from 'js-yaml';
 
 const { module: Qmodule, test } = QUnit;
 
 Qmodule('package inter-version consistency', () => {
   let rootDir = resolve(__dirname, '..', '..');
   let packages = new Map();
-  for (let pattern of readJSONSync(resolve(__dirname, '../../package.json')).workspaces.packages) {
+  for (let pattern of (yaml.load(readFileSync(resolve(__dirname, '../../pnpm-workspace.yaml'), 'utf8')) as any)
+    .packages) {
     for (let dir of glob.sync(pattern, { cwd: rootDir, expandDirectories: false, onlyDirectories: true })) {
       let pkg = readJSONSync(resolve(rootDir, dir, 'package.json'));
       packages.set(pkg.name, pkg);
@@ -20,8 +21,8 @@ Qmodule('package inter-version consistency', () => {
             let other = packages.get(name);
             if (other) {
               assert.ok(
-                satisfies(other.version, range as string),
-                `${name} in ${section} ${other.version} does not satisfy ${range}`
+                (range as string).startsWith('workspace:'),
+                `${section} refers to ${name} as ${range} instead of workspace:`
               );
             }
           }

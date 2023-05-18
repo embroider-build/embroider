@@ -20,7 +20,7 @@ ember install @embroider/util
 
 **This function is intended to help addon authors who still need to support Ember < 3.25**. In all other cases, instead of using this you should directly pass components around as values (not as strings) and invoke them directly with angle brackets (not the `{{component}}` helper).
 
-For the full explanation of why and how you would use this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/main/REPLACING-COMPONENT-HELPER.md).
+For the full explanation of why and how you would use this, see [the Addon Author Guide](https://github.com/embroider-build/embroider/blob/main/docs/replacing-component-helper.md).
 
 Example usage in Javascript:
 
@@ -58,6 +58,23 @@ The first argument is allowed to be:
 - a component class, in which case if your ember version does not yet support directly invoking component classes, we will convert it to a curried component definition for you.
 
 In the Javascript version, you must pass a second argument that is any object with an owner (a `Component` instance works great).
+
+## Glint usage
+If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
+
+```ts
+import type { EmbroiderUtilRegistry } from "@embroider/util";
+```
+to your app's e.g. `types/glint.d.ts` file, and making sure your registry extends from EmbroiderMacrosRegistry:
+
+```ts
+declare module '@glint/environment-ember-loose/registry' {
+  export default interface Registry
+    extends EmbroiderUtilRegistry, /* other registries here */ {
+      // ...
+    }
+}
+```
 
 ## Contributing
 

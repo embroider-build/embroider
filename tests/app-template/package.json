@@ -27,11 +27,12 @@
     "@babel/core": "^7.19.3",
     "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^2.9.1",
-    "@embroider/compat": "2.1.1",
-    "@embroider/core": "2.1.1",
-    "@embroider/router": "2.0.0",
-    "@embroider/test-setup": "2.1.1",
-    "@embroider/webpack": "2.1.1",
+    "@embroider/compat": "workspace:*",
+    "@embroider/core": "workspace:*",
+    "@embroider/router": "workspace:*",
+    "@ember/string": "^3.1.1",
+    "@embroider/test-setup": "workspace:*",
+    "@embroider/webpack": "workspace:*",
     "@glimmer/component": "^1.1.2",
     "@glimmer/tracking": "^1.1.2",
     "babel-eslint": "^10.1.0",
@@ -50,7 +51,7 @@
     "ember-load-initializers": "^2.1.2",
     "ember-page-title": "^7.0.0",
     "ember-qunit": "^6.1.1",
-    "ember-resolver": "^8.1.0",
+    "ember-resolver": "^10.1.0",
     "ember-source": "~4.6.0",
     "ember-template-lint": "^4.10.1",
     "eslint": "^7.32.0",
@@ -73,7 +74,7 @@
     "edition": "octane"
   },
   "volta": {
-    "node": "14.19.3",
-    "yarn": "1.22.19"
+    "node": "16.20.0",
+    "pnpm": "8.4.0"
   }
 }

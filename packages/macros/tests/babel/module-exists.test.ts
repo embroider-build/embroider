@@ -6,7 +6,7 @@ describe(`moduleExists`, function () {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {
-        return moduleExists('qunit/src/cli/run');
+        return moduleExists('@embroider/core/src/index');
       }
       `);
       expect(runDefault(code)).toBe(true);
@@ -16,7 +16,7 @@ describe(`moduleExists`, function () {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {
-        return moduleExists('qunit/not/a/real/thing');
+        return moduleExists('@embroider/core/not/a/real/thing');
       }
       `);
       expect(runDefault(code)).toBe(false);

@@ -8,6 +8,8 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('fastboot-app-test', project => {
+    project.pkg.fastbootDependencies = ['crypto', 'node-fetch'];
+
     project.addDependency(
       new Project('@embroider/sample-lib', '0.0.0', {
         files: {
@@ -86,8 +88,8 @@ appScenarios
       });
 
       ['production', 'development'].forEach(env => {
-        test(`yarn test: ${env}`, async function (assert) {
-          let result = await app.execute(`yarn test`, {
+        test(`pnpm test: ${env}`, async function (assert) {
+          let result = await app.execute(`pnpm test`, {
             env: {
               EMBER_ENV: env,
               EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',

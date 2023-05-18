@@ -6,7 +6,7 @@ import mergeTrees from 'broccoli-merge-trees';
 // output in a `modules` folder. This strips that level off if it exists,
 // without discarding any other content that was not inside `modules`.
 
-export default function modulesCompat(tree: Node) {
+export default function modulesCompat(tree: Node): Node {
   return mergeTrees([
     buildFunnel(tree, { exclude: ['modules'] }),
     buildFunnel(tree, { srcDir: 'modules', allowEmpty: true }),

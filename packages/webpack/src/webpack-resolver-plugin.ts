@@ -161,9 +161,13 @@ class WebpackModuleRequest implements ModuleRequest {
     return new WebpackModuleRequest(this.babelLoaderPrefix, this.state) as this;
   }
   rehome(newFromFile: string) {
-    this.state.contextInfo.issuer = newFromFile;
-    this.state.context = dirname(newFromFile);
-    return new WebpackModuleRequest(this.babelLoaderPrefix, this.state) as this;
+    if (this.fromFile === newFromFile) {
+      return this;
+    } else {
+      this.state.contextInfo.issuer = newFromFile;
+      this.state.context = dirname(newFromFile);
+      return new WebpackModuleRequest(this.babelLoaderPrefix, this.state) as this;
+    }
   }
   virtualize(filename: string) {
     let next = this.alias(`${this.babelLoaderPrefix}${virtualLoaderName}?${filename}!`);

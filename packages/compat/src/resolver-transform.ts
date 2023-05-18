@@ -22,7 +22,7 @@ import { camelCase, mergeWith } from 'lodash';
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
   contents: string;
-  strict?: boolean;
+  strictMode?: boolean;
   locals?: string[];
 };
 
@@ -863,7 +863,7 @@ class TemplateResolver implements ASTPlugin {
 export default function makeResolverTransform({ appRoot }: Options) {
   let config: CompatResolverOptions = readJSONSync(join(appRoot, '.embroider', 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
-    if (env.strict) {
+    if (env.strictMode) {
       return {
         name: 'embroider-build-time-resolver-strict-noop',
         visitor: {},

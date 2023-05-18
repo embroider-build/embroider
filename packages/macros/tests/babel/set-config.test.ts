@@ -7,7 +7,7 @@ describe(`setConfig`, function () {
       let config = {};
 
       let macroConfig = MacrosConfig.for({}, __dirname);
-      macroConfig.setConfig(__filename, 'qunit', config);
+      macroConfig.setConfig(__filename, 'scenario-tester', config);
     });
 
     test('works with POJO config', () => {
@@ -22,7 +22,7 @@ describe(`setConfig`, function () {
       };
 
       let macroConfig = MacrosConfig.for({}, __dirname);
-      macroConfig.setConfig(__filename, 'qunit', config);
+      macroConfig.setConfig(__filename, 'scenario-tester', config);
     });
 
     test('throws for non-serializable config', () => {
@@ -34,8 +34,8 @@ describe(`setConfig`, function () {
 
       let macroConfig = MacrosConfig.for({}, __dirname);
 
-      expect(() => macroConfig.setConfig(__filename, 'qunit', config)).toThrow(
-        `[Embroider:MacrosConfig] the given config from '${__filename}' for packageName 'qunit' is not JSON serializable.`
+      expect(() => macroConfig.setConfig(__filename, 'scenario-tester', config)).toThrow(
+        `[Embroider:MacrosConfig] the given config from '${__filename}' for packageName 'scenario-tester' is not JSON serializable.`
       );
     });
   });

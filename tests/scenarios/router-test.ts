@@ -5,16 +5,15 @@ import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
-tsAppScenarios
-  .map('router', project => {
-    project.linkDevDependency('@embroider/router', { baseDir: __dirname });
+let routerApp = tsAppScenarios.map('router', project => {
+  project.linkDevDependency('@embroider/router', { baseDir: __dirname });
 
-    // not strictly needed in the embroider case, but needed in the classic
-    // case.
-    project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+  // not strictly needed in the embroider case, but needed in the classic
+  // case.
+  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
-    merge(project.files, {
-      'ember-cli-build.js': `
+  merge(project.files, {
+    'ember-cli-build.js': `
         'use strict';
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
@@ -47,42 +46,42 @@ tsAppScenarios
           });
         };
       `,
-      app: {
-        components: {
-          'used-in-child.hbs': `
+    app: {
+      components: {
+        'used-in-child.hbs': `
             <div data-test-used-in-child>This is the used-in-child component</div>
           `,
-        },
-        controllers: {
-          'split-me.ts': `
+      },
+      controllers: {
+        'split-me.ts': `
             import Controller from '@ember/controller';
             export default class SplitMeController extends Controller {}
           `,
-          'split-me': {
-            'child.ts': `
+        'split-me': {
+          'child.ts': `
               import Controller from '@ember/controller';
               export default class SplitMeChildController extends Controller {}
             `,
-          },
         },
-        routes: {
-          'split-me.ts': `
+      },
+      routes: {
+        'split-me.ts': `
             import Route from '@ember/routing/route';
             export default class SplitMeRoute extends Route {}
           `,
-          'split-me': {
-            'child.ts': `
+        'split-me': {
+          'child.ts': `
               import Route from '@ember/routing/route';
               export default class SplitMeChildRoute extends Route {}
             `,
-            'index.ts': `
+          'index.ts': `
               import Route from '@ember/routing/route';
               export default class SplitMeIndexRoute extends Route {}
             `,
-          },
         },
-        templates: {
-          'application.hbs': `
+      },
+      templates: {
+        'application.hbs': `
             {{page-title 'Router Tests'}}
 
             <h2 id='title'>Welcome to Ember</h2>
@@ -93,13 +92,13 @@ tsAppScenarios
 
             {{outlet}}
           `,
-          'split-me.hbs': `{{outlet}}`,
-          'split-me': {
-            'child.hbs': `<UsedInChild />`,
-            'index.hbs': `<div data-test-split-me-index>This is the split-me/index.</div>`,
-          },
+        'split-me.hbs': `{{outlet}}`,
+        'split-me': {
+          'child.hbs': `<UsedInChild />`,
+          'index.hbs': `<div data-test-split-me-index>This is the split-me/index.</div>`,
         },
-        'router.ts': `
+      },
+      'router.ts': `
           import EmberRouter from '@embroider/router';
           import config from 'ts-app-template/config/environment';
 
@@ -114,10 +113,10 @@ tsAppScenarios
             });
           });
         `,
-      },
-      tests: {
-        acceptance: {
-          'lazy-routes-test.ts': `
+    },
+    tests: {
+      acceptance: {
+        'lazy-routes-test.ts': `
 
           import { module, test } from 'qunit';
           import { visit } from '@ember/test-helpers';
@@ -222,10 +221,16 @@ tsAppScenarios
           });
                   
           `,
-        },
       },
-    });
-  })
+    },
+  });
+});
+
+routerApp
+  // these earlier releases of ember don't offer native types, and we're only
+  // testing under native types, not third-party types.
+  .skip('lts_3_28-router')
+  .skip('lts_4_4-router')
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
@@ -234,26 +239,36 @@ tsAppScenarios
       });
 
       test(`type checks`, async function (assert) {
-        let result = await app.execute('yarn tsc');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
-      test(`CLASSIC yarn test:ember`, async function (assert) {
-        let result = await app.execute('yarn test:ember', {
-          env: {
-            EMBROIDER_TEST_SETUP_FORCE: 'classic',
-          },
-        });
-        assert.equal(result.exitCode, 0, result.output);
-      });
-      test(`EMBROIDER yarn test:ember`, async function (assert) {
-        let result = await app.execute('yarn test:ember', {
-          env: {
-            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-          },
-        });
+        let result = await app.execute('pnpm tsc');
         assert.equal(result.exitCode, 0, result.output);
       });
     });
   });
+
+routerApp.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
+    });
+
+    test(`CLASSIC pnpm test:ember`, async function (assert) {
+      let result = await app.execute('pnpm test:ember', {
+        env: {
+          EMBROIDER_TEST_SETUP_FORCE: 'classic',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
+    });
+
+    test(`EMBROIDER pnpm test:ember`, async function (assert) {
+      let result = await app.execute('pnpm test:ember', {
+        env: {
+          EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
+    });
+  });
+});

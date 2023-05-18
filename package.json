@@ -4,38 +4,21 @@
     "type": "git",
     "url": "git@github.com:embroider-build/embroider.git"
   },
-  "workspaces": {
-    "packages": [
-      "packages/*",
-      "test-packages/*",
-      "test-packages/@embroider/*",
-      "types/babel-core",
-      "types/@babel__traverse",
-      "types/broccoli-funnel",
-      "types/broccoli-concat",
-      "types/ember-cli-htmlbars",
-      "tests/scenarios",
-      "tests/app-template",
-      "tests/ts-app-template",
-      "tests/addon-template",
-      "tests/v2-addon-template"
-    ],
-    "nohoist": [
-      "**/@types/broccoli-plugin",
-      "**/babel-plugin-ember-template-compilation"
-    ]
-  },
   "scripts": {
-    "release": "changeset publish",
+    "postinstall": "patch-package",
     "clean": "git clean -x -f",
     "compile": "tsc",
-    "lint": "concurrently 'yarn:lint:*'",
+    "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
+    "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache",
-    "lint:router-types": "cd packages/router && yarn lint:types",
-    "prepare": "tsc && yarn build-v2-addons",
-    "build-v2-addons": "concurrently 'yarn:build-v2-addons:*'",
-    "build-v2-addons:router": "cd packages/router && yarn build",
-    "test": "cd tests/scenarios && yarn test"
+    "lint:eslint:fix": "eslint . --fix",
+    "lint:prettier": "prettier . -c",
+    "lint:prettier:fix": "prettier . -w",
+    "lint:router-types": "cd packages/router && pnpm lint:types",
+    "prepare": "tsc && pnpm build-v2-addons",
+    "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
+    "build-v2-addons:router": "cd packages/router && pnpm build",
+    "test": "cd tests/scenarios && pnpm test"
   },
   "jest": {
     "projects": [
@@ -47,33 +30,47 @@
       "**/*.test.js"
     ]
   },
-  "resolutions": {
-    "**/browserslist": "^4.14.0",
-    "**/qunit": "^2.14.1",
-    "**/graceful-fs": "^4.0.0"
+  "pnpm": {
+    "overrides": {
+      "browserslist": "^4.14.0",
+      "qunit": "^2.14.1",
+      "graceful-fs": "^4.0.0",
+      "@types/eslint": "^8.37.0"
+    }
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.4.7",
-    "@changesets/cli": "^2.25.0",
+    "@embroider/release": "workspace:*",
     "@types/jest": "^29.2.0",
-    "@typescript-eslint/eslint-plugin": "^4.1.1",
-    "@typescript-eslint/parser": "^4.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.5",
+    "@typescript-eslint/parser": "^5.59.5",
     "concurrently": "^7.2.1",
     "cross-env": "^7.0.3",
-    "eslint": "^7.14.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-prettier": "^3.1.4",
+    "eslint": "^8.40.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-prettier": "^4.2.1",
     "jest": "^29.2.1",
+    "patch-package": "^6.5.1",
     "prettier": "^2.3.1",
-    "typescript": "4.4.2"
+    "typescript": "^4.9.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
   "volta": {
-    "node": "14.19.3",
-    "yarn": "1.22.19"
+    "node": "16.20.0",
+    "pnpm": "8.4.0"
   },
-  "version": "1.8.3"
+  "changelog": {
+    "__comment__": "Our release infrastructure relies on these exact labels. Be careful changing them.",
+    "labels": {
+      "breaking": ":boom: Breaking Change",
+      "enhancement": ":rocket: Enhancement",
+      "bug": ":bug: Bug Fix",
+      "documentation": ":memo: Documentation",
+      "internal": ":house: Internal",
+      "unlabeled": ":question: Unlabeled"
+    },
+    "wildcardLabel": "unlabeled"
+  }
 }

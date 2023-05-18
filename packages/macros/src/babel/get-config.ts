@@ -93,7 +93,7 @@ function collapse(path: NodePath, config: any) {
   let evaluator = new Evaluator({ knownPaths: new Map([[path, { confident: true, value: config }]]) });
 
   while (true) {
-    let parentPath = path.parentPath;
+    let parentPath = path.parentPath!;
     let result = evaluator.evaluate(parentPath);
     if (!result.confident || parentPath.isAssignmentExpression()) {
       return { path, config: (evaluator.evaluate(path) as ConfidentResult).value };

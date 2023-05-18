@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  VOLTA_FEATURE_PNPM: 1
+
 on:
   schedule:
     - cron: '0 7 * * *' # daily, 7am
@@ -28,10 +31,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
       - name: lint
-        run: yarn lint
+        run: pnpm lint
       - id: set-matrix
         working-directory: test-packages/support
-        run: echo "matrix=$(node ./suite-setup-util.js --matrix)" >> $GITHUB_OUTPUT
+        run: |
+          matrix_json=$(node ./suite-setup-util --matrix)
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:
     needs: ['preflight']
@@ -52,28 +57,3 @@ jobs:
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}
-
-  # https://github.com/changesets/action
-  release:
-    name: Release
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs:
-      - test
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: yarn release
-          title: 'Release Preview'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

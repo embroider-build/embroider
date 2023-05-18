@@ -1,6 +1,6 @@
 {
   "name": "@embroider/webpack",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "private": false,
   "description": "Builds EmberJS apps with Webpack",
   "repository": {
@@ -19,10 +19,9 @@
   "scripts": {},
   "dependencies": {
     "@babel/core": "^7.14.5",
-    "@embroider/babel-loader-8": "2.0.0",
-    "@embroider/hbs-loader": "2.0.0",
-    "@embroider/shared-internals": "2.0.0",
-    "@types/source-map": "^0.5.7",
+    "@embroider/babel-loader-8": "workspace:*",
+    "@embroider/hbs-loader": "workspace:*",
+    "@embroider/shared-internals": "workspace:*",
     "@types/supports-color": "^8.1.0",
     "assert-never": "^1.2.1",
     "babel-loader": "^8.2.2",
@@ -44,15 +43,17 @@
   },
   "devDependencies": {
     "@types/csso": "^3.5.1",
-    "@types/fs-extra": "^9.0.11",
+    "@types/debug": "^4.1.5",
+    "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
     "@types/mini-css-extract-plugin": "^1.4.3",
     "@types/node": "^15.12.2",
-    "typescript": "*",
+    "@types/semver": "^7.3.6",
+    "typescript": "^4.9.0",
     "webpack": "^5.38.1"
   },
   "peerDependencies": {
-    "@embroider/core": "^2.0.0",
+    "@embroider/core": "workspace:^",
     "webpack": "^5.0.0"
   },
   "engines": {

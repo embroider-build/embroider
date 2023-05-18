@@ -34,7 +34,9 @@ jobs:
         run: pnpm lint
       - id: set-matrix
         working-directory: test-packages/support
-        run: echo "matrix=$(node ./suite-setup-util.js --matrix)" >> $GITHUB_OUTPUT
+        run: |
+          matrix_json=$(node ./suite-setup-util --matrix)
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:
     needs: ['preflight']

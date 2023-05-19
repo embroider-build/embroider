@@ -1,0 +1,50 @@
+name: Release Plan Review
+on:
+  push:
+    branches:
+      - main
+
+env:
+  VOLTA_FEATURE_PNPM: 1
+  branch: "gh-workflow/release-preview"
+  title: "Preview Release"
+
+jobs:
+  update_unstable_branch:
+    name: Update Unstable Branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      explanation: ${{ steps.explanation.outputs.text }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup
+      - name: 'Prepare git branch'
+        run: |
+          set +e
+          git branch -D ${{ env.branch }}
+          set -e
+          git switch -c ${{ env.branch }}
+
+      - id: explanation
+        run: |
+          echo "text=$(pnpm embroider-release explain-plan)" >> $GITHUB_OUTPUT
+      - run: pnpm embroider-release gather-changes
+      - run: pnpm embroider-release prepare
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions-bot@users.noreply.github.com"
+          git add .
+          git commit -m "Automated update"
+          git push origin ${{ env.branch }} --force
+
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "Prepare Release"
+          draft: true
+          branch: ${{ env.branch }}
+          base: 'main'
+          title: ${{ env.title }}
+          body: ${{ steps.explanation.outputs.text }}

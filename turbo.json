@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "baseBranch": "origin/main",
+  "pipeline": {
+      // this monorepo has a single build step / directory / command at the root
+    "//#build": {
+      "inputs": ["packages/**/*.ts"],
+      "outputs": ["**/*.js", "**/*.d.ts"]
+    },
+
+    "lint": {
+      "outputs": [],
+      "dependsOn": [
+        "//#lint:eslint",
+        "//#lint:prettier",
+        "lint:types"
+      ]
+    },
+    "//#lint:eslint": { "outputs": [] },
+    "//#lint:prettier": { "outputs": [] },
+    "lint:types": { "outputs": [] }
+  }
+}

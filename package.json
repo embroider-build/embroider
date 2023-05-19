@@ -6,9 +6,10 @@
   },
   "scripts": {
     "postinstall": "patch-package",
+    "build": "tsc",
     "clean": "git clean -x -f",
-    "compile": "tsc",
-    "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
+    "compile": "turbo build",
+    "lint": "turbo lint --output-logs errors-only --no-update-notifier",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache",
     "lint:eslint:fix": "eslint . --fix",

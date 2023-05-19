@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
 } from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
-import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
+import { Package, V2Package, explicitRelative } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
@@ -18,8 +18,8 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { /* existsSync, */ readFileSync } from 'fs';
-// import { readJSONSync } from 'fs-extra';
+import { readFileSync } from 'fs';
+import { RewrittenPackageCache } from './rewritten-package-cache';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -156,7 +156,7 @@ export class Resolver {
 
     request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
-    request = this.handleLegacyAddons(request);
+    request = this.handleRewrittenPackages(request);
     request = this.handleRenaming(request);
     return this.preHandleExternal(request);
   }
@@ -272,13 +272,15 @@ export class Resolver {
   }
 
   owningPackage(fromFile: string): Package | undefined {
-    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
+    return RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
     let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
     if (logicalLocation) {
-      let pkg = PackageCache.shared('embroider-stage3', this.options.appRoot).get(logicalLocation.owningEngine.root);
+      let pkg = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).get(
+        logicalLocation.owningEngine.root
+      );
       if (!pkg.isV2Ember()) {
         throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
@@ -481,7 +483,7 @@ export class Resolver {
   // out.
   @Memoize()
   private get mergeMap(): MergeMap {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+    let packageCache = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot);
     let result: MergeMap = new Map();
     for (let engine of this.options.engines) {
       let engineModules: Map<string, MergeEntry> = new Map();
@@ -600,66 +602,55 @@ export class Resolver {
     return owningEngine;
   }
 
-  private handleLegacyAddons<R extends ModuleRequest>(request: R): R {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
+  private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
+    let packageCache = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot);
 
-    // first we handle output requests from moved packages
-    let pkg = this.owningPackage(request.fromFile);
-    if (!pkg) {
+    let requestingPkg = this.owningPackage(request.fromFile);
+    if (!requestingPkg) {
       return request;
     }
-    let originalRoot = this.legacyAddonsIndex.v2toV1.get(pkg.root);
-    if (originalRoot) {
-      request = logTransition(
-        'outbound from moved v1 addon',
-        request,
-        request.rehome(resolve(originalRoot, 'package.json'))
-      );
-      pkg = packageCache.get(originalRoot)!;
-    }
 
-    // then we handle inbound requests to moved packages
+    let targetPkg: Package | undefined;
     let packageName = getPackageName(request.specifier);
-    if (packageName && packageName !== pkg.name) {
+    if (packageName && packageName !== requestingPkg.name) {
       // non-relative, non-self request, so check if it aims at a rewritten addon
       try {
-        let target = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
-        if (target) {
-          let movedRoot = this.legacyAddonsIndex.v1ToV2.get(target.root);
-          if (movedRoot) {
-            request = logTransition(
-              'inbound to moved v1 addon',
-              request,
-              this.resolveWithinPackage(request, packageCache.get(movedRoot))
-            );
-          }
-        }
+        // up above we already ensured that the source `pkg` here is always referring to the *original* copy if it had been rewritten.
+        targetPkg = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).resolve(
+          packageName,
+          requestingPkg
+        );
       } catch (err) {
+        // this is not the place to report resolution failures. If the thing
+        // doesn't resolve, we're just not interested in redirecting it for
+        // backward-compat, that's all. The rest of the system will take care of
+        // reporting a failure to resolve (or handling it a different way)
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
       }
     }
 
-    return request;
-  }
+    let originalRequestingPkg = packageCache.original(requestingPkg);
+    let originalTargetPkg = targetPkg ? packageCache.original(targetPkg) : undefined;
 
-  @Memoize()
-  private get legacyAddonsIndex(): { v1ToV2: Map<string, string>; v2toV1: Map<string, string> } {
-    // let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
-    // let indexFile = resolve(addonsDir, 'index.json');
-    // if (existsSync(indexFile)) {
-    //   let { packages } = readJSONSync(indexFile) as { packages: Record<string, string> };
-    //   return {
-    //     v1ToV2: new Map(
-    //       Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, oldRoot), resolve(addonsDir, newRoot)])
-    //     ),
-    //     v2toV1: new Map(
-    //       Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, newRoot), resolve(addonsDir, oldRoot)])
-    //     ),
-    //   };
-    // }
-    return { v1ToV2: new Map(), v2toV1: new Map() };
+    if (targetPkg && originalTargetPkg) {
+      // in this case it doesn't matter whether or not the requesting package
+      // was moved. RewrittenPackageCache.resolve already took care of finding
+      // the right target, and we redirect the request so it will look inside
+      // that target.
+      return logTransition('request targets a moved package', request, this.resolveWithinPackage(request, targetPkg));
+    } else if (originalRequestingPkg) {
+      // in this case, the requesting package is moved but its destination is
+      // not, so we need to rehome the request back to the original location.
+      return logTransition(
+        'outbound request from moved package',
+        request,
+        request.rehome(resolve(originalRequestingPkg.root, 'package.json'))
+      );
+    }
+
+    return request;
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
@@ -793,7 +784,10 @@ export class Resolver {
 
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPackage);
+        let dep = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).resolve(
+          packageName,
+          logicalPackage
+        );
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -880,7 +874,9 @@ export class Resolver {
         request,
         this.resolveWithinPackage(
           request,
-          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
+          RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).get(
+            this.options.activeAddons[packageName]
+          )
         )
       );
     }

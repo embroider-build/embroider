@@ -1,4 +1,4 @@
-import { PackageCache, Package } from '@embroider/shared-internals';
+import { PackageCache, Package, getOrCreate } from '@embroider/shared-internals';
 import { existsSync, readJSONSync } from 'fs-extra';
 import { resolve } from 'path';
 import { Memoize } from 'typescript-memoize';
@@ -79,6 +79,13 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     return this.maybeWrap(this.plainCache.get(packageRoot));
   }
 
+  original(pkg: Package): Package | undefined {
+    let oldRoot = this.index.newToOld.get(pkg.root);
+    if (oldRoot) {
+      return this.plainCache.get(oldRoot);
+    }
+  }
+
   ownerOfFile(filename: string): Package | undefined {
     let owner = this.plainCache.ownerOfFile(filename);
     if (owner) {
@@ -95,6 +102,7 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     let addonsDir = resolve(this.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
     let indexFile = resolve(addonsDir, 'index.json');
     if (existsSync(indexFile)) {
+      // I should probably make the else case throw here soon.
       let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;
       return {
         oldToNew: new Map(
@@ -135,8 +143,20 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
       return pkg;
     }
   }
+  static shared(identifier: string, appRoot: string) {
+    let pk = getOrCreate(
+      shared,
+      identifier + appRoot,
+      () => new RewrittenPackageCache(PackageCache.shared(identifier, appRoot))
+    );
+    if (pk.appRoot !== appRoot) {
+      throw new Error(`bug: PackageCache appRoot disagreement ${appRoot}!=${pk.appRoot}`);
+    }
+    return pk;
+  }
 }
 
+const shared: Map<string, RewrittenPackageCache> = new Map();
 const wrapped = new WeakMap<Package, MovedPackage>();
 
 // TODO: as our refactor lands we should be able to remove this from Package

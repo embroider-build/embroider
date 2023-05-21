@@ -29,7 +29,7 @@ type PublicAPI<T> = { [K in keyof T]: T[K] };
 
 // TODO: as our refactor lands we should be able to remove these things from
 // PackageCache itself.
-type PackageCacheTheGoodParts = Omit<PublicAPI<PackageCache>, 'basedir' | 'seed' | 'shareAs'>;
+type PackageCacheTheGoodParts = Omit<PublicAPI<PackageCache>, 'basedir' | 'seed'>;
 
 export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   constructor(private plainCache: PackageCache) {}
@@ -65,8 +65,8 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     return this.maybeMoved(oldDest);
   }
 
-  // ensure we have the moved version of the package
-  private maybeMoved(pkg: Package): Package {
+  // ensure we have the moved version of the package if it has been moved
+  maybeMoved(pkg: Package): Package {
     let newRoot = this.index.oldToNew.get(pkg.root);
     if (newRoot) {
       return this.get(newRoot);
@@ -169,6 +169,7 @@ function castToPackage(m: MovedPackage): Package {
 }
 
 class MovedPackage implements PackageTheGoodParts {
+  debugMoved = true as const;
   // plainPkg is not the Package in the original un-moved location, it's the
   // plain representation of the moved location. That is, when you grab
   // plainPkg.root it will show the new location, and plainPkg.packageJSON shows
@@ -281,7 +282,7 @@ class MovedPackage implements PackageTheGoodParts {
   hasDependency(name: string): boolean {
     // this is *not* extended because it's understood that the rewritten package
     // should explictly list the things that need extraResolutions in its own
-    // package.json.ß
+    // package.json.
     return this.plainPkg.hasDependency(name);
   }
 }

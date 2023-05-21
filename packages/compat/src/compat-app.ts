@@ -2,7 +2,6 @@ import { Node as BroccoliNode } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import {
   Stage,
-  PackageCache,
   OutputPaths,
   BuildStage,
   Asset,
@@ -13,6 +12,7 @@ import {
   Package,
   AddonPackage,
   Engine,
+  RewrittenPackageCache,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -66,7 +66,8 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
     appBootTree,
   };
 
-  let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
+  let instantiate = async (root: string, appSrcDir: string) => {
+    let packageCache = RewrittenPackageCache.shared('embroider', appSrcDir);
     let appPackage = packageCache.get(appSrcDir);
     let adapter = new CompatAppAdapter(
       root,
@@ -180,12 +181,15 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
 
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
-    let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
+    let deps = this.appSpecialDependencies(pkg);
+    let result = (deps.filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
       // a given package, to align with how ember-cli resolves addons. So here
       // we only include dependencies that definitely appear in one of the other
       // sections.
-      addon => pkg.packageJSON.dependencies?.[addon.name] || pkg.packageJSON.devDependencies?.[addon.name]
+      addon =>
+        pkg.packageJSON.dependencies?.[addon.name] ||
+        (pkg === this.appPackage && pkg.packageJSON.devDependencies?.[addon.name])
     );
     if (pkg === this.appPackage) {
       let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
@@ -194,9 +198,27 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     return result.sort(this.orderAddons);
   }
 
+  private appSpecialDependencies(pkg: Package): Package[] {
+    if (pkg !== this.appPackage) {
+      return pkg.dependencies;
+    }
+    // the app package is special because at this stage we're still looking at
+    // the original app package, but its deps have been rewritten.
+    return pkg.dependencies.map(dep => RewrittenPackageCache.shared('embroider', this.appPackage.root).maybeMoved(dep));
+  }
+
+  private appSpecialDescendants(pkg: Package, filter?: (p: Package) => boolean) {
+    if (pkg !== this.appPackage) {
+      return pkg.findDescendants(filter);
+    }
+    // the app package is special because at this stage we're still looking at
+    // the original app package, but its deps have been rewritten.
+    return Package.prototype.findDescendants.call({ dependencies: this.appSpecialDependencies(pkg) }, filter);
+  }
+
   @Memoize()
   get allActiveAddons(): AddonPackage[] {
-    let result = this.appPackage.findDescendants(this.isActiveAddon) as AddonPackage[];
+    let result = this.appSpecialDescendants(this.appPackage, this.isActiveAddon) as AddonPackage[];
     let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
@@ -205,8 +227,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
 
   @bind
   private isActiveAddon(pkg: Package): boolean {
-    // todo: filter by addon-provided hook
-    return pkg.isEmberPackage();
+    // stage1 already took care of converting everything that's actually active
+    // into v2 addons. If it's not a v2 addon, we don't want it.
+    //
+    // We can encounter v1 addons here when there is inactive stuff floating
+    // around in the node_modules that accidentally satisfy something like an
+    // optional peer dep.
+    return pkg.isV2Addon();
   }
 
   @bind

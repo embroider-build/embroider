@@ -1,5 +1,4 @@
 import WaitForTrees, { OutputPaths } from './wait-for-trees';
-import { PackageCache } from '@embroider/shared-internals';
 import Stage from './stage';
 import { Node } from 'broccoli-node-api';
 import { Memoize } from 'typescript-memoize';
@@ -10,27 +9,21 @@ import { Memoize } from 'typescript-memoize';
 export default class BuildStage<NamedTrees> implements Stage {
   private active: BuilderInstance<NamedTrees> | undefined;
   private outputPath: string | undefined;
-  private packageCache: PackageCache | undefined;
 
   constructor(
     private prevStage: Stage,
     private inTrees: NamedTrees,
     private annotation: string,
-    private instantiate: (
-      root: string,
-      appSrcDir: string,
-      packageCache: PackageCache
-    ) => Promise<BuilderInstance<NamedTrees>>
+    private instantiate: (root: string, appSrcDir: string) => Promise<BuilderInstance<NamedTrees>>
   ) {}
 
   @Memoize()
   get tree(): Node {
     return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
       if (!this.active) {
-        let { outputPath, packageCache } = await this.prevStage.ready();
+        let { outputPath } = await this.prevStage.ready();
         this.outputPath = outputPath;
-        this.packageCache = packageCache;
-        this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
+        this.active = await this.instantiate(outputPath, this.prevStage.inputPath);
       }
       delete (treePaths as any).__prevStageTree;
       await this.active.build(this.deAugment(treePaths));
@@ -42,11 +35,10 @@ export default class BuildStage<NamedTrees> implements Stage {
     return this.prevStage.inputPath;
   }
 
-  async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
+  async ready(): Promise<{ outputPath: string }> {
     await this.deferReady.promise;
     return {
       outputPath: this.outputPath!,
-      packageCache: this.packageCache!,
     };
   }
 

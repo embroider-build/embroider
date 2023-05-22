@@ -4,7 +4,6 @@ import {
   Stage,
   PackageCache,
   OutputPaths,
-  BuildStage,
   Asset,
   EmberAsset,
   AppAdapter,
@@ -13,6 +12,7 @@ import {
   Package,
   AddonPackage,
   Engine,
+  WaitForTrees,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -399,10 +399,74 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   }
 }
 
-export default class CompatApp extends BuildStage<TreeNames> {
-  constructor(legacyEmberAppInstance: object, addons: Stage, options?: Options) {
+interface BuilderInstance<NamedTrees> {
+  build(inputPaths: OutputPaths<NamedTrees>): Promise<void>;
+}
+
+interface ExtraTree {
+  __prevStageTree: BroccoliNode;
+}
+
+export default class CompatApp {
+  private inTrees: TreeNames;
+  private annotation = '@embroider/compat/app';
+  private instantiate: (
+    root: string,
+    appSrcDir: string,
+    packageCache: PackageCache
+  ) => Promise<BuilderInstance<TreeNames>>;
+
+  private active: BuilderInstance<TreeNames> | undefined;
+  private outputPath: string | undefined;
+  private packageCache: PackageCache | undefined;
+
+  constructor(legacyEmberAppInstance: object, private prevStage: Stage, options?: Options) {
     let { inTrees, instantiate } = setup(legacyEmberAppInstance, optionsWithDefaults(options));
-    super(addons, inTrees, '@embroider/compat/app', instantiate);
+    this.inTrees = inTrees;
+    this.instantiate = instantiate;
+  }
+
+  @Memoize()
+  get tree(): BroccoliNode {
+    return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
+      if (!this.active) {
+        let { outputPath, packageCache } = await this.prevStage.ready();
+        this.outputPath = outputPath;
+        this.packageCache = packageCache;
+        this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
+      }
+      delete (treePaths as any).__prevStageTree;
+      await this.active.build(this.deAugment(treePaths));
+      this.deferReady.resolve();
+    });
+  }
+
+  get inputPath(): string {
+    return this.prevStage.inputPath;
+  }
+
+  async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
+    await this.deferReady.promise;
+    return {
+      outputPath: this.outputPath!,
+      packageCache: this.packageCache!,
+    };
+  }
+
+  @Memoize()
+  private get deferReady() {
+    let resolve: Function;
+    let promise: Promise<void> = new Promise(r => (resolve = r));
+    return { resolve: resolve!, promise };
+  }
+
+  private augment(inTrees: TreeNames): TreeNames & ExtraTree {
+    return Object.assign({ __prevStageTree: this.prevStage.tree }, inTrees);
+  }
+
+  private deAugment(treePaths: OutputPaths<TreeNames & ExtraTree>): OutputPaths<TreeNames> {
+    delete (treePaths as any).__prevStageTree;
+    return treePaths;
   }
 }
 

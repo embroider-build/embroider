@@ -30,7 +30,6 @@ jobs:
       - id: explanation
         run: |
           echo "text=$(pnpm embroider-release explain-plan)" >> $GITHUB_OUTPUT
-      - run: pnpm embroider-release gather-changes
       - run: pnpm embroider-release prepare
 
       - run: |

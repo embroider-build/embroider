@@ -35,7 +35,10 @@ jobs:
           node ./test-packages/release/src/cli.js prepare
           # Don't print this, because it can be very large
           set +x
-          echo "text=$( echo $plan )" >> $GITHUB_OUTPUT
+          # Have to use this EOF syntax for multi-line strings.
+          echo 'text<<EOF' >> $GITHUB_OUTPUT
+          echo "$plan" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
@@ -47,4 +50,11 @@ jobs:
           draft: true
           branch: ${{ env.branch }}
           title: ${{ env.title }}
-          body: ${{ steps.explanation.outputs.text }}
+          body: |
+            Preview of the Release.
+
+            See `.github/workflows/release-plan-preview.yml` for how this PR was created.
+
+            -----------------------------------------
+
+            ${{ steps.explanation.outputs.text }}

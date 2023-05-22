@@ -24,7 +24,12 @@ export default class Package {
 
   @Memoize()
   protected get internalPackageJSON() {
-    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    try {
+      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    } catch (err) {
+      debugger;
+      throw err;
+    }
   }
 
   @Memoize()

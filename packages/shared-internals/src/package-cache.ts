@@ -42,6 +42,9 @@ export default class PackageCache {
   }
 
   get(packageRoot: string) {
+    if (/dummy/.test(packageRoot)) {
+      debugger;
+    }
     let root = realpathSync(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
       return new Package(root, this, root === this.appRoot);

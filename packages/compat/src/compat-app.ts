@@ -68,7 +68,7 @@ function setup(legacyEmberAppInstance: object, options: Required<Options>) {
 
   let instantiate = async (root: string, appSrcDir: string) => {
     let packageCache = RewrittenPackageCache.shared('embroider', appSrcDir);
-    let appPackage = packageCache.get(appSrcDir);
+    let appPackage = AppPackage.create(packageCache.get(appSrcDir), oldPackage);
     let adapter = new CompatAppAdapter(
       root,
       appPackage,
@@ -173,16 +173,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
   }
 
   developingAddons(): string[] {
-    if (this.oldPackage.owningAddon) {
-      return [this.oldPackage.owningAddon.root];
-    }
+    // TODO: dummy app puts addon under development
     return [];
   }
 
   @Memoize()
   activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
-    let deps = this.appSpecialDependencies(pkg);
-    let result = (deps.filter(this.isActiveAddon) as AddonPackage[]).filter(
+    let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
       // a given package, to align with how ember-cli resolves addons. So here
       // we only include dependencies that definitely appear in one of the other
@@ -198,27 +195,9 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
     return result.sort(this.orderAddons);
   }
 
-  private appSpecialDependencies(pkg: Package): Package[] {
-    if (pkg !== this.appPackage) {
-      return pkg.dependencies;
-    }
-    // the app package is special because at this stage we're still looking at
-    // the original app package, but its deps have been rewritten.
-    return pkg.dependencies.map(dep => RewrittenPackageCache.shared('embroider', this.appPackage.root).maybeMoved(dep));
-  }
-
-  private appSpecialDescendants(pkg: Package, filter?: (p: Package) => boolean) {
-    if (pkg !== this.appPackage) {
-      return pkg.findDescendants(filter);
-    }
-    // the app package is special because at this stage we're still looking at
-    // the original app package, but its deps have been rewritten.
-    return Package.prototype.findDescendants.call({ dependencies: this.appSpecialDependencies(pkg) }, filter);
-  }
-
   @Memoize()
   get allActiveAddons(): AddonPackage[] {
-    let result = this.appSpecialDescendants(this.appPackage, this.isActiveAddon) as AddonPackage[];
+    let result = this.appPackage.findDescendants(this.isActiveAddon) as AddonPackage[];
     let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
@@ -455,4 +434,105 @@ function defaultAddonPackageRules(): PackageRules[] {
     })
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
+}
+
+// without this, using a class as an interface forces you to have the same
+// private and protected methods too (since people trying to extend from you
+// could see all of those)
+type PublicAPI<T> = { [K in keyof T]: T[K] };
+
+// The app package is special and weird for two main reasons:
+//
+// 1. At the point where we're interrogating it, the addons have been rewritten
+//    to v2 but the app has not. So the app package's dependencies are no longer
+//    correct.
+// 2. Dummy apps are weird need special rules.
+//
+class AppPackage implements PublicAPI<Package> {
+  static create(realPkg: Package, instance: V1App) {
+    // cast is because we only implement the public API of Package, not the full
+    // protected API.
+    return new AppPackage(realPkg, instance) as unknown as Package;
+  }
+
+  constructor(private realPkg: Package, private instance: V1App) {}
+
+  get dependencies(): Package[] {
+    // the app package is special because at this stage we're still looking at
+    // the original app package, but its deps have been rewritten.
+    return this.realPkg.dependencies.map(dep => RewrittenPackageCache.shared('embroider', this.root).maybeMoved(dep));
+  }
+
+  findDescendants(filter?: (p: Package) => boolean) {
+    // the app package is special because at this stage we're still looking at
+    // the original app package, but its deps have been rewritten.
+    return Package.prototype.findDescendants.call({ dependencies: this.dependencies }, filter);
+  }
+
+  get name(): string {
+    if (this.instance.isDummyApp) {
+      // here we accept the ember-cli behavior
+      return this.instance.name;
+    } else {
+      // always the name from package.json. Not the one that apps may have weirdly
+      // customized.
+      return this.realPkg.name;
+    }
+  }
+
+  get root(): string {
+    return this.instance.root;
+  }
+
+  get version() {
+    return this.realPkg.version;
+  }
+
+  get packageJSON() {
+    return this.realPkg.packageJSON;
+  }
+
+  get meta() {
+    return this.realPkg.meta;
+  }
+
+  get isEmberPackage() {
+    return this.realPkg.isEmberPackage;
+  }
+
+  isEngine() {
+    return this.realPkg.isEngine();
+  }
+
+  isLazyEngine() {
+    return this.realPkg.isLazyEngine();
+  }
+
+  isV2Ember() {
+    return this.realPkg.isV2Ember;
+  }
+
+  isV2App() {
+    return this.realPkg.isV2App;
+  }
+
+  isV2Addon() {
+    return this.realPkg.isV2Addon;
+  }
+
+  get mayRebuild() {
+    return this.realPkg.mayRebuild;
+  }
+
+  get nonResolvableDeps() {
+    return this.realPkg.nonResolvableDeps;
+  }
+
+  get dependencyNames() {
+    return this.realPkg.dependencyNames;
+  }
+
+  hasDependency(name: string): boolean {
+    return this.realPkg.hasDependency(name);
+  }
 }

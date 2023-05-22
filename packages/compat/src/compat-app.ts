@@ -19,6 +19,9 @@ import {
   debug,
   warn,
   jsHandlebarsCompile,
+  templateColocationPluginPath,
+  cacheBustingPluginVersion,
+  cacheBustingPluginPath,
 } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import V1App from './v1-app';
@@ -119,50 +122,7 @@ class ConcatenatedAsset {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
-// This runs at broccoli-pipeline-construction time, whereas our actual
-// CompatAppAdapter instance only becomes available during tree-building
-// time.
-function setup(legacyEmberAppInstance: object, options: Required<Options>) {
-  let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
-
-  let { appJS } = oldPackage.processAppJS();
-  let htmlTree = oldPackage.htmlTree;
-  let publicTree = oldPackage.publicTree;
-  let configTree = oldPackage.config;
-  let appBootTree = oldPackage.appBoot;
-
-  if (options.extraPublicTrees.length > 0) {
-    publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
-  }
-
-  let inTrees = {
-    appJS,
-    htmlTree,
-    publicTree,
-    configTree,
-    appBootTree,
-  };
-
-  let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
-    let appPackage = packageCache.get(appSrcDir);
-    let macrosConfig = MacrosConfig.for(legacyEmberAppInstance, appSrcDir);
-
-    return new CompatAppAdapter(
-      root,
-      appPackage,
-      options,
-      oldPackage,
-      configTree,
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
-      macrosConfig
-    );
-  };
-
-  return { inTrees, instantiate };
-}
-
-class CompatAppAdapter {
+class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
 
@@ -658,10 +618,7 @@ class CompatAppAdapter {
       // supposed to take care of colocating their own templates explicitly.
       packageGuard: true,
     };
-    babel.plugins.push([
-      require.resolve('@embroider/shared-internals/src/template-colocation-plugin'),
-      colocationOptions,
-    ]);
+    babel.plugins.push([templateColocationPluginPath, colocationOptions]);
 
     for (let p of this.jsPlugins(resolverConfig)) {
       babel.plugins.push(p);
@@ -1568,6 +1525,8 @@ interface ExtraTree {
   __prevStageTree: BroccoliNode;
 }
 
+// This runs at broccoli-pipeline-construction time, whereas our actual
+// CompatAppBuilder instance only becomes available during tree-building time.
 export default class CompatApp {
   private inTrees: TreeNames;
   private annotation = '@embroider/compat/app';
@@ -1581,8 +1540,44 @@ export default class CompatApp {
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
 
-  constructor(legacyEmberAppInstance: object, private prevStage: Stage, options?: Options) {
-    let { inTrees, instantiate } = setup(legacyEmberAppInstance, optionsWithDefaults(options));
+  constructor(legacyEmberAppInstance: object, private prevStage: Stage, _options?: Options) {
+    let options = optionsWithDefaults(_options);
+    let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
+
+    let { appJS } = oldPackage.processAppJS();
+    let htmlTree = oldPackage.htmlTree;
+    let publicTree = oldPackage.publicTree;
+    let configTree = oldPackage.config;
+    let appBootTree = oldPackage.appBoot;
+
+    if (options.extraPublicTrees.length > 0) {
+      publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
+    }
+
+    let inTrees = {
+      appJS,
+      htmlTree,
+      publicTree,
+      configTree,
+      appBootTree,
+    };
+
+    let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
+      let appPackage = packageCache.get(appSrcDir);
+      let macrosConfig = MacrosConfig.for(legacyEmberAppInstance, appSrcDir);
+
+      return new CompatAppBuilder(
+        root,
+        appPackage,
+        options,
+        oldPackage,
+        configTree,
+        packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+        packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
+        macrosConfig
+      );
+    };
+
     this.inTrees = inTrees;
     this.instantiate = instantiate;
   }
@@ -1771,7 +1766,7 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 }
 
 const babelFilterTemplate = jsHandlebarsCompile(`
-const { babelFilter } = require(${JSON.stringify(require.resolve('./index.js'))});
+const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
 module.exports = babelFilter({{{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
@@ -1800,15 +1795,10 @@ function combinePackageJSON(...layers: object[]) {
   return mergeWith({}, ...layers, custom);
 }
 
-const CACHE_BUSTING_PLUGIN = {
-  path: require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
-  version: readJSONSync(`${__dirname}/../package.json`).version,
-};
-
 function addCachablePlugin(babelConfig: TransformOptions) {
   if (Array.isArray(babelConfig.plugins) && babelConfig.plugins.length > 0) {
     const plugins = Object.create(null);
-    plugins[CACHE_BUSTING_PLUGIN.path] = CACHE_BUSTING_PLUGIN.version;
+    plugins[cacheBustingPluginPath] = cacheBustingPluginVersion;
 
     for (const plugin of babelConfig.plugins) {
       let absolutePathToPlugin: string;
@@ -1824,7 +1814,7 @@ function addCachablePlugin(babelConfig: TransformOptions) {
     }
 
     babelConfig.plugins.push([
-      CACHE_BUSTING_PLUGIN.path,
+      cacheBustingPluginPath,
       {
         plugins,
       },

@@ -12,4 +12,11 @@ export { hbsToJS } from './hbs-to-js';
 export {
   default as templateColocationPlugin,
   Options as TemplateColocationPluginOptions,
+  pluginPath as templateColocationPluginPath,
 } from './template-colocation-plugin';
+
+export {
+  default as cacheBustingPlugin,
+  pluginPath as cacheBustingPluginPath,
+  version as cacheBustingPluginVersion,
+} from './babel-plugin-cache-busting';

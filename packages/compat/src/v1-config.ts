@@ -2,12 +2,11 @@ import Plugin from 'broccoli-plugin';
 import { Node } from 'broccoli-node-api';
 import { join } from 'path';
 import { readFileSync, outputFileSync } from 'fs-extra';
-import { EmberENV } from '@embroider/core';
 
 export interface ConfigContents {
   modulePrefix: string;
   podModulePrefix?: string;
-  EmberENV: EmberENV;
+  EmberENV: unknown;
   APP: unknown;
   rootURL: string;
 }

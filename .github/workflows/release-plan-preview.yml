@@ -24,18 +24,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - name: 'Prepare git branch'
-        run: |
-          set +e
-          git branch -D ${{ env.branch }}
-          set -e
-          git switch -c ${{ env.branch }}
-
-      - name: "Configure Git"
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions-bot@users.noreply.github.com"
-
       - name: "Generate Explanation and Prep Changelogs"
         id: explanation
         run: |
@@ -48,20 +36,15 @@ jobs:
           # Don't print this, because it can be very large
           set +x
           echo "text=$( echo $plan )" >> $GITHUB_OUTPUT
-          # For debugging
-          set -x
-          git diff
-          git add -A .
-          git commit -am "Automated update"
-          git push origin ${{ env.branch }} --force
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "Prepare Release"
+          commit-message: "Prepare Release using 'embroider-release'"
+          author: "github-actions[bot] <github-actions-bot@users.noreply.github.com>"
+          labels: "internal"
           draft: true
           branch: ${{ env.branch }}
-          base: 'main'
           title: ${{ env.title }}
           body: ${{ steps.explanation.outputs.text }}

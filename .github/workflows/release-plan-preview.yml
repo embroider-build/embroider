@@ -6,12 +6,12 @@ on:
 
 env:
   VOLTA_FEATURE_PNPM: 1
-  branch: "gh-workflow/release-preview"
+  branch: "embroider-release-preview"
   title: "Preview Release"
 
 jobs:
-  update_unstable_branch:
-    name: Update Unstable Branch
+  prepare_release_notes:
+    name: Prepare Release Notes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -19,6 +19,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        # We need to download lots of history so that
+        # lerna-changelog can discover what's changed since the last release
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/setup
       - name: 'Prepare git branch'
         run: |
@@ -27,17 +31,31 @@ jobs:
           set -e
           git switch -c ${{ env.branch }}
 
-      - id: explanation
+      - name: "Configure Git"
         run: |
-          echo "text=$(pnpm embroider-release explain-plan)" >> $GITHUB_OUTPUT
-      - run: pnpm embroider-release prepare
-
-      - run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions-bot@users.noreply.github.com"
-          git add .
-          git commit -m "Automated update"
+
+      - name: "Generate Explanation and Prep Changelogs"
+        id: explanation
+        run: |
+          # Print each command out to the terminal before running
+          set -x
+          # For an unknown reason the `pnpm embroider-release` bin is not
+          # wired up as it is locally.
+          plan=$(node ./test-packages/release/src/cli.js explain-plan)
+          node ./test-packages/release/src/cli.js prepare
+          # Don't print this, because it can be very large
+          set +x
+          echo "text=$( echo $plan )" >> $GITHUB_OUTPUT
+          # For debugging
+          set -x
+          git diff
+          git add -A .
+          git commit -am "Automated update"
           git push origin ${{ env.branch }} --force
+        env:
+          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: peter-evans/create-pull-request@v5
         with:

@@ -95,8 +95,23 @@ engineScenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
-      test(`pnpm test`, async function (assert) {
-        let result = await app.execute('pnpm test');
+      test(`pnpm test safe`, async function (assert) {
+        let result = await app.execute('pnpm test', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`pnpm test optimized`, async function (assert) {
+        let result = await app.execute('pnpm test', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -130,11 +145,25 @@ engineScenarios
         app = await scenario.prepare();
       });
 
-      test(`pnpm test`, async function (assert) {
-        let result = await app.execute('pnpm test');
+      test(`pnpm test safe`, async function (assert) {
+        let result = await app.execute('pnpm test', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      test(`pnpm test optimized`, async function (assert) {
+        let result = await app.execute('pnpm test', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
       let visit: any;
 
       hooks.before(async () => {

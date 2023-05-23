@@ -26,12 +26,6 @@ module.exports = function (defaults) {
     return app.toTree();
   }
 
-  const Webpack = require('@embroider/webpack').Webpack;
-  return require('@embroider/compat').compatBuild(app, Webpack, {
-    staticAddonTestSupportTrees: true,
-    staticAddonTrees: true,
-    // staticHelpers: true,
-    // staticModifiers: true,
-    // staticComponents: true,
-  });
+  const { maybeEmbroider } = require('@embroider/test-setup');
+  return maybeEmbroider(app);
 };

@@ -1,5 +1,5 @@
 import { Memoize } from 'typescript-memoize';
-import { dirname, join, relative } from 'path';
+import { dirname, join, relative, resolve } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
 import buildFunnel, { Options as FunnelOptions } from 'broccoli-funnel';
@@ -732,7 +732,20 @@ export default class V1Addon {
       // .hbs.js
       templateExtensions: ['.hbs', '.hbs.js'],
     });
-    if (!this.addonOptions.staticAddonTrees) {
+    if (this.addonOptions.staticAddonTrees) {
+      if (this.isEngine()) {
+        // even when staticAddonTrees is enabled, engines may have a router map
+        // that needs to be dynamically resolved.
+        let hasRoutesModule = false;
+
+        tree = new ObserveTree(tree, outputDir => {
+          hasRoutesModule = existsSync(resolve(outputDir, 'routes.js'));
+        });
+        built.dynamicMeta.push(() => ({
+          'implicit-modules': hasRoutesModule ? ['./routes.js'] : [],
+        }));
+      }
+    } else {
       let filenames: string[] = [];
       let templateOnlyComponentNames: string[] = [];
 

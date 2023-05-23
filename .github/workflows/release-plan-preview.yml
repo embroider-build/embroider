@@ -1,0 +1,60 @@
+name: Release Plan Review
+on:
+  push:
+    branches:
+      - main
+
+env:
+  VOLTA_FEATURE_PNPM: 1
+  branch: "embroider-release-preview"
+  title: "Preview Release"
+
+jobs:
+  prepare_release_notes:
+    name: Prepare Release Notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      explanation: ${{ steps.explanation.outputs.text }}
+
+    steps:
+      - uses: actions/checkout@v3
+        # We need to download lots of history so that
+        # lerna-changelog can discover what's changed since the last release
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: "Generate Explanation and Prep Changelogs"
+        id: explanation
+        run: |
+          # Print each command out to the terminal before running
+          set -x
+          # For an unknown reason the `pnpm embroider-release` bin is not
+          # wired up as it is locally.
+          plan=$(node ./test-packages/release/src/cli.js explain-plan)
+          node ./test-packages/release/src/cli.js prepare
+          # Don't print this, because it can be very large
+          set +x
+          # Have to use this EOF syntax for multi-line strings.
+          echo 'text<<EOF' >> $GITHUB_OUTPUT
+          echo "$plan" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+        env:
+          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "Prepare Release using 'embroider-release'"
+          author: "github-actions[bot] <github-actions-bot@users.noreply.github.com>"
+          labels: "internal"
+          draft: true
+          branch: ${{ env.branch }}
+          title: ${{ env.title }}
+          body: |
+            Preview of the Release.
+
+            See `.github/workflows/release-plan-preview.yml` for how this PR was created.
+
+            -----------------------------------------
+
+            ${{ steps.explanation.outputs.text }}

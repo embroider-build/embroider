@@ -40,7 +40,7 @@ export default function keepAssets({
         this.emitFile({
           type: 'asset',
           fileName: name,
-          source: readFileSync(join(from, name), 'utf8'),
+          source: readFileSync(join(from, name)),
         });
       }
     },

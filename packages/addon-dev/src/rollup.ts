@@ -1,7 +1,7 @@
 import { default as hbs } from './rollup-hbs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
-import { default as clean } from 'rollup-plugin-delete';
+import { default as clean, Options as DelOptions } from 'rollup-plugin-delete';
 import { default as keepAssets } from './rollup-keep-assets';
 import { default as dependencies } from './rollup-addon-dependencies';
 import { default as publicAssets } from './rollup-public-assets';
@@ -47,8 +47,8 @@ export class Addon {
 
   // By default rollup does not clear the output directory between builds. This
   // does that.
-  clean() {
-    return clean({ targets: `${this.#destDir}/*` });
+  clean(options: DelOptions) {
+    return clean({ targets: `${this.#destDir}/*`, ...options });
   }
 
   // V2 Addons are allowed to contain imports of .css files. This tells rollup

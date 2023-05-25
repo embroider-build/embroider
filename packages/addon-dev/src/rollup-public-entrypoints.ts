@@ -6,7 +6,10 @@ import type { Plugin } from 'rollup';
 
 function normalizeFileExt(fileName: string) {
   if (fileName.endsWith('.ts')) {
-    return fileName.replace(/\.ts$/, '.js');
+    // Match .ts but not .d.ts
+    const regex = /(^.?|\.[^d]|[^.]d|[^.][^d])\.ts$/;
+
+    return fileName.replace(regex, '$1.js');
   }
 
   return fileName.replace(/\.hbs|\.gts|\.gjs$/, '.js');

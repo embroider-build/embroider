@@ -5,14 +5,7 @@ import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
 
 function normalizeFileExt(fileName: string) {
-  if (fileName.endsWith('.ts')) {
-    // Match .ts but not .d.ts
-    const regex = /(^.?|\.[^d]|[^.]d|[^.][^d])\.ts$/;
-
-    return fileName.replace(regex, '$1.js');
-  }
-
-  return fileName.replace(/\.hbs|\.gts|\.gjs$/, '.js');
+  return fileName.replace(/(?<!\.d)\.ts|\.hbs|\.gts|\.gjs$/, '.js');
 }
 
 export default function publicEntrypoints(args: {

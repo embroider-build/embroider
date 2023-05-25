@@ -74,8 +74,8 @@ export class Addon {
   output() {
     return {
       dir: this.#destDir,
-      format: 'es',
       entryFileNames: '[name]',
+      format: 'es',
       hoistTransitiveImports: false,
       sourcemap: true,
     };

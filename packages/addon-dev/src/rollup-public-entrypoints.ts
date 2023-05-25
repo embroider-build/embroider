@@ -5,7 +5,7 @@ import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
 
 function normalizeFileExt(fileName: string) {
-  return fileName.replace(/\.ts|\.hbs|\.gts|\.gjs$/, '.js');
+  return fileName.replace(/(?<!\.d)\.ts|\.hbs|\.gts|\.gjs$/, '.js');
 }
 
 export default function publicEntrypoints(args: {

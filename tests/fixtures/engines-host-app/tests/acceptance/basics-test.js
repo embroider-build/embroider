@@ -16,24 +16,8 @@ function arrayOfCSSRules(styleSheets, cssSelector, cssProperty) {
 
   return values.sort();
 }
-
-// We don't yet support lazy CSS in apps that are using fastboot. This test
-// application runs both with and without fastboot.
-const ensureCSSisLazy = !dependencySatisfies('ember-cli-fastboot', '*');
-
-module('Acceptance | basics', function (hooks) {
-  setupApplicationTest(hooks);
-
-  test('host-app', async function (assert) {
-    await visit('/');
-    assert.equal(currentURL(), '/');
-    assert.dom('[data-test-duplicated-helper]').containsText('from-engines-host-app');
-  });
-
-  // this test must be the first test that loads the use-lazy-engine engine
-  // as after it has loaded it will not "unload" and we are checking that these
-  // modules are entering require.entries for the first time.
-  test('lazy-engine', async function (assert) {
+function createLazyEngineTest(type) {
+  return async function (assert) {
     await visit('/');
     let entriesBefore = Object.entries(window.require.entries).length;
     let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
@@ -77,7 +61,11 @@ module('Acceptance | basics', function (hooks) {
 
     await visit('/use-lazy-engine');
     let entriesAfter = Object.entries(window.require.entries).length;
-    assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    if (type === 'safe') {
+      assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    } else {
+      assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    }
     assert.ok(entriesAfter > entriesBefore);
     assert.equal(currentURL(), '/use-lazy-engine');
     assert.dom('[data-test-lazy-engine-main] > h1').containsText('Lazy engine');
@@ -118,15 +106,11 @@ module('Acceptance | basics', function (hooks) {
       '2px',
       'lazy-engine vendor styles are present'
     );
-  });
+  };
+}
 
-  // See TODO comment in above test
-  //skip('lazy engines own app tree is lazy', function () {});
-
-  // this test must be the first test that loads the lazy-in-repo-engine as after it has loaded
-  // it will not "unload" and we are checkign that these modules are entering require.entries
-  // for the first time.
-  test('lazy-in-repo-engine', async function (assert) {
+function createLazyInRepoEngineTest(type) {
+  return async function (assert) {
     await visit('/');
     const entriesBefore = Object.entries(window.require.entries).length;
     let rules = arrayOfCSSRules(document.styleSheets, '.shared-style-target', 'content');
@@ -154,7 +138,11 @@ module('Acceptance | basics', function (hooks) {
 
     await visit('/use-lazy-in-repo-engine');
     const entriesAfter = Object.entries(window.require.entries).length;
-    assert.ok(!!window.require.entries['lazy-in-repo-engine/helpers/duplicated-helper']);
+    if (type === 'safe') {
+      assert.ok(!!window.require.entries['lazy-in-repo-engine/helpers/duplicated-helper']);
+    } else {
+      assert.notOk(!!window.require.entries['lazy-in-repo-engine/helpers/duplicated-helper']);
+    }
     assert.ok(entriesAfter > entriesBefore);
     assert.equal(currentURL(), '/use-lazy-in-repo-engine');
     assert.dom('[data-test-lazy-in-repo-engine-main] > h1').containsText('Lazy In-Repo Engine');
@@ -177,7 +165,35 @@ module('Acceptance | basics', function (hooks) {
       '2px',
       'lazy-in-repo-engine addon styles are present'
     );
+  };
+}
+// We don't yet support lazy CSS in apps that are using fastboot. This test
+// application runs both with and without fastboot.
+const ensureCSSisLazy = !dependencySatisfies('ember-cli-fastboot', '*');
+
+module('Acceptance | basics', function (hooks) {
+  setupApplicationTest(hooks);
+
+  test('host-app', async function (assert) {
+    await visit('/');
+    assert.equal(currentURL(), '/');
+    assert.dom('[data-test-duplicated-helper]').containsText('from-engines-host-app');
   });
+
+  // this test must be the first test that loads the use-lazy-engine engine
+  // as after it has loaded it will not "unload" and we are checking that these
+  // modules are entering require.entries for the first time.
+  test('@safe lazy-engine', createLazyEngineTest('safe'));
+  test('@optimized lazy-engine', createLazyEngineTest('optimized'));
+
+  // See TODO comment in above test
+  //skip('lazy engines own app tree is lazy', function () {});
+
+  // this test must be the first test that loads the lazy-in-repo-engine as after it has loaded
+  // it will not "unload" and we are checkign that these modules are entering require.entries
+  // for the first time.
+  test('@safe lazy-in-repo-engine', createLazyInRepoEngineTest('safe'));
+  test('@optimized lazy-in-repo-engine', createLazyInRepoEngineTest('optimized'));
 
   test('eager-engine', async function (assert) {
     await visit('/use-eager-engine');

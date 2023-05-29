@@ -591,7 +591,9 @@ export class Resolver {
       // the app is always the first engine
       return this.options.engines[0];
     }
-    let owningEngine = this.options.engines.find(e => e.activeAddons.find(a => a.root === pkg.root));
+    let owningEngine = this.options.engines.find(e =>
+      pkg.isEngine() ? e.root === pkg.root : e.activeAddons.find(a => a.root === pkg.root)
+    );
     if (!owningEngine) {
       throw new Error(
         `bug in @embroider/core/src/module-resolver: cannot figure out the owning engine for ${pkg.root}`

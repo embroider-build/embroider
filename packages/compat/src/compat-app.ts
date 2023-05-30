@@ -163,7 +163,7 @@ class CompatAppBuilder {
     return this.oldPackage.env;
   }
 
-  extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
+  private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
     let assets: Asset[] = [];
 
     // Everything in our traditional public tree is an on-disk asset
@@ -200,7 +200,7 @@ class CompatAppBuilder {
   }
 
   @Memoize()
-  findTestemAsset(): Asset | undefined {
+  private findTestemAsset(): Asset | undefined {
     let sourcePath;
     try {
       sourcePath = resolveSync('ember-cli/lib/broccoli/testem.js', { basedir: this.root });

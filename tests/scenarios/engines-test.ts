@@ -132,6 +132,9 @@ engineScenarios
   });
 
 engineScenarios
+  .skip('lts_3_28-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
+  .skip('lts_4_4-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
+  .skip('release-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
   .map('with-fastboot', app => {
     app.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     app.linkDependency('fastboot', { baseDir: __dirname });

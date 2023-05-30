@@ -59,7 +59,7 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
     },
     CallExpression(path: NodePath<t.CallExpression>) {
       let callee = path.get('callee');
-      if (callee.referencesImport('@embroider/macros', 'importSync') || t.isImport(callee)) {
+      if (callee.referencesImport('@embroider/macros', 'importSync') || t.isImport(callee.node)) {
         let arg = path.node.arguments[0];
         if (arg.type === 'StringLiteral') {
           imports.push({
@@ -69,7 +69,9 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
           });
         } else {
           problems.push({
-            message: `audit tool is unable to understand this usage of ${t.isImport(callee) ? 'import' : 'importSync'}`,
+            message: `audit tool is unable to understand this usage of ${
+              t.isImport(callee.node) ? 'import' : 'importSync'
+            }`,
             detail: arg.type,
             codeFrameIndex: saveCodeFrame(arg),
           });

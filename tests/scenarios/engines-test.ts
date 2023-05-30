@@ -95,8 +95,23 @@ engineScenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
-      test(`pnpm test`, async function (assert) {
-        let result = await app.execute('pnpm test');
+      test(`pnpm test safe`, async function (assert) {
+        let result = await app.execute('pnpm test --filter=!@optimized', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`pnpm test optimized`, async function (assert) {
+        let result = await app.execute('pnpm test --filter=!@safe', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -117,6 +132,8 @@ engineScenarios
   });
 
 engineScenarios
+  .skip('lts_3_28-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
+  .skip('lts_4_4-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
   .skip('release-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
   .map('with-fastboot', app => {
     app.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
@@ -130,11 +147,25 @@ engineScenarios
         app = await scenario.prepare();
       });
 
-      test(`pnpm test`, async function (assert) {
-        let result = await app.execute('pnpm test');
+      test(`pnpm test safe`, async function (assert) {
+        let result = await app.execute('pnpm test --filter=!@optimized', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      test(`pnpm test optimized`, async function (assert) {
+        let result = await app.execute('pnpm test --filter=!@safe', {
+          env: {
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
       let visit: any;
 
       hooks.before(async () => {

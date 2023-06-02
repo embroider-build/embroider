@@ -1471,10 +1471,6 @@ class CompatAppBuilder {
   }
 }
 
-interface BuilderInstance<NamedTrees> {
-  build(inputPaths: OutputPaths<NamedTrees>): Promise<void>;
-}
-
 interface ExtraTree {
   __prevStageTree: BroccoliNode;
 }
@@ -1484,13 +1480,9 @@ interface ExtraTree {
 export default class CompatApp {
   private inTrees: TreeNames;
   private annotation = '@embroider/compat/app';
-  private instantiate: (
-    root: string,
-    appSrcDir: string,
-    packageCache: PackageCache
-  ) => Promise<BuilderInstance<TreeNames>>;
+  private instantiate: (root: string, appSrcDir: string, packageCache: PackageCache) => Promise<CompatAppBuilder>;
 
-  private active: BuilderInstance<TreeNames> | undefined;
+  private active: CompatAppBuilder | undefined;
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
 
@@ -1545,7 +1537,6 @@ export default class CompatApp {
         this.packageCache = packageCache;
         this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
       }
-      delete (treePaths as any).__prevStageTree;
       await this.active.build(this.deAugment(treePaths));
       this.deferReady.resolve();
     });

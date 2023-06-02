@@ -51,29 +51,35 @@ export default class V1App {
   // used to signal that this is a dummy app owned by a particular addon
   owningAddon: Package | undefined;
 
-  static create(app: EmberAppInstance): V1App {
-    if (app.project.pkg.keywords?.includes('ember-addon')) {
-      // we are a dummy app, which is unfortunately weird and special
-      return new V1DummyApp(app);
-    } else {
-      return new V1App(app);
-    }
-  }
-
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
 
   packageCache: MovablePackageCache;
 
-  protected constructor(protected app: EmberAppInstance) {
-    this.packageCache = new MovablePackageCache(MacrosConfig.for(app, this.root), this.root);
+  private get isDummy(): boolean {
+    return this.app.project.pkg.keywords?.includes('ember-addon') ?? false;
   }
 
-  // always the name from package.json. Not the one that apps may have weirdly
-  // customized.
+  constructor(protected app: EmberAppInstance) {
+    this.packageCache = new MovablePackageCache(MacrosConfig.for(app, this.root), this.root);
+
+    if (this.isDummy) {
+      this.owningAddon = new OwningAddon(this.app.project.root, this.packageCache);
+      this.packageCache.seed(this.owningAddon);
+      this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
+    }
+  }
+
   get name(): string {
-    return this.app.project.pkg.name;
+    if (this.isDummy) {
+      // here we accept the ember-cli behavior
+      return this.app.name;
+    } else {
+      // always the name from package.json. Not the one that apps may have weirdly
+      // customized.
+      return this.app.project.pkg.name;
+    }
   }
 
   get env(): string {
@@ -82,7 +88,12 @@ export default class V1App {
 
   @Memoize()
   get root(): string {
-    return dirname(pkgUpSync({ cwd: this.app.project.root })!);
+    if (this.isDummy) {
+      // this is the Known Hack for finding the true root of the dummy app.
+      return join(this.app.project.configPath(), '..', '..');
+    } else {
+      return dirname(pkgUpSync({ cwd: this.app.project.root })!);
+    }
   }
 
   @Memoize()
@@ -772,25 +783,6 @@ function throwIfMissing<T>(
   }
 
   return asset;
-}
-
-class V1DummyApp extends V1App {
-  constructor(app: EmberAppInstance) {
-    super(app);
-    this.owningAddon = new OwningAddon(this.app.project.root, this.packageCache);
-    this.packageCache.seed(this.owningAddon);
-    this.packageCache.seed(new DummyPackage(this.root, this.owningAddon, this.packageCache));
-  }
-
-  get name(): string {
-    // here we accept the ember-cli behavior
-    return this.app.name;
-  }
-
-  get root(): string {
-    // this is the Known Hack for finding the true root of the dummy app.
-    return join(this.app.project.configPath(), '..', '..');
-  }
 }
 
 interface Preprocessors {

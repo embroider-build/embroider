@@ -29,7 +29,7 @@ export default class V1InstanceCache {
   orderIdx: number;
 
   private constructor(oldApp: any, private options: Required<Options>) {
-    this.app = V1App.create(oldApp);
+    this.app = new V1App(oldApp);
     this.orderIdx = 0;
 
     // no reason to do this on demand because oldApp already eagerly loaded

@@ -54,10 +54,10 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'fs-extra';
-import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
+import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import type { PluginItem, TransformOptions } from '@babel/core';
+import type { TransformOptions } from '@babel/core';
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
@@ -318,26 +318,6 @@ class CompatAppBuilder {
     }
   }
 
-  private autoRun(): boolean {
-    return this.oldPackage.autoRun;
-  }
-
-  private appBoot(): string | undefined {
-    return this.oldPackage.appBoot.readAppBoot();
-  }
-
-  private mainModule(): string {
-    return 'app';
-  }
-
-  private mainModuleConfig(): unknown {
-    return this.configTree.readConfig().APP;
-  }
-
-  private emberENV(): EmberENV {
-    return this.configTree.readConfig().EmberENV;
-  }
-
   private modulePrefix(): string {
     return this.configTree.readConfig().modulePrefix;
   }
@@ -354,39 +334,12 @@ class CompatAppBuilder {
     return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
-  private strictV2Format() {
-    return false;
-  }
-
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
       { name: this.appPackage.name, version: this.appPackage.version, root: this.root },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
-  }
-
-  private hbsTransforms(resolverConfig: CompatResolverOptions): Transform[] {
-    if (
-      this.options.staticComponents ||
-      this.options.staticHelpers ||
-      this.options.staticModifiers ||
-      (globalThis as any).embroider_audit
-    ) {
-      let opts: ResolverTransformOptions = {
-        appRoot: resolverConfig.appRoot,
-      };
-      return [[require.resolve('./resolver-transform'), opts]];
-    } else {
-      return [];
-    }
-  }
-
-  private jsPlugins(resolverConfig: CompatResolverOptions): PluginItem[] {
-    let pluginConfig: AdjustImportsOptions = {
-      appRoot: resolverConfig.appRoot,
-    };
-    return [[require.resolve('./babel-plugin-adjust-imports'), pluginConfig]];
   }
 
   private resolverConfig(engines: Engine[]): CompatResolverOptions {
@@ -428,14 +381,6 @@ class CompatAppBuilder {
     };
 
     return config;
-  }
-
-  private htmlbarsPlugins(): Transform[] {
-    return this.oldPackage.htmlbarsPlugins;
-  }
-
-  private babelMajorVersion() {
-    return this.oldPackage.babelMajorVersion();
   }
 
   private scriptPriority(pkg: Package) {
@@ -546,15 +491,11 @@ class CompatAppBuilder {
     return result;
   }
 
-  private originalBabelConfig() {
-    return this.oldPackage.babelConfig();
-  }
-
   // unlike our full config, this one just needs to know how to parse all the
   // syntax our app can contain.
   @Memoize()
   private babelParserConfig(): TransformOptions {
-    let babel = cloneDeep(this.originalBabelConfig());
+    let babel = cloneDeep(this.oldPackage.babelConfig());
 
     if (!babel.plugins) {
       babel.plugins = [];
@@ -568,7 +509,7 @@ class CompatAppBuilder {
 
   @Memoize()
   private babelConfig(resolverConfig: CompatResolverOptions) {
-    let babel = cloneDeep(this.originalBabelConfig());
+    let babel = cloneDeep(this.oldPackage.babelConfig());
 
     if (!babel.plugins) {
       babel.plugins = [];
@@ -620,9 +561,15 @@ class CompatAppBuilder {
     };
     babel.plugins.push([templateColocationPluginPath, colocationOptions]);
 
-    for (let p of this.jsPlugins(resolverConfig)) {
-      babel.plugins.push(p);
-    }
+    babel.plugins.push([
+      require.resolve('./babel-plugin-adjust-imports'),
+      (() => {
+        let pluginConfig: AdjustImportsOptions = {
+          appRoot: resolverConfig.appRoot,
+        };
+        return pluginConfig;
+      })(),
+    ]);
 
     // we can use globally shared babel runtime by default
     babel.plugins.push([
@@ -1073,7 +1020,7 @@ class CompatAppBuilder {
     this.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);
-    let emberENV = this.emberENV();
+    let emberENV = this.configTree.readConfig().EmberENV;
     let assets = this.gatherAssets(inputPaths);
 
     let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
@@ -1101,15 +1048,14 @@ class CompatAppBuilder {
       babel: {
         filename: '_babel_config_.js',
         isParallelSafe: true, // TODO
-        majorVersion: this.babelMajorVersion(),
+        majorVersion: this.oldPackage.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
       'root-url': this.rootURL(),
     };
 
-    if (!this.strictV2Format()) {
-      meta['auto-upgraded'] = true;
-    }
+    // all compat apps are auto-upgraded, there's no v2 app format here
+    meta['auto-upgraded'] = true;
 
     let pkg = this.combinePackageJSON(meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
@@ -1133,7 +1079,7 @@ class CompatAppBuilder {
   }
 
   private etcOptions(resolverConfig: CompatResolverOptions): EtcOptions {
-    let transforms = this.htmlbarsPlugins();
+    let transforms = this.oldPackage.htmlbarsPlugins;
 
     let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
     setConfig(this.macrosConfig);
@@ -1141,8 +1087,16 @@ class CompatAppBuilder {
       transforms.push(macroPlugin as any);
     }
 
-    for (let t of this.hbsTransforms(resolverConfig)) {
-      transforms.push(t);
+    if (
+      this.options.staticComponents ||
+      this.options.staticHelpers ||
+      this.options.staticModifiers ||
+      (globalThis as any).embroider_audit
+    ) {
+      let opts: ResolverTransformOptions = {
+        appRoot: resolverConfig.appRoot,
+      };
+      transforms.push([require.resolve('./resolver-transform'), opts]);
     }
 
     return {
@@ -1271,10 +1225,10 @@ class CompatAppBuilder {
     let [app, ...childEngines] = engines;
     let relativePath = `assets/${this.appPackage.name}.js`;
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
-      autoRun: this.autoRun(),
-      appBoot: !this.autoRun() ? this.appBoot() : '',
-      mainModule: explicitRelative(dirname(relativePath), this.mainModule()),
-      appConfig: this.mainModuleConfig(),
+      autoRun: this.oldPackage.autoRun,
+      appBoot: !this.oldPackage.autoRun ? this.oldPackage.appBoot.readAppBoot() : '',
+      mainModule: explicitRelative(dirname(relativePath), 'app'),
+      appConfig: this.configTree.readConfig().APP,
     });
   }
 

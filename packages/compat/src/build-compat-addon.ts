@@ -34,7 +34,7 @@ export default function buildCompatAddon(originalPackage: Package, v1Cache: V1In
     // because that whole process only depends on looking at all the
     // package.json files on disk -- it can't know which ones are going to end
     // up unused at this point.
-    return new EmptyPackageTree(originalPackage.name);
+    return new EmptyPackageTree(originalPackage);
   }
 
   let needsSmooshing = oldPackages.length > 1 && oldPackages[0].hasAnyTrees();

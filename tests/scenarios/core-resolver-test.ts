@@ -477,6 +477,24 @@ Scenarios.fromProject(() => new Project())
             .to('./node_modules/my-addon/_app_/hello-world.js');
         });
 
+        test('hbs in addon is found', async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/templates/hello-world.hbs': '',
+            'app.js': `import "my-app/templates/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './templates/hello-world.hbs': './_app_/templates/hello-world.hbs' },
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-app/templates/hello-world')
+            .to('./node_modules/my-addon/_app_/templates/hello-world.hbs');
+        });
+
         test(`relative import in addon's app tree resolves to app`, async function () {
           givenFiles({
             'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,

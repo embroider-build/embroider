@@ -155,19 +155,8 @@ class CompatAppBuilder {
     private compatApp: CompatApp,
     private configTree: V1Config,
     private synthVendor: Package,
-    private synthStyles: Package,
-    private macrosConfig: MacrosConfig
-  ) {
-    // this uses globalConfig because it's a way for packages to ask "is
-    // Embroider doing this build?". So it's necessarily global, not scoped to
-    // any subgraph of dependencies.
-    macrosConfig.setGlobalConfig(__filename, `@embroider/core`, {
-      // this is hard-coded to true because it literally means "embroider is
-      // building this Ember app". You can see non-true when using the Embroider
-      // macros in a classic build.
-      active: true,
-    });
-  }
+    private synthStyles: Package
+  ) {}
 
   private appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
     return treePaths.appJS;
@@ -233,13 +222,6 @@ class CompatAppBuilder {
         size: stat.size,
       };
     }
-  }
-
-  private developingAddons(): string[] {
-    if (this.compatApp.owningAddon) {
-      return [this.compatApp.owningAddon.root];
-    }
-    return [];
   }
 
   private activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
@@ -543,7 +525,7 @@ class CompatAppBuilder {
     babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), this.etcOptions(resolverConfig)]);
 
     // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(...this.macrosConfig.babelPluginConfig());
+    babel.plugins.push(...this.compatApp.macrosConfig.babelPluginConfig());
 
     let colocationOptions: TemplateColocationPluginOptions = {
       appRoot: this.root,
@@ -1025,17 +1007,9 @@ class CompatAppBuilder {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    if (this.compatApp.env !== 'production') {
-      this.macrosConfig.enablePackageDevelopment(this.root);
-      this.macrosConfig.enableRuntimeMode();
-    }
-    for (let pkgRoot of this.developingAddons()) {
-      this.macrosConfig.enablePackageDevelopment(pkgRoot);
-    }
-
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
-    this.macrosConfig.finalize();
+    this.compatApp.macrosConfig.finalize();
 
     let appFiles = this.updateAppJS(inputPaths);
     let emberENV = this.configTree.readConfig().EmberENV;
@@ -1100,7 +1074,7 @@ class CompatAppBuilder {
     let transforms = this.compatApp.htmlbarsPlugins;
 
     let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
-    setConfig(this.macrosConfig);
+    setConfig(this.compatApp.macrosConfig);
     for (let macroPlugin of macroPlugins) {
       transforms.push(macroPlugin as any);
     }
@@ -1497,9 +1471,6 @@ export default class CompatApp {
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
   readonly options: Required<Options>;
-
-  // used to signal that this is a dummy app owned by a particular addon
-  owningAddon: Package | undefined;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
@@ -2217,15 +2188,34 @@ export default class CompatApp {
     );
   }
 
+  readonly macrosConfig: MacrosConfig;
+
   constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
     this.options = optionsWithDefaults(_options);
 
-    this.movablePackageCache = new MovablePackageCache(MacrosConfig.for(legacyEmberAppInstance, this.root), this.root);
+    this.macrosConfig = MacrosConfig.for(legacyEmberAppInstance, this.root);
+    if (this.env !== 'production') {
+      this.macrosConfig.enablePackageDevelopment(this.root);
+      this.macrosConfig.enableRuntimeMode();
+    }
+
+    // this uses globalConfig because it's a way for packages to ask "is
+    // Embroider doing this build?". So it's necessarily global, not scoped to
+    // any subgraph of dependencies.
+    this.macrosConfig.setGlobalConfig(__filename, `@embroider/core`, {
+      // this is hard-coded to true because it literally means "embroider is
+      // building this Ember app". You can see non-true when using the Embroider
+      // macros in a classic build.
+      active: true,
+    });
+
+    this.movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
 
     if (this.isDummy) {
-      this.owningAddon = new OwningAddon(legacyEmberAppInstance.project.root, this.movablePackageCache);
-      this.movablePackageCache.seed(this.owningAddon);
-      this.movablePackageCache.seed(new DummyPackage(this.root, this.owningAddon, this.movablePackageCache));
+      let owningAddon = new OwningAddon(legacyEmberAppInstance.project.root, this.movablePackageCache);
+      this.movablePackageCache.seed(owningAddon);
+      this.movablePackageCache.seed(new DummyPackage(this.root, owningAddon, this.movablePackageCache));
+      this.macrosConfig.enablePackageDevelopment(owningAddon.root);
     }
   }
 
@@ -2248,18 +2238,14 @@ export default class CompatApp {
   }
 
   private async instantiate(root: string, appSrcDir: string, packageCache: PackageCache, configTree: V1Config) {
-    let appPackage = packageCache.get(appSrcDir);
-    let macrosConfig = MacrosConfig.for(this.legacyEmberAppInstance, appSrcDir);
-
     return new CompatAppBuilder(
       root,
-      appPackage,
+      packageCache.get(appSrcDir),
       this.options,
       this,
       configTree,
       packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
-      macrosConfig
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
     );
   }
 

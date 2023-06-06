@@ -1517,7 +1517,7 @@ export default class CompatApp {
     return this.legacyEmberAppInstance.project.pkg.keywords?.includes('ember-addon') ?? false;
   }
 
-  get name(): string {
+  private get name(): string {
     if (this.isDummy) {
       // here we accept the ember-cli behavior
       return this.legacyEmberAppInstance.name;
@@ -1602,7 +1602,7 @@ export default class CompatApp {
   }
 
   @Memoize()
-  get config(): V1Config {
+  private get config(): V1Config {
     return new V1Config(this.configTree, this.legacyEmberAppInstance.env);
   }
 
@@ -1639,7 +1639,7 @@ export default class CompatApp {
     });
   }
 
-  get htmlTree() {
+  private get htmlTree() {
     if (this.legacyEmberAppInstance.tests) {
       return mergeTrees([this.indexTree, this.testIndexTree]);
     } else {
@@ -1876,7 +1876,7 @@ export default class CompatApp {
     return mergeTrees([tree, ...concatentations], { overwrite: true });
   }
 
-  addOtherAssets() {
+  private addOtherAssets() {
     for (let asset of this.legacyEmberAppInstance.otherAssetPaths) {
       this._publicAssets[`${asset.src}/${asset.file}`] = `${asset.dest}/${asset.file}`;
     }
@@ -2082,7 +2082,7 @@ export default class CompatApp {
     }
   }
 
-  get vendorTree(): BroccoliNode | undefined {
+  private get vendorTree(): BroccoliNode | undefined {
     return this.ensureTree(this.legacyEmberAppInstance.trees.vendor);
   }
 
@@ -2108,11 +2108,11 @@ export default class CompatApp {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
   }
 
-  get publicTree(): BroccoliNode | undefined {
+  private get publicTree(): BroccoliNode | undefined {
     return this.ensureTree(this.legacyEmberAppInstance.trees.public);
   }
 
-  processAppJS(): { appJS: BroccoliNode } {
+  private processAppJS(): { appJS: BroccoliNode } {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
@@ -2234,22 +2234,19 @@ export default class CompatApp {
       this.movablePackageCache.seed(new DummyPackage(this.root, this.owningAddon, this.movablePackageCache));
     }
 
-    let { appJS } = this.processAppJS();
-    let htmlTree = this.htmlTree;
     let publicTree = this.publicTree;
     let configTree = this.config;
-    let appBootTree = this.appBoot;
 
     if (options.extraPublicTrees.length > 0) {
       publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
     }
 
     let inTrees = {
-      appJS,
-      htmlTree,
+      appJS: this.processAppJS().appJS,
+      htmlTree: this.htmlTree,
       publicTree,
       configTree,
-      appBootTree,
+      appBootTree: this.appBoot,
     };
 
     let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {

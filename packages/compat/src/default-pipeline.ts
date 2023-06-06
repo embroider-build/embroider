@@ -32,7 +32,10 @@ export default function defaultPipeline<PackagerOptions>(
   options.workspaceDir = stableWorkspaceDir(emberApp.project.root, emberApp.env);
 
   emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
-  addons = new CompatAddons(emberApp, options);
+
+  let embroiderApp = new App(emberApp, options);
+
+  addons = new CompatAddons(embroiderApp);
   addons.ready().then(result => {
     outputPath = result.outputPath;
   });
@@ -41,16 +44,13 @@ export default function defaultPipeline<PackagerOptions>(
     return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
   }
 
-  let embroiderApp = new App(emberApp, options);
-  let appStage = embroiderApp.asStage(addons);
-
   if (process.env.STAGE2_ONLY || !packager) {
-    return mergeTrees([appStage.tree, writeFile('.stage2-output', () => outputPath)]);
+    return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(appStage, variants, options && options.packagerOptions);
+  return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

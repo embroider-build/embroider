@@ -1496,7 +1496,7 @@ export default class CompatApp {
   private active: CompatAppBuilder | undefined;
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
-  private options: Required<Options>;
+  readonly options: Required<Options>;
 
   // used to signal that this is a dummy app owned by a particular addon
   owningAddon: Package | undefined;
@@ -2217,7 +2217,7 @@ export default class CompatApp {
     );
   }
 
-  constructor(private legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
+  constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
     this.options = optionsWithDefaults(_options);
 
     this.movablePackageCache = new MovablePackageCache(MacrosConfig.for(legacyEmberAppInstance, this.root), this.root);

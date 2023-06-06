@@ -1,12 +1,11 @@
 import { Node } from 'broccoli-node-api';
 import { join, relative, dirname, isAbsolute, sep } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot, EmberAppInstance } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { MovedPackageCache } from './moved-package-cache';
 import { Memoize } from 'typescript-memoize';
 import buildCompatAddon from './build-compat-addon';
-import Options, { optionsWithDefaults } from './options';
 import TreeSync from 'tree-sync';
 import { WatchedDir } from 'broccoli-source';
 import CompatApp from './compat-app';
@@ -30,20 +29,17 @@ export default class CompatAddons implements Stage {
   private v1Cache: V1InstanceCache;
   readonly inputPath: string;
 
-  constructor(legacyEmberAppInstance: EmberAppInstance, maybeOptions?: Options) {
-    let options = optionsWithDefaults(maybeOptions);
-    let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
-
+  constructor(private compatApp: CompatApp) {
     // we want this to be stable across builds, because it becomes part of the
     // path to all of the files that the stage3 packager sees, and we want to
     // benefit from on-disk caching in stage3 packagers.
-    ensureDirSync(options.workspaceDir!);
-    this.destDir = realpathSync(options.workspaceDir!);
+    ensureDirSync(compatApp.options.workspaceDir!);
+    this.destDir = realpathSync(compatApp.options.workspaceDir!);
 
-    this.packageCache = v1Cache.app.movablePackageCache.moveAddons(this.destDir);
-    this.inputPath = v1Cache.app.root;
+    this.packageCache = compatApp.movablePackageCache.moveAddons(this.destDir);
+    this.inputPath = compatApp.root;
     this.treeSyncMap = new WeakMap();
-    this.v1Cache = v1Cache;
+    this.v1Cache = new V1InstanceCache(compatApp);
   }
 
   get tree(): Node {
@@ -57,7 +53,7 @@ export default class CompatAddons implements Stage {
       .filter(pkg => pkg.mayRebuild)
       .map(pkg => new WatchedDir(pkg.root));
 
-    let { synthVendor, synthStyles } = this.getSyntheticPackages(this.v1Cache.app, movedAddons);
+    let { synthVendor, synthStyles } = this.getSyntheticPackages(this.compatApp, movedAddons);
     return new WaitForTrees(
       { movedAddons, synthVendor, synthStyles, watchedUnmovedAddons },
       '@embroider/compat/addons',

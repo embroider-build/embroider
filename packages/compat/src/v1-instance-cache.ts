@@ -4,7 +4,7 @@
 
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
-import { AddonInstance, getOrCreate } from '@embroider/core';
+import { AddonInstance, EmberAppInstance, getOrCreate } from '@embroider/core';
 import Options from './options';
 import isEqual from 'lodash/isEqual';
 import CompatApp from './compat-app';
@@ -12,7 +12,7 @@ import CompatApp from './compat-app';
 export default class V1InstanceCache {
   static caches: WeakMap<object, V1InstanceCache> = new WeakMap();
 
-  static forApp(emberApp: object, options: Required<Options>): V1InstanceCache {
+  static forApp(emberApp: EmberAppInstance, options: Required<Options>): V1InstanceCache {
     let instance = getOrCreate(this.caches, emberApp, () => new this(emberApp, options));
     if (!isEqual(instance.options, options)) {
       throw new Error(`attempted double set of app Options`);
@@ -28,7 +28,7 @@ export default class V1InstanceCache {
   app: CompatApp;
   orderIdx: number;
 
-  private constructor(oldApp: any, private options: Required<Options>) {
+  private constructor(oldApp: EmberAppInstance, private options: Required<Options>) {
     this.app = new CompatApp(oldApp, options);
     this.orderIdx = 0;
 

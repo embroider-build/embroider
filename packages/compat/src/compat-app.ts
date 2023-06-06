@@ -158,12 +158,8 @@ class CompatAppBuilder {
     private synthStyles: Package
   ) {}
 
-  private appJSSrcDir(treePaths: OutputPaths<TreeNames>) {
-    return treePaths.appJS;
-  }
-
   @Memoize()
-  private fastbootJSSrcDir(_treePaths: OutputPaths<TreeNames>) {
+  private fastbootJSSrcDir() {
     let target = join(this.root, 'fastboot');
     if (pathExistsSync(target)) {
       return target;
@@ -801,7 +797,7 @@ class CompatAppBuilder {
   private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
 
   private updateAppJS(inputPaths: OutputPaths<TreeNames>): Engine[] {
-    let appJSPath = this.appJSSrcDir(inputPaths);
+    let appJSPath = inputPaths.appJS;
     if (!this.appDiffers) {
       let engines = this.partitionEngines(appJSPath);
       this.appDiffers = engines.map(engine => {
@@ -812,7 +808,7 @@ class CompatAppBuilder {
             engine.sourcePath,
             [...engine.addons],
             true,
-            this.fastbootJSSrcDir(inputPaths),
+            this.fastbootJSSrcDir(),
             this.babelParserConfig()
           );
         } else {

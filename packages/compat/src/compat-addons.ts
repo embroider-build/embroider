@@ -1,15 +1,15 @@
 import { Node } from 'broccoli-node-api';
 import { join, relative, dirname, isAbsolute, sep } from 'path';
 import { emptyDirSync, ensureSymlinkSync, ensureDirSync, realpathSync, copySync, writeJSONSync } from 'fs-extra';
-import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot } from '@embroider/core';
+import { Stage, Package, PackageCache, WaitForTrees, mangledEngineRoot, EmberAppInstance } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import { MovedPackageCache } from './moved-package-cache';
 import { Memoize } from 'typescript-memoize';
 import buildCompatAddon from './build-compat-addon';
 import Options, { optionsWithDefaults } from './options';
-import V1App from './v1-app';
 import TreeSync from 'tree-sync';
 import { WatchedDir } from 'broccoli-source';
+import CompatApp from './compat-app';
 
 // This build stage expects to be run with broccoli memoization enabled in order
 // to get good rebuild performance. We turn it on by default here, but you can
@@ -30,7 +30,7 @@ export default class CompatAddons implements Stage {
   private v1Cache: V1InstanceCache;
   readonly inputPath: string;
 
-  constructor(legacyEmberAppInstance: object, maybeOptions?: Options) {
+  constructor(legacyEmberAppInstance: EmberAppInstance, maybeOptions?: Options) {
     let options = optionsWithDefaults(maybeOptions);
     let v1Cache = V1InstanceCache.forApp(legacyEmberAppInstance, options);
 
@@ -40,7 +40,7 @@ export default class CompatAddons implements Stage {
     ensureDirSync(options.workspaceDir!);
     this.destDir = realpathSync(options.workspaceDir!);
 
-    this.packageCache = v1Cache.app.packageCache.moveAddons(this.destDir);
+    this.packageCache = v1Cache.app.movablePackageCache.moveAddons(this.destDir);
     this.inputPath = v1Cache.app.root;
     this.treeSyncMap = new WeakMap();
     this.v1Cache = v1Cache;
@@ -221,7 +221,7 @@ export default class CompatAddons implements Stage {
     }
   }
 
-  private getSyntheticPackages(v1App: V1App, movedAddons: Node[]): { synthVendor: Node; synthStyles: Node } {
+  private getSyntheticPackages(v1App: CompatApp, movedAddons: Node[]): { synthVendor: Node; synthStyles: Node } {
     let index = 0;
     let upgradedAddonTrees = [];
     for (let [oldPkg] of this.packageCache.moved.entries()) {

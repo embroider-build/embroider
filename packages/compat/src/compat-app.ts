@@ -1,20 +1,15 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
-import mergeTrees from 'broccoli-merge-trees';
 import {
-  Stage,
   PackageCache,
   OutputPaths,
   Asset,
   EmberAsset,
-  Package,
   AddonPackage,
   Engine,
   WaitForTrees,
-  AddonMeta,
   AppMeta,
   explicitRelative,
   extensionsPattern,
-  PackageInfo,
   TemplateColocationPluginOptions,
   debug,
   warn,
@@ -22,14 +17,11 @@ import {
   templateColocationPluginPath,
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
+  Stage,
 } from '@embroider/core';
-import V1InstanceCache from './v1-instance-cache';
-import V1App from './v1-app';
 import walkSync from 'walk-sync';
-import { dirname, join, resolve as resolvePath, sep, posix } from 'path';
+import { resolve as resolvePath, posix } from 'path';
 import { JSDOM } from 'jsdom';
-import resolve from 'resolve';
-import { V1Config } from './v1-config';
 import Options, { optionsWithDefaults } from './options';
 import { CompatResolverOptions } from './resolver-transform';
 import { activePackageRules, PackageRules } from './dependency-rules';
@@ -39,25 +31,12 @@ import flatten from 'lodash/flatten';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
-import { Memoize } from 'typescript-memoize';
 import { sync as resolveSync } from 'resolve';
-import { MacrosConfig } from '@embroider/macros/src/node';
 import bind from 'bind-decorator';
-import {
-  pathExistsSync,
-  copySync,
-  ensureDirSync,
-  outputJSONSync,
-  readJSONSync,
-  statSync,
-  readdirSync,
-  unlinkSync,
-  writeFileSync,
-} from 'fs-extra';
+import { outputJSONSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import type { TransformOptions } from '@babel/core';
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
@@ -65,9 +44,52 @@ import { AppFiles, EngineSummary, RouteFiles } from '@embroider/core/src/app-fil
 import { mangledEngineRoot } from '@embroider/core/src/engine-mangler';
 import { PortableHint, maybeNodeModuleVersion } from '@embroider/core/src/portable';
 import AppDiffer from '@embroider/core/src/app-differ';
-import SourceMapConcat from 'fast-sourcemap-concat';
 import assertNever from 'assert-never';
+import { Memoize } from 'typescript-memoize';
+import { sync as pkgUpSync } from 'pkg-up';
+import { join, dirname, isAbsolute, sep } from 'path';
+import buildFunnel from 'broccoli-funnel';
+import mergeTrees from 'broccoli-merge-trees';
+import { WatchedDir } from 'broccoli-source';
+import resolve from 'resolve';
+import { V1Config, WriteV1Config } from './v1-config';
+import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
+import {
+  AddonMeta,
+  Package,
+  EmberAppInstance,
+  OutputFileToInputFileMap,
+  PackageInfo,
+  AddonInstance,
+} from '@embroider/core';
+import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
+import AddToTree from './add-to-tree';
+import DummyPackage, { OwningAddon } from './dummy-package';
+import { TransformOptions } from '@babel/core';
+import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
+import resolvePackagePath from 'resolve-package-path';
+import Concat from 'broccoli-concat';
+import mapKeys from 'lodash/mapKeys';
+import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
+import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
+import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import { readFileSync } from 'fs';
+import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
+import semver from 'semver';
+import { MovablePackageCache } from './moved-package-cache';
+import type { Transform } from 'babel-plugin-ember-template-compilation';
+import SourceMapConcat from 'fast-sourcemap-concat';
 import escapeRegExp from 'escape-string-regexp';
+
+type EmberCliHTMLBarsAddon = AddonInstance & {
+  htmlbarsOptions(): HTMLBarsOptions;
+};
+
+interface Group {
+  outputFiles: OutputFileToInputFileMap;
+  implicitKey: '_implicitStyles' | '_implicitScripts';
+  vendorOutputPath: 'string';
+}
 
 interface TreeNames {
   appJS: BroccoliNode;
@@ -130,7 +152,7 @@ class CompatAppBuilder {
     private root: string,
     private appPackage: Package,
     private options: Required<Options>,
-    private oldPackage: V1App,
+    private compatApp: CompatApp,
     private configTree: V1Config,
     private synthVendor: Package,
     private synthStyles: Package,
@@ -153,14 +175,10 @@ class CompatAppBuilder {
 
   @Memoize()
   private fastbootJSSrcDir(_treePaths: OutputPaths<TreeNames>) {
-    let target = join(this.oldPackage.root, 'fastboot');
+    let target = join(this.root, 'fastboot');
     if (pathExistsSync(target)) {
       return target;
     }
-  }
-
-  private get env() {
-    return this.oldPackage.env;
   }
 
   private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
@@ -185,7 +203,7 @@ class CompatAppBuilder {
 
     // ember-cli traditionally outputs a dummy testem.js file to prevent
     // spurious errors when running tests under "ember s".
-    if (this.oldPackage.shouldBuildTests) {
+    if (this.compatApp.shouldBuildTests) {
       let testemAsset = this.findTestemAsset();
       if (testemAsset) {
         assets.push(testemAsset);
@@ -218,8 +236,8 @@ class CompatAppBuilder {
   }
 
   private developingAddons(): string[] {
-    if (this.oldPackage.owningAddon) {
-      return [this.oldPackage.owningAddon.root];
+    if (this.compatApp.owningAddon) {
+      return [this.compatApp.owningAddon.root];
     }
     return [];
   }
@@ -285,7 +303,7 @@ class CompatAppBuilder {
       { entrypoint: 'index.html', includeTests: false },
       { entrypoint: 'tests/index.html', includeTests: true },
     ];
-    if (!this.oldPackage.shouldBuildTests) {
+    if (!this.compatApp.shouldBuildTests) {
       classicEntrypoints.pop();
     }
     for (let { entrypoint, includeTests } of classicEntrypoints) {
@@ -304,13 +322,13 @@ class CompatAppBuilder {
           let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
 
           return {
-            javascript: definitelyReplace(dom, this.oldPackage.findAppScript(scripts, entrypoint)),
-            styles: definitelyReplace(dom, this.oldPackage.findAppStyles(styles, entrypoint)),
-            implicitScripts: definitelyReplace(dom, this.oldPackage.findVendorScript(scripts, entrypoint)),
-            implicitStyles: definitelyReplace(dom, this.oldPackage.findVendorStyles(styles, entrypoint)),
-            testJavascript: maybeReplace(dom, this.oldPackage.findTestScript(scripts)),
-            implicitTestScripts: maybeReplace(dom, this.oldPackage.findTestSupportScript(scripts)),
-            implicitTestStyles: maybeReplace(dom, this.oldPackage.findTestSupportStyles(styles)),
+            javascript: definitelyReplace(dom, this.compatApp.findAppScript(scripts, entrypoint)),
+            styles: definitelyReplace(dom, this.compatApp.findAppStyles(styles, entrypoint)),
+            implicitScripts: definitelyReplace(dom, this.compatApp.findVendorScript(scripts, entrypoint)),
+            implicitStyles: definitelyReplace(dom, this.compatApp.findVendorStyles(styles, entrypoint)),
+            testJavascript: maybeReplace(dom, this.compatApp.findTestScript(scripts)),
+            implicitTestScripts: maybeReplace(dom, this.compatApp.findTestSupportScript(scripts)),
+            implicitTestStyles: maybeReplace(dom, this.compatApp.findTestSupportStyles(styles)),
           };
         },
       };
@@ -495,7 +513,7 @@ class CompatAppBuilder {
   // syntax our app can contain.
   @Memoize()
   private babelParserConfig(): TransformOptions {
-    let babel = cloneDeep(this.oldPackage.babelConfig());
+    let babel = cloneDeep(this.compatApp.babelConfig());
 
     if (!babel.plugins) {
       babel.plugins = [];
@@ -509,7 +527,7 @@ class CompatAppBuilder {
 
   @Memoize()
   private babelConfig(resolverConfig: CompatResolverOptions) {
-    let babel = cloneDeep(this.oldPackage.babelConfig());
+    let babel = cloneDeep(this.compatApp.babelConfig());
 
     if (!babel.plugins) {
       babel.plugins = [];
@@ -1007,7 +1025,7 @@ class CompatAppBuilder {
   }
 
   async build(inputPaths: OutputPaths<TreeNames>) {
-    if (this.env !== 'production') {
+    if (this.compatApp.env !== 'production') {
       this.macrosConfig.enablePackageDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
     }
@@ -1048,7 +1066,7 @@ class CompatAppBuilder {
       babel: {
         filename: '_babel_config_.js',
         isParallelSafe: true, // TODO
-        majorVersion: this.oldPackage.babelMajorVersion(),
+        majorVersion: this.compatApp.babelMajorVersion(),
         fileFilter: '_babel_filter_.js',
       },
       'root-url': this.rootURL(),
@@ -1079,7 +1097,7 @@ class CompatAppBuilder {
   }
 
   private etcOptions(resolverConfig: CompatResolverOptions): EtcOptions {
-    let transforms = this.oldPackage.htmlbarsPlugins;
+    let transforms = this.compatApp.htmlbarsPlugins;
 
     let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
     setConfig(this.macrosConfig);
@@ -1225,8 +1243,8 @@ class CompatAppBuilder {
     let [app, ...childEngines] = engines;
     let relativePath = `assets/${this.appPackage.name}.js`;
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
-      autoRun: this.oldPackage.autoRun,
-      appBoot: !this.oldPackage.autoRun ? this.oldPackage.appBoot.readAppBoot() : '',
+      autoRun: this.compatApp.autoRun,
+      appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',
       mainModule: explicitRelative(dirname(relativePath), 'app'),
       appConfig: this.configTree.readConfig().APP,
     });
@@ -1486,15 +1504,741 @@ export default class CompatApp {
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
 
-  constructor(legacyEmberAppInstance: object, private prevStage: Stage, _options?: Options) {
-    let options = optionsWithDefaults(_options);
-    let oldPackage = V1InstanceCache.forApp(legacyEmberAppInstance, options).app;
+  // used to signal that this is a dummy app owned by a particular addon
+  owningAddon: Package | undefined;
 
-    let { appJS } = oldPackage.processAppJS();
-    let htmlTree = oldPackage.htmlTree;
-    let publicTree = oldPackage.publicTree;
-    let configTree = oldPackage.config;
-    let appBootTree = oldPackage.appBoot;
+  private _publicAssets: { [filePath: string]: string } = Object.create(null);
+  private _implicitScripts: string[] = [];
+  private _implicitStyles: string[] = [];
+
+  movablePackageCache: MovablePackageCache;
+
+  private get isDummy(): boolean {
+    return this.legacyEmberAppInstance.project.pkg.keywords?.includes('ember-addon') ?? false;
+  }
+
+  get name(): string {
+    if (this.isDummy) {
+      // here we accept the ember-cli behavior
+      return this.legacyEmberAppInstance.name;
+    } else {
+      // always the name from package.json. Not the one that apps may have weirdly
+      // customized.
+      return this.legacyEmberAppInstance.project.pkg.name;
+    }
+  }
+
+  get env(): string {
+    return this.legacyEmberAppInstance.env;
+  }
+
+  @Memoize()
+  get root(): string {
+    if (this.isDummy) {
+      // this is the Known Hack for finding the true root of the dummy app.
+      return join(this.legacyEmberAppInstance.project.configPath(), '..', '..');
+    } else {
+      return dirname(pkgUpSync({ cwd: this.legacyEmberAppInstance.project.root })!);
+    }
+  }
+
+  @Memoize()
+  private get emberCLILocation() {
+    const emberCLIPackage = resolvePackagePath('ember-cli', this.root);
+
+    if (emberCLIPackage === null) {
+      throw new Error(`Embroider: cannot resolve ember-cli's package.json`);
+    }
+
+    return dirname(emberCLIPackage);
+  }
+
+  @Memoize()
+  get hasCompiledStyles() {
+    return semver.gte(JSON.parse(readFileSync(`${this.emberCLILocation}/package.json`, 'utf8')).version, '3.18.0');
+  }
+
+  private requireFromEmberCLI(specifier: string) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(resolve.sync(specifier, { basedir: this.emberCLILocation }));
+  }
+
+  private get configReplace() {
+    return this.requireFromEmberCLI('broccoli-config-replace');
+  }
+
+  private get configLoader() {
+    return this.requireFromEmberCLI('broccoli-config-loader');
+  }
+
+  private get appUtils() {
+    return this.requireFromEmberCLI('./lib/utilities/ember-app-utils');
+  }
+
+  @Memoize()
+  get addonTreeCache(): Map<string, BroccoliNode> {
+    return new Map();
+  }
+
+  @Memoize()
+  get preprocessRegistry() {
+    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
+  }
+
+  get shouldBuildTests(): boolean {
+    return this.legacyEmberAppInstance.tests || false;
+  }
+
+  configPath(): string {
+    return this.legacyEmberAppInstance.project.configPath();
+  }
+
+  private get configTree() {
+    return new this.configLoader(dirname(this.configPath()), {
+      env: this.legacyEmberAppInstance.env,
+      tests: this.legacyEmberAppInstance.tests || false,
+      project: this.legacyEmberAppInstance.project,
+    });
+  }
+
+  @Memoize()
+  get config(): V1Config {
+    return new V1Config(this.configTree, this.legacyEmberAppInstance.env);
+  }
+
+  get autoRun(): boolean {
+    return this.legacyEmberAppInstance.options.autoRun;
+  }
+
+  @Memoize()
+  get appBoot(): ReadV1AppBoot {
+    let env = this.legacyEmberAppInstance.env;
+    let appBootContentTree = new WriteV1AppBoot();
+
+    let patterns = this.configReplacePatterns;
+
+    appBootContentTree = new this.configReplace(appBootContentTree, this.configTree, {
+      configPath: join('environments', `${env}.json`),
+      files: ['config/app-boot.js'],
+      patterns,
+    });
+
+    return new ReadV1AppBoot(appBootContentTree);
+  }
+
+  private get storeConfigInMeta(): boolean {
+    return this.legacyEmberAppInstance.options.storeConfigInMeta;
+  }
+
+  @Memoize()
+  private get configReplacePatterns() {
+    return this.appUtils.configReplacePatterns({
+      addons: this.legacyEmberAppInstance.project.addons,
+      autoRun: this.autoRun,
+      storeConfigInMeta: this.storeConfigInMeta,
+    });
+  }
+
+  get htmlTree() {
+    if (this.legacyEmberAppInstance.tests) {
+      return mergeTrees([this.indexTree, this.testIndexTree]);
+    } else {
+      return this.indexTree;
+    }
+  }
+
+  private get indexTree() {
+    let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
+    let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
+      allowEmpty: true,
+      include: [`index.html`],
+      getDestinationPath: () => indexFilePath,
+      annotation: 'app/index.html',
+    });
+    return new this.configReplace(index, this.configTree, {
+      configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
+      files: [indexFilePath],
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/indexTree',
+    });
+  }
+
+  private get testIndexTree() {
+    let index = buildFunnel(this.legacyEmberAppInstance.trees.tests, {
+      allowEmpty: true,
+      include: [`index.html`],
+      destDir: 'tests',
+      annotation: 'tests/index.html',
+    });
+    return new this.configReplace(index, this.configTree, {
+      configPath: join('environments', `test.json`),
+      files: ['tests/index.html'],
+      patterns: this.configReplacePatterns,
+      annotation: 'ConfigReplace/testIndexTree',
+    });
+  }
+
+  @Memoize()
+  babelConfig(): TransformOptions {
+    // this finds all the built-in babel configuration that comes with ember-cli-babel
+    const babelAddon = (this.legacyEmberAppInstance.project as any).findAddonByName('ember-cli-babel');
+    const babelConfig = babelAddon.buildBabelOptions({
+      'ember-cli-babel': {
+        ...this.legacyEmberAppInstance.options['ember-cli-babel'],
+        includeExternalHelpers: true,
+        compileModules: false,
+        disableDebugTooling: false,
+        disablePresetEnv: false,
+        disableEmberModulesAPIPolyfill: false,
+        disableDecoratorTransforms: false,
+      },
+    });
+
+    let plugins = babelConfig.plugins as any[];
+    let presets = babelConfig.presets;
+
+    // this finds any custom babel configuration that's on the app (either
+    // because the app author explicitly added some, or because addons have
+    // pushed plugins into it).
+    let appBabel = this.legacyEmberAppInstance.options.babel;
+    if (appBabel) {
+      if (appBabel.plugins) {
+        plugins = appBabel.plugins.concat(plugins);
+      }
+      if (appBabel.presets) {
+        presets = appBabel.presets.concat(presets);
+      }
+    }
+
+    plugins = plugins.filter(p => {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      return (
+        !isEmbroiderMacrosPlugin(p) &&
+        // similarly, if the app was already using an inline template compiler
+        // babel plugin, we remove it here because we have our own
+        // always-installed version of that (v2 addons are allowed to assume it
+        // will be present in the final app build, the app doesn't get to turn
+        // that off or configure it.)
+        !isInlinePrecompilePlugin(p) &&
+        !isEmberAutoImportDynamic(p)
+      );
+    });
+
+    const config: TransformOptions = {
+      babelrc: false,
+      plugins,
+      presets,
+      // this is here because broccoli-middleware can't render a codeFrame full
+      // of terminal codes. It would be nice to add something like
+      // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
+      // leave color enabled.
+      highlightCode: false,
+    };
+
+    return config;
+  }
+
+  @Memoize()
+  babelMajorVersion(): 7 {
+    let babelAddon = this.legacyEmberAppInstance.project.addons.find((a: any) => a.name === 'ember-cli-babel');
+    if (babelAddon) {
+      let babelAddonMajor = Number(babelAddon.pkg.version.split('.')[0]);
+      let babelMajor: number | undefined = babelAddonMajor;
+      if (babelAddonMajor >= 8) {
+        // `ember-cli-babel` v8 breaks lockstep with Babel, because it now
+        // defines `@babel/core` as a peer dependency, so we need to check the
+        // project's version of `@babel/core`:
+        let babelVersion = this.legacyEmberAppInstance.project.pkg.devDependencies?.['@babel/core'];
+        if (babelVersion) {
+          babelMajor = semver.coerce(babelVersion)?.major;
+        } else {
+          babelMajor = 7;
+        }
+      }
+      if (babelMajor !== 7) {
+        throw new Error('`@embroider/compat` only supports apps and addons that use Babel v7.');
+      }
+      return babelMajor;
+    }
+    // if we didn't have our own babel plugin at all, it's safe to parse our
+    // code with 7.
+    return 7;
+  }
+
+  @Memoize()
+  private transformedNodeFiles(): Map<string, string> {
+    // any app.imports from node_modules that need custom transforms will need
+    // to get copied into our own synthesized vendor package. app.imports from
+    // node_modules that *don't* need custom transforms can just stay where they
+    // are.
+    let transformed = new Map();
+    for (let transformConfig of this.legacyEmberAppInstance._customTransformsMap.values()) {
+      for (let filename of transformConfig.files as string[]) {
+        let preresolved = this.preresolvedNodeFile(filename);
+        if (preresolved) {
+          transformed.set(filename, preresolved);
+        }
+      }
+    }
+    return transformed;
+  }
+
+  private preresolvedNodeFile(filename: string) {
+    // this regex is an exact copy of how ember-cli does this, so we align.
+    let match = filename.match(/^node_modules\/((@[^/]+\/)?[^/]+)\//);
+    if (match) {
+      // ember-cli has already done its own resolution of
+      // `app.import('node_modules/something/...')`, so we go find its answer.
+      for (let { name, path } of this.legacyEmberAppInstance._nodeModules.values()) {
+        if (match[1] === name) {
+          return filename.replace(match[0], path + sep);
+        }
+      }
+      throw new Error(`bug: expected ember-cli to already have a resolved path for asset ${filename}`);
+    }
+  }
+
+  private combinedVendor(addonTrees: BroccoliNode[]): BroccoliNode {
+    let trees = addonTrees.map(tree =>
+      buildFunnel(tree, {
+        allowEmpty: true,
+        srcDir: 'vendor',
+        destDir: 'vendor',
+      })
+    );
+    if (this.vendorTree) {
+      trees.push(
+        buildFunnel(this.vendorTree, {
+          destDir: 'vendor',
+        })
+      );
+    }
+
+    const tree = mergeTrees(trees, { overwrite: true });
+
+    const outputGroups: Group[] = [
+      // scripts
+      {
+        outputFiles: this.legacyEmberAppInstance._scriptOutputFiles,
+        implicitKey: '_implicitScripts',
+        vendorOutputPath: this.legacyEmberAppInstance.options.outputPaths.vendor.js,
+      },
+      // styles
+      {
+        outputFiles: this.legacyEmberAppInstance._styleOutputFiles,
+        implicitKey: '_implicitStyles',
+        vendorOutputPath: this.legacyEmberAppInstance.options.outputPaths.vendor.css,
+      },
+    ];
+
+    const concatentations = [];
+
+    // support: app.import / outputFile / using
+    for (let entry of outputGroups) {
+      const { outputFiles, implicitKey, vendorOutputPath } = entry;
+      for (let importPath of Object.keys(outputFiles)) {
+        const headerFiles = outputFiles[importPath];
+
+        if (importPath === vendorOutputPath) {
+          // these are the default ember-cli output files vendor.js or
+          // vendor.css. Let embroider handle these.
+          this[implicitKey] = headerFiles;
+        } else if (headerFiles.length === 0) {
+          // something went really wrong, open an issue
+          throw new Error('Embroider: EWUT');
+        } else if (headerFiles.length === 1) {
+          // app.import(x, { outputFile: y }); where only one app.imports had this outputFile
+          //
+          // No concat needed. Simply serialize the remapping in the addon's
+          // manifest, this ensures it is included in the final output with no extra work.
+          this._publicAssets[headerFiles[0]] = importPath;
+        } else {
+          // app.import(x, { outputFile: y }); where multiple app.imports share one outputFile
+          // Concat needed. Perform concat, and include the outputFile in the
+          // addon's manifest. This ensures it is included in the final output
+          this._publicAssets[importPath] = importPath;
+
+          concatentations.push(
+            new Concat(tree, {
+              headerFiles,
+              outputFile: importPath,
+              annotation: `Package ${importPath}`,
+              separator: '\n;',
+              sourceMapConfig: this.legacyEmberAppInstance.options['sourcemaps'],
+            })
+          );
+        }
+      }
+    }
+
+    this.addOtherAssets();
+    return mergeTrees([tree, ...concatentations], { overwrite: true });
+  }
+
+  addOtherAssets() {
+    for (let asset of this.legacyEmberAppInstance.otherAssetPaths) {
+      this._publicAssets[`${asset.src}/${asset.file}`] = `${asset.dest}/${asset.file}`;
+    }
+  }
+
+  private addNodeAssets(inputTree: BroccoliNode): BroccoliNode {
+    let transformedNodeFiles = this.transformedNodeFiles();
+
+    return new AddToTree(inputTree, outputPath => {
+      for (let [localDestPath, sourcePath] of transformedNodeFiles) {
+        let destPath = join(outputPath, localDestPath);
+        ensureDirSync(dirname(destPath));
+        copySync(sourcePath, destPath);
+      }
+
+      let remapAsset = this.remapAsset.bind(this);
+
+      let addonMeta: AddonMeta = {
+        type: 'addon',
+        version: 2,
+        'implicit-scripts': this._implicitScripts.map(remapAsset),
+        'implicit-styles': this._implicitStyles.map(remapAsset),
+        'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend.map(remapAsset),
+        'implicit-test-styles': this.legacyEmberAppInstance.vendorTestStaticStyles.map(remapAsset),
+        'public-assets': mapKeys(this._publicAssets, (_, key) => remapAsset(key)),
+      };
+      let meta: PackageInfo = {
+        name: '@embroider/synthesized-vendor',
+        version: '0.0.0',
+        keywords: ['ember-addon'],
+        'ember-addon': addonMeta,
+      };
+      writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+    });
+  }
+
+  synthesizeVendorPackage(addonTrees: BroccoliNode[]): BroccoliNode {
+    return this.applyCustomTransforms(this.addNodeAssets(this.combinedVendor(addonTrees)));
+  }
+
+  private combinedStyles(addonTrees: BroccoliNode[]): BroccoliNode {
+    let trees: BroccoliNode[] = addonTrees.map(tree =>
+      buildFunnel(tree, {
+        allowEmpty: true,
+        srcDir: '_app_styles_',
+      })
+    );
+    let appStyles = this.legacyEmberAppInstance.trees.styles as BroccoliNode | undefined;
+    if (appStyles) {
+      // Workaround for https://github.com/ember-cli/ember-cli/issues/9020
+      //
+      // The default app styles tree is unwatched and relies on side effects
+      // elsewhere in ember-cli's build pipeline to actually get rebuilds to
+      // work. Here we need it to actually be watched properly if we want to
+      // rely on it, particularly when using BROCCOLI_ENABLED_MEMOIZE.
+      if ((appStyles as any)._watched === false && (appStyles as any)._directoryPath) {
+        appStyles = new WatchedDir((appStyles as any)._directoryPath);
+      }
+      trees.push(appStyles);
+    }
+    return mergeTrees(trees, { overwrite: true, annotation: 'embroider-v1-app-combined-styles' });
+  }
+
+  synthesizeStylesPackage(addonTrees: BroccoliNode[]): BroccoliNode {
+    let options = {
+      // we're deliberately not allowing this to be customized. It's an
+      // internal implementation detail, and respecting outputPaths here is
+      // unnecessary complexity. The corresponding code that adjusts the HTML
+      // <link> is in updateHTML in app.ts.
+      outputPaths: { app: `/assets/${this.name}.css` },
+      registry: this.legacyEmberAppInstance.registry,
+      minifyCSS: this.legacyEmberAppInstance.options.minifyCSS.options,
+    };
+
+    let nestedInput = buildFunnel(this.combinedStyles(addonTrees), { destDir: 'app/styles' });
+    let styles = this.preprocessors.preprocessCss(nestedInput, '/app/styles', '/assets', options);
+
+    return new AddToTree(styles, outputPath => {
+      let addonMeta: AddonMeta = {
+        type: 'addon',
+        version: 2,
+        'public-assets': {},
+      };
+      let assetPath = join(outputPath, 'assets');
+      if (pathExistsSync(assetPath)) {
+        for (let file of readdirSync(assetPath)) {
+          addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+        }
+      }
+      let meta: PackageInfo = {
+        name: '@embroider/synthesized-styles',
+        version: '0.0.0',
+        keywords: ['ember-addon'],
+        'ember-addon': addonMeta,
+      };
+      writeJSONSync(join(outputPath, 'package.json'), meta, { spaces: 2 });
+    });
+  }
+
+  // this is taken nearly verbatim from ember-cli.
+  private applyCustomTransforms(externalTree: BroccoliNode) {
+    for (let customTransformEntry of this.legacyEmberAppInstance._customTransformsMap) {
+      let transformName = customTransformEntry[0];
+      let transformConfig = customTransformEntry[1];
+
+      let transformTree = buildFunnel(externalTree, {
+        files: transformConfig.files,
+        annotation: `Funnel (custom transform: ${transformName})`,
+      });
+
+      externalTree = mergeTrees([externalTree, transformConfig.callback(transformTree, transformConfig.options)], {
+        annotation: `TreeMerger (custom transform: ${transformName})`,
+        overwrite: true,
+      });
+    }
+    return externalTree;
+  }
+
+  private remapAsset(asset: string) {
+    if (this.transformedNodeFiles().has(asset)) {
+      // transformed node assets become local paths, because we have copied
+      // those ones into our synthesized vendor package.
+      return './' + asset;
+    }
+    let preresolved = this.preresolvedNodeFile(asset);
+    if (preresolved) {
+      // non-transformed node assets point directly at their pre-resolved
+      // original files (this is an absolute path).
+      return preresolved;
+    }
+    // non node assets are local paths. They need an explicit `/` or `.` at
+    // the start.
+    if (asset.startsWith('.') || isAbsolute(asset)) {
+      return asset;
+    }
+    return './' + asset;
+  }
+
+  private preprocessJS(tree: BroccoliNode): BroccoliNode {
+    // we're saving all our babel compilation for the final stage packager
+    this.legacyEmberAppInstance.registry.remove('js', 'ember-cli-babel');
+
+    // auto-import is supported natively so we don't need it here
+    this.legacyEmberAppInstance.registry.remove('js', 'ember-auto-import-analyzer');
+
+    tree = buildFunnel(tree, { destDir: this.name });
+
+    tree = this.preprocessors.preprocessJs(tree, `/`, '/', {
+      annotation: 'v1-app-preprocess-js',
+      registry: this.legacyEmberAppInstance.registry,
+    });
+
+    tree = buildFunnel(tree, { srcDir: this.name });
+
+    return tree;
+  }
+
+  get htmlbarsPlugins(): Transform[] {
+    let addon = this.legacyEmberAppInstance.project.addons.find(
+      (a: AddonInstance) => a.name === 'ember-cli-htmlbars'
+    ) as unknown as EmberCliHTMLBarsAddon;
+    let options = addon.htmlbarsOptions();
+    if (options?.plugins?.ast) {
+      // even if the app was using @embroider/macros, we drop it from the config
+      // here in favor of our globally-configured one.
+      options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+      prepHtmlbarsAstPluginsForUnwrap(this.legacyEmberAppInstance.registry);
+
+      // classically, this list was backwards for silly historic reasons. But
+      // we're the compatibility system, so we're putting it back into
+      // reasonable order.
+      options.plugins.ast.reverse();
+
+      return options.plugins.ast;
+    } else {
+      return [];
+    }
+  }
+
+  // our own appTree. Not to be confused with the one that combines the app js
+  // from all addons too.
+  private get appTree(): BroccoliNode {
+    return this.preprocessJS(
+      buildFunnel(this.legacyEmberAppInstance.trees.app, {
+        exclude: ['styles/**', '*.html'],
+      })
+    );
+  }
+
+  private get testsTree(): BroccoliNode | undefined {
+    if (this.shouldBuildTests && this.legacyEmberAppInstance.trees.tests) {
+      return this.preprocessJS(
+        buildFunnel(this.legacyEmberAppInstance.trees.tests, {
+          destDir: 'tests',
+        })
+      );
+    }
+  }
+
+  private get lintTree(): BroccoliNode | undefined {
+    if (this.shouldBuildTests) {
+      return this.legacyEmberAppInstance.getLintTests();
+    }
+  }
+
+  get vendorTree(): BroccoliNode | undefined {
+    return this.ensureTree(this.legacyEmberAppInstance.trees.vendor);
+  }
+
+  private ensureTree(maybeTree: string | BroccoliNode | undefined): BroccoliNode | undefined {
+    if (typeof maybeTree === 'string') {
+      // this is deliberately mimicking how ember-cli does it. We don't use
+      // `this.root` on purpose, because that can differ from what ember-cli
+      // considers the project.root. And we don't use path.resolve even though
+      // that seems possibly more correct, because ember-cli always assumes the
+      // input is relative.
+      let resolvedPath = join(this.legacyEmberAppInstance.project.root, maybeTree);
+      if (existsSync(resolvedPath)) {
+        return new WatchedDir(maybeTree);
+      } else {
+        return undefined;
+      }
+    }
+    return maybeTree;
+  }
+
+  @Memoize()
+  private get preprocessors(): Preprocessors {
+    return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
+  }
+
+  get publicTree(): BroccoliNode | undefined {
+    return this.ensureTree(this.legacyEmberAppInstance.trees.public);
+  }
+
+  processAppJS(): { appJS: BroccoliNode } {
+    let appTree = this.appTree;
+    let testsTree = this.testsTree;
+    let lintTree = this.lintTree;
+    let config = new WriteV1Config(this.config, this.storeConfigInMeta);
+    let patterns = this.configReplacePatterns;
+    let configReplaced = new this.configReplace(config, this.configTree, {
+      configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
+      files: ['config/environment.js'],
+      patterns,
+    });
+
+    let trees: BroccoliNode[] = [];
+    trees.push(appTree);
+    trees.push(
+      new SynthesizeTemplateOnlyComponents(appTree, { allowedPaths: ['components'], templateExtensions: ['.hbs'] })
+    );
+
+    trees.push(configReplaced);
+    if (testsTree) {
+      trees.push(testsTree);
+    }
+    if (lintTree) {
+      trees.push(lintTree);
+    }
+    return {
+      appJS: mergeTrees(trees, { overwrite: true }),
+    };
+  }
+
+  private withoutRootURL(src: string) {
+    let rootURL = this.config.readConfig().rootURL;
+    if ((src.startsWith(rootURL) && rootURL) || (!rootURL && !src.startsWith('/'))) {
+      src = '/' + src.slice(rootURL.length);
+    } else if (src.startsWith('/' + rootURL)) {
+      src = src.slice(rootURL.length);
+    }
+    return src;
+  }
+
+  findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
+    let appJS = scripts.find(
+      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.app.js
+    );
+    return throwIfMissing(
+      appJS,
+      this.legacyEmberAppInstance.options.outputPaths.app.js,
+      scripts.map(s => s.src),
+      entrypoint,
+      'app javascript'
+    );
+  }
+
+  findAppStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
+    let style = styles.find(
+      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.app.css.app
+    );
+    return throwIfMissing(
+      style,
+      this.legacyEmberAppInstance.options.outputPaths.app.css.app,
+      styles.map(s => s.href),
+      entrypoint,
+      'app css'
+    );
+  }
+
+  findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
+    let vendor = scripts.find(
+      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.vendor.js
+    );
+    return throwIfMissing(
+      vendor,
+      this.legacyEmberAppInstance.options.outputPaths.vendor.js,
+      scripts.map(s => s.src),
+      entrypoint,
+      'vendor javascript'
+    );
+  }
+
+  findVendorStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
+    let vendorStyle = styles.find(
+      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.vendor.css
+    );
+    return throwIfMissing(
+      vendorStyle,
+      this.legacyEmberAppInstance.options.outputPaths.vendor.css,
+      styles.map(s => s.href),
+      entrypoint,
+      'vendor css'
+    );
+  }
+
+  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
+    return styles.find(
+      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.testSupport.css
+    );
+  }
+
+  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
+    return scripts.find(
+      script =>
+        this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.testSupport.js.testSupport
+    );
+  }
+
+  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
+    return scripts.find(
+      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js
+    );
+  }
+
+  constructor(private legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
+    let options = optionsWithDefaults(_options);
+
+    this.movablePackageCache = new MovablePackageCache(MacrosConfig.for(legacyEmberAppInstance, this.root), this.root);
+
+    if (this.isDummy) {
+      this.owningAddon = new OwningAddon(legacyEmberAppInstance.project.root, this.movablePackageCache);
+      this.movablePackageCache.seed(this.owningAddon);
+      this.movablePackageCache.seed(new DummyPackage(this.root, this.owningAddon, this.movablePackageCache));
+    }
+
+    let { appJS } = this.processAppJS();
+    let htmlTree = this.htmlTree;
+    let publicTree = this.publicTree;
+    let configTree = this.config;
+    let appBootTree = this.appBoot;
 
     if (options.extraPublicTrees.length > 0) {
       publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
@@ -1516,7 +2260,7 @@ export default class CompatApp {
         root,
         appPackage,
         options,
-        oldPackage,
+        this,
         configTree,
         packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
         packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
@@ -1528,29 +2272,33 @@ export default class CompatApp {
     this.instantiate = instantiate;
   }
 
-  @Memoize()
-  get tree(): BroccoliNode {
-    return new WaitForTrees(this.augment(this.inTrees), this.annotation, async treePaths => {
-      if (!this.active) {
-        let { outputPath, packageCache } = await this.prevStage.ready();
-        this.outputPath = outputPath;
-        this.packageCache = packageCache;
-        this.active = await this.instantiate(outputPath, this.prevStage.inputPath, packageCache);
-      }
-      await this.active.build(this.deAugment(treePaths));
-      this.deferReady.resolve();
-    });
-  }
+  asStage(prevStage: Stage): Stage {
+    let tree = () =>
+      new WaitForTrees(this.augment(this.inTrees, prevStage.tree), this.annotation, async treePaths => {
+        if (!this.active) {
+          let { outputPath, packageCache } = await prevStage.ready();
+          this.outputPath = outputPath;
+          this.packageCache = packageCache;
+          this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache);
+        }
+        await this.active.build(this.deAugment(treePaths));
+        this.deferReady.resolve();
+      });
 
-  get inputPath(): string {
-    return this.prevStage.inputPath;
-  }
-
-  async ready(): Promise<{ outputPath: string; packageCache: PackageCache }> {
-    await this.deferReady.promise;
     return {
-      outputPath: this.outputPath!,
-      packageCache: this.packageCache!,
+      get inputPath() {
+        return prevStage.inputPath;
+      },
+      ready: async () => {
+        await this.deferReady.promise;
+        return {
+          outputPath: this.outputPath!,
+          packageCache: this.packageCache!,
+        };
+      },
+      get tree() {
+        return tree();
+      },
     };
   }
 
@@ -1561,8 +2309,8 @@ export default class CompatApp {
     return { resolve: resolve!, promise };
   }
 
-  private augment(inTrees: TreeNames): TreeNames & ExtraTree {
-    return Object.assign({ __prevStageTree: this.prevStage.tree }, inTrees);
+  private augment(inTrees: TreeNames, prevStageTree: BroccoliNode): TreeNames & ExtraTree {
+    return Object.assign({ __prevStageTree: prevStageTree }, inTrees);
   }
 
   private deAugment(treePaths: OutputPaths<TreeNames & ExtraTree>): OutputPaths<TreeNames> {
@@ -1769,4 +2517,28 @@ function addCachablePlugin(babelConfig: TransformOptions) {
 
 function excludeDotFiles(files: string[]) {
   return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
+}
+function throwIfMissing<T>(
+  asset: T | undefined,
+  needle: string,
+  haystack: string[],
+  entryfile: string,
+  context: string
+): T {
+  if (!asset) {
+    throw new Error(
+      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack
+        .map(asset => ` - ${asset}`)
+        .join(
+          '\n'
+        )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
+    );
+  }
+
+  return asset;
+}
+
+interface Preprocessors {
+  preprocessJs(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
+  preprocessCss(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
 }

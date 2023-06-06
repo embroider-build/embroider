@@ -49,15 +49,16 @@ export default function defaultPipeline<PackagerOptions>(
     return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
   }
 
-  let embroiderApp = new App(emberApp, addons, options);
+  let embroiderApp = new App(emberApp, options);
+  let appStage = embroiderApp.asStage(addons);
 
   if (process.env.STAGE2_ONLY || !packager) {
-    return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => outputPath)]);
+    return mergeTrees([appStage.tree, writeFile('.stage2-output', () => outputPath)]);
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
+  return new BroccoliPackager(appStage, variants, options && options.packagerOptions);
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

@@ -1,297 +1,86 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "minor",
-      "oldVersion": "3.0.0",
-      "newVersion": "3.1.0",
+      "impact": "patch",
+      "oldVersion": "3.1.0",
+      "newVersion": "3.1.1",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
-      "impact": "patch",
-      "oldVersion": "1.8.4",
-      "newVersion": "1.8.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/addon-shim/package.json"
+      "oldVersion": "1.8.5"
     },
     "@embroider/babel-loader-8": {
-      "impact": "major",
-      "oldVersion": "2.0.0",
-      "newVersion": "3.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/babel-loader-8/package.json"
+      "oldVersion": "3.0.0"
     },
     "@embroider/compat": {
-      "impact": "major",
-      "oldVersion": "2.1.1",
-      "newVersion": "3.0.0",
+      "impact": "patch",
+      "oldVersion": "3.0.0",
+      "newVersion": "3.0.1",
       "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        },
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "major",
-      "oldVersion": "2.1.1",
-      "newVersion": "3.0.0",
+      "impact": "patch",
+      "oldVersion": "3.0.0",
+      "newVersion": "3.0.1",
       "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/core/package.json"
     },
     "@embroider/hbs-loader": {
-      "impact": "major",
-      "oldVersion": "2.0.0",
-      "newVersion": "3.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/hbs-loader/package.json"
+      "oldVersion": "3.0.0"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.10.0",
-      "newVersion": "1.11.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/macros/package.json"
+      "oldVersion": "1.11.0"
     },
     "@embroider/router": {
-      "impact": "minor",
-      "oldVersion": "2.0.0",
-      "newVersion": "2.1.0",
+      "impact": "patch",
+      "oldVersion": "2.1.0",
+      "newVersion": "2.1.1",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/router/package.json"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "2.0.0",
-      "newVersion": "2.1.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/shared-internals/package.json"
+      "oldVersion": "2.1.0"
     },
     "@embroider/test-setup": {
-      "impact": "major",
-      "oldVersion": "2.1.1",
-      "newVersion": "3.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/compat"
-        },
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/webpack"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/test-setup/package.json"
+      "oldVersion": "3.0.1"
     },
     "@embroider/util": {
-      "impact": "minor",
-      "oldVersion": "1.10.0",
-      "newVersion": "1.11.0",
+      "impact": "patch",
+      "oldVersion": "1.11.0",
+      "newVersion": "1.11.1",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/util/package.json"
     },
     "@embroider/webpack": {
-      "impact": "major",
-      "oldVersion": "2.1.1",
-      "newVersion": "3.0.0",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/babel-loader-8"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/hbs-loader"
-        },
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/core"
-        },
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/webpack/package.json"
+      "oldVersion": "3.0.0"
     }
   },
-  "description": "## Release (2023-05-17)\n\n@embroider/addon-dev 3.1.0 (minor)\n@embroider/addon-shim 1.8.5 (patch)\n@embroider/babel-loader-8 3.0.0 (major)\n@embroider/compat 3.0.0 (major)\n@embroider/core 3.0.0 (major)\n@embroider/hbs-loader 3.0.0 (major)\n@embroider/macros 1.11.0 (minor)\n@embroider/router 2.1.0 (minor)\n@embroider/shared-internals 2.1.0 (minor)\n@embroider/test-setup 3.0.0 (major)\n@embroider/util 1.11.0 (minor)\n@embroider/webpack 3.0.0 (major)\n\n#### :boom: Breaking Change\n* `compat`, `core`, `webpack`\n  * [#1363](https://github.com/embroider-build/embroider/pull/1363) Simplified template resolution ([@ef4](https://github.com/ef4))\n\n#### :rocket: Enhancement\n* `addon-dev`, `router`\n  * [#1419](https://github.com/embroider-build/embroider/pull/1419) Test against ember preview types ([@ef4](https://github.com/ef4))\n* `macros`\n  * [#1354](https://github.com/embroider-build/embroider/pull/1354) Add glint helper types for more macros ([@vlascik](https://github.com/vlascik))\n* `shared-internals`\n  * [#1396](https://github.com/embroider-build/embroider/pull/1396) Add @ember/owner to emberVirtualPackages ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `core`\n  * [#1376](https://github.com/embroider-build/embroider/pull/1376) legacy addon resolving ([@ef4](https://github.com/ef4))\n* `compat`, `core`, `webpack`\n  * [#1373](https://github.com/embroider-build/embroider/pull/1373) app tree resolving ([@ef4](https://github.com/ef4))\n  * [#1331](https://github.com/embroider-build/embroider/pull/1331) Move resolving into dedicated plugins ([@ef4](https://github.com/ef4))\n* `compat`, `shared-internals`\n  * [#1372](https://github.com/embroider-build/embroider/pull/1372) restore component invokes rules support ([@ef4](https://github.com/ef4))\n* `util`\n  * [#1367](https://github.com/embroider-build/embroider/pull/1367) Improve types of `ensure-safe-component` helper ([@simonihmig](https://github.com/simonihmig))\n* `compat`\n  * [#1369](https://github.com/embroider-build/embroider/pull/1369) Add semverRange <=4.11.0 for ember-data ([@mkszepp](https://github.com/mkszepp))\n  * [#1362](https://github.com/embroider-build/embroider/pull/1362) clarify which package rules apply inside vs outside a component ([@ef4](https://github.com/ef4))\n  * [#1352](https://github.com/embroider-build/embroider/pull/1352) reinstate logic around parsing of invokes packageRules ([@void-mAlex](https://github.com/void-mAlex))\n  * [#1343](https://github.com/embroider-build/embroider/pull/1343) Fix `@babel/core` version check to support `ember-cli-babel` v8 ([@bertdeblock](https://github.com/bertdeblock))\n* `addon-dev`\n  * [#1368](https://github.com/embroider-build/embroider/pull/1368) Add support for keeping public assets and ember-addon.public-assets meta in sync ([@phndiaye](https://github.com/phndiaye))\n* `core`, `webpack`\n  * [#1355](https://github.com/embroider-build/embroider/pull/1355) Refactor self-resolution ([@ef4](https://github.com/ef4))\n* `compat`, `core`, `shared-internals`, `webpack`\n  * [#1339](https://github.com/embroider-build/embroider/pull/1339) Layer template resolver on top of module resolver ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `test-setup`\n  * [#1427](https://github.com/embroider-build/embroider/pull/1427) Use optional peer deps in @embroider/test-setup ([@ef4](https://github.com/ef4))\n* `util`\n  * [#1429](https://github.com/embroider-build/embroider/pull/1429) Ember 5 compat ([@ef4](https://github.com/ef4))\n* `compat`, `router`\n  * [#1428](https://github.com/embroider-build/embroider/pull/1428) Add compat adapter for @ember/test-waiters ([@ef4](https://github.com/ef4))\n* Other\n  * [#1424](https://github.com/embroider-build/embroider/pull/1424) Fix CI by upgrading ts-node ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1381](https://github.com/embroider-build/embroider/pull/1381) add tests for helper name collisions with html elements or js keywords ([@void-mAlex](https://github.com/void-mAlex))\n* `core`, `webpack`\n  * [#1391](https://github.com/embroider-build/embroider/pull/1391) only rehome a request if it would resolve in a different package ([@void-mAlex](https://github.com/void-mAlex))\n  * [#1346](https://github.com/embroider-build/embroider/pull/1346) Bugfix: inconsistent handling of webpack virtual modules ([@ef4](https://github.com/ef4))\n* `webpack`\n  * [#1403](https://github.com/embroider-build/embroider/pull/1403) Remove deprecated dependency @types/source-map ([@francois2metz](https://github.com/francois2metz))\n  * [#1359](https://github.com/embroider-build/embroider/pull/1359) Ignore resolve requests that start with ! ([@mansona](https://github.com/mansona))\n* `compat`\n  * [#1383](https://github.com/embroider-build/embroider/pull/1383) Rename strict flag to strictMode ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1386](https://github.com/embroider-build/embroider/pull/1386) Fix `Maximum call stack size exceeded` error ([@simonihmig](https://github.com/simonihmig))\n  * [#1347](https://github.com/embroider-build/embroider/pull/1347) fix resolver bugs around package rules ([@void-mAlex](https://github.com/void-mAlex))\n  * [#1342](https://github.com/embroider-build/embroider/pull/1342) restore original ts extension priority ([@ef4](https://github.com/ef4))\n  * [#1340](https://github.com/embroider-build/embroider/pull/1340) Static helpers and static modifiers transform fixes ([@void-mAlex](https://github.com/void-mAlex))\n* `shared-internals`\n  * [#1379](https://github.com/embroider-build/embroider/pull/1379) don't confuse webpack requests with packageNames ([@ef4](https://github.com/ef4))\n* `addon-shim`\n  * [#1327](https://github.com/embroider-build/embroider/pull/1327) Fix Nested V2 Addons ([@gossi](https://github.com/gossi))\n\n#### :memo: Documentation\n* `addon-dev`, `util`\n  * [#1415](https://github.com/embroider-build/embroider/pull/1415) fix casing in docs links ([@mansona](https://github.com/mansona))\n* `macros`\n  * [#1348](https://github.com/embroider-build/embroider/pull/1348) Move docs into a docs folder ([@mansona](https://github.com/mansona))\n* Other\n  * [#1406](https://github.com/embroider-build/embroider/pull/1406) Release prep ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `router`\n  * [#1431](https://github.com/embroider-build/embroider/pull/1431) Release infra ([@ef4](https://github.com/ef4))\n* Other\n  * [#1430](https://github.com/embroider-build/embroider/pull/1430) Remove changeset, as @ef4 has some custom release tooling coming ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1409](https://github.com/embroider-build/embroider/pull/1409) Use a custom changelog line generator function to avoid adding meaningless changelog entries  ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1407](https://github.com/embroider-build/embroider/pull/1407) Enable changelog generation ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1406](https://github.com/embroider-build/embroider/pull/1406) Release prep ([@ef4](https://github.com/ef4))\n  * [#1405](https://github.com/embroider-build/embroider/pull/1405) Upgrade changeset-recover ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1398](https://github.com/embroider-build/embroider/pull/1398) Add prepare changelog workflow to automatically propose what should be in sync for us ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1401](https://github.com/embroider-build/embroider/pull/1401) Add relevant changesets for the upcoming release and evaluate their impact ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1392](https://github.com/embroider-build/embroider/pull/1392) Allow running publish-unstable on workflow_dispatch ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1393](https://github.com/embroider-build/embroider/pull/1393) continue deploying unstable packages even with an error ([@mansona](https://github.com/mansona))\n  * [#1395](https://github.com/embroider-build/embroider/pull/1395) Revving yarn.lock ([@ef4](https://github.com/ef4))\n  * [#1389](https://github.com/embroider-build/embroider/pull/1389) bump unstable versions by at least a patch ([@mansona](https://github.com/mansona))\n  * [#1390](https://github.com/embroider-build/embroider/pull/1390) Change namespace for publish-unstable cancel-in-progress ([@backspace](https://github.com/backspace))\n  * [#1364](https://github.com/embroider-build/embroider/pull/1364) Unstable release sync with main ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1345](https://github.com/embroider-build/embroider/pull/1345) Update release workflow ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `addon-dev`, `addon-shim`, `babel-loader-8`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `util`, `webpack`\n  * [#1422](https://github.com/embroider-build/embroider/pull/1422) Use pnpm workspace protocol everywhere ([@ef4](https://github.com/ef4))\n* `addon-dev`, `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `util`, `webpack`\n  * [#1421](https://github.com/embroider-build/embroider/pull/1421) upgrade typescript ([@ef4](https://github.com/ef4))\n* `compat`, `core`, `macros`, `router`, `shared-internals`, `test-setup`, `util`, `webpack`\n  * [#1411](https://github.com/embroider-build/embroider/pull/1411) Switch to pnpm ([@ef4](https://github.com/ef4))\n* `util`\n  * [#1388](https://github.com/embroider-build/embroider/pull/1388) Enable prettier in ci ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 12\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))\n- Buck Doyle ([@backspace](https://github.com/backspace))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- François de Metz ([@francois2metz](https://github.com/francois2metz))\n- Philippe Ndiaye ([@phndiaye](https://github.com/phndiaye))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n- Thomas Gossmann ([@gossi](https://github.com/gossi))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n- [@mkszepp](https://github.com/mkszepp)\n- [@vlascik](https://github.com/vlascik)\n"
+  "description": "## Release (2023-06-05)\n\n@embroider/addon-dev 3.1.1 (patch)\n@embroider/compat 3.0.1 (patch)\n@embroider/core 3.0.1 (patch)\n@embroider/router 2.1.1 (patch)\n@embroider/util 1.11.1 (patch)\n\n#### :bug: Bug Fix\n* `compat`\n  * [#1460](https://github.com/embroider-build/embroider/pull/1460) expanding EmptyPackage contents ([@ef4](https://github.com/ef4))\n* `addon-dev`\n  * [#1423](https://github.com/embroider-build/embroider/pull/1423) Do not write package.json when there are no changes (affects `addon.appReexports()` and `addon.publicAssets()`) ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1446](https://github.com/embroider-build/embroider/pull/1446) Revert \"Run the clean plugin of addon-dev as late as possible\" ([@mansona](https://github.com/mansona))\n  * [#1450](https://github.com/embroider-build/embroider/pull/1450) [bugfix] Ensured that normalizeFileExt ignores .css.d.ts files ([@ijlee2](https://github.com/ijlee2))\n  * [#1447](https://github.com/embroider-build/embroider/pull/1447) fix keepAssets corrupting image files ([@mansona](https://github.com/mansona))\n* `compat`, `core`\n  * [#1443](https://github.com/embroider-build/embroider/pull/1443) linkto routable engine path in host app ([@void-mAlex](https://github.com/void-mAlex))\n* `addon-dev`, `router`\n  * [#1449](https://github.com/embroider-build/embroider/pull/1449) [bugfix] Set output.experimentalMinChunkSize to 0, to counter a change in rollup@3.22.0 ([@ijlee2](https://github.com/ijlee2))\n* `util`\n  * [#1451](https://github.com/embroider-build/embroider/pull/1451) Use `typeof` in `EmbroiderUtilRegistry` ([@bertdeblock](https://github.com/bertdeblock))\n\n#### :memo: Documentation\n* [#1349](https://github.com/embroider-build/embroider/pull/1349) Add a document about pnpm monorepo error ([@mansona](https://github.com/mansona))\n* [#1458](https://github.com/embroider-build/embroider/pull/1458) Add compatible Ember version to README.md ([@EWhite613](https://github.com/EWhite613))\n\n#### :house: Internal\n* [#1444](https://github.com/embroider-build/embroider/pull/1444) clean up patch-package which was introduced with changeset-recover th… ([@void-mAlex](https://github.com/void-mAlex))\n* [#1440](https://github.com/embroider-build/embroider/pull/1440) release preview workflow ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 7\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Eric White ([@EWhite613](https://github.com/EWhite613))\n- Isaac Lee ([@ijlee2](https://github.com/ijlee2))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

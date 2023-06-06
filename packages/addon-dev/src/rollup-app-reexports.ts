@@ -32,10 +32,17 @@ export default function appReexports(opts: {
           });
         }
       }
-      pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
-        'app-js': appJS,
-      });
-      writeJsonSync('package.json', pkg, { spaces: 2 });
+      let originalAppJS = pkg['ember-addon']?.['app-js'];
+
+      let hasChanges = JSON.stringify(originalAppJS) !== JSON.stringify(appJS);
+
+      // Don't cause a file i/o event unless something actually changed
+      if (hasChanges) {
+        pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
+          'app-js': appJS,
+        });
+        writeJsonSync('package.json', pkg, { spaces: 2 });
+      }
     },
   };
 }

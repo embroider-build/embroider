@@ -8,9 +8,9 @@ type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Opti
 const ourPeerDeps = require('../package.json').peerDependencies;
 
 const embroiderDevDeps = {
-  '@embroider/core': `^${ourPeerDeps['@embroider/core']}`,
-  '@embroider/webpack': `^${ourPeerDeps['@embroider/webpack']}`,
-  '@embroider/compat': `^${ourPeerDeps['@embroider/compat']}`,
+  '@embroider/core': `${ourPeerDeps['@embroider/core']}`,
+  '@embroider/webpack': `${ourPeerDeps['@embroider/webpack']}`,
+  '@embroider/compat': `${ourPeerDeps['@embroider/compat']}`,
   // Webpack is a peer dependency of `@embroider/webpack`
   webpack: '^5.0.0',
 };

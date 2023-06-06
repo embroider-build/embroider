@@ -25,5 +25,5 @@ export class EnsureSafeComponentHelper<
 }> {}
 
 export interface EmbroiderUtilRegistry {
-  'ensure-safe-component': EnsureSafeComponentHelper;
+  'ensure-safe-component': typeof EnsureSafeComponentHelper;
 }

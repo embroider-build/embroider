@@ -26,11 +26,18 @@ export default function publicAssets(
         {}
       );
 
-      pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
-        'public-assets': publicAssets,
-      });
+      let originalPublicAssets = pkg['ember-addon']?.['public-assets'];
 
-      writeJsonSync('package.json', pkg, { spaces: 2 });
+      let hasChanges =
+        JSON.stringify(originalPublicAssets) !== JSON.stringify(publicAssets);
+
+      if (hasChanges) {
+        pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
+          'public-assets': publicAssets,
+        });
+
+        writeJsonSync('package.json', pkg, { spaces: 2 });
+      }
     },
   };
 }

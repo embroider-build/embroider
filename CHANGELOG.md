@@ -1,5 +1,60 @@
 # Embroider Changelog
 
+## Release (2023-06-05)
+
+@embroider/addon-dev 3.1.1 (patch)
+@embroider/compat 3.0.1 (patch)
+@embroider/core 3.0.1 (patch)
+@embroider/router 2.1.1 (patch)
+@embroider/util 1.11.1 (patch)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1460](https://github.com/embroider-build/embroider/pull/1460) expanding EmptyPackage contents ([@ef4](https://github.com/ef4))
+* `addon-dev`
+  * [#1423](https://github.com/embroider-build/embroider/pull/1423) Do not write package.json when there are no changes (affects `addon.appReexports()` and `addon.publicAssets()`) ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1446](https://github.com/embroider-build/embroider/pull/1446) Revert "Run the clean plugin of addon-dev as late as possible" ([@mansona](https://github.com/mansona))
+  * [#1450](https://github.com/embroider-build/embroider/pull/1450) [bugfix] Ensured that normalizeFileExt ignores .css.d.ts files ([@ijlee2](https://github.com/ijlee2))
+  * [#1447](https://github.com/embroider-build/embroider/pull/1447) fix keepAssets corrupting image files ([@mansona](https://github.com/mansona))
+* `compat`, `core`
+  * [#1443](https://github.com/embroider-build/embroider/pull/1443) linkto routable engine path in host app ([@void-mAlex](https://github.com/void-mAlex))
+* `addon-dev`, `router`
+  * [#1449](https://github.com/embroider-build/embroider/pull/1449) [bugfix] Set output.experimentalMinChunkSize to 0, to counter a change in rollup@3.22.0 ([@ijlee2](https://github.com/ijlee2))
+* `util`
+  * [#1451](https://github.com/embroider-build/embroider/pull/1451) Use `typeof` in `EmbroiderUtilRegistry` ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :memo: Documentation
+* [#1349](https://github.com/embroider-build/embroider/pull/1349) Add a document about pnpm monorepo error ([@mansona](https://github.com/mansona))
+* [#1458](https://github.com/embroider-build/embroider/pull/1458) Add compatible Ember version to README.md ([@EWhite613](https://github.com/EWhite613))
+
+#### :house: Internal
+* [#1444](https://github.com/embroider-build/embroider/pull/1444) clean up patch-package which was introduced with changeset-recover th… ([@void-mAlex](https://github.com/void-mAlex))
+* [#1440](https://github.com/embroider-build/embroider/pull/1440) release preview workflow ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 7
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Eric White ([@EWhite613](https://github.com/EWhite613))
+- Isaac Lee ([@ijlee2](https://github.com/ijlee2))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2023-05-18)
+
+@embroider/test-setup 3.0.1 (patch)
+
+#### :bug: Bug Fix
+* `test-setup`
+  * [#1436](https://github.com/embroider-build/embroider/pull/1436) prevent double ^ when using embroider test-setup ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1433](https://github.com/embroider-build/embroider/pull/1433) Make preflight error when suite-setup-util fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-05-17)
 
 ```

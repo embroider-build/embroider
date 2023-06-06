@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -42,7 +42,7 @@
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",
     "@types/yargs": "^17.0.3",
-    "rollup": "^2.58.0",
+    "rollup": "^3.23.0",
     "tmp": "^0.1.0",
     "typescript": "^4.9.0"
   },

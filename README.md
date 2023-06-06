@@ -114,11 +114,17 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
-## Compatibility with Classic Builds
+## Compatibility
+
+### Ember version
+
+Requires Ember 3.28.11 or greater
+
+### With Classic Builds
 
 While we have a strong emphasis on backward compatibility with classic builds, there are a few places where you may need to make changes to your code:
 
-### Lazy Engines
+#### Lazy Engines
 
 If you're using lazy loaded engines, you need to use `@embroider/router`, which is a drop-in replacement for `@ember/routing/router`:
 

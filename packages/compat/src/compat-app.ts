@@ -160,7 +160,7 @@ class CompatAppBuilder {
 
   @Memoize()
   private fastbootJSSrcDir() {
-    let target = join(this.root, 'fastboot');
+    let target = join(this.compatApp.root, 'fastboot');
     if (pathExistsSync(target)) {
       return target;
     }

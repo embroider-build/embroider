@@ -1489,20 +1489,14 @@ class CompatAppBuilder {
   }
 }
 
-interface ExtraTree {
-  __prevStageTree: BroccoliNode;
-}
-
 // This runs at broccoli-pipeline-construction time, whereas our actual
 // CompatAppBuilder instance only becomes available during tree-building time.
 export default class CompatApp {
-  private inTrees: TreeNames;
   private annotation = '@embroider/compat/app';
-  private instantiate: (root: string, appSrcDir: string, packageCache: PackageCache) => Promise<CompatAppBuilder>;
-
   private active: CompatAppBuilder | undefined;
   private outputPath: string | undefined;
   private packageCache: PackageCache | undefined;
+  private options: Required<Options>;
 
   // used to signal that this is a dummy app owned by a particular addon
   owningAddon: Package | undefined;
@@ -2224,7 +2218,7 @@ export default class CompatApp {
   }
 
   constructor(private legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
-    let options = optionsWithDefaults(_options);
+    this.options = optionsWithDefaults(_options);
 
     this.movablePackageCache = new MovablePackageCache(MacrosConfig.for(legacyEmberAppInstance, this.root), this.root);
 
@@ -2233,54 +2227,56 @@ export default class CompatApp {
       this.movablePackageCache.seed(this.owningAddon);
       this.movablePackageCache.seed(new DummyPackage(this.root, this.owningAddon, this.movablePackageCache));
     }
+  }
 
+  private inTrees(prevStageTree: BroccoliNode) {
     let publicTree = this.publicTree;
     let configTree = this.config;
 
-    if (options.extraPublicTrees.length > 0) {
-      publicTree = mergeTrees([publicTree, ...options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
+    if (this.options.extraPublicTrees.length > 0) {
+      publicTree = mergeTrees([publicTree, ...this.options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
     }
 
-    let inTrees = {
+    return {
       appJS: this.processAppJS().appJS,
       htmlTree: this.htmlTree,
       publicTree,
       configTree,
       appBootTree: this.appBoot,
+      prevStageTree,
     };
+  }
 
-    let instantiate = async (root: string, appSrcDir: string, packageCache: PackageCache) => {
-      let appPackage = packageCache.get(appSrcDir);
-      let macrosConfig = MacrosConfig.for(legacyEmberAppInstance, appSrcDir);
+  private async instantiate(root: string, appSrcDir: string, packageCache: PackageCache, configTree: V1Config) {
+    let appPackage = packageCache.get(appSrcDir);
+    let macrosConfig = MacrosConfig.for(this.legacyEmberAppInstance, appSrcDir);
 
-      return new CompatAppBuilder(
-        root,
-        appPackage,
-        options,
-        this,
-        configTree,
-        packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-        packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
-        macrosConfig
-      );
-    };
-
-    this.inTrees = inTrees;
-    this.instantiate = instantiate;
+    return new CompatAppBuilder(
+      root,
+      appPackage,
+      this.options,
+      this,
+      configTree,
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
+      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles')),
+      macrosConfig
+    );
   }
 
   asStage(prevStage: Stage): Stage {
-    let tree = () =>
-      new WaitForTrees(this.augment(this.inTrees, prevStage.tree), this.annotation, async treePaths => {
+    let tree = () => {
+      let inTrees = this.inTrees(prevStage.tree);
+      return new WaitForTrees(inTrees, this.annotation, async treePaths => {
         if (!this.active) {
           let { outputPath, packageCache } = await prevStage.ready();
           this.outputPath = outputPath;
           this.packageCache = packageCache;
-          this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache);
+          this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache, inTrees.configTree);
         }
-        await this.active.build(this.deAugment(treePaths));
+        await this.active.build(treePaths);
         this.deferReady.resolve();
       });
+    };
 
     return {
       get inputPath() {
@@ -2304,15 +2300,6 @@ export default class CompatApp {
     let resolve: Function;
     let promise: Promise<void> = new Promise(r => (resolve = r));
     return { resolve: resolve!, promise };
-  }
-
-  private augment(inTrees: TreeNames, prevStageTree: BroccoliNode): TreeNames & ExtraTree {
-    return Object.assign({ __prevStageTree: prevStageTree }, inTrees);
-  }
-
-  private deAugment(treePaths: OutputPaths<TreeNames & ExtraTree>): OutputPaths<TreeNames> {
-    delete (treePaths as any).__prevStageTree;
-    return treePaths;
   }
 }
 

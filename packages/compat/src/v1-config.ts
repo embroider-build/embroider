@@ -42,16 +42,20 @@ export class WriteV1Config extends Plugin {
     if (this.storeConfigInMeta) {
       contents = metaLoader();
     } else {
-      contents = `
-      import { isTesting } from '@embroider/macros';
-      let env;
-      if (isTesting()) {
-        env = ${JSON.stringify(this.testInputTree?.readConfig())};
+      if (this.testInputTree) {
+        contents = `
+        import { isTesting } from '@embroider/macros';
+        let env;
+        if (isTesting()) {
+          env = ${JSON.stringify(this.testInputTree.readConfig())};
+        } else {
+          env = ${JSON.stringify(this.inputTree.readConfig())};
+        }
+        export default env;
+        `;
       } else {
-        env = ${JSON.stringify(this.inputTree.readConfig())};
+        contents = `export default ${JSON.stringify(this.inputTree.readConfig())};`;
       }
-      export default env;
-      `;
     }
     if (!this.lastContents || this.lastContents !== contents) {
       outputFileSync(filename, contents);

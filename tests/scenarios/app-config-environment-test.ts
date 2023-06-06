@@ -44,10 +44,11 @@ appScenarios
             ENV.APP.LOG_VIEW_LOOKUPS = false;
             ENV.APP.rootElement = '#ember-testing';
             ENV.APP.autoboot = false;
+
+            // CUSTOM
+            ENV.someCustomField = true;
           };
 
-          // CUSTOM
-          ENV.someCustomField = true;
           return ENV;
         };`,
       },
@@ -57,7 +58,7 @@ appScenarios
             import { module, test } from 'qunit';
             import ENV from 'app-template/config/environment';
 
-            module('Unit | storeConfigInMeta', function (hooks) {
+            module('Unit | storeConfigInMeta set to false', function (hooks) {
               test('it has loaded the correct config values', async function (assert) {
                 assert.equal(ENV.someCustomField, true);
               });
@@ -73,9 +74,16 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test(`yarn test ran with custom unit test`, async function (assert) {
-        let result = await app.execute(`yarn test`);
-        assert.equal(result.exitCode, 0, result.output);
+      test(`ember test ran against dev build with custom unit test`, async function (assert) {
+        // here we build the app with environment set to dev so that we can use
+        // the build output directory as the input path to an `ember test` run
+        // later. This difference in environment is important because it's the
+        // only way for us to test ember-cli-build.js' `tests: true` behavior,
+        // and is equivalent to visiting the app's /tests page
+        let devBuildResult = await app.execute(`pnpm build --environment=development`);
+        assert.equal(devBuildResult.exitCode, 0, devBuildResult.output);
+        let testRunResult = await app.execute(`pnpm test:ember --path dist`);
+        assert.equal(testRunResult.exitCode, 0, testRunResult.output);
       });
     });
   });

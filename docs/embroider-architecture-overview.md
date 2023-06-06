@@ -133,11 +133,11 @@ Or, put another way, as a picture:
 flowchart TD
     A[Dependency] --> B{Is Ember addon?}
     B -->|Yes| C{Is V2 addon?}
-    C -->|Yes| D{Has deps\nthat need\nrewriting?}
-    D -->|No| F[Symlink]
-    D -->|Yes| E[Rewrite] 
-    C -->|No| E[Rewrite]
-    B ---->|No| F[Symlink]
+    C -->|No| E["❌ Rewrite"]
+    C -->|Yes| D{Has dependency\nthat needs rewrite?}
+    D -->|Yes| E["❌ Rewrite"]
+    D -->|No| F["✅ Symlink"]
+    B -->|No| F["✅ Symlink"]
 ```
 
 The output of stage 1 is a tmp embroider directory containing a `node_modules` directory with a mix of symlinked node modules for packages that were no rewritten and rewritten packages for those that were convereted to V2 (or one of their dependencies was converted) , something like this for example:

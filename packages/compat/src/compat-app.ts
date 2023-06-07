@@ -44,15 +44,11 @@ interface Group {
 export default class CompatApp {
   private annotation = '@embroider/compat/app';
   private active: CompatAppBuilder | undefined;
-  private outputPath: string | undefined;
-  private packageCache: PackageCache | undefined;
   readonly options: Required<Options>;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
   private _implicitStyles: string[] = [];
-
-  movablePackageCache: MovablePackageCache;
 
   private get isDummy(): boolean {
     return this.legacyEmberAppInstance.project.pkg.keywords?.includes('ember-addon') ?? false;
@@ -784,15 +780,18 @@ export default class CompatApp {
       // macros in a classic build.
       active: true,
     });
+  }
 
-    this.movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
+  makePackageCache(): MovablePackageCache {
+    let movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
 
     if (this.isDummy) {
-      let owningAddon = new OwningAddon(legacyEmberAppInstance.project.root, this.movablePackageCache);
-      this.movablePackageCache.seed(owningAddon);
-      this.movablePackageCache.seed(new DummyPackage(this.root, owningAddon, this.movablePackageCache));
+      let owningAddon = new OwningAddon(this.legacyEmberAppInstance.project.root, movablePackageCache);
+      movablePackageCache.seed(owningAddon);
+      movablePackageCache.seed(new DummyPackage(this.root, owningAddon, movablePackageCache));
       this.macrosConfig.enablePackageDevelopment(owningAddon.root);
     }
+    return movablePackageCache;
   }
 
   private inTrees(prevStageTree: BroccoliNode) {
@@ -826,17 +825,18 @@ export default class CompatApp {
   }
 
   asStage(prevStage: Stage): Stage {
+    let resolve: (result: { packageCache: PackageCache; outputPath: string }) => void;
+    let promise: Promise<{ packageCache: PackageCache; outputPath: string }> = new Promise(r => (resolve = r));
+
     let tree = () => {
       let inTrees = this.inTrees(prevStage.tree);
       return new WaitForTrees(inTrees, this.annotation, async treePaths => {
         if (!this.active) {
           let { outputPath, packageCache } = await prevStage.ready();
-          this.outputPath = outputPath;
-          this.packageCache = packageCache;
           this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache, inTrees.configTree);
+          resolve({ packageCache, outputPath });
         }
         await this.active.build(treePaths);
-        this.deferReady.resolve();
       });
     };
 
@@ -845,23 +845,12 @@ export default class CompatApp {
         return prevStage.inputPath;
       },
       ready: async () => {
-        await this.deferReady.promise;
-        return {
-          outputPath: this.outputPath!,
-          packageCache: this.packageCache!,
-        };
+        return await promise;
       },
       get tree() {
         return tree();
       },
     };
-  }
-
-  @Memoize()
-  private get deferReady() {
-    let resolve: Function;
-    let promise: Promise<void> = new Promise(r => (resolve = r));
-    return { resolve: resolve!, promise };
   }
 }
 

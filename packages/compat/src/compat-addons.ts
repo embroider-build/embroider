@@ -36,10 +36,11 @@ export default class CompatAddons implements Stage {
     ensureDirSync(compatApp.options.workspaceDir!);
     this.destDir = realpathSync(compatApp.options.workspaceDir!);
 
-    this.packageCache = compatApp.movablePackageCache.moveAddons(this.destDir);
+    let movablePackageCache = compatApp.makePackageCache();
+    this.packageCache = movablePackageCache.moveAddons(this.destDir);
     this.inputPath = compatApp.root;
     this.treeSyncMap = new WeakMap();
-    this.v1Cache = new V1InstanceCache(compatApp);
+    this.v1Cache = new V1InstanceCache(compatApp, movablePackageCache);
   }
 
   get tree(): Node {

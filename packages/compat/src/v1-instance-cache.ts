@@ -4,7 +4,7 @@
 
 import V1Addon, { V1AddonConstructor } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
-import { AddonInstance, getOrCreate } from '@embroider/core';
+import { AddonInstance, getOrCreate, PackageCache } from '@embroider/core';
 import CompatApp from './compat-app';
 
 export default class V1InstanceCache {
@@ -12,11 +12,9 @@ export default class V1InstanceCache {
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
   private addons: Map<string, V1Addon[]> = new Map();
-
-  private app: CompatApp;
   private orderIdx: number;
 
-  constructor(app: CompatApp) {
+  constructor(private app: CompatApp, private packageCache: PackageCache) {
     this.app = app;
     this.orderIdx = 0;
 
@@ -63,7 +61,7 @@ export default class V1InstanceCache {
 
     this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance);
-    let v1Addon = new Klass(addonInstance, this.app.options, this.app, this.app.movablePackageCache, this.orderIdx);
+    let v1Addon = new Klass(addonInstance, this.app.options, this.app, this.packageCache, this.orderIdx);
     let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
     pkgs.push(v1Addon);
   }

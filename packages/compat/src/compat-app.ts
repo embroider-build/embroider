@@ -793,10 +793,12 @@ export default class CompatApp {
     let movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
 
     if (this.isDummy) {
-      movablePackageCache.seed(
+      movablePackageCache.setApp(
         new DummyPackage(this.root, this.legacyEmberAppInstance.project.root, movablePackageCache)
       );
       this.macrosConfig.enablePackageDevelopment(this.legacyEmberAppInstance.project.root);
+    } else {
+      movablePackageCache.setApp(movablePackageCache.get(this.root));
     }
     return movablePackageCache;
   }

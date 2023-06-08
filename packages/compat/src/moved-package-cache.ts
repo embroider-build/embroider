@@ -13,19 +13,29 @@ function assertNoTildeExpansion(source: string, target: string) {
   }
 }
 export class MovablePackageCache extends PackageCache {
+  #appPackage: Package | undefined;
+
   constructor(private macrosConfig: MacrosConfig, appRoot: string) {
     super(appRoot);
   }
 
   moveAddons(destDir: string): MovedPackageCache {
     // start with the plain old app package
-    let origApp = this.get(this.appRoot);
+    let origApp = this.#appPackage;
+
+    if (!origApp) {
+      throw new Error('You must call setApp() on MovablePackageCache before calling moveAddons()');
+    }
 
     // discover the set of all packages that will need to be moved into the
     // workspace
     let movedSet = new MovedSet(origApp);
 
     return new MovedPackageCache(this.rootCache, this.resolutionCache, destDir, movedSet, origApp, this.macrosConfig);
+  }
+
+  setApp(pkg: Package) {
+    this.#appPackage = pkg;
   }
 }
 

@@ -27,13 +27,6 @@ export default class PackageCache {
     return result;
   }
 
-  seed(pkg: Package) {
-    if (this.rootCache.has(pkg.root)) {
-      throw new Error(`bug: tried to seed package ${pkg.name} but it's already in packageCache`);
-    }
-    this.rootCache.set(pkg.root, pkg);
-  }
-
   protected rootCache: Map<string, Package> = new Map();
   protected resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
 

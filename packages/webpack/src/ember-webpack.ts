@@ -257,9 +257,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
                 this.extraBabelLoaderOptions
               ),
             ]),
-            resolve: {
-              fullySpecified: true,
-            },
           },
           {
             test: isCSS,

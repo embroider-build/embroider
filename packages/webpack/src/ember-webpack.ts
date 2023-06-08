@@ -277,6 +277,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       },
       resolve: {
         extensions: resolverConfig.resolvableExtensions,
+        fullySpecified: false,
       },
       resolveLoader: {
         alias: {

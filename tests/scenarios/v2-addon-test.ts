@@ -9,6 +9,7 @@ appScenarios
   .map('v2-addon-basics', project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
+    addon.pkg.type = 'module';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
       './app/components/example-component.js';
     merge(addon.files, {
@@ -32,9 +33,9 @@ appScenarios
         'example-component.css': '/* not empty */ h1 { color: red }',
       },
       'import-from-npm.js': `
-        export default async function() { 
+        export default async function() {
           let { message } = await import('third-party');
-          return message() 
+          return message()
         }
         `,
     });

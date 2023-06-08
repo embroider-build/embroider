@@ -36,7 +36,7 @@ export default function macroCondition(conditionalPath: MacroConditionPath, stat
   let consequent = conditionalPath.get('consequent');
   let alternate = conditionalPath.get('alternate');
 
-  if (state.opts.mode === 'run-time') {
+  if (state.opts.mode === 'run-time' && predicate.hasRuntimeImplementation !== false) {
     let callee = conditionalPath.get('test').get('callee');
     callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'macroCondition'));
   } else {

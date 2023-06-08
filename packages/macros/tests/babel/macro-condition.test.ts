@@ -37,11 +37,12 @@ describe('macroCondition', function () {
         config.setConfig(join(project.baseDir, 'sample.js'), 'qunit', {
           items: [{ approved: true, other: null, size: 2.3 }],
         });
+        config.setGlobalConfig(__filename, '@embroider/macros', { isTesting: true });
         applyMode(config);
         config.finalize();
       });
 
-      buildTimeTest('if selects consequent, drops alternate', () => {
+      test('if selects consequent, drops alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -60,11 +61,11 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
-      runTimeTest('evaluates consequent block', () => {
+      runTimeTest('given runtime implementation, it evaluates consequent block', () => {
         let code = transform(`
-      import { macroCondition } from '@embroider/macros';
+      import { isTesting, macroCondition } from '@embroider/macros';
       export default function() {
-        if (macroCondition(true)) {
+        if (macroCondition(isTesting())) {
           return 'alpha';
         } else {
           return 'beta';
@@ -79,7 +80,7 @@ describe('macroCondition', function () {
         expect(code).toMatch(/\/runtime/);
       });
 
-      buildTimeTest('non-block if selects consequent', () => {
+      test('non-block if selects consequent', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -95,7 +96,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
-      buildTimeTest('if selects alternate, drops consequent', () => {
+      test('if selects alternate, drops consequent', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -114,7 +115,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
-      buildTimeTest('ternary selects consequent, drops alternate', () => {
+      test('ternary selects consequent, drops alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -129,11 +130,11 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
-      runTimeTest('ternary evalutes to consequent', () => {
+      runTimeTest('given runtime implementation, ternary evaluates to consequent', () => {
         let code = transform(`
-      import { macroCondition } from '@embroider/macros';
+      import { isTesting, macroCondition } from '@embroider/macros';
       export default function() {
-        return macroCondition(true) ? 'alpha' : 'beta';
+        return macroCondition(isTesting()) ? 'alpha' : 'beta';
       }
       `);
         expect(run(code, { filename })).toBe('alpha');
@@ -144,7 +145,7 @@ describe('macroCondition', function () {
         expect(code).toMatch(/\/runtime/);
       });
 
-      buildTimeTest('ternary selects alternate, drops consequent', () => {
+      test('ternary selects alternate, drops consequent', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -159,7 +160,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
-      buildTimeTest('if selects consequent, no alternate', () => {
+      test('if selects consequent, no alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -186,7 +187,7 @@ describe('macroCondition', function () {
         expect(run(code, { filename })).toBe(undefined);
       });
 
-      buildTimeTest('else if consequent', () => {
+      test('else if consequent', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -204,7 +205,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/gamma/);
       });
 
-      buildTimeTest('else if alternate', () => {
+      test('else if alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -222,7 +223,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/beta/);
       });
 
-      buildTimeTest('else if with indeterminate predecessor, alternate', () => {
+      test('else if with indeterminate predecessor, alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -240,7 +241,7 @@ describe('macroCondition', function () {
         expect(code).toMatch(/gamma/);
       });
 
-      buildTimeTest('else if with indeterminate predecessor, consequent', () => {
+      test('else if with indeterminate predecessor, consequent', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
       export default function() {
@@ -292,7 +293,7 @@ describe('macroCondition', function () {
         }).toThrow(/macroCondition can only be used as the predicate of an if statement or ternary expression/);
       });
 
-      buildTimeTest('composes with other macros using ternary', () => {
+      test('composes with other macros using ternary', () => {
         let code = transform(`
       import { macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
@@ -303,11 +304,11 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/beta/);
       });
 
-      runTimeTest('composes with other macros using ternary', () => {
+      runTimeTest('given runtime implementation, it composes with other macros using ternary', () => {
         let code = transform(`
-      import { macroCondition, dependencySatisfies } from '@embroider/macros';
+      import { isTesting, macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return macroCondition(dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
+        return macroCondition(isTesting() && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
         expect(run(code, { filename })).toBe('alpha');
@@ -337,18 +338,18 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/beta/);
       });
 
-      runTimeTest('can evaluate boolean expressions', () => {
+      runTimeTest('given runtime implementation, it can evaluate boolean expressions', () => {
         let code = transform(`
-      import { macroCondition, dependencySatisfies } from '@embroider/macros';
+      import { isTesting, macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
-        return macroCondition((2 > 1) && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
+        return macroCondition(isTesting() && (2 > 1) && dependencySatisfies('qunit', '*')) ? 'alpha' : 'beta';
       }
       `);
         expect(run(code, { filename })).toBe('alpha');
         expect(code).toMatch(/beta/);
       });
 
-      buildTimeTest('can evaluate boolean expressions', () => {
+      test('can evaluate boolean expressions', () => {
         let code = transform(`
       import { macroCondition, dependencySatisfies } from '@embroider/macros';
       export default function() {
@@ -401,11 +402,11 @@ describe('macroCondition', function () {
           expect(code).not.toMatch(/alpha/);
         });
 
-        runTimeTest('can be used as class field initializer', () => {
+        runTimeTest('given runtime implementation, it can be used as class field initializer', () => {
           let code = transform(`
-            import { macroCondition, getConfig } from '@embroider/macros';
+            import { isTesting, macroCondition, getConfig } from '@embroider/macros';
             class QUnitTest {
-              version = macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
+              version = macroCondition(isTesting() && getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
             }
             let test = new QUnitTest();
             export default function() {

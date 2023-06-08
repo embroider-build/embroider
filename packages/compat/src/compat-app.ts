@@ -13,7 +13,7 @@ import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo, AddonInstance } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
-import DummyPackage, { OwningAddon } from './dummy-package';
+import DummyPackage from './dummy-package';
 import { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
@@ -793,10 +793,10 @@ export default class CompatApp {
     let movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
 
     if (this.isDummy) {
-      let owningAddon = new OwningAddon(this.legacyEmberAppInstance.project.root, movablePackageCache);
-      movablePackageCache.seed(owningAddon);
-      movablePackageCache.seed(new DummyPackage(this.root, owningAddon, movablePackageCache));
-      this.macrosConfig.enablePackageDevelopment(owningAddon.root);
+      movablePackageCache.seed(
+        new DummyPackage(this.root, this.legacyEmberAppInstance.project.root, movablePackageCache)
+      );
+      this.macrosConfig.enablePackageDevelopment(this.legacyEmberAppInstance.project.root);
     }
     return movablePackageCache;
   }

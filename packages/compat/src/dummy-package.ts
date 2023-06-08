@@ -5,13 +5,13 @@ import cloneDeep from 'lodash/cloneDeep';
 // A specialized Package that represents a Dummy App (the app that comes along
 // with an addon for purposes of testing that addon).
 export default class DummyPackage extends Package {
-  constructor(root: string, private owningAddon: Package, packageCache: PackageCache) {
+  constructor(root: string, private owningAddonRoot: string, packageCache: PackageCache) {
     super(root, packageCache, true);
   }
 
   @Memoize()
   protected get internalPackageJSON() {
-    let pkg = cloneDeep(this.owningAddon.packageJSON);
+    let pkg = cloneDeep(this.packageCache.get(this.owningAddonRoot).packageJSON);
     pkg.name = 'dummy';
     return pkg;
   }
@@ -22,19 +22,8 @@ export default class DummyPackage extends Package {
     if (!deps) {
       deps = new Map();
     }
-    deps.set(this.owningAddon.name, this.owningAddon);
+    const owningAddon = this.packageCache.get(this.owningAddonRoot);
+    deps.set(owningAddon.name, owningAddon);
     return deps;
-  }
-}
-
-// A specialized Package that represents an Addon that owns the current Dummy
-// App. It's special because it always supports rebuilds.
-export class OwningAddon extends Package {
-  constructor(root: string, packageCache: PackageCache) {
-    super(root, packageCache, false);
-  }
-
-  get mayRebuild(): boolean {
-    return true;
   }
 }

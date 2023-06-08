@@ -143,6 +143,13 @@ export default class CompatApp {
     return new V1Config(this.configTree, this.legacyEmberAppInstance.env);
   }
 
+  @Memoize()
+  get testConfig(): V1Config | undefined {
+    if (this.shouldBuildTests) {
+      return new V1Config(this.configTree, 'test');
+    }
+  }
+
   get autoRun(): boolean {
     return this.legacyEmberAppInstance.options.autoRun;
   }
@@ -653,7 +660,7 @@ export default class CompatApp {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let config = new WriteV1Config(this.config, this.storeConfigInMeta);
+    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.testConfig);
     let patterns = this.configReplacePatterns;
     let configReplaced = new this.configReplace(config, this.configTree, {
       configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),

@@ -1,4 +1,5 @@
-import { Package, PackageCache } from '@embroider/core';
+import Package from './package';
+import PackageCache from './package-cache';
 import { Memoize } from 'typescript-memoize';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -24,17 +25,5 @@ export default class DummyPackage extends Package {
     }
     deps.set(this.owningAddon.name, this.owningAddon);
     return deps;
-  }
-}
-
-// A specialized Package that represents an Addon that owns the current Dummy
-// App. It's special because it always supports rebuilds.
-export class OwningAddon extends Package {
-  constructor(root: string, packageCache: PackageCache) {
-    super(root, packageCache, false);
-  }
-
-  get mayRebuild(): boolean {
-    return true;
   }
 }

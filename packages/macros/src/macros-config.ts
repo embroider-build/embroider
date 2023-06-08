@@ -3,7 +3,7 @@ import { join } from 'path';
 import crypto from 'crypto';
 import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
-import { PackageCache, getOrCreate } from '@embroider/shared-internals';
+import { PackageCache, getOrCreate, getAppRoot, AppInstance, AddonInstance } from '@embroider/shared-internals';
 import { FirstTransformParams, makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import State from './babel/state';
 import partition from 'lodash/partition';
@@ -311,9 +311,17 @@ export default class MacrosConfig {
   // normal node_modules resolution can find their dependencies. In other words,
   // owningPackageRoot is needed when you use this inside classic ember-cli, and
   // it's not appropriate inside embroider.
-  babelPluginConfig(appOrAddonInstance?: any): PluginItem[] {
+  babelPluginConfig(appOrAddonInstance?: AppInstance | AddonInstance): PluginItem[] {
     let self = this;
-    let owningPackageRoot = appOrAddonInstance ? appOrAddonInstance.root || appOrAddonInstance.project.root : null;
+    let owningPackageRoot: string | undefined;
+
+    if (appOrAddonInstance) {
+      if ('root' in appOrAddonInstance) {
+        owningPackageRoot = appOrAddonInstance.root;
+      } else {
+        owningPackageRoot = getAppRoot(appOrAddonInstance);
+      }
+    }
     let opts: State['opts'] = {
       // this is deliberately lazy because we want to allow everyone to finish
       // setting config before we generate the userConfigs

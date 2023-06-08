@@ -17,6 +17,9 @@ async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.pkg.volta = {
+    node: '20.2.0',
+  };
 }
 
 export function supportMatrix(scenarios: Scenarios) {

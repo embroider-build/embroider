@@ -15,6 +15,6 @@
     "main": "addon-main.cjs"
   },
   "exports": {
-    "./*": "./*"
+    "./*": "./*.js"
   }
 }

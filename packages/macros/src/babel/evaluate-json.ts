@@ -103,6 +103,7 @@ const unops: { [operator: string]: any } = {
 export interface ConfidentResult {
   confident: true;
   value: any;
+  hasRuntimeImplementation: boolean;
 }
 
 export interface UnknownResult {
@@ -162,6 +163,8 @@ export class Evaluator {
               return confidentObject.value[confidentProperty.value];
             }
           },
+          hasRuntimeImplementation:
+            confidentObject.hasRuntimeImplementation || confidentProperty.hasRuntimeImplementation,
         };
       }
     }
@@ -174,7 +177,7 @@ export class Evaluator {
       return first;
     }
     if (path.isIdentifier()) {
-      return { confident: true, value: path.node.name };
+      return { confident: true, value: path.node.name, hasRuntimeImplementation: false };
     }
     return { confident: false };
   }
@@ -191,7 +194,7 @@ export class Evaluator {
   private realEvaluate(path: NodePath): EvaluateResult {
     let builtIn = path.evaluate();
     if (isConfidentResult(builtIn)) {
-      return builtIn;
+      return { ...builtIn, hasRuntimeImplementation: false };
     }
 
     if (path.isMemberExpression()) {
@@ -205,19 +208,19 @@ export class Evaluator {
     }
 
     if (path.isStringLiteral()) {
-      return { confident: true, value: path.node.value };
+      return { confident: true, value: path.node.value, hasRuntimeImplementation: false };
     }
 
     if (path.isNumericLiteral()) {
-      return { confident: true, value: path.node.value };
+      return { confident: true, value: path.node.value, hasRuntimeImplementation: false };
     }
 
     if (path.isBooleanLiteral()) {
-      return { confident: true, value: path.node.value };
+      return { confident: true, value: path.node.value, hasRuntimeImplementation: false };
     }
 
     if (path.isNullLiteral()) {
-      return { confident: true, value: null };
+      return { confident: true, value: null, hasRuntimeImplementation: false };
     }
 
     if (path.isObjectExpression()) {
@@ -246,6 +249,9 @@ export class Evaluator {
           }
           return result;
         },
+        hasRuntimeImplementation: confidentProps.some(
+          ([key, value]) => key.hasRuntimeImplementation || value.hasRuntimeImplementation
+        ),
       };
     }
 
@@ -260,6 +266,7 @@ export class Evaluator {
           get value() {
             return confidentElements.map(element => element.value);
           },
+          hasRuntimeImplementation: confidentElements.some(el => el.hasRuntimeImplementation),
         };
       }
     }
@@ -295,7 +302,11 @@ export class Evaluator {
           let rightOperand = this.evaluate(path.get('right') as NodePath<t.Expression>);
           if (leftOperand.confident && rightOperand.confident) {
             let value = binops[operator](leftOperand.value, rightOperand.value);
-            return { confident: true, value };
+            return {
+              confident: true,
+              value,
+              hasRuntimeImplementation: leftOperand.hasRuntimeImplementation || rightOperand.hasRuntimeImplementation,
+            };
           }
         }
       }
@@ -307,7 +318,11 @@ export class Evaluator {
       if (test.confident) {
         let result = test.value ? this.evaluate(path.get('consequent')) : this.evaluate(path.get('alternate'));
         if (result.confident) {
-          return result;
+          return {
+            confident: true,
+            value: result.value,
+            hasRuntimeImplementation: test.hasRuntimeImplementation || result.hasRuntimeImplementation,
+          };
         }
       }
     }
@@ -318,7 +333,7 @@ export class Evaluator {
         let operand = this.evaluate(path.get('argument') as NodePath<t.Expression>);
         if (operand.confident) {
           let value = unops[operator](operand.value);
-          return { confident: true, value };
+          return { confident: true, value, hasRuntimeImplementation: operand.hasRuntimeImplementation };
         }
       }
       return { confident: false };
@@ -328,7 +343,7 @@ export class Evaluator {
       if (!this.locals.hasOwnProperty(path.node.name)) {
         return { confident: false };
       }
-      return { confident: true, value: this.locals[path.node.name] };
+      return { confident: true, value: this.locals[path.node.name], hasRuntimeImplementation: false };
     }
 
     return { confident: false };
@@ -354,6 +369,7 @@ export class Evaluator {
           get value() {
             throw new Error(`bug in @embroider/macros: didn't expect to need to evaluate this value`);
           },
+          hasRuntimeImplementation: true,
         };
       }
     }
@@ -366,19 +382,19 @@ export class Evaluator {
     }
     let callee = path.get('callee');
     if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
-      return { confident: true, value: dependencySatisfies(path, this.state) };
+      return { confident: true, value: dependencySatisfies(path, this.state), hasRuntimeImplementation: false };
     }
     if (callee.referencesImport('@embroider/macros', 'moduleExists')) {
-      return { confident: true, value: moduleExists(path, this.state) };
+      return { confident: true, value: moduleExists(path, this.state), hasRuntimeImplementation: false };
     }
     if (callee.referencesImport('@embroider/macros', 'getConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'package') };
+      return { confident: true, value: getConfig(path, this.state, 'package'), hasRuntimeImplementation: true };
     }
     if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'own') };
+      return { confident: true, value: getConfig(path, this.state, 'own'), hasRuntimeImplementation: true };
     }
     if (callee.referencesImport('@embroider/macros', 'getGlobalConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'getGlobalConfig') };
+      return { confident: true, value: getConfig(path, this.state, 'getGlobalConfig'), hasRuntimeImplementation: true };
     }
     if (callee.referencesImport('@embroider/macros', 'isDevelopingApp')) {
       return {
@@ -387,19 +403,21 @@ export class Evaluator {
           this.state.opts.appPackageRoot &&
             this.state.opts.isDevelopingPackageRoots.includes(this.state.opts.appPackageRoot)
         ),
+        hasRuntimeImplementation: false,
       };
     }
     if (callee.referencesImport('@embroider/macros', 'isDevelopingThisPackage')) {
       return {
         confident: true,
         value: this.state.opts.isDevelopingPackageRoots.includes(this.state.owningPackage().root),
+        hasRuntimeImplementation: false,
       };
     }
     if (callee.referencesImport('@embroider/macros', 'isTesting')) {
       let g = getConfig(path, this.state, 'getGlobalConfig') as any;
       let e = g && g['@embroider/macros'];
       let value = Boolean(e && e.isTesting);
-      return { confident: true, value };
+      return { confident: true, value, hasRuntimeImplementation: true };
     }
     return { confident: false };
   }

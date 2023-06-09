@@ -89,8 +89,10 @@ function targetPackage(fromPath: string, packageName: string | undefined, packag
   }
 }
 
-function collapse(path: NodePath, config: any) {
-  let evaluator = new Evaluator({ knownPaths: new Map([[path, { confident: true, value: config }]]) });
+function collapse(path: NodePath, config: unknown) {
+  let evaluator = new Evaluator({
+    knownPaths: new Map([[path, { confident: true, value: config, hasRuntimeImplementation: false }]]),
+  });
 
   while (true) {
     let parentPath = path.parentPath!;

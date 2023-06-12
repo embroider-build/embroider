@@ -827,7 +827,16 @@ export default class CompatApp {
     packageCache: RewrittenPackageCache,
     configTree: V1Config
   ) {
-    let origAppPkg = packageCache.get(appSrcDir);
+    let origAppPkg;
+    if (this.isDummy) {
+      origAppPkg = new DummyPackage(
+        this.root,
+        this.legacyEmberAppInstance.project.root,
+        packageCache as unknown as PackageCache // TODO: cast won't be needed when refactor is complete
+      );
+    } else {
+      origAppPkg = packageCache.get(appSrcDir);
+    }
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     return new CompatAppBuilder(
       root,

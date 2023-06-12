@@ -1,5 +1,5 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
-import { PackageCache, WaitForTrees, Stage } from '@embroider/core';
+import { PackageCache, WaitForTrees, Stage, RewrittenPackageCache } from '@embroider/core';
 import Options, { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -821,10 +821,18 @@ export default class CompatApp {
     };
   }
 
-  private async instantiate(root: string, appSrcDir: string, packageCache: PackageCache, configTree: V1Config) {
+  private async instantiate(
+    root: string,
+    appSrcDir: string,
+    packageCache: RewrittenPackageCache,
+    configTree: V1Config
+  ) {
+    let origAppPkg = packageCache.get(appSrcDir);
+    let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     return new CompatAppBuilder(
       root,
-      packageCache.get(appSrcDir),
+      origAppPkg,
+      movedAppPkg,
       this.options,
       this,
       configTree,
@@ -834,16 +842,18 @@ export default class CompatApp {
   }
 
   asStage(prevStage: Stage): Stage {
-    let resolve: (result: { packageCache: PackageCache; outputPath: string }) => void;
-    let promise: Promise<{ packageCache: PackageCache; outputPath: string }> = new Promise(r => (resolve = r));
+    let resolve: (result: { outputPath: string }) => void;
+    let promise: Promise<{ outputPath: string }> = new Promise(r => (resolve = r));
 
     let tree = () => {
       let inTrees = this.inTrees(prevStage.tree);
       return new WaitForTrees(inTrees, this.annotation, async treePaths => {
         if (!this.active) {
-          let { outputPath, packageCache } = await prevStage.ready();
+          let { outputPath } = await prevStage.ready();
+          // TODO: this will use shared caches once we refactor out MovedPackageCache
+          let packageCache = new RewrittenPackageCache(new PackageCache(this.root));
           this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache, inTrees.configTree);
-          resolve({ packageCache, outputPath });
+          resolve({ outputPath });
         }
         await this.active.build(treePaths);
       });

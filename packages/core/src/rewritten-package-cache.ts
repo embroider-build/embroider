@@ -66,7 +66,7 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   }
 
   // ensure we have the moved version of the package
-  private maybeMoved(pkg: Package): Package {
+  maybeMoved(pkg: Package): Package {
     let newRoot = this.index.oldToNew.get(pkg.root);
     if (newRoot) {
       return this.get(newRoot);
@@ -84,6 +84,17 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     if (oldRoot) {
       return this.plainCache.get(oldRoot);
     }
+  }
+
+  // given any package, give us a new representation of it where its deps are
+  // replaced with rewritten versions of those deps, as needed.
+  withRewrittenDeps(pkg: Package): Package {
+    let found = wrapped.get(pkg);
+    if (!found) {
+      found = new WrappedPackage(this, pkg);
+      wrapped.set(pkg, found);
+    }
+    return castToPackage(found);
   }
 
   ownerOfFile(filename: string): Package | undefined {
@@ -133,12 +144,7 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   private maybeWrap(pkg: Package) {
     let oldRoot = this.index.newToOld.get(pkg.root);
     if (oldRoot) {
-      let found = wrapped.get(pkg);
-      if (!found) {
-        found = new MovedPackage(this, pkg);
-        wrapped.set(pkg, found);
-      }
-      return castToPackage(found);
+      return this.withRewrittenDeps(pkg);
     } else {
       return pkg;
     }
@@ -157,27 +163,32 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
 }
 
 const shared: Map<string, RewrittenPackageCache> = new Map();
-const wrapped = new WeakMap<Package, MovedPackage>();
+const wrapped = new WeakMap<Package, WrappedPackage>();
 
 // TODO: as our refactor lands we should be able to remove this from Package
 // itself.
 type PackageTheGoodParts = Omit<PublicAPI<Package>, 'nonResolvableDeps'>;
 
 // TODO: this goes with the above TODO and can get deleted when it does.
-function castToPackage(m: MovedPackage): Package {
+function castToPackage(m: WrappedPackage): Package {
   return m as unknown as Package;
 }
 
-class MovedPackage implements PackageTheGoodParts {
-  // plainPkg is not the Package in the original un-moved location, it's the
-  // plain representation of the moved location. That is, when you grab
-  // plainPkg.root it will show the new location, and plainPkg.packageJSON shows
-  // the rewritten package.json contained there.
+class WrappedPackage implements PackageTheGoodParts {
+  // Questions about *this* package will be answered based on the given
+  // plainPkg.
   //
-  // The point of MovedPackage is to finesse the parts of plainPkg that wouldn't
-  // be correct if you used them directly. For example, plainPkg.dependencies
-  // won't necessarily even work, because if you try to resolve them from the
-  // moved location they might not be there.
+  // Questions about *this package's deps* will be translated through the set of
+  // moved packages.
+  //
+  // There are two different cases that this enables. The first is when we're
+  // representing a package that has itself been rewritten, in which case
+  // plainPkg points at the *rewritten* copy of the package, so that we see our
+  // own rewritten package.json, etc. The second case is in Stage2 when the
+  // dependencies have been rewritten but the app has not -- we represent the
+  // app as a WrappedPackage where plainPkg is the *original* app package, so
+  // we're still seeing the original package.json, etc, but while also seeing
+  // the rewritten addons.
   constructor(private packageCache: RewrittenPackageCache, private plainPkg: Package) {}
 
   get root() {
@@ -261,7 +272,12 @@ class MovedPackage implements PackageTheGoodParts {
     return this.plainPkg.dependencyNames
       .map(name => {
         try {
-          return this.packageCache.resolve(name, castToPackage(this));
+          // when this.plainPkg was itself moved, the result from resolve() is
+          // already a moved package if that dep was moved. In that case, the
+          // maybeMoved() is not needed. But when this.plainPkg is not moved and
+          // wants to see moved deps (which is the case for the app package in
+          // stage2), we do need the final maybeMoved() call to adjust them.
+          return this.packageCache.maybeMoved(this.packageCache.resolve(name, castToPackage(this)));
         } catch (error) {
           // if the package was not found do not error out here. this is relevant
           // for the case where a package might be an optional peerDependency and we dont

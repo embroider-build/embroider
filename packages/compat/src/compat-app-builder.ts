@@ -64,7 +64,8 @@ export class CompatAppBuilder {
 
   constructor(
     private root: string,
-    private appPackage: Package,
+    private origAppPackage: Package,
+    private appPackageWithMovedDeps: Package,
     private options: Required<Options>,
     private compatApp: CompatApp,
     private configTree: V1Config,
@@ -134,7 +135,7 @@ export class CompatAppBuilder {
     }
   }
 
-  private activeAddonChildren(pkg: Package = this.appPackage): AddonPackage[] {
+  private activeAddonChildren(pkg: Package): AddonPackage[] {
     let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
       // a given package, to align with how ember-cli resolves addons. So here
@@ -142,7 +143,7 @@ export class CompatAppBuilder {
       // sections.
       addon => pkg.packageJSON.dependencies?.[addon.name] || pkg.packageJSON.devDependencies?.[addon.name]
     );
-    if (pkg === this.appPackage) {
+    if (pkg === this.appPackageWithMovedDeps) {
       let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
       result = [...result, ...extras];
     }
@@ -151,7 +152,7 @@ export class CompatAppBuilder {
 
   @Memoize()
   private get allActiveAddons(): AddonPackage[] {
-    let result = this.appPackage.findDescendants(this.isActiveAddon) as AddonPackage[];
+    let result = this.appPackageWithMovedDeps.findDescendants(this.isActiveAddon) as AddonPackage[];
     let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
     let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
     result = [...result, ...extras, ...extraDescendants];
@@ -160,8 +161,13 @@ export class CompatAppBuilder {
 
   @bind
   private isActiveAddon(pkg: Package): boolean {
-    // todo: filter by addon-provided hook
-    return pkg.isEmberPackage();
+    // stage1 already took care of converting everything that's actually active
+    // into v2 addons. If it's not a v2 addon, we don't want it.
+    //
+    // We can encounter v1 addons here when there is inactive stuff floating
+    // around in the node_modules that accidentally satisfy something like an
+    // optional peer dep.
+    return pkg.isV2Addon();
   }
 
   @bind
@@ -247,7 +253,7 @@ export class CompatAppBuilder {
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      { name: this.appPackage.name, version: this.appPackage.version, root: this.root },
+      { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.root },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }
@@ -524,7 +530,7 @@ export class CompatAppBuilder {
       }
     }
 
-    html.insertStyleLink(html.styles, `assets/${this.appPackage.name}.css`);
+    html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
     const parentEngine = appFiles.find(e => !e.parent) as Engine;
     let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
@@ -653,7 +659,7 @@ export class CompatAppBuilder {
   private partitionEngines(appJSPath: string): EngineSummary[] {
     let queue: EngineSummary[] = [
       {
-        package: this.appPackage,
+        package: this.appPackageWithMovedDeps,
         addons: new Set(),
         parent: undefined,
         sourcePath: appJSPath,
@@ -691,7 +697,7 @@ export class CompatAppBuilder {
 
   @Memoize()
   private get activeFastboot() {
-    return this.activeAddonChildren(this.appPackage).find(a => a.name === 'ember-cli-fastboot');
+    return this.activeAddonChildren(this.appPackageWithMovedDeps).find(a => a.name === 'ember-cli-fastboot');
   }
 
   @Memoize()
@@ -969,7 +975,7 @@ export class CompatAppBuilder {
   }
 
   private combinePackageJSON(meta: AppMeta): object {
-    let pkgLayers: any[] = [this.appPackage.packageJSON];
+    let pkgLayers: any[] = [this.origAppPackage.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
       // fastboot-specific package.json output is allowed to add to our original package.json
@@ -1011,7 +1017,7 @@ export class CompatAppBuilder {
   @Memoize()
   private get portableHints(): PortableHint[] {
     return this.options.pluginHints.map(hint => {
-      let cursor = join(this.appPackage.root, 'package.json');
+      let cursor = join(this.origAppPackage.root, 'package.json');
       for (let i = 0; i < hint.resolve.length; i++) {
         let target = hint.resolve[i];
         if (i < hint.resolve.length - 1) {
@@ -1125,7 +1131,7 @@ export class CompatAppBuilder {
 
   private topAppJSAsset(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
     let [app, ...childEngines] = engines;
-    let relativePath = `assets/${this.appPackage.name}.js`;
+    let relativePath = `assets/${this.origAppPackage.name}.js`;
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
       autoRun: this.compatApp.autoRun,
       appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',

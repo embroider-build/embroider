@@ -22,12 +22,7 @@ export default function toBroccoliPlugin<Options>(
 
     async build() {
       if (!this.packager) {
-        let { outputPath, packageCache } = await this.stage.ready();
-        // We always register a shared stage3 packageCache so it can be used by
-        // things like babel plugins and template compilers.
-        if (packageCache) {
-          packageCache.shareAs('embroider-stage3');
-        }
+        let { outputPath } = await this.stage.ready();
         this.packager = new packagerClass(
           outputPath,
           this.outputPath,

@@ -306,7 +306,7 @@ export class Resolver {
 
     let pkg = this.owningPackage(match.filename);
     if (pkg) {
-      let rel = withoutJSExt(explicitRelative(pkg.root, match.filename));
+      let rel = explicitRelative(pkg.root, match.filename);
       let entry = this.mergeMap.get(pkg.root)?.get(rel);
       if (entry?.type === 'both') {
         return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
@@ -504,7 +504,6 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            inEngineName = withoutJSExt(inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -549,7 +548,6 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            inEngineName = withoutJSExt(inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -933,8 +931,17 @@ export class Resolver {
     engine: EngineConfig,
     inEngineSpecifier: string
   ): R | undefined {
-    inEngineSpecifier = withoutJSExt(inEngineSpecifier);
-    let entry = this.mergeMap.get(engine.root)?.get(inEngineSpecifier);
+    let entry;
+
+    if (inEngineSpecifier.match(/\.(hbs|js|hbs\.js)$/)) {
+      entry = this.mergeMap.get(engine.root)?.get(inEngineSpecifier);
+    } else {
+      // try looking up .hbs .js and .hbs.js in that order for specifiers without extenstions
+      ['.hbs', '.js', '.hbs.js'].find(ext => {
+        return (entry = this.mergeMap.get(engine.root)?.get(`${inEngineSpecifier}${ext}`));
+      });
+    }
+
     switch (entry?.type) {
       case undefined:
         return undefined;
@@ -1059,12 +1066,4 @@ function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, impor
 function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
   let filename = virtualExternalModule(specifier);
   return logTransition(label, request, request.virtualize(filename));
-}
-
-// this is specifically for app-js handling, where only .js and .hbs are legal
-// extensiosn, and only .js is allowed to be an *implied* extension (.hbs must
-// be explicit). So when normalizing such paths, it's only a .js suffix that we
-// must remove.
-function withoutJSExt(filename: string): string {
-  return filename.replace(/\.js$/, '');
 }

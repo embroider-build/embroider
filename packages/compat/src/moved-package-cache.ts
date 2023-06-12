@@ -113,6 +113,14 @@ export class MovedPackageCache extends PackageCache {
         content.extraResolutions[newPkg.root] = [...nonResolvableDeps.values()].map(v => v.root);
       }
     }
+
+    // we aren't listing the app itself in the index but we need to list any
+    // extraResolutions it needs to find its nonresolvable deps
+    let nonResolvableDeps = this.app.nonResolvableDeps;
+    if (nonResolvableDeps) {
+      content.extraResolutions[this.app.root] = [...nonResolvableDeps.values()].map(v => v.root);
+    }
+
     outputJSONSync(indexFile, content, { spaces: 2 });
   }
 

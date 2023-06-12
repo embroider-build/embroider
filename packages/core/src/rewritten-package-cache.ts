@@ -39,13 +39,6 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   }
 
   resolve(packageName: string, fromPackage: Package): Package {
-    let oldRoot = this.index.newToOld.get(fromPackage.root);
-    if (!oldRoot) {
-      // the fromPackage has not been moved, so we're just providing the plain
-      // behavior.
-      return this.plainCache.resolve(packageName, fromPackage);
-    }
-
     // check for any extraResolutions
     let extraResolutions = this.index.extraResolutions.get(fromPackage.root);
     if (extraResolutions) {
@@ -55,6 +48,13 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
           return this.maybeMoved(depPkg);
         }
       }
+    }
+
+    let oldRoot = this.index.newToOld.get(fromPackage.root);
+    if (!oldRoot) {
+      // the fromPackage has not been moved, so we're just providing the plain
+      // behavior.
+      return this.plainCache.resolve(packageName, fromPackage);
     }
 
     // do the real resolving from the old location

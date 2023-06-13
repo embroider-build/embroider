@@ -4,6 +4,7 @@ import { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import { types as t } from '@babel/core';
 import 'code-equality-assertions/jest';
+import State, { initState } from '../../src/babel/state';
 
 describe('evaluation', function () {
   allBabelVersions({
@@ -117,6 +118,180 @@ describe('evaluation', function () {
   });
 });
 
+describe('hasRuntimeImplementation', function () {
+  allBabelVersions({
+    babelConfig() {
+      return {
+        plugins: [testRuntime],
+      };
+    },
+    createTests(transform) {
+      test('boolean literal', () => {
+        let code = transform(`const result = true;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('string literal', () => {
+        let code = transform(`const result = 'foo';`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('number literal', () => {
+        let code = transform(`const result = 1;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('null literal', () => {
+        let code = transform(`const result = null;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('undefined literal', () => {
+        let code = transform(`const result = undefined;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('isTesting', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = isTesting()`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('getConfig', () => {
+        let code = transform(`
+        import { getConfig } from '@embroider/macros';
+        const result = getConfig('foo')`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      // this is throwing internally, not sure how to fix
+      test.skip('getOwnConfig', () => {
+        let code = transform(`
+        import { getOwnConfig } from '@embroider/macros';
+        const result = getOwnConfig()`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('getGlobalConfig', () => {
+        let code = transform(`
+        import { getGlobalConfig } from '@embroider/macros';
+        const result = getGlobalConfig()`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('static object', () => {
+        let code = transform(`const result = { foo: 'bar' }`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('object with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = { foo: isTesting() }`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('static array', () => {
+        let code = transform(`const result = [1, 2]`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('array with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = [1, isTesting(), 2]`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('static assignment', () => {
+        let code = transform(`
+        let foo;
+        const result = foo = 1;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('assignment with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        let foo;
+        const result = foo = isTesting();`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('call expression', () => {
+        let code = transform(`const result = foo();`);
+        expect(code).toMatch(`result = undefined`);
+      });
+
+      test('binary expression', () => {
+        let code = transform(`const result = 1 === 1;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('binary expression with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = true === isTesting();`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('logical expression', () => {
+        let code = transform(`const result = true && false`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('logical expression with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = true && isTesting();`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('unary expression', () => {
+        let code = transform(`const result = !false`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('unary expression with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = !isTesting();`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('ternary expression', () => {
+        let code = transform(`const result = true ? 1 : 2`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('ternary expression with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = true ? isTesting() : 2;`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('identifier', () => {
+        let code = transform(`const result = knownValue;`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('member expression', () => {
+        let code = transform(`const result = { foo: true }`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('member expression with runtime', () => {
+        let code = transform(`
+        import { isTesting } from '@embroider/macros';
+        const result = { foo: isTesting() }`);
+        expect(code).toMatch(`result = true`);
+      });
+    },
+  });
+});
+
 function isNodePathPresent(path: NodePath<t.Expression | null | undefined>): path is NodePath<t.Expression> {
   return path.node != null;
 }
@@ -138,6 +313,36 @@ function testEval(babelContext: typeof Babel) {
           if (result.confident) {
             value.replaceWith(buildLiterals(result.value, babelContext));
           }
+        }
+      },
+    },
+  };
+  return { visitor };
+}
+
+function testRuntime(babelContext: typeof Babel) {
+  let visitor = {
+    Program: {
+      enter(path: NodePath<t.Program>, state: State) {
+        initState(t, path, state);
+      },
+    },
+    VariableDeclarator: {
+      exit(path: NodePath<t.VariableDeclarator>, state: State) {
+        let id = path.get('id').node;
+        let value = path.get('init');
+        if (t.isIdentifier(id) && id.name === 'result' && isNodePathPresent(value)) {
+          let evaluator = new Evaluator({
+            locals: {
+              knownValue: 2,
+              knownUndefinedValue: undefined,
+            },
+            state,
+          });
+          let result = evaluator.evaluate(value);
+          value.replaceWith(
+            buildLiterals(result.confident ? result.hasRuntimeImplementation : undefined, babelContext)
+          );
         }
       },
     },

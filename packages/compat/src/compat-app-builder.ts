@@ -15,6 +15,7 @@ import {
   templateColocationPluginPath,
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
+  Resolver,
 } from '@embroider/core';
 import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
@@ -244,10 +245,6 @@ export class CompatAppBuilder {
 
   private rootURL(): string {
     return this.configTree.readConfig().rootURL;
-  }
-
-  private templateCompilerPath(): string {
-    return 'ember-source/vendor/ember/ember-template-compiler';
   }
 
   @Memoize()
@@ -1007,9 +1004,18 @@ export class CompatAppBuilder {
       transforms.push([require.resolve('./resolver-transform'), opts]);
     }
 
+    let resolver = new Resolver(resolverConfig);
+    let resolution = resolver.nodeResolve(
+      'ember-source/vendor/ember/ember-template-compiler',
+      resolvePath(this.root, 'package.json')
+    );
+    if (resolution.type !== 'real') {
+      throw new Error(`bug: unable to resolve ember-template-compiler from ${this.root}`);
+    }
+
     return {
       transforms,
-      compilerPath: resolve.sync(this.templateCompilerPath(), { basedir: this.root }),
+      compilerPath: resolution.filename,
       enableLegacyModules: ['ember-cli-htmlbars', 'ember-cli-htmlbars-inline-precompile', 'htmlbars-inline-precompile'],
     };
   }

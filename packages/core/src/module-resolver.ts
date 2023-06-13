@@ -307,7 +307,7 @@ export class Resolver {
     let pkg = this.owningPackage(match.filename);
     if (pkg) {
       let rel = explicitRelative(pkg.root, match.filename);
-      let entry = this.mergeMap.get(pkg.root)?.get(rel);
+      let entry = this.getEntryFromMergeMap(rel, pkg.root);
       if (entry?.type === 'both') {
         return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
       }
@@ -926,21 +926,30 @@ export class Resolver {
     return logTransition('fallbackResolve final exit', request);
   }
 
+  private getEntryFromMergeMap(inEngineSpecifier: string, root: string): MergeEntry | undefined {
+    let entry: MergeEntry | undefined;
+
+    if (inEngineSpecifier.match(/\.(hbs|js|hbs\.js)$/)) {
+      entry = this.mergeMap.get(root)?.get(inEngineSpecifier);
+    } else {
+      // try looking up .hbs .js and .hbs.js in that order for specifiers without extenstions
+      ['.hbs', '.js', '.hbs.js'].forEach(ext => {
+        if (entry) {
+          return;
+        }
+
+        entry = this.mergeMap.get(root)?.get(`${inEngineSpecifier}${ext}`);
+      });
+    }
+    return entry;
+  }
+
   private searchAppTree<R extends ModuleRequest>(
     request: R,
     engine: EngineConfig,
     inEngineSpecifier: string
   ): R | undefined {
-    let entry;
-
-    if (inEngineSpecifier.match(/\.(hbs|js|hbs\.js)$/)) {
-      entry = this.mergeMap.get(engine.root)?.get(inEngineSpecifier);
-    } else {
-      // try looking up .hbs .js and .hbs.js in that order for specifiers without extenstions
-      ['.hbs', '.js', '.hbs.js'].find(ext => {
-        return (entry = this.mergeMap.get(engine.root)?.get(`${inEngineSpecifier}${ext}`));
-      });
-    }
+    let entry = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
 
     switch (entry?.type) {
       case undefined:

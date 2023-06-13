@@ -112,31 +112,25 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   } {
     let addonsDir = resolve(this.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
     let indexFile = resolve(addonsDir, 'index.json');
-    if (existsSync(indexFile)) {
-      // I should probably make the else case throw here soon.
-      let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;
-      return {
-        oldToNew: new Map(
-          Object.entries(packages).map(([oldRoot, newRoot]) => [
-            resolve(addonsDir, oldRoot),
-            resolve(addonsDir, newRoot),
-          ])
-        ),
-        newToOld: new Map(
-          Object.entries(packages).map(([oldRoot, newRoot]) => [
-            resolve(addonsDir, newRoot),
-            resolve(addonsDir, oldRoot),
-          ])
-        ),
-        extraResolutions: new Map(
-          Object.entries(extraResolutions).map(([fromRoot, toRoots]) => [
-            resolve(addonsDir, fromRoot),
-            toRoots.map(r => resolve(addonsDir, r)),
-          ])
-        ),
-      };
+    if (!existsSync(indexFile)) {
+      throw new Error(`RewrittenPackageCache expected ${indexFile} to exist`);
     }
-    return { oldToNew: new Map(), newToOld: new Map(), extraResolutions: new Map() };
+
+    let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;
+    return {
+      oldToNew: new Map(
+        Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, oldRoot), resolve(addonsDir, newRoot)])
+      ),
+      newToOld: new Map(
+        Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, newRoot), resolve(addonsDir, oldRoot)])
+      ),
+      extraResolutions: new Map(
+        Object.entries(extraResolutions).map(([fromRoot, toRoots]) => [
+          resolve(addonsDir, fromRoot),
+          toRoots.map(r => resolve(addonsDir, r)),
+        ])
+      ),
+    };
   }
 
   // put a WrappedPackage around Packages that do in fact represent ones that we

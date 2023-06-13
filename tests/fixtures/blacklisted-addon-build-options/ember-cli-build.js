@@ -6,7 +6,7 @@ module.exports = function (defaults) {
   let app = new EmberApp(defaults, {
     // Add options here
     addons: {
-      blacklist: ['blacklisted-in-repo-addon'],
+      exclude: ['blacklisted-in-repo-addon'],
     },
   });
 

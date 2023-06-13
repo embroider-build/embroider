@@ -25,7 +25,6 @@ import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
-import { MovablePackageCache } from './moved-package-cache';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { CompatAppBuilder } from './compat-app-builder';
 
@@ -789,20 +788,6 @@ export default class CompatApp {
     });
   }
 
-  makePackageCache(): MovablePackageCache {
-    let movablePackageCache = new MovablePackageCache(this.macrosConfig, this.root);
-
-    if (this.isDummy) {
-      movablePackageCache.setApp(
-        new DummyPackage(this.root, this.legacyEmberAppInstance.project.root, movablePackageCache)
-      );
-      this.macrosConfig.enablePackageDevelopment(this.legacyEmberAppInstance.project.root);
-    } else {
-      movablePackageCache.setApp(movablePackageCache.get(this.root));
-    }
-    return movablePackageCache;
-  }
-
   private inTrees(prevStageTree: BroccoliNode) {
     let publicTree = this.publicTree;
     let configTree = this.config;
@@ -845,8 +830,12 @@ export default class CompatApp {
       this.options,
       this,
       configTree,
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-vendor')),
-      packageCache.get(join(root, 'node_modules', '@embroider', 'synthesized-styles'))
+      packageCache.get(
+        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-vendor')
+      ),
+      packageCache.get(
+        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-styles')
+      )
     );
   }
 

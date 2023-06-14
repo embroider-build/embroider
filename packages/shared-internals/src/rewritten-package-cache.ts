@@ -1,7 +1,9 @@
-import { PackageCache, Package, getOrCreate } from '@embroider/shared-internals';
+import PackageCache from './package-cache';
+import Package from './package';
 import { existsSync, readJSONSync } from 'fs-extra';
 import { resolve } from 'path';
 import { Memoize } from 'typescript-memoize';
+import { getOrCreate } from './get-or-create';
 
 export interface RewrittenPackageIndex {
   // keys are paths to original package root directories.

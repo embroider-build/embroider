@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
 } from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
-import { Package, V2Package, explicitRelative } from '@embroider/shared-internals';
+import { Package, V2Package, explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
@@ -19,7 +19,6 @@ import {
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
-import { RewrittenPackageCache } from './rewritten-package-cache';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {

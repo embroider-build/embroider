@@ -1526,7 +1526,7 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 
 const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
-module.exports = babelFilter({{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}");
+module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.

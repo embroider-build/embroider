@@ -1,6 +1,6 @@
 import { Node } from 'broccoli-node-api';
 import { resolve } from 'path';
-import { Stage, WaitForTrees } from '@embroider/core';
+import { RewrittenPackageCache, Stage, WaitForTrees } from '@embroider/core';
 import TreeSync from 'tree-sync';
 import CompatApp from './compat-app';
 import { convertLegacyAddons } from './standalone-addon-build';
@@ -24,7 +24,7 @@ export default class CompatAddons implements Stage {
   private destDir: string;
   private addons: Node;
 
-  constructor(compatApp: CompatApp) {
+  constructor(private compatApp: CompatApp) {
     this.destDir = resolve(compatApp.root, 'node_modules', '.embroider', 'rewritten-packages', compatApp.name);
     this.addons = convertLegacyAddons(compatApp);
     this.inputPath = compatApp.root;
@@ -59,6 +59,7 @@ export default class CompatAddons implements Stage {
       changedMap.get(addons)
     ) {
       this.treeSync.sync();
+      RewrittenPackageCache.shared('embroider', this.compatApp.root).invalidateIndex();
     }
     this.didBuild = true;
   }

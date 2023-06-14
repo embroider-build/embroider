@@ -112,16 +112,38 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     }
   }
 
-  @Memoize()
+  private indexCache:
+    | {
+        oldToNew: Map<string, string>;
+        newToOld: Map<string, string>;
+        extraResolutions: Map<string, string[]>;
+      }
+    | undefined;
+
   private get index(): {
     oldToNew: Map<string, string>;
     newToOld: Map<string, string>;
     extraResolutions: Map<string, string[]>;
   } {
+    if (!this.indexCache) {
+      this.indexCache = this.loadIndex();
+    }
+    return this.indexCache;
+  }
+
+  invalidateIndex(): void {
+    this.indexCache = undefined;
+  }
+
+  private loadIndex(): RewrittenPackageCache['index'] {
     let addonsDir = resolve(this.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
     let indexFile = resolve(addonsDir, 'index.json');
     if (!existsSync(indexFile)) {
-      throw new Error(`RewrittenPackageCache expected ${indexFile} to exist`);
+      return {
+        oldToNew: new Map(),
+        newToOld: new Map(),
+        extraResolutions: new Map(),
+      };
     }
 
     let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;

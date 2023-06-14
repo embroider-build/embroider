@@ -1,6 +1,5 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import { PackageCache } from '@embroider/shared-internals';
 import State, { initState } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';

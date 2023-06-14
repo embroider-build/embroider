@@ -1442,7 +1442,7 @@ let d = w.define;
 w._embroiderRouteBundles_ = [
   {{#each lazyRoutes as |route|}}
   {
-    names: {{{json-stringify route.names}}},
+    names: {{json-stringify route.names}},
     load: function() {
       return import("{{js-string-escape route.path}}");
     }
@@ -1455,7 +1455,7 @@ w._embroiderRouteBundles_ = [
 w._embroiderEngineBundles_ = [
   {{#each lazyEngines as |engine|}}
   {
-    names: {{{json-stringify engine.names}}},
+    names: {{json-stringify engine.names}},
     load: function() {
       return import("{{js-string-escape engine.path}}");
     }
@@ -1466,10 +1466,10 @@ w._embroiderEngineBundles_ = [
 
 {{#if autoRun ~}}
 if (!runningTests) {
-  i("{{js-string-escape mainModule}}").default.create({{{json-stringify appConfig}}});
+  i("{{js-string-escape mainModule}}").default.create({{json-stringify appConfig}});
 }
 {{else  if appBoot ~}}
-  {{{ appBoot }}}
+  {{ appBoot }}
 {{/if}}
 
 {{#if testSuffix ~}}
@@ -1526,7 +1526,7 @@ function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
 
 const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
-module.exports = babelFilter({{{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}}");
+module.exports = babelFilter({{json-stringify skipBabel}}}, "{{{js-string-escape appRoot}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.

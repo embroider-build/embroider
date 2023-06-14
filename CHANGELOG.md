@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2023-06-13)
+
+@embroider/compat 3.0.2 (patch)
+@embroider/core 3.0.2 (patch)
+@embroider/macros 1.11.1 (patch)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1463](https://github.com/embroider-build/embroider/pull/1463) fix resolution of files with .hbs extensions ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1468](https://github.com/embroider-build/embroider/pull/1468) macroCondition: do branch elimination if no runtime impl. is involved ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#1412](https://github.com/embroider-build/embroider/pull/1412) WriteV1Config: fix /tests support ([@22a](https://github.com/22a))
+
+#### :house: Internal
+* [#1469](https://github.com/embroider-build/embroider/pull/1469) update deprecated (and removed) blacklist config in test app ([@mansona](https://github.com/mansona))
+
+
+#### Committers: 5
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Peter Meehan ([@22a](https://github.com/22a))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2023-06-05)
 
 @embroider/addon-dev 3.1.1 (patch)

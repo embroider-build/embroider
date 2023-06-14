@@ -11,4 +11,7 @@ handlebars.registerHelper('json-stringify', function (input: any, indent?: numbe
 handlebars.registerHelper('eq', function (a: any, b: any) {
   return a === b;
 });
-export const compile = handlebars.compile;
+
+export function compile(input: string) {
+  return handlebars.compile(input, { noEscape: true });
+}

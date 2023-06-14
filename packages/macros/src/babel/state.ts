@@ -2,7 +2,7 @@ import type { NodePath, Node } from '@babel/traverse';
 import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
-import { explicitRelative, Package, PackageCache } from '@embroider/shared-internals';
+import { explicitRelative, Package, RewrittenPackageCache } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
 import type * as Babel from '@babel/core';
 
@@ -12,7 +12,7 @@ export default interface State {
   removed: Set<Node>;
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
-  packageCache: PackageCache;
+  packageCache: RewrittenPackageCache;
   sourceFile: string;
   pathToOurAddon(moduleName: string): string;
   owningPackage(): Package;
@@ -55,7 +55,7 @@ export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Prog
   state.jobs = [];
   state.removed = new Set();
   state.calledIdentifiers = new Set();
-  state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
+  state.packageCache = RewrittenPackageCache.shared('embroider', state.opts.appPackageRoot);
   state.sourceFile = state.opts.owningPackageRoot || (path.hub as any).file.opts.filename;
   state.pathToOurAddon = pathToAddon;
   state.owningPackage = owningPackage;

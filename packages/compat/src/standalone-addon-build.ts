@@ -13,7 +13,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
   let instanceCache = new V1InstanceCache(compatApp, packageCache);
 
   let v1Addons = findV1Addons(packageCache.get(compatApp.root));
-  let index = buildAddonIndex(v1Addons);
+  let index = buildAddonIndex(compatApp, v1Addons);
 
   let interiorTrees: Node[] = [];
   let exteriorTrees = [...v1Addons].map(pkg => {
@@ -30,11 +30,11 @@ export function convertLegacyAddons(compatApp: CompatApp) {
     new Funnel(compatApp.synthesizeVendorPackage(interiorTrees), {
       destDir: '@embroider/synthesized-vendor',
     }),
-    writeFile('index.json', JSON.stringify(buildAddonIndex(v1Addons), null, 2)),
+    writeFile('index.json', JSON.stringify(index, null, 2)),
   ]);
 }
 
-function buildAddonIndex(packages: Set<Package>): RewrittenPackageIndex {
+function buildAddonIndex(compatApp: CompatApp, packages: Set<Package>): RewrittenPackageIndex {
   let content: RewrittenPackageIndex = {
     packages: {},
     extraResolutions: {},
@@ -47,6 +47,11 @@ function buildAddonIndex(packages: Set<Package>): RewrittenPackageIndex {
       content.extraResolutions[newRoot] = [...nonResolvableDeps.values()].map(v => v.root);
     }
   }
+
+  // adding an entry for the app itself to have a place in the
+  // rewritten-packages, even though this stage hasn't actually put it there
+  // yet.
+  content.packages[compatApp.root] = compatApp.name;
 
   return content;
 }

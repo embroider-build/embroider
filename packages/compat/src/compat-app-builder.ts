@@ -270,7 +270,7 @@ export class CompatAppBuilder {
       renameModules,
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
-      appRoot: this.root,
+      appRoot: this.origAppPackage.root,
       engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
         root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
@@ -441,7 +441,7 @@ export class CompatAppBuilder {
     babel.plugins.push(...this.compatApp.macrosConfig.babelPluginConfig());
 
     let colocationOptions: TemplateColocationPluginOptions = {
-      appRoot: this.root,
+      appRoot: this.origAppPackage.root,
 
       // This extra weirdness is a compromise in favor of build performance.
       //
@@ -1051,13 +1051,13 @@ export class CompatAppBuilder {
     );
     writeFileSync(
       join(this.root, '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.root }),
+      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.origAppPackage.root }),
       'utf8'
     );
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
-    outputJSONSync(join(this.root, '.embroider', 'resolver.json'), config);
+    outputJSONSync(join(this.origAppPackage.root, 'node_modules', '.embroider', 'resolver.json'), config);
   }
 
   private shouldSplitRoute(routeName: string) {

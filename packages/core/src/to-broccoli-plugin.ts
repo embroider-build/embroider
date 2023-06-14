@@ -22,9 +22,8 @@ export default function toBroccoliPlugin<Options>(
 
     async build() {
       if (!this.packager) {
-        let { outputPath } = await this.stage.ready();
         this.packager = new packagerClass(
-          outputPath,
+          this.stage.inputPath,
           this.outputPath,
           this.variants,
           msg => console.log(msg.split(tmpdir).join('$TMPDIR')),

@@ -29,10 +29,6 @@ export default function defaultPipeline<PackagerOptions>(
   let outputPath: string;
   let addons;
 
-  options.workspaceDir = stableWorkspaceDir(emberApp.project.root, emberApp.env);
-
-  emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
-
   let embroiderApp = new App(emberApp, options);
 
   addons = new CompatAddons(embroiderApp);

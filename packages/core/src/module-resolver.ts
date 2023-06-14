@@ -155,9 +155,14 @@ export class Resolver {
 
     request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
-    request = this.handleRewrittenPackages(request);
     request = this.handleRenaming(request);
-    return this.preHandleExternal(request);
+    request = this.preHandleExternal(request);
+
+    // this should probably stay the last step in beforeResolve, because it can
+    // rehome requests to their un-rewritten locations, and for the most part we
+    // want to be dealing with the rewritten packages.
+    request = this.handleRewrittenPackages(request);
+    return request;
   }
 
   // This encapsulates the whole resolving process. Given a `defaultResolve`
@@ -270,16 +275,18 @@ export class Resolver {
     }
   }
 
+  private get packageCache() {
+    return RewrittenPackageCache.shared('embroider', this.options.appRoot);
+  }
+
   owningPackage(fromFile: string): Package | undefined {
-    return RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
+    return this.packageCache.ownerOfFile(fromFile);
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
     let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
     if (logicalLocation) {
-      let pkg = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).get(
-        logicalLocation.owningEngine.root
-      );
+      let pkg = this.packageCache.get(logicalLocation.owningEngine.root);
       if (!pkg.isV2Ember()) {
         throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
@@ -482,12 +489,11 @@ export class Resolver {
   // out.
   @Memoize()
   private get mergeMap(): MergeMap {
-    let packageCache = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot);
     let result: MergeMap = new Map();
     for (let engine of this.options.engines) {
       let engineModules: Map<string, MergeEntry> = new Map();
       for (let addonConfig of engine.activeAddons) {
-        let addon = packageCache.get(addonConfig.root);
+        let addon = this.packageCache.get(addonConfig.root);
         if (!addon.isV2Addon()) {
           continue;
         }
@@ -588,10 +594,6 @@ export class Resolver {
   }
 
   owningEngine(pkg: Package) {
-    if (pkg.root === this.options.appRoot) {
-      // the app is always the first engine
-      return this.options.engines[0];
-    }
     let owningEngine = this.options.engines.find(e =>
       pkg.isEngine() ? e.root === pkg.root : e.activeAddons.find(a => a.root === pkg.root)
     );
@@ -604,23 +606,21 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    let packageCache = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot);
-
     let requestingPkg = this.owningPackage(request.fromFile);
     if (!requestingPkg) {
       return request;
     }
+    let packageName = getPackageName(request.specifier);
+    if (!packageName) {
+      // relative request
+      return request;
+    }
 
     let targetPkg: Package | undefined;
-    let packageName = getPackageName(request.specifier);
-    if (packageName && packageName !== requestingPkg.name) {
+    if (packageName !== requestingPkg.name) {
       // non-relative, non-self request, so check if it aims at a rewritten addon
       try {
-        // up above we already ensured that the source `pkg` here is always referring to the *original* copy if it had been rewritten.
-        targetPkg = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).resolve(
-          packageName,
-          requestingPkg
-        );
+        targetPkg = this.packageCache.resolve(packageName, requestingPkg);
       } catch (err) {
         // this is not the place to report resolution failures. If the thing
         // doesn't resolve, we're just not interested in redirecting it for
@@ -632,8 +632,8 @@ export class Resolver {
       }
     }
 
-    let originalRequestingPkg = packageCache.original(requestingPkg);
-    let originalTargetPkg = targetPkg ? packageCache.original(targetPkg) : undefined;
+    let originalRequestingPkg = this.packageCache.original(requestingPkg);
+    let originalTargetPkg = targetPkg ? this.packageCache.original(targetPkg) : undefined;
 
     if (targetPkg && originalTargetPkg) {
       // in this case it doesn't matter whether or not the requesting package
@@ -785,10 +785,7 @@ export class Resolver {
 
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).resolve(
-          packageName,
-          logicalPackage
-        );
+        let dep = this.packageCache.resolve(packageName, logicalPackage);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -837,7 +834,17 @@ export class Resolver {
     }
 
     let pkg = this.owningPackage(fromFile);
-    if (!pkg || !pkg.isV2Ember()) {
+    if (!pkg) {
+      return logTransition('no identifiable owningPackage', request);
+    }
+
+    // if we rehomed this request to its un-rewritten location in order to try
+    // to do the defaultResolve from there, now we refer back to the rewritten
+    // location because that's what we want to use when asking things like
+    // isV2Ember()
+    pkg = this.packageCache.maybeMoved(pkg);
+
+    if (!pkg.isV2Ember()) {
       return logTransition('fallbackResolve: not in an ember package', request);
     }
 
@@ -873,12 +880,7 @@ export class Resolver {
       return logTransition(
         `activeAddons`,
         request,
-        this.resolveWithinPackage(
-          request,
-          RewrittenPackageCache.shared('embroider-stage3', this.options.appRoot).get(
-            this.options.activeAddons[packageName]
-          )
-        )
+        this.resolveWithinPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
       );
     }
 

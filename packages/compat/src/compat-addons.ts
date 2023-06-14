@@ -1,6 +1,5 @@
 import { Node } from 'broccoli-node-api';
 import { resolve } from 'path';
-import { ensureDirSync, realpathSync } from 'fs-extra';
 import { Stage, WaitForTrees } from '@embroider/core';
 import TreeSync from 'tree-sync';
 import CompatApp from './compat-app';
@@ -26,11 +25,7 @@ export default class CompatAddons implements Stage {
   private addons: Node;
 
   constructor(compatApp: CompatApp) {
-    // we want this to be stable across builds, because it becomes part of the
-    // path to all of the files that the stage3 packager sees, and we want to
-    // benefit from on-disk caching in stage3 packagers.
-    ensureDirSync(compatApp.options.workspaceDir!);
-    this.destDir = realpathSync(compatApp.options.workspaceDir!);
+    this.destDir = resolve(compatApp.root, 'node_modules', '.embroider', 'rewritten-packages', compatApp.name);
     this.addons = convertLegacyAddons(compatApp);
     this.inputPath = compatApp.root;
   }

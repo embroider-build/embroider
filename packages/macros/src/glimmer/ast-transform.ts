@@ -53,7 +53,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       throw new Error(`bug in @embroider/macros. Running without packageRoot but don't have filename.`);
     }
 
-    let packageCache = PackageCache.shared('embroider-stage3', opts.appRoot);
+    let packageCache = PackageCache.shared('embroider', opts.appRoot);
 
     let scopeStack: string[][] = [];
 

@@ -278,7 +278,7 @@ export class Audit {
   }
 
   private get resolverParams(): ResolverOptions {
-    return readJSONSync(join(this.appDir, '.embroider', 'resolver.json'));
+    return readJSONSync(join(this.appDir, 'node_modules', '.embroider', 'resolver.json'));
   }
 
   private resolver = new Resolver(this.resolverParams);

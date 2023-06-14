@@ -42,7 +42,9 @@ export default function main(babel: typeof Babel) {
     if (cached) {
       return cached;
     }
-    let resolverOptions: CompatResolverOptions = readJSONSync(join(appRoot, '.embroider', 'resolver.json'));
+    let resolverOptions: CompatResolverOptions = readJSONSync(
+      join(appRoot, 'node_modules', '.embroider', 'resolver.json')
+    );
     let resolver = new Resolver(resolverOptions);
     cached = {
       resolverOptions,

@@ -861,7 +861,7 @@ class TemplateResolver implements ASTPlugin {
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform({ appRoot }: Options) {
-  let config: CompatResolverOptions = readJSONSync(join(appRoot, '.embroider', 'resolver.json'));
+  let config: CompatResolverOptions = readJSONSync(join(appRoot, 'node_modules', '.embroider', 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
       return {

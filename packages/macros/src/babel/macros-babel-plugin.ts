@@ -17,8 +17,6 @@ export default function main(context: typeof Babel): unknown {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
         initState(t, path, state);
-
-        state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
       },
       exit(_: NodePath<t.Program>, state: State) {
         // @embroider/macros itself has no runtime behaviors and should always be removed

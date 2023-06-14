@@ -55,7 +55,7 @@ export default function main(babel: typeof Babel) {
           let filename = (path.hub as any).file.opts.filename;
 
           if (state.opts.packageGuard) {
-            let owningPackage = PackageCache.shared('embroider-stage3', state.opts.appRoot).ownerOfFile(filename);
+            let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
             if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
               return;
             }

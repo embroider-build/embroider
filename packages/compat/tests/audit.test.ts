@@ -76,8 +76,10 @@ describe('audit', function () {
         null,
         2
       )}`,
-      '.embroider': {
-        'resolver.json': JSON.stringify(resolverConfig),
+      node_modules: {
+        '.embroider': {
+          'resolver.json': JSON.stringify(resolverConfig),
+        },
       },
     });
     let appMeta: AppMeta = {

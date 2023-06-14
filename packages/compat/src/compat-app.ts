@@ -53,7 +53,7 @@ export default class CompatApp {
     return this.legacyEmberAppInstance.project.pkg.keywords?.includes('ember-addon') ?? false;
   }
 
-  private get name(): string {
+  get name(): string {
     if (this.isDummy) {
       // here we accept the ember-cli behavior
       return this.legacyEmberAppInstance.name;
@@ -848,8 +848,7 @@ export default class CompatApp {
       return new WaitForTrees(inTrees, this.annotation, async treePaths => {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
-          // TODO: this will use shared caches once we refactor out MovedPackageCache
-          let packageCache = new RewrittenPackageCache(new PackageCache(this.root));
+          let packageCache = RewrittenPackageCache.shared('embroider', this.root);
           this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache, inTrees.configTree);
           resolve({ outputPath });
         }

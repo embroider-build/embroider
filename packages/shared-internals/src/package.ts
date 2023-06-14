@@ -8,7 +8,7 @@ import flatMap from 'lodash/flatMap';
 export default class Package {
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
-  constructor(readonly root: string, protected packageCache: PackageCache, isApp: boolean) {
+  constructor(readonly root: string, protected packageCache: PackageCache, private isApp: boolean) {
     this.dependencyKeys = isApp
       ? ['dependencies', 'devDependencies', 'peerDependencies']
       : ['dependencies', 'peerDependencies'];
@@ -57,6 +57,10 @@ export default class Package {
   }
 
   isEngine(): boolean {
+    if (this.isApp) {
+      // an app is implicitly an engine
+      return true;
+    }
     let keywords = this.packageJSON.keywords;
     return Boolean(keywords && (keywords as string[]).includes('ember-engine'));
   }

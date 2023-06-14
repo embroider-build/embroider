@@ -125,7 +125,7 @@ Scenarios.fromProject(() => new Project())
             '_babel_filter.js': `
               module.exports = function(filename) { return true }
             `,
-            '.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
             'node_modules/my-addon/package.json': addonPackageJSON(opts?.addonMeta),
           });
 

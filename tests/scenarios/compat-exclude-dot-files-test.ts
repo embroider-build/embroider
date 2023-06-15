@@ -1,4 +1,4 @@
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
@@ -35,6 +35,7 @@ appScenarios
       let app: PreparedApp;
 
       let expectFile: ExpectFile;
+      let expectAddonFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -44,6 +45,7 @@ appScenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
       });
 
       test('dot files are not included as app modules', function () {
@@ -60,10 +62,10 @@ appScenarios
 
       test('dot files are not included as addon implicit-modules', function () {
         // Dot files should exist on disk
-        expectFile('node_modules/my-addon/.fooaddon.js').exists();
-        expectFile('node_modules/my-addon/baraddon.js').exists();
+        expectAddonFile('my-addon/.fooaddon.js').exists();
+        expectAddonFile('my-addon/baraddon.js').exists();
 
-        let myAddonPackage = expectFile('node_modules/my-addon/package.json').json();
+        let myAddonPackage = expectAddonFile('my-addon/package.json').json();
 
         // dot files are not included as implicit-modules
         myAddonPackage.get(['ember-addon', 'implicit-modules']).deepEquals(['./baraddon']);

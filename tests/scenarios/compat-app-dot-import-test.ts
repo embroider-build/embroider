@@ -1,8 +1,7 @@
-import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { PreparedApp } from 'scenario-tester';
 import { join } from 'path';
-import { readFileSync } from 'fs';
 import { appScenarios, baseAddon } from './scenarios';
 import QUnit from 'qunit';
 import { merge } from 'lodash';
@@ -46,18 +45,20 @@ appScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+        expectFile = expectRewrittenAddonFilesAt(app.dir, {
+          qunit: assert,
+        });
       });
       test('destDir puts vendor files into public assets', function () {
-        expectFile('node_modules/@embroider/synthesized-vendor/package.json')
+        expectFile('@embroider/synthesized-vendor/package.json')
           .json()
           .get(['ember-addon', 'public-assets', './vendor/some-font.ttf'])
           .equals('fonts/some-font.ttf');
-        expectFile('node_modules/@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
+        expectFile('@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
       });
 
       test('handle non-transformed node_module with explicit outputFile', function () {
-        expectFile('node_modules/@embroider/synthesized-vendor/package.json')
+        expectFile('@embroider/synthesized-vendor/package.json')
           .json()
           .get([
             'ember-addon',

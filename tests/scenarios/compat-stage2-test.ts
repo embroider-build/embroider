@@ -5,7 +5,7 @@ import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenari
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Rebuilder, Transpiler } from '@embroider/test-support';
-import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt, expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -82,7 +82,7 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
+      let expectAddonFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -91,35 +91,26 @@ stage2Scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
       });
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);
 
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
-        expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
+        expectAddonFile('dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
+        expectAddonFile('dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
+        expectAddonFile('dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
 
         // check that symlinks are correct
-        expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json').exists();
-        expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json').exists();
-        expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json').exists();
+        expectAddonFile('dep-a/node_modules/in-repo-a/package.json').exists();
+        expectAddonFile('dep-b/node_modules/in-repo-b/package.json').exists();
+        expectAddonFile('dep-b/node_modules/in-repo-c/package.json').exists();
 
         // check that the in repo addons are correct upgraded
-        expectFile('./node_modules/dep-a/node_modules/in-repo-a/package.json')
-          .json()
-          .get('ember-addon.version')
-          .equals(2);
-        expectFile('./node_modules/dep-b/node_modules/in-repo-b/package.json')
-          .json()
-          .get('ember-addon.version')
-          .equals(2);
-        expectFile('./node_modules/dep-b/node_modules/in-repo-c/package.json')
-          .json()
-          .get('ember-addon.version')
-          .equals(2);
+        expectAddonFile('dep-a/node_modules/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
+        expectAddonFile('dep-b/node_modules/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
+        expectAddonFile('dep-b/node_modules/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
 
         // check that the app trees with in repo addon are combined correctly
         expectAudit

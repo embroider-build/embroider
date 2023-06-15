@@ -6,7 +6,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 import { definesPattern, Transpiler } from '@embroider/test-support';
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
@@ -164,6 +164,7 @@ appScenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
+      let expectAddonFile: ExpectFile;
       let build: Transpiler;
 
       hooks.before(async () => {
@@ -172,6 +173,7 @@ appScenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
         build = new Transpiler(expectFile.basePath);
       });
 
@@ -186,7 +188,7 @@ appScenarios
           .module('./components/import-lodash.js')
           .resolves('lodash')
           .to('./node_modules/ember-lodash/index.js');
-        expectFile('node_modules/ember-lodash/index.js').matches(/lodash index/);
+        expectAddonFile('ember-lodash/index.js').matches(/lodash index/);
       });
 
       test('whole package renaming works for interior module', function () {
@@ -195,7 +197,7 @@ appScenarios
           .resolves('lodash/capitalize')
           .to('./node_modules/ember-lodash/capitalize.js');
 
-        expectFile('node_modules/ember-lodash/capitalize.js').matches(/lodash capitalize/);
+        expectAddonFile('ember-lodash/capitalize.js').matches(/lodash capitalize/);
       });
 
       test("modules in own namespace don't get renamed", function () {
@@ -203,7 +205,7 @@ appScenarios
           .module('./components/import-own-thing.js')
           .resolves('emits-multiple-packages/own-thing')
           .to('./node_modules/emits-multiple-packages/own-thing.js');
-        expectFile('node_modules/emits-multiple-packages/own-thing.js').matches(/own thing/);
+        expectAddonFile('emits-multiple-packages/own-thing.js').matches(/own thing/);
       });
 
       test('modules outside our namespace do get renamed', function () {
@@ -211,7 +213,7 @@ appScenarios
           .module('./components/import-somebody-elses.js')
           .resolves('somebody-elses-package/environment')
           .to('./node_modules/emits-multiple-packages/somebody-elses-package/environment.js');
-        expectFile('node_modules/emits-multiple-packages/somebody-elses-package/environment.js').matches(
+        expectAddonFile('emits-multiple-packages/somebody-elses-package/environment.js').matches(
           /somebody elses environment/
         );
       });
@@ -221,7 +223,7 @@ appScenarios
           .module('./components/import-somebody-elses-utils.js')
           .resolves('somebody-elses-package/utils')
           .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
-        expectFile('node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js').matches(
+        expectAddonFile('emits-multiple-packages/somebody-elses-package/utils/index.js').matches(
           /somebody elses utils/
         );
       });
@@ -263,9 +265,7 @@ appScenarios
           .module('./components/import-single-file-package.js')
           .resolves('single-file-package')
           .to('./node_modules/emits-multiple-packages/single-file-package/index.js');
-        expectFile('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(
-          /single file package/
-        );
+        expectAddonFile('emits-multiple-packages/single-file-package/index.js').matches(/single file package/);
       });
       test('files logically copied into app from addons resolve their own original packages', function () {
         expectAudit

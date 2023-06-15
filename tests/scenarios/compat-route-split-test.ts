@@ -175,7 +175,7 @@ splitScenarios
       Qmodule('audit', function (hooks) {
         let auditResults: AuditResults;
         hooks.before(async function () {
-          let audit = new Audit(expectFile.basePath);
+          let audit = new Audit(app.dir);
           auditResults = await audit.run();
         });
 
@@ -357,7 +357,7 @@ splitScenarios
       Qmodule('audit', function (hooks) {
         let auditResults: AuditResults;
         hooks.before(async function () {
-          let audit = new Audit(expectFile.basePath);
+          let audit = new Audit(app.dir);
           auditResults = await audit.run();
         });
 

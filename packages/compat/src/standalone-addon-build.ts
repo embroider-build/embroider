@@ -41,7 +41,7 @@ function buildAddonIndex(compatApp: CompatApp, packages: Set<Package>): Rewritte
   };
   for (let oldPkg of packages) {
     let newRoot = `${oldPkg.name}.${hashed(oldPkg.root)}`;
-    content.packages[oldPkg.root] = `${oldPkg.name}.${hashed(oldPkg.root)}`;
+    content.packages[oldPkg.root] = newRoot;
     let nonResolvableDeps = oldPkg.nonResolvableDeps;
     if (nonResolvableDeps) {
       content.extraResolutions[newRoot] = [...nonResolvableDeps.values()].map(v => v.root);

@@ -129,7 +129,7 @@ Scenarios.fromProject(() => new Project())
             'node_modules/my-addon/package.json': addonPackageJSON(opts?.addonMeta),
           });
 
-          expectAudit = await assert.audit({ outputDir: app.dir });
+          expectAudit = await assert.audit({ app: app.dir, 'reuse-build': true });
         };
       });
 

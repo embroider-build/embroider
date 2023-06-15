@@ -1,9 +1,7 @@
-import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import { appScenarios, baseAddon } from './scenarios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import QUnit from 'qunit';
 import { merge } from 'lodash';
 const { module: Qmodule, test } = QUnit;
@@ -93,7 +91,7 @@ appScenarios
 
       let app: PreparedApp;
 
-      let expectFile: ExpectFile;
+      let expectAddonFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -102,32 +100,26 @@ appScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage1-output'), 'utf8'), { qunit: assert });
+        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
       });
 
       test('treeForStyles adds styles to build', function () {
-        expectFile('node_modules/@embroider/synthesized-styles/assets/third-party1.css').matches(
-          '.error { color: red; }'
-        );
+        expectAddonFile('@embroider/synthesized-styles/assets/third-party1.css').matches('.error { color: red; }');
       });
 
       // prevent regression of https://github.com/embroider-build/embroider/issues/164
       test('treeForStyles not calling super adds styles to build', function () {
-        expectFile('node_modules/@embroider/synthesized-styles/assets/third-party2.css').matches(
-          '.success { color: green }'
-        );
+        expectAddonFile('@embroider/synthesized-styles/assets/third-party2.css').matches('.success { color: green }');
       });
 
       test(`all addon CSS gets convert to implicit-styles`, function () {
-        let implicitStyles = expectFile('node_modules/my-addon3/package.json')
-          .json()
-          .get('ember-addon.implicit-styles');
+        let implicitStyles = expectAddonFile('my-addon3/package.json').json().get('ember-addon.implicit-styles');
         implicitStyles.includes('./my-addon3.css');
         implicitStyles.includes('./outer.css');
         implicitStyles.includes('./nested/inner.css');
-        expectFile('node_modules/my-addon3/my-addon3.css').matches(`from-addon`);
-        expectFile('node_modules/my-addon3/outer.css').matches(`from-outer`);
-        expectFile('node_modules/my-addon3/nested/inner.css').matches(`from-inner`);
+        expectAddonFile('my-addon3/my-addon3.css').matches(`from-addon`);
+        expectAddonFile('my-addon3/outer.css').matches(`from-outer`);
+        expectAddonFile('my-addon3/nested/inner.css').matches(`from-inner`);
       });
     });
   });

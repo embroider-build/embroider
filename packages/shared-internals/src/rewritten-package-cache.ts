@@ -173,14 +173,16 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
     }
   }
   static shared(identifier: string, appRoot: string) {
-    // it's intentional that the cache key here does not include the appRoot. We
-    // *want* to notice if two people are using the same identifier with
-    // different appRoots: that's a bug, and automatically separating them from
-    // each other defeats part of the point of using a shared package cache in
-    // the first place.
-    let pk = getOrCreate(shared, identifier, () => new RewrittenPackageCache(PackageCache.shared(identifier, appRoot)));
+    let pk = getOrCreate(
+      shared,
+      identifier + appRoot,
+      () => new RewrittenPackageCache(PackageCache.shared(identifier, appRoot))
+    );
+
+    // it's not clear that this could ever happen because appRoot is part of the new identifier
+    // but it doesn't cost much to leave this code here.
     if (pk.appRoot !== appRoot) {
-      throw new Error(`bug: RewrittenPackageCache appRoot disagreement ${appRoot}!=${pk.appRoot}`);
+      throw new Error(`bug: RewrittenPackageCache appRoot disagreement ${appRoot} != ${pk.appRoot}`);
     }
     return pk;
   }

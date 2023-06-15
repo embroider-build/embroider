@@ -41,7 +41,7 @@ export function expectFilesAt(basePath: string, params: { qunit: Assert }): Expe
   return func;
 }
 
-function getRewrittenLocation(appDir: string, addonPath: string){
+function getRewrittenLocation(appDir: string, addonPath: string) {
   let name = packageName(addonPath);
   if (!name) {
     throw new Error('getRewrittenLocation only accepts fully-qualified paths');

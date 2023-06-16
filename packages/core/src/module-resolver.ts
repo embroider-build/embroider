@@ -645,7 +645,7 @@ export class Resolver {
       return logTransition(
         'outbound request from moved package',
         request,
-        request.rehome(resolve(originalRequestingPkg.root, 'package.json'))
+        request.rehome(resolve(originalRequestingPkg.root, request.fromFile.slice(requestingPkg.root.length + 1)))
       );
     }
 
@@ -840,7 +840,11 @@ export class Resolver {
     // to do the defaultResolve from there, now we refer back to the rewritten
     // location because that's what we want to use when asking things like
     // isV2Ember()
-    pkg = this.packageCache.maybeMoved(pkg);
+    let movedPkg = this.packageCache.maybeMoved(pkg);
+    if (movedPkg !== pkg) {
+      fromFile = resolve(movedPkg.root, request.fromFile.slice(pkg.root.length + 1));
+      pkg = movedPkg;
+    }
 
     if (!pkg.isV2Ember()) {
       return logTransition('fallbackResolve: not in an ember package', request);
@@ -882,15 +886,7 @@ export class Resolver {
       );
     }
 
-    let targetingEngine = this.engineConfig(packageName);
-    if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
-      if (appJSMatch) {
-        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
-      }
-    }
-
-    let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+    let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);
     if (logicalLocation) {
       // the requesting file is in an addon's appTree. We didn't succeed in
       // resolving this (non-relative) request from inside the actual addon, so
@@ -901,6 +897,14 @@ export class Resolver {
         request,
         request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
       );
+    }
+
+    let targetingEngine = this.engineConfig(packageName);
+    if (targetingEngine) {
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
+      if (appJSMatch) {
+        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
+      }
     }
 
     if (pkg.meta['auto-upgraded']) {

@@ -331,7 +331,8 @@ export class Audit {
       await this.drainQueue();
       this.linkModules();
       this.inspectModules();
-      return AuditResults.create(this.movedAppRoot, this.findings, this.modules);
+
+      return AuditResults.create(this.originAppRoot, this.findings, this.modules);
     } finally {
       delete (globalThis as any).embroider_audit;
     }

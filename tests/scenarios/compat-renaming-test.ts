@@ -177,7 +177,7 @@ appScenarios
         build = new Transpiler(expectFile.basePath);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => app.dir);
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
 
       test('audit issues', function () {
         expectAudit.hasNoFindings();

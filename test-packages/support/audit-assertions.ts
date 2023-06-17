@@ -11,17 +11,17 @@ import { sortBy } from 'lodash';
   take advantage of the audit tool within our test suite to help us analyze
   Embroider's output.
 */
-export function setupAuditTest(hooks: NestedHooks, getAppDir: () => string) {
+export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions) {
   let result: AuditResults;
   let expectAudit: ExpectAuditResults;
 
   hooks.before(async () => {
-    result = await Audit.run({ app: getAppDir(), 'reuse-build': false });
+    result = await Audit.run(opts());
   });
 
   hooks.beforeEach(assert => {
     installAuditAssertions(assert);
-    expectAudit = new ExpectAuditResults(result, assert, getAppDir());
+    expectAudit = new ExpectAuditResults(result, assert, opts().app);
   });
 
   return {
@@ -55,10 +55,10 @@ declare global {
 export class ExpectAuditResults {
   private packageCache = RewrittenPackageCache.shared('embroider', this.appDir);
 
-  constructor(readonly result: AuditResults, private assert: Assert, private appDir: string) {}
+  constructor(readonly result: AuditResults, readonly assert: Assert, private appDir: string) {}
 
   // input and output paths are relative to getAppDir()
-  private toRewritten = (path: string) => {
+  toRewrittenPath = (path: string) => {
     let fullPath = resolve(this.appDir, path);
     let owner = this.packageCache.ownerOfFile(fullPath);
     if (!owner) {
@@ -72,21 +72,8 @@ export class ExpectAuditResults {
     return explicitRelative(this.appDir, movedFullPath);
   };
 
-  module(inputName: string) {
-    let outputName = this.toRewritten(inputName);
-    let m = this.result.modules[outputName];
-    const showNearMisses = 4;
-    if (!m) {
-      let actuals = sortBy(Object.keys(this.result.modules), candidate => distance(candidate, outputName));
-      this.assert.pushResult({
-        result: false,
-        actual:
-          actuals.length > showNearMisses ? actuals.slice(0, showNearMisses).join(', ') + '...' : actuals.join(', '),
-        expected: outputName,
-        message: `Can't locate module ${inputName}`,
-      });
-    }
-    return new ExpectModule(this.assert, this.result, m, this.toRewritten);
+  module(inputName: string): PublicAPI<ExpectModule> {
+    return new ExpectModule(this, inputName);
   }
 
   get findings() {
@@ -103,93 +90,139 @@ export class ExpectAuditResults {
 }
 
 export class ExpectModule {
-  constructor(
-    private assert: Assert,
-    private result: AuditResults,
-    private module: Module | undefined,
-    private toRewritten: (s: string) => string
-  ) {}
+  constructor(private expectAudit: ExpectAuditResults, private inputName: string) {}
 
-  codeEquals(expectedSource: string) {
-    if (this.module) {
-      this.assert.codeEqual(this.module.content, expectedSource);
-    }
+  private get module() {
+    let outputName = this.expectAudit.toRewrittenPath(this.inputName);
+    return this.expectAudit.result.modules[outputName];
   }
 
-  resolves(specifier: string): ExpectResolution {
+  private emitMissingModule() {
+    let outputName = this.expectAudit.toRewrittenPath(this.inputName);
+    const showNearMisses = 4;
+    let actuals = sortBy(Object.keys(this.expectAudit.result.modules), candidate => distance(candidate, outputName));
+    this.expectAudit.assert.pushResult({
+      result: false,
+      actual:
+        actuals.length > showNearMisses ? actuals.slice(0, showNearMisses).join(', ') + '...' : actuals.join(', '),
+      expected: outputName,
+      message: `Can't locate module ${this.inputName}`,
+    });
+  }
+
+  doesNotExist() {
+    this.expectAudit.assert.pushResult({
+      result: !this.module,
+      actual: `${this.inputName} exists`,
+      expected: `${this.inputName} not to exist`,
+      message: `Expected ${this.inputName} not to exist`,
+    });
+  }
+
+  codeEquals(expectedSource: string) {
     if (!this.module) {
-      // the place that instantiated us already pushed the exception that this
-      // module doesn't exist
-      return new ExpectResolution(this.assert, this.result, undefined, this.toRewritten);
+      this.emitMissingModule();
+      return;
+    }
+    this.expectAudit.assert.codeEqual(this.module.content, expectedSource);
+  }
+
+  resolves(specifier: string): PublicAPI<ExpectResolution> {
+    if (!this.module) {
+      this.emitMissingModule();
+      return new EmptyExpectResolution();
     }
     if (!(specifier in this.module.resolutions)) {
-      this.assert.pushResult({
+      this.expectAudit.assert.pushResult({
         result: false,
         expected: `${this.module.appRelativePath} does not refer to ${specifier}`,
         actual: Object.keys(this.module.resolutions),
       });
-      return new ExpectResolution(this.assert, this.result, undefined, this.toRewritten);
+      return new EmptyExpectResolution();
     }
     let resolution = this.module.resolutions[specifier];
     if (!resolution) {
-      this.assert.pushResult({
+      this.expectAudit.assert.pushResult({
         result: false,
         expected: `${specifier} fails to resolve in ${this.module.appRelativePath}`,
         actual: `${specifier} to resolve to something`,
       });
-      return new ExpectResolution(this.assert, this.result, undefined, this.toRewritten);
+      return new EmptyExpectResolution();
     }
-    let target = this.result.modules[resolution];
+    let target = this.expectAudit.result.modules[resolution];
     if (!target) {
-      this.assert.pushResult({
+      this.expectAudit.assert.pushResult({
         result: false,
         expected: `${specifier} resolves to ${resolution} but ${resolution} is not found in audit results`,
         actual: `${resolution} exists`,
       });
-      return new ExpectResolution(this.assert, this.result, undefined, this.toRewritten);
+      return new EmptyExpectResolution();
     }
-    return new ExpectResolution(this.assert, this.result, target, this.toRewritten);
+    return new ExpectResolution(this.expectAudit, target, resolution);
   }
 
   // this is testing explicitly for the template-only component moduels that we
   // synthesize in our module-resolver
   isTemplateOnlyComponent(template: string, message?: string) {
-    if (this.module) {
-      this.resolves(
-        explicitRelative(
-          posix.dirname(posix.resolve('/APP', this.module.appRelativePath)),
-          posix.resolve('/APP', template)
-        )
-      ).to(template, message);
-      this.resolves('@ember/component/template-only');
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
     }
+    this.resolves(
+      explicitRelative(
+        posix.dirname(posix.resolve('/APP', this.module.appRelativePath)),
+        posix.resolve('/APP', template)
+      )
+    ).to(template, message);
+    this.resolves('@ember/component/template-only');
+  }
+
+  hasConsumers(paths: string[]) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    this.expectAudit.assert.deepEqual(this.module.consumedFrom, paths.map(this.expectAudit.toRewrittenPath));
   }
 }
 
 export class ExpectResolution {
-  constructor(
-    private assert: Assert,
-    private result: AuditResults,
-    private module: Module | undefined,
-    private toRewritten: (s: string) => string
-  ) {}
+  constructor(private expectAudit: ExpectAuditResults, private module: Module, private moduleInputName: string) {}
 
-  to(inputName: string | null, message?: string) {
-    let outputName: string | null = null;
-    if (inputName) {
-      outputName = this.toRewritten(inputName);
+  to(targetInputName: string | null, message?: string) {
+    let targetOutputName: string | null = null;
+    if (targetInputName) {
+      targetOutputName = this.expectAudit.toRewrittenPath(targetInputName);
     }
-    if (this.module) {
-      this.assert.pushResult({
-        result: this.module.appRelativePath === outputName,
-        expected: inputName,
-        actual: this.module.appRelativePath,
-        message,
-      });
-    }
+
+    this.expectAudit.assert.pushResult({
+      result: this.module.appRelativePath === targetOutputName,
+      expected: targetInputName,
+      actual: this.module.appRelativePath,
+      message,
+    });
   }
 
-  toModule(): ExpectModule {
-    return new ExpectModule(this.assert, this.result, this.module, this.toRewritten);
+  toModule(): PublicAPI<ExpectModule> {
+    return new ExpectModule(this.expectAudit, this.moduleInputName);
+  }
+}
+
+type PublicAPI<T> = { [K in keyof T]: T[K] };
+
+class EmptyExpectModule implements PublicAPI<ExpectModule> {
+  doesNotExist() {}
+  codeEquals() {}
+  resolves(): PublicAPI<ExpectResolution> {
+    return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;
+  }
+  isTemplateOnlyComponent() {}
+  hasConsumers() {}
+}
+
+class EmptyExpectResolution implements PublicAPI<ExpectResolution> {
+  to() {}
+  toModule() {
+    return new EmptyExpectModule() as PublicAPI<ExpectModule>;
   }
 }

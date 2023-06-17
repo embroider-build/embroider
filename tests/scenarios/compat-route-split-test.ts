@@ -2,13 +2,12 @@ import { PreparedApp } from 'scenario-tester';
 import { appScenarios, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import QUnit from 'qunit';
-const { module: Qmodule, test } = QUnit;
-
 import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
-import { Audit, AuditResults } from '@embroider/compat/src/audit';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import QUnit from 'qunit';
+const { module: Qmodule, test } = QUnit;
 
 let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
   renameApp(app, 'my-app');
@@ -173,36 +172,26 @@ splitScenarios
       });
 
       Qmodule('audit', function (hooks) {
-        let auditResults: AuditResults;
-        hooks.before(async function () {
-          let audit = new Audit(app.dir);
-          auditResults = await audit.run();
+        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
+        test('has no issues', function () {
+          expectAudit.hasNoFindings();
         });
 
-        test('has no issues', function (assert) {
-          assert.deepEqual(auditResults.findings, []);
+        test('helper is consumed only from the template that uses it', function () {
+          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
         });
 
-        test('helper is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./helpers/capitalize.js']?.consumedFrom, [
-            './components/one-person.hbs',
-          ]);
+        test('component is consumed only from the template that uses it', function () {
+          expectAudit.module('./components/one-person.js').hasConsumers(['./templates/people/show.hbs']);
         });
 
-        test('component is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./components/one-person.js']?.consumedFrom, [
-            './templates/people/show.hbs',
-          ]);
+        test('modifier is consumed only from the template that uses it', function () {
+          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./templates/people/edit.hbs']);
         });
 
-        test('modifier is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./modifiers/auto-focus.js']?.consumedFrom, [
-            './templates/people/edit.hbs',
-          ]);
-        });
-
-        test('does not include unused component', function (assert) {
-          assert.strictEqual(auditResults.modules['./components/unused.hbs'], undefined);
+        test('does not include unused component', function () {
+          expectAudit.module('./components/unused.hbs').doesNotExist();
         });
       });
     });
@@ -355,36 +344,26 @@ splitScenarios
       });
 
       Qmodule('audit', function (hooks) {
-        let auditResults: AuditResults;
-        hooks.before(async function () {
-          let audit = new Audit(app.dir);
-          auditResults = await audit.run();
+        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
+        test('has no issues', function () {
+          expectAudit.hasNoFindings();
         });
 
-        test('has no issues', function (assert) {
-          assert.deepEqual(auditResults.findings, []);
+        test('helper is consumed only from the template that uses it', function () {
+          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
         });
 
-        test('helper is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./helpers/capitalize.js']?.consumedFrom, [
-            './components/one-person.hbs',
-          ]);
+        test('component is consumed only from the template that uses it', function () {
+          expectAudit.module('./components/one-person.js').hasConsumers(['./pods/people/show/template.hbs']);
         });
 
-        test('component is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./components/one-person.js']?.consumedFrom, [
-            './pods/people/show/template.hbs',
-          ]);
+        test('modifier is consumed only from the template that uses it', function () {
+          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./pods/people/edit/template.hbs']);
         });
 
-        test('modifier is consumed only from the template that uses it', function (assert) {
-          assert.deepEqual(auditResults.modules['./modifiers/auto-focus.js']?.consumedFrom, [
-            './pods/people/edit/template.hbs',
-          ]);
-        });
-
-        test('does not include unused component', function (assert) {
-          assert.strictEqual(auditResults.modules['./components/unused.hbs'], undefined);
+        test('does not include unused component', function () {
+          expectAudit.module('./components/unused.hbs').doesNotExist();
         });
       });
     });

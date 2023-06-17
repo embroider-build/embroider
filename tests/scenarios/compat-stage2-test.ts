@@ -94,7 +94,7 @@ stage2Scenarios
         expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      let expectAudit = setupAuditTest(hooks, () => app.dir);
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
@@ -182,7 +182,7 @@ stage2Scenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => app.dir);
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
         let expectModule = expectAudit.module('./assets/my-app.js');
@@ -477,7 +477,7 @@ stage2Scenarios
         build = new Transpiler(expectFile.basePath);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => app.dir);
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('no audit issues', function () {
         // among other things, this is asserting that dynamicComponent in

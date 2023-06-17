@@ -1,9 +1,10 @@
 import { Audit, AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
-import { explicitRelative, RewrittenPackageCache } from '../../packages/shared-internals';
+import { explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
-import { posix, resolve } from 'path';
+import { posix } from 'path';
 import { distance } from 'fastest-levenshtein';
 import { sortBy } from 'lodash';
+import { getRewrittenLocation } from './rewritten-path';
 
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
@@ -53,23 +54,11 @@ declare global {
 }
 
 export class ExpectAuditResults {
-  private packageCache = RewrittenPackageCache.shared('embroider', this.appDir);
-
   constructor(readonly result: AuditResults, readonly assert: Assert, private appDir: string) {}
 
   // input and output paths are relative to getAppDir()
   toRewrittenPath = (path: string) => {
-    let fullPath = resolve(this.appDir, path);
-    let owner = this.packageCache.ownerOfFile(fullPath);
-    if (!owner) {
-      return path;
-    }
-    let movedOwner = this.packageCache.maybeMoved(owner);
-    if (movedOwner === owner) {
-      return path;
-    }
-    let movedFullPath = fullPath.replace(owner.root, movedOwner.root);
-    return explicitRelative(this.appDir, movedFullPath);
+    return getRewrittenLocation(this.appDir, path);
   };
 
   module(inputName: string): PublicAPI<ExpectModule> {
@@ -171,7 +160,7 @@ export class ExpectModule {
     this.resolves(
       explicitRelative(
         posix.dirname(posix.resolve('/APP', this.module.appRelativePath)),
-        posix.resolve('/APP', template)
+        posix.resolve('/APP', this.expectAudit.toRewrittenPath(template))
       )
     ).to(template, message);
     this.resolves('@ember/component/template-only');

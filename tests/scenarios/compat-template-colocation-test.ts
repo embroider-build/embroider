@@ -1,7 +1,7 @@
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { Transpiler } from '@embroider/test-support';
 import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
@@ -92,8 +92,8 @@ scenarios
       });
 
       hooks.beforeEach(assert => {
-        let r = (expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert }));
-        build = new Transpiler(resolve(app.dir, r.toRewrittenPath(app.dir)));
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+        build = new Transpiler(app.dir);
       });
 
       test(`app's colocated template is associated with JS`, function () {

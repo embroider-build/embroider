@@ -27,16 +27,26 @@ stage2Scenarios
     depB.linkDependency('dep-c', { project: depC });
 
     addInRepoAddon(depC, 'in-repo-d', {
-      app: { service: { 'in-repo.js': 'in-repo-d' } },
+      app: { service: { 'in-repo.js': '//in-repo-d' } },
     });
     addInRepoAddon(depA, 'in-repo-a', {
-      app: { service: { 'in-repo.js': 'in-repo-a' } },
+      app: { service: { 'in-repo.js': '//in-repo-a' } },
+      addon: {
+        'check-resolution-target.js': 'export {}',
+      },
+    });
+    merge(depA.files, {
+      addon: {
+        'check-resolution.js': `
+          import 'in-repo-a/check-resolution-target';
+        `,
+      },
     });
     addInRepoAddon(depB, 'in-repo-b', {
-      app: { service: { 'in-repo.js': 'in-repo-b' } },
+      app: { service: { 'in-repo.js': '//in-repo-b' } },
     });
     addInRepoAddon(depB, 'in-repo-c', {
-      app: { service: { 'in-repo.js': 'in-repo-c' } },
+      app: { service: { 'in-repo.js': '//in-repo-c' } },
     });
 
     // make an in-repo addon with a dependency on a secondary in-repo-addon
@@ -82,7 +92,7 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectAddonFile: ExpectFile;
+      let expectFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -91,26 +101,27 @@ stage2Scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
-        expectAddonFile('dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
-        expectAddonFile('dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
-        expectAddonFile('dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
+        expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
+        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
+        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
 
-        // check that symlinks are correct
-        expectAddonFile('dep-a/node_modules/in-repo-a/package.json').exists();
-        expectAddonFile('dep-b/node_modules/in-repo-b/package.json').exists();
-        expectAddonFile('dep-b/node_modules/in-repo-c/package.json').exists();
+        // check that in-repo addons are resolvable
+        expectAudit
+          .module('./node_modules/dep-a/check-resolution.js')
+          .resolves('in-repo-a/check-resolution-target')
+          .to('./node_modules/dep-a/lib/in-repo-a/check-resolution-target.js');
 
-        // check that the in repo addons are correct upgraded
-        expectAddonFile('dep-a/node_modules/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
-        expectAddonFile('dep-b/node_modules/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
-        expectAddonFile('dep-b/node_modules/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
+        // check that the in repo addons are correctly upgraded
+        expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
+        expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
+        expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
 
         // check that the app trees with in repo addon are combined correctly
         expectAudit
@@ -130,7 +141,7 @@ stage2Scenarios
         expectAudit
           .module('./lib/primary-in-repo-addon/_app_/services/primary.js')
           .resolves('secondary-in-repo-addon/components/secondary')
-          .to('./lib/primary-in-repo-addon/node_modules/secondary-in-repo-addon/components/secondary.js');
+          .to('./lib/secondary-in-repo-addon/components/secondary.js');
       });
     });
   });
@@ -471,10 +482,8 @@ stage2Scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(builder.outputPath, '.stage2-output'), 'utf8'), {
-          qunit: assert,
-        });
-        build = new Transpiler(expectFile.basePath);
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+        build = new Transpiler(app.dir);
       });
 
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
@@ -576,10 +585,10 @@ stage2Scenarios
       });
 
       test('component with relative import of arbitrarily placed template', function () {
-        let assertFile = expectFile('node_modules/my-addon/components/has-relative-template.js').transform(
-          build.transpile
-        );
-        assertFile.matches(/import layout from ["']\.\/t['"]/, 'arbitrary relative template remains the same');
+        expectAudit
+          .module('node_modules/my-addon/components/has-relative-template.js')
+          .resolves('./t')
+          .to('node_modules/my-addon/components/t.js');
       });
 
       test('app can import a deep addon', function () {

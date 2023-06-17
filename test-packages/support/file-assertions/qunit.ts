@@ -1,7 +1,7 @@
 import { install } from 'code-equality-assertions/qunit';
 import { AssertionAdapter, BoundExpectFile, ExpectFile } from '../file-assertions';
-import { packageName } from '../../../packages/shared-internals';
-import crypto from 'crypto';
+import { explicitRelative, RewrittenPackageCache } from '../../../packages/shared-internals';
+import { resolve } from 'path';
 
 class QUnitAdapter implements AssertionAdapter {
   constructor(private qassert: Assert) {
@@ -41,31 +41,36 @@ export function expectFilesAt(basePath: string, params: { qunit: Assert }): Expe
   return func;
 }
 
-function getRewrittenLocation(appDir: string, addonPath: string) {
-  let name = packageName(addonPath);
-  if (!name) {
-    throw new Error('getRewrittenLocation only accepts fully-qualified paths');
+function getRewrittenLocation(appDir: string, inputPath: string) {
+  let packageCache = RewrittenPackageCache.shared('embroider', appDir);
+  let fullInputPath = resolve(appDir, inputPath);
+  let owner = packageCache.ownerOfFile(fullInputPath);
+  if (!owner) {
+    return inputPath;
   }
-
-  const syntheticPackages = ['@embroider/synthesized-styles', '@embroider/synthesized-vendor'];
-
-  if (syntheticPackages.includes(name)) {
-    return `node_modules/.embroider/rewritten-packages/${name}/${addonPath.slice(name.length)}`;
+  let movedOwner = packageCache.maybeMoved(owner);
+  if (movedOwner === owner) {
+    return inputPath;
   }
-
-  let h = crypto.createHash('sha1');
-  let hash = h.update(`${appDir}/node_modules/${name}`).digest('hex').slice(0, 8);
-
-  return `node_modules/.embroider/rewritten-packages/${name}.${hash}/${addonPath.slice(name.length)}`;
+  let movedFullPath = fullInputPath.replace(owner.root, movedOwner.root);
+  return explicitRelative(appDir, movedFullPath);
 }
 
-export function expectRewrittenFilesAt(basePath: string, params: { qunit: Assert }): ExpectFile {
-  let func: any = (addonPath: string) => {
-    return new BoundExpectFile(basePath, getRewrittenLocation(basePath, addonPath), new QUnitAdapter(params.qunit));
+export function expectRewrittenFilesAt(
+  basePath: string,
+  params: { qunit: Assert }
+): ExpectFile & { toRewrittenPath: (s: string) => string } {
+  let func: any = (inputPath: string) => {
+    return new BoundExpectFile(basePath, getRewrittenLocation(basePath, inputPath), new QUnitAdapter(params.qunit));
   };
   Object.defineProperty(func, 'basePath', {
     get() {
       return basePath;
+    },
+  });
+  Object.defineProperty(func, 'toRewrittenPath', {
+    get() {
+      return (p: string) => getRewrittenLocation(basePath, p);
     },
   });
   return func;

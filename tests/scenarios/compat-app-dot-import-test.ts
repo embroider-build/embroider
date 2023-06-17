@@ -50,15 +50,17 @@ appScenarios
         });
       });
       test('destDir puts vendor files into public assets', function () {
-        expectFile('@embroider/synthesized-vendor/package.json')
+        expectFile('./node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json')
           .json()
           .get(['ember-addon', 'public-assets', './vendor/some-font.ttf'])
           .equals('fonts/some-font.ttf');
-        expectFile('@embroider/synthesized-vendor/vendor/some-font.ttf').exists();
+        expectFile(
+          './node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/vendor/some-font.ttf'
+        ).exists();
       });
 
       test('handle non-transformed node_module with explicit outputFile', function () {
-        expectFile('@embroider/synthesized-vendor/package.json')
+        expectFile('./node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json')
           .json()
           .get([
             'ember-addon',

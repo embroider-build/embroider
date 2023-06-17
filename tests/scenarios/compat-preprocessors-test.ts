@@ -1,8 +1,6 @@
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -92,7 +90,6 @@ appScenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
-      let expectAddonFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -101,28 +98,30 @@ appScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test('dependencies are setup for this test suite correctly', () => {
-        expectFile('package.json').exists();
-        expectFile('package.json').matches(/my-preprocessor/, 'has the preprocessor dependency');
-        expectAddonFile('my-addon/package.json').exists();
-        expectAddonFile('my-addon/package.json').matches(/my-preprocessor/, 'has the preprocessor dependency');
-        expectAddonFile('my-preprocessor/package.json').exists();
+        expectFile('./package.json').exists();
+        expectFile('./package.json').matches(/my-preprocessor/, 'has the preprocessor dependency');
+        expectFile('./node_modules/my-addon/package.json').exists();
+        expectFile('./node_modules/my-addon/package.json').matches(
+          /my-preprocessor/,
+          'has the preprocessor dependency'
+        );
+        expectFile('./node_modules/my-preprocessor/package.json').exists();
       });
 
       test('app has correct path embedded in comment', () => {
-        const assertFile = expectFile('components/from-the-app.js');
+        const assertFile = expectFile('./components/from-the-app.js');
         assertFile.exists();
         // This is the expected output during an classic build.
         assertFile.matches(/path@app-template\/components\/from-the-app\.js/, 'has a path comment in app components');
       });
 
       test('addon has correct path embedded in comment', () => {
-        expectAddonFile('my-preprocessor/package.json').exists();
-        const assertFile = expectAddonFile('my-addon/components/greeting.js');
+        expectFile('./node_modules/my-preprocessor/package.json').exists();
+        const assertFile = expectFile('./node_modules/my-addon/components/greeting.js');
         assertFile.matches(/path@my-addon\/components\/greeting\.js/, 'has a path comment in app components');
       });
     });

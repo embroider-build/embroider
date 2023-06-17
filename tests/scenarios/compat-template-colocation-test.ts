@@ -1,7 +1,7 @@
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Transpiler } from '@embroider/test-support';
 import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
@@ -83,7 +83,6 @@ scenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
-      let expectAddonFile: ExpectFile;
       let build: Transpiler;
 
       hooks.before(async assert => {
@@ -93,9 +92,8 @@ scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
-        build = new Transpiler(expectFile.basePath);
+        let r = (expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert }));
+        build = new Transpiler(resolve(app.dir, r.toRewrittenPath(app.dir)));
       });
 
       test(`app's colocated template is associated with JS`, function () {
@@ -137,7 +135,7 @@ scenarios
       });
 
       test(`addon's colocated template is associated with JS`, function () {
-        let assertFile = expectAddonFile('my-addon/components/component-one.js').transform(build.transpile);
+        let assertFile = expectFile('./node_modules/my-addon/components/component-one.js').transform(build.transpile);
         assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
         assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
         assertFile.matches(
@@ -147,7 +145,7 @@ scenarios
       });
 
       test(`addon's template-only component JS is synthesized`, function () {
-        let assertFile = expectAddonFile('my-addon/components/component-two.js').transform(build.transpile);
+        let assertFile = expectFile('./node_modules/my-addon/components/component-two.js').transform(build.transpile);
         assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
         assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
         assertFile.matches(/import templateOnlyComponent/, 'found templateOnlyComponent');
@@ -158,7 +156,7 @@ scenarios
       });
 
       test(`addon's colocated components are correct in implicit-modules`, function () {
-        let assertFile = expectAddonFile('my-addon/package.json').json();
+        let assertFile = expectFile('./node_modules/my-addon/package.json').json();
         assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
         assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');
         assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-one.hbs');
@@ -190,7 +188,6 @@ scenarios
 
       let app: PreparedApp;
       let expectFile: ExpectFile;
-      let expectAddonFile: ExpectFile;
 
       hooks.before(async assert => {
         app = await scenario.prepare();
@@ -199,8 +196,7 @@ scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test(`app's colocated components are not implicitly included`, function () {
@@ -214,7 +210,7 @@ scenarios
       });
 
       test(`addon's colocated components are not in implicit-modules`, function () {
-        let assertFile = expectAddonFile('my-addon/package.json').json();
+        let assertFile = expectFile('./node_modules/my-addon/package.json').json();
         assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
       });
     });

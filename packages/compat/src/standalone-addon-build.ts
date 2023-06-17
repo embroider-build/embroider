@@ -7,6 +7,7 @@ import broccoliMergeTrees from 'broccoli-merge-trees';
 import writeFile from 'broccoli-file-creator';
 import type { Node } from 'broccoli-node-api';
 import CompatApp from './compat-app';
+import { join } from 'path';
 
 export function convertLegacyAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
@@ -51,15 +52,17 @@ function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Se
 
   // adding an entry for the app itself to have a place in the
   // rewritten-packages, even though this stage hasn't actually put it there
-  // yet.
-  content.packages[compatApp.root] = compatApp.name;
+  // yet. This directory lives outside our rewritten-pacakges directory because
+  // it's produced by a separate build stage, and it's easier to have them
+  // writing into separate directories.
+  content.packages[compatApp.root] = join('..', 'rewritten-app');
 
   let nonResolvableDeps = appPackage.nonResolvableDeps;
   if (nonResolvableDeps) {
     let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
 
     // the app gets extraResolutions support just like every addon does
-    content.extraResolutions[compatApp.name] = extraRoots;
+    content.extraResolutions[join('..', 'rewritten-app')] = extraRoots;
 
     // but it also gets extraResolutions registered against its *original*
     // location, because the app is unique because stage2 needs a Package

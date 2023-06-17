@@ -21,11 +21,9 @@ export default class CompatAddons implements Stage {
   private treeSync: TreeSync | undefined;
   readonly inputPath: string;
 
-  private destDir: string;
   private addons: Node;
 
   constructor(private compatApp: CompatApp) {
-    this.destDir = resolve(compatApp.root, 'node_modules', '.embroider', 'rewritten-packages', compatApp.name);
     this.addons = convertLegacyAddons(compatApp);
     this.inputPath = compatApp.root;
   }
@@ -36,7 +34,7 @@ export default class CompatAddons implements Stage {
 
   async ready(): Promise<{ outputPath: string }> {
     return {
-      outputPath: this.destDir,
+      outputPath: resolve(this.compatApp.root, 'node_modules', '.embroider', 'rewritten-app'),
     };
   }
 
@@ -58,6 +56,7 @@ export default class CompatAddons implements Stage {
       !this.didBuild || // always copy on the first build
       changedMap.get(addons)
     ) {
+      // the problem
       this.treeSync.sync();
       RewrittenPackageCache.shared('embroider', this.compatApp.root).invalidateIndex();
     }

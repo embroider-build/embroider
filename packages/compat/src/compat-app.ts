@@ -1,5 +1,5 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
-import { PackageCache, WaitForTrees, Stage, RewrittenPackageCache } from '@embroider/core';
+import { PackageCache, WaitForTrees, Stage, RewrittenPackageCache, Package } from '@embroider/core';
 import Options, { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -806,22 +806,22 @@ export default class CompatApp {
     };
   }
 
-  private async instantiate(
-    root: string,
-    appSrcDir: string,
-    packageCache: RewrittenPackageCache,
-    configTree: V1Config
-  ) {
-    let origAppPkg;
+  @Memoize()
+  appPackage(): Package {
+    let packageCache = RewrittenPackageCache.shared('embroider', this.root);
     if (this.isDummy) {
-      origAppPkg = new DummyPackage(
+      return new DummyPackage(
         this.root,
         this.legacyEmberAppInstance.project.root,
         packageCache as unknown as PackageCache // TODO: cast won't be needed when refactor is complete
       );
     } else {
-      origAppPkg = packageCache.get(appSrcDir);
+      return packageCache.get(this.root);
     }
+  }
+
+  private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
+    let origAppPkg = this.appPackage();
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     return new CompatAppBuilder(
       root,
@@ -849,7 +849,7 @@ export default class CompatApp {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
           let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, prevStage.inputPath, packageCache, inTrees.configTree);
+          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree);
           resolve({ outputPath });
         }
         await this.active.build(treePaths);

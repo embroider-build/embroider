@@ -13,7 +13,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
   let instanceCache = new V1InstanceCache(compatApp, packageCache);
 
-  let appPackage = packageCache.get(compatApp.root);
+  let appPackage = compatApp.appPackage();
   let v1Addons = findV1Addons(appPackage);
   let index = buildAddonIndex(compatApp, appPackage, v1Addons);
 

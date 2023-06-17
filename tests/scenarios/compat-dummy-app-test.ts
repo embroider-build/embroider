@@ -1,10 +1,10 @@
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { Rebuilder } from '@embroider/test-support';
 import { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync } from 'fs';
+import { join, resolve } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
@@ -47,7 +47,9 @@ dummyAppScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(builder.outputPath, '.stage2-output'), 'utf8'), { qunit: assert });
+        expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), {
+          qunit: assert,
+        });
       });
 
       test('rebuilds addon code', async function () {
@@ -58,8 +60,16 @@ dummyAppScenarios
       });
 
       test('contains public assets from dummy app', async function () {
-        expectFile('robots.txt').exists();
-        expectFile('package.json').json().get('ember-addon.assets').includes('robots.txt');
+        // expectRewrittenFilesAt doesn't understand dummy apps, so even though
+        // we initialized it on app.dir/tests/dummy, we can't just say
+        // "robots.txt" here because it thinks that file belongs to the
+        // containing addon. By writing out the rewritten paths ourselves we
+        // sidestep that problem≥
+        expectFile('./node_modules/.embroider/rewritten-app/robots.txt').exists();
+        expectFile('./node_modules/.embroider/rewritten-app/package.json')
+          .json()
+          .get('ember-addon.assets')
+          .includes('robots.txt');
       });
     });
   });

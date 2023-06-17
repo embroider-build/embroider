@@ -56,7 +56,6 @@ export default class CompatAddons implements Stage {
       !this.didBuild || // always copy on the first build
       changedMap.get(addons)
     ) {
-      // the problem
       this.treeSync.sync();
       RewrittenPackageCache.shared('embroider', this.compatApp.root).invalidateIndex();
     }

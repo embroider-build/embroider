@@ -12,8 +12,9 @@ export function convertLegacyAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
   let instanceCache = new V1InstanceCache(compatApp, packageCache);
 
-  let v1Addons = findV1Addons(packageCache.get(compatApp.root));
-  let index = buildAddonIndex(compatApp, v1Addons);
+  let appPackage = packageCache.get(compatApp.root);
+  let v1Addons = findV1Addons(appPackage);
+  let index = buildAddonIndex(compatApp, appPackage, v1Addons);
 
   let interiorTrees: Node[] = [];
   let exteriorTrees = [...v1Addons].map(pkg => {
@@ -34,7 +35,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
   ]);
 }
 
-function buildAddonIndex(compatApp: CompatApp, packages: Set<Package>): RewrittenPackageIndex {
+function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Set<Package>): RewrittenPackageIndex {
   let content: RewrittenPackageIndex = {
     packages: {},
     extraResolutions: {},
@@ -52,6 +53,19 @@ function buildAddonIndex(compatApp: CompatApp, packages: Set<Package>): Rewritte
   // rewritten-packages, even though this stage hasn't actually put it there
   // yet.
   content.packages[compatApp.root] = compatApp.name;
+
+  let nonResolvableDeps = appPackage.nonResolvableDeps;
+  if (nonResolvableDeps) {
+    let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
+
+    // the app gets extraResolutions support just like every addon does
+    content.extraResolutions[compatApp.name] = extraRoots;
+
+    // but it also gets extraResolutions registered against its *original*
+    // location, because the app is unique because stage2 needs a Package
+    // representing the *unmoved* app but seeing *moved* deps.
+    content.extraResolutions[appPackage.root] = extraRoots;
+  }
 
   return content;
 }

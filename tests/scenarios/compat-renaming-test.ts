@@ -6,7 +6,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 import { definesPattern, Transpiler } from '@embroider/test-support';
-import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
@@ -173,7 +173,7 @@ appScenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
         build = new Transpiler(expectFile.basePath);
       });
 

@@ -2,7 +2,7 @@ import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -102,7 +102,7 @@ appScenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test('dependencies are setup for this test suite correctly', () => {

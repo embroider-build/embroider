@@ -3,7 +3,7 @@ import { appScenarios, baseAddon, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Transpiler } from '@embroider/test-support';
-import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -94,7 +94,7 @@ scenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
         build = new Transpiler(expectFile.basePath);
       });
 
@@ -200,7 +200,7 @@ scenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test(`app's colocated components are not implicitly included`, function () {

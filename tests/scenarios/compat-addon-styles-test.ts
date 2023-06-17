@@ -1,4 +1,4 @@
-import { expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import { appScenarios, baseAddon } from './scenarios';
@@ -100,7 +100,7 @@ appScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test('treeForStyles adds styles to build', function () {

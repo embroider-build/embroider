@@ -1,4 +1,4 @@
-import { ExpectFile, expectFilesAt, expectRewrittenAddonFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { ExpectFile, expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
@@ -45,7 +45,7 @@ appScenarios
 
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test('dot files are not included as app modules', function () {

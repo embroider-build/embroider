@@ -59,7 +59,7 @@ function getRewrittenLocation(appDir: string, addonPath: string) {
   return `node_modules/.embroider/rewritten-packages/${name}.${hash}/${addonPath.slice(name.length)}`;
 }
 
-export function expectRewrittenAddonFilesAt(basePath: string, params: { qunit: Assert }): ExpectFile {
+export function expectRewrittenFilesAt(basePath: string, params: { qunit: Assert }): ExpectFile {
   let func: any = (addonPath: string) => {
     return new BoundExpectFile(basePath, getRewrittenLocation(basePath, addonPath), new QUnitAdapter(params.qunit));
   };

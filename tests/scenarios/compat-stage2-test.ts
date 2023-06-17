@@ -5,7 +5,7 @@ import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenari
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Rebuilder, Transpiler } from '@embroider/test-support';
-import { expectFilesAt, expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt, expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -91,7 +91,7 @@ stage2Scenarios
       });
 
       hooks.beforeEach(assert => {
-        expectAddonFile = expectRewrittenAddonFilesAt(app.dir, { qunit: assert });
+        expectAddonFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       let expectAudit = setupAuditTest(hooks, () => app.dir);

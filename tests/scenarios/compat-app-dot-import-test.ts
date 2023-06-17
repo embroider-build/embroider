@@ -1,4 +1,4 @@
-import { expectRewrittenAddonFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { PreparedApp } from 'scenario-tester';
 import { join } from 'path';
@@ -45,7 +45,7 @@ appScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectRewrittenAddonFilesAt(app.dir, {
+        expectFile = expectRewrittenFilesAt(app.dir, {
           qunit: assert,
         });
       });

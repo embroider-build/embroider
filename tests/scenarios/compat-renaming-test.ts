@@ -283,7 +283,7 @@ appScenarios
           .resolves('inner-dep')
           .to('./node_modules/has-app-tree-import/node_modules/inner-dep/index.js');
       });
-      QUnit.only(`app-tree files from addons can import from the app`, function () {
+      test(`app-tree files from addons can import from the app`, function () {
         expectAudit
           .module('./node_modules/mirage-like/_app_/mirage/config.js')
           .resolves('app-template/components/import-lodash')

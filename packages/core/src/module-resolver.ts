@@ -772,7 +772,10 @@ export class Resolver {
       if (!this.options.activeAddons[packageName]) {
         throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }
-      let newHome = resolve(this.options.appRoot, 'package.json');
+      let newHome = resolve(
+        this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
+        'package.json'
+      );
       return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 

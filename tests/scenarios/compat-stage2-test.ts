@@ -2,10 +2,9 @@ import { Options } from '@embroider/compat';
 import { writeFileSync, unlinkSync } from 'fs';
 import { PreparedApp, Project } from 'scenario-tester';
 import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenarios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Rebuilder, Transpiler } from '@embroider/test-support';
-import { expectFilesAt, expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -755,21 +754,19 @@ dummyAppScenarios
       });
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        build = new Transpiler(expectFile.basePath);
+        expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), { qunit: assert });
+        build = new Transpiler(resolve(app.dir, 'tests/dummy'));
       });
 
       test('dummy app sees that its being developed', function () {
-        let assertFile = expectFile('components/inside-dummy-app.js').transform(build.transpile);
+        let assertFile = expectFile('node_modules/.embroider/rewritten-app/components/inside-dummy-app.js').transform(
+          build.transpile
+        );
         assertFile.matches(/console\.log\(true\)/);
       });
 
       test('addon within dummy app sees that its being developed', function () {
-        let assertFile = expectFile(
-          require.resolve('my-addon/components/hello-world', {
-            paths: [expectFile.basePath],
-          })
-        ).transform(build.transpile);
+        let assertFile = expectFile('../../components/hello-world.js').transform(build.transpile);
         assertFile.matches(/console\.log\(true\)/);
       });
     });

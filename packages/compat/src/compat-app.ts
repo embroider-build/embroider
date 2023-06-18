@@ -775,6 +775,12 @@ export default class CompatApp {
     if (this.env !== 'production') {
       this.macrosConfig.enablePackageDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
+      if (this.isDummy) {
+        // dummy apps automatically put their owning addon under development too
+        this.macrosConfig.enablePackageDevelopment(
+          dirname(pkgUpSync({ cwd: this.legacyEmberAppInstance.project.root })!)
+        );
+      }
     }
 
     // this uses globalConfig because it's a way for packages to ask "is

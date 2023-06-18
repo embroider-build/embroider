@@ -86,7 +86,7 @@ function owningPackage(this: State): Package {
   if (!pkg) {
     throw new Error(`unable to determine which npm package owns the file ${this.sourceFile}`);
   }
-  return pkg;
+  return this.packageCache.original(pkg) || pkg;
 }
 
 function cloneDeep(this: State, node: Node): Node {

@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
+  .skip('lts_4_4') // @ember-data/debug 4.4 has an undeclared peerDep on @ember-data/store that wreaks havoc in our monorepo.
   .map('fastboot-app-test', project => {
     project.pkg.fastbootDependencies = ['crypto', 'node-fetch'];
 

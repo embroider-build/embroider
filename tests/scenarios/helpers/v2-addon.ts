@@ -6,70 +6,105 @@ import rollup from 'rollup';
 export class DevWatcher {
   #addon: PreparedApp;
   #watcher?: ReturnType<(typeof rollup)['watch']>;
-  #waitForBuildPromise?: Promise<void>;
+  #waitForBuildPromise?: Promise<unknown>;
+  #resolve?: (value: unknown) => void;
+  #reject?: (error: unknown) => void;
+  #originalDirectory: string;
 
   constructor(addon: PreparedApp) {
     this.#addon = addon;
+    this.#originalDirectory = process.cwd();
   }
 
   start = async () => {
-    let originalDirectory = process.cwd();
-    let buildDirectory = this.#addon.dir;
-    let configPath = path.resolve(this.#addon.dir, 'rollup.config.mjs');
+    if (this.#watcher) {
+      throw new Error(`.start() may only be called once`);
+    }
 
+    let buildDirectory = this.#addon.dir;
+
+    /**
+     * Rollup does not have a way to build/watch in other directories,
+     * unless we prepend / modifier all the input/output/include/exclude paths
+     */
     process.chdir(buildDirectory);
 
+    let configPath = path.resolve(this.#addon.dir, 'rollup.config.mjs');
     let configFile = await loadConfigFile(configPath);
     configFile.warnings.flush();
 
-    this.#watcher = rollup.watch(configFile.options);
+    this.#watcher = rollup.watch(
+      configFile.options.map(options => {
+        options.watch = { buildDelay: 20 };
+        return options;
+      })
+    );
 
-    let resolve: () => void | undefined;
-    let reject: () => void | undefined;
+    this.#defer();
 
     this.#watcher.on('event', args => {
       switch (args.code) {
         case 'START': {
-          process.chdir(buildDirectory);
-          resolve?.();
-          this.#waitForBuildPromise = new Promise((_resolve, _reject) => {
-            resolve = _resolve;
-            reject = _reject;
-          });
+          this.#defer();
           break;
         }
-        // case 'BUNDLE_START'
-        // case 'BUNDLE_END'
         case 'END': {
-          resolve?.();
-          process.chdir(originalDirectory);
+          this.#forceResolve?.('end');
           break;
         }
         case 'ERROR': {
-          reject?.();
-          process.chdir(originalDirectory);
+          this.#forceReject?.(args.error);
           break;
         }
       }
-
-      console.log('event', args);
     });
 
-    this.#watcher.on('change', args => {
-      console.log('change', args);
-    });
-    this.#watcher.on('close', () => {
-      console.debug('closing watcher');
-      resolve?.();
-    });
+    this.#watcher.on('close', () => this.#forceResolve?.('close'));
 
-    this.#watcher.on('restart', args => {
-      console.log('restart', args);
-    });
-
-    return this.#waitForBuildPromise;
+    return this.settled();
   };
 
-  stop = () => this.#watcher?.close();
-  settled = () => this.#waitForBuildPromise;
+  #defer = () => {
+    if (this.#waitForBuildPromise) {
+      // Need to finish prior work before deferring again
+      // if we hit this use case, we may have mis-configured
+      // the previosu deferral
+      return;
+    }
+    this.#waitForBuildPromise = new Promise<unknown>((_resolve, _reject) => {
+      this.#resolve = _resolve;
+      this.#reject = _reject;
+    });
+  };
+
+  #forceResolve(state: unknown) {
+    this.#resolve?.(state);
+    this.#waitForBuildPromise = undefined;
+  }
+  #forceReject(error: unknown) {
+    this.#reject?.(error);
+    this.#waitForBuildPromise = undefined;
+  }
+
+  stop = async () => {
+    await this.#watcher?.close();
+    process.chdir(this.#originalDirectory);
+  };
+
+  nextBuild = async () => {
+    this.#defer();
+    await this.settled();
+  };
+
+  settled = async (timeout = 2_000) => {
+    if (!this.#waitForBuildPromise) {
+      console.debug(`There is nothing to wait for`);
+      return;
+    }
+
+    await Promise.race([
+      this.#waitForBuildPromise,
+      new Promise((_, reject) => setTimeout(() => reject('[DevWatcher] rollup.watch timed out'), timeout)),
+    ]);
+  };
 }

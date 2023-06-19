@@ -119,7 +119,8 @@ Scenarios.fromProject(() => baseV2Addon())
         await addon.execute('pnpm build');
       });
 
-      hooks.beforeEach(function (assert) {
+      hooks.beforeEach(async function (assert) {
+        assert.notOk(watcher, 'a watcher failed to be cleaned up in a prior run');
         // None of these tests should take longer than even 1s, but
         // if something goes wrong, they could hang, and we don't want to hold up
         // all of C.I.
@@ -127,7 +128,8 @@ Scenarios.fromProject(() => baseV2Addon())
       });
 
       hooks.afterEach(async () => {
-        watcher?.stop();
+        await watcher?.stop();
+        watcher = undefined;
       });
 
       Qmodule('Watching the addon via rollup -c -w', function () {
@@ -152,6 +154,7 @@ Scenarios.fromProject(() => baseV2Addon())
               // the `stat` is measured in `ms`, so it's still pretty fast
               await aBit(10);
               await fs.writeFile(someFile, someContent + `\n`);
+              await watcher?.nextBuild();
             },
           });
         });
@@ -177,8 +180,7 @@ Scenarios.fromProject(() => baseV2Addon())
                 fs.rm(path.join(addon.dir, 'src/components/demo.js')),
                 fs.rm(path.join(addon.dir, 'src/components/demo.hbs')),
               ]);
-              await aBit(1000);
-              await watcher?.settled();
+              await watcher?.nextBuild();
             },
           });
         });

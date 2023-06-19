@@ -1,91 +1,75 @@
+import path from 'path';
 import { PreparedApp } from 'scenario-tester';
-import { spawn } from 'child_process';
+import { loadConfigFile } from 'rollup/loadConfigFile';
+import rollup from 'rollup';
 
 export class DevWatcher {
   #addon: PreparedApp;
-  #singletonAbort?: AbortController;
-  #waitForBuildPromise?: Promise<unknown>;
-  #lastBuild?: string;
+  #watcher?: ReturnType<(typeof rollup)['watch']>;
+  #waitForBuildPromise?: Promise<void>;
 
   constructor(addon: PreparedApp) {
     this.#addon = addon;
   }
 
-  start = () => {
-    if (this.#singletonAbort) this.#singletonAbort.abort();
+  start = async () => {
+    let originalDirectory = process.cwd();
+    let buildDirectory = this.#addon.dir;
+    let configPath = path.resolve(this.#addon.dir, 'rollup.config.mjs');
 
-    this.#singletonAbort = new AbortController();
+    process.chdir(buildDirectory);
 
-    /**
-     * NOTE: when running rollup in a non-TTY environemnt, the "watching for changes" message does not print.
-     */
-    let rollupProcess = spawn('pnpm', ['start'], {
-      cwd: this.#addon.dir,
-      signal: this.#singletonAbort.signal,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      // Have to disable color so our regex / string matching works easier
-      // Have to include process.env, so the spawned environment has access to `pnpm`
-      env: { ...process.env, NO_COLOR: '1' },
+    let configFile = await loadConfigFile(configPath);
+    configFile.warnings.flush();
+
+    this.#watcher = rollup.watch(configFile.options);
+
+    let resolve: () => void | undefined;
+    let reject: () => void | undefined;
+
+    this.#watcher.on('event', args => {
+      switch (args.code) {
+        case 'START': {
+          process.chdir(buildDirectory);
+          resolve?.();
+          this.#waitForBuildPromise = new Promise((_resolve, _reject) => {
+            resolve = _resolve;
+            reject = _reject;
+          });
+          break;
+        }
+        // case 'BUNDLE_START'
+        // case 'BUNDLE_END'
+        case 'END': {
+          resolve?.();
+          process.chdir(originalDirectory);
+          break;
+        }
+        case 'ERROR': {
+          reject?.();
+          process.chdir(originalDirectory);
+          break;
+        }
+      }
+
+      console.log('event', args);
     });
 
-    let settle: (...args: unknown[]) => void;
-    let error: (...args: unknown[]) => void;
-    this.#waitForBuildPromise = new Promise((resolve, reject) => {
-      settle = resolve;
-      error = reject;
+    this.#watcher.on('change', args => {
+      console.log('change', args);
+    });
+    this.#watcher.on('close', () => {
+      console.debug('closing watcher');
+      resolve?.();
     });
 
-    if (!rollupProcess.stdout) {
-      throw new Error(`Failed to start process, pnpm start`);
-    }
-    if (!rollupProcess.stderr) {
-      throw new Error(`Failed to start process, pnpm start`);
-    }
-
-    let handleData = (data: Buffer) => {
-      let string = data.toString();
-      let lines = string.split('\n');
-
-      let build = lines.find(line => line.trim().match(/^created dist in (.+)$/));
-      let problem = lines.find(line => line.includes('Error:'));
-      let isAbort = lines.find(line => line.includes('AbortError:'));
-
-      if (isAbort) {
-        // Test may have ended, we want to kill the watcher,
-        // but not error, because throwing an error causes the test to fail.
-        return settle();
-      }
-
-      if (problem) {
-        console.error('\n!!!\n', problem, '\n!!!\n');
-        error(problem);
-        return;
-      }
-
-      if (build) {
-        this.#lastBuild = build[1];
-
-        settle?.();
-
-        this.#waitForBuildPromise = new Promise((resolve, reject) => {
-          settle = resolve;
-          error = reject;
-        });
-      }
-    };
-
-    // NOTE: rollup outputs to stderr only, not stdout
-    rollupProcess.stderr.on('data', (...args) => handleData(...args));
-    rollupProcess.on('error', handleData);
-    rollupProcess.on('close', () => settle?.());
-    rollupProcess.on('exit', () => settle?.());
+    this.#watcher.on('restart', args => {
+      console.log('restart', args);
+    });
 
     return this.#waitForBuildPromise;
   };
 
-  stop = () => this.#singletonAbort?.abort();
+  stop = () => this.#watcher?.close();
   settled = () => this.#waitForBuildPromise;
-  get lastBuild() {
-    return this.#lastBuild;
-  }
 }

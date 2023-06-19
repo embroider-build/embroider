@@ -24,9 +24,9 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "test": "qunit --require ts-node/register *-test.ts",
-    "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
-    "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
+    "test": "qunit --require @swc/register *-test.ts",
+    "test:list": "scenario-tester list --require @swc/register --files=*-test.ts",
+    "test:output": "scenario-tester output --require @swc/register --files=*-test.ts"
   },
   "private": true,
   "license": "MIT",
@@ -46,6 +46,7 @@
     "@embroider/router": "workspace:*",
     "@embroider/util": "workspace:*",
     "@rollup/plugin-babel": "^5.3.1",
+    "@swc/register": "^0.1.10",
     "@tsconfig/ember": "1.0.1",
     "@types/fs-extra": "^9.0.12",
     "@types/js-yaml": "^4.0.5",
